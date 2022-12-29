@@ -57,11 +57,11 @@ object KyuubiSparkUtil extends Logging {
   def engineUrl: String = globalSparkContext.getConf.getOption(
     "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
     .orElse(globalSparkContext.uiWebUrl).getOrElse("")
-  def deployMode(sc: SparkContext): String = {
-    if (sc.getConf.getBoolean("spark.kubernetes.submitInDriver", false)) {
+  def deployMode: String = {
+    if (globalSparkContext.getConf.getBoolean("spark.kubernetes.submitInDriver", false)) {
       "cluster"
     } else {
-      sc.deployMode
+      globalSparkContext.deployMode
     }
   }
 
@@ -74,7 +74,7 @@ object KyuubiSparkUtil extends Logging {
        |                 application ID: $engineId
        |                 application web UI: $engineUrl
        |                 master: ${sc.master}
-       |                 deploy mode: ${deployMode(sc)}
+       |                 deploy mode: $deployMode
        |                 version: ${sc.version}
        |           Start time: ${LocalDateTime.ofInstant(Instant.ofEpochMilli(sc.startTime), ZoneId.systemDefault)}
        |           User: ${sc.sparkUser}""".stripMargin
