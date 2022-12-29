@@ -118,7 +118,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    if (isSparkV31OrGreater) {
+    if (isSparkV33OrGreater) {
       assert(po.catalog === sparkCatalogVal)
     } else {
       assert(po.catalog.isEmpty)
@@ -171,7 +171,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-      if (isSparkV31OrGreater) {
+      if (isSparkV33OrGreater) {
         assert(po.catalog === sparkCatalogVal)
       } else {
         assert(po.catalog.isEmpty)
@@ -195,7 +195,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-      if (isSparkV31OrGreater) {
+      if (isSparkV33OrGreater) {
         assert(po.catalog === sparkCatalogVal)
       } else {
         assert(po.catalog.isEmpty)
@@ -770,7 +770,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = in.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    if (isSparkV31OrGreater) {
+    if (isSparkV33OrGreater) {
       assert(po.catalog === sparkCatalogVal)
     } else {
       assert(po.catalog.isEmpty)
@@ -1273,7 +1273,11 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    assert(po.catalog.isEmpty)
+    if (isSparkV33OrGreater) {
+      assert(po.catalog === sparkCatalogVal)
+    } else {
+      assert(po.catalog.isEmpty)
+    }
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
