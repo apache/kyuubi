@@ -62,7 +62,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     new java.util.HashMap[String, (Integer, java.lang.Long)]()
   private var userIsolatedSparkSessionThread: Option[ScheduledExecutorService] = None
 
-  private var discoveryClient: Option[DiscoveryClient] = _
+  private var discoveryClient: Option[DiscoveryClient] = None
   private var sessionsPath: String = _
 
   private def startUserIsolatedCacheChecker(): Unit = {
