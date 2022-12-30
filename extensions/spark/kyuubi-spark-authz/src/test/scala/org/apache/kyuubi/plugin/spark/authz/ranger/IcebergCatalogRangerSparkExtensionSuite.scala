@@ -171,7 +171,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     }
   }
 
-  test("[KYUUBI #3515] MERGE INTO 2") {
+  test("KYUUBI #4047 MergeIntoIcebergTable with row filter") {
     assume(isSparkV32OrGreater)
 
     val outputTable2 = "outputTable2"
