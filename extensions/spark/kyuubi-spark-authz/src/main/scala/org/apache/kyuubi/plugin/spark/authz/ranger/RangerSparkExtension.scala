@@ -36,7 +36,6 @@ import org.apache.kyuubi.plugin.spark.authz.util.{RuleEliminateMarker, RuleElimi
  *  @since 1.6.0
  */
 class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
-  SparkRangerAdminPlugin.init()
 
   override def apply(v1: SparkSessionExtensions): Unit = {
     v1.injectCheckRule(AuthzConfigurationChecker)

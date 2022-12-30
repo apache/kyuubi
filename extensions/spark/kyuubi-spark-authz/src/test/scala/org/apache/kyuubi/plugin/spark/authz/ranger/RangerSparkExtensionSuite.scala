@@ -36,7 +36,9 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.{getOrCreate, serviceType}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll {
@@ -815,8 +817,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
 
       try {
-        SparkRangerAdminPlugin.getRangerConf.setBoolean(
-          s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+        getRangerConf(getOrCreate()).setBoolean(
+          s"ranger.plugin.$serviceType.authorize.in.single.call",
           true)
         val e2 = intercept[AccessControlException](doAs("someone", sql(insertSql1)))
         assert(e2.getMessage.contains(s"does not have" +
@@ -827,8 +829,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]"))
       } finally {
         // revert to default value
-        SparkRangerAdminPlugin.getRangerConf.setBoolean(
-          s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+        getRangerConf(getOrCreate()).setBoolean(
+          s"ranger.plugin.$serviceType.authorize.in.single.call",
           false)
       }
     }

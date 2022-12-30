@@ -29,6 +29,7 @@ import scala.util.{Failure, Success, Try}
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.ranger.plugin.service.RangerBasePlugin
 import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
@@ -246,5 +247,15 @@ private[authz] object AuthZUtils {
     publicSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
     val signatureBytes = Base64.getDecoder.decode(signatureBase64)
     publicSignature.verify(signatureBytes)
+  }
+
+  lazy val isRanger21orGreater: Boolean = {
+    try {
+      classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
+      true
+    } catch {
+      case _: NoSuchMethodException =>
+        false
+    }
   }
 }

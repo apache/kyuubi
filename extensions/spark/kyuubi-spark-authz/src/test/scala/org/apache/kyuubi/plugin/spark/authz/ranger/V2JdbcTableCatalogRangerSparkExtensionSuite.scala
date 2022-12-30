@@ -22,6 +22,8 @@ import scala.util.Try
 
 // scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.{getOrCreate, serviceType}
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
 
 /**
  * Tests for RangerSparkExtensionSuite
@@ -197,8 +199,8 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
       s" on [$namespace1/$table1/id]"))
 
     try {
-      SparkRangerAdminPlugin.getRangerConf.setBoolean(
-        s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+      getRangerConf(getOrCreate()).setBoolean(
+        s"ranger.plugin.$serviceType.authorize.in.single.call",
         true)
       val e2 = intercept[AccessControlException](
         doAs(
@@ -209,8 +211,8 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
         s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
         s" [update] privilege on [$namespace1/$outputTable1]"))
     } finally {
-      SparkRangerAdminPlugin.getRangerConf.setBoolean(
-        s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+      getRangerConf(getOrCreate()).setBoolean(
+        s"ranger.plugin.$serviceType.authorize.in.single.call",
         false)
     }
   }

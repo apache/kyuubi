@@ -29,7 +29,15 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{invoke, invokeAs}
 
-case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
+case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl {
+  def getResourceCatalog: Option[String] = {
+    if (this.getResource != null && this.getResource.isInstanceOf[AccessResource]) {
+      this.getResource.asInstanceOf[AccessResource].catalog
+    } else {
+      None
+    }
+  }
+}
 
 object AccessRequest {
   def apply(
@@ -44,9 +52,10 @@ object AccessRequest {
     req.setUser(userName)
     req.setUserGroups(userGroups)
     req.setAction(opType.toString)
+    val rangerPlugin = SparkRangerAdminPlugin.getOrCreate(resource.catalog)
     try {
       val roles = invokeAs[JSet[String]](
-        SparkRangerAdminPlugin,
+        rangerPlugin,
         "getRolesFromUserAndGroups",
         (classOf[String], userName),
         (classOf[JSet[String]], userGroups))

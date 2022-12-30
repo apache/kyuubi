@@ -24,6 +24,7 @@ import org.apache.ranger.plugin.policyengine.RangerAccessResourceImpl
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, PrivilegeObject}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.getOrCreate
 
 class AccessResource private (val objectType: ObjectType, val catalog: Option[String])
   extends RangerAccessResourceImpl {
@@ -61,7 +62,7 @@ object AccessResource {
         resource.setValue("database", firstLevelResource)
         resource.setValue("table", secondLevelResource)
     }
-    resource.setServiceDef(SparkRangerAdminPlugin.getServiceDef)
+    resource.setServiceDef(getOrCreate().getServiceDef)
     owner.foreach(resource.setOwnerUser)
     resource
   }
