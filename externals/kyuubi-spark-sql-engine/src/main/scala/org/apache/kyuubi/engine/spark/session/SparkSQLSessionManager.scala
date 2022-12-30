@@ -29,7 +29,7 @@ import org.apache.kyuubi.engine.ShareLevel._
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
-import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths}
+import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths, ServiceDiscovery}
 import org.apache.kyuubi.session._
 import org.apache.kyuubi.util.ThreadUtils
 
@@ -94,7 +94,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   private def startRegisterSessionsPath(): Unit = {
     shareLevel match {
       case CONNECTION =>
-      case _ =>
+      // TODO add enable config
+      case _ if ServiceDiscovery.supportServiceDiscovery(conf) =>
         val namespace = conf.get(HA_NAMESPACE)
         // /kyuubi_1.6.1-incubating_USER_SPARK_SQL/tom/engine-pool-0
         // /kyuubi_1.6.1-incubating_USER_SPARK_SQL/sessions/tom/engine-pool-0
@@ -103,7 +104,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         discoveryClient = Some(DiscoveryClientProvider.createDiscoveryClient(conf))
         discoveryClient.get.createClient()
         // TODO etcd mode?
-        sessionsPath = discoveryClient.get.create(sessionsPrefixPath, "PERSISTENT_SEQUENTIAL")
+        sessionsPath = discoveryClient.get.create(sessionsPrefixPath, "PERSISTENT")
+//        sessionsPath = discoveryClient.get.create(sessionsPrefixPath, "PERSISTENT_SEQUENTIAL")
+      case _ =>
     }
   }
 
@@ -117,7 +120,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     super.stop()
     userIsolatedSparkSessionThread.foreach(_.shutdown())
     discoveryClient.foreach { client =>
-      client.delete(sessionsPath, true)
+//      client.delete(sessionsPath, true)
       client.closeClient()
     }
   }
