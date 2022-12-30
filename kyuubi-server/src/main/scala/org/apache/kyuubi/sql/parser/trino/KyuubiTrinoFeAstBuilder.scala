@@ -17,23 +17,24 @@
 
 package org.apache.kyuubi.sql.parser.trino
 
-import org.apache.kyuubi.sql.{KyuubiTrinoFeBaseParser, KyuubiTrinoFeBaseParserBaseVisitor}
+import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParser._
+import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParserBaseVisitor
 import org.apache.kyuubi.sql.parser.KyuubiParser
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTableTypes}
 
 class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef] {
 
   override def visitSingleStatement(
-      ctx: KyuubiTrinoFeBaseParser.SingleStatementContext): KyuubiTreeNode = {
+      ctx: SingleStatementContext): KyuubiTreeNode = {
     visit(ctx.statement).asInstanceOf[KyuubiTreeNode]
   }
 
-  override def visitPassThrough(ctx: KyuubiTrinoFeBaseParser.PassThroughContext): KyuubiTreeNode = {
+  override def visitPassThrough(ctx: PassThroughContext): KyuubiTreeNode = {
     PassThroughNode()
   }
 
-  override def visitGetSchemas(ctx: KyuubiTrinoFeBaseParser.GetSchemasContext): KyuubiTreeNode = {
+  override def visitGetSchemas(ctx: GetSchemasContext): KyuubiTreeNode = {
     val catalog = if (ctx.catalog == null) {
       null
     } else {
@@ -48,7 +49,11 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
     GetSchemas(catalog, schema)
   }
 
-  override def visitGetCatalogs(ctx: KyuubiTrinoFeBaseParser.GetCatalogsContext): KyuubiTreeNode = {
+  override def visitGetCatalogs(ctx: GetCatalogsContext): KyuubiTreeNode = {
     GetCatalogs()
+  }
+
+  override def visitGetTableTypes(ctx: GetTableTypesContext): KyuubiTreeNode = {
+    GetTableTypes()
   }
 }

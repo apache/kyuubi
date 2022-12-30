@@ -30,3 +30,7 @@ case class GetSchemas(catalogName: String, schemaPattern: String) extends Kyuubi
 case class GetCatalogs() extends KyuubiTreeNode {
   override def name(): String = "Get Catalogs"
 }
+
+case class GetTableTypes() extends KyuubiTreeNode {
+  override def name(): String = "Get Table Types"
+}
