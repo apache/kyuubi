@@ -79,6 +79,11 @@ server:
 env: []
 envFrom: []
 
+# Additional volumes for Kyuubi pod (templated)
+volumes: []
+# Additional volumeMounts for Kyuubi container (templated)
+volumeMounts: []
+
 service:
   type: NodePort
   # The default port limit of kubernetes is 30000-32767
