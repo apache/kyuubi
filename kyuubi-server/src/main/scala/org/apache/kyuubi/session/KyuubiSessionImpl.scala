@@ -38,7 +38,7 @@ import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
-import org.apache.kyuubi.sql.parser.KyuubiParser
+import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.sql.plan.command.RunnableCommand
 import org.apache.kyuubi.util.SignUtils
 

@@ -20,49 +20,28 @@ package org.apache.kyuubi.sql.parser
 import java.lang.{Long => JLong}
 import java.nio.CharBuffer
 
-import org.antlr.v4.runtime._
-import org.antlr.v4.runtime.atn.PredictionMode
-import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
+import org.antlr.v4.runtime.{CharStream, CodePointCharStream, IntStream}
+import org.antlr.v4.runtime.misc.Interval
+import org.antlr.v4.runtime.tree.{AbstractParseTreeVisitor, ParseTree}
 
-import org.apache.kyuubi.sql.{KyuubiSqlBaseLexer, KyuubiSqlBaseParser, KyuubiSqlBaseParserBaseListener}
+import org.apache.kyuubi.sql.KyuubiSqlBaseParserBaseListener
 import org.apache.kyuubi.sql.plan.KyuubiTreeNode
 
-class KyuubiParser {
+abstract class KyuubiParserBase[P] {
 
-  lazy val astBuilder = new KyuubiAstBuilder
+  val astBuilder: AbstractParseTreeVisitor[AnyRef]
+
+  protected def parse[T](command: String)(toResult: P => T): T
+
+  def parseTree(parser: P): ParseTree
 
   def parsePlan(sqlText: String): KyuubiTreeNode = parse(sqlText) { parser =>
-    astBuilder.visit(parser.singleStatement) match {
+    astBuilder.visit(parseTree(parser)) match {
       case plan: KyuubiTreeNode => plan
     }
   }
-
-  protected def parse[T](command: String)(toResult: KyuubiSqlBaseParser => T): T = {
-    val lexer = new KyuubiSqlBaseLexer(
-      new UpperCaseCharStream(CharStreams.fromString(command)))
-    lexer.removeErrorListeners()
-
-    val tokenStream = new CommonTokenStream(lexer)
-    val parser = new KyuubiSqlBaseParser(tokenStream)
-    parser.addParseListener(PostProcessor)
-    parser.removeErrorListeners()
-
-    try {
-      // first, try parsing with potentially faster SLL mode
-      parser.getInterpreter.setPredictionMode(PredictionMode.SLL)
-      toResult(parser)
-    } catch {
-      case _: ParseCancellationException =>
-        // if we fail, parse with LL mode
-        tokenStream.seek(0) // rewind input stream
-        parser.reset()
-
-        // Try Again.
-        parser.getInterpreter.setPredictionMode(PredictionMode.LL)
-        toResult(parser)
-    }
-  }
 }
+
 object KyuubiParser {
   val U16_CHAR_PATTERN = """\\u([a-fA-F0-9]{4})(?s).*""".r
   val U32_CHAR_PATTERN = """\\U([a-fA-F0-9]{8})(?s).*""".r
