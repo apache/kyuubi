@@ -273,7 +273,7 @@ class KyuubiSessionImpl(
       statement: String,
       confOverlay: Map[String, String],
       runAsync: Boolean,
-      queryTimeout: Long): OperationHandle = {
+      queryTimeout: Long): OperationHandle = withAcquireRelease() {
     val kyuubiNode = parser.parsePlan(statement)
     kyuubiNode match {
       case command: RunnableCommand =>
@@ -282,9 +282,7 @@ class KyuubiSessionImpl(
           runAsync,
           command)
         runOperation(operation)
-      case _ =>
-        super.executeStatement(statement, confOverlay, runAsync, queryTimeout)
+      case _ => super.executeStatement(statement, confOverlay, runAsync, queryTimeout)
     }
-
   }
 }
