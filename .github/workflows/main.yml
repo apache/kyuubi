@@ -1,0 +1,23 @@
+name: code style check
+on:
+  pull_request:
+    branches:
+      - master
+      - branch-*
+
+concurrency:
+  group: linter-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  linter:
+    name: Style check
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        profiles:
+          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds'
+    steps:
+      - name: checkout files in bin
+        uses: azohra/shell-linter@latest
+        with:
+          path: "bin"
