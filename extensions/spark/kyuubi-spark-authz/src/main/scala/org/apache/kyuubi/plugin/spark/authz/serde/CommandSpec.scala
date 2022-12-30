@@ -72,3 +72,10 @@ case class TableCommandSpec(
     tableDescs: Seq[TableDesc],
     opType: String = "QUERY",
     queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec
+
+
+case class ScanSpec(
+    classname: String,
+    scanDescs: Seq[ScanDesc]) extends CommandSpec {
+  override def opType: String = "QUERY"
+}

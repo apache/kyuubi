@@ -18,11 +18,10 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.connector.catalog.Identifier
+import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.{IcebergCommands, ObjectType}
 import org.apache.kyuubi.plugin.spark.authz.serde._
@@ -30,6 +29,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilter
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
+  final private val LOG = LoggerFactory.getLogger(getClass)
 
   private def mapPlanChildren(plan: LogicalPlan)(f: LogicalPlan => LogicalPlan): LogicalPlan = {
     val newChildren = plan match {
@@ -47,50 +47,34 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
     // RowFilterAndDataMaskingMarker if it is not wrapped yet.
     mapPlanChildren(plan) {
       case p: RowFilterAndDataMaskingMarker => p
-      case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
-        val table = getHiveTable(hiveTableRelation)
-        applyFilterAndMasking(hiveTableRelation, table.identifier, spark)
-      case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
-        val table = getDatasourceTable(logicalRelation)
-        if (table.isEmpty) {
-          logicalRelation
-        } else {
-          applyFilterAndMasking(logicalRelation, table.get.identifier, spark)
+      case r if SCAN_SPECS.contains(r.getClass.getName) && r.resolved =>
+        val tables = SCAN_SPECS(r.getClass.getName).scanDescs.flatMap { td =>
+          try {
+            td.extract(r, spark)
+          } catch {
+            case e: Exception =>
+              LOG.warn(td.error(r, e))
+              None
+          }
         }
-      case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
-        val tableIdentifier = getDatasourceV2Identifier(datasourceV2Relation)
-        if (tableIdentifier.isEmpty) {
-          datasourceV2Relation
-        } else {
-          applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
-        }
-      case permanentView: PermanentViewMarker =>
-        val viewIdent = permanentView.catalogTable.identifier
-        applyFilterAndMasking(permanentView, viewIdent, spark)
+        tables.headOption.map(applyFilterAndMasking(r, _, spark)).getOrElse(r)
       case other => apply(other)
     }
   }
 
   private def applyFilterAndMasking(
       plan: LogicalPlan,
-      identifier: Identifier,
-      spark: SparkSession): LogicalPlan = {
-    applyFilterAndMasking(plan, getTableIdentifierFromV2Identifier(identifier), spark)
-  }
-
-  private def applyFilterAndMasking(
-      plan: LogicalPlan,
-      identifier: TableIdentifier,
+      table: Table,
       spark: SparkSession): LogicalPlan = {
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = operationType(plan)
     val parse = spark.sessionState.sqlParser.parseExpression _
-    val are = AccessResource(ObjectType.TABLE, identifier.database.orNull, identifier.table, null)
+    val are = AccessResource(ObjectType.TABLE, table.database.orNull, table.table, null)
     val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
     val filterExprStr = SparkRangerAdminPlugin.getFilterExpr(art)
     val newOutput = plan.output.map { attr =>
       val are =
-        AccessResource(ObjectType.COLUMN, identifier.database.orNull, identifier.table, attr.name)
+        AccessResource(ObjectType.COLUMN, table.database.orNull, table.table, attr.name)
       val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
       val maskExprStr = SparkRangerAdminPlugin.getMaskingExpr(art)
       if (maskExprStr.isEmpty) {
