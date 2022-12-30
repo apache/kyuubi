@@ -28,6 +28,8 @@ import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel._
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
+import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths}
 import org.apache.kyuubi.session._
 import org.apache.kyuubi.util.ThreadUtils
 
@@ -60,6 +62,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     new java.util.HashMap[String, (Integer, java.lang.Long)]()
   private var userIsolatedSparkSessionThread: Option[ScheduledExecutorService] = None
 
+  private var discoveryClient: Option[DiscoveryClient] = _
+  private var sessionsPath: String = _
+
   private def startUserIsolatedCacheChecker(): Unit = {
     if (!userIsolatedSparkSession) {
       userIsolatedSparkSessionThread =
@@ -86,14 +91,35 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     }
   }
 
+  private def startRegisterSessionsPath(): Unit = {
+    shareLevel match {
+      case CONNECTION =>
+      case _ =>
+        val namespace = conf.get(HA_NAMESPACE)
+        // /kyuubi_1.6.1-incubating_USER_SPARK_SQL/tom/engine-pool-0
+        // /kyuubi_1.6.1-incubating_USER_SPARK_SQL/sessions/tom/engine-pool-0
+        // TODO sessions name configurable?
+        val sessionsPrefixPath = namespace.split("/", 3).drop(1).mkString("/", "/sessions/", "")
+        discoveryClient = Some(DiscoveryClientProvider.createDiscoveryClient(conf))
+        discoveryClient.get.createClient()
+        // TODO etcd mode?
+        sessionsPath = discoveryClient.get.create(sessionsPrefixPath, "PERSISTENT_SEQUENTIAL")
+    }
+  }
+
   override def start(): Unit = {
     startUserIsolatedCacheChecker()
+    startRegisterSessionsPath()
     super.start()
   }
 
   override def stop(): Unit = {
     super.stop()
     userIsolatedSparkSessionThread.foreach(_.shutdown())
+    discoveryClient.foreach { client =>
+      client.delete(sessionsPath, true)
+      client.closeClient()
+    }
   }
 
   private def getOrNewSparkSession(user: String): SparkSession = {
@@ -142,7 +168,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         case e: Exception => throw KyuubiSQLException(e)
       }
 
-    new SparkSessionImpl(
+    val session = new SparkSessionImpl(
       protocol,
       user,
       password,
@@ -150,6 +176,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       conf,
       this,
       sparkSession)
+    createSessionInfo(session.handle)
+    session
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
@@ -165,6 +193,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       }
     }
     super.closeSession(sessionHandle)
+    deleteSessionInfo(sessionHandle)
     if (shareLevel == ShareLevel.CONNECTION) {
       info("Session stopped due to shared level is Connection.")
       stopSession()
@@ -173,6 +202,25 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   private def stopSession(): Unit = {
     SparkSQLEngine.currentEngine.foreach(_.stop())
+  }
+
+  private def createSessionInfo(handle: SessionHandle) = {
+    discoveryClient.foreach { client =>
+      val sessionPath = DiscoveryPaths.makePath(
+        sessionsPath,
+        handle.identifier.toString)
+      // TODO etcd mode?
+      client.create(sessionPath, "EPHEMERAL")
+    }
+  }
+
+  private def deleteSessionInfo(handle: SessionHandle) = {
+    discoveryClient.foreach { client =>
+      val sessionPath = DiscoveryPaths.makePath(
+        sessionsPath,
+        handle.identifier.toString)
+      client.delete(sessionPath)
+    }
   }
 
   override protected def isServer: Boolean = false
