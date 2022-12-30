@@ -27,5 +27,6 @@ statement
     : SELECT TABLE_SCHEM COMMA TABLE_CATALOG FROM SYSTEM_JDBC_SCHEMAS
       (WHERE (TABLE_CATALOG EQ catalog=STRING+)? AND? (TABLE_SCHEM LIKE schema=STRING+)?)?
       ORDER BY TABLE_CATALOG COMMA TABLE_SCHEM                                                #getSchemas
+    | SELECT TABLE_CAT FROM SYSTEM_JDBC_CATALOGS ORDER BY TABLE_CAT                           #getCatalogs
     | .*?                                                                                     #passThrough
     ;
