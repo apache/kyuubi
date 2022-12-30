@@ -33,7 +33,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
 
 object SparkRangerAdminPlugin extends Logging {
 
-  val serviceType: String = "spark"
+  final val serviceType: String = "spark"
   val defaultAppId: String = "sparkSql"
 
   private lazy val defaultBasePlugin: RangerBasePlugin =
