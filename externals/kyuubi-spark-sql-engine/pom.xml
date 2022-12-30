@@ -433,16 +433,16 @@
                         <phase>package</phase>
                         <configuration>
                             <target>
-                                <echo message="unpacking netty jar"></echo>
+                                <echo level="info">unpacking netty jar</echo>
                                 <unzip dest="${project.build.directory}/unpacked/" src="${project.build.directory}/${project.artifactId}-${project.version}.jar"></unzip>
-                                <echo message="renaming netty native libraries"></echo>
+                                <echo level="info">renaming netty native libraries</echo>
                                 <move includeemptydirs="false" todir="${project.build.directory}/unpacked/META-INF/native">
                                     <fileset dir="${project.build.directory}/unpacked/META-INF/native"></fileset>
                                     <mapper from="libnetty_transport_native_epoll_(aarch_64.so|x86_64.so)" to="liborg_apache_kyuubi_shade_netty_transport_native_epoll_\1" type="regexp"></mapper>
                                 </move>
-                                <echo message="deleting META-INF/native-image folder"></echo>
+                                <echo level="info">deleting META-INF/native-image folder</echo>
                                 <delete dir="${project.build.directory}/unpacked/META-INF/native-image"></delete>
-                                <echo message="repackaging netty jar"></echo>
+                                <echo level="info">repackaging netty jar</echo>
                                 <jar basedir="${project.build.directory}/unpacked" destfile="${project.build.directory}/${project.artifactId}-${project.version}.jar"></jar>
                             </target>
                         </configuration>
