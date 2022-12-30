@@ -26,45 +26,12 @@ import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
-import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 object PrivilegesBuilder {
 
   final private val LOG = LoggerFactory.getLogger(getClass)
-
-  def databasePrivileges(db: Database): PrivilegeObject = {
-    PrivilegeObject(
-      DATABASE,
-      PrivilegeObjectActionType.OTHER,
-      db.database,
-      db.database,
-      catalog = db.catalog)
-  }
-
-  private def tablePrivileges(
-      table: Table,
-      columns: Seq[String] = Nil,
-      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    PrivilegeObject(
-      TABLE_OR_VIEW,
-      actionType,
-      table.database.orNull,
-      table.table,
-      columns,
-      table.owner,
-      table.catalog)
-  }
-
-  private def functionPrivileges(
-      function: Function): PrivilegeObject = {
-    PrivilegeObject(
-      FUNCTION,
-      PrivilegeObjectActionType.OTHER,
-      function.database.orNull,
-      function.functionName)
-  }
 
   private def collectLeaves(expr: Expression): Seq[NamedExpression] = {
     expr.collect { case p: NamedExpression if p.children.isEmpty => p }
@@ -96,12 +63,11 @@ object PrivilegesBuilder {
 
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += tablePrivileges(table,
-          plan.output.map(_.name))
+        privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += tablePrivileges(table, cols)
+        privilegeObjects += PrivilegeObject(table, cols)
       }
     }
 
@@ -182,7 +148,7 @@ object PrivilegesBuilder {
             } else {
               val actionType = tableDesc.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
               val columnNames = tableDesc.columnDesc.map(_.extract(plan)).getOrElse(Nil)
-              Seq(tablePrivileges(newTable, columnNames, actionType))
+              Seq(PrivilegeObject(newTable, columnNames, actionType))
             }
           case None => Nil
         }
@@ -200,9 +166,9 @@ object PrivilegesBuilder {
           try {
             val database = databaseDesc.extract(plan)
             if (databaseDesc.isInput) {
-              inputObjs += databasePrivileges(database)
+              inputObjs += PrivilegeObject(database)
             } else {
-              outputObjs += databasePrivileges(database)
+              outputObjs += PrivilegeObject(database)
             }
           } catch {
             case e: Exception =>
@@ -237,9 +203,9 @@ object PrivilegesBuilder {
             val function = fd.extract(plan)
             if (!fd.functionTypeDesc.exists(_.skip(plan, spark))) {
               if (fd.isInput) {
-                inputObjs += functionPrivileges(function)
+                inputObjs += PrivilegeObject(function)
               } else {
-                outputObjs += functionPrivileges(function)
+                outputObjs += PrivilegeObject(function)
               }
             }
           } catch {

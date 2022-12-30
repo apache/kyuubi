@@ -20,7 +20,8 @@ package org.apache.kyuubi.plugin.spark.authz
 import javax.annotation.Nonnull
 
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
-import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.PrivilegeObjectType
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
+import org.apache.kyuubi.plugin.spark.authz.serde.{Database, Function, Table}
 
 /**
  * Build a Spark logical plan to different `PrivilegeObject`s
@@ -43,6 +44,45 @@ case class PrivilegeObject(
     actionType: PrivilegeObjectActionType,
     dbname: String,
     objectName: String,
-    @Nonnull columns: Seq[String] = Nil,
-    owner: Option[String] = None,
-    catalog: Option[String] = None)
+    @Nonnull columns: Seq[String],
+    owner: Option[String],
+    catalog: Option[String])
+
+object PrivilegeObject {
+
+  def apply(database: Database): PrivilegeObject = {
+    new PrivilegeObject(
+      DATABASE,
+      PrivilegeObjectActionType.OTHER,
+      database.database,
+      database.database,
+      Nil,
+      None,
+      database.catalog)
+  }
+
+  def apply(
+      table: Table,
+      columns: Seq[String] = Nil,
+      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
+    new PrivilegeObject(
+      TABLE_OR_VIEW,
+      actionType,
+      table.database.orNull,
+      table.table,
+      columns,
+      table.owner,
+      table.catalog)
+  }
+
+  def apply(function: Function): PrivilegeObject = {
+    new PrivilegeObject(
+      FUNCTION,
+      PrivilegeObjectActionType.OTHER,
+      function.database.orNull,
+      function.functionName,
+      Nil,
+      None,
+      None) // TODO: Support catalog for function
+  }
+}
