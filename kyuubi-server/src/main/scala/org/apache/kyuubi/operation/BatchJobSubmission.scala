@@ -29,7 +29,6 @@ import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
-import org.apache.kyuubi.events.{EventBus, KyuubiOperationEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -61,7 +60,6 @@ class BatchJobSubmission(
     recoveryMetadata: Option[Metadata])
   extends KyuubiApplicationOperation(session) {
   import BatchJobSubmission._
-  EventBus.post(KyuubiOperationEvent(this))
 
   override def shouldRunAsync: Boolean = true
 
@@ -151,7 +149,6 @@ class BatchJobSubmission(
       if (newState == RUNNING) {
         session.onEngineOpened()
       }
-      EventBus.post(KyuubiOperationEvent(this))
     }
   }
 
@@ -345,6 +342,8 @@ class BatchJobSubmission(
   }
 
   override def isTimedOut: Boolean = false
+
+  override protected def eventEnabled: Boolean = true
 }
 
 object BatchJobSubmission {

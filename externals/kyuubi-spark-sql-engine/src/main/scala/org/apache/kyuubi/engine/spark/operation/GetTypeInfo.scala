@@ -27,6 +27,7 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class GetTypeInfo(session: Session) extends SparkOperation(session) {
+  override protected def eventEnabled: Boolean = false
   override protected def resultSchema: StructType = {
     new StructType()
       .add(TYPE_NAME, "string", nullable = false, "Type name")

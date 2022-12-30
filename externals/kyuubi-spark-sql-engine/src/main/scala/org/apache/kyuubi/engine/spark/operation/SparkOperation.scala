@@ -120,11 +120,15 @@ abstract class SparkOperation(session: Session)
     s"spark.${SESSION_USER_SIGN_ENABLED.key}",
     SESSION_USER_SIGN_ENABLED.defaultVal.get)
 
-  EventBus.post(SparkOperationEvent(this))
+  protected def eventEnabled: Boolean = true
+
+  if (eventEnabled) EventBus.post(SparkOperationEvent(this))
 
   override protected def setState(newState: OperationState): Unit = {
     super.setState(newState)
-    EventBus.post(SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
+    if (eventEnabled) {
+      EventBus.post(SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
+    }
   }
 
   protected def setSparkLocalProperty: (String, String) => Unit =
