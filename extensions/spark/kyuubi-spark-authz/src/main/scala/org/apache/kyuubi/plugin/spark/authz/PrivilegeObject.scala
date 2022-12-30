@@ -83,6 +83,7 @@ object PrivilegeObject {
       function.functionName,
       Nil,
       None,
-      None) // TODO: Support catalog for function
+      None
+    ) // TODO: Support catalog for function
   }
 }

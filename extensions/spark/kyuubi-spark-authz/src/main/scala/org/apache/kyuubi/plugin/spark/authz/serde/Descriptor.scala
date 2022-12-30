@@ -289,7 +289,6 @@ case class CatalogDesc(
   }
 }
 
-
 case class ScanDesc(
     fieldName: String,
     fieldExtractor: String,
