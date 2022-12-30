@@ -19,14 +19,19 @@ package org.apache.kyuubi.parser.trino
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
-import org.apache.kyuubi.sql.plan.trino.GetSchemas
+import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas}
 
 class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
   val parser = new KyuubiTrinoFeParser()
 
+  private def parse(sql: String): KyuubiTreeNode = {
+    parser.parsePlan(sql)
+  }
+
   test("get schemas") {
     def check(query: String, catalog: String = null, schema: String = null): Unit = {
-      parser.parsePlan(query) match {
+      parse(query) match {
         case GetSchemas(catalogName, schemaPattern) =>
           assert(catalogName == catalog)
           assert(schemaPattern == schema)
@@ -64,5 +69,20 @@ class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
         |""".stripMargin,
       catalog = "bb",
       schema = "bb%")
+  }
+
+  test("Parse PassThroughNode") {
+    assert(parse("yikaifei").isInstanceOf[PassThroughNode])
+
+    assert(parse("SELECT * FROM T1").isInstanceOf[PassThroughNode])
+  }
+
+  test("Support GetCatalogs for Trino Fe") {
+    val kyuubiTreeNode = parse(
+      """
+        |SELECT TABLE_CAT FROM system.jdbc.catalogs ORDER BY TABLE_CAT
+        |""".stripMargin)
+
+    assert(kyuubiTreeNode.isInstanceOf[GetCatalogs])
   }
 }

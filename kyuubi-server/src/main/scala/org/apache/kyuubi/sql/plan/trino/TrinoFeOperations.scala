@@ -26,3 +26,7 @@ import org.apache.kyuubi.sql.plan.KyuubiTreeNode
 case class GetSchemas(catalogName: String, schemaPattern: String) extends KyuubiTreeNode {
   override def name(): String = "Get Schemas"
 }
+
+case class GetCatalogs() extends KyuubiTreeNode {
+  override def name(): String = "Get Catalogs"
+}
