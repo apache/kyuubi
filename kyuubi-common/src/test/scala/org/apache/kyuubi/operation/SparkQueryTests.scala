@@ -52,7 +52,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
   test("execute statement - select with variable substitution") {
     assume(!httpMode)
 
-    withThriftClient { client =>
+    withThriftClientAndConnectionConf { (client, connectionConf) =>
       val req = new TOpenSessionReq()
       req.setUsername("chengpan")
       req.setPassword("123")
@@ -62,7 +62,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
         "set:hivevar:b" -> "y",
         "set:metaconf:c" -> "z",
         "set:system:s" -> "s")
-      req.setConfiguration(conf.asJava)
+      req.setConfiguration((conf ++ connectionConf).asJava)
       val tOpenSessionResp = client.OpenSession(req)
       val status = tOpenSessionResp.getStatus
       assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
