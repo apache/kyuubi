@@ -96,6 +96,10 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     zkClient.getChildren.forPath(path).asScala.toList
   }
 
+  def getChildrenCount(path: String): Int = {
+    zkClient.checkExists.forPath(path).getNumChildren
+  }
+
   def pathExists(path: String): Boolean = {
     zkClient.checkExists().forPath(path) != null
   }

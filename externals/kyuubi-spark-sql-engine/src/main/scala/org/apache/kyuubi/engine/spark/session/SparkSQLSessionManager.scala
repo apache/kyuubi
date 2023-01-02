@@ -28,7 +28,7 @@ import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel._
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_CLIENT_CLASS, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths, ServiceDiscovery}
 import org.apache.kyuubi.session._
 import org.apache.kyuubi.util.ThreadUtils
@@ -94,18 +94,22 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   private def startRegisterSessionsPath(): Unit = {
     shareLevel match {
       case CONNECTION =>
-      // TODO add enable config
-      case _ if ServiceDiscovery.supportServiceDiscovery(conf) =>
+      case _
+          if ServiceDiscovery.supportServiceDiscovery(conf)
+            && conf.get(HA_CLIENT_CLASS) ==
+            "org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient" =>
+        // TODO add enable config
         val namespace = conf.get(HA_NAMESPACE)
         // /kyuubi_1.6.1-incubating_USER_SPARK_SQL/tom/engine-pool-0
         // /kyuubi_1.6.1-incubating_USER_SPARK_SQL/sessions/tom/engine-pool-0
         // TODO sessions name configurable?
         val sessionsPrefixPath = namespace.split("/", 3).drop(1).mkString("/", "/sessions/", "")
-        discoveryClient = Some(DiscoveryClientProvider.createDiscoveryClient(conf))
-        discoveryClient.get.createClient()
-        // TODO etcd mode?
-        sessionsPath = discoveryClient.get.create(sessionsPrefixPath, "PERSISTENT")
-//        sessionsPath = discoveryClient.get.create(sessionsPrefixPath, "PERSISTENT_SEQUENTIAL")
+        val client = DiscoveryClientProvider.createDiscoveryClient(conf)
+        client.createClient()
+        if (client.pathNonExists(sessionsPrefixPath)) {
+          sessionsPath = client.create(sessionsPrefixPath, "PERSISTENT")
+        }
+        discoveryClient = Some(client)
       case _ =>
     }
   }
@@ -120,7 +124,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     super.stop()
     userIsolatedSparkSessionThread.foreach(_.shutdown())
     discoveryClient.foreach { client =>
-//      client.delete(sessionsPath, true)
       client.closeClient()
     }
   }
@@ -212,7 +215,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       val sessionPath = DiscoveryPaths.makePath(
         sessionsPath,
         handle.identifier.toString)
-      // TODO etcd mode?
       client.create(sessionPath, "EPHEMERAL")
     }
   }

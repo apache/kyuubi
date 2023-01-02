@@ -142,6 +142,10 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
+  def getChildrenCount(path: String): Int = {
+    getChildren(path).size
+  }
+
   def pathExists(path: String): Boolean = {
     !pathNonExists(path)
   }

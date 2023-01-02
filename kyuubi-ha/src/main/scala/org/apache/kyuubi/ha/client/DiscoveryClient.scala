@@ -57,6 +57,13 @@ trait DiscoveryClient extends Logging {
   def getChildren(path: String): List[String]
 
   /**
+   * Get the number of children under the given path.
+   *
+   * @return number of children
+   */
+  def getChildrenCount(path: String): Int
+
+  /**
    * Check if the path is exists.
    */
   def pathExists(path: String): Boolean
