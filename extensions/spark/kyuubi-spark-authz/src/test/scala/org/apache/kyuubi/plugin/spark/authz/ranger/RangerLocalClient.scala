@@ -19,20 +19,48 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.io.InputStreamReader
 
+import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
 import com.google.gson.GsonBuilder
+import org.apache.hadoop.conf.Configuration
 import org.apache.ranger.admin.client.RangerAdminRESTClient
 import org.apache.ranger.plugin.util.ServicePolicies
 
 class RangerLocalClient extends RangerAdminRESTClient with RangerClientHelper {
-
   private val g =
     new GsonBuilder().setDateFormat("yyyyMMdd-HH:mm:ss.SSS-Z").setPrettyPrinting().create
-  private val policies: ServicePolicies = {
-    val loader = Thread.currentThread().getContextClassLoader
-    val inputStream = {
-      loader.getResourceAsStream("sparkSql_hive_jenkins.json")
+
+  private var rangerPluginAppId: String = _
+
+  private val policyLoader: LoadingCache[String, ServicePolicies] =
+    CacheBuilder.newBuilder.maximumSize(3).build(new CacheLoader[String, ServicePolicies]() {
+      override def load(key: String): ServicePolicies = {
+        val loader = Thread.currentThread().getContextClassLoader
+        val inputStream = {
+          val fileName = rangerPluginAppId match {
+            case "catalog2" => "sparkSql_hive_jenkins_catalog2.json"
+            case _ => "sparkSql_hive_jenkins.json"
+          }
+          loader.getResourceAsStream(fileName)
+        }
+        val a = g.fromJson(new InputStreamReader(inputStream), classOf[ServicePolicies])
+        a
+      }
+    })
+
+  private def policies: ServicePolicies = {
+    val jsonFileName: String = rangerPluginAppId match {
+      case "catalog2" => "sparkSql_hive_jenkins_catalog2.json"
+      case _ => "sparkSql_hive_jenkins.json"
     }
-    g.fromJson(new InputStreamReader(inputStream), classOf[ServicePolicies])
+    policyLoader.get(jsonFileName)
+  }
+
+  override def init(
+      serviceName: String,
+      appId: String,
+      configPropertyPrefix: String,
+      config: Configuration): Unit = {
+    this.rangerPluginAppId = appId
   }
 
   override def getServicePoliciesIfUpdated(
