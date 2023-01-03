@@ -68,11 +68,11 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
     args = Array(
       "refresh",
       "config",
-      "userDefaults")
+      "userDefaultsConf")
     val opArgs2 = new AdminControlCliArguments(args)
     assert(opArgs2.cliConfig.action === ControlAction.REFRESH)
     assert(opArgs2.cliConfig.resource === ControlObject.CONFIG)
-    assert(opArgs2.cliConfig.adminConfigOpts.configType === "userDefaults")
+    assert(opArgs2.cliConfig.adminConfigOpts.configType === "userDefaultsConf")
 
     args = Array(
       "refresh",
