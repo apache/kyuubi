@@ -107,7 +107,6 @@ object KyuubiServer extends Logging {
   }
 
   private[kyuubi] def refreshUserDefaultsConf(): Unit = kyuubiServer.conf.synchronized {
-    kyuubiServer.conf.loadFileDefaults()
     val newLoadedUserDefaults =
       new KyuubiConf(true).getAllWithPrefix(USER_DEFAULTS_CONF_QUOTE, "")
     val existedUserDefaults = kyuubiServer.conf.getAllWithPrefix(USER_DEFAULTS_CONF_QUOTE, "")
