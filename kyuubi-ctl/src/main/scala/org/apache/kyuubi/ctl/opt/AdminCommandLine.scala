@@ -100,6 +100,6 @@ object AdminCommandLine extends CommonCommandLine {
         arg[String]("<configType>")
           .optional()
           .action((v, c) => c.copy(adminConfigOpts = c.adminConfigOpts.copy(configType = v)))
-          .text("The valid config type can be one of the following: hadoopConf, serverConf."))
+          .text("The valid config type can be one of the following: hadoopConf, userDefaults."))
   }
 }

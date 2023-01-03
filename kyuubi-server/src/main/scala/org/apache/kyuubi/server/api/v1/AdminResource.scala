@@ -71,7 +71,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     description = "refresh the users' default configs")
   @POST
   @Path("refresh/user_defaults_conf")
-  def refreshServerConf(): Response = {
+  def refreshUserDefaultsConf(): Response = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive refresh Kyuubi server conf request from $userName/$ipAddress")
