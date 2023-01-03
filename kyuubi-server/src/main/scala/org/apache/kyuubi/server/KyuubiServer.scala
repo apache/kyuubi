@@ -108,13 +108,11 @@ object KyuubiServer extends Logging {
 
   private[kyuubi] def refreshUserDefaultsConf(): Unit = kyuubiServer.conf.synchronized {
     val existedUserDefaults = kyuubiServer.conf.getAllUserDefaults
-    val newLoadedUserDefaults = new KyuubiConf(true).getAllUserDefaults
-    for ((k, _) <- existedUserDefaults) {
-      if (!newLoadedUserDefaults.contains(k)) {
-        kyuubiServer.conf.unset(k)
-      }
+    val refreshedUserDefaults = KyuubiConf().loadFileDefaults().getAllUserDefaults
+    for ((k, _) <- existedUserDefaults if !refreshedUserDefaults.contains(k)) {
+      kyuubiServer.conf.unset(k)
     }
-    for ((k, v) <- newLoadedUserDefaults) {
+    for ((k, v) <- refreshedUserDefaults) {
       kyuubiServer.conf.set(k, v)
     }
   }
