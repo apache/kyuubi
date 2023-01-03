@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.metadata.jdbc
 
+import java.nio.file.Paths
 import java.util.UUID
 
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -54,6 +55,12 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     assert(jdbcMetadataStore.hikariDataSource.getConnectionTimeout == 3000)
     assert(jdbcMetadataStore.hikariDataSource.getMaximumPoolSize == 99)
     assert(jdbcMetadataStore.hikariDataSource.getIdleTimeout == 60000)
+  }
+
+  test("test init schema file") {
+    val url = Paths.get("src/test/resources/sql").toUri.toURL
+    val file = jdbcMetadataStore.getInitSchemaStream(url)
+    assert("metadata-store-schema-1.100.0.derby.sql" == file.get.getName)
   }
 
   test("jdbc metadata store") {

@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi.server.metadata.jdbc
 
-import java.io.{BufferedReader, InputStream, InputStreamReader}
+import java.io._
+import java.net.URL
 import java.sql.{Connection, PreparedStatement, ResultSet, SQLException}
 import java.util.Locale
 import java.util.stream.Collectors
@@ -29,7 +30,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.google.common.annotations.VisibleForTesting
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataStore
@@ -78,20 +79,17 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
   private def initSchema(): Unit = {
     val classLoader = Utils.getContextOrKyuubiClassLoader
-    val kyuubiShortVersion = KYUUBI_VERSION.split("-").head
-    val initSchemaStream: Option[InputStream] = dbType match {
-      case DERBY =>
-        Option(classLoader
-          .getResourceAsStream(s"sql/derby/metadata-store-schema-${kyuubiShortVersion}.derby.sql"))
-      case MYSQL =>
-        Option(classLoader
-          .getResourceAsStream(s"sql/mysql/metadata-store-schema-${kyuubiShortVersion}.mysql.sql"))
+    val initSchemaFile: Option[File] = dbType match {
+      case DERBY | MYSQL =>
+        getInitSchemaStream(classLoader.getResource(s"sql/${dbType.toString.toLowerCase}"))
       case CUSTOM => None
     }
-    initSchemaStream.foreach { inputStream =>
+    initSchemaFile.foreach { schemaFile =>
+      info(s"Init schema file: ${schemaFile.getAbsolutePath}")
+      val reader = new BufferedReader(new FileReader(schemaFile))
       try {
-        val ddlStatements = new BufferedReader(new InputStreamReader(inputStream)).lines()
-          .collect(Collectors.joining("\n")).trim.split(";")
+        val ddlStatements = reader.lines().collect(Collectors.joining("\n"))
+          .trim.split(";")
         withConnection() { connection =>
           Utils.tryLogNonFatalError {
             ddlStatements.foreach { ddlStatement =>
@@ -101,9 +99,29 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           }
         }
       } finally {
-        inputStream.close()
+        reader.close()
       }
     }
+  }
+
+  // Visible for testing.
+  private[jdbc] def getInitSchemaStream(url: URL): Option[File] = {
+    new File(url.getPath())
+      .listFiles((_, name) => name.matches("metadata-store-schema-[0-9]+\\.[0-9]+\\.[0-9].*\\.sql"))
+      .sortWith((v1, v2) => sortByVersion(v1.getName, v2.getName))
+      .lastOption
+  }
+
+  private def sortByVersion(sqlFile1: String, sqlFile2: String): Boolean = {
+    val versionPart = 3
+    val version1 = sqlFile1.split("-").last.split("\\.").take(versionPart)
+    val version2 = sqlFile2.split("-").last.split("\\.").take(versionPart)
+    for (i <- 0 to versionPart - 1) {
+      if (version1(i).toInt != version2(i).toInt) {
+        return version1(i).toInt < version2(i).toInt
+      }
+    }
+    sqlFile1.length < sqlFile2.length
   }
 
   override def close(): Unit = {
