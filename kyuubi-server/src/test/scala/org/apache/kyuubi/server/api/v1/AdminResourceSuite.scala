@@ -66,7 +66,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response.getStatus)
   }
 
-  test("refresh users' default config of the kyuubi server") {
+  test("refresh user defaults config of the kyuubi server") {
     var response = webTarget.path("api/v1/admin/refresh/user_defaults_conf")
       .request()
       .post(null)

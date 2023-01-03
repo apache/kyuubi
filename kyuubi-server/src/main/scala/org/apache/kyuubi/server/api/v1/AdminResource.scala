@@ -68,7 +68,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
-    description = "refresh the users' default configs")
+    description = "refresh the user defaults configs")
   @POST
   @Path("refresh/user_defaults_conf")
   def refreshUserDefaultsConf(): Response = {
@@ -77,7 +77,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     info(s"Receive refresh Kyuubi server conf request from $userName/$ipAddress")
     if (!userName.equals(administrator)) {
       throw new NotAllowedException(
-        s"$userName is not allowed to refresh the Kyuubi server conf")
+        s"$userName is not allowed to refresh the user defaults conf")
     }
     info(s"Reloading the Kyuubi server conf")
     KyuubiServer.refreshUserDefaultsConf()
