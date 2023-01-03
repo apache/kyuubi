@@ -147,6 +147,13 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     }
   }
 
+  /**
+   * Retrieve user defaults configs in key-value pairs from [[KyuubiConf]] with key prefix "___"
+   */
+  def getAllUserDefaults: Map[String, String] = {
+    getAll.filter { case (k, _) => k.startsWith(USER_DEFAULTS_CONF_QUOTE) }
+  }
+
   /** Copy this object */
   override def clone: KyuubiConf = {
     val cloned = KyuubiConf(false)
