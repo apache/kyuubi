@@ -64,6 +64,7 @@ class LogBatchCommand(
         }
 
         while (!done) {
+          log = null
           try {
             log = retrieveOperationLog()
             val (latestBatch, shouldFinishLog) =
