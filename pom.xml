@@ -82,15 +82,15 @@
     </modules>
 
     <scm>
-        <connection>scm:git:git@github.com:apache/incubator-kyuubi.git</connection>
-        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/incubator-kyuubi.git</developerConnection>
+        <connection>scm:git:git@github.com:apache/kyuubi.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/kyuubi.git</developerConnection>
         <tag>HEAD</tag>
-        <url>scm:git:git@github.com:apache/incubator-kyuubi.git</url>
+        <url>scm:git:git@github.com:apache/kyuubi.git</url>
     </scm>
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/apache/incubator-kyuubi/issues</url>
+        <url>https://github.com/apache/kyuubi/issues</url>
     </issueManagement>
 
     <distributionManagement>

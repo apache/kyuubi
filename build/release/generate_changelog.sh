@@ -36,8 +36,8 @@ function usage {
   echo "+--------------------------------------------------------------------+"
   echo "| ./generate_changelog.sh <LAST_RELEASE_TAG> <CURRENT_RELEASE_TAG>   |"
   echo "+--------------------------------------------------------------------+"
-  echo "LAST_RELEASE_TAG:     -  last release tag of kyuubi e.g. v1.5.0-incubating"
-  echo "CURRENT_RELEASE_TAG:  -  current release tag of kyuubi e.g. v1.5.1-incubating-rc0"
+  echo "LAST_RELEASE_TAG:     -  last release tag of kyuubi e.g. v1.7.0"
+  echo "CURRENT_RELEASE_TAG:  -  current release tag of kyuubi e.g. v1.7.1-rc0"
   echo ""
 }
 
@@ -49,7 +49,7 @@ if [ "${LAST_RELEASE_TAG}" = "-h" ]; then
 fi
 
 ## Add title for changelog doc.
-echo "## Changelog for Apache Kyuubi(Incubating) $RELEASE_VERSION" > $CHANGELOG_PATH
+echo "## Changelog for Apache Kyuubi $RELEASE_VERSION" > $CHANGELOG_PATH
 echo "" >> $CHANGELOG_PATH
 ## Append well-formatted git log to changelog file.
 git log --pretty="[%s]($KYUUBI_GITHUB_COMMIT_URL%h)  " $LAST_RELEASE_TAG..$CURRENT_RELEASE_TAG | grep -v "\[RELEASE\]" >> $CHANGELOG_PATH
