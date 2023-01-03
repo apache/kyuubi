@@ -206,7 +206,7 @@ object KyuubiConf {
   final val KYUUBI_HOME = "KYUUBI_HOME"
   final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv"
   final val KYUUBI_BATCH_CONF_PREFIX = "kyuubi.batchConf"
-  final val USER_DEFAULTS_CONF_QUOTE: String = "___"
+  final val USER_DEFAULTS_CONF_QUOTE = "___"
 
   private[this] val kyuubiConfEntriesUpdateLock = new Object
 
