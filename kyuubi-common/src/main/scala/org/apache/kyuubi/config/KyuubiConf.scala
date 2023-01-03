@@ -159,11 +159,12 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   def getUserDefaults(user: String): KyuubiConf = {
     val cloned = KyuubiConf(false)
 
-    for (e <- settings.entrySet().asScala if !e.getKey.startsWith("___")) {
+    for (e <- settings.entrySet().asScala if !e.getKey.startsWith(USER_DEFAULTS_CONF_QUOTE)) {
       cloned.set(e.getKey, e.getValue)
     }
 
-    for ((k, v) <- getAllWithPrefix(s"___${user}___", "")) {
+    for ((k, v) <-
+        getAllWithPrefix(s"$USER_DEFAULTS_CONF_QUOTE${user}$USER_DEFAULTS_CONF_QUOTE", "")) {
       cloned.set(k, v)
     }
     serverOnlyConfEntries.foreach(cloned.unset)
@@ -198,6 +199,7 @@ object KyuubiConf {
   final val KYUUBI_HOME = "KYUUBI_HOME"
   final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv"
   final val KYUUBI_BATCH_CONF_PREFIX = "kyuubi.batchConf"
+  final val USER_DEFAULTS_CONF_QUOTE: String = "___"
 
   private[this] val kyuubiConfEntriesUpdateLock = new Object
 

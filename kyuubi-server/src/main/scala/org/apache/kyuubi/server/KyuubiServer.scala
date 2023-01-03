@@ -24,7 +24,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols, USER_DEFAULTS_CONF_QUOTE}
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
 import org.apache.kyuubi.events.{EventBus, KyuubiServerInfoEvent, ServerEventHandlerRegister}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -106,8 +106,21 @@ object KyuubiServer extends Logging {
     hadoopConf = _hadoopConf
   }
 
-  private[kyuubi] def reloadServerConf(): Unit = synchronized {
+  private[kyuubi] def refreshUserDefaultsConf(): Unit = kyuubiServer.conf.synchronized {
     kyuubiServer.conf.loadFileDefaults()
+    val newLoadedUserDefaults =
+      new KyuubiConf(true).getAllWithPrefix(USER_DEFAULTS_CONF_QUOTE, "")
+    val existedUserDefaults = kyuubiServer.conf.getAllWithPrefix(USER_DEFAULTS_CONF_QUOTE, "")
+
+    for ((k, _) <- existedUserDefaults) {
+      if (!newLoadedUserDefaults.contains(k)) {
+        kyuubiServer.conf.unset(k)
+      }
+    }
+
+    for ((k, v) <- newLoadedUserDefaults) {
+      kyuubiServer.conf.set(k, v)
+    }
   }
 }
 

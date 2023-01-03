@@ -66,8 +66,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response.getStatus)
   }
 
-  test("refresh config of the kyuubi server") {
-    var response = webTarget.path("api/v1/admin/refresh/server_conf")
+  test("refresh users' default config of the kyuubi server") {
+    var response = webTarget.path("api/v1/admin/refresh/user_defaults_conf")
       .request()
       .post(null)
     assert(405 == response.getStatus)
@@ -77,7 +77,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       Base64.getEncoder.encode(
         s"$adminUser:".getBytes()),
       "UTF-8")
-    response = webTarget.path("api/v1/admin/refresh/server_conf")
+    response = webTarget.path("api/v1/admin/refresh/user_defaults_conf")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .post(null)

@@ -34,7 +34,7 @@ class RefreshConfigCommand(cliConfig: CliConfig) extends AdminCtlCommand[String]
       val adminRestApi = new AdminRestApi(kyuubiRestClient)
       normalizedCliConfig.adminConfigOpts.configType match {
         case "hadoopConf" => adminRestApi.refreshHadoopConf()
-        case "serverConf" => adminRestApi.refreshServerConf()
+        case "userDefaults" => adminRestApi.refreshUserDefaultsConf()
         case configType => throw new KyuubiException(s"Invalid config type:$configType")
       }
     }

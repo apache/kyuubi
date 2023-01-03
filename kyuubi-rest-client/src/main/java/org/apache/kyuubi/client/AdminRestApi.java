@@ -39,8 +39,8 @@ public class AdminRestApi {
     return this.getClient().post(path, null, client.getAuthHeader());
   }
 
-  public String refreshServerConf() {
-    String path = String.format("%s/%s", API_BASE_PATH, "refresh/server_conf");
+  public String refreshUserDefaultsConf() {
+    String path = String.format("%s/%s", API_BASE_PATH, "refresh/user_defaults_conf");
     return this.getClient().post(path, null, client.getAuthHeader());
   }
 

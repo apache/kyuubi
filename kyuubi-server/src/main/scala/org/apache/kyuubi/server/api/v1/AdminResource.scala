@@ -68,9 +68,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
-    description = "refresh the Kyuubi server conf")
+    description = "refresh the users' default configs")
   @POST
-  @Path("refresh/server_conf")
+  @Path("refresh/user_defaults_conf")
   def refreshServerConf(): Response = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
@@ -80,7 +80,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         s"$userName is not allowed to refresh the Kyuubi server conf")
     }
     info(s"Reloading the Kyuubi server conf")
-    KyuubiServer.reloadServerConf()
+    KyuubiServer.refreshUserDefaultsConf()
     Response.ok(s"Refresh the server conf successfully.").build()
   }
 
