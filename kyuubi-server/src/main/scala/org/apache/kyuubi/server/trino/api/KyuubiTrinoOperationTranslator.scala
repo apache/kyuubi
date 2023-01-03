@@ -23,7 +23,7 @@ import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
 import org.apache.kyuubi.sql.plan.PassThroughNode
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTableTypes}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTableTypes, GetTypeInfo}
 
 class KyuubiTrinoOperationTranslator(backendService: BackendService) {
   lazy val parser = new KyuubiTrinoFeParser()
@@ -48,6 +48,8 @@ class KyuubiTrinoOperationTranslator(backendService: BackendService) {
         backendService.getCatalogs(sessionHandle)
       case GetTableTypes() =>
         backendService.getTableTypes(sessionHandle)
+      case GetTypeInfo() =>
+        backendService.getTypeInfo(sessionHandle)
       case PassThroughNode() =>
         backendService.executeStatement(sessionHandle, statement, configs, runAsync, queryTimeout)
     }

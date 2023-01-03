@@ -34,3 +34,7 @@ case class GetCatalogs() extends KyuubiTreeNode {
 case class GetTableTypes() extends KyuubiTreeNode {
   override def name(): String = "Get Table Types"
 }
+
+case class GetTypeInfo() extends KyuubiTreeNode {
+  override def name(): String = "Get Type Info"
+}
