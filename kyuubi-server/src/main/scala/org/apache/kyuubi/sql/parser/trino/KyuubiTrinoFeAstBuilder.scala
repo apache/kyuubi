@@ -21,7 +21,7 @@ import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParser._
 import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParserBaseVisitor
 import org.apache.kyuubi.sql.parser.KyuubiParser
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTableTypes}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTableTypes, GetTypeInfo}
 
 class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef] {
 
@@ -55,5 +55,9 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
 
   override def visitGetTableTypes(ctx: GetTableTypesContext): KyuubiTreeNode = {
     GetTableTypes()
+  }
+
+  override def visitGetTypeInfo(ctx: GetTypeInfoContext): KyuubiTreeNode = {
+    GetTypeInfo()
   }
 }

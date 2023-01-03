@@ -20,7 +20,7 @@ package org.apache.kyuubi.parser.trino
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTableTypes}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTableTypes, GetTypeInfo}
 
 class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
   val parser = new KyuubiTrinoFeParser()
@@ -93,5 +93,19 @@ class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
         |""".stripMargin)
 
     assert(kyuubiTreeNode.isInstanceOf[GetTableTypes])
+  }
+
+  test("Support GetTypeInfo for Trino Fe") {
+    val kyuubiTreeNode = parse(
+      """
+        |SELECT TYPE_NAME, DATA_TYPE, PRECISION, LITERAL_PREFIX, LITERAL_SUFFIX,
+        |CREATE_PARAMS, NULLABLE, CASE_SENSITIVE, SEARCHABLE, UNSIGNED_ATTRIBUTE,
+        |FIXED_PREC_SCALE, AUTO_INCREMENT, LOCAL_TYPE_NAME, MINIMUM_SCALE, MAXIMUM_SCALE,
+        |SQL_DATA_TYPE, SQL_DATETIME_SUB, NUM_PREC_RADIX
+        |FROM system.jdbc.types
+        |ORDER BY DATA_TYPE
+        |""".stripMargin)
+
+    assert(kyuubiTreeNode.isInstanceOf[GetTypeInfo])
   }
 }
