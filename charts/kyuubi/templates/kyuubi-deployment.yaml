@@ -43,6 +43,9 @@ spec:
       imagePullSecrets: {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name | default .Release.Name }}
+      {{- with .Values.initContainers }}
+      initContainers: {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
       containers:
         - name: kyuubi-server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -86,6 +89,9 @@ spec:
             {{- with .Values.volumeMounts }}
               {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
+        {{- with .Values.containers }}
+          {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
       volumes:
         - name: conf
           configMap:
