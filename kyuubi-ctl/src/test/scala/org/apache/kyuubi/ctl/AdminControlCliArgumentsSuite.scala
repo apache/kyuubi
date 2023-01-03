@@ -19,6 +19,7 @@ package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.ctl.cli.AdminControlCliArguments
+import org.apache.kyuubi.ctl.cmd.refresh.RefreshConfigCommandConfigType._
 import org.apache.kyuubi.ctl.opt.{ControlAction, ControlObject}
 
 class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
@@ -146,7 +147,7 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |	Refresh the resource.
          |Command: refresh config [<configType>]
          |	Refresh the config with specified type.
-         |  <configType>             The valid config type can be one of the following: hadoopConf, userDefaults.
+         |  <configType>             The valid config type can be one of the following: $HADOOP_CONF, $TYPE_USER_DEFAULTS_CONF.
          |
          |  -h, --help               Show help message and exit.""".stripMargin
     // scalastyle:on
