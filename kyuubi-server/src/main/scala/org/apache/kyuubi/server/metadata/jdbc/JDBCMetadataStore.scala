@@ -107,7 +107,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   // Visible for testing.
   private[jdbc] def getInitSchemaStream(url: URL): Option[File] = {
     new File(url.getPath())
-      .listFiles((_, name) => name.matches("metadata-store-schema-[0-9]+\\.[0-9]+\\.[0-9].*\\.sql"))
+      .listFiles((_, name) =>
+        name.matches("metadata-store-schema-[0-9]+\\.[0-9]+\\.[0-9]+\\..*\\.sql"))
       .sortWith((v1, v2) => sortByVersion(v1.getName, v2.getName))
       .lastOption
   }
