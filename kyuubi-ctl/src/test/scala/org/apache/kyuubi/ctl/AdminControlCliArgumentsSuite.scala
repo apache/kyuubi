@@ -147,7 +147,7 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |	Refresh the resource.
          |Command: refresh config [<configType>]
          |	Refresh the config with specified type.
-         |  <configType>             The valid config type can be one of the following: $HADOOP_CONF, $TYPE_USER_DEFAULTS_CONF.
+         |  <configType>             The valid config type can be one of the following: $HADOOP_CONF, $USER_DEFAULTS_CONF.
          |
          |  -h, --help               Show help message and exit.""".stripMargin
     // scalastyle:on
