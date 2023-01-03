@@ -103,7 +103,8 @@ class LogBatchCommand(
                 hasRemainingLogs = false
               }
             } catch {
-              case e: Exception => error(s"Error fetching batch logs: ${e.getMessage}")
+              case e: Exception =>
+                error(s"Error fetching batch logs: ${e.getMessage}")
                 hasRemainingLogs = false
             }
           }
