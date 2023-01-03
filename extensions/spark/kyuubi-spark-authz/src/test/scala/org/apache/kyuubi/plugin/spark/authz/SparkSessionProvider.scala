@@ -58,7 +58,6 @@ trait SparkSessionProvider {
       .config("spark.sql.extensions", sqlExtensions)
       .withExtensions(extension)
       .config(extraSparkConf)
-      .enableHiveSupport()
       .getOrCreate()
     if (catalogImpl == "hive") {
       // Ensure HiveExternalCatalog.client.userName is defaultTableOwner

@@ -102,7 +102,7 @@ class MultiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $catalog1.default_bob"))
       doAs(
         "admin",
-        sql(s"CREATE TABLE IF NOT EXISTS $catalog1.$db1.table_select2 (key int)"))
+        sql(s"CREATE TABLE IF NOT EXISTS $catalog1.$db1.table_select2 (key int) USING PARQUET"))
 
       doAs(
         "admin",
