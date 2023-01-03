@@ -25,7 +25,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.engine.jdbc.doris.{DorisRowSetHelper, DorisSchemaHelper}
+import org.apache.kyuubi.engine.jdbc.phoenix.{PhoenixRowSetHelper, PhoenixSchemaHelper}
 import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
@@ -140,11 +140,11 @@ class PhoenixDialect extends JdbcDialect {
   }
 
   override def getRowSetHelper(): RowSetHelper = {
-    new DorisRowSetHelper
+    new PhoenixRowSetHelper
   }
 
   override def getSchemaHelper(): SchemaHelper = {
-    new DorisSchemaHelper
+    new PhoenixSchemaHelper
   }
 
   override def name(): String = {
