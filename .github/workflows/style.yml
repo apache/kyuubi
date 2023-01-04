@@ -107,6 +107,6 @@ jobs:
           severity: "error"
       - name: checkout files in build
         uses: azohra/shell-linter@latest
-          with:
-            path: "build"
-            severity: "error"
+        with:
+          path: "build"
+          severity: "error"
