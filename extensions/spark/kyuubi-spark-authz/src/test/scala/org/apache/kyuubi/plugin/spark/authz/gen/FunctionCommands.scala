@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
-import org.apache.kyuubi.plugin.spark.authz.serde.{DatabaseDesc, FunctionCommandSpec, FunctionDesc, FunctionTypeDesc, StringOptionDatabaseExtractor, TempMarkerFunctionTypeExtractor}
+import org.apache.kyuubi.plugin.spark.authz.serde._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getClassSimpleName
 
 object FunctionCommands {
 
@@ -25,13 +26,13 @@ object FunctionCommands {
     val cmd = "org.apache.spark.sql.execution.command.CreateFunctionCommand"
     val functionTypeDesc = FunctionTypeDesc(
       "isTemp",
-      classOf[TempMarkerFunctionTypeExtractor].getSimpleName,
+      getClassSimpleName[TempMarkerFunctionTypeExtractor],
       Seq("TEMP"))
     val databaseDesc =
-      DatabaseDesc("databaseName", classOf[StringOptionDatabaseExtractor].getSimpleName)
+      DatabaseDesc("databaseName", getClassSimpleName[StringOptionDatabaseExtractor])
     val functionDesc = FunctionDesc(
       "functionName",
-      "StringFunctionExtractor",
+      getClassSimpleName[StringFunctionExtractor],
       Some(databaseDesc),
       Some(functionTypeDesc))
     FunctionCommandSpec(cmd, Seq(functionDesc), "CREATEFUNCTION")
@@ -40,18 +41,22 @@ object FunctionCommands {
   val DescribeFunction = {
     val cmd = "org.apache.spark.sql.execution.command.DescribeFunctionCommand"
     val skips = Seq("TEMP", "SYSTEM")
-    val functionTypeDesc1 = FunctionTypeDesc("info", "ExpressionInfoFunctionTypeExtractor", skips)
+    val functionTypeDesc1 =
+      FunctionTypeDesc("info", getClassSimpleName[ExpressionInfoFunctionTypeExtractor], skips)
     val functionDesc1 = FunctionDesc(
       "info",
-      "ExpressionInfoFunctionExtractor",
+      getClassSimpleName[ExpressionInfoFunctionExtractor],
       functionTypeDesc = Some(functionTypeDesc1),
       isInput = true)
 
     val functionTypeDesc2 =
-      FunctionTypeDesc("functionName", "FunctionIdentifierFunctionTypeExtractor", skips)
+      FunctionTypeDesc(
+        "functionName",
+        getClassSimpleName[FunctionIdentifierFunctionTypeExtractor],
+        skips)
     val functionDesc2 = FunctionDesc(
       "functionName",
-      "FunctionIdentifierFunctionExtractor",
+      getClassSimpleName[FunctionIdentifierFunctionExtractor],
       functionTypeDesc = Some(functionTypeDesc2),
       isInput = true)
     FunctionCommandSpec(cmd, Seq(functionDesc1, functionDesc2), "DESCFUNCTION")
@@ -64,10 +69,11 @@ object FunctionCommands {
 
   val RefreshFunction = {
     val cmd = "org.apache.spark.sql.execution.command.RefreshFunctionCommand"
-    val databaseDesc = DatabaseDesc("databaseName", "StringOptionDatabaseExtractor")
+    val databaseDesc =
+      DatabaseDesc("databaseName", getClassSimpleName[StringOptionDatabaseExtractor])
     val functionDesc = FunctionDesc(
       "functionName",
-      "StringFunctionExtractor",
+      getClassSimpleName[StringFunctionExtractor],
       Some(databaseDesc))
     FunctionCommandSpec(cmd, Seq(functionDesc), "RELOADFUNCTION")
   }
