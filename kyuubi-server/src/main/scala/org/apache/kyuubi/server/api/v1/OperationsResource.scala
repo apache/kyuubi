@@ -289,7 +289,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   @Path("listOperation")
   def listOperation(
       @QueryParam("sessionHandle") @DefaultValue("") sessionHandleStr: String,
-      @QueryParam("type") @DefaultValue("") typeStr: String,
+      @QueryParam("operationType") @DefaultValue("") operationType: String,
       @QueryParam("state") @DefaultValue("") stateStr: String): Seq[KyuubiOperationEvent] = {
     try {
       val KyuubiOperationEvents = ListBuffer[KyuubiOperationEvent]()
@@ -304,8 +304,10 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       (KyuubiOperationEvents
         .filter(
           sessionHandleStr.equalsIgnoreCase("") || _.sessionId.equalsIgnoreCase(sessionHandleStr))
-        .filter(typeStr.equalsIgnoreCase("") || _.operationType.equalsIgnoreCase(typeStr))
-        .filter(stateStr.equalsIgnoreCase("") || _.state.equalsIgnoreCase(stateStr)))
+        .filter(
+          operationType.equalsIgnoreCase("") || _.operationType.equalsIgnoreCase(operationType))
+        .filter(
+          stateStr.equalsIgnoreCase("") || _.state.equalsIgnoreCase(stateStr)))
 
     } catch {
       case NonFatal(e) =>
