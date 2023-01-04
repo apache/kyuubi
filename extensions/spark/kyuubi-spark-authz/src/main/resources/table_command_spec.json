@@ -543,7 +543,10 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ {
+    "fieldName" : "sourceTable",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.UpdateIcebergTable",
   "tableDescs" : [ {

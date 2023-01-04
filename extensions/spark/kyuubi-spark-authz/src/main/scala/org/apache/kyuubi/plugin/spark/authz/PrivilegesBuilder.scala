@@ -112,7 +112,7 @@ object PrivilegesBuilder {
         val parts = invokeAs[String](u, "tableName").split("\\.")
         val db = quote(parts.init)
         val table = Table(None, Some(db), parts.last, None)
-        mergeProjection(table, plan)
+        privilegeObjects += PrivilegeObject(table)
 
       case p =>
         for (child <- p.children) {

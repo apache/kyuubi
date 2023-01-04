@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.slf4j.LoggerFactory
@@ -34,6 +35,8 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
  *  - the [[OperationType]] of this command which finally maps to an access privilege
  */
 trait CommandSpec extends {
+
+  @JsonIgnore
   final protected val LOG = LoggerFactory.getLogger(getClass)
   def classname: String
   def opType: String
