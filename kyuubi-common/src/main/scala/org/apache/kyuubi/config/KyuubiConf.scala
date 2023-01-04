@@ -1534,18 +1534,18 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val OPERATION_RESULT_CODEC: ConfigEntry[String] =
-    buildConf("kyuubi.operation.result.codec")
-      .doc("Specify the result codec, available configs are: <ul>" +
-        " <li>SIMPLE: the result will convert to TRow at the engine driver side. </li>" +
+  val OPERATION_RESULT_FORMAT: ConfigEntry[String] =
+    buildConf("kyuubi.operation.result.format")
+      .doc("Specify the result format, available configs are: <ul>" +
+        " <li>THRIFT: the result will convert to TRow at the engine driver side. </li>" +
         " <li>ARROW: the result will be encoded as Arrow at the executor side before collecting" +
         " by the driver, and deserialized at the client side. note that it only takes effect for" +
         " kyuubi-hive-jdbc clients now.</li></ul>")
       .version("1.7.0")
       .stringConf
-      .checkValues(Set("arrow", "simple"))
+      .checkValues(Set("arrow", "thrift"))
       .transform(_.toLowerCase(Locale.ROOT))
-      .createWithDefault("simple")
+      .createWithDefault("thrift")
 
   val OPERATION_RESULT_MAX_ROWS: ConfigEntry[Int] =
     buildConf("kyuubi.operation.result.max.rows")
