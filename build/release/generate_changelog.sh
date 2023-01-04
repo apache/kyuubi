@@ -26,7 +26,7 @@ KYUUBI_DIR="$(cd "$(dirname "$0")"/../..; pwd)"
 CHANGELOG_DIR=$KYUUBI_DIR/docs/changelog
 RELEASE_VERSION="$(echo $CURRENT_RELEASE_TAG | cut -d "-" -f 1,2)"  ## use cut to remove -rc symbol
 CHANGELOG_PATH=$CHANGELOG_DIR/"$RELEASE_VERSION.md"
-KYUUBI_GITHUB_COMMIT_URL="https://github.com/apache/incubator-kyuubi/commit/"
+KYUUBI_GITHUB_COMMIT_URL="https://github.com/apache/kyuubi/commit/"
 
 function usage {
   set +x
