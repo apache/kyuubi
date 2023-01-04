@@ -104,4 +104,3 @@ jobs:
         uses: azohra/shell-linter@latest
         with:
           path: "bin"
-          severity: "error"
