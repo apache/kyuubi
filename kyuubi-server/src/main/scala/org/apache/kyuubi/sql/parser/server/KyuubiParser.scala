@@ -15,24 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.sql.parser
+package org.apache.kyuubi.sql.parser.server
 
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
-import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
+import org.antlr.v4.runtime.misc.ParseCancellationException
+import org.antlr.v4.runtime.tree.ParseTree
 
-import org.apache.kyuubi.sql.{KyuubiSqlBaseLexer, KyuubiSqlBaseParser, KyuubiSqlBaseParserBaseListener}
-import org.apache.kyuubi.sql.plan.KyuubiTreeNode
+import org.apache.kyuubi.sql.{KyuubiSqlBaseLexer, KyuubiSqlBaseParser}
+import org.apache.kyuubi.sql.parser.{KyuubiParserBase, PostProcessor, UpperCaseCharStream}
 
-class KyuubiParser {
+class KyuubiParser extends KyuubiParserBase[KyuubiSqlBaseParser] {
 
-  val astBuilder = new KyuubiAstBuilder
-
-  def parsePlan(sqlText: String): KyuubiTreeNode = parse(sqlText) { parser =>
-    astBuilder.visit(parser.singleStatement) match {
-      case plan: KyuubiTreeNode => plan
-    }
-  }
+  override lazy val astBuilder = new KyuubiAstBuilder
 
   protected def parse[T](command: String)(toResult: KyuubiSqlBaseParser => T): T = {
     val lexer = new KyuubiSqlBaseLexer(
@@ -59,27 +54,8 @@ class KyuubiParser {
         toResult(parser)
     }
   }
-}
 
-case object PostProcessor extends KyuubiSqlBaseParserBaseListener {}
-
-/* Copied from Apache Spark's to avoid dependency on Spark Internals */
-class UpperCaseCharStream(wrapped: CodePointCharStream) extends CharStream {
-  override def consume(): Unit = wrapped.consume()
-  override def getSourceName(): String = wrapped.getSourceName
-  override def index(): Int = wrapped.index
-  override def mark(): Int = wrapped.mark
-  override def release(marker: Int): Unit = wrapped.release(marker)
-  override def seek(where: Int): Unit = wrapped.seek(where)
-  override def size(): Int = wrapped.size
-
-  override def getText(interval: Interval): String = wrapped.getText(interval)
-
-  // scalastyle:off
-  override def LA(i: Int): Int = {
-    val la = wrapped.LA(i)
-    if (la == 0 || la == IntStream.EOF) la
-    else Character.toUpperCase(la)
+  override def parseTree(parser: KyuubiSqlBaseParser): ParseTree = {
+    parser.singleStatement()
   }
-  // scalastyle:on
 }

@@ -31,7 +31,7 @@ In the process of using Apache Kyuubi, if you have any questions, suggestions, o
 
 - Join the [Mailing Lists](https://kyuubi.apache.org/mailing_lists.html) - the best way to keep up-to-date with the community.
 - [Issue Tracker](https://kyuubi.apache.org/issue_tracking.html) - tracking bugs, ideas, plans, etc.
-- [Github Discussions](https://github.com/apache/incubator-kyuubi/discussions) - second to mailing list for anything else you want to share or ask
+- [Github Discussions](https://github.com/apache/kyuubi/discussions) - second to mailing list for anything else you want to share or ask
 - [Slack](https://join.slack.com/t/apachekyuubi/shared_invite/zt-1e1qw68g4-yE5HJsVVDin~ABtZISyuxg) - chat with our community User && Developer anytime!
 
 ## Contributing Guide
@@ -44,10 +44,10 @@ There are many ways to make valuable contributions to the project and community.
 You can make various types of contributions to Kyuubi, including the following but not limited to,
 
 - Answer questions in the  [Mailing Lists](https://kyuubi.apache.org/mailing_lists.html)
-- [Share your success stories with us](https://github.com/apache/incubator-kyuubi/discussions/925) 
+- [Share your success stories with us](https://github.com/apache/kyuubi/discussions/925) 
 - Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
-- Test latest releases - [![Latest tag](https://img.shields.io/github/v/tag/apache/incubator-kyuubi?label=tag)](https://github.com/apache/incubator-kyuubi/tags)
-- Improve test coverage - [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
+- Test latest releases - [![Latest tag](https://img.shields.io/github/v/tag/apache/kyuubi?label=tag)](https://github.com/apache/kyuubi/tags)
+- Improve test coverage - [![codecov](https://codecov.io/gh/apache/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/kyuubi)
 - Report bugs and better help developers to reproduce
 - Review changes
 - [Make a pull request](https://kyuubi.apache.org/pull_request.html)

@@ -17,7 +17,7 @@
 
 # Usage:
 # Start:
-#   kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-service.yaml
+#   kubectl apply -f https://raw.githubusercontent.com/apache/kyuubi/master/docker/kyuubi-service.yaml
 # Connect:
 #   ${SPARK_HOME}/bin/beeline -u 'jdbc:hive2://${any_hostname_of_k8s_nodes}:30009'
 

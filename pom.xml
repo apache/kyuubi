@@ -82,15 +82,15 @@
     </modules>
 
     <scm>
-        <connection>scm:git:git@github.com:apache/incubator-kyuubi.git</connection>
-        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/incubator-kyuubi.git</developerConnection>
+        <connection>scm:git:git@github.com:apache/kyuubi.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/kyuubi.git</developerConnection>
         <tag>HEAD</tag>
-        <url>scm:git:git@github.com:apache/incubator-kyuubi.git</url>
+        <url>scm:git:git@github.com:apache/kyuubi.git</url>
     </scm>
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/apache/incubator-kyuubi/issues</url>
+        <url>https://github.com/apache/kyuubi/issues</url>
     </issueManagement>
 
     <distributionManagement>
@@ -116,7 +116,8 @@
         <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
         <arrow.version>10.0.1</arrow.version>
-        <antlr4.version>4.8</antlr4.version>
+        <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
+        <antlr4.version>4.9.3</antlr4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.2.8</codahale.metrics.version>
@@ -161,7 +162,7 @@
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.1</jakarta.activation.version>
         <jersey.version>2.36</jersey.version>
-        <jetty.version>9.4.48.v20220622</jetty.version>
+        <jetty.version>9.4.50.v20221201</jetty.version>
         <jline.version>0.9.94</jline.version>
         <junit.version>4.13.1</junit.version>
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
@@ -228,7 +229,7 @@
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
-        <maven.plugin.shade.version>3.2.4</maven.plugin.shade.version>
+        <maven.plugin.shade.version>3.4.1</maven.plugin.shade.version>
         <maven.plugin.silencer.version>1.7.10</maven.plugin.silencer.version>
         <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>

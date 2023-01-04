@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-trait QueryExtractor extends (AnyRef => LogicalPlan) with Extractor
+trait QueryExtractor extends (AnyRef => Option[LogicalPlan]) with Extractor
 
 object QueryExtractor {
   val queryExtractors: Map[String, QueryExtractor] = {
@@ -36,13 +36,13 @@ object QueryExtractor {
 }
 
 class LogicalPlanQueryExtractor extends QueryExtractor {
-  override def apply(v1: AnyRef): LogicalPlan = {
-    v1.asInstanceOf[LogicalPlan]
+  override def apply(v1: AnyRef): Option[LogicalPlan] = {
+    Some(v1.asInstanceOf[LogicalPlan])
   }
 }
 
 class LogicalPlanOptionQueryExtractor extends QueryExtractor {
-  override def apply(v1: AnyRef): LogicalPlan = {
-    v1.asInstanceOf[Option[LogicalPlan]].orNull
+  override def apply(v1: AnyRef): Option[LogicalPlan] = {
+    v1.asInstanceOf[Option[LogicalPlan]]
   }
 }

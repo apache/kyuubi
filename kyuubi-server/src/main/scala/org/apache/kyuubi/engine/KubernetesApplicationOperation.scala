@@ -138,6 +138,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 object KubernetesApplicationOperation extends Logging {
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
   val SPARK_APP_ID_LABEL = "spark-app-selector"
+  val KUBERNETES_SERVICE_HOST = "KUBERNETES_SERVICE_HOST"
+  val KUBERNETES_SERVICE_PORT = "KUBERNETES_SERVICE_PORT"
 
   def toApplicationState(state: String): ApplicationState = state match {
     // https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/types.go#L2396

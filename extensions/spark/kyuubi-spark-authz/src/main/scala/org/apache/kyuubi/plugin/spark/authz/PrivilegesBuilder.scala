@@ -20,66 +20,26 @@ package org.apache.kyuubi.plugin.spark.authz
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.connector.catalog.Identifier
 import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
-import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 
 object PrivilegesBuilder {
 
   final private val LOG = LoggerFactory.getLogger(getClass)
-
-  def databasePrivileges(db: String): PrivilegeObject = {
-    PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER, db, db)
-  }
-
-  private def tablePrivileges(
-      table: TableIdentifier,
-      columns: Seq[String] = Nil,
-      owner: Option[String] = None,
-      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns, owner)
-  }
-
-  private def v2TablePrivileges(
-      table: Identifier,
-      columns: Seq[String] = Nil,
-      owner: Option[String] = None,
-      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    PrivilegeObject(
-      TABLE_OR_VIEW,
-      actionType,
-      quote(table.namespace()),
-      table.name(),
-      columns,
-      owner)
-  }
-  private def functionPrivileges(
-      function: Function): PrivilegeObject = {
-    PrivilegeObject(
-      FUNCTION,
-      PrivilegeObjectActionType.OTHER,
-      function.database.orNull,
-      function.functionName)
-  }
 
   private def collectLeaves(expr: Expression): Seq[NamedExpression] = {
     expr.collect { case p: NamedExpression if p.children.isEmpty => p }
   }
 
   private def setCurrentDBIfNecessary(
-      tableIdent: TableIdentifier,
-      spark: SparkSession): TableIdentifier = {
-
+      tableIdent: Table,
+      spark: SparkSession): Table = {
     if (tableIdent.database.isEmpty) {
       tableIdent.copy(database = Some(spark.catalog.currentDatabase))
     } else {
@@ -98,87 +58,55 @@ object PrivilegesBuilder {
       plan: LogicalPlan,
       privilegeObjects: ArrayBuffer[PrivilegeObject],
       projectionList: Seq[NamedExpression] = Nil,
-      conditionList: Seq[NamedExpression] = Nil): Unit = {
+      conditionList: Seq[NamedExpression] = Nil,
+      spark: SparkSession): Unit = {
 
-    def mergeProjection(table: CatalogTable, plan: LogicalPlan): Unit = {
-      val tableOwner = extractTableOwner(table)
+    def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += tablePrivileges(
-          table.identifier,
-          table.schema.fieldNames,
-          tableOwner)
+        privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += tablePrivileges(table.identifier, cols, tableOwner)
-      }
-    }
-
-    def mergeProjectionV2Table(
-        table: Identifier,
-        plan: LogicalPlan,
-        owner: Option[String] = None): Unit = {
-      if (projectionList.isEmpty) {
-        privilegeObjects += v2TablePrivileges(table, plan.output.map(_.name), owner)
-      } else {
-        val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
-          .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += v2TablePrivileges(table, cols, owner)
+        privilegeObjects += PrivilegeObject(table, cols)
       }
     }
 
     plan match {
-      case p: Project => buildQuery(p.child, privilegeObjects, p.projectList, conditionList)
+      case p: Project => buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
 
       case j: Join =>
         val cols =
           conditionList ++ j.condition.map(expr => collectLeaves(expr)).getOrElse(Nil)
-        buildQuery(j.left, privilegeObjects, projectionList, cols)
-        buildQuery(j.right, privilegeObjects, projectionList, cols)
+        buildQuery(j.left, privilegeObjects, projectionList, cols, spark)
+        buildQuery(j.right, privilegeObjects, projectionList, cols, spark)
 
       case f: Filter =>
         val cols = conditionList ++ collectLeaves(f.condition)
-        buildQuery(f.child, privilegeObjects, projectionList, cols)
+        buildQuery(f.child, privilegeObjects, projectionList, cols, spark)
 
       case w: Window =>
         val orderCols = w.orderSpec.flatMap(orderSpec => collectLeaves(orderSpec))
         val partitionCols = w.partitionSpec.flatMap(partitionSpec => collectLeaves(partitionSpec))
         val cols = conditionList ++ orderCols ++ partitionCols
-        buildQuery(w.child, privilegeObjects, projectionList, cols)
+        buildQuery(w.child, privilegeObjects, projectionList, cols, spark)
 
       case s: Sort =>
         val sortCols = s.order.flatMap(sortOrder => collectLeaves(sortOrder))
         val cols = conditionList ++ sortCols
-        buildQuery(s.child, privilegeObjects, projectionList, cols)
+        buildQuery(s.child, privilegeObjects, projectionList, cols, spark)
 
-      case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
-        mergeProjection(getHiveTable(hiveTableRelation), hiveTableRelation)
-
-      case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
-        getDatasourceTable(logicalRelation).foreach { t =>
-          mergeProjection(t, plan)
-        }
-
-      case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
-        val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
-        if (tableIdent.isDefined) {
-          mergeProjectionV2Table(
-            tableIdent.get,
-            plan,
-            getDatasourceV2TableOwner(datasourceV2Relation))
-        }
+      case scan if isKnownScan(scan) && scan.resolved =>
+        getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))
 
       case u if u.nodeName == "UnresolvedRelation" =>
         val parts = invokeAs[String](u, "tableName").split("\\.")
         val db = quote(parts.init)
-        privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)))
-
-      case permanentViewMarker: PermanentViewMarker =>
-        mergeProjection(permanentViewMarker.catalogTable, plan)
+        val table = Table(None, Some(db), parts.last, None)
+        privilegeObjects += PrivilegeObject(table)
 
       case p =>
         for (child <- p.children) {
-          buildQuery(child, privilegeObjects, projectionList, conditionList)
+          buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
         }
     }
   }
@@ -200,17 +128,17 @@ object PrivilegesBuilder {
         val maybeTable = tableDesc.extract(plan, spark)
         maybeTable match {
           case Some(table) =>
-            // TODO Use strings instead of ti for general purpose.
-            var identifier = TableIdentifier(table.table, table.database)
-            if (tableDesc.setCurrentDatabaseIfMissing) {
-              identifier = setCurrentDBIfNecessary(identifier, spark)
+            val newTable = if (tableDesc.setCurrentDatabaseIfMissing) {
+              setCurrentDBIfNecessary(table, spark)
+            } else {
+              table
             }
             if (tableDesc.tableTypeDesc.exists(_.skip(plan))) {
               Nil
             } else {
               val actionType = tableDesc.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
               val columnNames = tableDesc.columnDesc.map(_.extract(plan)).getOrElse(Nil)
-              Seq(tablePrivileges(identifier, columnNames, table.owner, actionType))
+              Seq(PrivilegeObject(newTable, columnNames, actionType))
             }
           case None => Nil
         }
@@ -228,9 +156,9 @@ object PrivilegesBuilder {
           try {
             val database = databaseDesc.extract(plan)
             if (databaseDesc.isInput) {
-              inputObjs += databasePrivileges(database)
+              inputObjs += PrivilegeObject(database)
             } else {
-              outputObjs += databasePrivileges(database)
+              outputObjs += PrivilegeObject(database)
             }
           } catch {
             case e: Exception =>
@@ -248,14 +176,7 @@ object PrivilegesBuilder {
             outputObjs ++= getTablePriv(td)
           }
         }
-        spec.queryDescs.foreach { qd =>
-          try {
-            buildQuery(qd.extract(plan), inputObjs)
-          } catch {
-            case e: Exception =>
-              LOG.warn(qd.error(plan, e))
-          }
-        }
+        spec.queries(plan).foreach(buildQuery(_, inputObjs, spark = spark))
         spec.operationType
 
       case classname if FUNCTION_COMMAND_SPECS.contains(classname) =>
@@ -265,9 +186,9 @@ object PrivilegesBuilder {
             val function = fd.extract(plan)
             if (!fd.functionTypeDesc.exists(_.skip(plan, spark))) {
               if (fd.isInput) {
-                inputObjs += functionPrivileges(function)
+                inputObjs += PrivilegeObject(function)
               } else {
-                outputObjs += functionPrivileges(function)
+                outputObjs += PrivilegeObject(function)
               }
             }
           } catch {
@@ -303,7 +224,7 @@ object PrivilegesBuilder {
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries
       case _ =>
-        buildQuery(plan, inputObjs)
+        buildQuery(plan, inputObjs, spark = spark)
         OperationType.QUERY
     }
     (inputObjs, outputObjs, opType)

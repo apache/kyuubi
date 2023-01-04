@@ -46,7 +46,6 @@
   - ".github/**/*"
   - ".gitignore"
   - ".travis.yml"
-  - "DISCLAIMER"
   - "LICENSE"
   - "LICENSE-binary"
   - "NOTICE"

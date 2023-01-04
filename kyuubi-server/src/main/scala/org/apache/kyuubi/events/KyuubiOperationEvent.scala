@@ -19,6 +19,7 @@ package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
+import org.apache.kyuubi.session.KyuubiSession
 
 /**
  * A [[KyuubiOperationEvent]] used to tracker the lifecycle of an operation at server side.
@@ -40,6 +41,7 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
  * @param exception: caught exception if have
  * @param sessionId the identifier of the parent session
  * @param sessionUser the authenticated client user
+ * @param sessionType the type of the parent session
  */
 case class KyuubiOperationEvent private (
     statementId: String,
@@ -53,7 +55,8 @@ case class KyuubiOperationEvent private (
     completeTime: Long,
     exception: Option[Throwable],
     sessionId: String,
-    sessionUser: String) extends KyuubiEvent {
+    sessionUser: String,
+    sessionType: String) extends KyuubiEvent {
 
   // operation events are partitioned by the date when the corresponding operations are
   // created.
@@ -67,7 +70,7 @@ object KyuubiOperationEvent {
    * Shorthand for instantiating a operation event with a [[KyuubiOperation]] instance
    */
   def apply(operation: KyuubiOperation): KyuubiOperationEvent = {
-    val session = operation.getSession
+    val session = operation.getSession.asInstanceOf[KyuubiSession]
     val status = operation.getStatus
     new KyuubiOperationEvent(
       operation.statementId,
@@ -81,6 +84,7 @@ object KyuubiOperationEvent {
       status.completed,
       status.exception,
       session.handle.identifier.toString,
-      session.user)
+      session.user,
+      session.sessionType.toString)
   }
 }

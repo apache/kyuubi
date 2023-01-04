@@ -20,20 +20,23 @@ package org.apache.kyuubi.engine.spark.operation
 import java.io.IOException
 import java.time.ZoneId
 
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TProgressUpdateResp, TRowSet}
+import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.SESSION_USER_SIGN_ENABLED
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE, SESSION_USER_SIGN_ENABLED}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
+import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.engine.spark.schema.{RowSet, SchemaHelper}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
-import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
+import org.apache.kyuubi.events.EventBus
+import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
@@ -59,7 +62,46 @@ abstract class SparkOperation(session: Session)
   override def redactedStatement: String =
     redact(spark.sessionState.conf.stringRedactionPattern, statement)
 
+  protected val operationSparkListenerEnabled =
+    spark.conf.getOption(OPERATION_SPARK_LISTENER_ENABLED.key) match {
+      case Some(s) => s.toBoolean
+      case _ => session.sessionManager.getConf.get(OPERATION_SPARK_LISTENER_ENABLED)
+    }
+
+  protected val operationListener: Option[SQLOperationListener] =
+    if (operationSparkListenerEnabled) {
+      Some(new SQLOperationListener(this, spark))
+    } else {
+      None
+    }
+
+  protected def addOperationListener(): Unit = {
+    operationListener.foreach(spark.sparkContext.addSparkListener(_))
+  }
+
+  private val progressEnable = spark.conf.getOption(SESSION_PROGRESS_ENABLE.key) match {
+    case Some(s) => s.toBoolean
+    case _ => session.sessionManager.getConf.get(SESSION_PROGRESS_ENABLE)
+  }
+
+  protected def supportProgress: Boolean = false
+
+  override def getStatus: OperationStatus = {
+    if (progressEnable && supportProgress) {
+      val progressMonitor = new SparkProgressMonitor(spark, statementId)
+      setOperationJobProgress(new TProgressUpdateResp(
+        progressMonitor.headers,
+        progressMonitor.rows,
+        progressMonitor.progressedPercentage,
+        progressMonitor.executionStatus,
+        progressMonitor.footerSummary,
+        startTime))
+    }
+    super.getStatus
+  }
+
   override def cleanup(targetState: OperationState): Unit = state.synchronized {
+    operationListener.foreach(_.cleanup())
     if (!isTerminalState(state)) {
       setState(targetState)
       Option(getBackgroundHandle).foreach(_.cancel(true))
@@ -77,6 +119,17 @@ abstract class SparkOperation(session: Session)
   protected val isSessionUserSignEnabled: Boolean = spark.sparkContext.getConf.getBoolean(
     s"spark.${SESSION_USER_SIGN_ENABLED.key}",
     SESSION_USER_SIGN_ENABLED.defaultVal.get)
+
+  protected def eventEnabled: Boolean = true
+
+  if (eventEnabled) EventBus.post(SparkOperationEvent(this))
+
+  override protected def setState(newState: OperationState): Unit = {
+    super.setState(newState)
+    if (eventEnabled) {
+      EventBus.post(SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
+    }
+  }
 
   protected def setSparkLocalProperty: (String, String) => Unit =
     spark.sparkContext.setLocalProperty
@@ -207,14 +260,14 @@ abstract class SparkOperation(session: Session)
   override def shouldRunAsync: Boolean = false
 
   protected def arrowEnabled(): Boolean = {
-    resultCodec().equalsIgnoreCase("arrow") &&
+    resultFormat().equalsIgnoreCase("arrow") &&
     // TODO: (fchen) make all operation support arrow
     getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
   }
 
-  protected def resultCodec(): String = {
+  protected def resultFormat(): String = {
     // TODO: respect the config of the operation ExecuteStatement, if it was set.
-    spark.conf.get("kyuubi.operation.result.codec", "simple")
+    spark.conf.get("kyuubi.operation.result.format", "thrift")
   }
 
   protected def setSessionUserSign(): Unit = {

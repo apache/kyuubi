@@ -19,7 +19,7 @@ Kyuubi Release Guide
 ===
 
 ## Introduction
-The Apache Kyuubi (Incubating) project periodically declares and publishes releases. A release is one or more packages
+The Apache Kyuubi project periodically declares and publishes releases. A release is one or more packages
 of the project artifact(s) that are approved for general public distribution and use. They may come with various
 degrees of caveat regarding their perceived quality and potential for change, such as "alpha", "beta", "incubating",
 "stable", etc.
@@ -166,7 +166,7 @@ After cutting release branch, don't forget bump version in `master` branch.
 1. Set environment variables.
 
 ```shell
-export RELEASE_VERSION=<release version, e.g. 1.3.0-incubating>
+export RELEASE_VERSION=<release version, e.g. 1.7.0>
 export RELEASE_RC_NO=<RC number, e.g. 0>
 ```
 
@@ -182,7 +182,7 @@ git commit -am "[RELEASE] Bump ${RELEASE_VERSION}"
 
 3. Create a git tag for the release candidate.
 
-The tag pattern is `v${RELEASE_VERSION}-rc${RELEASE_RC_NO}`, e.g. `v1.3.0-incubating-rc0`
+The tag pattern is `v${RELEASE_VERSION}-rc${RELEASE_RC_NO}`, e.g. `v1.7.0-rc0`
 
 > NOTE: After all the voting passed, be sure to create a final tag with the pattern: `v${RELEASE_VERSION}`
 
@@ -197,15 +197,15 @@ To make your release available in the staging repository, you must close the sta
 
 5. Generate a pre-release note from GitHub for the subsequent voting.
 
-Goto the [release page](https://github.com/apache/incubator-kyuubi/releases) and click the "Draft a new release" button, then it would jump to a new page to prepare the release.
+Goto the [release page](https://github.com/apache/kyuubi/releases) and click the "Draft a new release" button, then it would jump to a new page to prepare the release.
 
 Filling in all the necessary information required by the form. And in the bottom of the form, choose the "This is a pre-release" checkbox. Finally, click the "Publish release" button to finish the step.
 
-> Note: the pre-release note is used for voting purposes. It would be marked with a **Pre-release** tag. After all the voting works(dev and general) are finished, do not forget to inverse the "This is a pre-release" checkbox. The pre-release version comes from vx.y.z-incubating-rcN tags, and the final version should come from vx.y.z-incubating tags.
+> Note: the pre-release note is used for voting purposes. It would be marked with a **Pre-release** tag. After all the voting works(dev and general) are finished, do not forget to inverse the "This is a pre-release" checkbox. The pre-release version comes from vx.y.z-rcN tags, and the final version should come from vx.y.z tags.
 
 ## Vote on the release candidate
 
-The release voting takes place on the Apache Kyuubi (Incubating) developers list (the (P)PMC is voting).
+The release voting takes place on the Apache Kyuubi developers list (the (P)PMC is voting).
 
 - If possible, attach a draft of the release notes with the email.
 - Recommend represent voting closing time in UTC format.

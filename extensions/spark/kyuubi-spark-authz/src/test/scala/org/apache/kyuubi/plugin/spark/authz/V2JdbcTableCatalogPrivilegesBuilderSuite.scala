@@ -22,7 +22,7 @@ import scala.util.Try
 
 import org.scalatest.Outcome
 
-import org.apache.kyuubi.plugin.spark.authz.serde.{Table, TABLE_COMMAND_SPECS}
+import org.apache.kyuubi.plugin.spark.authz.serde._
 
 class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val catalogImpl: String = "in-memory"
@@ -86,6 +86,88 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
             assert(table.owner.isEmpty)
           }
         }
+      }
+    }
+  }
+
+  test("Extracting table info with ResolvedTableTableExtractor") {
+    val ns1 = "testns1"
+    val tbl = "testtbl"
+    withDatabase(s"$ns1") { ns =>
+      sql(s"CREATE NAMESPACE $ns")
+      withTable(s"$catalogV2.$ns1.$tbl") { t =>
+        sql(s"CREATE TABLE IF NOT EXISTS $t(key int)")
+        val sql1 = s"SHOW CREATE TABLE $t"
+        val plan = executePlan(sql1).analyzed
+        val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
+        var table: Table = null
+        spec.tableDescs.find { d =>
+          Try(table = d.extract(plan, spark).get).isSuccess
+        }
+        withClue(sql1) {
+          assert(table.catalog === Some(catalogV2))
+          assert(table.database === Some(ns1))
+          assert(table.table === tbl)
+          assert(table.owner.isEmpty)
+        }
+      }
+    }
+  }
+
+  test("Extracting table info with DataSourceV2RelationTableExtractor") {
+    val ns1 = "testns1"
+    val tbl = "testtbl"
+    withDatabase(s"$ns1") { ns =>
+      sql(s"CREATE NAMESPACE $ns")
+      withTable(s"$catalogV2.$ns1.$tbl") { t =>
+        sql(s"CREATE TABLE IF NOT EXISTS $t(key int)")
+        val sql1 = s"INSERT INTO TABLE $t VALUES(1)"
+        val plan = executePlan(sql1).analyzed
+        val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
+        var table: Table = null
+        spec.tableDescs.find { d => Try(table = d.extract(plan, spark).get).isSuccess }
+        withClue(sql1) {
+          assert(table.catalog === Some(catalogV2))
+          assert(table.database === Some(ns1))
+          assert(table.table === tbl)
+          assert(table.owner.isEmpty)
+        }
+      }
+    }
+  }
+
+  test("Extracting database info with ResolvedDBObjectNameDatabaseExtractor") {
+    val ns1 = "testns1"
+
+    Seq(s"CREATE NAMESPACE IF NOT EXISTS $catalogV2.$ns1", s"USE $catalogV2.$ns1").foreach { sql =>
+      val plan = executePlan(sql).analyzed
+      val spec = DB_COMMAND_SPECS(plan.getClass.getName)
+      var db: Database = null
+      spec.databaseDescs.find { d =>
+        Try(db = d.extract(plan)).isSuccess
+      }
+      withClue(sql) {
+        assert(db.catalog === Some(catalogV2))
+        assert(db.database === ns1)
+      }
+    }
+
+  }
+
+  test("Extracting database info with ResolvedNamespaceDatabaseExtractor") {
+    val ns1 = "testns1"
+    withDatabase(s"$ns1") { ns =>
+      sql(s"CREATE NAMESPACE $ns")
+      val sql1 = s"DROP NAMESPACE IF EXISTS $catalogV2.$ns1"
+      val plan = executePlan(sql1).analyzed
+      val spec = DB_COMMAND_SPECS(plan.getClass.getName)
+      var db: Database = null
+      spec.databaseDescs.find { d =>
+        Try(db = d.extract(plan)).isSuccess
+      }
+      withClue(sql1) {
+        assert(db.catalog === Some(catalogV2))
+        assert(db.database === ns1)
       }
     }
   }

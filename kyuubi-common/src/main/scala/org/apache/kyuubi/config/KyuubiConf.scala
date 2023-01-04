@@ -147,6 +147,13 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     }
   }
 
+  /**
+   * Retrieve user defaults configs in key-value pairs from [[KyuubiConf]] with key prefix "___"
+   */
+  def getAllUserDefaults: Map[String, String] = {
+    getAll.filter { case (k, _) => k.startsWith(USER_DEFAULTS_CONF_QUOTE) }
+  }
+
   /** Copy this object */
   override def clone: KyuubiConf = {
     val cloned = KyuubiConf(false)
@@ -159,11 +166,12 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   def getUserDefaults(user: String): KyuubiConf = {
     val cloned = KyuubiConf(false)
 
-    for (e <- settings.entrySet().asScala if !e.getKey.startsWith("___")) {
+    for (e <- settings.entrySet().asScala if !e.getKey.startsWith(USER_DEFAULTS_CONF_QUOTE)) {
       cloned.set(e.getKey, e.getValue)
     }
 
-    for ((k, v) <- getAllWithPrefix(s"___${user}___", "")) {
+    for ((k, v) <-
+        getAllWithPrefix(s"$USER_DEFAULTS_CONF_QUOTE${user}$USER_DEFAULTS_CONF_QUOTE", "")) {
       cloned.set(k, v)
     }
     serverOnlyConfEntries.foreach(cloned.unset)
@@ -198,6 +206,7 @@ object KyuubiConf {
   final val KYUUBI_HOME = "KYUUBI_HOME"
   final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv"
   final val KYUUBI_BATCH_CONF_PREFIX = "kyuubi.batchConf"
+  final val USER_DEFAULTS_CONF_QUOTE = "___"
 
   private[this] val kyuubiConfEntriesUpdateLock = new Object
 
@@ -385,8 +394,7 @@ object KyuubiConf {
       .createWithDefault(Seq(FrontendProtocols.THRIFT_BINARY.toString))
 
   val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("kyuubi.frontend.bind.host")
-    .doc("(deprecated) Hostname or IP of the machine on which to run the thrift frontend service " +
-      "via binary protocol.")
+    .doc("Hostname or IP of the machine on which to run the frontend services.")
     .version("1.0.0")
     .serverOnly
     .stringConf
@@ -1526,18 +1534,18 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val OPERATION_RESULT_CODEC: ConfigEntry[String] =
-    buildConf("kyuubi.operation.result.codec")
-      .doc("Specify the result codec, available configs are: <ul>" +
-        " <li>SIMPLE: the result will convert to TRow at the engine driver side. </li>" +
+  val OPERATION_RESULT_FORMAT: ConfigEntry[String] =
+    buildConf("kyuubi.operation.result.format")
+      .doc("Specify the result format, available configs are: <ul>" +
+        " <li>THRIFT: the result will convert to TRow at the engine driver side. </li>" +
         " <li>ARROW: the result will be encoded as Arrow at the executor side before collecting" +
         " by the driver, and deserialized at the client side. note that it only takes effect for" +
         " kyuubi-hive-jdbc clients now.</li></ul>")
       .version("1.7.0")
       .stringConf
-      .checkValues(Set("arrow", "simple"))
+      .checkValues(Set("arrow", "thrift"))
       .transform(_.toLowerCase(Locale.ROOT))
-      .createWithDefault("simple")
+      .createWithDefault("thrift")
 
   val OPERATION_RESULT_MAX_ROWS: ConfigEntry[Int] =
     buildConf("kyuubi.operation.result.max.rows")

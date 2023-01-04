@@ -26,12 +26,14 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import io.trino.client.QueryResults
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.server.trino.api.ApiRequestContext
+import org.apache.kyuubi.server.trino.api.{ApiRequestContext, KyuubiTrinoOperationTranslator}
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 
 @Tag(name = "Statement")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class StatementResource extends ApiRequestContext with Logging {
+
+  lazy val translator = new KyuubiTrinoOperationTranslator(fe.be)
 
   @ApiResponse(
     responseCode = "200",

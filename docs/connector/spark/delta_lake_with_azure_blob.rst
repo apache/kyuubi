@@ -156,7 +156,7 @@ Install Kyuubi
 
 2.Unpackage
 
-   tar -xzvf  apache-kyuubi-|release|-incubating-bin.tgz
+   tar -xzvf  apache-kyuubi-|release|-bin.tgz
 
 Config Kyuubi
 *************

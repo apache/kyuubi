@@ -61,12 +61,33 @@ server:
   bind:
     host: 0.0.0.0
     port: 10009
+  confDir: /opt/kyuubi/conf
   conf:
-    mountPath: /opt/kyuubi/conf
+    # The value (templated string) is used for kyuubi-env.sh file
+    # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments for more details
+    kyuubiEnv: ~
+
+    # The value (templated string) is used for kyuubi-defaults.conf file
+    # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#kyuubi-configurations for more details
+    kyuubiDefaults: ~
+
+    # The value (templated string) is used for log4j2.xml file
+    # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#logging for more details
+    log4j2: ~
 
 # Environment variables (templated)
 env: []
 envFrom: []
+
+# Additional volumes for Kyuubi pod (templated)
+volumes: []
+# Additional volumeMounts for Kyuubi container (templated)
+volumeMounts: []
+
+# Additional init containers for Kyuubi pod (templated)
+initContainers: []
+# Additional containers for Kyuubi pod (templated)
+containers: []
 
 service:
   type: NodePort

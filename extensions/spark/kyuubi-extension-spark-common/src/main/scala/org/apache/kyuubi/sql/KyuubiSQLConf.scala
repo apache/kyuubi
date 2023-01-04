@@ -99,7 +99,7 @@ object KyuubiSQLConf {
 
   val REBALANCE_BEFORE_ZORDER =
     buildConf("spark.sql.optimizer.rebalanceBeforeZorder.enabled")
-      .doc("when true, we do a rebalance before zorder in case data skew. " +
+      .doc("When true, we do a rebalance before zorder in case data skew. " +
         "Note that, if the insertion is dynamic partition we will use the partition " +
         "columns to rebalance. Note that, this config only affects with Spark 3.3.x")
       .version("1.6.0")
@@ -183,4 +183,11 @@ object KyuubiSQLConf {
       .version("1.7.0")
       .booleanConf
       .createWithDefault(false)
+
+  val FINAL_STAGE_CONFIG_ISOLATION_WRITE_ONLY =
+    buildConf("spark.sql.optimizer.finalStageConfigIsolationWriteOnly.enabled")
+      .doc("When true, only enable final stage isolation for writing.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(true)
 }

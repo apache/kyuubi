@@ -35,7 +35,7 @@ import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.sql.parser.KyuubiParser
+import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.util.SignUtils
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {

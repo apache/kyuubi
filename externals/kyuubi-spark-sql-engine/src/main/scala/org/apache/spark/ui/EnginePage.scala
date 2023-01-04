@@ -155,7 +155,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
                 'aggregated-sqlstat')">
         <h4>
           <span class="collapse-table-arrow arrow-open"></span>
-          <a>SQL Statistics ({numStatement})</a>
+          <a>Statement Statistics ({numStatement})</a>
         </h4>
       </span> ++
         <div class="aggregated-sqlstat collapsible-table">
@@ -340,6 +340,7 @@ private class StatementStatsPagedTable(
     val sqlTableHeadersAndTooltips: Seq[(String, Boolean, Option[String])] =
       Seq(
         ("User", true, None),
+        ("Session ID", true, None),
         ("Statement ID", true, None),
         ("Create Time", true, None),
         ("Finish Time", true, None),
@@ -360,9 +361,16 @@ private class StatementStatsPagedTable(
   }
 
   override def row(event: SparkOperationEvent): Seq[Node] = {
+    val sessionLink = "%s/%s/session/?id=%s".format(
+      UIUtils.prependBaseUri(request, parent.basePath),
+      parent.prefix,
+      event.sessionId)
     <tr>
       <td>
         {event.sessionUser}
+      </td>
+      <td>
+        <a href={sessionLink}>{event.sessionId}</a>
       </td>
       <td>
         {event.statementId}
@@ -475,6 +483,7 @@ private class StatementStatsTableDataSource(
   private def ordering(sortColumn: String, desc: Boolean): Ordering[SparkOperationEvent] = {
     val ordering: Ordering[SparkOperationEvent] = sortColumn match {
       case "User" => Ordering.by(_.sessionUser)
+      case "Session ID" => Ordering.by(_.sessionId)
       case "Statement ID" => Ordering.by(_.statementId)
       case "Create Time" => Ordering.by(_.createTime)
       case "Finish Time" => Ordering.by(_.completeTime)

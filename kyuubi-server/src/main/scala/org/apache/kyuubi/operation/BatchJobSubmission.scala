@@ -32,7 +32,7 @@ import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState}
+import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState, RUNNING}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
@@ -143,6 +143,12 @@ class BatchJobSubmission(
   private def setStateIfNotCanceled(newState: OperationState): Unit = state.synchronized {
     if (state != CANCELED) {
       setState(newState)
+      applicationInfo.filter(_.id != null).foreach { ai =>
+        session.getSessionEvent.foreach(_.engineId = ai.id)
+      }
+      if (newState == RUNNING) {
+        session.onEngineOpened()
+      }
     }
   }
 
@@ -336,6 +342,8 @@ class BatchJobSubmission(
   }
 
   override def isTimedOut: Boolean = false
+
+  override protected def eventEnabled: Boolean = true
 }
 
 object BatchJobSubmission {

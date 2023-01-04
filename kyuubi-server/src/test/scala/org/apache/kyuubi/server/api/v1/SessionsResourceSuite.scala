@@ -32,6 +32,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL
 import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
+import org.apache.kyuubi.session.SessionType
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -128,7 +129,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == sessionOpenResp.getStatus)
     val sessions = response.readEntity(classOf[KyuubiSessionEvent])
     assert(sessions.conf("testConfig").equals("testValue"))
-    assert(sessions.sessionType.equals("SQL"))
+    assert(sessions.sessionType.equals(SessionType.INTERACTIVE.toString))
 
     // close an opened session
     response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
@@ -163,7 +164,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response.getStatus)
     val sessions = response.readEntity(classOf[InfoDetail])
     assert(sessions.getInfoType.equals("CLI_SERVER_NAME") &&
-      sessions.getInfoValue.equals("Apache Kyuubi (Incubating)"))
+      sessions.getInfoValue.equals("Apache Kyuubi"))
     // Invalid sessionHandleStr
     val handle = "b88d6b56-d200-4bb6-bf0a-5da0ea572e11|0c4aad4e-ccf7-4abd-9305-943d4bfd2d9a|0"
     response = webTarget.path(s"api/v1/sessions/$handle/info/13").request().get()

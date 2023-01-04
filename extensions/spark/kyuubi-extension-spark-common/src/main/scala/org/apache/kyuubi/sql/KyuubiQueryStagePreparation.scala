@@ -58,6 +58,15 @@ case class FinalStageConfigIsolation(session: SparkSession) extends Rule[SparkPl
     }
 
     if (isFinalStage(plan)) {
+      // We can not get the whole plan at query preparation phase to detect if current plan is
+      // for writing, so we depend on a tag which is been injected at post resolution phase.
+      // Note: we should still do clean up previous config for non-final stage to avoid such case:
+      // the first statement is write, but the second statement is query.
+      if (conf.getConf(FINAL_STAGE_CONFIG_ISOLATION_WRITE_ONLY) &&
+        !MarkNumOutputColumnsRule.isWrite(session, plan)) {
+        return plan
+      }
+
       // set config for final stage
       session.conf.getAll.filter(_._1.startsWith(FINAL_STAGE_CONFIG_PREFIX)).foreach {
         case (k, v) =>

@@ -22,13 +22,13 @@ set -e
 
 RELEASE_DIR="$(cd "$(dirname "$0")"/..; pwd)"
 ######### Please modify the variables ##########
-# release version, e.g. v1.4.0-incubating
+# release version, e.g. v1.7.0
 release_version=${release_version:-""}
 # release candidate number, e.g. rc2
 release_rc_no=${release_rc_no:-""}
 # previous release candidate number, e.g. rc1, could be empty if it is the first vote
 prev_release_rc_no=${prev_release_rc_no:-""}
-# previous release version, e.g. v1.3.0-incubating, this is used to generate change log
+# previous release version, e.g. v1.6.0, this is used to generate change log
 prev_release_version=${prev_release_version:-""}
 # staging repository number, check it under https://repository.apache.org/content/repositories
 repo_no=${repo_no:-""}
@@ -88,13 +88,13 @@ mkdir -p ${RELEASE_TEMP_DIR}
 GENERAL_VOTE=${RELEASE_TEMP_DIR}/${release_rc_tag}_general_vote.temp
 
 cat >$GENERAL_VOTE<<EOF
-Title: [VOTE] Release Apache Kyuubi(Incubating) ${release_version} ${release_rc_no}
+Title: [VOTE] Release Apache Kyuubi ${release_version} ${release_rc_no}
 
 Content:
 Hello Incubator Community,
 
 The Apache Kyuubi community has voted on and approved a proposal to release
-Apache Kyuubi(Incubating) version ${release_version} ${release_rc_no}.
+Apache Kyuubi version ${release_version} ${release_rc_no}.
 
 We now kindly request the Incubator PMC members review and vote on this
 incubator release.
@@ -109,14 +109,14 @@ ${dev_kyuubi_vote_result_mail_address}
 [ ] +0
 [ ] -1 Do not release this package because ...
 
-To learn more about Apache Kyuubi (Incubating), please see
+To learn more about Apache Kyuubi, please see
 https://kyuubi.apache.org/
 
 The tag to be voted on is ${release_rc_tag} (commit ${git_commit_hash}):
-https://github.com/apache/incubator-kyuubi/tree/${release_rc_tag}
+https://github.com/apache/kyuubi/tree/${release_rc_tag}
 
 The release files, including signatures, digests, etc. can be found at:
-https://dist.apache.org/repos/dist/dev/incubator/kyuubi/${release_rc_tag}/
+https://dist.apache.org/repos/dist/dev/kyuubi/${release_rc_tag}/
 
 Signatures used for Kyuubi RCs can be found in this file:
 https://downloads.apache.org/incubator/kyuubi/KEYS
@@ -125,11 +125,11 @@ The staging repository for this release can be found at:
 https://repository.apache.org/content/repositories/orgapachekyuubi-${repo_no}/
 $change_from_pre_commit
 The release note is available in:
-https://github.com/apache/incubator-kyuubi/compare/${prev_release_version}...${release_rc_tag}
+https://github.com/apache/kyuubi/compare/${prev_release_version}...${release_rc_tag}
 
 
 Thanks,
-On behalf of Apache Kyuubi(Incubating) community
+On behalf of Apache Kyuubi community
 EOF
 
 echo "please use general@incubator.apache.org

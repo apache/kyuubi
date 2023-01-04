@@ -36,11 +36,16 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Chart.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        checksum/conf: {{ include (print $.Template.BasePath "/kyuubi-configmap.yaml") . | sha256sum }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.name | default .Release.Name }}
+      {{- with .Values.initContainers }}
+      initContainers: {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
       containers:
         - name: kyuubi-server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -79,12 +84,21 @@ spec:
           resources:  {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: kyuubi-defaults
-              mountPath: {{ .Values.server.conf.mountPath }}
+            - name: conf
+              mountPath: {{ .Values.server.confDir }}
+            {{- with .Values.volumeMounts }}
+              {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+        {{- with .Values.containers }}
+          {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
       volumes:
-        - name: kyuubi-defaults
+        - name: conf
           configMap:
-            name: {{ .Release.Name }}-kyuubi-defaults
+            name: {{ .Release.Name }}
+        {{- with .Values.volumes }}
+          {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
