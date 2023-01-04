@@ -893,4 +893,16 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         })
     }
   }
+
+  test("modified query plan should correctly report stats") {
+    val db = "stats_test"
+    val table = "stats"
+    withCleanTmpResources(
+      Seq(
+        (s"$db.$table", "table"),
+        (s"$db", "database"))) {
+      sql("SHOW DATABASES").queryExecution.optimizedPlan.stats
+      sql(s"SHOW TABLES IN $db").queryExecution.optimizedPlan.stats
+    }
+  }
 }
