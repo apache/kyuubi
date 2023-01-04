@@ -18,11 +18,11 @@
 import request from '@/utils/request'
 import { IServerSearch, IEngineSearch } from './types'
 
-export function getAllServers(data: IServerSearch) {
+export function getAllServers(params: IServerSearch) {
   return request({
     url: 'api/v1/admin/servers',
-    method: 'post',
-    data
+    method: 'get',
+    params
   })
 }
 
@@ -40,10 +40,10 @@ export function getServerLog() {
   })
 }
 
-export function getAllEngines(data: IEngineSearch) {
+export function getAllEngines(params: IEngineSearch) {
   return request({
     url: 'api/v1/admin/engine',
-    method: 'post',
-    data
+    method: 'get',
+    params
   })
 }

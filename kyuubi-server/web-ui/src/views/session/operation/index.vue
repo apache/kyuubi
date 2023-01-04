@@ -23,12 +23,14 @@
         <el-input
           v-model="searchParam.sessionHandle"
           :placeholder="$t('session_id')"
-          style="width: 300px"
+          style="width: 320px"
           @keyup.enter="getList"
         />
         <el-select
           v-model="searchParam.operationType"
-          :placeholder="$t('type')"
+          :placeholder="$t('operation_type')"
+          clearable
+          style="width: 210px"
           @change="getList"
         >
           <el-option
@@ -51,6 +53,8 @@
         <el-select
           v-model="searchParam.state"
           :placeholder="$t('state')"
+          clearable
+          style="width: 210px"
           @change="getList"
         >
           <el-option
@@ -58,6 +62,7 @@
               'INITIALIZED_STATE',
               'PENDING_STATE',
               'RUNNING_STATE',
+              'FINISHED_STATE',
               'TIMEDOUT_STATE',
               'CANCELED_STATE',
               'CLOSED_STATE',
@@ -81,7 +86,11 @@
         :label="$t('operation_id')"
         width="160"
       />
-      <el-table-column prop="operationType" :label="$t('type')" width="160" />
+      <el-table-column
+        prop="operationType"
+        :label="$t('operation_type')"
+        width="160"
+      />
       <el-table-column prop="state" :label="$t('state')" width="160" />
       <el-table-column :label="$t('start_time')" width="200">
         <template #default="scope">

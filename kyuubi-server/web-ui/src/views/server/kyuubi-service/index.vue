@@ -23,6 +23,7 @@
         <el-input
           v-model="searchParam.host"
           :placeholder="$t('server_ip')"
+          style="width: 210px"
           @keyup.enter="getList"
         />
         <el-button type="primary" icon="Search" @click="getList" />
@@ -33,11 +34,15 @@
     <el-table v-loading="loading" :data="tableData" style="width: 100%">
       <el-table-column prop="host" :label="$t('server_ip')" min-width="20%" />
       <el-table-column prop="cpuTotal" :label="$t('cpu')" min-width="20%" />
-      <el-table-column
-        prop="memoryTotal"
-        :label="$t('memory')"
-        min-width="20%"
-      />
+      <el-table-column prop="memoryTotal" :label="$t('memory')" min-width="20%">
+        <template #default="scope">
+          <span>{{
+            scope.row.memoryTotal == null || scope.row.memoryTotal === ''
+              ? '-'
+              : byteTransfer(scope.row.memoryTotal)
+          }}</span>
+        </template>
+      </el-table-column>
       <el-table-column :label="$t('start_time')" min-width="20%">
         <template #default="scope">
           {{
@@ -57,6 +62,7 @@
   import { format } from 'date-fns'
   import { getAllServers } from '@/api/server'
   import { useTable } from '@/views/common/use-table'
+  import { byteTransfer } from '@/utils'
 
   const searchParam = reactive({
     host: null

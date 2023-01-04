@@ -23,11 +23,13 @@
         <el-input
           v-model="searchParam.user"
           :placeholder="$t('user')"
+          style="width: 210px"
           @keyup.enter="getList"
         />
         <el-input
           v-model="searchParam.serverIP"
           :placeholder="$t('server_ip')"
+          style="width: 210px"
           @keyup.enter="getList"
         />
         <el-button type="primary" icon="Search" @click="getList" />
@@ -62,8 +64,8 @@
         width="120"
       />
       <el-table-column
-        prop="totalOperations"
-        :label="$t('total_operations')"
+        prop="finishedOperations"
+        :label="$t('finish_operations')"
         width="120"
       />
       <el-table-column :label="$t('start_time')" width="200">

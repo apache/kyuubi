@@ -21,4 +21,23 @@ function secondTransfer(val: number) {
   return result
 }
 
-export { secondTransfer }
+function unitTransfer(diShu: number, unitArr: any[], mi: number, left: number) {
+  const duiShu = Math.floor(Math.log(diShu) / Math.log(mi))
+  const index = duiShu < unitArr.length ? duiShu : unitArr.length - 1
+  return `${Number((diShu / Math.pow(mi, index)).toFixed(left))}${
+    unitArr[index]
+  }`
+}
+
+function byteTransfer(
+  diShu: number,
+  unitArr = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'],
+  mi = 1024,
+  left = 2
+) {
+  return diShu === 0 ? 0 : unitTransfer(diShu, unitArr, mi, left)
+}
+
+export default byteTransfer
+
+export { secondTransfer, byteTransfer }

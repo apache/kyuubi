@@ -23,10 +23,18 @@
         <el-select
           v-model="searchParam.enginetype"
           :placeholder="$t('engine_type')"
+          clearable
+          style="width: 210px"
           @change="getList"
         >
           <el-option
-            v-for="item in ['FLINK_SQL', 'TRINO', 'HIVE_SQL', 'JDBC']"
+            v-for="item in [
+              'SPARK_SQL',
+              'FLINK_SQL',
+              'TRINO',
+              'HIVE_SQL',
+              'JDBC'
+            ]"
             :key="item"
             :label="item"
             :value="item"
@@ -35,6 +43,8 @@
         <el-select
           v-model="searchParam.sharelevel"
           :placeholder="$t('share_level')"
+          clearable
+          style="width: 210px"
           @change="getList"
         >
           <el-option
@@ -44,11 +54,6 @@
             :value="item"
           />
         </el-select>
-        <el-input
-          v-model="searchParam.subdomain"
-          :placeholder="$t('subdomain')"
-          @keyup.enter="getList"
-        />
         <el-button type="primary" icon="Search" @click="getList" />
       </el-space>
     </header>
@@ -68,9 +73,17 @@
       />
       <el-table-column
         prop="memoryTotal"
-        :label="$t('memory')"
+        :label="$t('engine_id')"
         min-width="20%"
-      />
+      >
+        <template #default="scope">
+          <span>{{
+            scope.row.attributes && scope.row.attributes['kyuubi.engine.id']
+              ? scope.row.attributes['kyuubi.engine.id']
+              : '-'
+          }}</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="user" :label="$t('user')" min-width="20%" />
       <el-table-column :label="$t('start_time')" min-width="20%">
         <template #default="scope">
@@ -101,8 +114,7 @@
 
   const searchParam: IEngineSearch = reactive({
     enginetype: null,
-    sharelevel: null,
-    subdomain: null
+    sharelevel: null
   })
 
   const { tableData, loading, getList: _getList } = useTable()

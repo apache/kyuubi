@@ -19,10 +19,10 @@
   <el-card :body-style="{ padding: '10px 14px' }">
     <header>
       <el-breadcrumb separator="/">
-        <el-breadcrumb-item :to="{ path: '/session/session-statistics' }"
-          >Session Statistics</el-breadcrumb-item
-        >
-        <el-breadcrumb-item>Sql Statistics</el-breadcrumb-item>
+        <el-breadcrumb-item :to="{ path: '/session/session-statistics' }">{{
+          $t('session_statistics')
+        }}</el-breadcrumb-item>
+        <el-breadcrumb-item>{{ $t('sql_statistics') }}</el-breadcrumb-item>
       </el-breadcrumb>
     </header>
   </el-card>
@@ -32,7 +32,7 @@
   >
     <template #header>
       <div class="card-header">
-        <span>Session Properties</span>
+        <span>{{ $t('session_properties') }}</span>
       </div>
     </template>
     <div class="main">
@@ -47,7 +47,7 @@
   <el-card class="table-container">
     <template #header>
       <div class="card-header">
-        <span>Sql Details</span>
+        <span>{{ $t('sql_details') }}</span>
       </div>
     </template>
     <el-table
