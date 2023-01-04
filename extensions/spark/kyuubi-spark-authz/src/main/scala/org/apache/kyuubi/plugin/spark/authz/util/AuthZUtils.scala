@@ -23,6 +23,7 @@ import java.security.interfaces.ECPublicKey
 import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 import org.apache.commons.lang3.StringUtils
@@ -31,6 +32,7 @@ import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.serde.Extractor
 import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
 
 private[authz] object AuthZUtils {
@@ -86,8 +88,8 @@ private[authz] object AuthZUtils {
     method.invoke(obj, values: _*)
   }
 
-  def getClassSimpleName[T]: String = {
-    classOf[T].getClass.getSimpleName
+  def extractorName[T <: Extractor](implicit ct: ClassTag[T]): String = {
+    ct.runtimeClass.getSimpleName
   }
 
   /**

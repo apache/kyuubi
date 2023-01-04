@@ -18,29 +18,29 @@
 package org.apache.kyuubi.plugin.spark.authz.gen
 
 import org.apache.kyuubi.plugin.spark.authz.serde._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getClassSimpleName
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.extractorName
 
 object TableCommands {
   // table extractors
-  val tite = getClassSimpleName[TableIdentifierTableExtractor]
+  val tite = extractorName[TableIdentifierTableExtractor]
   val tableNameDesc = TableDesc("tableName", tite)
   val tableIdentDesc = TableDesc("tableIdent", tite)
-  val resolvedTableDesc = TableDesc("child", getClassSimpleName[ResolvedTableTableExtractor])
+  val resolvedTableDesc = TableDesc("child", extractorName[ResolvedTableTableExtractor])
   val resolvedDbObjectNameDesc =
-    TableDesc("child", getClassSimpleName[ResolvedDbObjectNameTableExtractor])
+    TableDesc("child", extractorName[ResolvedDbObjectNameTableExtractor])
 
   val overwriteActionTypeDesc =
-    ActionTypeDesc("overwrite", getClassSimpleName[OverwriteOrInsertActionTypeExtractor])
+    ActionTypeDesc("overwrite", extractorName[OverwriteOrInsertActionTypeExtractor])
 
   val AlterTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.AlterTable"
-    val tableDesc = TableDesc("ident", getClassSimpleName[IdentifierTableExtractor])
+    val tableDesc = TableDesc("ident", extractorName[IdentifierTableExtractor])
     TableCommandSpec(cmd, Seq(tableDesc), "ALTERTABLE_PROPERTIES")
   }
 
   val AlterTableAddColumns = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand"
-    val columnDesc = ColumnDesc("colsToAdd", getClassSimpleName[StructFieldSeqColumnExtractor])
+    val columnDesc = ColumnDesc("colsToAdd", extractorName[StructFieldSeqColumnExtractor])
     val tableDesc = TableDesc("table", tite, Some(columnDesc))
     TableCommandSpec(cmd, Seq(tableDesc), "ALTERTABLE_ADDCOLS")
   }
@@ -73,7 +73,7 @@ object TableCommands {
   val AlterTableAddPartition = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableAddPartitionCommand"
     val columnDesc =
-      ColumnDesc("partitionSpecsAndLocs", getClassSimpleName[PartitionLocsSeqColumnExtractor])
+      ColumnDesc("partitionSpecsAndLocs", extractorName[PartitionLocsSeqColumnExtractor])
     TableCommandSpec(
       cmd,
       Seq(tableNameDesc.copy(columnDesc = Some(columnDesc))),
@@ -82,7 +82,7 @@ object TableCommands {
 
   val AlterTableChangeColumn = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableChangeColumnCommand"
-    val columnDesc = ColumnDesc("columnName", getClassSimpleName[StringColumnExtractor])
+    val columnDesc = ColumnDesc("columnName", extractorName[StringColumnExtractor])
     TableCommandSpec(
       cmd,
       Seq(tableNameDesc.copy(columnDesc = Some(columnDesc))),
@@ -91,7 +91,7 @@ object TableCommands {
 
   val AlterTableDropPartition = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableDropPartitionCommand"
-    val columnDesc = ColumnDesc("specs", getClassSimpleName[PartitionSeqColumnExtractor])
+    val columnDesc = ColumnDesc("specs", extractorName[PartitionSeqColumnExtractor])
     TableCommandSpec(
       cmd,
       Seq(tableNameDesc.copy(columnDesc = Some(columnDesc))),
@@ -105,7 +105,7 @@ object TableCommands {
     val oldTableTableTypeDesc =
       TableTypeDesc(
         "oldName",
-        getClassSimpleName[TableIdentifierTableTypeExtractor],
+        extractorName[TableIdentifierTableTypeExtractor],
         Seq("TEMP_VIEW"))
     val oldTableD = TableDesc(
       "oldName",
@@ -131,7 +131,7 @@ object TableCommands {
 
   val AlterTableRenamePartition = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableRenamePartitionCommand"
-    val columnDesc = ColumnDesc("oldPartition", getClassSimpleName[PartitionColumnExtractor])
+    val columnDesc = ColumnDesc("oldPartition", extractorName[PartitionColumnExtractor])
     TableCommandSpec(
       cmd,
       Seq(tableNameDesc.copy(columnDesc = Some(columnDesc))),
@@ -140,7 +140,7 @@ object TableCommands {
 
   val AlterTableSerDeProperties = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableSerDePropertiesCommand"
-    val columnDesc = ColumnDesc("partSpec", getClassSimpleName[PartitionOptionColumnExtractor])
+    val columnDesc = ColumnDesc("partSpec", extractorName[PartitionOptionColumnExtractor])
     TableCommandSpec(
       cmd,
       Seq(tableNameDesc.copy(columnDesc = Some(columnDesc))),
@@ -149,7 +149,7 @@ object TableCommands {
 
   val AlterTableSetLocation = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableSetLocationCommand"
-    val columnDesc = ColumnDesc("partitionSpec", getClassSimpleName[PartitionOptionColumnExtractor])
+    val columnDesc = ColumnDesc("partitionSpec", extractorName[PartitionOptionColumnExtractor])
     TableCommandSpec(
       cmd,
       Seq(tableNameDesc.copy(columnDesc = Some(columnDesc))),
@@ -166,7 +166,7 @@ object TableCommands {
 
   val AlterViewAs = {
     val tableTypeDesc =
-      TableTypeDesc("name", getClassSimpleName[TableIdentifierTableTypeExtractor], Seq("TEMP_VIEW"))
+      TableTypeDesc("name", extractorName[TableIdentifierTableTypeExtractor], Seq("TEMP_VIEW"))
 
     TableCommandSpec(
       "org.apache.spark.sql.execution.command.AlterViewAsCommand",
@@ -177,8 +177,8 @@ object TableCommands {
 
   val AnalyzeColumn = {
     val cmd = "org.apache.spark.sql.execution.command.AnalyzeColumnCommand"
-    val cd1 = ColumnDesc("columnNames", getClassSimpleName[StringSeqColumnExtractor])
-    val cd2 = cd1.copy(fieldExtractor = getClassSimpleName[StringSeqOptionColumnExtractor])
+    val cd1 = ColumnDesc("columnNames", extractorName[StringSeqColumnExtractor])
+    val cd2 = cd1.copy(fieldExtractor = extractorName[StringSeqOptionColumnExtractor])
     val td1 = tableIdentDesc.copy(columnDesc = Some(cd1), isInput = true)
     val td2 = td1.copy(columnDesc = Some(cd2))
     TableCommandSpec(cmd, Seq(td1, td2), "ANALYZE_TABLE")
@@ -186,7 +186,7 @@ object TableCommands {
 
   val AnalyzePartition = {
     val cmd = "org.apache.spark.sql.execution.command.AnalyzePartitionCommand"
-    val columnDesc = ColumnDesc("partitionSpec", getClassSimpleName[PartitionColumnExtractor])
+    val columnDesc = ColumnDesc("partitionSpec", extractorName[PartitionColumnExtractor])
     TableCommandSpec(
       cmd,
       Seq(tableIdentDesc.copy(columnDesc = Some(columnDesc), isInput = true)),
@@ -205,7 +205,7 @@ object TableCommands {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.CreateTable"
     val tableDesc = TableDesc(
       "tableName",
-      getClassSimpleName[IdentifierTableExtractor],
+      extractorName[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
     TableCommandSpec(cmd, Seq(tableDesc, resolvedDbObjectNameDesc), "CREATETABLE")
   }
@@ -214,7 +214,7 @@ object TableCommands {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.CreateV2Table"
     val tableDesc = TableDesc(
       "tableName",
-      getClassSimpleName[IdentifierTableExtractor],
+      extractorName[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
     TableCommandSpec(cmd, Seq(tableDesc), "CREATETABLE")
   }
@@ -223,7 +223,7 @@ object TableCommands {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.CreateTableAsSelect"
     val tableDesc = TableDesc(
       "tableName",
-      getClassSimpleName[IdentifierTableExtractor],
+      extractorName[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
     TableCommandSpec(
       cmd,
@@ -243,7 +243,7 @@ object TableCommands {
     val tableDesc =
       TableDesc(
         "table",
-        getClassSimpleName[DataSourceV2RelationTableExtractor],
+        extractorName[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
   }
@@ -254,7 +254,7 @@ object TableCommands {
     val tableDesc =
       TableDesc(
         "table",
-        getClassSimpleName[DataSourceV2RelationTableExtractor],
+        extractorName[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
   }
@@ -270,7 +270,7 @@ object TableCommands {
     val tableDesc =
       TableDesc(
         "table",
-        getClassSimpleName[DataSourceV2RelationTableExtractor],
+        extractorName[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
   }
@@ -283,28 +283,28 @@ object TableCommands {
   val AddPartitions = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.AddPartitions"
     // TODO: add column desc
-    val tableDesc = TableDesc("table", getClassSimpleName[DataSourceV2RelationTableExtractor])
+    val tableDesc = TableDesc("table", extractorName[DataSourceV2RelationTableExtractor])
     TableCommandSpec(cmd, Seq(tableDesc), "ALTERTABLE_ADDPARTS")
   }
 
   val DropPartitions = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.DropPartitions"
     // TODO: add column desc
-    val tableDesc = TableDesc("table", getClassSimpleName[DataSourceV2RelationTableExtractor])
+    val tableDesc = TableDesc("table", extractorName[DataSourceV2RelationTableExtractor])
     TableCommandSpec(cmd, Seq(tableDesc), "ALTERTABLE_DROPPARTS")
   }
 
   val RenamePartitions = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.RenamePartitions"
     // TODO: add column desc
-    val tableDesc = TableDesc("table", getClassSimpleName[DataSourceV2RelationTableExtractor])
+    val tableDesc = TableDesc("table", extractorName[DataSourceV2RelationTableExtractor])
     TableCommandSpec(cmd, Seq(tableDesc), "ALTERTABLE_RENAMEPART")
   }
 
   val TruncatePartition = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.TruncatePartition"
     // TODO: add column desc
-    val tableDesc = TableDesc("table", getClassSimpleName[DataSourceV2RelationTableExtractor])
+    val tableDesc = TableDesc("table", extractorName[DataSourceV2RelationTableExtractor])
     TableCommandSpec(cmd, Seq(tableDesc), "ALTERTABLE_DROPPARTS")
   }
 
@@ -315,7 +315,7 @@ object TableCommands {
 
   val CacheTable = {
     val cmd = "org.apache.spark.sql.execution.command.CacheTableCommand"
-    val queryDesc = QueryDesc("plan", getClassSimpleName[LogicalPlanOptionQueryExtractor])
+    val queryDesc = QueryDesc("plan", extractorName[LogicalPlanOptionQueryExtractor])
     TableCommandSpec(cmd, Nil, "CREATEVIEW", queryDescs = Seq(queryDesc))
   }
 
@@ -328,11 +328,11 @@ object TableCommands {
     val cmd = "org.apache.spark.sql.execution.command.CreateViewCommand"
     val tableTypeDesc = TableTypeDesc(
       "viewType",
-      getClassSimpleName[ViewTypeTableTypeExtractor],
+      extractorName[ViewTypeTableTypeExtractor],
       Seq("TEMP_VIEW", "GLOBAL_TEMP_VIEW"))
     val tableDesc = TableDesc(
       "name",
-      getClassSimpleName[TableIdentifierTableExtractor],
+      extractorName[TableIdentifierTableExtractor],
       tableTypeDesc = Some(tableTypeDesc))
     val queryDesc1 = QueryDesc("plan")
     val queryDesc2 = QueryDesc("child")
@@ -346,7 +346,7 @@ object TableCommands {
 
   val CreateDataSourceTable = {
     val cmd = "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand"
-    val tableDesc = TableDesc("table", getClassSimpleName[CatalogTableTableExtractor])
+    val tableDesc = TableDesc("table", extractorName[CatalogTableTableExtractor])
     TableCommandSpec(cmd, Seq(tableDesc), "CREATETABLE")
   }
 
@@ -360,9 +360,9 @@ object TableCommands {
 
   val CreateHiveTableAsSelect = {
     val cmd = "org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand"
-    val columnDesc = ColumnDesc("outputColumnNames", getClassSimpleName[StringSeqColumnExtractor])
+    val columnDesc = ColumnDesc("outputColumnNames", extractorName[StringSeqColumnExtractor])
     val tableDesc =
-      TableDesc("tableDesc", getClassSimpleName[CatalogTableTableExtractor], Some(columnDesc))
+      TableDesc("tableDesc", extractorName[CatalogTableTableExtractor], Some(columnDesc))
     val queryDesc = QueryDesc("query")
     TableCommandSpec(cmd, Seq(tableDesc), "CREATETABLE_AS_SELECT", queryDescs = Seq(queryDesc))
   }
@@ -371,11 +371,11 @@ object TableCommands {
     val cmd = "org.apache.spark.sql.execution.command.CreateTableLikeCommand"
     val tableDesc1 = TableDesc(
       "targetTable",
-      getClassSimpleName[TableIdentifierTableExtractor],
+      extractorName[TableIdentifierTableExtractor],
       setCurrentDatabaseIfMissing = true)
     val tableDesc2 = TableDesc(
       "sourceTable",
-      getClassSimpleName[TableIdentifierTableExtractor],
+      extractorName[TableIdentifierTableExtractor],
       isInput = true,
       setCurrentDatabaseIfMissing = true)
     TableCommandSpec(cmd, Seq(tableDesc1, tableDesc2), "CREATETABLE")
@@ -383,10 +383,10 @@ object TableCommands {
 
   val DescribeColumn = {
     val cmd = "org.apache.spark.sql.execution.command.DescribeColumnCommand"
-    val columnDesc = ColumnDesc("colNameParts", getClassSimpleName[StringSeqLastColumnExtractor])
+    val columnDesc = ColumnDesc("colNameParts", extractorName[StringSeqLastColumnExtractor])
     val tableDesc = TableDesc(
       "table",
-      getClassSimpleName[TableIdentifierTableExtractor],
+      extractorName[TableIdentifierTableExtractor],
       Some(columnDesc),
       isInput = true)
     TableCommandSpec(cmd, Seq(tableDesc), "DESCTABLE")
@@ -394,10 +394,10 @@ object TableCommands {
 
   val DescribeTable = {
     val cmd = "org.apache.spark.sql.execution.command.DescribeTableCommand"
-    val columnDesc = ColumnDesc("partitionSpec", getClassSimpleName[PartitionColumnExtractor])
+    val columnDesc = ColumnDesc("partitionSpec", extractorName[PartitionColumnExtractor])
     val tableDesc = TableDesc(
       "table",
-      getClassSimpleName[TableIdentifierTableExtractor],
+      extractorName[TableIdentifierTableExtractor],
       Some(columnDesc),
       isInput = true,
       setCurrentDatabaseIfMissing = true)
@@ -409,7 +409,7 @@ object TableCommands {
     val tableTypeDesc =
       TableTypeDesc(
         "tableName",
-        getClassSimpleName[TableIdentifierTableTypeExtractor],
+        extractorName[TableIdentifierTableTypeExtractor],
         Seq("TEMP_VIEW"))
     TableCommandSpec(
       cmd,
@@ -428,7 +428,7 @@ object TableCommands {
     val actionTypeDesc = ActionTypeDesc(null, null, Some("UPDATE"))
     val tableDesc = TableDesc(
       "targetTable",
-      getClassSimpleName[DataSourceV2RelationTableExtractor],
+      extractorName[DataSourceV2RelationTableExtractor],
       actionTypeDesc = Some(actionTypeDesc))
     val queryDesc = QueryDesc("sourceTable")
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
@@ -455,27 +455,27 @@ object TableCommands {
   val ShowCreateTableV2 = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.ShowCreateTable"
     val tableDesc =
-      TableDesc("child", getClassSimpleName[ResolvedTableTableExtractor], isInput = true)
+      TableDesc("child", extractorName[ResolvedTableTableExtractor], isInput = true)
     TableCommandSpec(cmd, Seq(tableDesc), "SHOW_CREATETABLE")
   }
 
   val ShowTablePropertiesV2 = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.ShowTableProperties"
     val tableDesc =
-      TableDesc("table", getClassSimpleName[ResolvedTableTableExtractor], isInput = true)
+      TableDesc("table", extractorName[ResolvedTableTableExtractor], isInput = true)
     TableCommandSpec(cmd, Seq(tableDesc), "SHOW_TBLPROPERTIES")
   }
 
   val ShowPartitions = {
     val cmd = "org.apache.spark.sql.execution.command.ShowPartitionsCommand"
-    val columnDesc = ColumnDesc("spec", getClassSimpleName[PartitionOptionColumnExtractor])
+    val columnDesc = ColumnDesc("spec", extractorName[PartitionOptionColumnExtractor])
     val tableDesc = tableNameDesc.copy(isInput = true, columnDesc = Some(columnDesc))
     TableCommandSpec(cmd, Seq(tableDesc), "SHOWPARTITIONS")
   }
 
   val TruncateTable = {
     val cmd = "org.apache.spark.sql.execution.command.TruncateTableCommand"
-    val columnDesc = ColumnDesc("partitionSpec", getClassSimpleName[PartitionOptionColumnExtractor])
+    val columnDesc = ColumnDesc("partitionSpec", extractorName[PartitionOptionColumnExtractor])
     val tableDesc = tableNameDesc.copy(columnDesc = Some(columnDesc))
     TableCommandSpec(cmd, Seq(tableDesc), "TRUNCATETABLE")
   }
@@ -490,7 +490,7 @@ object TableCommands {
     val actionTypeDesc = overwriteActionTypeDesc
     val tableDesc = TableDesc(
       "logicalRelation",
-      getClassSimpleName[LogicalRelationTableExtractor],
+      extractorName[LogicalRelationTableExtractor],
       actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
   }
@@ -498,10 +498,10 @@ object TableCommands {
   val InsertIntoHiveTable = {
     val cmd = "org.apache.spark.sql.hive.execution.InsertIntoHiveTable"
     val actionTypeDesc = overwriteActionTypeDesc
-    val columnDesc = ColumnDesc("outputColumnNames", getClassSimpleName[StringSeqColumnExtractor])
+    val columnDesc = ColumnDesc("outputColumnNames", extractorName[StringSeqColumnExtractor])
     val tableDesc = TableDesc(
       "table",
-      getClassSimpleName[CatalogTableTableExtractor],
+      extractorName[CatalogTableTableExtractor],
       Some(columnDesc),
       Some(actionTypeDesc))
     val queryDesc = QueryDesc("query")
@@ -517,7 +517,7 @@ object TableCommands {
   val LoadData = {
     val cmd = "org.apache.spark.sql.execution.command.LoadDataCommand"
     val actionTypeDesc = overwriteActionTypeDesc.copy(fieldName = "isOverwrite")
-    val columnDesc = ColumnDesc("partition", getClassSimpleName[PartitionOptionColumnExtractor])
+    val columnDesc = ColumnDesc("partition", extractorName[PartitionOptionColumnExtractor])
     val tableDesc = tableIdentDesc.copy(
       fieldName = "table",
       columnDesc = Some(columnDesc),
