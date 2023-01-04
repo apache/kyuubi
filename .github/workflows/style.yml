@@ -104,7 +104,9 @@ jobs:
     name: Shellcheck
     runs-on: ubuntu-22.04
     steps:
-      uses: actions/checkout@v3
-      with:
-        severity: "error"
-        scandir: "bin"
+      - uses: actions/checkout@v3
+      - name: check bin directory
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: error
+          scandir: "bin"
