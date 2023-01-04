@@ -105,6 +105,7 @@ done
 # Setup java
 if [[ -z "$JAVA_HOME" ]]; then
   # Fallback on JAVA_HOME from rpm, if found
+  # shellcheck disable=SC2046
   if [ $(command -v rpm) ]; then
     RPM_JAVA_HOME="$(rpm -E %java_home 2>/dev/null)"
     if [ "$RPM_JAVA_HOME" != "%java_home" ]; then
@@ -114,8 +115,10 @@ if [[ -z "$JAVA_HOME" ]]; then
   fi
 
   if [ -z "$JAVA_HOME" ]; then
+    # shellcheck disable=SC2006
     if [[ `command -v java` ]]; then
       # If java is in /usr/bin/java, we want /usr
+      # shellcheck disable=SC2046
       JAVA_HOME="$(dirname $(dirname $(which java)))"
     fi
   fi
@@ -123,6 +126,7 @@ fi
 
 if [[ -z "$JAVA_HOME" ]]; then
   echo "Error: JAVA_HOME is not set, cannot proceed."
+  # shellcheck disable=SC2242
   exit -1
 fi
 
@@ -141,41 +145,49 @@ fi
 if [ ! "$(command -v "$MVN")" ] ; then
     echo -e "Could not locate Maven command: '$MVN'."
     echo -e "Specify the Maven command with the --mvn flag"
+    # shellcheck disable=SC2242
     exit -1;
 fi
 
 echo "MVN is set to $MVN"
 
+# shellcheck disable=SC2068
 VERSION=$("$MVN" help:evaluate -Dexpression=project.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
 
+# shellcheck disable=SC2068
 JAVA_VERSION=$("$MVN" help:evaluate -Dexpression=java.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
 
+# shellcheck disable=SC2068
 SCALA_VERSION=$("$MVN" help:evaluate -Dexpression=scala.binary.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
 
+# shellcheck disable=SC2068
 FLINK_VERSION=$("$MVN" help:evaluate -Dexpression=flink.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
 
+# shellcheck disable=SC2068
 SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
 
+# shellcheck disable=SC2068
 HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
 
+# shellcheck disable=SC2068
 HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
@@ -217,6 +229,7 @@ export MAVEN_OPTS="${MAVEN_OPTS:--Xmx2g}"
 BUILD_COMMAND=("$MVN" clean install $MVN_DIST_OPT $@)
 
 echo -e "\nBuilding with..."
+# shellcheck disable=SC2145
 echo -e "\$ ${BUILD_COMMAND[@]}\n"
 
 "${BUILD_COMMAND[@]}"
@@ -240,6 +253,7 @@ echo "Flink $FLINK_VERSION" >> "$DISTDIR/RELEASE"
 echo "Spark $SPARK_VERSION" >> "$DISTDIR/RELEASE"
 echo "Kyuubi Hadoop $HADOOP_VERSION" >> "$DISTDIR/RELEASE"
 echo "Hive $HIVE_VERSION" >> "$DISTDIR/RELEASE"
+# shellcheck disable=SC2145
 echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 
 # Copy kyuubi server jars
@@ -249,6 +263,7 @@ cp -r "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/*.jar "$DI
 cp "$KYUUBI_HOME"/kyuubi-hive-beeline/target/*.jar "$DISTDIR/beeline-jars/"
 
 # Share the jars w/ server to reduce binary size
+# shellcheck disable=SC2045
 for jar in $(ls "$DISTDIR/jars/"); do
   if [[ -f "$DISTDIR/beeline-jars/$jar" ]]; then
     (cd $DISTDIR/beeline-jars; ln -snf "../jars/$jar" "$DISTDIR/beeline-jars/$jar")
@@ -266,6 +281,7 @@ cp "$KYUUBI_HOME/externals/kyuubi-trino-engine/target/kyuubi-trino-engine_${SCAL
 cp -r "$KYUUBI_HOME"/externals/kyuubi-trino-engine/target/scala-$SCALA_VERSION/jars/*.jar "$DISTDIR/externals/engines/trino/"
 
 # Share the jars w/ server to reduce binary size
+# shellcheck disable=SC2045
 for jar in $(ls "$DISTDIR/jars/"); do
   if [[ -f "$DISTDIR/externals/engines/trino/$jar" ]]; then
     (cd $DISTDIR/externals/engines/trino; ln -snf "../../../jars/$jar" "$DISTDIR/externals/engines/trino/$jar")
@@ -280,6 +296,7 @@ cp "$KYUUBI_HOME/externals/kyuubi-jdbc-engine/target/kyuubi-jdbc-engine_${SCALA_
 cp -r "$KYUUBI_HOME"/externals/kyuubi-jdbc-engine/target/scala-$SCALA_VERSION/jars/*.jar "$DISTDIR/externals/engines/jdbc/"
 
 # Share the jars w/ server to reduce binary size
+# shellcheck disable=SC2045
 for jar in $(ls "$DISTDIR/jars/"); do
   if [[ -f "$DISTDIR/externals/engines/jdbc/$jar" ]]; then
     (cd $DISTDIR/externals/engines/jdbc; ln -snf "../../../jars/$jar" "$DISTDIR/externals/engines/jdbc/$jar")
@@ -296,6 +313,7 @@ fi
 
 # Copy Kyuubi Spark extension
 SPARK_EXTENSION_VERSIONS=('3-1' '3-2' '3-3')
+# shellcheck disable=SC2068
 for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
   if [[ -f $"$KYUUBI_HOME/extensions/spark/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" ]]; then
     mkdir -p "$DISTDIR/extension"
