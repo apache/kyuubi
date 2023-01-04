@@ -71,6 +71,34 @@ object v2Commands extends Enumeration {
     }
   }
 
+  def getCmdOutputTableAndIdent(
+      command: LogicalPlan,
+      commandType: CommandType): (Option[LogicalPlan], Option[Identifier]) = {
+    commandType match {
+      case HasTableNameAsIdentifier =>
+        (None, Some(invoke(command, "tableName").asInstanceOf[Identifier]))
+
+      case HasTableAsIdentifierOption =>
+        val datasourceV2Relation = getFieldVal[LogicalPlan](command, "table")
+          .find(_.isInstanceOf[DataSourceV2Relation])
+        val ident = datasourceV2Relation.flatMap { r =>
+          getFieldVal[Option[Identifier]](r, "identifier")
+        }
+        (datasourceV2Relation, ident)
+
+      case HasTableAsIdentifier =>
+        val resolvedTable = getFieldVal[LogicalPlan](command, "table")
+        (Some(resolvedTable), Some(getFieldVal[Identifier](resolvedTable, "identifier")))
+
+      case HasChildAsIdentifier =>
+        val resolvedTable = getFieldVal[LogicalPlan](command, "child")
+        (Some(resolvedTable), Some(getFieldVal[Identifier](resolvedTable, "identifier")))
+
+      case _ =>
+        (None, None)
+    }
+  }
+
   val defaultBuildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[CommandType]) => Unit =
     (plan, inputObjs, commandTypes) => {
       commandTypes.foreach {
@@ -90,34 +118,31 @@ object v2Commands extends Enumeration {
     (plan, outputObjs, commandTypes, outputObjsActionType, resolveTableOwner) => {
       commandTypes.foreach {
         case HasTableNameAsIdentifier =>
-          val table = invoke(plan, "tableName").asInstanceOf[Identifier]
-          val owner = if (resolveTableOwner) getTableOwnerFromV2Plan(plan, table) else None
-          outputObjs += v2TablePrivileges(table, owner = owner)
+          val (_, Some(tableIdent)) = getCmdOutputTableAndIdent(plan, HasTableNameAsIdentifier)
+          val owner = if (resolveTableOwner) getTableOwnerFromV2Plan(plan, tableIdent) else None
+          outputObjs += v2TablePrivileges(tableIdent, owner = owner)
 
         case HasTableAsIdentifierOption =>
-          val datasourceV2Relation = getFieldVal[LogicalPlan](plan, "table")
-            .find(_.isInstanceOf[DataSourceV2Relation])
-          val tableIdent = datasourceV2Relation.flatMap { r =>
-            getFieldVal[Option[Identifier]](r, "identifier")
-          }
-          if (tableIdent.isDefined) {
+          val (Some(datasourceV2Relation), tableIdentOpt) =
+            getCmdOutputTableAndIdent(plan, HasTableAsIdentifierOption)
+          if (tableIdentOpt.isDefined) {
             val owner =
-              if (resolveTableOwner) getDatasourceV2TableOwner(datasourceV2Relation.get) else None
+              if (resolveTableOwner) getDatasourceV2TableOwner(datasourceV2Relation) else None
             outputObjs += v2TablePrivileges(
-              tableIdent.get,
+              tableIdentOpt.get,
               owner = owner,
               actionType = outputObjsActionType)
           }
 
         case HasTableAsIdentifier =>
-          val resolvedTable = getFieldVal[LogicalPlan](plan, "table")
-          val tableIdent = getFieldVal[Identifier](resolvedTable, "identifier")
+          val (Some(resolvedTable), Some(tableIdent)) =
+            getCmdOutputTableAndIdent(plan, HasTableAsIdentifier)
           val owner = if (resolveTableOwner) getDatasourceV2TableOwner(resolvedTable) else None
           outputObjs += v2TablePrivileges(tableIdent, owner = owner)
 
         case HasChildAsIdentifier =>
-          val resolvedTable = getFieldVal[LogicalPlan](plan, "child")
-          val tableIdent = getFieldVal[Identifier](resolvedTable, "identifier")
+          val (Some(resolvedTable), Some(tableIdent)) =
+            getCmdOutputTableAndIdent(plan, HasChildAsIdentifier)
           val owner = if (resolveTableOwner) getDatasourceV2TableOwner(resolvedTable) else None
           outputObjs += v2TablePrivileges(tableIdent, owner = owner)
 

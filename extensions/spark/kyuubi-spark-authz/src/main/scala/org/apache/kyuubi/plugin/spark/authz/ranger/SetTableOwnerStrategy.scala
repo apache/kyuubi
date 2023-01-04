@@ -21,12 +21,14 @@ import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, V2CreateTablePlan}
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
+import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.RunnableCommand
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{getAuthzUgi, getFieldVal, setFieldVal}
+import org.apache.kyuubi.plugin.spark.authz.v2Commands
 
 class SetTableOwnerStrategy(spark: SparkSession) extends Strategy {
   import SetTableOwnerStrategy._
@@ -58,25 +60,45 @@ class SetTableOwnerStrategy(spark: SparkSession) extends Strategy {
   private def applyInternal(plan: LogicalPlan): Seq[SparkPlan] = plan match {
     case r: RunnableCommand if r.nodeName == "CreateTableLikeCommand" =>
       val tableId = getFieldVal[TableIdentifier](r, "targetTable")
-      planInternal(r, tableId, authzUser, replace = false)
+      planV1Cmd(r, tableId, authzUser, replace = false)
     case r: RunnableCommand
         if r.nodeName == "CreateViewCommand" && getFieldVal[ViewType](
           r,
           "viewType") == PersistedView =>
       val tableId = getFieldVal[TableIdentifier](r, "name")
       val replace = getFieldVal[Boolean](r, "replace")
-      planInternal(r, tableId, authzUser, replace)
+      planV1Cmd(r, tableId, authzUser, replace)
+    case p: V2CreateTablePlan if v2Commands.accept(p.nodeName) =>
+      val cmd = v2Commands.withName(p.nodeName)
+      val tableIdOpt = cmd.commandTypes.flatMap(cmdType =>
+        v2Commands.getCmdOutputTableAndIdent(p, cmdType)._2).headOption
+      val replace = cmd match {
+        case v2Commands.ReplaceTable | v2Commands.ReplaceTableAsSelect =>
+          true
+        case _ =>
+          false
+      }
+      tableIdOpt.map(tableId => planV2Cmd(p, tableId, authzUser, replace)).getOrElse(Nil)
     case _ =>
       Nil
   }
 
-  private def planInternal(
+  private def planV1Cmd(
       plan: LogicalPlan,
       tableId: TableIdentifier,
       authzUser: String,
       replace: Boolean): Seq[SparkPlan] = {
     spark.sessionState.planner.plan(plan).map(exec =>
       SetTableOwnerExec(exec, tableId, authzUser, replace)).toSeq
+  }
+
+  private def planV2Cmd(
+      plan: V2CreateTablePlan,
+      tableId: Identifier,
+      authzUser: String,
+      replace: Boolean): Seq[SparkPlan] = {
+    spark.sessionState.planner.plan(plan).map(exec =>
+      SetV2TableOwnerExec(exec, tableId, authzUser, replace)).toSeq
   }
 }
 

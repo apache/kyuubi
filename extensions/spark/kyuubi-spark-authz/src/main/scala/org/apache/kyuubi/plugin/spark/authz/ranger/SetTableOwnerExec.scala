@@ -21,7 +21,10 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog, TableChange}
 import org.apache.spark.sql.execution.{LeafExecNode, SparkPlan}
+
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
 
 case class SetTableOwnerExec(
     delegated: SparkPlan,
@@ -43,6 +46,39 @@ case class SetTableOwnerExec(
       val metadata = catalog.getTableMetadata(tableId)
       if (metadata.owner != authzUser) {
         catalog.alterTable(metadata.copy(owner = authzUser))
+      }
+    }
+    sparkContext.parallelize(ret, 1)
+  }
+}
+
+case class SetV2TableOwnerExec(
+    delegated: SparkPlan,
+    tableId: Identifier,
+    authzUser: String,
+    replace: Boolean) extends LeafExecNode {
+
+  final override def output: Seq[Attribute] = delegated.output
+
+  final override def doExecute(): RDD[InternalRow] = {
+    val catalog = getFieldVal[TableCatalog](delegated, "catalog")
+    val shouldSet = replace || !catalog.tableExists(tableId)
+
+    val ret = delegated.executeCollect()
+
+    if (shouldSet) {
+      val table = catalog.loadTable(tableId)
+
+      if (table.properties().containsKey(TableCatalog.PROP_OWNER)) {
+        val owner = table.properties().get(TableCatalog.PROP_OWNER)
+        if (owner != authzUser) {
+          catalog.alterTable(
+            tableId,
+            TableChange.setProperty(TableCatalog.PROP_OWNER, authzUser))
+        }
+      } else {
+        // `TableCatalog.PROP_OWNER` is discarded by TableCatalog.
+        // No need to set table owner.
       }
     }
     sparkContext.parallelize(ret, 1)
