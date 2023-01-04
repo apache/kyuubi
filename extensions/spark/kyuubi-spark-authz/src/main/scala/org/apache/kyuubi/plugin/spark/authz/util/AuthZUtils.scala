@@ -50,13 +50,30 @@ private[authz] object AuthZUtils {
       field.get(o)
     } match {
       case Success(value) => value.asInstanceOf[T]
-      case Failure(e) =>
+      case Failure(e: NoSuchFieldException) =>
         val candidates = o.getClass.getDeclaredFields.map(_.getName).mkString("[", ",", "]")
         throw new RuntimeException(s"$name not in ${o.getClass} $candidates", e)
+      case Failure(e: Throwable) =>
+        throw new RuntimeException(s"Failed to get ${o.getClass} field $name", e)
     }
   }
 
   def getFieldValOpt[T](o: Any, name: String): Option[T] = Try(getFieldVal[T](o, name)).toOption
+
+  def setFieldVal(o: Any, name: String, value: Any): Unit = {
+    Try {
+      val field = o.getClass.getDeclaredField(name)
+      field.setAccessible(true)
+      field.set(o, value)
+    } match {
+      case Success(_) =>
+      case Failure(e: NoSuchFieldException) =>
+        val candidates = o.getClass.getDeclaredFields.map(_.getName).mkString("[", ",", "]")
+        throw new RuntimeException(s"$name not in ${o.getClass} $candidates", e)
+      case Failure(e: Throwable) =>
+        throw new RuntimeException(s"Failed to set ${o.getClass} field $name with value $value", e)
+    }
+  }
 
   def invoke(
       obj: AnyRef,

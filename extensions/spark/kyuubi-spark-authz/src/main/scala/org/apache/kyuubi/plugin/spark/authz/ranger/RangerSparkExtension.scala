@@ -47,5 +47,6 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
     v1.injectOptimizerRule(new RuleAuthorization(_))
     v1.injectOptimizerRule(_ => new RuleEliminateViewMarker())
     v1.injectPlannerStrategy(new FilterDataSourceV2Strategy(_))
+    v1.injectPlannerStrategy(new SetTableOwnerStrategy(_))
   }
 }
