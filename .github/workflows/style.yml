@@ -104,3 +104,9 @@ jobs:
         uses: azohra/shell-linter@latest
         with:
           path: "bin"
+          severity: "error"
+      - name: checkout files in build
+        uses: azohra/shell-linter@latest
+          with:
+            path: "build"
+            severity: "error"
