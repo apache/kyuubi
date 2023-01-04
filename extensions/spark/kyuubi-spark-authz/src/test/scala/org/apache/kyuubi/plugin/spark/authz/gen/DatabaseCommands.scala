@@ -17,42 +17,47 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
-import org.apache.kyuubi.plugin.spark.authz.serde.{CatalogDesc, DatabaseCommandSpec, DatabaseDesc}
+import org.apache.kyuubi.plugin.spark.authz.serde._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getClassSimpleName
 
 object DatabaseCommands {
 
   val AlterDatabaseProperties = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand",
-      Seq(DatabaseDesc("databaseName", "StringDatabaseExtractor")),
+      Seq(DatabaseDesc("databaseName", getClassSimpleName[StringDatabaseExtractor])),
       "ALTERDATABASE")
   }
 
   val CommentOnNamespace = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.CommentOnNamespace",
-      Seq(DatabaseDesc("child", "ResolvedNamespaceDatabaseExtractor")),
+      Seq(DatabaseDesc("child", getClassSimpleName[ResolvedNamespaceDatabaseExtractor])),
       "ALTERDATABASE")
   }
 
   val SetNamespaceProperties = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties",
-      Seq(DatabaseDesc("namespace", "ResolvedNamespaceDatabaseExtractor")),
+      Seq(DatabaseDesc("namespace", getClassSimpleName[ResolvedNamespaceDatabaseExtractor])),
       "ALTERDATABASE")
   }
 
   val SetNamespaceLocation = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation",
-      Seq(DatabaseDesc("namespace", "ResolvedNamespaceDatabaseExtractor")),
+      Seq(DatabaseDesc("namespace", getClassSimpleName[ResolvedNamespaceDatabaseExtractor])),
       "ALTERDATABASE_LOCATION")
   }
 
   val CreateNamespace = {
-    val databaseDesc1 = DatabaseDesc("name", "ResolvedDBObjectNameDatabaseExtractor")
+    val databaseDesc1 =
+      DatabaseDesc("name", getClassSimpleName[ResolvedDBObjectNameDatabaseExtractor])
     val databaseDesc2 =
-      DatabaseDesc("namespace", "StringSeqDatabaseExtractor", catalogDesc = Some(CatalogDesc()))
+      DatabaseDesc(
+        "namespace",
+        getClassSimpleName[StringSeqDatabaseExtractor],
+        catalogDesc = Some(CatalogDesc()))
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
       Seq(databaseDesc1, databaseDesc2),
@@ -62,40 +67,48 @@ object DatabaseCommands {
   val DropNamespace = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.DropNamespace",
-      Seq(DatabaseDesc("namespace", "ResolvedNamespaceDatabaseExtractor")),
+      Seq(DatabaseDesc("namespace", getClassSimpleName[ResolvedNamespaceDatabaseExtractor])),
       "DROPDATABASE")
   }
 
   val AnalyzeTables = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
-      Seq(DatabaseDesc("databaseName", "StringOptionDatabaseExtractor", isInput = true)),
+      Seq(DatabaseDesc(
+        "databaseName",
+        getClassSimpleName[StringOptionDatabaseExtractor],
+        isInput = true)),
       "ANALYZE_TABLE")
   }
 
   val SetDatabase = {
     val cmd = "org.apache.spark.sql.execution.command.SetDatabaseCommand"
-    val databaseDesc = DatabaseDesc("databaseName", "StringDatabaseExtractor", isInput = true)
+    val databaseDesc =
+      DatabaseDesc("databaseName", getClassSimpleName[StringDatabaseExtractor], isInput = true)
     DatabaseCommandSpec(cmd, Seq(databaseDesc), "SWITCHDATABASE")
   }
 
   val DescribeDatabase = {
     val cmd = "org.apache.spark.sql.execution.command.DescribeDatabaseCommand"
-    val databaseDesc = DatabaseDesc("databaseName", "StringDatabaseExtractor", isInput = true)
+    val databaseDesc =
+      DatabaseDesc("databaseName", getClassSimpleName[StringDatabaseExtractor], isInput = true)
     DatabaseCommandSpec(cmd, Seq(databaseDesc), "DESCDATABASE")
   }
 
   val SetCatalogAndNamespace = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace"
     val databaseDesc1 =
-      DatabaseDesc("child", "ResolvedDBObjectNameDatabaseExtractor", isInput = true)
+      DatabaseDesc(
+        "child",
+        getClassSimpleName[ResolvedDBObjectNameDatabaseExtractor],
+        isInput = true)
     val databaseDesc2 =
       DatabaseDesc(
         "namespace",
-        "StringSeqOptionDatabaseExtractor",
+        getClassSimpleName[StringSeqOptionDatabaseExtractor],
         catalogDesc = Some(CatalogDesc(
           fieldName = "catalogName",
-          fieldExtractor = "StringOptionCatalogExtractor")),
+          fieldExtractor = getClassSimpleName[StringOptionCatalogExtractor])),
         isInput = true)
     DatabaseCommandSpec(cmd, Seq(databaseDesc1, databaseDesc2), "SWITCHDATABASE")
   }
@@ -104,7 +117,7 @@ object DatabaseCommands {
     val cmd = "org.apache.spark.sql.execution.command.SetNamespaceCommand"
     val databaseDesc = DatabaseDesc(
       "namespace",
-      "StringSeqDatabaseExtractor",
+      getClassSimpleName[StringSeqDatabaseExtractor],
       isInput = true)
     DatabaseCommandSpec(cmd, Seq(databaseDesc), "SWITCHDATABASE")
   }
@@ -112,7 +125,10 @@ object DatabaseCommands {
   val DescribeNamespace = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace"
     val databaseDesc =
-      DatabaseDesc("namespace", "ResolvedNamespaceDatabaseExtractor", isInput = true)
+      DatabaseDesc(
+        "namespace",
+        getClassSimpleName[ResolvedNamespaceDatabaseExtractor],
+        isInput = true)
     DatabaseCommandSpec(cmd, Seq(databaseDesc), "DESCDATABASE")
   }
 
