@@ -86,6 +86,10 @@ private[authz] object AuthZUtils {
     method.invoke(obj, values: _*)
   }
 
+  def getClassSimpleName[T]: String = {
+    classOf[T].getClass.getSimpleName
+  }
+
   /**
    * Get the active session user
    * @param spark spark context instance
