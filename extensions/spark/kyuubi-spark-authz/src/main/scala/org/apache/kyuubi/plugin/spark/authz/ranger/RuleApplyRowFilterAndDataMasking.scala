@@ -21,21 +21,22 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.slf4j.LoggerFactory
 
-import org.apache.kyuubi.plugin.spark.authz.{IcebergCommands, ObjectType}
+import org.apache.kyuubi.plugin.spark.authz.ObjectType
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilterAndDataMaskingMarker}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
-  final private val LOG = LoggerFactory.getLogger(getClass)
-
   private def mapPlanChildren(plan: LogicalPlan)(f: LogicalPlan => LogicalPlan): LogicalPlan = {
     val newChildren = plan match {
-      case _ if IcebergCommands.accept(plan.nodeName) =>
-        val skipped = IcebergCommands.skipMappedChildren(plan)
-        skipped ++ (plan.children diff skipped).map(f)
+      case cmd if isKnownTableCommand(cmd) =>
+        val tableCommandSpec = getTableCommandDesc(cmd)
+        val queries = tableCommandSpec.queries(cmd)
+        cmd.children.map {
+          case c if queries.contains(c) => f(c)
+          case other => other
+        }
       case _ =>
         plan.children.map(f)
     }
@@ -48,24 +49,15 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
     mapPlanChildren(plan) {
       case p: RowFilterAndDataMaskingMarker => p
       case r if SCAN_SPECS.contains(r.getClass.getName) && r.resolved =>
-        val tables = SCAN_SPECS(r.getClass.getName).scanDescs.flatMap { td =>
-          try {
-            td.extract(r, spark)
-          } catch {
-            case e: Exception =>
-              LOG.warn(td.error(r, e))
-              None
-          }
-        }
-        tables.headOption.map(applyFilterAndMasking(r, _, spark)).getOrElse(r)
+        val tables = SCAN_SPECS(r.getClass.getName).tables(r, spark)
+        tables.headOption.map(applyFilterAndMasking(r, _)).getOrElse(r)
       case other => apply(other)
     }
   }
 
   private def applyFilterAndMasking(
       plan: LogicalPlan,
-      table: Table,
-      spark: SparkSession): LogicalPlan = {
+      table: Table): LogicalPlan = {
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = operationType(plan)
     val parse = spark.sessionState.sqlParser.parseExpression _

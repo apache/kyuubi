@@ -17,6 +17,10 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.slf4j.LoggerFactory
+
 import org.apache.kyuubi.plugin.spark.authz.OperationType
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
@@ -29,7 +33,8 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
  *  - the classname of a command which this spec point to
  *  - the [[OperationType]] of this command which finally maps to an access privilege
  */
-trait CommandSpec {
+trait CommandSpec extends {
+  final protected val LOG = LoggerFactory.getLogger(getClass)
   def classname: String
   def opType: String
   final def operationType: OperationType = OperationType.withName(opType)
@@ -71,10 +76,33 @@ case class TableCommandSpec(
     classname: String,
     tableDescs: Seq[TableDesc],
     opType: String = "QUERY",
-    queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec
+    queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec {
+  def queries: LogicalPlan => Seq[LogicalPlan] = plan => {
+    queryDescs.flatMap { qd =>
+      try {
+        qd.extract(plan)
+      } catch {
+        case e: Exception =>
+          LOG.warn(qd.error(plan, e))
+          None
+      }
+    }
+  }
+}
 
 case class ScanSpec(
     classname: String,
     scanDescs: Seq[ScanDesc]) extends CommandSpec {
   override def opType: String = "QUERY"
+  def tables: (LogicalPlan, SparkSession) => Seq[Table] = (plan, spark) => {
+    scanDescs.flatMap { td =>
+      try {
+        td.extract(plan, spark)
+      } catch {
+        case e: Exception =>
+          LOG.warn(td.error(plan, e))
+          None
+      }
+    }
+  }
 }

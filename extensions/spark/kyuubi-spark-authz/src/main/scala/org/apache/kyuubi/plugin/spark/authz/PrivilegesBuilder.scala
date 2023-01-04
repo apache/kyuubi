@@ -186,14 +186,7 @@ object PrivilegesBuilder {
             outputObjs ++= getTablePriv(td)
           }
         }
-        spec.queryDescs.foreach { qd =>
-          try {
-            buildQuery(qd.extract(plan), inputObjs, spark = spark)
-          } catch {
-            case e: Exception =>
-              LOG.warn(qd.error(plan, e))
-          }
-        }
+        spec.queries(plan).foreach(buildQuery(_, inputObjs, spark = spark))
         spec.operationType
 
       case classname if FUNCTION_COMMAND_SPECS.contains(classname) =>
