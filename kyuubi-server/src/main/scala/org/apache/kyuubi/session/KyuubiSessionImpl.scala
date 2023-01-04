@@ -166,12 +166,12 @@ class KyuubiSessionImpl(
   override protected def runOperation(operation: Operation): OperationHandle = {
     if (operation != launchEngineOp) {
       waitForEngineLaunched()
-      sessionEvent.totalOperations += 1
     }
     try {
       sessionEvent.runningOperations += 1
       val OperationHandle = super.runOperation(operation)
       sessionEvent.runningOperations -= 1
+      sessionEvent.finishedOperations += 1
       OperationHandle
     } catch {
       case e: Exception =>

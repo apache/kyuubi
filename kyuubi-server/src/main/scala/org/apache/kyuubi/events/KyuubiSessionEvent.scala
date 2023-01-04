@@ -35,7 +35,7 @@ import org.apache.kyuubi.session.KyuubiSession
  * @param engineId engine id. For engine on yarn, it is applicationId.
  * @param openedTime session opened time
  * @param endTime session end time
- * @param totalOperations how many queries and meta calls
+ * @param finishedOperations how many queries and meta calls
  * @param exception the session exception, such as the exception that occur when opening session
  * @param runningOperations how many queries running
  * @param errorOperations how many queries failed
@@ -54,7 +54,7 @@ case class KyuubiSessionEvent(
     var engineId: String = "",
     var openedTime: Long = -1L,
     var endTime: Long = -1L,
-    var totalOperations: Int = 0,
+    var finishedOperations: Int = 0,
     var exception: Option[Throwable] = None,
     var runningOperations: Int = 0,
     var errorOperations: Int = 0) extends KyuubiEvent {

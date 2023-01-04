@@ -174,6 +174,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     engines
   }
 
+  @deprecated
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
@@ -189,7 +190,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       info(s"Listing server nodes for $serverSpace")
       serverNodes ++= discoveryClient.getServiceNodesInfo(serverSpace)
       serverNodes.map(node => {
-        info(s"judge server nodes:$node " + host.equalsIgnoreCase("").toString)
         if (host.equalsIgnoreCase("") || node.host.equalsIgnoreCase(host)) {
           Servers += new Server(
             node.nodeName,
