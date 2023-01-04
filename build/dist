@@ -322,7 +322,6 @@ if [[ "$HIVE_PROVIDED" != "true" ]]; then
 fi
 
 # Copy license files
-cp "$KYUUBI_HOME/DISCLAIMER" "$DISTDIR/DISCLAIMER"
 if [[ -f $"$KYUUBI_HOME/LICENSE-binary" ]]; then
   cp "$KYUUBI_HOME/LICENSE-binary" "$DISTDIR/LICENSE"
   cp -r "$KYUUBI_HOME/licenses-binary" "$DISTDIR/licenses"
