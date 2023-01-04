@@ -74,14 +74,14 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   def refreshUserDefaultsConf(): Response = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
-    info(s"Receive refresh Kyuubi server conf request from $userName/$ipAddress")
+    info(s"Receive refresh user defaults conf request from $userName/$ipAddress")
     if (!userName.equals(administrator)) {
       throw new NotAllowedException(
         s"$userName is not allowed to refresh the user defaults conf")
     }
-    info(s"Reloading the Kyuubi server conf")
+    info(s"Reloading user defaults conf")
     KyuubiServer.refreshUserDefaultsConf()
-    Response.ok(s"Refresh the server conf successfully.").build()
+    Response.ok(s"Refresh the user defaults conf successfully.").build()
   }
 
   @ApiResponse(
