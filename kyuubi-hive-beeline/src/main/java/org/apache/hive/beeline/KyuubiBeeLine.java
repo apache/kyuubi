@@ -102,7 +102,7 @@ public class KyuubiBeeLine extends BeeLine {
         new Object[] {
           "Beeline",
           pack.getImplementationVersion() == null ? "???" : pack.getImplementationVersion(),
-          "Apache Kyuubi (Incubating)",
+          "Apache Kyuubi",
         });
   }
 

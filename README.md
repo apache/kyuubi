@@ -15,21 +15,21 @@
  - limitations under the License.
  -->
 
-# Apache Kyuubi (Incubating)
+# Apache Kyuubi
 
 <img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" height="120px" align="right" />
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![Release](https://img.shields.io/github/v/release/apache/incubator-kyuubi?label=release)](https://github.com/apache/incubator-kyuubi/releases)
-[![](https://tokei.rs/b1/github.com/apache/incubator-kyuubi)](https://github.com/apache/incubator-kyuubi)
-[![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/apache/incubator-kyuubi/Kyuubi/master?style=plastic)
-[![Travis](https://api.travis-ci.com/apache/incubator-kyuubi.svg?branch=master)](https://travis-ci.com/apache/incubator-kyuubi)
+[![Release](https://img.shields.io/github/v/release/apache/kyuubi?label=release)](https://github.com/apache/kyuubi/releases)
+[![](https://tokei.rs/b1/github.com/apache/kyuubi)](https://github.com/apache/kyuubi)
+[![codecov](https://codecov.io/gh/apache/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/kyuubi)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/apache/kyuubi/Kyuubi/master?style=plastic)
+[![Travis](https://api.travis-ci.com/apache/kyuubi.svg?branch=master)](https://travis-ci.com/apache/kyuubi)
 [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
-![GitHub top language](https://img.shields.io/github/languages/top/apache/incubator-kyuubi)
-[![Commit activity](https://img.shields.io/github/commit-activity/m/apache/incubator-kyuubi)](https://github.com/apache/incubator-kyuubi/graphs/commit-activity)
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/apache/incubator-kyuubi.svg)](http://isitmaintained.com/project/apache/incubator-kyuubi "Average time to resolve an issue")
-[![Percentage of issues still open](http://isitmaintained.com/badge/open/apache/incubator-kyuubi.svg)](http://isitmaintained.com/project/apache/incubator-kyuubi "Percentage of issues still open")
+![GitHub top language](https://img.shields.io/github/languages/top/apache/kyuubi)
+[![Commit activity](https://img.shields.io/github/commit-activity/m/apache/kyuubi)](https://github.com/apache/kyuubi/graphs/commit-activity)
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/apache/kyuubi.svg)](http://isitmaintained.com/project/apache/kyuubi "Average time to resolve an issue")
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/apache/kyuubi.svg)](http://isitmaintained.com/project/apache/kyuubi "Percentage of issues still open")
 
 
 ## What is Kyuubi?
@@ -113,7 +113,7 @@ Ready? [Getting Started](https://kyuubi.apache.org/docs/latest/quick_start/quick
 
 ## Contributor over time
 
-[![Contributor over time](https://contributor-graph-api.apiseven.com/contributors-svg?chart=contributorOverTime&repo=apache/incubator-kyuubi)](https://api7.ai/contributor-graph?chart=contributorOverTime&repo=apache/incubator-kyuubi)
+[![Contributor over time](https://contributor-graph-api.apiseven.com/contributors-svg?chart=contributorOverTime&repo=apache/kyuubi)](https://api7.ai/contributor-graph?chart=contributorOverTime&repo=apache/kyuubi)
 
 ## Aside
 

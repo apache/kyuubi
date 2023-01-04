@@ -49,7 +49,7 @@ class KyuubiOperationPerUserSuite
     withSessionConf()(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER"))(Map.empty) {
       withJdbcStatement() { statement =>
         val metaData = statement.getConnection.getMetaData
-        assert(metaData.getDatabaseProductName === "Apache Kyuubi (Incubating)")
+        assert(metaData.getDatabaseProductName === "Apache Kyuubi")
         assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
         val ver = SemanticVersion(KYUUBI_VERSION)
         assert(metaData.getDatabaseMajorVersion === ver.majorVersion)
@@ -265,7 +265,7 @@ class KyuubiOperationPerUserSuite
         val req = new TGetInfoReq()
         req.setSessionHandle(handle)
         req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
-        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi")
       }
     }
   }
