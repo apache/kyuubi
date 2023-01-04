@@ -24,7 +24,8 @@ class StatementSuite extends WithPhoenixEngine with HiveJDBCTestHelper {
 
   test("test select") {
     withJdbcStatement("test1") { statement =>
-      statement.execute("create table db1.test1(id bigint, name varchar(255), age int)")
+      statement.execute("create table db1.test1(id bigint primary key, " +
+        "name varchar(255), age integer)")
       statement.execute("upsert into db1.test1 values(1, 'a', 11)")
 
       val resultSet1 = statement.executeQuery("select * from db1.test1")

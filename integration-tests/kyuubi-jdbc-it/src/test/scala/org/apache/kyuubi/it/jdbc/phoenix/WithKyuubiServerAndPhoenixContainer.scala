@@ -17,10 +17,11 @@
 package org.apache.kyuubi.it.jdbc.phoenix
 
 import java.nio.file.{Files, Path, Paths}
+import java.time.Duration
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
 import org.apache.kyuubi.engine.jdbc.phoenix.WithPhoenixEngine
 
 trait WithKyuubiServerAndPhoenixContainer extends WithKyuubiServer with WithPhoenixEngine {
@@ -48,6 +49,7 @@ trait WithKyuubiServerAndPhoenixContainer extends WithKyuubiServer with WithPhoe
     KyuubiConf()
       .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
       .set(ENGINE_JDBC_EXTRA_CLASSPATH, phoenixJdbcConnectorPath)
+      .set(ENGINE_IDLE_TIMEOUT, Duration.ofMinutes(1).toMillis)
   }
 
   override def beforeAll(): Unit = {

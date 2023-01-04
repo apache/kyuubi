@@ -47,17 +47,17 @@ abstract class PhoenixOperationSuite extends WithPhoenixEngine with HiveJDBCTest
       statement.execute("create table db1.test1(id bigint primary key)")
       statement.execute("create table db1.test2(id bigint primary key)")
 
-      tables = meta.getTables(null, null, "test1", Array("u"))
+      tables = meta.getTables(null, null, "TEST1", Array("u"))
       while (tables.next()) {
         val table = Table(
           null,
           null,
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
-        assert(table == Table(null, null, "test1", "u"))
+        assert(table == Table(null, null, "TEST1", "u"))
       }
 
-      tables = meta.getTables(null, null, "test1", null)
+      tables = meta.getTables(null, null, "TEST2", null)
       while (tables.next()) {
         resultBuffer += Table(
           null,
@@ -65,7 +65,7 @@ abstract class PhoenixOperationSuite extends WithPhoenixEngine with HiveJDBCTest
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
       }
-      assert(resultBuffer.contains(Table(null, null, "test1", "u")))
+      assert(resultBuffer.contains(Table(null, null, "TEST2", "u")))
       resultBuffer.clear()
 
       tables = meta.getTables(null, null, null, Array("u"))
@@ -76,8 +76,8 @@ abstract class PhoenixOperationSuite extends WithPhoenixEngine with HiveJDBCTest
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
       }
-      assert(resultBuffer.contains(Table(null, null, "test1", "u")))
-      assert(resultBuffer.size == 2)
+      assert(resultBuffer.contains(Table(null, null, "TEST1", "u")))
+      assert(resultBuffer.contains(Table(null, null, "TEST2", "u")))
       resultBuffer.clear()
 
       tables = meta.getTables(null, null, null, Array("u", "s"))
@@ -88,8 +88,8 @@ abstract class PhoenixOperationSuite extends WithPhoenixEngine with HiveJDBCTest
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
       }
-      assert(resultBuffer.contains(Table(null, null, "test1", "u")))
-      assert(resultBuffer.contains(Table(null, null, "test2", "u")))
+      assert(resultBuffer.contains(Table(null, null, "TEST1", "u")))
+      assert(resultBuffer.contains(Table(null, null, "TEST2", "u")))
       assert(resultBuffer.contains(Table(null, null, "LOG", "s")))
       assert(resultBuffer.contains(Table(null, null, "CATALOG", "s")))
       resultBuffer.clear()
@@ -114,7 +114,7 @@ abstract class PhoenixOperationSuite extends WithPhoenixEngine with HiveJDBCTest
       statement.execute("create table if not exists db1.test1" +
         "(id bigint primary key, str1 varchar, str2 varchar, age integer)")
 
-      statement.execute("create table if not exists db2.test1" +
+      statement.execute("create table if not exists db1.test2" +
         "(id bigint primary key, str1 varchar, str2 varchar, age integer)")
 
       val resultBuffer = ArrayBuffer[Column]()
@@ -124,64 +124,57 @@ abstract class PhoenixOperationSuite extends WithPhoenixEngine with HiveJDBCTest
         resultBuffer += column
       }
 
-      assert(resultBuffer.contains(Column("test1", "id")))
-      assert(resultBuffer.contains(Column("test1", "str1")))
-      assert(resultBuffer.contains(Column("test1", "str2")))
-      assert(resultBuffer.contains(Column("test1", "age")))
+      assert(resultBuffer.contains(Column("TEST1", "ID")))
+      assert(resultBuffer.contains(Column("TEST1", "STR1")))
+      assert(resultBuffer.contains(Column("TEST1", "STR2")))
+      assert(resultBuffer.contains(Column("TEST1", "AGE")))
 
-      assert(resultBuffer.contains(Column("test2", "id")))
-      assert(resultBuffer.contains(Column("test2", "str1")))
-      assert(resultBuffer.contains(Column("test2", "str2")))
-      assert(resultBuffer.contains(Column("test2", "age")))
+      assert(resultBuffer.contains(Column("TEST2", "ID")))
+      assert(resultBuffer.contains(Column("TEST2", "STR1")))
+      assert(resultBuffer.contains(Column("TEST2", "STR2")))
+      assert(resultBuffer.contains(Column("TEST2", "AGE")))
 
       resultBuffer.clear()
 
-      val resultSet2 = metadata.getColumns(null, null, "test1", null)
+      val resultSet2 = metadata.getColumns(null, null, "TEST1", null)
       while (resultSet2.next()) {
         val column = buildColumn(resultSet2)
         resultBuffer += column
       }
 
-      assert(resultBuffer.contains(Column("test1", "id")))
-      assert(resultBuffer.contains(Column("test1", "str1")))
-      assert(resultBuffer.contains(Column("test1", "str2")))
-      assert(resultBuffer.contains(Column("test1", "age")))
-
-      assert(resultBuffer.contains(Column("test1", "id")))
-      assert(resultBuffer.contains(Column("test1", "str1")))
-      assert(resultBuffer.contains(Column("test1", "str2")))
-      assert(resultBuffer.contains(Column("test1", "age")))
+      assert(resultBuffer.contains(Column("TEST1", "ID")))
+      assert(resultBuffer.contains(Column("TEST1", "STR1")))
+      assert(resultBuffer.contains(Column("TEST1", "STR2")))
+      assert(resultBuffer.contains(Column("TEST1", "AGE")))
 
       resultBuffer.clear()
 
-      val resultSet3 = metadata.getColumns(null, null, null, "age")
+      val resultSet3 = metadata.getColumns(null, null, null, "AGE")
       while (resultSet3.next()) {
         val column = buildColumn(resultSet3)
         resultBuffer += column
       }
 
-      assert(resultBuffer.contains(Column("test1", "age")))
-      assert(resultBuffer.contains(Column("test2", "age")))
-      assert(resultBuffer.contains(Column("test1", "age")))
+      assert(resultBuffer.contains(Column("TEST1", "AGE")))
+      assert(resultBuffer.contains(Column("TEST2", "AGE")))
 
       resultBuffer.clear()
 
-      val resultSet4 = metadata.getColumns(null, null, "t%1", "str%")
+      val resultSet4 = metadata.getColumns(null, null, "T%1", "STR%")
       while (resultSet4.next()) {
         val column = buildColumn(resultSet4)
         resultBuffer += column
       }
 
-      assert(resultBuffer.contains(Column("test1", "str1")))
-      assert(resultBuffer.contains(Column("test1", "str2")))
+      assert(resultBuffer.contains(Column("TEST1", "STR1")))
 
       resultBuffer.clear()
 
-      val resultSet5 = metadata.getColumns(null, null, "t%1", "fake")
+      val resultSet5 = metadata.getColumns(null, null, "T%1", "fake")
       assert(!resultSet5.next())
 
       statement.execute("drop table db1.test1")
-      statement.execute("drop table db2.test1")
+      statement.execute("drop table db1.test2")
     }
   }
 }
