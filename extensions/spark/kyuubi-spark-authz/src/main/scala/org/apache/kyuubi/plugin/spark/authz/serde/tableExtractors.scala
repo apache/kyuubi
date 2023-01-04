@@ -86,6 +86,16 @@ class CatalogTableTableExtractor extends TableExtractor {
 }
 
 /**
+ * org.apache.spark.sql.catalyst.catalog.CatalogTable Option
+ */
+class CatalogTableOptionTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val catalogTable = v1.asInstanceOf[Option[CatalogTable]]
+    catalogTable.flatMap(new CatalogTableTableExtractor().apply(spark, _))
+  }
+}
+
+/**
  * org.apache.spark.sql.catalyst.analysis.ResolvedTable
  */
 class ResolvedTableTableExtractor extends TableExtractor {
