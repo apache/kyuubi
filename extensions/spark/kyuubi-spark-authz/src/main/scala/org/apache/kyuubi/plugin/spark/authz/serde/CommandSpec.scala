@@ -35,7 +35,6 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
  *  - the [[OperationType]] of this command which finally maps to an access privilege
  */
 trait CommandSpec extends {
-
   @JsonIgnore
   final protected val LOG = LoggerFactory.getLogger(getClass)
   def classname: String
@@ -78,7 +77,7 @@ case class FunctionCommandSpec(
 case class TableCommandSpec(
     classname: String,
     tableDescs: Seq[TableDesc],
-    opType: String = "QUERY",
+    opType: String = OperationType.QUERY.toString,
     queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec {
   def queries: LogicalPlan => Seq[LogicalPlan] = plan => {
     queryDescs.flatMap { qd =>
@@ -96,7 +95,7 @@ case class TableCommandSpec(
 case class ScanSpec(
     classname: String,
     scanDescs: Seq[ScanDesc]) extends CommandSpec {
-  override def opType: String = "QUERY"
+  override def opType: String = OperationType.QUERY.toString
   def tables: (LogicalPlan, SparkSession) => Seq[Table] = (plan, spark) => {
     scanDescs.flatMap { td =>
       try {

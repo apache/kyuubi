@@ -43,7 +43,7 @@ package object serde {
     TABLE_COMMAND_SPECS.contains(r.getClass.getName)
   }
 
-  def getTableCommandDesc(r: AnyRef): TableCommandSpec = {
+  def getTableCommandSpec(r: AnyRef): TableCommandSpec = {
     TABLE_COMMAND_SPECS(r.getClass.getName)
   }
 
@@ -52,9 +52,17 @@ package object serde {
     mapper.readValue[Array[FunctionCommandSpec]](is).map(e => (e.classname, e)).toMap
   }
 
-  final lazy val SCAN_SPECS: Map[String, ScanSpec] = {
+  final private lazy val SCAN_SPECS: Map[String, ScanSpec] = {
     val is = getClass.getClassLoader.getResourceAsStream("scan_command_spec.json")
     mapper.readValue[Array[ScanSpec]](is).map(e => (e.classname, e)).toMap
+  }
+
+  def isKnownScan(r: AnyRef): Boolean = {
+    SCAN_SPECS.contains(r.getClass.getName)
+  }
+
+  def getScanSpec(r: AnyRef): ScanSpec = {
+    SCAN_SPECS(r.getClass.getName)
   }
 
   def operationType(plan: LogicalPlan): OperationType = {

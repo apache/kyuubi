@@ -28,10 +28,10 @@ import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilter
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
-  private def mapPlanChildren(plan: LogicalPlan)(f: LogicalPlan => LogicalPlan): LogicalPlan = {
+  private def mapChildren(plan: LogicalPlan)(f: LogicalPlan => LogicalPlan): LogicalPlan = {
     val newChildren = plan match {
       case cmd if isKnownTableCommand(cmd) =>
-        val tableCommandSpec = getTableCommandDesc(cmd)
+        val tableCommandSpec = getTableCommandSpec(cmd)
         val queries = tableCommandSpec.queries(cmd)
         cmd.children.map {
           case c if queries.contains(c) => f(c)
@@ -44,13 +44,11 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    // Apply FilterAndMasking and wrap HiveTableRelation/LogicalRelation/DataSourceV2Relation with
-    // RowFilterAndDataMaskingMarker if it is not wrapped yet.
-    mapPlanChildren(plan) {
+    mapChildren(plan) {
       case p: RowFilterAndDataMaskingMarker => p
-      case r if SCAN_SPECS.contains(r.getClass.getName) && r.resolved =>
-        val tables = SCAN_SPECS(r.getClass.getName).tables(r, spark)
-        tables.headOption.map(applyFilterAndMasking(r, _)).getOrElse(r)
+      case scan if isKnownScan(scan) && scan.resolved =>
+        val tables = getScanSpec(scan).tables(scan, spark)
+        tables.headOption.map(applyFilterAndMasking(scan, _)).getOrElse(scan)
       case other => apply(other)
     }
   }
