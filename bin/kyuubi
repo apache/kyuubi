@@ -30,6 +30,7 @@ function usage() {
   echo "    -h | --help  - Show this help message"
 }
 
+# shellcheck disable=SC2199
 if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
   usage
   exit 0
@@ -48,6 +49,7 @@ function kyuubi_rotate_log() {
     num=${KYUUBI_MAX_LOG_FILES}
   else
     echo "Error: KYUUBI_MAX_LOG_FILES must be a positive number, but got ${KYUUBI_MAX_LOG_FILES}"
+    # shellcheck disable=SC2242
     exit -1
   fi
 
