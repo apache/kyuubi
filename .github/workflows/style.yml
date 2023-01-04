@@ -109,4 +109,3 @@ jobs:
         uses: ludeeus/action-shellcheck@master
         with:
           severity: error
-          scandir: "bin"
