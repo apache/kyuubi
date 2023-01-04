@@ -100,14 +100,7 @@ jobs:
           echo "If there is a problem that cannot be fixed by the command, "
           echo "you need to manually fix it by following the information told by the command above"
           echo "---------------------------------------------------------------------------------"
-
       - name: checkout files in bin
         uses: azohra/shell-linter@latest
         with:
           path: "bin"
-          severity: "error"
-      - name: checkout files in build
-        uses: azohra/shell-linter@latest
-          with:
-            path: "build"
-            severity: "error"
