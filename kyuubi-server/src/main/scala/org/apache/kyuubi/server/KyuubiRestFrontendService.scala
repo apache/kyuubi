@@ -26,7 +26,7 @@ import javax.ws.rs.core.Response.Status
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.conf.Configuration
-import org.eclipse.jetty.servlet.FilterHolder
+import org.eclipse.jetty.servlet.{FilterHolder, ServletContextHandler}
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -75,12 +75,19 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   private def startInternal(): Unit = {
-    val contextHandler = ApiRootResource.getServletHandler(this)
+    // val contextHandler = ApiRootResource.getServletHandler(this)
+    val contextHandlerCollection = ApiRootResource.getServletHandlerCollection(this)
     val holder = new FilterHolder(new AuthenticationFilter(conf))
-    contextHandler.addFilter(holder, "/v1/*", EnumSet.allOf(classOf[DispatcherType]))
+    contextHandlerCollection.getChildHandlers.map(handler => {
+      if (handler.isInstanceOf[ServletContextHandler]) {
+        handler.asInstanceOf[ServletContextHandler]
+          .addFilter(holder, "/v1/*", EnumSet.allOf(classOf[DispatcherType]))
+      }
+    })
+    // contextHandler.addFilter(holder, "/v1/*", EnumSet.allOf(classOf[DispatcherType]))
     val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
-    server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))
-
+    server.addHandler(
+      authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandlerCollection))
     server.addStaticHandler("org/apache/kyuubi/ui/static", "/static/")
     server.addRedirectHandler("/", "/static/")
     server.addRedirectHandler("/static", "/static/")

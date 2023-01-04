@@ -23,6 +23,7 @@ import javax.ws.rs.core.{MediaType, Response}
 import com.google.common.annotations.VisibleForTesting
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import org.eclipse.jetty.server.handler.ContextHandlerCollection
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
@@ -30,7 +31,7 @@ import org.glassfish.jersey.servlet.ServletContainer
 import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.api.{ApiRequestContext, FrontendServiceContext, OpenAPIConfig}
+import org.apache.kyuubi.server.api.{ApiRequestContext, FrontendServiceContext, OpenAPIConfig, WebProxyServlet}
 
 @Path("/v1")
 private[v1] class ApiRootResource extends ApiRequestContext {
@@ -82,5 +83,27 @@ private[server] object ApiRootResource {
     FrontendServiceContext.set(handler, fe)
     handler.addServlet(holder, "/*")
     handler
+  }
+
+  def getServletHandlerCollection(fe: KyuubiRestFrontendService): ContextHandlerCollection = {
+    val contextHandlerCollection = new ContextHandlerCollection();
+    val openapiConf: ResourceConfig = new OpenAPIConfig
+    val holder = new ServletHolder(new ServletContainer(openapiConf))
+    val handler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
+    handler.setContextPath("/api")
+    FrontendServiceContext.set(handler, fe)
+    handler.addServlet(holder, "/*")
+    contextHandlerCollection.addHandler(handler)
+    addProxyHandler(contextHandlerCollection)
+    contextHandlerCollection
+  }
+
+  def addProxyHandler(contextHandlerCollection: ContextHandlerCollection): Unit = {
+    val proxyServlet = new WebProxyServlet()
+    val holder = new ServletHolder(proxyServlet)
+    val contextHandler = new ServletContextHandler();
+    contextHandler.setContextPath("/proxy");
+    contextHandler.addServlet(holder, "*");
+    contextHandlerCollection.addHandler(contextHandler)
   }
 }
