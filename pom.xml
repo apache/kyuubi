@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>27</version>
+        <version>29</version>
     </parent>
 
     <groupId>org.apache.kyuubi</groupId>
@@ -210,16 +210,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
-        <maven.plugin.antrun.version>3.0.0</maven.plugin.antrun.version>
-        <maven.plugin.assembly.version>3.2.0</maven.plugin.assembly.version>
         <maven.plugin.build.helper.version>3.2.0</maven.plugin.build.helper.version>
-        <maven.plugin.clean.version>3.1.0</maven.plugin.clean.version>
-        <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
-        <maven.plugin.dependency.version>3.1.1</maven.plugin.dependency.version>
-        <maven.plugin.deploy.version>3.0.0-M1</maven.plugin.deploy.version>
         <maven.plugin.download.version>1.6.6</maven.plugin.download.version>
-        <maven.plugin.gpg.version>3.0.1</maven.plugin.gpg.version>
-        <maven.plugin.javadoc.version>3.3.0</maven.plugin.javadoc.version>
         <maven.plugin.scala.version>4.6.1</maven.plugin.scala.version>
         <maven.plugin.surefire.version>3.0.0-M7</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
@@ -227,12 +219,9 @@
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.spotless.version>2.27.2</maven.plugin.spotless.version>
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
-        <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.4.1</maven.plugin.shade.version>
         <maven.plugin.silencer.version>1.7.10</maven.plugin.silencer.version>
-        <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
-        <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
 
         <maven.scaladoc.skip>false</maven.scaladoc.skip>
         <maven.scalastyle.skip>false</maven.scalastyle.skip>
@@ -1690,7 +1679,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>${maven.plugin.antrun.version}</version>
                     <executions>
                         <execution>
                             <id>create-tmp-dir</id>
@@ -1758,7 +1746,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${maven.plugin.compiler.version}</version>
                     <configuration>
                         <maxmem>1024m</maxmem>
                         <fork>true</fork>
@@ -1911,20 +1898,7 @@
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>${maven.plugin.jar.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>${maven.plugin.assembly.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>${maven.plugin.dependency.version}</version>
                     <executions>
                         <execution>
                             <id>default-cli</id>
@@ -1965,7 +1939,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>${maven.plugin.clean.version}</version>
                     <configuration>
                         <filesets>
                             <fileset>
@@ -1988,30 +1961,6 @@
                             </fileset>
                         </filesets>
                     </configuration>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <version>${maven.plugin.deploy.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>${maven.plugin.source.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>${maven.plugin.javadoc.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>${maven.plugin.gpg.version}</version>
                 </plugin>
 
                 <plugin>
@@ -2106,7 +2055,6 @@
                 <plugin>
                     <groupId>org.apache.rat</groupId>
                     <artifactId>apache-rat-plugin</artifactId>
-                    <version>${maven.plugin.rat.version}</version>
                     <inherited>true</inherited>
                     <configuration>
                         <excludeSubProjects>false</excludeSubProjects>
