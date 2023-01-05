@@ -47,16 +47,15 @@ Hi all,
 The Apache Kyuubi community is pleased to announce that
 Apache Kyuubi ${release_version} has been released!
 
-Apache Kyuubi is a distributed multi-tenant JDBC server for
-large-scale data processing and analytics, built on top of Apache Spark
-and designed to support more engines (i.e. Apache Flink).
+Apache Kyuubi is a distributed and multi-tenant gateway to provide
+serverless SQL on data warehouses and lakehouses.
 
 Kyuubi provides a pure SQL gateway through Thrift JDBC/ODBC interface
 for end-users to manipulate large-scale data with pre-programmed and
 extensible Spark SQL engines.
 
 We are aiming to make Kyuubi an "out-of-the-box" tool for data warehouses
-and data lakes.
+and lakehouses.
 
 This "out-of-the-box" model minimizes the barriers and costs for end-users
 to use Spark at the client side.
@@ -82,5 +81,5 @@ Thanks,
 On behalf of Apache Kyuubi community
 EOF
 
-echo "please Use general@incubator.apache.org, announce@apache.org, dev@kyuubi.apache.org, user@spark.apache.org
+echo "please Use announce@apache.org, dev@kyuubi.apache.org, user@spark.apache.org
 see announce content in $ANNOUNCE"

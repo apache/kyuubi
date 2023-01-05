@@ -35,7 +35,7 @@ body:
       label: Search before asking
       options:
         - label: >
-            I have searched in the [issues](https://github.com/apache/incubator-kyuubi/issues) and found no similar
+            I have searched in the [issues](https://github.com/apache/kyuubi/issues) and found no similar
             issues.
           required: true
 

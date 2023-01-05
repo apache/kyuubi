@@ -54,8 +54,8 @@ fi
 
 RELEASE_TAG="v${RELEASE_VERSION}-rc${RELEASE_RC_NO}"
 
-SVN_STAGING_REPO="https://dist.apache.org/repos/dist/dev/incubator/kyuubi"
-SVN_RELEASE_REPO="https://dist.apache.org/repos/dist/release/incubator/kyuubi"
+SVN_STAGING_REPO="https://dist.apache.org/repos/dist/dev/kyuubi"
+SVN_RELEASE_REPO="https://dist.apache.org/repos/dist/release/kyuubi"
 
 KYUUBI_DIR="$(cd "$(dirname "$0")"/../..; pwd)"
 RELEASE_DIR="${KYUUBI_DIR}/work/release"

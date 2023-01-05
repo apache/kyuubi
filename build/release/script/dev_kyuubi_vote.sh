@@ -78,7 +78,7 @@ cat >${DEV_VOTE}<<EOF
 Title: [VOTE] Release Apache Kyuubi ${release_version} ${release_rc_no}
 
 Content:
-Hello Apache Kyuubi PPMC and Community,
+Hello Apache Kyuubi PMC and Community,
 
 Please vote on releasing the following candidate as
 Apache Kyuubi version ${release_version}.
@@ -93,13 +93,13 @@ To learn more about Apache Kyuubi, please see
 https://kyuubi.apache.org/
 
 The tag to be voted on is ${release_rc_tag} (commit ${git_commit_hash}):
-https://github.com/apache/incubator-kyuubi/tree/${release_rc_tag}
+https://github.com/apache/kyuubi/tree/${release_rc_tag}
 
 The release files, including signatures, digests, etc. can be found at:
-https://dist.apache.org/repos/dist/dev/incubator/kyuubi/${release_rc_tag}/
+https://dist.apache.org/repos/dist/dev/kyuubi/${release_rc_tag}/
 
 Signatures used for Kyuubi RCs can be found in this file:
-https://downloads.apache.org/incubator/kyuubi/KEYS
+https://downloads.apache.org/kyuubi/KEYS
 
 The staging repository for this release can be found at:
 https://repository.apache.org/content/repositories/orgapachekyuubi-${repo_no}/
