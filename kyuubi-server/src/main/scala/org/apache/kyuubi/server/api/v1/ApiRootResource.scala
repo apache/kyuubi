@@ -103,7 +103,7 @@ private[server] object ApiRootResource {
     val holder = new ServletHolder(proxyServlet)
     val contextHandler = new ServletContextHandler();
     contextHandler.setContextPath("/proxy");
-    contextHandler.addServlet(holder, "*");
+    contextHandler.addServlet(holder, "/*");
     contextHandlerCollection.addHandler(contextHandler)
   }
 }
