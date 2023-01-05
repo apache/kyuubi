@@ -18,14 +18,11 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
 package object gen {
-  implicit def classSimpleName[T](implicit ct: ClassTag[T]): String = {
-    ct.runtimeClass.getSimpleName
-  }
+  implicit def classSimpleName[T](clz: Class[_]): String = clz.getSimpleName
 
   implicit def operationTypeStr(t: OperationType): String = t.toString
 }

@@ -26,13 +26,13 @@ object FunctionCommands {
     val cmd = "org.apache.spark.sql.execution.command.CreateFunctionCommand"
     val functionTypeDesc = FunctionTypeDesc(
       "isTemp",
-      classSimpleName[TempMarkerFunctionTypeExtractor],
+      classOf[TempMarkerFunctionTypeExtractor],
       Seq("TEMP"))
     val databaseDesc =
-      DatabaseDesc("databaseName", classSimpleName[StringOptionDatabaseExtractor])
+      DatabaseDesc("databaseName", classOf[StringOptionDatabaseExtractor])
     val functionDesc = FunctionDesc(
       "functionName",
-      classSimpleName[StringFunctionExtractor],
+      classOf[StringFunctionExtractor],
       Some(databaseDesc),
       Some(functionTypeDesc))
     FunctionCommandSpec(cmd, Seq(functionDesc), CREATEFUNCTION)
@@ -42,21 +42,21 @@ object FunctionCommands {
     val cmd = "org.apache.spark.sql.execution.command.DescribeFunctionCommand"
     val skips = Seq("TEMP", "SYSTEM")
     val functionTypeDesc1 =
-      FunctionTypeDesc("info", classSimpleName[ExpressionInfoFunctionTypeExtractor], skips)
+      FunctionTypeDesc("info", classOf[ExpressionInfoFunctionTypeExtractor], skips)
     val functionDesc1 = FunctionDesc(
       "info",
-      classSimpleName[ExpressionInfoFunctionExtractor],
+      classOf[ExpressionInfoFunctionExtractor],
       functionTypeDesc = Some(functionTypeDesc1),
       isInput = true)
 
     val functionTypeDesc2 =
       FunctionTypeDesc(
         "functionName",
-        classSimpleName[FunctionIdentifierFunctionTypeExtractor],
+        classOf[FunctionIdentifierFunctionTypeExtractor],
         skips)
     val functionDesc2 = FunctionDesc(
       "functionName",
-      classSimpleName[FunctionIdentifierFunctionExtractor],
+      classOf[FunctionIdentifierFunctionExtractor],
       functionTypeDesc = Some(functionTypeDesc2),
       isInput = true)
     FunctionCommandSpec(cmd, Seq(functionDesc1, functionDesc2), DESCFUNCTION)
@@ -70,10 +70,10 @@ object FunctionCommands {
   val RefreshFunction = {
     val cmd = "org.apache.spark.sql.execution.command.RefreshFunctionCommand"
     val databaseDesc =
-      DatabaseDesc("databaseName", classSimpleName[StringOptionDatabaseExtractor])
+      DatabaseDesc("databaseName", classOf[StringOptionDatabaseExtractor])
     val functionDesc = FunctionDesc(
       "functionName",
-      classSimpleName[StringFunctionExtractor],
+      classOf[StringFunctionExtractor],
       Some(databaseDesc))
     FunctionCommandSpec(cmd, Seq(functionDesc), RELOADFUNCTION)
   }

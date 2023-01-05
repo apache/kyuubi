@@ -26,7 +26,7 @@ object Scans {
     val tableDesc =
       ScanDesc(
         "tableMeta",
-        classSimpleName[CatalogTableTableExtractor])
+        classOf[CatalogTableTableExtractor])
     ScanSpec(r, Seq(tableDesc))
   }
 
@@ -35,7 +35,7 @@ object Scans {
     val tableDesc =
       ScanDesc(
         "catalogTable",
-        classSimpleName[CatalogTableOptionTableExtractor])
+        classOf[CatalogTableOptionTableExtractor])
     ScanSpec(r, Seq(tableDesc))
   }
 
@@ -44,7 +44,7 @@ object Scans {
     val tableDesc =
       ScanDesc(
         null,
-        classSimpleName[DataSourceV2RelationTableExtractor])
+        classOf[DataSourceV2RelationTableExtractor])
     ScanSpec(r, Seq(tableDesc))
   }
 
@@ -53,7 +53,7 @@ object Scans {
     val tableDesc =
       ScanDesc(
         "catalogTable",
-        classSimpleName[CatalogTableTableExtractor])
+        classOf[CatalogTableTableExtractor])
     ScanSpec(r, Seq(tableDesc))
   }
 
