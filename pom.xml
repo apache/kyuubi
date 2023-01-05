@@ -1394,7 +1394,7 @@
             </dependency>
 
             <!--
-              Required for Yarn Mini Cluster on JDK 11, it already is a transitive dependency
+              Required for Yarn Mini Cluster on JDK 11, it is already a transitive dependency
               of spark-core, thus only should explicitly add on Kyuubi Server Main test scope.
               -->
             <dependency>
