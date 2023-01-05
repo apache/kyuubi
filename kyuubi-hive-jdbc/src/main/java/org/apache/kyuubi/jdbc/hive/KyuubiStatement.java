@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiStatement.class.getName());
   public static final int DEFAULT_FETCH_SIZE = 1000;
-  public static final String DEFAULT_RESULT_CODEC = "simple";
+  public static final String DEFAULT_RESULT_FORMAT = "thrift";
   private final KyuubiConnection connection;
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle = null;
@@ -208,10 +208,10 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     List<JdbcColumnAttributes> columnAttributes = new ArrayList<>();
     parseMetadata(metadata, columnNames, columnTypes, columnAttributes);
 
-    String resultCodec =
-        properties.getOrDefault("__kyuubi_operation_result_codec__", DEFAULT_RESULT_CODEC);
-    LOG.info("kyuubi.operation.result.codec: " + resultCodec);
-    switch (resultCodec) {
+    String resultFormat =
+        properties.getOrDefault("__kyuubi_operation_result_format__", DEFAULT_RESULT_FORMAT);
+    LOG.info("kyuubi.operation.result.format: " + resultFormat);
+    switch (resultFormat) {
       case "arrow":
         resultSet =
             new KyuubiArrowQueryResultSet.Builder(this)
@@ -265,10 +265,10 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     List<JdbcColumnAttributes> columnAttributes = new ArrayList<>();
     parseMetadata(metadata, columnNames, columnTypes, columnAttributes);
 
-    String resultCodec =
-        properties.getOrDefault("__kyuubi_operation_result_codec__", DEFAULT_RESULT_CODEC);
-    LOG.info("kyuubi.operation.result.codec: " + resultCodec);
-    switch (resultCodec) {
+    String resultFormat =
+        properties.getOrDefault("__kyuubi_operation_result_format__", DEFAULT_RESULT_FORMAT);
+    LOG.info("kyuubi.operation.result.format: " + resultFormat);
+    switch (resultFormat) {
       case "arrow":
         resultSet =
             new KyuubiArrowQueryResultSet.Builder(this)

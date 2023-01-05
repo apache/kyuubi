@@ -51,6 +51,38 @@ object TClientTestUtils extends Logging {
     }
   }
 
+  def withThriftClientAndConnectionConf[T](
+      url: String,
+      user: Option[String] = None)(f: (Iface, Map[String, String]) => T): T = {
+    val hostPortPrefix = url.split("/;").head
+    val hostport = hostPortPrefix.split(':')
+    val connectionConf = url.stripPrefix(hostPortPrefix) match {
+      case connectionStr: String if connectionStr.startsWith("/;#") =>
+        val kvPairs = connectionStr.stripPrefix("/;#")
+        if (kvPairs.contains("=")) {
+          kvPairs.split(";").map(kv => (kv.split("=")(0), kv.split("=")(1))).toMap
+        } else {
+          Map.empty[String, String]
+        }
+      case _ =>
+        Map.empty[String, String]
+    }
+
+    val socket = new TSocket(hostport.head, hostport.last.toInt)
+    val transport = PlainSASLHelper.getPlainTransport(
+      user.getOrElse(Utils.currentUser),
+      "anonymous",
+      socket)
+    val protocol = new TBinaryProtocol(transport)
+    val client = new TCLIService.Client(protocol)
+    transport.open()
+    try {
+      f(client, connectionConf)
+    } finally {
+      socket.close()
+    }
+  }
+
   /**
    * s shall be [[TFrontendService]]
    */

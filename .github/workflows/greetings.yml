@@ -33,9 +33,9 @@ jobs:
         issue-message: |
           Hello @${{ github.actor }},
           Thanks for finding the time to report the issue!
-          We really appreciate the community's efforts to improve Apache Kyuubi (Incubating).
+          We really appreciate the community's efforts to improve Apache Kyuubi.
         pr-message: |
           Hello @${{ github.actor }},
           Thanks for finding the time to submit the Pull request, the Kyuubi community thanks you！
-          We really appreciate the community's efforts to improve Apache Kyuubi (Incubating).
+          We really appreciate the community's efforts to improve Apache Kyuubi.
           If you are new to Apache Kyuubi for code changes, please take some time to read our [contributing guide](https://kyuubi.apache.org/contributing.html).

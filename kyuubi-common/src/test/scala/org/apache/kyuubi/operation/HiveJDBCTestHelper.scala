@@ -88,6 +88,18 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
       user)(f)
   }
 
+  def withThriftClientAndConnectionConf[T](f: (TCLIService.Iface, Map[String, String]) => T): T = {
+    withThriftClientAndConnectionConf()(f)
+  }
+
+  def withThriftClientAndConnectionConf[T](user: Option[String] = None)(f: (
+      TCLIService.Iface,
+      Map[String, String]) => T): T = {
+    TClientTestUtils.withThriftClientAndConnectionConf(
+      jdbcUrl.stripPrefix(URL_PREFIX),
+      user)(f)
+  }
+
   def withSessionHandle[T](f: (TCLIService.Iface, TSessionHandle) => T): T = {
     val hostAndPort = jdbcUrl.stripPrefix(URL_PREFIX).split("/;").head
     TClientTestUtils.withSessionHandle(hostAndPort, sessionConfigs)(f)

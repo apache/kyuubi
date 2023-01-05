@@ -176,5 +176,5 @@ class ExecuteStatement(
   }
 
   override def getResultSetMetadataHints(): Seq[String] =
-    Seq(s"__kyuubi_operation_result_codec__=$resultCodec")
+    Seq(s"__kyuubi_operation_result_format__=$resultFormat")
 }

@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.mysql.constant
+package org.apache.kyuubi.plugin.spark.authz
 
-import org.apache.kyuubi._
+import scala.language.implicitConversions
 
-object MySQLServerDefines {
-  val PROTOCOL_VERSION = 0x0A
-  val CHARSET = 0x2D // utf8mb4_general_ci
-  val MYSQL_VERSION = "5.7.22"
-  val MYSQL_KYUUBI_SERVER_VERSION = s"$MYSQL_VERSION-Kyuubi-Server $KYUUBI_VERSION"
-  val KYUUBI_SERVER_DESCRIPTION = s"Apache Kyuubi v$KYUUBI_VERSION revision $REVISION"
+import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
+
+package object gen {
+  implicit def classSimpleName(clz: Class[_]): String = clz.getSimpleName
+
+  implicit def operationTypeStr(t: OperationType): String = t.toString
 }

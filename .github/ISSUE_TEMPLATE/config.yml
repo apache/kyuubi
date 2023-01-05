@@ -18,11 +18,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Ask a question or get support
-    url: https://github.com/apache/incubator-kyuubi/discussions/categories/q-a
+    url: https://github.com/apache/kyuubi/discussions/categories/q-a
     about: Ask a question or request support for using Apache Kyuubi
   - name: Tell us your success story or use case
-    url: https://github.com/apache/incubator-kyuubi/discussions/925
+    url: https://github.com/apache/kyuubi/discussions/925
     about: Tell us your success story or use case using Apache Kyuubi
   - name: Kyuubi project improvement proposal
-    url: https://github.com/apache/incubator-kyuubi/discussions/categories/ideas
+    url: https://github.com/apache/kyuubi/discussions/categories/ideas
     about: a.k.a KPIP

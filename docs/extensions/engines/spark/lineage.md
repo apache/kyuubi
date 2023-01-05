@@ -71,16 +71,23 @@ Currently supported column lineage for spark's `Command` and `Query` type:
 - `Select`
 
 #### Command
+- `AlterViewAsCommand`
+- `AppendData`
 - `CreateDataSourceTableAsSelectCommand`
 - `CreateHiveTableAsSelectCommand`
-- `OptimizedCreateHiveTableAsSelectCommand`
 - `CreateTableAsSelect`
-- `ReplaceTableAsSelect`
+- `CreateViewCommand`
 - `InsertIntoDataSourceCommand`
-- `InsertIntoHadoopFsRelationCommand`
 - `InsertIntoDataSourceDirCommand`
+- `InsertIntoHadoopFsRelationCommand`
 - `InsertIntoHiveDirCommand`
 - `InsertIntoHiveTable`
+- `MergeIntoTable`
+- `OptimizedCreateHiveTableAsSelectCommand`
+- `OverwriteByExpression`
+- `OverwritePartitionsDynamic`
+- `ReplaceTableAsSelect`
+- `SaveIntoDataSourceCommand`
 
 
 ## Building

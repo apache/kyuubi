@@ -57,7 +57,6 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
 
   test("DeleteFromIcebergTable") {
     val plan = sql(s"DELETE FROM $catalogTable WHERE key = 1 ").queryExecution.analyzed
-    assert(IcebergCommands.accept(plan.nodeName))
     val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
     assert(inputs.isEmpty)
@@ -75,7 +74,6 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
 
   test("UpdateIcebergTable") {
     val plan = sql(s"UPDATE $catalogTable SET value = 'b' WHERE key = 1 ").queryExecution.analyzed
-    assert(IcebergCommands.accept(plan.nodeName))
     val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
     assert(inputs.isEmpty)
