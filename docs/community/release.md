@@ -131,7 +131,7 @@ The last step is to update the KEYS file with your code signing key
 https://www.apache.org/dev/openpgp.html#export-public-key
 
 ```shell
-svn checkout --depth=files "https://dist.apache.org/repos/dist/release/incubator/kyuubi" work/svn-kyuubi
+svn checkout --depth=files "https://dist.apache.org/repos/dist/release/kyuubi" work/svn-kyuubi
 
 (gpg --list-sigs "${ASF_USERNAME}@apache.org" && gpg --export --armor "${ASF_USERNAME}@apache.org") >> work/svn-kyuubi/KEYS
 
@@ -147,7 +147,7 @@ gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys ${PUBLIC_KEY} # verify
 
 ## Cut branch if for major release
 
-Kyuubi use version pattern `{MAJOR_VERSION}.{MINOR_VERSION}.{PATCH_VERSION}[-{OPTIONAL_SUFFIX}]`, e.g. `1.3.0-incubating`.
+Kyuubi use version pattern `{MAJOR_VERSION}.{MINOR_VERSION}.{PATCH_VERSION}[-{OPTIONAL_SUFFIX}]`, e.g. `1.7.0`.
 __Major Release__ means `MAJOR_VERSION` or `MINOR_VERSION` changed, and __Patch Release__ means `PATCH_VERSION` changed.
 
 The main step towards preparing a major release is to create a release branch. This is done via standard Git branching
@@ -155,7 +155,7 @@ mechanism and should be announced to the community once the branch is created.
 
 > Note: If you are releasing a patch version, you can ignore this step.
 
-The release branch pattern is `branch-{MAJOR_VERSION}.{MINOR_VERSION}`, e.g. `branch-1.3`.
+The release branch pattern is `branch-{MAJOR_VERSION}.{MINOR_VERSION}`, e.g. `branch-1.7`.
 
 After cutting release branch, don't forget bump version in `master` branch.
 
@@ -173,9 +173,7 @@ export RELEASE_RC_NO=<RC number, e.g. 0>
 2. Bump version.
 
 ```shell
-build/mvn versions:set -DgenerateBackupPoms=false \
-  -DnewVersion="${RELEASE_VERSION}" \
-  -Pspark-3.2,spark-block-cleaner
+build/mvn versions:set -DgenerateBackupPoms=false -DnewVersion="${RELEASE_VERSION}"
 
 git commit -am "[RELEASE] Bump ${RELEASE_VERSION}"
 ```
@@ -205,21 +203,16 @@ Filling in all the necessary information required by the form. And in the bottom
 
 ## Vote on the release candidate
 
-The release voting takes place on the Apache Kyuubi developers list (the (P)PMC is voting).
+The release voting takes place on the Apache Kyuubi developers list.
 
 - If possible, attach a draft of the release notes with the email.
 - Recommend represent voting closing time in UTC format.
-- Make sure the email is in text format and the links are correct
+- Make sure the email is in text format and the links are correct.
 
 > Note: you can generate the voting mail content for dev ML automatically via invoke the `build/release/script/dev_kyuubi_vote.sh` script. 
 
 Once the vote is done, you should also send out a summary email with the totals, with a subject that looks
-something like __[VOTE][RESULT] ....__
-
-Then, you can move the release vote on the general incubator mailing list, and generate the voting mail content automatically via invoke the `build/release/script/general_incubator_vote.sh` script.
-Also, you should send out a summary email like dev ML voting.
-
-> Note, any reason causes voting cancel. You should re-vote on the dev ML firstly.
+something like __[VOTE][RESULT] Release Apache Kyuubi ...__
 
 ## Finalize the Release
 
@@ -230,7 +223,7 @@ __Once you move the artifacts into the release folder, they cannot be removed.__
 
 After the vote passes, to upload the binaries to Apache mirrors, you move the binaries from dev directory (this should
 be where they are voted) to release directory. This "moving" is the only way you can add stuff to the actual release
-directory. (Note: only (P)PMC members can move to release directory)
+directory. (Note: only PMC members can move to release directory)
 
 Move the sub-directory in "dev" to the corresponding directory in "release". If you've added your signing key to the
 KEYS file, also update the release copy.
@@ -239,45 +232,31 @@ KEYS file, also update the release copy.
 build/release/release.sh finalize
 ```
 
-Verify that the resources are present in https://www.apache.org/dist/incubator/kyuubi/. It may take a while for them
-to be visible. This will be mirrored throughout the Apache network.
+Verify that the resources are present in https://www.apache.org/dist/kyuubi/. It may take a while for them to be visible.
+This will be mirrored throughout the Apache network.
 
 For Maven Central Repository, you can Release from the [Apache Nexus Repository Manager](https://repository.apache.org/).
-Log in, open Staging Repositories, find the one voted on, select and click Release and confirm. If successful, it should
-show up under https://repository.apache.org/content/repositories/releases/org/apache/kyuubi/ and the same under 
+Log in, open "Staging Repositories", find the one voted on, select and click "Release" and confirm. If successful, it
+should show up under https://repository.apache.org/content/repositories/releases/org/apache/kyuubi/ and the same under 
 https://repository.apache.org/content/groups/maven-staging-group/org/apache/kyuubi/ (look for the correct release version).
-After some time this will be sync’d to [Maven Central](https://search.maven.org/) automatically.
+After some time this will be synced to [Maven Central](https://search.maven.org/) automatically.
 
 ## Promote the release
 
 ### Update Website
 
-Fork and clone [Apache Kyuubi website](https://github.com/apache/incubator-kyuubi-website)
+Fork and clone [Apache Kyuubi website](https://github.com/apache/kyuubi-website)
 
 1. Add a new markdown file in `src/zh/news/`, `src/en/news/`
 2. Add a new markdown file in `src/zh/release/`, `src/en/release/`
-3. Follow [Build Document](../develop_tools/build_document.md) to build documents, then copy `apache/incubator-kyuubi`'s
-   folder `docs/_build/html` to `apache/incubator-kyuubi-website`'s folder `content/docs/r{RELEASE_VERSION}`
-
-### Add news in status file
-
-```shell
-svn checkout --depth=files "https://svn.apache.org/repos/asf/incubator/public/trunk/content/projects"
-```
-
-Add the release news
-
-```shell
-svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update kyuubi.xml" kyuubi.xml
-```
-
-The [kyuubi status website](https://incubator.apache.org/projects/kyuubi.html) will be updated after a few minutes.
+3. Follow [Build Document](../develop_tools/build_document.md) to build documents, then copy `apache/kyuubi`'s
+   folder `docs/_build/html` to `apache/kyuubi-website`'s folder `content/docs/r{RELEASE_VERSION}`
 
 ### Create an Announcement
 
 Once everything is working, create an announcement on the website and then send an e-mail to the mailing list.
 You can generate the announcement via `build/release/script/announce.sh` automatically.
-The mailing list includes: `general@incubator.apache.org`, `announce@apache.org`, `dev@kyuubi.apache.org`, `user@spark.apache.org`.
+The mailing list includes: `announce@apache.org`, `dev@kyuubi.apache.org`, `user@spark.apache.org`.
 
 Note that, you must use the apache.org email to send announce to `announce@apache.org`.
 
@@ -290,7 +269,7 @@ Remove the deprecated dist repo directories at last.
 
 ```shell
 cd work/svn-dev
-svn delete https://dist.apache.org/repos/dist/dev/incubator/kyuubi/{RELEASE_TAG} \
+svn delete https://dist.apache.org/repos/dist/dev/kyuubi/{RELEASE_TAG} \
   --username "${ASF_USERNAME}" \
   --password "${ASF_PASSWORD}" \
   --message "Remove deprecated Apache Kyuubi ${RELEASE_TAG}" 

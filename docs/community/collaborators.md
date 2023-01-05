@@ -17,6 +17,6 @@
 
 # Collaborators
 
-[PPMC Members and Committers](https://people.apache.org/phonebook.html?podling=kyuubi)
+[PMC Members and Committers](https://people.apache.org/phonebook.html?project=kyuubi)
 
-See full contributor list at [contributors](https://github.com/apache/incubator-kyuubi/graphs/contributors).
+See full contributor list at [contributors](https://github.com/apache/kyuubi/graphs/contributors).
