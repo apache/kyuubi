@@ -26,28 +26,28 @@ object DatabaseCommands {
     DatabaseCommandSpec(
       "org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand",
       Seq(DatabaseDesc("databaseName", classSimpleName[StringDatabaseExtractor])),
-      operationTypeStr(ALTERDATABASE))
+      ALTERDATABASE)
   }
 
   val CommentOnNamespace = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.CommentOnNamespace",
       Seq(DatabaseDesc("child", classSimpleName[ResolvedNamespaceDatabaseExtractor])),
-      operationTypeStr(ALTERDATABASE))
+      ALTERDATABASE)
   }
 
   val SetNamespaceProperties = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties",
       Seq(DatabaseDesc("namespace", classSimpleName[ResolvedNamespaceDatabaseExtractor])),
-      operationTypeStr(ALTERDATABASE))
+      ALTERDATABASE)
   }
 
   val SetNamespaceLocation = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation",
       Seq(DatabaseDesc("namespace", classSimpleName[ResolvedNamespaceDatabaseExtractor])),
-      operationTypeStr(ALTERDATABASE_LOCATION))
+      ALTERDATABASE_LOCATION)
   }
 
   val CreateNamespace = {
@@ -61,7 +61,7 @@ object DatabaseCommands {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
       Seq(databaseDesc1, databaseDesc2),
-      operationTypeStr(CREATEDATABASE))
+      CREATEDATABASE)
   }
 
   val DropNamespace = {

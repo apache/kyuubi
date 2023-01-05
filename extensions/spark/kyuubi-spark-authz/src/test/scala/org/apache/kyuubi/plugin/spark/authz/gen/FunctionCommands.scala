@@ -35,7 +35,7 @@ object FunctionCommands {
       classSimpleName[StringFunctionExtractor],
       Some(databaseDesc),
       Some(functionTypeDesc))
-    FunctionCommandSpec(cmd, Seq(functionDesc), operationTypeStr(CREATEFUNCTION))
+    FunctionCommandSpec(cmd, Seq(functionDesc), CREATEFUNCTION)
   }
 
   val DescribeFunction = {
@@ -59,12 +59,12 @@ object FunctionCommands {
       classSimpleName[FunctionIdentifierFunctionExtractor],
       functionTypeDesc = Some(functionTypeDesc2),
       isInput = true)
-    FunctionCommandSpec(cmd, Seq(functionDesc1, functionDesc2), operationTypeStr(DESCFUNCTION))
+    FunctionCommandSpec(cmd, Seq(functionDesc1, functionDesc2), DESCFUNCTION)
   }
 
   val DropFunction = {
     val cmd = "org.apache.spark.sql.execution.command.DropFunctionCommand"
-    CreateFunction.copy(cmd, opType = operationTypeStr(DROPFUNCTION))
+    CreateFunction.copy(cmd, opType = DROPFUNCTION)
   }
 
   val RefreshFunction = {
@@ -75,7 +75,7 @@ object FunctionCommands {
       "functionName",
       classSimpleName[StringFunctionExtractor],
       Some(databaseDesc))
-    FunctionCommandSpec(cmd, Seq(functionDesc), operationTypeStr(RELOADFUNCTION))
+    FunctionCommandSpec(cmd, Seq(functionDesc), RELOADFUNCTION)
   }
 
   val data = Array(
