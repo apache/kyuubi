@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
-import org.apache.kyuubi.plugin.spark.authz.serde.{CatalogTableOptionTableExtractor, CatalogTableTableExtractor, DataSourceV2RelationTableExtractor, ScanDesc, ScanSpec}
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.extractorKey
+import org.apache.kyuubi.plugin.spark.authz.serde._
 
 object Scans {
 
@@ -27,7 +26,7 @@ object Scans {
     val tableDesc =
       ScanDesc(
         "tableMeta",
-        extractorKey[CatalogTableTableExtractor])
+        classSimpleName[CatalogTableTableExtractor])
     ScanSpec(r, Seq(tableDesc))
   }
 
@@ -36,7 +35,7 @@ object Scans {
     val tableDesc =
       ScanDesc(
         "catalogTable",
-        extractorKey[CatalogTableOptionTableExtractor])
+        classSimpleName[CatalogTableOptionTableExtractor])
     ScanSpec(r, Seq(tableDesc))
   }
 
@@ -45,7 +44,7 @@ object Scans {
     val tableDesc =
       ScanDesc(
         null,
-        extractorKey[DataSourceV2RelationTableExtractor])
+        classSimpleName[DataSourceV2RelationTableExtractor])
     ScanSpec(r, Seq(tableDesc))
   }
 
@@ -54,7 +53,7 @@ object Scans {
     val tableDesc =
       ScanDesc(
         "catalogTable",
-        extractorKey[CatalogTableTableExtractor])
+        classSimpleName[CatalogTableTableExtractor])
     ScanSpec(r, Seq(tableDesc))
   }
 
