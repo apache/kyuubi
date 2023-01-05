@@ -227,6 +227,7 @@ Examples:
 EOF
 }
 
+# shellcheck disable=SC2199
 if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
   usage
   exit 0

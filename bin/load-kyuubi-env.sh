@@ -59,11 +59,12 @@ fi
 
 export KYUUBI_WORK_DIR_ROOT="${KYUUBI_WORK_DIR_ROOT:-"${KYUUBI_HOME}/work"}"
 if [[ ! -e ${KYUUBI_WORK_DIR_ROOT} ]]; then
-  mkdir -p ${KYUUBI_WORK_DIR_ROOT}
+  mkdir -p "${KYUUBI_WORK_DIR_ROOT}"
 fi
 
 if [[ -z ${JAVA_HOME} ]]; then
   if [[ $(command -v java) ]]; then
+    # shellcheck disable=SC2155
     export JAVA_HOME="$(dirname $(dirname $(which java)))"
   fi
 fi
