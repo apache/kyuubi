@@ -160,7 +160,7 @@
         <jackson.version>2.14.1</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
-        <jakarta.activation.version>1.2.1</jakarta.activation.version>
+        <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jersey.version>2.36</jersey.version>
         <jetty.version>9.4.50.v20221201</jetty.version>
         <jline.version>0.9.94</jline.version>
@@ -1394,7 +1394,7 @@
             </dependency>
 
             <!--
-              Required for Yarn Mini Cluster on JDK 11, it already be a transitive dependency
+              Required for Yarn Mini Cluster on JDK 11, it already is a transitive dependency
               of spark-core, thus only should explicitly add on Kyuubi Server Main test scope.
               -->
             <dependency>
