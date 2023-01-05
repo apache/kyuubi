@@ -153,7 +153,7 @@ object TableCommands {
     TableCommandSpec(
       cmd,
       Seq(tableNameDesc.copy(columnDesc = Some(columnDesc))),
-      "ALTERTABLE_LOCATION")
+      ALTERTABLE_LOCATION)
   }
 
   val AlterTableSetProperties = TableCommandSpec(
@@ -228,7 +228,7 @@ object TableCommands {
     TableCommandSpec(
       cmd,
       Seq(tableDesc, resolvedDbObjectNameDesc.copy(fieldName = "left")),
-      "CREATETABLE_AS_SELECT",
+      CREATETABLE_AS_SELECT,
       Seq(QueryDesc("query")))
   }
 
@@ -358,7 +358,7 @@ object TableCommands {
     val cmd = "org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand"
     CreateDataSourceTable.copy(
       classname = cmd,
-      opType = "CREATETABLE_AS_SELECT",
+      opType = CREATETABLE_AS_SELECT,
       queryDescs = Seq(QueryDesc("query")))
   }
 
