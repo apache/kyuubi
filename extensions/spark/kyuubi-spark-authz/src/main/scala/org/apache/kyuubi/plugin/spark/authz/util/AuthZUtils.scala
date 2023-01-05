@@ -88,7 +88,14 @@ private[authz] object AuthZUtils {
     method.invoke(obj, values: _*)
   }
 
-  def extractorName[T <: Extractor](implicit ct: ClassTag[T]): String = {
+  /**
+   * return the key of [[org.apache.kyuubi.plugin.spark.authz.serde.Extractor]]
+   * extracting class simple name as in [[org.apache.kyuubi.plugin.spark.authz.serde.Extractor.key]]
+   *
+   * @tparam T class of Extractor
+   * @return key of Extractor
+   */
+  def extractorKey[T <: Extractor](implicit ct: ClassTag[T]): String = {
     ct.runtimeClass.getSimpleName
   }
 

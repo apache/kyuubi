@@ -18,7 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.gen
 
 import org.apache.kyuubi.plugin.spark.authz.serde._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.extractorName
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.extractorKey
 
 object IcebergCommands {
 
@@ -28,7 +28,7 @@ object IcebergCommands {
     val tableDesc =
       TableDesc(
         "table",
-        extractorName[DataSourceV2RelationTableExtractor],
+        extractorKey[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
   }
@@ -43,7 +43,7 @@ object IcebergCommands {
     val actionTypeDesc = ActionTypeDesc(null, null, Some("UPDATE"))
     val tableDesc = TableDesc(
       "targetTable",
-      extractorName[DataSourceV2RelationTableExtractor],
+      extractorKey[DataSourceV2RelationTableExtractor],
       actionTypeDesc = Some(actionTypeDesc))
     val queryDesc = QueryDesc("sourceTable")
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
