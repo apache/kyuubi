@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
+import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
 object DatabaseCommands {
@@ -25,28 +26,28 @@ object DatabaseCommands {
     DatabaseCommandSpec(
       "org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand",
       Seq(DatabaseDesc("databaseName", classSimpleName[StringDatabaseExtractor])),
-      "ALTERDATABASE")
+      operationTypeStr(ALTERDATABASE))
   }
 
   val CommentOnNamespace = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.CommentOnNamespace",
       Seq(DatabaseDesc("child", classSimpleName[ResolvedNamespaceDatabaseExtractor])),
-      "ALTERDATABASE")
+      operationTypeStr(ALTERDATABASE))
   }
 
   val SetNamespaceProperties = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties",
       Seq(DatabaseDesc("namespace", classSimpleName[ResolvedNamespaceDatabaseExtractor])),
-      "ALTERDATABASE")
+      operationTypeStr(ALTERDATABASE))
   }
 
   val SetNamespaceLocation = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation",
       Seq(DatabaseDesc("namespace", classSimpleName[ResolvedNamespaceDatabaseExtractor])),
-      "ALTERDATABASE_LOCATION")
+      operationTypeStr(ALTERDATABASE_LOCATION))
   }
 
   val CreateNamespace = {
@@ -60,7 +61,7 @@ object DatabaseCommands {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
       Seq(databaseDesc1, databaseDesc2),
-      "CREATEDATABASE")
+      operationTypeStr(CREATEDATABASE))
   }
 
   val DropNamespace = {

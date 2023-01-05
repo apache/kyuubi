@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
+import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
 object FunctionCommands {
@@ -34,7 +35,7 @@ object FunctionCommands {
       classSimpleName[StringFunctionExtractor],
       Some(databaseDesc),
       Some(functionTypeDesc))
-    FunctionCommandSpec(cmd, Seq(functionDesc), "CREATEFUNCTION")
+    FunctionCommandSpec(cmd, Seq(functionDesc), operationTypeStr(CREATEFUNCTION))
   }
 
   val DescribeFunction = {
@@ -58,12 +59,12 @@ object FunctionCommands {
       classSimpleName[FunctionIdentifierFunctionExtractor],
       functionTypeDesc = Some(functionTypeDesc2),
       isInput = true)
-    FunctionCommandSpec(cmd, Seq(functionDesc1, functionDesc2), "DESCFUNCTION")
+    FunctionCommandSpec(cmd, Seq(functionDesc1, functionDesc2), operationTypeStr(DESCFUNCTION))
   }
 
   val DropFunction = {
     val cmd = "org.apache.spark.sql.execution.command.DropFunctionCommand"
-    CreateFunction.copy(cmd, opType = "DROPFUNCTION")
+    CreateFunction.copy(cmd, opType = operationTypeStr(DROPFUNCTION))
   }
 
   val RefreshFunction = {
@@ -74,7 +75,7 @@ object FunctionCommands {
       "functionName",
       classSimpleName[StringFunctionExtractor],
       Some(databaseDesc))
-    FunctionCommandSpec(cmd, Seq(functionDesc), "RELOADFUNCTION")
+    FunctionCommandSpec(cmd, Seq(functionDesc), operationTypeStr(RELOADFUNCTION))
   }
 
   val data = Array(
