@@ -209,7 +209,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
-        <maven.plugin.antrun.version>3.0.0</maven.plugin.antrun.version>
         <maven.plugin.assembly.version>3.2.0</maven.plugin.assembly.version>
         <maven.plugin.build.helper.version>3.2.0</maven.plugin.build.helper.version>
         <maven.plugin.clean.version>3.1.0</maven.plugin.clean.version>
@@ -1683,7 +1682,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>${maven.plugin.antrun.version}</version>
                     <executions>
                         <execution>
                             <id>create-tmp-dir</id>
