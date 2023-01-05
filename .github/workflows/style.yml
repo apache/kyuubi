@@ -100,6 +100,7 @@ jobs:
           echo "If there is a problem that cannot be fixed by the command, "
           echo "you need to manually fix it by following the information told by the command above"
           echo "---------------------------------------------------------------------------------"
+
   shellcheck:
     name: Shellcheck
     runs-on: ubuntu-22.04
