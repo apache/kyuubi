@@ -172,6 +172,7 @@
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
         <netty.version>4.1.84.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
+        <phoenix.version>6.0.0</phoenix.version>
         <prometheus.version>0.16.0</prometheus.version>
         <protobuf.version>3.21.7</protobuf.version>
         <py4j.version>0.10.7</py4j.version>
@@ -1497,6 +1498,12 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.phoenix</groupId>
+                <artifactId>phoenix-queryserver-client</artifactId>
+                <version>${phoenix.version}</version>
             </dependency>
 
             <!-- flink -->
