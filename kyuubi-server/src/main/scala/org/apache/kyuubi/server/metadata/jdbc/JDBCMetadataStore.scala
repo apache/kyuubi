@@ -105,7 +105,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     Option(classLoader.getResourceAsStream(schemaPackage)).foreach { schemaUrlInputStream =>
       try {
         val br = new BufferedReader(new InputStreamReader(schemaUrlInputStream))
-        var resource: String = br.readLine()
+        var resource = br.readLine()
         while (resource != null) {
           if (schemaUrlPattern.findFirstMatchIn(resource).isDefined) {
             schemaUrls += resource

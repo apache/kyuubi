@@ -56,7 +56,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     assert(jdbcMetadataStore.hikariDataSource.getIdleTimeout == 60000)
   }
 
-  test("test init schema file") {
+  test("test get init schema stream") {
     assert(jdbcMetadataStore.getInitSchemaStream(DatabaseType.DERBY).isDefined)
     assert(jdbcMetadataStore.getInitSchemaStream(DatabaseType.MYSQL).isDefined)
     assert(jdbcMetadataStore.getInitSchemaStream(DatabaseType.CUSTOM).isEmpty)
