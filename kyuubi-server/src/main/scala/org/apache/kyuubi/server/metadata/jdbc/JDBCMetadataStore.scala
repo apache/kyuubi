@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.server.metadata.jdbc
 
-import java.io._
-import java.net.URL
+import java.io.{BufferedReader, InputStream, InputStreamReader}
 import java.sql.{Connection, PreparedStatement, ResultSet, SQLException}
 import java.util.Locale
 import java.util.stream.Collectors
@@ -78,18 +77,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   }
 
   private def initSchema(): Unit = {
-    val classLoader = Utils.getContextOrKyuubiClassLoader
-    val initSchemaFile: Option[File] = dbType match {
-      case DERBY | MYSQL =>
-        getInitSchemaStream(classLoader.getResource(s"sql/${dbType.toString.toLowerCase}"))
-      case CUSTOM => None
-    }
-    initSchemaFile.foreach { schemaFile =>
-      info(s"Init schema file: ${schemaFile.getAbsolutePath}")
-      val reader = new BufferedReader(new FileReader(schemaFile))
+    getInitSchemaStream(dbType).foreach { inputStream =>
       try {
-        val ddlStatements = reader.lines().collect(Collectors.joining("\n"))
-          .trim.split(";")
+        val ddlStatements = new BufferedReader(new InputStreamReader(inputStream)).lines()
+          .collect(Collectors.joining("\n")).trim.split(";")
         withConnection() { connection =>
           Utils.tryLogNonFatalError {
             ddlStatements.foreach { ddlStatement =>
@@ -99,31 +90,36 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           }
         }
       } finally {
-        reader.close()
+        inputStream.close()
       }
     }
   }
 
   // Visible for testing.
-  private[jdbc] def getInitSchemaStream(url: URL): Option[File] = {
-    Option(new File(url.getPath())
-      .listFiles((_, name) =>
-        name.matches("metadata-store-schema-[0-9]+\\.[0-9]+\\.[0-9]+\\..*\\.sql")))
-      .flatMap(f =>
-        f.sortWith((v1, v2) => sortByVersion(v1.getName, v2.getName))
-          .lastOption)
-  }
+  private[jdbc] def getInitSchemaStream(dbType: DatabaseType): Option[InputStream] = {
+    val classLoader = Utils.getContextOrKyuubiClassLoader
+    val schemaPackage = s"sql/${dbType.toString.toLowerCase}"
+    val schemaUrlPattern = """^metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
+    val schemaUrls = ListBuffer[String]()
 
-  private def sortByVersion(sqlFile1: String, sqlFile2: String): Boolean = {
-    val versionPart = 3
-    val version1 = sqlFile1.split("-").last.split("\\.").take(versionPart)
-    val version2 = sqlFile2.split("-").last.split("\\.").take(versionPart)
-    for (i <- 0 to versionPart - 1) {
-      if (version1(i).toInt != version2(i).toInt) {
-        return version1(i).toInt < version2(i).toInt
+    Option(classLoader.getResourceAsStream(schemaPackage)).foreach { schemaUrlInputStream =>
+      try {
+        val br = new BufferedReader(new InputStreamReader(schemaUrlInputStream))
+        var resource = br.readLine()
+        while (resource != null) {
+          if (schemaUrlPattern.findFirstMatchIn(resource).isDefined) {
+            schemaUrls += resource
+          }
+          resource = br.readLine()
+        }
+      } finally {
+        schemaUrlInputStream.close()
       }
     }
-    sqlFile1.length < sqlFile2.length
+
+    schemaUrls.sorted.lastOption.map { schemaUrl =>
+      classLoader.getResourceAsStream(s"$schemaPackage/$schemaUrl")
+    }
   }
 
   override def close(): Unit = {
