@@ -46,18 +46,10 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
   }
 
   override def visitGetSchemas(ctx: GetSchemasContext): KyuubiTreeNode = {
-    val catalog = if (ctx.catalog == null) {
-      null
-    } else {
-      unescapeSQLString(ctx.catalog.getText)
-    }
-    val schema = if (ctx.schema == null) {
-      null
-    } else {
-      unescapeSQLString(ctx.schema.getText)
-    }
+    val catalog = visit(ctx.tableCatalogFilter()).asInstanceOf[String]
+    val schemaPattern = visit(ctx.tableSchemaFilter()).asInstanceOf[String]
 
-    GetSchemas(catalog, schema)
+    GetSchemas(catalog, schemaPattern)
   }
 
   override def visitGetCatalogs(ctx: GetCatalogsContext): KyuubiTreeNode = {
