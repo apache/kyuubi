@@ -17,11 +17,13 @@
 
 package org.apache.kyuubi.server.metadata.jdbc
 
-import java.io.{BufferedReader, InputStream, InputStreamReader}
+import java.io.{BufferedReader, InputStreamReader}
+import java.nio.file.{Files, FileSystems, Paths}
 import java.sql.{Connection, PreparedStatement, ResultSet, SQLException}
 import java.util.Locale
 import java.util.stream.Collectors
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -77,48 +79,53 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   }
 
   private def initSchema(): Unit = {
-    getInitSchemaStream(dbType).foreach { inputStream =>
-      try {
-        val ddlStatements = new BufferedReader(new InputStreamReader(inputStream)).lines()
-          .collect(Collectors.joining("\n")).trim.split(";")
-        withConnection() { connection =>
-          Utils.tryLogNonFatalError {
-            ddlStatements.foreach { ddlStatement =>
-              execute(connection, ddlStatement)
-              info(s"Execute init schema ddl: $ddlStatement successfully.")
-            }
+    getInitSchema(dbType).foreach { schema =>
+      val ddlStatements = schema.trim.split(";")
+      withConnection() { connection =>
+        Utils.tryLogNonFatalError {
+          ddlStatements.foreach { ddlStatement =>
+            execute(connection, ddlStatement)
+            info(s"Execute init schema ddl: $ddlStatement successfully.")
           }
         }
-      } finally {
-        inputStream.close()
       }
     }
   }
 
   // Visible for testing.
-  private[jdbc] def getInitSchemaStream(dbType: DatabaseType): Option[InputStream] = {
+  private[jdbc] def getInitSchema(dbType: DatabaseType): Option[String] = {
     val classLoader = Utils.getContextOrKyuubiClassLoader
     val schemaPackage = s"sql/${dbType.toString.toLowerCase}"
     val schemaUrlPattern = """^metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
     val schemaUrls = ListBuffer[String]()
 
-    Option(classLoader.getResourceAsStream(schemaPackage)).foreach { schemaUrlInputStream =>
-      try {
-        val br = new BufferedReader(new InputStreamReader(schemaUrlInputStream))
-        var resource = br.readLine()
-        while (resource != null) {
-          if (schemaUrlPattern.findFirstMatchIn(resource).isDefined) {
-            schemaUrls += resource
-          }
-          resource = br.readLine()
+    Option(classLoader.getResource(schemaPackage)).map(_.toURI).foreach { uri =>
+      val pathNames = if (uri.getScheme == "jar") {
+        val fs = FileSystems.newFileSystem(uri, Map.empty[String, AnyRef].asJava)
+        try {
+          Files.walk(fs.getPath(schemaPackage), 1).iterator().asScala.map(
+            _.getFileName.toString).filter { name =>
+            schemaUrlPattern.findFirstMatchIn(name).isDefined
+          }.toArray
+        } finally {
+          fs.close()
         }
-      } finally {
-        schemaUrlInputStream.close()
+      } else {
+        Paths.get(uri).toFile.listFiles((_, name) => {
+          schemaUrlPattern.findFirstMatchIn(name).isDefined
+        }).map(_.getName)
       }
+      pathNames.foreach(name => schemaUrls += s"$schemaPackage/$name")
     }
 
     schemaUrls.sorted.lastOption.map { schemaUrl =>
-      classLoader.getResourceAsStream(s"$schemaPackage/$schemaUrl")
+      val inputStream = classLoader.getResourceAsStream(schemaUrl)
+      try {
+        new BufferedReader(new InputStreamReader(inputStream)).lines()
+          .collect(Collectors.joining("\n"))
+      } finally {
+        inputStream.close()
+      }
     }
   }
 

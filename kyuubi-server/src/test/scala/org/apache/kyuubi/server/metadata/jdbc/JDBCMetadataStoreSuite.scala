@@ -57,9 +57,9 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
   }
 
   test("test get init schema stream") {
-    assert(jdbcMetadataStore.getInitSchemaStream(DatabaseType.DERBY).isDefined)
-    assert(jdbcMetadataStore.getInitSchemaStream(DatabaseType.MYSQL).isDefined)
-    assert(jdbcMetadataStore.getInitSchemaStream(DatabaseType.CUSTOM).isEmpty)
+    assert(jdbcMetadataStore.getInitSchema(DatabaseType.DERBY).isDefined)
+    assert(jdbcMetadataStore.getInitSchema(DatabaseType.MYSQL).isDefined)
+    assert(jdbcMetadataStore.getInitSchema(DatabaseType.CUSTOM).isEmpty)
   }
 
   test("jdbc metadata store") {
