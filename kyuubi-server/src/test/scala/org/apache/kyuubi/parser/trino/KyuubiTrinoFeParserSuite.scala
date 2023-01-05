@@ -20,7 +20,7 @@ package org.apache.kyuubi.parser.trino
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTableTypes, GetTypeInfo}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
 
 class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
   val parser = new KyuubiTrinoFeParser()
@@ -107,5 +107,135 @@ class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
         |""".stripMargin)
 
     assert(kyuubiTreeNode.isInstanceOf[GetTypeInfo])
+  }
+
+  test("Support GetTables for Trino Fe") {
+    def check(
+        query: String,
+        catalog: String = null,
+        schema: String = null,
+        tableName: String = null,
+        types: List[String] = null,
+        emptyRes: Boolean = false): Unit = {
+      parse(query) match {
+        case GetTables(catalogName, schemaPattern, tableNamePattern, tableTypes, emptyResult) =>
+          assert(catalog == catalogName)
+          assert(schema == schemaPattern)
+          assert(tableName == tableNamePattern)
+          assert(types == tableTypes)
+          assert(emptyRes == emptyResult)
+        case _ => fail(s"Query $query parse failed. ")
+      }
+    }
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS,
+        | TYPE_CAT, TYPE_SCHEM, TYPE_NAME,
+        | SELF_REFERENCING_COL_NAME, REF_GENERATION
+        | FROM system.jdbc.tables
+        | ORDER BY TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME
+        |""".stripMargin)
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS,
+        | TYPE_CAT, TYPE_SCHEM, TYPE_NAME,
+        | SELF_REFERENCING_COL_NAME, REF_GENERATION
+        | FROM system.jdbc.tables
+        | WHERE TABLE_CAT IS NULL
+        | ORDER BY TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME
+        |""".stripMargin)
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS,
+        | TYPE_CAT, TYPE_SCHEM, TYPE_NAME,
+        | SELF_REFERENCING_COL_NAME, REF_GENERATION
+        | FROM system.jdbc.tables
+        | WHERE TABLE_CAT = 'ykf_catalog'
+        | ORDER BY TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME
+        |""".stripMargin,
+      catalog = "ykf_catalog")
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS,
+        | TYPE_CAT, TYPE_SCHEM, TYPE_NAME,
+        | SELF_REFERENCING_COL_NAME, REF_GENERATION
+        | FROM system.jdbc.tables
+        | WHERE TABLE_CAT = 'ykf_catalog' AND TABLE_SCHEM IS NULL
+        | ORDER BY TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME
+        |""".stripMargin,
+      catalog = "ykf_catalog")
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS,
+        | TYPE_CAT, TYPE_SCHEM, TYPE_NAME,
+        | SELF_REFERENCING_COL_NAME, REF_GENERATION
+        | FROM system.jdbc.tables
+        | WHERE TABLE_CAT = 'ykf_catalog' AND TABLE_SCHEM LIKE '%aa' ESCAPE '\'
+        | ORDER BY TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME
+        |""".stripMargin,
+      catalog = "ykf_catalog",
+      "%aa")
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS,
+        | TYPE_CAT, TYPE_SCHEM, TYPE_NAME,
+        | SELF_REFERENCING_COL_NAME, REF_GENERATION
+        | FROM system.jdbc.tables
+        | WHERE TABLE_CAT = 'ykf_catalog' AND TABLE_NAME LIKE '%aa' ESCAPE '\'
+        | ORDER BY TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME
+        |""".stripMargin,
+      catalog = "ykf_catalog",
+      tableName = "%aa")
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS,
+        | TYPE_CAT, TYPE_SCHEM, TYPE_NAME,
+        | SELF_REFERENCING_COL_NAME, REF_GENERATION
+        | FROM system.jdbc.tables
+        | WHERE TABLE_CAT = 'ykf_catalog' AND TABLE_NAME LIKE '%aa' ESCAPE '\' AND FALSE
+        | ORDER BY TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME
+        |""".stripMargin,
+      catalog = "ykf_catalog",
+      tableName = "%aa",
+      emptyRes = true)
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS,
+        | TYPE_CAT, TYPE_SCHEM, TYPE_NAME,
+        | SELF_REFERENCING_COL_NAME, REF_GENERATION
+        | FROM system.jdbc.tables
+        | WHERE TABLE_CAT = 'ykf_catalog' AND TABLE_SCHEM LIKE '%aa' ESCAPE '\' AND
+        | TABLE_TYPE IN ('ykf_type', 'ykf2_type')
+        | ORDER BY TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME
+        |""".stripMargin,
+      catalog = "ykf_catalog",
+      schema = "%aa",
+      types = List("ykf_type", "ykf2_type"))
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS,
+        | TYPE_CAT, TYPE_SCHEM, TYPE_NAME,
+        | SELF_REFERENCING_COL_NAME, REF_GENERATION
+        | FROM system.jdbc.tables
+        | WHERE
+        | TABLE_CAT = 'ykf_catalog' AND
+        | TABLE_SCHEM LIKE '%aa' ESCAPE '\' AND
+        | TABLE_NAME LIKE 'bb%' ESCAPE '\' AND
+        | TABLE_TYPE IN ('ykf_type', 'ykf2_type')
+        | ORDER BY TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME
+        |""".stripMargin,
+      catalog = "ykf_catalog",
+      schema = "%aa",
+      tableName = "bb%",
+      types = List("ykf_type", "ykf2_type"))
   }
 }

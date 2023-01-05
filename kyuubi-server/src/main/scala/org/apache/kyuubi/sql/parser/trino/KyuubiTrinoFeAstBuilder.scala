@@ -17,14 +17,25 @@
 
 package org.apache.kyuubi.sql.parser.trino
 
+import scala.collection.JavaConverters._
+
+import org.antlr.v4.runtime.tree.ParseTree
+
 import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParser._
 import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParserBaseVisitor
-import org.apache.kyuubi.sql.parser.KyuubiParser
+import org.apache.kyuubi.sql.parser.KyuubiParser.unescapeSQLString
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTableTypes, GetTypeInfo}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
 
 class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef] {
 
+  override def visit(tree: ParseTree): AnyRef = {
+    Option(tree) match {
+      case Some(_) => super.visit(tree)
+      case _ => null
+    }
+
+  }
   override def visitSingleStatement(
       ctx: SingleStatementContext): KyuubiTreeNode = {
     visit(ctx.statement).asInstanceOf[KyuubiTreeNode]
@@ -38,12 +49,12 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
     val catalog = if (ctx.catalog == null) {
       null
     } else {
-      KyuubiParser.unescapeSQLString(ctx.catalog.getText)
+      unescapeSQLString(ctx.catalog.getText)
     }
     val schema = if (ctx.schema == null) {
       null
     } else {
-      KyuubiParser.unescapeSQLString(ctx.schema.getText)
+      unescapeSQLString(ctx.schema.getText)
     }
 
     GetSchemas(catalog, schema)
@@ -59,5 +70,48 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
 
   override def visitGetTypeInfo(ctx: GetTypeInfoContext): KyuubiTreeNode = {
     GetTypeInfo()
+  }
+
+  override def visitGetTables(ctx: GetTablesContext): KyuubiTreeNode = {
+    val catalog = visit(ctx.tableCatalogFilter()).asInstanceOf[String]
+    val schemaPattern = visit(ctx.tableSchemaFilter()).asInstanceOf[String]
+    val tableNamePattern = visit(ctx.tableNameFilter()).asInstanceOf[String]
+
+    var emptyResult = false
+    var tableTypes: List[String] = null
+
+    ctx.tableTypeFilter() match {
+      case _: TableTypesAlwaysFalseContext =>
+        emptyResult = true
+      case typesFilter: TypesFilterContext =>
+        tableTypes = visitTypesFilter(typesFilter)
+      case _ => // ctx.tableTypeFilter is null.
+    }
+
+    GetTables(catalog, schemaPattern, tableNamePattern, tableTypes, emptyResult)
+  }
+
+  override def visitNullCatalog(ctx: NullCatalogContext): AnyRef = {
+    null
+  }
+
+  override def visitCatalogFilter(ctx: CatalogFilterContext): String = {
+    unescapeSQLString(ctx.catalog.getText)
+  }
+
+  override def visitNulTableSchema(ctx: NulTableSchemaContext): AnyRef = {
+    null
+  }
+
+  override def visitSchemaFilter(ctx: SchemaFilterContext): String = {
+    unescapeSQLString(ctx.schemaPattern.getText)
+  }
+
+  override def visitTableNameFilter(ctx: TableNameFilterContext): String = {
+    unescapeSQLString(ctx.tableNamePattern.getText)
+  }
+
+  override def visitTypesFilter(ctx: TypesFilterContext): List[String] = {
+    ctx.stirngInValue().asScala.map(v => unescapeSQLString(v.getText)).toList
   }
 }
