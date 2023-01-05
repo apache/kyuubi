@@ -22,7 +22,7 @@ import scala.language.implicitConversions
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
 package object gen {
-  implicit def classSimpleName[T](clz: Class[_]): String = clz.getSimpleName
+  implicit def classSimpleName(clz: Class[_]): String = clz.getSimpleName
 
   implicit def operationTypeStr(t: OperationType): String = t.toString
 }
