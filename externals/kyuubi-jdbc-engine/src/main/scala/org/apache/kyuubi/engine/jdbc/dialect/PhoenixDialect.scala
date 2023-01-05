@@ -36,7 +36,7 @@ class PhoenixDialect extends JdbcDialect {
   override def createStatement(connection: Connection, fetchSize: Int): Statement = {
     val statement =
       connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
-    statement.setFetchSize(Integer.MIN_VALUE)
+    statement.setFetchSize(fetchSize)
     statement
   }
 
