@@ -19,25 +19,30 @@ package org.apache.kyuubi.server.api
 
 import javax.servlet.http.HttpServletRequest
 
+import scala.collection.mutable
+
+import org.apache.commons.lang3.StringUtils
 import org.apache.http.HttpHost
 import org.eclipse.jetty.proxy.ProxyServlet
 
 import org.apache.kyuubi.Logging
 
-private[api] class WebProxyServlet(serverPort: Int = 0) extends ProxyServlet with Logging {
-
+private[api] class WebProxyServlet() extends ProxyServlet with Logging {
   override def rewriteTarget(request: HttpServletRequest): String = {
+    var targetUrl = "/no-ui-error"
     val requestUrl = request.getRequestURI
     logger.info("requestUrl is {}", requestUrl)
-    val urls = requestUrl.split(":")
-    var serviceName = ""
-    if (urls.size > 0) {
-      serviceName = urls(0)
+    val url = request.getParameterMap.get("url").orElse("").toString()
+    logger.info("url is {}", url)
+    if (StringUtils.isNotEmpty(url)) {
+      val serviceName = url.split(":")(1)
+      val port = url.split(":")(2).toInt
       request.setAttribute(
         this.getClass.getSimpleName,
-        new HttpHost(serviceName, serverPort, "http"))
-      return requestUrl
+        new HttpHost(serviceName, port, "http"))
+      targetUrl = new mutable.StringBuilder().append("/jobs/").toString()
+      logger.info("ui --> http://{}:{}{}", serviceName, port, targetUrl);
     }
-    "/no-ui-error";
+    targetUrl
   }
 }
