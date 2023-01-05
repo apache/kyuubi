@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.server.metadata.jdbc
 
-import java.nio.file.Paths
 import java.util.UUID
 
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -58,9 +57,9 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
   }
 
   test("test init schema file") {
-    val url = Paths.get("src/test/resources/sql").toUri.toURL
-    val file = jdbcMetadataStore.getInitSchemaStream(url)
-    assert("metadata-store-schema-1.100.0.derby.sql" == file.get.getName)
+    assert(jdbcMetadataStore.getInitSchemaStream(DatabaseType.DERBY).isDefined)
+    assert(jdbcMetadataStore.getInitSchemaStream(DatabaseType.MYSQL).isDefined)
+    assert(jdbcMetadataStore.getInitSchemaStream(DatabaseType.CUSTOM).isEmpty)
   }
 
   test("jdbc metadata store") {
