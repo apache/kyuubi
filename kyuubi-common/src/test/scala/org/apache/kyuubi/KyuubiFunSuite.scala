@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi
 
+import java.util.Locale
+
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.commons.lang3.time.FastDateFormat
 // scalastyle:off
 import org.apache.logging.log4j._
 import org.apache.logging.log4j.core.{LogEvent, Logger, LoggerContext}
@@ -52,6 +55,11 @@ trait KyuubiFunSuite extends AnyFunSuite
   override def afterAll(): Unit = {
     super.afterAll()
     doThreadPostAudit()
+  }
+
+  override def suiteName: String = {
+    val dateFormat = FastDateFormat.getInstance("HH:mm:ss.SSS", Locale.US)
+    s"${dateFormat.format(System.currentTimeMillis())} ${super.suiteName}"
   }
 
   final override def withFixture(test: NoArgTest): Outcome = {
