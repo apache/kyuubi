@@ -81,5 +81,5 @@ conf/kyuubi-env.sh
 
 # For Antlr
 kyuubi-server/gen
-kyuubi-server/src/main/antlr4/org/apache/kyuubi/sql/KyuubiSqlBaseLexer.tokens
+kyuubi-server/src/main/antlr4/org/apache/kyuubi/sql/*.tokens
 kyuubi-server/src/main/antlr4/org/apache/kyuubi/sql/gen/
