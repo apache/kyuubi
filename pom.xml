@@ -212,7 +212,7 @@
 
         <maven.plugin.build.helper.version>3.2.0</maven.plugin.build.helper.version>
         <maven.plugin.download.version>1.6.6</maven.plugin.download.version>
-        <maven.plugin.enforcer.mojo.extra.rules.version>1.6.1</maven.plugin.enforcer.mojo.extra.rules.version>
+        <maven.plugin.enforcer.mojo.rules.version>1.6.1</maven.plugin.enforcer.mojo.rules.version>
         <maven.plugin.scala.version>4.6.1</maven.plugin.scala.version>
         <maven.plugin.surefire.version>3.0.0-M7</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
@@ -2099,7 +2099,7 @@
                         <dependency>
                             <groupId>org.codehaus.mojo</groupId>
                             <artifactId>extra-enforcer-rules</artifactId>
-                            <version>${maven.plugin.enforcer.mojo.extra.rules.version}</version>
+                            <version>${maven.plugin.enforcer.mojo.rules.version}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
