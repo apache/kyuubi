@@ -21,7 +21,6 @@ import javax.servlet.http.HttpServletRequest
 
 import scala.collection.mutable
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.http.HttpHost
 import org.eclipse.jetty.proxy.ProxyServlet
 
@@ -32,11 +31,11 @@ private[api] class WebProxyServlet() extends ProxyServlet with Logging {
     var targetUrl = "/no-ui-error"
     val requestUrl = request.getRequestURI
     logger.info("requestUrl is {}", requestUrl)
-    val url = request.getParameterMap.get("url").orElse("").toString()
+    val url = request.getParameterMap.get("url")
     logger.info("url is {}", url)
-    if (StringUtils.isNotEmpty(url)) {
-      val serviceName = url.split(":")(1)
-      val port = url.split(":")(2).toInt
+    if (url != null && url.length > 0) {
+      val serviceName = url(0).split(":")(1)
+      val port = url(0).split(":")(2).toInt
       request.setAttribute(
         this.getClass.getSimpleName,
         new HttpHost(serviceName, port, "http"))
