@@ -112,6 +112,6 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
   }
 
   override def visitTypesFilter(ctx: TypesFilterContext): List[String] = {
-    ctx.stirngInValue().asScala.map(v => unescapeSQLString(v.getText)).toList
+    ctx.STRING().asScala.map(v => unescapeSQLString(v.getText)).toList
   }
 }

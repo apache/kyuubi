@@ -22,7 +22,7 @@ import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.antlr.v4.runtime.tree.ParseTree
 
-import org.apache.kyuubi.sql.{KyuubiSqlBaseLexer, KyuubiTrinoFeBaseParser}
+import org.apache.kyuubi.sql.{KyuubiTrinoFeBaseLexer, KyuubiTrinoFeBaseParser}
 import org.apache.kyuubi.sql.parser.{KyuubiParserBase, PostProcessor, UpperCaseCharStream}
 
 class KyuubiTrinoFeParser extends KyuubiParserBase[KyuubiTrinoFeBaseParser] {
@@ -30,7 +30,7 @@ class KyuubiTrinoFeParser extends KyuubiParserBase[KyuubiTrinoFeBaseParser] {
   override lazy val astBuilder = new KyuubiTrinoFeAstBuilder
 
   protected def parse[T](command: String)(toResult: KyuubiTrinoFeBaseParser => T): T = {
-    val lexer = new KyuubiSqlBaseLexer(
+    val lexer = new KyuubiTrinoFeBaseLexer(
       new UpperCaseCharStream(CharStreams.fromString(command)))
     lexer.removeErrorListeners()
 
