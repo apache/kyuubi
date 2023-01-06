@@ -25,7 +25,7 @@ singleStatement
 
 statement
     : SELECT TABLE_SCHEM COMMA TABLE_CATALOG FROM SYSTEM_JDBC_SCHEMAS
-      (WHERE (TABLE_CATALOG EQ catalog=STRING)? AND? (TABLE_SCHEM LIKE schema=STRING)?)?
+      (WHERE (TABLE_CATALOG EQ catalog=stringLit)? AND? (TABLE_SCHEM LIKE schema=stringLit)?)?
       ORDER BY TABLE_CATALOG COMMA TABLE_SCHEM                                                          #getSchemas
     | SELECT TABLE_CAT FROM SYSTEM_JDBC_CATALOGS ORDER BY TABLE_CAT                                     #getCatalogs
     | SELECT TABLE_TYPE FROM SYSTEM_JDBC_TABLE_TYPES ORDER BY TABLE_TYPE                                #getTableTypes
@@ -44,19 +44,23 @@ statement
 
 tableCatalogFilter
     : TABLE_CAT IS NULL                                                                                 #nullCatalog
-    | TABLE_CAT EQ catalog=STRING                                                                       #catalogFilter
+    | TABLE_CAT EQ catalog=stringLit                                                                    #catalogFilter
     ;
 
 tableSchemaFilter
     : TABLE_SCHEM IS NULL                                                                               #nulTableSchema
-    | TABLE_SCHEM LIKE schemaPattern=STRING ESCAPE STRING                                               #schemaFilter
+    | TABLE_SCHEM LIKE schemaPattern=stringLit ESCAPE STRING_ESCAPE                                     #schemaFilter
     ;
 
 tableNameFilter
-    : TABLE_NAME LIKE tableNamePattern=STRING ESCAPE STRING
+    : TABLE_NAME LIKE tableNamePattern=stringLit ESCAPE STRING_ESCAPE
     ;
 
 tableTypeFilter
     : FALSE                                                                                             #tableTypesAlwaysFalse
-    | TABLE_TYPE IN LEFT_PAREN STRING (COMMA STRING)* RIGHT_PAREN                                       #typesFilter
+    | TABLE_TYPE IN LEFT_PAREN stringLit (COMMA stringLit)* RIGHT_PAREN                                 #typesFilter
+    ;
+
+stringLit
+    : STRING
     ;

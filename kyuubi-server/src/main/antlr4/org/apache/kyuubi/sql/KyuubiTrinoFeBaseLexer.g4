@@ -83,6 +83,12 @@ TYPE_CAT: 'TYPE_CAT';
 TYPE_NAME: 'TYPE_NAME';
 TYPE_SCHEM: 'TYPE_SCHEM';
 
+fragment SEARCH_STRING_ESCAPE: '\'' '\\' '\'';
+
+STRING_ESCAPE
+    : SEARCH_STRING_ESCAPE
+    ;
+
 STRING
     : '\'' ( ~'\'' | '\'\'' )* '\''
     ;
