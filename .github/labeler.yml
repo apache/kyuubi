@@ -119,3 +119,6 @@
 
 "module:integration-tests":
   - "integration-tests/**/*"
+  -
+"module:authz":
+  - "extensions/spark/kyuubi-spark-authz/**/*"
