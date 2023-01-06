@@ -169,7 +169,7 @@
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.19.0</log4j.version>
-        <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
+        <mysql.jdbc.version>8.0.31</mysql.jdbc.version>
         <netty.version>4.1.84.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
@@ -1484,8 +1484,8 @@
             </dependency>
 
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql.jdbc.version}</version>
             </dependency>
 
