@@ -41,7 +41,7 @@ private[api] class WebProxyServlet() extends ProxyServlet with Logging {
         this.getClass.getSimpleName,
         new HttpHost(serviceName, port, "http"))
       targetUrl = new mutable.StringBuilder().append("/jobs/").toString()
-      logger.info("ui --> http://{}:{}{}", serviceName, port, targetUrl);
+      logger.info("ui -> http://{}:{}{}", serviceName, port.toString, targetUrl)
     }
     targetUrl
   }
