@@ -72,8 +72,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         case (fn, "function") => doAs("admin", sql(s"DROP FUNCTION IF EXISTS $fn"))
         case (view, "view") => doAs("admin", sql(s"DROP VIEW IF EXISTS $view"))
         case (cacheTable, "cache") => if (isSparkV32OrGreater) {
-          doAs("admin", sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
-        }
+            doAs("admin", sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
+          }
         case (_, e) =>
           throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
       }
