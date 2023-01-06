@@ -2321,6 +2321,7 @@
         <profile>
             <id>fast</id>
             <properties>
+                <enforcer.skip>true</enforcer.skip>
                 <maven.javadoc.skip>true</maven.javadoc.skip>
                 <maven.scaladoc.skip>true</maven.scaladoc.skip>
                 <maven.scalastyle.skip>true</maven.scalastyle.skip>
