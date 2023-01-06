@@ -17,14 +17,19 @@
 
 package org.apache.kyuubi
 
+import java.util.{Date, Locale}
+
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.commons.lang3.time.FastDateFormat
 // scalastyle:off
 import org.apache.logging.log4j._
 import org.apache.logging.log4j.core.{LogEvent, Logger, LoggerContext}
 import org.apache.logging.log4j.core.appender.AbstractAppender
 import org.apache.logging.log4j.core.config.Property
+import org.scalactic.source.Position
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome}
+import org.scalatest.Tag
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
 import org.slf4j.bridge.SLF4JBridgeHandler
@@ -64,6 +69,12 @@ trait KyuubiFunSuite extends AnyFunSuite
     } finally {
       info(s"\n\n===== FINISHED $shortSuiteName: '$testName' =====\n")
     }
+  }
+
+  override protected def test(testName: String, testTags: Tag*)(testFun: => Any)(implicit
+      pos: Position): Unit = {
+    val timestamp = FastDateFormat.getInstance("HH:mm:ss.SSS", Locale.US).format(new Date())
+    super.test(s"$timestamp $testName", testTags: _*)(testFun)
   }
 
   /**
