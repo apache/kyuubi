@@ -32,8 +32,6 @@
     <url>https://kyuubi.apache.org/</url>
 
     <properties>
-        <!-- ensure earliest version of fasterxml.jackson provided in Spark 3.x -->
-        <authz.jackson.version>2.10.0</authz.jackson.version>
         <gethostname4j.version>1.0.0</gethostname4j.version>
         <jna.version>5.7.0</jna.version>
     </properties>
@@ -256,7 +254,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-scala_${scala.binary.version}</artifactId>
-            <version>${authz.jackson.version}</version>
             <scope>provided</scope>
         </dependency>
 
