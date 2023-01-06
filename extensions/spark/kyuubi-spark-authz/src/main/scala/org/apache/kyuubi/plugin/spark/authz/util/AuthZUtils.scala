@@ -27,6 +27,7 @@ import scala.util.{Failure, Success, Try}
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.ranger.plugin.service.RangerBasePlugin
 import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 
@@ -86,6 +87,13 @@ private[authz] object AuthZUtils {
     method.invoke(obj, values: _*)
   }
 
+  def invokeStaticAs[T](
+      obj: Class[_],
+      methodName: String,
+      args: (Class[_], AnyRef)*): T = {
+    invokeStatic(obj, methodName, args: _*).asInstanceOf[T]
+  }
+
   /**
    * Get the active session user
    * @param spark spark context instance
@@ -113,6 +121,16 @@ private[authz] object AuthZUtils {
       case view: View if view.resolved && isSparkVersionAtLeast("3.1.0") =>
         !getFieldVal[Boolean](view, "isTempView")
       case _ =>
+        false
+    }
+  }
+
+  lazy val isRanger21orGreater: Boolean = {
+    try {
+      classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
+      true
+    } catch {
+      case _: NoSuchMethodException =>
         false
     }
   }
