@@ -62,6 +62,24 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
   }
 
+  protected def withCleanTmpResources[T](res: Seq[(String, String)])(f: => T): T = {
+    try {
+      f
+    } finally {
+      res.foreach {
+        case (t, "table") => doAs("admin", sql(s"DROP TABLE IF EXISTS $t"))
+        case (db, "database") => doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
+        case (fn, "function") => doAs("admin", sql(s"DROP FUNCTION IF EXISTS $fn"))
+        case (view, "view") => doAs("admin", sql(s"DROP VIEW IF EXISTS $view"))
+        case (cacheTable, "cache") => if (isSparkV32OrGreater) {
+          doAs("admin", sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
+        }
+        case (_, e) =>
+          throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
+      }
+    }
+  }
+
   test("[KYUUBI #3226] RuleAuthorization: Should check privileges once only.") {
     val logicalPlan = doAs("admin", sql("SHOW TABLES").queryExecution.logical)
     val rule = new RuleAuthorization(spark)
