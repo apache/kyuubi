@@ -41,7 +41,11 @@
       <el-table-column prop="user" :label="$t('user')" width="160" />
       <el-table-column prop="clientIP" :label="$t('client_ip')" width="160" />
       <el-table-column prop="serverIP" :label="$t('server_ip')" width="180" />
-      <el-table-column :label="$t('session_id')" width="160">
+      <el-table-column
+        :label="$t('session_id')"
+        width="300"
+        class-name="td-session-id"
+      >
         <template #default="scope">
           <el-link @click="handleSessionJump(scope.row.sessionId)">{{
             scope.row.sessionId
@@ -118,6 +122,18 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="pagination-container">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 30, 50]"
+        background
+        layout="prev, pager, next, sizes, jumper"
+        :total="totalPage"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
   </el-card>
 </template>
 
@@ -137,7 +153,16 @@
     user: null,
     serverIP: null
   })
-  const { tableData, loading, getList: _getList } = useTable()
+  const {
+    tableData,
+    currentPage,
+    pageSize,
+    totalPage,
+    loading,
+    handleSizeChange,
+    handleCurrentChange,
+    getList: _getList
+  } = useTable()
 
   const handleSessionJump = (sessionId: string) => {
     router.push({
@@ -170,5 +195,11 @@
   header {
     display: flex;
     justify-content: flex-end;
+  }
+
+  :deep(.td-session-id) {
+    .el-link__inner {
+      text-decoration: underline;
+    }
   }
 </style>

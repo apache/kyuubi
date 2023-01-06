@@ -43,7 +43,7 @@ export function deleteSession(sessionId: string) {
 export function getSqlDetails(sessionId: string) {
   return request({
     url: `api/v1/sessions/${sessionId}/sqlDetails`,
-    method: 'post'
+    method: 'get'
   })
 }
 

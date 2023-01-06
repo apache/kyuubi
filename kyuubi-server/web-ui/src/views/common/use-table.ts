@@ -18,26 +18,61 @@
 import { ref, Ref } from 'vue'
 
 export function useTable() {
+  const list: Ref<any[]> = ref([])
   const tableData: Ref<any[]> = ref([])
   const loading = ref(false)
-  const searchParam = ref()
+  const currentPage = ref(1)
+  const pageSize = ref(10)
+  const totalPage = ref(1)
+
+  const handleSizeChange = (val: number) => {
+    if (
+      currentPage.value === 1 ||
+      (currentPage.value > 1 && totalPage.value > (currentPage.value - 1) * val)
+    ) {
+      loading.value = true
+      setTimeout(() => {
+        setTableData()
+      }, 200)
+    }
+  }
+
+  const handleCurrentChange = () => {
+    loading.value = true
+    setTimeout(() => {
+      setTableData()
+    }, 200)
+  }
+
+  const setTableData = () => {
+    tableData.value = [...list.value].splice(
+      (currentPage.value - 1) * pageSize.value,
+      pageSize.value
+    )
+    loading.value = false
+  }
 
   const getList = (func: Function, data?: any) => {
     loading.value = true
     func(data)
-      .then((res: any[]) => {
-        tableData.value = res || []
-      })
-      .catch(() => (tableData.value = []))
+      .then((res: any[]) => (list.value = res || []))
+      .catch(() => (list.value = []))
       .finally(() => {
-        loading.value = false
+        currentPage.value = 1
+        pageSize.value = 10
+        totalPage.value = list.value.length
+        setTableData()
       })
   }
 
   return {
     tableData,
     loading,
-    searchParam,
+    currentPage,
+    pageSize,
+    totalPage,
+    handleSizeChange,
+    handleCurrentChange,
     getList
   }
 }

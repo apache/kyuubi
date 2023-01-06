@@ -85,7 +85,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="user" :label="$t('user')" min-width="20%" />
-      <el-table-column :label="$t('start_time')" min-width="20%">
+      <el-table-column :label="$t('start_time')" min-width="30%">
         <template #default="scope">
           {{
             scope.row.createTime != null && Number(scope.row.createTime) > 0
@@ -102,6 +102,18 @@
       />
       <el-table-column prop="status" :label="$t('status')" min-width="20%" />
     </el-table>
+    <div class="pagination-container">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 30, 50]"
+        background
+        layout="prev, pager, next, sizes, jumper"
+        :total="totalPage"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
   </el-card>
 </template>
 
@@ -117,7 +129,16 @@
     sharelevel: null
   })
 
-  const { tableData, loading, getList: _getList } = useTable()
+  const {
+    tableData,
+    currentPage,
+    pageSize,
+    totalPage,
+    loading,
+    handleSizeChange,
+    handleCurrentChange,
+    getList: _getList
+  } = useTable()
 
   const getList = () => {
     _getList(getAllEngines, searchParam)
