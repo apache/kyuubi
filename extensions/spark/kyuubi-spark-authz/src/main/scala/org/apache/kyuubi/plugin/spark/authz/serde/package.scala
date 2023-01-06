@@ -26,9 +26,7 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.{OperationType, QUERY}
 
 package object serde {
 
-  final val mapper = JsonMapper.builder()
-    .addModule(DefaultScalaModule)
-    .build()
+  final val mapper = JsonMapper.builder().addModule(DefaultScalaModule).build()
 
   final lazy val DB_COMMAND_SPECS: Map[String, DatabaseCommandSpec] = {
     val is = getClass.getClassLoader.getResourceAsStream("database_command_spec.json")
