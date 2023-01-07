@@ -67,6 +67,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
   @GET
   @Path("/queued/{queryId}/{slug}/{token}")
   def getQueuedStatementStatus(
+      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
       @PathParam("token") token: Long): QueryResults = {
@@ -82,6 +83,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
   @GET
   @Path("/executing/{queryId}/{slug}/{token}")
   def getExecutingStatementStatus(
+      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
       @PathParam("token") token: Long): QueryResults = {
@@ -97,6 +99,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
   @DELETE
   @Path("/queued/{queryId}/{slug}/{token}")
   def cancelQueuedStatement(
+      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
       @PathParam("token") token: Long): QueryResults = {
@@ -112,6 +115,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
   @DELETE
   @Path("/executing/{queryId}/{slug}/{token}")
   def cancelExecutingStatementStatus(
+      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
       @PathParam("token") token: Long): QueryResults = {
