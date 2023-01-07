@@ -80,8 +80,7 @@ object KyuubiOperationEvent {
       Option(operation.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
       operation.statement,
       operation.shouldRunAsync,
-      Option(operation.remoteOpHandle())
-        .map(OperationHandle(_).toTOperationHandle.getOperationType.name()).orNull,
+      Option(operation.remoteOpHandle()).map(_.getOperationType.name()).orNull,
       status.state.name(),
       status.lastModified,
       status.create,
