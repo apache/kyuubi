@@ -318,6 +318,7 @@ object MetadataManager extends Logging {
       batchMetadata.kyuubiInstance,
       batchState,
       batchMetadata.createTime,
+      batchMetadata.openedTime,
       batchMetadata.endTime)
   }
 }

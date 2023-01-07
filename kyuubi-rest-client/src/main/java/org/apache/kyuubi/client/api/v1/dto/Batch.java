@@ -33,6 +33,7 @@ public class Batch {
   private String kyuubiInstance;
   private String state;
   private long createTime;
+  private long submissionTime;
   private long endTime;
 
   public Batch() {}
@@ -49,6 +50,7 @@ public class Batch {
       String kyuubiInstance,
       String state,
       long createTime,
+      long submissionTime,
       long endTime) {
     this.id = id;
     this.user = user;
@@ -150,6 +152,14 @@ public class Batch {
 
   public void setCreateTime(long createTime) {
     this.createTime = createTime;
+  }
+
+  public long getSubmissionTime() {
+    return submissionTime;
+  }
+
+  public void setSubmissionTime(long submissionTime) {
+    this.submissionTime = submissionTime;
   }
 
   public long getEndTime() {

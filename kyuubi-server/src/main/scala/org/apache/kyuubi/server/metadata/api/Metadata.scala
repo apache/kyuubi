@@ -63,6 +63,7 @@ case class Metadata(
     requestConf: Map[String, String] = Map.empty,
     requestArgs: Seq[String] = Seq.empty,
     createTime: Long = 0L,
+    openedTime: Long = 0L,
     engineType: String = null,
     clusterManager: Option[String] = None,
     engineId: String = null,

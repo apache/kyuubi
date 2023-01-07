@@ -74,6 +74,9 @@ class BatchJobSubmission(
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
 
+  @volatile private var _applicationSubmissionTime: Long = _
+  def applicationSubmissionTime: Long = _applicationSubmissionTime
+
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
@@ -127,6 +130,7 @@ class BatchJobSubmission(
       val metadataToUpdate = Metadata(
         identifier = batchId,
         state = state.toString,
+        openedTime = applicationSubmissionTime,
         engineId = status.id,
         engineName = status.name,
         engineUrl = status.url.orNull,
@@ -147,7 +151,8 @@ class BatchJobSubmission(
         session.getSessionEvent.foreach(_.engineId = ai.id)
       }
       if (newState == RUNNING) {
-        session.onEngineOpened()
+        _applicationSubmissionTime = System.currentTimeMillis()
+        session.onEngineOpened(_applicationSubmissionTime)
       }
     }
   }

@@ -101,6 +101,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       session.connectionUrl,
       batchOpStatus.state.toString,
       session.createTime,
+      batchOp.applicationSubmissionTime,
       batchOpStatus.completed)
   }
 
@@ -137,6 +138,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         metadata.kyuubiInstance,
         currentBatchState,
         metadata.createTime,
+        metadata.openedTime,
         metadata.endTime)
     }.getOrElse(MetadataManager.buildBatch(metadata))
   }
