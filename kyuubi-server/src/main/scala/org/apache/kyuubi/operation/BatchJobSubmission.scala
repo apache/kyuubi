@@ -99,7 +99,14 @@ class BatchJobSubmission(
 
   override private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo] = {
     // only the ApplicationInfo with non-empty id is valid for the operation
-    applicationManager.getApplicationInfo(builder.clusterManager(), batchId).filter(_.id != null)
+    val applicationInfo =
+      applicationManager.getApplicationInfo(builder.clusterManager(), batchId).filter(_.id != null)
+    applicationInfo.foreach { _ =>
+      if (_appSubmissionTime <= 0) {
+        _appSubmissionTime = System.currentTimeMillis()
+      }
+    }
+    applicationInfo
   }
 
   private[kyuubi] def killBatchApplication(): KillResponse = {
@@ -151,9 +158,6 @@ class BatchJobSubmission(
         session.getSessionEvent.foreach(_.engineId = ai.id)
       }
       if (newState == RUNNING) {
-        if (_appSubmissionTime <= 0) {
-          _appSubmissionTime = System.currentTimeMillis()
-        }
         session.onEngineOpened(_appSubmissionTime)
       }
     }
