@@ -74,7 +74,7 @@ class BatchJobSubmission(
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
 
-  @volatile private var _appSubmissionTime: Long = _
+  @volatile private var _appSubmissionTime = recoveryMetadata.map(_.engineOpenTime).getOrElse(0L)
   def appSubmissionTime: Long = _appSubmissionTime
 
   @VisibleForTesting
@@ -151,7 +151,9 @@ class BatchJobSubmission(
         session.getSessionEvent.foreach(_.engineId = ai.id)
       }
       if (newState == RUNNING) {
-        _appSubmissionTime = System.currentTimeMillis()
+        if (_appSubmissionTime <= 0) {
+          _appSubmissionTime = System.currentTimeMillis()
+        }
         session.onEngineOpened(_appSubmissionTime)
       }
     }
