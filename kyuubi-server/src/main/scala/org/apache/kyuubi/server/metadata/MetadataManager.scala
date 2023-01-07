@@ -311,6 +311,7 @@ object MetadataManager extends Logging {
       batchMetadata.username,
       batchMetadata.engineType,
       name,
+      batchMetadata.openedTime,
       batchMetadata.engineId,
       batchMetadata.engineUrl,
       batchMetadata.engineState,
@@ -318,7 +319,6 @@ object MetadataManager extends Logging {
       batchMetadata.kyuubiInstance,
       batchState,
       batchMetadata.createTime,
-      batchMetadata.openedTime,
       batchMetadata.endTime)
   }
 }
