@@ -130,7 +130,7 @@ class BatchJobSubmission(
       val metadataToUpdate = Metadata(
         identifier = batchId,
         state = state.toString,
-        openedTime = appSubmissionTime,
+        engineOpenTime = appSubmissionTime,
         engineId = status.id,
         engineName = status.name,
         engineUrl = status.url.orNull,

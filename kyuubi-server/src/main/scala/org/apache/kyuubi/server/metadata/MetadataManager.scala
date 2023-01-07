@@ -311,7 +311,7 @@ object MetadataManager extends Logging {
       batchMetadata.username,
       batchMetadata.engineType,
       name,
-      batchMetadata.openedTime,
+      batchMetadata.engineOpenTime,
       batchMetadata.engineId,
       batchMetadata.engineUrl,
       batchMetadata.engineState,
