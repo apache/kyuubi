@@ -158,7 +158,7 @@ class BatchJobSubmission(
         session.getSessionEvent.foreach(_.engineId = ai.id)
       }
       if (newState == RUNNING) {
-        session.onEngineOpened(_appSubmissionTime)
+        session.onEngineOpened()
       }
     }
   }
