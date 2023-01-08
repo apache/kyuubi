@@ -520,7 +520,6 @@ object TableCommands {
 
   val InsertIntoHadoopFsRelationCommand = {
     val cmd = "org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand"
-    val queryDesc = QueryDesc("query")
     val actionTypeDesc = ActionTypeDesc(null, null, Some("UPDATE"))
     val columnDesc = ColumnDesc("outputColumnNames", classOf[StringSeqColumnExtractor])
     val tableDesc = TableDesc(
@@ -528,6 +527,7 @@ object TableCommands {
       classOf[CatalogTableOptionTableExtractor],
       Some(columnDesc),
       actionTypeDesc = Some(actionTypeDesc))
+    val queryDesc = QueryDesc("query")
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
   }
 
