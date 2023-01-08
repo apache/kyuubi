@@ -804,7 +804,12 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(
         "admin",
         sql(s"CREATE TABLE IF NOT EXISTS $db1.$sinkTable1" +
-          s" (id int, age int, name string, city string)"))
+          s" (id int, age int, name string, city string) using parquet"))
+
+      val insertSql2 = s"INSERT INTO $sinkTable1" +
+        s" VALUES(1,1,'a','x')"
+      val e99 = intercept[AccessControlException](doAs("someone", sql(insertSql2)))
+      assert(e99.getMessage.contains(s"does not have [update] privilege on [$db1/$sinkTable1/id]"))
 
       val insertSql1 = s"INSERT INTO $sinkTable1" +
         s" SELECT tb1.id as id, tb2.age as age, tb1.name as name, tb1.city as city" +

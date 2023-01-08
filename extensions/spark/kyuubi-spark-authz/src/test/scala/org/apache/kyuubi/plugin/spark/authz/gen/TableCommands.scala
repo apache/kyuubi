@@ -518,6 +518,19 @@ object TableCommands {
     TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc))
   }
 
+  val InsertIntoHadoopFsRelationCommand = {
+    val cmd = "org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand"
+    val queryDesc = QueryDesc("query")
+    val actionTypeDesc = ActionTypeDesc(null, null, Some("UPDATE"))
+    val columnDesc = ColumnDesc("outputColumnNames", classOf[StringSeqColumnExtractor])
+    val tableDesc = TableDesc(
+      "catalogTable",
+      classOf[CatalogTableOptionTableExtractor],
+      Some(columnDesc),
+      actionTypeDesc = Some(actionTypeDesc))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
+  }
+
   val LoadData = {
     val cmd = "org.apache.spark.sql.execution.command.LoadDataCommand"
     val actionTypeDesc = overwriteActionTypeDesc.copy(fieldName = "isOverwrite")
@@ -605,9 +618,7 @@ object TableCommands {
     InsertIntoDataSourceDir,
     InsertIntoDataSourceDir.copy(classname =
       "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand"),
-    // TODO: InsertIntoHadoopFsRelationCommand may have a CatalogTable
-    InsertIntoDataSourceDir.copy(classname =
-      "org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand"),
+    InsertIntoHadoopFsRelationCommand,
     InsertIntoDataSourceDir.copy(classname =
       "org.apache.spark.sql.execution.datasources.InsertIntoHiveDirCommand"),
     InsertIntoHiveTable,
