@@ -26,6 +26,7 @@ public class Batch {
   private String user;
   private String batchType;
   private String name;
+  private long appSubmissionTime;
   private String appId;
   private String appUrl;
   private String appState;
@@ -42,6 +43,7 @@ public class Batch {
       String user,
       String batchType,
       String name,
+      long appSubmissionTime,
       String appId,
       String appUrl,
       String appState,
@@ -54,6 +56,7 @@ public class Batch {
     this.user = user;
     this.batchType = batchType;
     this.name = name;
+    this.appSubmissionTime = appSubmissionTime;
     this.appId = appId;
     this.appUrl = appUrl;
     this.appState = appState;
@@ -150,6 +153,14 @@ public class Batch {
 
   public void setCreateTime(long createTime) {
     this.createTime = createTime;
+  }
+
+  public long getAppSubmissionTime() {
+    return appSubmissionTime;
+  }
+
+  public void setAppSubmissionTime(long appSubmissionTime) {
+    this.appSubmissionTime = appSubmissionTime;
   }
 
   public long getEndTime() {

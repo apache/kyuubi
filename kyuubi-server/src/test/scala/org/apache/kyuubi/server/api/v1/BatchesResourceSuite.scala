@@ -100,6 +100,9 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     assert(batch.getName === sparkBatchTestAppName)
     assert(batch.getCreateTime > 0)
     assert(batch.getEndTime === 0)
+    if (batch.getAppId != null) {
+      assert(batch.getAppSubmissionTime > 0)
+    }
 
     // invalid batchId
     getBatchResponse = webTarget.path(s"api/v1/batches/invalidBatchId")

@@ -265,6 +265,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       setClauses += " end_time = ? "
       params += metadata.endTime
     }
+    if (metadata.engineOpenTime > 0) {
+      setClauses += " engine_open_time = ? "
+      params += metadata.engineOpenTime
+    }
     Option(metadata.engineId).foreach { _ =>
       setClauses += " engine_id = ? "
       params += metadata.engineId
