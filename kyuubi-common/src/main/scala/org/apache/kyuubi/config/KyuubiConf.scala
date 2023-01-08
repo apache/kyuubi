@@ -1815,7 +1815,12 @@ object KyuubiConf {
         s" <li>JSON: the events will be written to the location of" +
         s" ${SERVER_EVENT_JSON_LOG_PATH.key}</li>" +
         s" <li>JDBC: to be done</li>" +
-        s" <li>CUSTOM: to be done.</li></ul>")
+        s" <li>CUSTOM: User-defined event handlers.</li></ul>" +
+        " Note that: Kyuubi supports custom event handlers with the Java SPI." +
+        " To register a custom event handler," +
+        " user need to implement a class" +
+        " which is a child of org.apache.kyuubi.events.handler.CustomEventHandlerProvider" +
+        " which has zero-arg constructor.")
       .version("1.4.0")
       .serverOnly
       .stringConf
@@ -1833,7 +1838,12 @@ object KyuubiConf {
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
         " <li>JDBC: to be done</li>" +
-        " <li>CUSTOM: to be done.</li></ul>")
+        " <li>CUSTOM: User-defined event handlers.</li></ul>" +
+        " Note that: Kyuubi supports custom event handlers with the Java SPI." +
+        " To register a custom event handler," +
+        " user need to implement a class" +
+        " which is a child of org.apache.kyuubi.events.handler.CustomEventHandlerProvider" +
+        " which has zero-arg constructor.")
       .version("1.3.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
