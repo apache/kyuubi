@@ -42,6 +42,9 @@ class OverwriteOrInsertActionTypeExtractor extends ActionTypeExtractor {
   }
 }
 
+/**
+ * org.apache.spark.annotation.Stable.SaveMode
+ */
 class SaveModeActionTypeExtractor extends ActionTypeExtractor {
   override def apply(v1: AnyRef): PrivilegeObjectActionType = {
     invokeAs[String](v1, "name") match {
