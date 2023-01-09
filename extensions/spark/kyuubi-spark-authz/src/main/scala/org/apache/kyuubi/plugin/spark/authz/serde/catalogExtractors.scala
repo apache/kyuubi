@@ -27,11 +27,7 @@ trait CatalogExtractor extends (AnyRef => Option[String]) with Extractor
 
 object CatalogExtractor {
   val catalogExtractors: Map[String, CatalogExtractor] = {
-    ServiceLoader.load(classOf[CatalogExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[CatalogExtractor]
   }
 }
 

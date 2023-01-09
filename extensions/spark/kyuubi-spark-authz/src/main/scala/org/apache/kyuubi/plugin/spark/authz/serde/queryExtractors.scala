@@ -27,11 +27,7 @@ trait QueryExtractor extends (AnyRef => Option[LogicalPlan]) with Extractor
 
 object QueryExtractor {
   val queryExtractors: Map[String, QueryExtractor] = {
-    ServiceLoader.load(classOf[QueryExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[QueryExtractor]
   }
 }
 

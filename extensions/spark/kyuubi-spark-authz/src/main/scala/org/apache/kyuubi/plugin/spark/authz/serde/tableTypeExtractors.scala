@@ -35,11 +35,7 @@ trait TableTypeExtractor extends ((AnyRef, SparkSession) => TableType) with Extr
 
 object TableTypeExtractor {
   val tableTypeExtractors: Map[String, TableTypeExtractor] = {
-    ServiceLoader.load(classOf[TableTypeExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[TableTypeExtractor]
   }
 }
 

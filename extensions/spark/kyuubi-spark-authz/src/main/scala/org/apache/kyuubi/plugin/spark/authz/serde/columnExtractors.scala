@@ -27,11 +27,7 @@ trait ColumnExtractor extends (AnyRef => Seq[String]) with Extractor
 
 object ColumnExtractor {
   val columnExtractors: Map[String, ColumnExtractor] = {
-    ServiceLoader.load(classOf[ColumnExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[ColumnExtractor]
   }
 }
 class StringColumnExtractor extends ColumnExtractor {

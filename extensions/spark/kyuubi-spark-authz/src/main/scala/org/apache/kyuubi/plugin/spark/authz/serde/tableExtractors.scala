@@ -36,11 +36,7 @@ trait TableExtractor extends ((SparkSession, AnyRef) => Option[Table]) with Extr
 
 object TableExtractor {
   val tableExtractors: Map[String, TableExtractor] = {
-    ServiceLoader.load(classOf[TableExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[TableExtractor]
   }
 
   /**

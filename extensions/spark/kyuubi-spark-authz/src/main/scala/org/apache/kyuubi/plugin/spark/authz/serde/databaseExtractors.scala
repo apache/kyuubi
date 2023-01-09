@@ -27,11 +27,7 @@ trait DatabaseExtractor extends (AnyRef => Database) with Extractor
 
 object DatabaseExtractor {
   val dbExtractors: Map[String, DatabaseExtractor] = {
-    ServiceLoader.load(classOf[DatabaseExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[DatabaseExtractor]
   }
 }
 

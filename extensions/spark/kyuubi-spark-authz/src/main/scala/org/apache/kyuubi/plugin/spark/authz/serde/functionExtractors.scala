@@ -28,11 +28,7 @@ trait FunctionExtractor extends (AnyRef => Function) with Extractor
 
 object FunctionExtractor {
   val functionExtractors: Map[String, FunctionExtractor] = {
-    ServiceLoader.load(classOf[FunctionExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[FunctionExtractor]
   }
 }
 

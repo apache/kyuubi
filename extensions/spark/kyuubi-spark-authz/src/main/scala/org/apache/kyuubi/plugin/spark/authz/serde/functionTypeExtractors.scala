@@ -35,11 +35,7 @@ trait FunctionTypeExtractor extends ((AnyRef, SparkSession) => FunctionType) wit
 
 object FunctionTypeExtractor {
   val functionTypeExtractors: Map[String, FunctionTypeExtractor] = {
-    ServiceLoader.load(classOf[FunctionTypeExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[FunctionTypeExtractor]
   }
 }
 
