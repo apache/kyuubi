@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.types.StructField
 
 trait ColumnExtractor extends (AnyRef => Seq[String]) with Extractor

@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
-
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 trait DatabaseExtractor extends (AnyRef => Database) with Extractor
