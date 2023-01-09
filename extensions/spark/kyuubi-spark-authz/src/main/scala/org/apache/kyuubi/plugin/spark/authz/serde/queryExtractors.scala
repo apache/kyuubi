@@ -35,12 +35,18 @@ object QueryExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+ */
 class LogicalPlanQueryExtractor extends QueryExtractor {
   override def apply(v1: AnyRef): Option[LogicalPlan] = {
     Some(v1.asInstanceOf[LogicalPlan])
   }
 }
 
+/**
+ * Option[org.apache.spark.sql.catalyst.plans.logical.LogicalPlan]
+ */
 class LogicalPlanOptionQueryExtractor extends QueryExtractor {
   override def apply(v1: AnyRef): Option[LogicalPlan] = {
     v1.asInstanceOf[Option[LogicalPlan]]

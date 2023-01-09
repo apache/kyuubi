@@ -56,6 +56,9 @@ class ViewTypeTableTypeExtractor extends TableTypeExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.TableIdentifier
+ */
 class TableIdentifierTableTypeExtractor extends TableTypeExtractor {
   override def apply(v1: AnyRef, spark: SparkSession): TableType = {
     val catalog = spark.sessionState.catalog

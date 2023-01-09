@@ -83,6 +83,9 @@ class ResolvedNamespaceDatabaseExtractor extends DatabaseExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.analysis.ResolvedDbObjectName
+ */
 class ResolvedDBObjectNameDatabaseExtractor extends DatabaseExtractor {
   override def apply(v1: AnyRef): Database = {
     val catalogVal = invoke(v1, "catalog")

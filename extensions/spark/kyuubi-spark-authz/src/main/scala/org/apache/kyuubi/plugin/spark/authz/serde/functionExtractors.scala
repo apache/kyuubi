@@ -36,12 +36,18 @@ object FunctionExtractor {
   }
 }
 
+/**
+ * String
+ */
 class StringFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     Function(None, v1.asInstanceOf[String])
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.FunctionIdentifier
+ */
 class FunctionIdentifierFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     val identifier = v1.asInstanceOf[FunctionIdentifier]
@@ -49,6 +55,9 @@ class FunctionIdentifierFunctionExtractor extends FunctionExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.expressions.ExpressionInfo
+ */
 class ExpressionInfoFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     val info = v1.asInstanceOf[ExpressionInfo]

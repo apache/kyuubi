@@ -37,6 +37,9 @@ object ActionTypeExtractor {
   }
 }
 
+/**
+ * Boolean
+ */
 class OverwriteOrInsertActionTypeExtractor extends ActionTypeExtractor {
   override def apply(v1: AnyRef): PrivilegeObjectActionType = {
     if (v1.asInstanceOf[Boolean]) INSERT_OVERWRITE else INSERT

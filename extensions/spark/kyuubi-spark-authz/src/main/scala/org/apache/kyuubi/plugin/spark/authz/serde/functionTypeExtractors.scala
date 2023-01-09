@@ -56,6 +56,9 @@ class TempMarkerFunctionTypeExtractor extends FunctionTypeExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.expressions.ExpressionInfo
+ */
 class ExpressionInfoFunctionTypeExtractor extends FunctionTypeExtractor {
   override def apply(v1: AnyRef, spark: SparkSession): FunctionType = {
     val function = new ExpressionInfoFunctionExtractor().apply(v1)
@@ -64,6 +67,9 @@ class ExpressionInfoFunctionTypeExtractor extends FunctionTypeExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.FunctionIdentifier
+ */
 class FunctionIdentifierFunctionTypeExtractor extends FunctionTypeExtractor {
   override def apply(v1: AnyRef, spark: SparkSession): FunctionType = {
     val catalog = spark.sessionState.catalog

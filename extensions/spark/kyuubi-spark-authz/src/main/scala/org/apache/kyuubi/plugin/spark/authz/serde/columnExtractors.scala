@@ -58,6 +58,9 @@ class StringSeqOptionColumnExtractor extends ColumnExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.types.StructField
+ */
 class StructFieldSeqColumnExtractor extends ColumnExtractor {
   override def apply(v1: AnyRef): Seq[String] = {
     v1.asInstanceOf[Seq[StructField]].map(_.name)
