@@ -205,14 +205,4 @@ private[authz] object AuthZUtils {
     val signatureBytes = Base64.getDecoder.decode(signatureBase64)
     publicSignature.verify(signatureBytes)
   }
-
-  lazy val isRanger21orGreater: Boolean = {
-    try {
-      classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
-      true
-    } catch {
-      case _: NoSuchMethodException =>
-        false
-    }
-  }
 }
