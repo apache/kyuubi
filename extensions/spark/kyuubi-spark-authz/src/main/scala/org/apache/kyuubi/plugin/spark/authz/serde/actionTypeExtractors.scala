@@ -21,8 +21,9 @@ import java.util.ServiceLoader
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.SaveMode
+
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.invokeAs
 
 trait ActionTypeExtractor extends (AnyRef => PrivilegeObjectActionType) with Extractor
 
@@ -47,7 +48,7 @@ class OverwriteOrInsertActionTypeExtractor extends ActionTypeExtractor {
  */
 class SaveModeActionTypeExtractor extends ActionTypeExtractor {
   override def apply(v1: AnyRef): PrivilegeObjectActionType = {
-    invokeAs[String](v1, "name") match {
+    v1.asInstanceOf[SaveMode].name() match {
       case "Append" => INSERT
       case "Overwrite" => INSERT_OVERWRITE
       case _ => OTHER
