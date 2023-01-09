@@ -101,7 +101,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     assert(batch.getCreateTime > 0)
     assert(batch.getEndTime === 0)
     if (batch.getAppId != null) {
-      assert(batch.getAppSubmissionTime > 0)
+      assert(batch.getAppStartTime > 0)
     }
 
     // invalid batchId

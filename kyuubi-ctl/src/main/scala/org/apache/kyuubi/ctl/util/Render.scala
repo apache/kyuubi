@@ -111,9 +111,9 @@ private[ctl] object Render {
 
   private def buildBatchAppInfo(batch: Batch, showDiagnostic: Boolean = true): List[String] = {
     val batchAppInfo = ListBuffer[String]()
-    if (batch.getAppSubmissionTime > 0) {
-      batchAppInfo += s"App Submission Time:" +
-        s" ${millisToDateString(batch.getAppSubmissionTime, "yyyy-MM-dd HH:mm:ss")}"
+    if (batch.getAppStartTime > 0) {
+      batchAppInfo += s"App Start Time:" +
+        s" ${millisToDateString(batch.getAppStartTime, "yyyy-MM-dd HH:mm:ss")}"
     }
     Option(batch.getAppId).foreach { _ =>
       batchAppInfo += s"App Id: ${batch.getAppId}"
