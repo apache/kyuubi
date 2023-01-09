@@ -21,7 +21,6 @@ import java.util.ServiceLoader
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.SaveMode.{Append, Overwrite}
 
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
