@@ -22,6 +22,7 @@ import java.util.ServiceLoader
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.SaveMode.{Append, Overwrite}
 
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 
@@ -44,13 +45,13 @@ class OverwriteOrInsertActionTypeExtractor extends ActionTypeExtractor {
 }
 
 /**
- * org.apache.spark.annotation.Stable.SaveMode
+ * org.apache.spark.sql.SaveMode
  */
 class SaveModeActionTypeExtractor extends ActionTypeExtractor {
   override def apply(v1: AnyRef): PrivilegeObjectActionType = {
-    v1.asInstanceOf[SaveMode].name() match {
-      case "Append" => INSERT
-      case "Overwrite" => INSERT_OVERWRITE
+    v1 match {
+      case Append => INSERT
+      case Overwrite => INSERT_OVERWRITE
       case _ => OTHER
     }
   }
