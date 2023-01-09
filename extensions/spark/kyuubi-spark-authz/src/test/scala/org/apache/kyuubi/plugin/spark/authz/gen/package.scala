@@ -22,6 +22,7 @@ import scala.language.implicitConversions
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionType.FunctionType
+import org.apache.kyuubi.plugin.spark.authz.serde.TableType.TableType
 
 package object gen {
   implicit def classSimpleName(clz: Class[_]): String = clz.getSimpleName
@@ -31,4 +32,6 @@ package object gen {
   implicit def functionTypeStr(t: FunctionType): String = t.toString
 
   implicit def operationTypeStr(t: OperationType): String = t.toString
+
+  implicit def tableTypeStr(t: TableType): String = t.toString
 }

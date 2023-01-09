@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
+import org.apache.kyuubi.plugin.spark.authz.serde.TableType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
 object TableCommands {
@@ -107,7 +108,7 @@ object TableCommands {
       TableTypeDesc(
         "oldName",
         classOf[TableIdentifierTableTypeExtractor],
-        Seq("TEMP_VIEW"))
+        Seq(TEMP_VIEW))
     val oldTableD = TableDesc(
       "oldName",
       tite,
@@ -330,7 +331,7 @@ object TableCommands {
     val tableTypeDesc = TableTypeDesc(
       "viewType",
       classOf[ViewTypeTableTypeExtractor],
-      Seq("TEMP_VIEW", "GLOBAL_TEMP_VIEW"))
+      Seq(TEMP_VIEW, GLOBAL_TEMP_VIEW))
     val tableDesc = TableDesc(
       "name",
       classOf[TableIdentifierTableExtractor],
@@ -415,7 +416,7 @@ object TableCommands {
       TableTypeDesc(
         "tableName",
         classOf[TableIdentifierTableTypeExtractor],
-        Seq("TEMP_VIEW"))
+        Seq(TEMP_VIEW))
     TableCommandSpec(
       cmd,
       Seq(tableNameDesc.copy(tableTypeDesc = Some(tableTypeDesc))),

@@ -41,7 +41,7 @@ object FunctionCommands {
 
   val DescribeFunction = {
     val cmd = "org.apache.spark.sql.execution.command.DescribeFunctionCommand"
-    val skips = Seq(TEMP, SYSTEM)
+    val skips: Seq[String] = Seq(TEMP, SYSTEM)
     val functionTypeDesc1 =
       FunctionTypeDesc("info", classOf[ExpressionInfoFunctionTypeExtractor], skips)
     val functionDesc1 = FunctionDesc(
