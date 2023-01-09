@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.{Map => JMap, ServiceLoader}
+import java.util.{Map => JMap}
 
 import scala.collection.JavaConverters._
 
