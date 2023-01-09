@@ -27,9 +27,7 @@ import org.apache.logging.log4j._
 import org.apache.logging.log4j.core.{LogEvent, Logger, LoggerContext}
 import org.apache.logging.log4j.core.appender.AbstractAppender
 import org.apache.logging.log4j.core.config.Property
-import org.scalactic.source.Position
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome}
-import org.scalatest.Tag
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
 import org.slf4j.bridge.SLF4JBridgeHandler
@@ -71,10 +69,9 @@ trait KyuubiFunSuite extends AnyFunSuite
     }
   }
 
-  override protected def test(testName: String, testTags: Tag*)(testFun: => Any)(implicit
-      pos: Position): Unit = {
+  override def suiteName: String = {
     val timestamp = FastDateFormat.getInstance("HH:mm:ss.SSS", Locale.US).format(new Date())
-    super.test(s"$timestamp $testName", testTags: _*)(testFun)
+    s"$timestamp ${super.suiteName}"
   }
 
   /**
