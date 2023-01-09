@@ -22,6 +22,7 @@ import java.util.ServiceLoader
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.invokeAs
 
 trait ActionTypeExtractor extends (AnyRef => PrivilegeObjectActionType) with Extractor
 
@@ -38,5 +39,15 @@ object ActionTypeExtractor {
 class OverwriteOrInsertActionTypeExtractor extends ActionTypeExtractor {
   override def apply(v1: AnyRef): PrivilegeObjectActionType = {
     if (v1.asInstanceOf[Boolean]) INSERT_OVERWRITE else INSERT
+  }
+}
+
+class SaveModeActionTypeExtractor extends ActionTypeExtractor {
+  override def apply(v1: AnyRef): PrivilegeObjectActionType = {
+    invokeAs[String](v1, "name") match {
+      case "Append" => INSERT
+      case "Overwrite" => INSERT_OVERWRITE
+      case _ => OTHER
+    }
   }
 }

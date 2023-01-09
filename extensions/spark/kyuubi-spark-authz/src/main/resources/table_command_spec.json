@@ -1215,9 +1215,9 @@
       "fieldExtractor" : "StringSeqColumnExtractor"
     },
     "actionTypeDesc" : {
-      "fieldName" : null,
-      "fieldExtractor" : null,
-      "actionType" : "UPDATE"
+      "fieldName" : "mode",
+      "fieldExtractor" : "SaveModeActionTypeExtractor",
+      "actionType" : null
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,

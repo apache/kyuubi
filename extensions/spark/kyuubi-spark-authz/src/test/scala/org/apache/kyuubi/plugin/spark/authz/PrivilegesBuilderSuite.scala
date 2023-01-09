@@ -1536,7 +1536,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
       assert(outputs.size === 1)
       outputs.foreach { po =>
-        assert(po.actionType === PrivilegeObjectActionType.UPDATE)
+        assert(po.actionType === PrivilegeObjectActionType.INSERT)
         assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
         assert(po.catalog.isEmpty)
         assert(po.dbname equalsIgnoreCase "default")
