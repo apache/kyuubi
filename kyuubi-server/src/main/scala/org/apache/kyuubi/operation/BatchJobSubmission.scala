@@ -74,8 +74,8 @@ class BatchJobSubmission(
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
 
-  @volatile private var _appSubmissionTime = recoveryMetadata.map(_.engineOpenTime).getOrElse(0L)
-  def appSubmissionTime: Long = _appSubmissionTime
+  @volatile private var _appStartTime = recoveryMetadata.map(_.engineOpenTime).getOrElse(0L)
+  def appStartTime: Long = _appStartTime
 
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
@@ -102,8 +102,8 @@ class BatchJobSubmission(
     val applicationInfo =
       applicationManager.getApplicationInfo(builder.clusterManager(), batchId).filter(_.id != null)
     applicationInfo.foreach { _ =>
-      if (_appSubmissionTime <= 0) {
-        _appSubmissionTime = System.currentTimeMillis()
+      if (_appStartTime <= 0) {
+        _appStartTime = System.currentTimeMillis()
       }
     }
     applicationInfo
@@ -137,7 +137,7 @@ class BatchJobSubmission(
       val metadataToUpdate = Metadata(
         identifier = batchId,
         state = state.toString,
-        engineOpenTime = appSubmissionTime,
+        engineOpenTime = appStartTime,
         engineId = status.id,
         engineName = status.name,
         engineUrl = status.url.orNull,

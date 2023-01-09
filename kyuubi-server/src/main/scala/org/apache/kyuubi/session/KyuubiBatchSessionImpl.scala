@@ -161,7 +161,7 @@ class KyuubiBatchSessionImpl(
 
   private[kyuubi] def onEngineOpened(): Unit = {
     if (sessionEvent.openedTime <= 0) {
-      sessionEvent.openedTime = batchJobSubmissionOp.appSubmissionTime
+      sessionEvent.openedTime = batchJobSubmissionOp.appStartTime
       EventBus.post(sessionEvent)
     }
   }
