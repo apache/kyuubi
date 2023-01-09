@@ -20,9 +20,12 @@ package org.apache.kyuubi.plugin.spark.authz
 import scala.language.implicitConversions
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 
 package object gen {
   implicit def classSimpleName(clz: Class[_]): String = clz.getSimpleName
 
   implicit def operationTypeStr(t: OperationType): String = t.toString
+
+  implicit def actionTypeStr(t: PrivilegeObjectActionType): String = t.toString
 }

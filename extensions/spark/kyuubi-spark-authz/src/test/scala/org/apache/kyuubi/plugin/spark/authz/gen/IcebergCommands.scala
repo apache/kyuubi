@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
 object IcebergCommands {
 
   val DeleteFromIcebergTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.DeleteFromIcebergTable"
-    val actionTypeDesc = ActionTypeDesc(null, null, Some("UPDATE"))
+    val actionTypeDesc = ActionTypeDesc(null, null, Some(UPDATE))
     val tableDesc =
       TableDesc(
         "table",
@@ -39,7 +40,7 @@ object IcebergCommands {
 
   val MergeIntoIcebergTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable"
-    val actionTypeDesc = ActionTypeDesc(null, null, Some("UPDATE"))
+    val actionTypeDesc = ActionTypeDesc(null, null, Some(UPDATE))
     val tableDesc = TableDesc(
       "targetTable",
       classOf[DataSourceV2RelationTableExtractor],
