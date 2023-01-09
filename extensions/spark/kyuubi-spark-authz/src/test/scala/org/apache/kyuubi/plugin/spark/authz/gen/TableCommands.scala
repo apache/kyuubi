@@ -101,7 +101,7 @@ object TableCommands {
 
   val AlterTableRename = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableRenameCommand"
-    val actionTypeDesc = ActionTypeDesc(null, null, Some("DELETE"))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(DELETE))
 
     val oldTableTableTypeDesc =
       TableTypeDesc(
@@ -240,7 +240,7 @@ object TableCommands {
 
   val AppendDataV2 = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.AppendData"
-    val actionTypeDesc = ActionTypeDesc(null, null, Some("INSERT"))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(INSERT))
     val tableDesc =
       TableDesc(
         "table",
@@ -251,7 +251,7 @@ object TableCommands {
 
   val UpdateTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.UpdateTable"
-    val actionTypeDesc = ActionTypeDesc(null, null, Some(UPDATE))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
     val tableDesc =
       TableDesc(
         "table",
@@ -267,7 +267,7 @@ object TableCommands {
 
   val OverwriteByExpression = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.OverwriteByExpression"
-    val actionTypeDesc = ActionTypeDesc(null, null, Some("INSERT_OVERWRITE"))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(INSERT_OVERWRITE))
     val tableDesc =
       TableDesc(
         "table",
@@ -430,7 +430,7 @@ object TableCommands {
 
   val MergeIntoTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.MergeIntoTable"
-    val actionTypeDesc = ActionTypeDesc(null, null, Some(UPDATE))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
     val tableDesc = TableDesc(
       "targetTable",
       classOf[DataSourceV2RelationTableExtractor],
