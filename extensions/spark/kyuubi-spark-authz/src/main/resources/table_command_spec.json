@@ -1207,7 +1207,23 @@
   } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand",
-  "tableDescs" : [ ],
+  "tableDescs" : [ {
+    "fieldName" : "catalogTable",
+    "fieldExtractor" : "CatalogTableOptionTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "outputColumnNames",
+      "fieldExtractor" : "StringSeqColumnExtractor"
+    },
+    "actionTypeDesc" : {
+      "fieldName" : "mode",
+      "fieldExtractor" : "SaveModeActionTypeExtractor",
+      "actionType" : null
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",

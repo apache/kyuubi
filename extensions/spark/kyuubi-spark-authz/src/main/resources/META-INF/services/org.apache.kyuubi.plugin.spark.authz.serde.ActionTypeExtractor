@@ -16,3 +16,4 @@
 #
 
 org.apache.kyuubi.plugin.spark.authz.serde.OverwriteOrInsertActionTypeExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.SaveModeActionTypeExtractor
