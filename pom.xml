@@ -2171,6 +2171,7 @@
                         </goals>
                         <configuration>
                             <rules>
+                                <banCircularDependencies/>
                                 <enforceBytecodeVersion>
                                     <maxJdkVersion>${java.version}</maxJdkVersion>
                                     <ignoredScopes>test</ignoredScopes>
