@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>27</version>
+        <version>29</version>
     </parent>
 
     <groupId>org.apache.kyuubi</groupId>
@@ -82,15 +82,15 @@
     </modules>
 
     <scm>
-        <connection>scm:git:git@github.com:apache/incubator-kyuubi.git</connection>
-        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/incubator-kyuubi.git</developerConnection>
+        <connection>scm:git:git@github.com:apache/kyuubi.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/kyuubi.git</developerConnection>
         <tag>HEAD</tag>
-        <url>scm:git:git@github.com:apache/incubator-kyuubi.git</url>
+        <url>scm:git:git@github.com:apache/kyuubi.git</url>
     </scm>
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/apache/incubator-kyuubi/issues</url>
+        <url>https://github.com/apache/kyuubi/issues</url>
     </issueManagement>
 
     <distributionManagement>
@@ -160,18 +160,19 @@
         <jackson.version>2.14.1</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
-        <jakarta.activation.version>1.2.1</jakarta.activation.version>
-        <jersey.version>2.36</jersey.version>
-        <jetty.version>9.4.48.v20220622</jetty.version>
+        <jakarta.activation.version>1.2.2</jakarta.activation.version>
+        <jersey.version>2.38</jersey.version>
+        <jetty.version>9.4.50.v20221201</jetty.version>
         <jline.version>0.9.94</jline.version>
         <junit.version>4.13.1</junit.version>
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.19.0</log4j.version>
-        <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
+        <mysql.jdbc.version>8.0.31</mysql.jdbc.version>
         <netty.version>4.1.84.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
+        <phoenix.version>6.0.0</phoenix.version>
         <prometheus.version>0.16.0</prometheus.version>
         <protobuf.version>3.21.7</protobuf.version>
         <py4j.version>0.10.7</py4j.version>
@@ -209,16 +210,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
-        <maven.plugin.antrun.version>3.0.0</maven.plugin.antrun.version>
-        <maven.plugin.assembly.version>3.2.0</maven.plugin.assembly.version>
         <maven.plugin.build.helper.version>3.2.0</maven.plugin.build.helper.version>
-        <maven.plugin.clean.version>3.1.0</maven.plugin.clean.version>
-        <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
-        <maven.plugin.dependency.version>3.1.1</maven.plugin.dependency.version>
-        <maven.plugin.deploy.version>3.0.0-M1</maven.plugin.deploy.version>
         <maven.plugin.download.version>1.6.6</maven.plugin.download.version>
-        <maven.plugin.gpg.version>3.0.1</maven.plugin.gpg.version>
-        <maven.plugin.javadoc.version>3.3.0</maven.plugin.javadoc.version>
+        <maven.plugin.enforcer.mojo.rules.version>1.6.1</maven.plugin.enforcer.mojo.rules.version>
         <maven.plugin.scala.version>4.6.1</maven.plugin.scala.version>
         <maven.plugin.surefire.version>3.0.0-M7</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
@@ -226,12 +220,9 @@
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.spotless.version>2.27.2</maven.plugin.spotless.version>
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
-        <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.4.1</maven.plugin.shade.version>
         <maven.plugin.silencer.version>1.7.10</maven.plugin.silencer.version>
-        <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
-        <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
 
         <maven.scaladoc.skip>false</maven.scaladoc.skip>
         <maven.scalastyle.skip>false</maven.scalastyle.skip>
@@ -1394,7 +1385,7 @@
             </dependency>
 
             <!--
-              Required for Yarn Mini Cluster on JDK 11, it already be a transitive dependency
+              Required for Yarn Mini Cluster on JDK 11, it is already a transitive dependency
               of spark-core, thus only should explicitly add on Kyuubi Server Main test scope.
               -->
             <dependency>
@@ -1494,9 +1485,15 @@
             </dependency>
 
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql.jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.phoenix</groupId>
+                <artifactId>phoenix-queryserver-client</artifactId>
+                <version>${phoenix.version}</version>
             </dependency>
 
             <!-- flink -->
@@ -1683,7 +1680,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>${maven.plugin.antrun.version}</version>
                     <executions>
                         <execution>
                             <id>create-tmp-dir</id>
@@ -1751,7 +1747,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${maven.plugin.compiler.version}</version>
                     <configuration>
                         <maxmem>1024m</maxmem>
                         <fork>true</fork>
@@ -1904,20 +1899,7 @@
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>${maven.plugin.jar.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>${maven.plugin.assembly.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>${maven.plugin.dependency.version}</version>
                     <executions>
                         <execution>
                             <id>default-cli</id>
@@ -1958,7 +1940,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>${maven.plugin.clean.version}</version>
                     <configuration>
                         <filesets>
                             <fileset>
@@ -1981,30 +1962,6 @@
                             </fileset>
                         </filesets>
                     </configuration>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <version>${maven.plugin.deploy.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>${maven.plugin.source.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>${maven.plugin.javadoc.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>${maven.plugin.gpg.version}</version>
                 </plugin>
 
                 <plugin>
@@ -2099,7 +2056,6 @@
                 <plugin>
                     <groupId>org.apache.rat</groupId>
                     <artifactId>apache-rat-plugin</artifactId>
-                    <version>${maven.plugin.rat.version}</version>
                     <inherited>true</inherited>
                     <configuration>
                         <excludeSubProjects>false</excludeSubProjects>
@@ -2134,6 +2090,18 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>extra-enforcer-rules</artifactId>
+                            <version>${maven.plugin.enforcer.mojo.rules.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -2191,6 +2159,28 @@
                 <groupId>org.apache.rat</groupId>
                 <artifactId>apache-rat-plugin</artifactId>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-bytecode-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <enforceBytecodeVersion>
+                                    <maxJdkVersion>${java.version}</maxJdkVersion>
+                                    <ignoredScopes>test</ignoredScopes>
+                                </enforceBytecodeVersion>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -2230,6 +2220,7 @@
                 <maven.compiler.source></maven.compiler.source>
                 <maven.compiler.target></maven.compiler.target>
                 <maven.compiler.release>${java.version}</maven.compiler.release>
+                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
 
@@ -2365,6 +2356,7 @@
         <profile>
             <id>fast</id>
             <properties>
+                <enforcer.skip>true</enforcer.skip>
                 <maven.javadoc.skip>true</maven.javadoc.skip>
                 <maven.scaladoc.skip>true</maven.scaladoc.skip>
                 <maven.scalastyle.skip>true</maven.scalastyle.skip>

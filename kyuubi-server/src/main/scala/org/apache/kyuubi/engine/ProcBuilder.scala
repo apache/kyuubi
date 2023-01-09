@@ -106,6 +106,14 @@ trait ProcBuilder {
 
   protected val extraEngineLog: Option[OperationLog]
 
+  /**
+   * Add `engine.master` if KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT
+   * are defined. So we can deploy engine on kubernetes without setting `engine.master`
+   * explicitly when kyuubi-servers are on kubernetes, which also helps in case that
+   * api-server is not exposed to us.
+   */
+  protected def completeMasterUrl(conf: KyuubiConf) = {}
+
   protected val workingDir: Path = {
     env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
       val workingRoot = Paths.get(root).toAbsolutePath

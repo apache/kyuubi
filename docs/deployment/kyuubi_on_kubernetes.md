@@ -30,7 +30,7 @@ If you want to deploy Kyuubi on Kubernetes, you'd better get a sense of the foll
 
 ## Kyuubi Official Docker Image 
 
-You can find the official docker image at [Apache Kyuubi (Incubating) Docker Hub](https://registry.hub.docker.com/r/apache/kyuubi).
+You can find the official docker image at [Apache Kyuubi Docker Hub](https://registry.hub.docker.com/r/apache/kyuubi).
 
 ## Build Kyuubi Docker Image
 

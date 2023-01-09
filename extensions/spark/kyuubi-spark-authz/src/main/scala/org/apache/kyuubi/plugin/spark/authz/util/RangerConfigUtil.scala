@@ -40,10 +40,9 @@ object RangerConfigUtil {
       invokeAs[Configuration](plugin, "getConfig")
     } else {
       // for Ranger 2.0 and below
-      invokeStatic(
+      invokeStaticAs[Configuration](
         Class.forName("org.apache.ranger.authorization.hadoop.config.RangerConfiguration"),
         "getInstance")
-        .asInstanceOf[Configuration]
     }
   }
 }

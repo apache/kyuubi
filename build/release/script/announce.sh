@@ -23,7 +23,7 @@ set -e
 RELEASE_DIR="$(cd "$(dirname "$0")"/..; pwd)"
 
 ######### Please modify the variables ##########
-# release version, e.g. 1.4.0-incubating
+# release version, e.g. 1.7.0
 release_version=${release_version:-""}
 ################################################
 
@@ -39,24 +39,23 @@ mkdir -p ${RELEASE_TEMP_DIR}
 ANNOUNCE=${RELEASE_TEMP_DIR}/${release_version}_announce.temp
 
 cat >$ANNOUNCE<<EOF
-Title: [ANNOUNCE] Apache Kyuubi (Incubating) released ${release_version}
+Title: [ANNOUNCE] Apache Kyuubi released ${release_version}
 
 Content:
 Hi all,
 
-The Apache Kyuubi (Incubating) community is pleased to announce that
-Apache Kyuubi (Incubating) ${release_version} has been released!
+The Apache Kyuubi community is pleased to announce that
+Apache Kyuubi ${release_version} has been released!
 
-Apache Kyuubi (Incubating) is a distributed multi-tenant JDBC server for
-large-scale data processing and analytics, built on top of Apache Spark
-and designed to support more engines (i.e. Apache Flink).
+Apache Kyuubi is a distributed and multi-tenant gateway to provide
+serverless SQL on data warehouses and lakehouses.
 
 Kyuubi provides a pure SQL gateway through Thrift JDBC/ODBC interface
 for end-users to manipulate large-scale data with pre-programmed and
 extensible Spark SQL engines.
 
 We are aiming to make Kyuubi an "out-of-the-box" tool for data warehouses
-and data lakes.
+and lakehouses.
 
 This "out-of-the-box" model minimizes the barriers and costs for end-users
 to use Spark at the client side.
@@ -68,19 +67,19 @@ data security, high availability, high client concurrency, etc.
 The full release notes and download links are available at:
 Release Notes: https://kyuubi.apache.org/release/${release_version}.html
 
-To learn more about Apache Kyuubi (Incubating), please see
+To learn more about Apache Kyuubi, please see
 https://kyuubi.apache.org/
 
 Kyuubi Resources:
-- Issue: https://github.com/apache/incubator-kyuubi/issues
+- Issue: https://github.com/apache/kyuubi/issues
 - Mailing list: dev@kyuubi.apache.org
 
-We would like to thank all contributors of the Kyuubi community and Incubating
-community who made this release possible!
+We would like to thank all contributors of the Kyuubi community
+who made this release possible!
 
 Thanks,
-On behalf of Apache Kyuubi (Incubating) community
+On behalf of Apache Kyuubi community
 EOF
 
-echo "please Use general@incubator.apache.org, announce@apache.org, dev@kyuubi.apache.org, user@spark.apache.org
+echo "please Use announce@apache.org, dev@kyuubi.apache.org, user@spark.apache.org
 see announce content in $ANNOUNCE"

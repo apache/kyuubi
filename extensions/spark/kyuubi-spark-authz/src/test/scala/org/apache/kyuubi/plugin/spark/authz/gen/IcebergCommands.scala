@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
-import org.apache.kyuubi.plugin.spark.authz.serde.{ActionTypeDesc, QueryDesc, TableCommandSpec, TableDesc}
+import org.apache.kyuubi.plugin.spark.authz.serde._
 
 object IcebergCommands {
 
@@ -27,7 +27,7 @@ object IcebergCommands {
     val tableDesc =
       TableDesc(
         "table",
-        "DataSourceV2RelationTableExtractor",
+        classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
   }
@@ -42,7 +42,7 @@ object IcebergCommands {
     val actionTypeDesc = ActionTypeDesc(null, null, Some("UPDATE"))
     val tableDesc = TableDesc(
       "targetTable",
-      "DataSourceV2RelationTableExtractor",
+      classOf[DataSourceV2RelationTableExtractor],
       actionTypeDesc = Some(actionTypeDesc))
     val queryDesc = QueryDesc("sourceTable")
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
@@ -51,5 +51,7 @@ object IcebergCommands {
   val data = Array(
     DeleteFromIcebergTable,
     UpdateIcebergTable,
-    MergeIntoIcebergTable)
+    MergeIntoIcebergTable,
+    MergeIntoIcebergTable.copy(classname =
+      "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable"))
 }

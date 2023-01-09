@@ -66,8 +66,14 @@
         </dependency>
 
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.phoenix</groupId>
+            <artifactId>phoenix-queryserver-client</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

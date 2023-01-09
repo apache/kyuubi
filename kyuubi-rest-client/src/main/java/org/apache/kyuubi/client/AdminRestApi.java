@@ -39,6 +39,11 @@ public class AdminRestApi {
     return this.getClient().post(path, null, client.getAuthHeader());
   }
 
+  public String refreshUserDefaultsConf() {
+    String path = String.format("%s/%s", API_BASE_PATH, "refresh/user_defaults_conf");
+    return this.getClient().post(path, null, client.getAuthHeader());
+  }
+
   public String deleteEngine(
       String engineType, String shareLevel, String subdomain, String hs2ProxyUser) {
     Map<String, Object> params = new HashMap<>();

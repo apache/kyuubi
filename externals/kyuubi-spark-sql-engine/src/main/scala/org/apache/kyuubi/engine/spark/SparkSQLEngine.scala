@@ -214,7 +214,7 @@ object SparkSQLEngine extends Logging {
     if (Utils.isOnK8s) {
       kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
 
-      // https://github.com/apache/incubator-kyuubi/issues/3385
+      // https://github.com/apache/kyuubi/issues/3385
       // Set unset executor pod prefix to prevent kubernetes pod length limit error
       // due to the long app name
       _sparkConf.setIfMissing(

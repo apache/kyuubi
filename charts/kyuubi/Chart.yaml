@@ -22,6 +22,6 @@ type: application
 version: 0.1.0
 appVersion: "master-snapshot"
 home: https://kyuubi.apache.org
-icon: https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docs/imgs/logo.png
+icon: https://raw.githubusercontent.com/apache/kyuubi/master/docs/imgs/logo.png
 sources:
-  - https://github.com/apache/incubator-kyuubi
+  - https://github.com/apache/kyuubi

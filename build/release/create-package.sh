@@ -35,7 +35,7 @@ Top level targets are:
 
 All other inputs are environment variables:
 
-RELEASE_VERSION - Release version, must match pom.xml (e.g. 1.3.0-incubating)
+RELEASE_VERSION - Release version, must match pom.xml (e.g. 1.7.0)
 SKIP_GPG        - (optional) Default false
 EOF
   exit 1

@@ -28,6 +28,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
@@ -56,6 +57,32 @@ class SparkProcessBuilder(
   override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
 
   /**
+   * Add `spark.master` if KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT
+   * are defined. So we can deploy spark on kubernetes without setting `spark.master`
+   * explicitly when kyuubi-servers are on kubernetes, which also helps in case that
+   * api-server is not exposed to us.
+   */
+  override protected def completeMasterUrl(conf: KyuubiConf): Unit = {
+    try {
+      (
+        clusterManager(),
+        sys.env.get(KUBERNETES_SERVICE_HOST),
+        sys.env.get(KUBERNETES_SERVICE_PORT)) match {
+        case (None, Some(kubernetesServiceHost), Some(kubernetesServicePort)) =>
+          // According to "https://kubernetes.io/docs/concepts/architecture/control-plane-
+          // node-communication/#node-to-control-plane", the API server is configured to listen
+          // for remote connections on a secure HTTPS port (typically 443), so we set https here.
+          val masterURL = s"k8s://https://${kubernetesServiceHost}:${kubernetesServicePort}"
+          conf.set(MASTER_KEY, masterURL)
+        case _ =>
+      }
+    } catch {
+      case e: Exception =>
+        warn("Failed when setting up spark.master with kubernetes environment automatically.", e)
+    }
+  }
+
+  /**
    * Converts kyuubi config key so that Spark could identify.
    * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
    * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
@@ -72,6 +99,9 @@ class SparkProcessBuilder(
   }
 
   override protected val commands: Array[String] = {
+    // complete `spark.master` if absent on kubernetes
+    completeMasterUrl(conf)
+
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     val buffer = new ArrayBuffer[String]()
     buffer += executable

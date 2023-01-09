@@ -124,17 +124,17 @@ case class FunctionTypeDesc(
     fieldExtractor: String,
     skipTypes: Seq[String]) extends Descriptor {
   override def extract(v: AnyRef): FunctionType = {
-    getValue(v, SparkSession.active)
+    extract(v, SparkSession.active)
   }
 
-  def getValue(v: AnyRef, spark: SparkSession): FunctionType = {
+  def extract(v: AnyRef, spark: SparkSession): FunctionType = {
     val functionTypeVal = invoke(v, fieldName)
     val functionTypeExtractor = functionTypeExtractors(fieldExtractor)
     functionTypeExtractor(functionTypeVal, spark)
   }
 
   def skip(v: AnyRef, spark: SparkSession): Boolean = {
-    skipTypes.exists(skipType => getValue(v, spark) == FunctionType.withName(skipType))
+    skipTypes.exists(skipType => extract(v, spark) == FunctionType.withName(skipType))
   }
 }
 
@@ -178,7 +178,7 @@ case class FunctionDesc(
 case class QueryDesc(
     fieldName: String,
     fieldExtractor: String = "LogicalPlanQueryExtractor") extends Descriptor {
-  override def extract(v: AnyRef): LogicalPlan = {
+  override def extract(v: AnyRef): Option[LogicalPlan] = {
     val queryVal = invoke(v, fieldName)
     val queryExtractor = queryExtractors(fieldExtractor)
     queryExtractor(queryVal)
@@ -286,5 +286,32 @@ case class CatalogDesc(
     val catalogVal = invoke(v, fieldName)
     val extractor = catalogExtractors(fieldExtractor)
     extractor(catalogVal)
+  }
+}
+
+case class ScanDesc(
+    fieldName: String,
+    fieldExtractor: String,
+    catalogDesc: Option[CatalogDesc] = None) extends Descriptor {
+  override def extract(v: AnyRef): Option[Table] = {
+    extract(v, SparkSession.active)
+  }
+
+  def extract(v: AnyRef, spark: SparkSession): Option[Table] = {
+    val tableVal = if (fieldName == null) {
+      v
+    } else {
+      invoke(v, fieldName)
+    }
+    val tableExtractor = tableExtractors(fieldExtractor)
+    val maybeTable = tableExtractor(spark, tableVal)
+    maybeTable.map { t =>
+      if (t.catalog.isEmpty && catalogDesc.nonEmpty) {
+        val newCatalog = catalogDesc.get.extract(v)
+        t.copy(catalog = newCatalog)
+      } else {
+        t
+      }
+    }
   }
 }

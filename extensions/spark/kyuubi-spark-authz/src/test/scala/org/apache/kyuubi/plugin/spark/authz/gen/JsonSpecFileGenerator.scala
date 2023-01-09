@@ -34,6 +34,7 @@ object JsonSpecFileGenerator {
     write(DatabaseCommands.data, "database")
     write(TableCommands.data ++ IcebergCommands.data, "table")
     write(FunctionCommands.data, "function")
+    write(Scans.data, "scan")
   }
 
   def write[T <: CommandSpec](data: Array[T], filename: String): Unit = {

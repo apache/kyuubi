@@ -17,7 +17,7 @@
 
 # Usage:
 #   DEMO:
-#     kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-configmap.yaml
+#     kubectl apply -f https://raw.githubusercontent.com/apache/kyuubi/master/docker/kyuubi-configmap.yaml
 #   LOCAL:
 #     kubectl create cm kyuubi-defaults --from-file=${KYUUBI_HOME}/conf/kyuubi-defaults.conf
 

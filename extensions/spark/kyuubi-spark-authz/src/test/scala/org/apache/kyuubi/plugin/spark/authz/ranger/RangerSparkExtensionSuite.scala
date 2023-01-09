@@ -895,4 +895,18 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         })
     }
   }
+
+  test("modified query plan should correctly report stats") {
+    val db = "stats_test"
+    val table = "stats"
+    withCleanTmpResources(
+      Seq(
+        (s"$db.$table", "table"),
+        (s"$db", "database"))) {
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.$table (key int) USING $format"))
+      sql("SHOW DATABASES").queryExecution.optimizedPlan.stats
+      sql(s"SHOW TABLES IN $db").queryExecution.optimizedPlan.stats
+    }
+  }
 }
