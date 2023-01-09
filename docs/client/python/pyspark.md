@@ -92,18 +92,6 @@ jdbcDF = spark.read \
            query="select * from testdb.src_table"
            ) \
   .load()
-
-
-# Saving data to Kyuubi via HiveDriver as JDBC datasource
-jdbcDF.write \
-    .format("jdbc") \
-    .options(driver="org.apache.hive.jdbc.HiveDriver",
-             url="jdbc:hive2://kyuubi_server_ip:port",
-           user="user",
-           password="password",
-           dbtable="testdb.tgt_table"
-           ) \
-    .save()
 ```
 
 ### Using as JDBC Datasource table with SQL
