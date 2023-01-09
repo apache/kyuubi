@@ -35,7 +35,7 @@ class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
         case GetSchemas(catalogName, schemaPattern) =>
           assert(catalogName == catalog)
           assert(schemaPattern == schema)
-        case _ => throw new IllegalStateException()
+        case _ => fail(s"Query $query parse failed. ")
       }
     }
 
@@ -56,7 +56,14 @@ class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
     check(
       """
         |SELECT TABLE_SCHEM, TABLE_CATALOG FROM system.jdbc.schemas
-        |WHERE TABLE_SCHEM LIKE 'aa%'
+        |WHERE TABLE_CATALOG IS NULL
+        |ORDER BY TABLE_CATALOG, TABLE_SCHEM
+        |""".stripMargin)
+
+    check(
+      """
+        |SELECT TABLE_SCHEM, TABLE_CATALOG FROM system.jdbc.schemas
+        |WHERE TABLE_SCHEM LIKE 'aa%' ESCAPE '\'
         |ORDER BY TABLE_CATALOG, TABLE_SCHEM
         |""".stripMargin,
       schema = "aa%")
@@ -64,7 +71,7 @@ class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
     check(
       """
         |SELECT TABLE_SCHEM, TABLE_CATALOG FROM system.jdbc.schemas
-        |WHERE TABLE_CATALOG='bb' and TABLE_SCHEM LIKE 'bb%'
+        |WHERE TABLE_CATALOG='bb' and TABLE_SCHEM LIKE 'bb%' ESCAPE '\'
         |ORDER BY TABLE_CATALOG, TABLE_SCHEM
         |""".stripMargin,
       catalog = "bb",
