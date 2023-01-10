@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.FunctionIdentifier
 
@@ -35,11 +31,7 @@ trait FunctionTypeExtractor extends ((AnyRef, SparkSession) => FunctionType) wit
 
 object FunctionTypeExtractor {
   val functionTypeExtractors: Map[String, FunctionTypeExtractor] = {
-    ServiceLoader.load(classOf[FunctionTypeExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[FunctionTypeExtractor]
   }
 }
 
@@ -56,6 +48,9 @@ class TempMarkerFunctionTypeExtractor extends FunctionTypeExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.expressions.ExpressionInfo
+ */
 class ExpressionInfoFunctionTypeExtractor extends FunctionTypeExtractor {
   override def apply(v1: AnyRef, spark: SparkSession): FunctionType = {
     val function = new ExpressionInfoFunctionExtractor().apply(v1)
@@ -64,6 +59,9 @@ class ExpressionInfoFunctionTypeExtractor extends FunctionTypeExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.FunctionIdentifier
+ */
 class FunctionIdentifierFunctionTypeExtractor extends FunctionTypeExtractor {
   override def apply(v1: AnyRef, spark: SparkSession): FunctionType = {
     val catalog = spark.sessionState.catalog

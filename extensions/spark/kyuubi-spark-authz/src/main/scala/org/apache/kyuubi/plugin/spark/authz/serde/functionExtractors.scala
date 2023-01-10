@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.apache.spark.sql.catalyst.expressions.ExpressionInfo
 
@@ -28,20 +24,22 @@ trait FunctionExtractor extends (AnyRef => Function) with Extractor
 
 object FunctionExtractor {
   val functionExtractors: Map[String, FunctionExtractor] = {
-    ServiceLoader.load(classOf[FunctionExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[FunctionExtractor]
   }
 }
 
+/**
+ * String
+ */
 class StringFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     Function(None, v1.asInstanceOf[String])
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.FunctionIdentifier
+ */
 class FunctionIdentifierFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     val identifier = v1.asInstanceOf[FunctionIdentifier]
@@ -49,6 +47,9 @@ class FunctionIdentifierFunctionExtractor extends FunctionExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.expressions.ExpressionInfo
+ */
 class ExpressionInfoFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     val info = v1.asInstanceOf[ExpressionInfo]

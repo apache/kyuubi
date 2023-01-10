@@ -132,7 +132,7 @@ object DatabaseCommands {
     DatabaseCommandSpec(cmd, Seq(databaseDesc), DESCDATABASE)
   }
 
-  val data = Array(
+  val data: Array[DatabaseCommandSpec] = Array(
     AlterDatabaseProperties,
     AlterDatabaseProperties.copy(
       classname = "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",

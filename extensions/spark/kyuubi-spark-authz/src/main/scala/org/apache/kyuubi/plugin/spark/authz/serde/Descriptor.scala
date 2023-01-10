@@ -261,8 +261,8 @@ case class TableDesc(
  * @param actionType the explicitly given action type which take precedence over extracting
  */
 case class ActionTypeDesc(
-    fieldName: String,
-    fieldExtractor: String,
+    fieldName: String = null,
+    fieldExtractor: String = null,
     actionType: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): PrivilegeObjectActionType = {
     actionType.map(PrivilegeObjectActionType.withName).getOrElse {

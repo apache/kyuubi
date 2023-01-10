@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
+import org.apache.kyuubi.plugin.spark.authz.serde.FunctionType.{SYSTEM, TEMP}
 
 object FunctionCommands {
 
@@ -27,7 +28,7 @@ object FunctionCommands {
     val functionTypeDesc = FunctionTypeDesc(
       "isTemp",
       classOf[TempMarkerFunctionTypeExtractor],
-      Seq("TEMP"))
+      Seq(TEMP))
     val databaseDesc =
       DatabaseDesc("databaseName", classOf[StringOptionDatabaseExtractor])
     val functionDesc = FunctionDesc(
@@ -40,7 +41,7 @@ object FunctionCommands {
 
   val DescribeFunction = {
     val cmd = "org.apache.spark.sql.execution.command.DescribeFunctionCommand"
-    val skips = Seq("TEMP", "SYSTEM")
+    val skips: Seq[String] = Seq(TEMP, SYSTEM)
     val functionTypeDesc1 =
       FunctionTypeDesc("info", classOf[ExpressionInfoFunctionTypeExtractor], skips)
     val functionDesc1 = FunctionDesc(
@@ -78,7 +79,7 @@ object FunctionCommands {
     FunctionCommandSpec(cmd, Seq(functionDesc), RELOADFUNCTION)
   }
 
-  val data = Array(
+  val data: Array[FunctionCommandSpec] = Array(
     CreateFunction,
     DropFunction,
     DescribeFunction,

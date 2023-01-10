@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.SaveMode.{Append, Overwrite}
 
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
@@ -29,14 +25,13 @@ trait ActionTypeExtractor extends (AnyRef => PrivilegeObjectActionType) with Ext
 
 object ActionTypeExtractor {
   val actionTypeExtractors: Map[String, ActionTypeExtractor] = {
-    ServiceLoader.load(classOf[ActionTypeExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[ActionTypeExtractor]
   }
 }
 
+/**
+ * Boolean
+ */
 class OverwriteOrInsertActionTypeExtractor extends ActionTypeExtractor {
   override def apply(v1: AnyRef): PrivilegeObjectActionType = {
     if (v1.asInstanceOf[Boolean]) INSERT_OVERWRITE else INSERT

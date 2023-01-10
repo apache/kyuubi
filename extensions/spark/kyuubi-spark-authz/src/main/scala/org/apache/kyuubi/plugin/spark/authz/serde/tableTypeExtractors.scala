@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 
@@ -35,11 +31,7 @@ trait TableTypeExtractor extends ((AnyRef, SparkSession) => TableType) with Extr
 
 object TableTypeExtractor {
   val tableTypeExtractors: Map[String, TableTypeExtractor] = {
-    ServiceLoader.load(classOf[TableTypeExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[TableTypeExtractor]
   }
 }
 
@@ -56,6 +48,9 @@ class ViewTypeTableTypeExtractor extends TableTypeExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.TableIdentifier
+ */
 class TableIdentifierTableTypeExtractor extends TableTypeExtractor {
   override def apply(v1: AnyRef, spark: SparkSession): TableType = {
     val catalog = spark.sessionState.catalog

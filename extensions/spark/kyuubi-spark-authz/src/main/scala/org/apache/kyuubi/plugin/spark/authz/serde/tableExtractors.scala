@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.{Map => JMap, ServiceLoader}
+import java.util.{Map => JMap}
 
 import scala.collection.JavaConverters._
 
@@ -36,11 +36,7 @@ trait TableExtractor extends ((SparkSession, AnyRef) => Option[Table]) with Extr
 
 object TableExtractor {
   val tableExtractors: Map[String, TableExtractor] = {
-    ServiceLoader.load(classOf[TableExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[TableExtractor]
   }
 
   /**
