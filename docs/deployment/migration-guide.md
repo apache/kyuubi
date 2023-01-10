@@ -24,6 +24,7 @@
 * Since Kyuubi 1.7, Kyuubi returns engine's information for `GetInfo` request instead of server. To restore the previous behavior, set `kyuubi.server.info.provider` to `SERVER`.
 * Since Kyuubi 1.7, Kyuubi session type `SQL` is refactored to `INTERACTIVE`, because Kyuubi supports not only `SQL` session, but also `SCALA` and `PYTHON` sessions.
   User need to use `INTERACTIVE` sessionType to look up the session event.
+* Since Kyuubi 1.7, the REST API of `Open(create) a session` will not contains parameters `user` `password` and `IpAddr`. We should set user and password in `Authorization` of http request when needed.
 
 ## Upgrading from Kyuubi 1.6.0 to 1.6.1
 * Since Kyuubi 1.6.1, `kyuubi.ha.zookeeper.engine.auth.type` does not fallback to `kyuubi.ha.zookeeper.auth.type`.  
