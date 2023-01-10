@@ -34,8 +34,8 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL
 import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
+import org.apache.kyuubi.session.SessionType
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -128,12 +128,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == sessionOpenResp.getStatus)
     val sessions = response.readEntity(classOf[KyuubiSessionEvent])
     assert(sessions.conf("testConfig").equals("testValue"))
-<<<<<<< HEAD
     assert(sessions.sessionType.equals(SessionType.INTERACTIVE.toString))
-=======
-    assert(sessions.sessionType.equals("SQL"))
     assert(sessions.user.equals("kyuubi"))
->>>>>>> 4ca32c54 ([REST] Remove unused parameters in SessionOpenRequest)
 
     // close an opened session
     response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
