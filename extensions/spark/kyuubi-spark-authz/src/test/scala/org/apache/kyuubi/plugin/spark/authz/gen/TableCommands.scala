@@ -30,9 +30,9 @@ object TableCommands {
   val resolvedTableDesc = TableDesc("child", classOf[ResolvedTableTableExtractor])
   val resolvedDbObjectNameDesc =
     TableDesc("child", classOf[ResolvedDbObjectNameTableExtractor])
-
   val overwriteActionTypeDesc =
     ActionTypeDesc("overwrite", classOf[OverwriteOrInsertActionTypeExtractor])
+  val queryQueryDesc = QueryDesc("query")
 
   val AlterTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.AlterTable"
@@ -174,7 +174,7 @@ object TableCommands {
       "org.apache.spark.sql.execution.command.AlterViewAsCommand",
       Seq(TableDesc("name", tite, tableTypeDesc = Some(tableTypeDesc))),
       ALTERVIEW_AS,
-      Seq(QueryDesc("query")))
+      Seq(queryQueryDesc))
   }
 
   val AnalyzeColumn = {
@@ -231,7 +231,7 @@ object TableCommands {
       cmd,
       Seq(tableDesc, resolvedDbObjectNameDesc.copy(fieldName = "left")),
       CREATETABLE_AS_SELECT,
-      Seq(QueryDesc("query")))
+      Seq(queryQueryDesc))
   }
 
   val CommentOnTable = {
@@ -247,7 +247,7 @@ object TableCommands {
         "table",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
   }
 
   val UpdateTable = {
@@ -258,7 +258,7 @@ object TableCommands {
         "table",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
   }
 
   val DeleteFromTable = {
@@ -274,7 +274,7 @@ object TableCommands {
         "table",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
   }
 
   val OverwritePartitionsDynamic = {
@@ -361,7 +361,7 @@ object TableCommands {
     CreateDataSourceTable.copy(
       classname = cmd,
       opType = CREATETABLE_AS_SELECT,
-      queryDescs = Seq(QueryDesc("query")))
+      queryDescs = Seq(queryQueryDesc))
   }
 
   val CreateHiveTableAsSelect = {
@@ -369,7 +369,7 @@ object TableCommands {
     val columnDesc = ColumnDesc("outputColumnNames", classOf[StringSeqColumnExtractor])
     val tableDesc =
       TableDesc("tableDesc", classOf[CatalogTableTableExtractor], Some(columnDesc))
-    val queryDesc = QueryDesc("query")
+    val queryDesc = queryQueryDesc
     TableCommandSpec(cmd, Seq(tableDesc), "CREATETABLE_AS_SELECT", queryDescs = Seq(queryDesc))
   }
 
@@ -498,7 +498,7 @@ object TableCommands {
       "logicalRelation",
       classOf[LogicalRelationTableExtractor],
       actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
   }
 
   val InsertIntoHiveTable = {
@@ -510,13 +510,13 @@ object TableCommands {
       classOf[CatalogTableTableExtractor],
       Some(columnDesc),
       Some(actionTypeDesc))
-    val queryDesc = QueryDesc("query")
+    val queryDesc = queryQueryDesc
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
   }
 
   val InsertIntoDataSourceDir = {
     val cmd = "org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand"
-    val queryDesc = QueryDesc("query")
+    val queryDesc = queryQueryDesc
     TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc))
   }
 
@@ -529,7 +529,7 @@ object TableCommands {
       classOf[CatalogTableOptionTableExtractor],
       Some(columnDesc),
       actionTypeDesc = Some(actionTypeDesc))
-    val queryDesc = QueryDesc("query")
+    val queryDesc = queryQueryDesc
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
   }
 
