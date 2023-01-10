@@ -107,6 +107,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: check bin directory
-        uses: ludeeus/action-shellcheck@master
+        uses: ludeeus/action-shellcheck@1.1.0
         with:
           severity: error
