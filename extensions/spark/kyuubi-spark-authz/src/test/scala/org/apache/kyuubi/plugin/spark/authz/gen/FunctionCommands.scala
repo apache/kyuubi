@@ -79,7 +79,7 @@ object FunctionCommands {
     FunctionCommandSpec(cmd, Seq(functionDesc), RELOADFUNCTION)
   }
 
-  val data = Array(
+  val data: Array[FunctionCommandSpec] = Array(
     CreateFunction,
     DropFunction,
     DescribeFunction,

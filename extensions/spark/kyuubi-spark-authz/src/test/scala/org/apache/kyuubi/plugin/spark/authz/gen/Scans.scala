@@ -57,7 +57,7 @@ object Scans {
     ScanSpec(r, Seq(tableDesc))
   }
 
-  val data = Array(
+  val data: Array[ScanSpec] = Array(
     HiveTableRelation,
     LogicalRelation,
     DataSourceV2Relation,

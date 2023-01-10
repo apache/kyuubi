@@ -49,7 +49,7 @@ object IcebergCommands {
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
   }
 
-  val data = Array(
+  val data: Array[TableCommandSpec] = Array(
     DeleteFromIcebergTable,
     UpdateIcebergTable,
     MergeIntoIcebergTable,

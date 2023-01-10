@@ -559,7 +559,7 @@ object TableCommands {
     TableCommandSpec(cmd, Seq(tableIdentDesc.copy(isInput = true)))
   }
 
-  val data = Array(
+  val data: Array[TableCommandSpec] = Array(
     AddPartitions,
     DropPartitions,
     RenamePartitions,
