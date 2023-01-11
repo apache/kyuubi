@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.io.InputStream
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import javax.ws.rs._
@@ -29,13 +30,14 @@ import scala.util.control.NonFatal
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.glassfish.jersey.media.multipart.{FormDataContentDisposition, FormDataParam}
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys._
-import org.apache.kyuubi.engine.ApplicationInfo
+import org.apache.kyuubi.engine.{ApplicationInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
@@ -161,6 +163,39 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openBatchSession(request: BatchRequest): Batch = {
+    openBatchSessionInternal(request)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[Batch]))),
+    description = "create and open a batch session with uploading resource file")
+  @POST
+  @Consumes(Array(MediaType.MULTIPART_FORM_DATA))
+  def openBatchSessionWithUpload(
+      @FormDataParam("batchRequest") batchRequest: BatchRequest,
+      @FormDataParam("resourceFile") resourceFileInputStream: InputStream,
+      @FormDataParam("resourceFile") resourceFileMetadata: FormDataContentDisposition): Batch = {
+    val tempFile = Utils.writeToTempFile(
+      resourceFileInputStream,
+      KyuubiApplicationManager.tempDirForUpload,
+      resourceFileMetadata.getFileName)
+    batchRequest.setResource(tempFile.getPath)
+    openBatchSessionInternal(batchRequest, isResourceFromUpload = true)
+  }
+
+  /**
+   * open new batch session with request
+   *
+   * @param request              instance of BatchRequest
+   * @param isResourceFromUpload whether to clean up temporary uploaded resource file
+   *                             in local path after execution
+   */
+  private def openBatchSessionInternal(
+      request: BatchRequest,
+      isResourceFromUpload: Boolean = false): Batch = {
     require(
       supportedBatchType(request.getBatchType),
       s"${request.getBatchType} is not in the supported list: $SUPPORTED_BATCH_TYPES}")
@@ -177,6 +212,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         KYUUBI_CLIENT_IP_KEY -> ipAddress,
         KYUUBI_SERVER_IP_KEY -> fe.host,
         KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
+        KYUUBI_SESSION_BATCH_RESOURCE_UPLOADED_KEY -> isResourceFromUpload.toString,
         KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
     val sessionHandle = sessionManager.openBatchSession(
       userName,

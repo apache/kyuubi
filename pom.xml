@@ -170,7 +170,7 @@
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.19.0</log4j.version>
         <mysql.jdbc.version>8.0.31</mysql.jdbc.version>
-        <netty.version>4.1.84.Final</netty.version>
+        <netty.version>4.1.87.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -882,6 +882,10 @@
                     </exclusion>
                     <exclusion>
                         <groupId>io.netty</groupId>
+                        <artifactId>netty-handler-ssl-ocsp</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
                         <artifactId>netty-resolver-dns-classes-macos</artifactId>
                     </exclusion>
                     <exclusion>
@@ -1459,6 +1463,19 @@
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-json-jackson</artifactId>
                 <version>${jersey.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-multipart</artifactId>
+                <version>${jersey.version}</version>
+                <exclusions>
+                    <!--todo: remove this exclusion when Jersey 2.39 released with scope fix for Junit dependency-->
+                    <exclusion>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>

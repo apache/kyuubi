@@ -20,8 +20,10 @@ package org.apache.kyuubi
 import java.io._
 import java.net.{Inet4Address, InetAddress, NetworkInterface}
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
-import java.util.{Properties, TimeZone, UUID}
+import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.text.SimpleDateFormat
+import java.util.{Date, Properties, TimeZone, UUID}
+import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.JavaConverters._
 import scala.sys.process._
@@ -39,6 +41,12 @@ import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 object Utils extends Logging {
 
   import org.apache.kyuubi.config.KyuubiConf._
+
+  /**
+   * An atomic counter used in writeToTempFile method
+   * avoiding duplication in temporary file name generation
+   */
+  private lazy val tempFileIdCounter: AtomicLong = new AtomicLong(0)
 
   def strToSeq(s: String, sp: String = ","): Seq[String] = {
     require(s != null)
@@ -136,6 +144,20 @@ object Utils extends Logging {
   }
 
   /**
+   * delete file in path with logging
+   * @param filePath path to file for deletion
+   * @param errorMessage message as prefix logging with error exception
+   */
+  def deleteFile(filePath: String, errorMessage: String): Unit = {
+    try {
+      Files.delete(Paths.get(filePath))
+    } catch {
+      case e: Exception =>
+        error(s"$errorMessage: $filePath ", e)
+    }
+  }
+
+  /**
    * Create a temporary directory inside the given parent directory. The directory will be
    * automatically deleted when the VM shuts down.
    */
@@ -145,6 +167,50 @@ object Utils extends Logging {
     val dir = createDirectory(root, prefix)
     dir.toFile.deleteOnExit()
     dir
+  }
+
+  /**
+   * Copies bytes from an InputStream source to a newly created temporary file
+   * created in the directory destination. The temporary file will be created
+   * with new name by adding random identifiers before original file name's suffix,
+   * and the file will be deleted on JVM exit. The directories up to destination
+   * will be created if they don't already exist. destination will be overwritten
+   * if it already exists. The source stream is closed.
+   * @param source the InputStream to copy bytes from, must not be null, will be closed
+   * @param dir the directory path for temp file creation
+   * @param fileName original file name with suffix
+   * @return the created temp file in dir
+   */
+  def writeToTempFile(source: InputStream, dir: Path, fileName: String): File = {
+    try {
+      if (source == null) {
+        throw new IOException("the source inputstream is null")
+      }
+      if (!dir.toFile.exists()) {
+        dir.toFile.mkdirs()
+      }
+      val (prefix, suffix) = fileName.lastIndexOf(".") match {
+        case i if i > 0 => (fileName.substring(0, i), fileName.substring(i))
+        case _ => (fileName, "")
+      }
+      val currentTime = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
+      val identifier = s"$currentTime-${tempFileIdCounter.incrementAndGet()}"
+      val filePath = Paths.get(dir.toString, s"$prefix-$identifier$suffix")
+      try {
+        Files.copy(source, filePath, StandardCopyOption.REPLACE_EXISTING)
+      } finally {
+        source.close()
+      }
+      val file = filePath.toFile
+      file.deleteOnExit()
+      file
+    } catch {
+      case e: Exception =>
+        error(
+          s"failed to write to temp file in path $dir, original file name: $fileName",
+          e)
+        throw e
+    }
   }
 
   def currentUser: String = UserGroupInformation.getCurrentUser.getShortUserName
