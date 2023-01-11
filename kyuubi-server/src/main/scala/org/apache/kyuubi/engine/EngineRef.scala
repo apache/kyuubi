@@ -101,8 +101,7 @@ private[kyuubi] class EngineRef(
         case "POLLING" =>
           val snPath =
             DiscoveryPaths.makePath(
-              s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType",
-              "seq_num",
+              s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_seq_num",
               appUser,
               clientPoolName)
           DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
@@ -159,8 +158,7 @@ private[kyuubi] class EngineRef(
       case _ =>
         val lockPath =
           DiscoveryPaths.makePath(
-            s"${serverSpace}_${shareLevel}_$engineType",
-            "lock",
+            s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_lock",
             appUser,
             subdomain)
         discoveryClient.tryWithLock(
