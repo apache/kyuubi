@@ -349,6 +349,7 @@ fi
 cp -r "$KYUUBI_HOME/bin" "$DISTDIR"
 cp -r "$KYUUBI_HOME/conf" "$DISTDIR"
 cp -r "$KYUUBI_HOME/docker" "$DISTDIR"
+cp -r "$KYUUBI_HOME/charts" "$DISTDIR"
 
 if [[ "$MAKE_TGZ" == "true" ]]; then
   TARDIR_NAME="apache-kyuubi-$VERSION-bin$SUFFIX"
