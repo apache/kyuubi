@@ -131,9 +131,6 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
     var token = generateToken(hostName)
     val sessionOpenRequest = new SessionOpenRequest(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11.getValue,
-      "kyuubi",
-      "pass",
-      "localhost",
       Map(
         KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION",
         "hive.server2.proxy.user" -> proxyUser).asJava)
