@@ -71,7 +71,7 @@
 
         <dependency>
             <groupId>org.scalatestplus</groupId>
-            <artifactId>scalacheck-1-15_${scala.binary.version}</artifactId>
+            <artifactId>scalacheck-1-17_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
 
