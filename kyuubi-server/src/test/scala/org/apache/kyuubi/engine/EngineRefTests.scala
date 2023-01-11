@@ -204,7 +204,7 @@ trait EngineRefTests extends KyuubiFunSuite {
     conf.set(ENGINE_POOL_NAME, pool_name)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
     conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
-    conf.set(ENGINE_POOL_BALANCE_POLICY, "POLLING")
+    conf.set(ENGINE_POOL_SELECT_POLICY, "POLLING")
     (0 until (10)).foreach { i =>
       val engine7 = new EngineRef(conf, user, "grp", id, null)
       val engineNumber = Integer.parseInt(engine7.subdomain.substring(pool_name.length + 1))

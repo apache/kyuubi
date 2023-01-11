@@ -74,7 +74,7 @@ private[kyuubi] class EngineRef(
 
   private val enginePoolIgnoreSubdomain: Boolean = conf.get(ENGINE_POOL_IGNORE_SUBDOMAIN)
 
-  private val enginePoolBalancePolicy: String = conf.get(ENGINE_POOL_BALANCE_POLICY)
+  private val enginePoolSelectPolicy: String = conf.get(ENGINE_POOL_SELECT_POLICY)
 
   // In case the multi kyuubi instances have the small gap of timeout, here we add
   // a small amount of time for timeout
@@ -97,7 +97,7 @@ private[kyuubi] class EngineRef(
         warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to " +
           s"system threshold $poolThreshold")
       }
-      val seqNum = enginePoolBalancePolicy match {
+      val seqNum = enginePoolSelectPolicy match {
         case "POLLING" =>
           val snPath =
             DiscoveryPaths.makePath(
