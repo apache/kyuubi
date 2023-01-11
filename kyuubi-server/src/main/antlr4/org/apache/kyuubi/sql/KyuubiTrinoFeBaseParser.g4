@@ -39,6 +39,14 @@ statement
       FROM SYSTEM_JDBC_TABLES
       (WHERE tableCatalogFilter? AND? tableSchemaFilter? AND? tableNameFilter? AND? tableTypeFilter?)?
       ORDER BY TABLE_TYPE COMMA TABLE_CAT COMMA TABLE_SCHEM COMMA TABLE_NAME                            #getTables
+    | SELECT TABLE_CAT COMMA TABLE_SCHEM COMMA TABLE_NAME COMMA COLUMN_NAME COMMA DATA_TYPE COMMA
+      TYPE_NAME COMMA COLUMN_SIZE COMMA BUFFER_LENGTH COMMA DECIMAL_DIGITS COMMA NUM_PREC_RADIX COMMA
+      NULLABLE COMMA REMARKS COMMA COLUMN_DEF COMMA SQL_DATA_TYPE COMMA SQL_DATETIME_SUB COMMA
+      CHAR_OCTET_LENGTH COMMA ORDINAL_POSITION COMMA IS_NULLABLE COMMA
+      SCOPE_CATALOG COMMA SCOPE_SCHEMA COMMA SCOPE_TABLE COMMA
+      SOURCE_DATA_TYPE COMMA IS_AUTOINCREMENT COMMA IS_GENERATEDCOLUMN FROM SYSTEM_JDBC_COLUMNS
+      (WHERE tableCatalogFilter? AND? tableSchemaFilter? AND? tableNameFilter? AND? colNameFilter?)?
+      ORDER BY TABLE_CAT COMMA TABLE_SCHEM COMMA TABLE_NAME COMMA ORDINAL_POSITION                      #getColumns
     | .*?                                                                                               #passThrough
     ;
 
@@ -54,6 +62,10 @@ tableSchemaFilter
 
 tableNameFilter
     : TABLE_NAME LIKE tableNamePattern=stringLit ESCAPE STRING_ESCAPE
+    ;
+
+colNameFilter
+    : COLUMN_NAME LIKE colNamePattern=stringLit ESCAPE STRING_ESCAPE
     ;
 
 tableTypeFilter
