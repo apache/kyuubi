@@ -25,7 +25,7 @@ import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParser._
 import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParserBaseVisitor
 import org.apache.kyuubi.sql.parser.KyuubiParser.unescapeSQLString
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetColumns, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
 
 class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef] {
 
@@ -83,6 +83,15 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
     GetTables(catalog, schemaPattern, tableNamePattern, tableTypes, emptyResult)
   }
 
+  override def visitGetColumns(ctx: GetColumnsContext): KyuubiTreeNode = {
+    val catalog = visit(ctx.tableCatalogFilter()).asInstanceOf[String]
+    val schemaPattern = visit(ctx.tableSchemaFilter()).asInstanceOf[String]
+    val tableNamePattern = visit(ctx.tableNameFilter()).asInstanceOf[String]
+    val colNamePattern = visit(ctx.colNameFilter()).asInstanceOf[String]
+
+    GetColumns(catalog, schemaPattern, tableNamePattern, colNamePattern)
+  }
+
   override def visitNullCatalog(ctx: NullCatalogContext): AnyRef = {
     null
   }
@@ -101,6 +110,10 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
 
   override def visitTableNameFilter(ctx: TableNameFilterContext): String = {
     unescapeSQLString(ctx.tableNamePattern.getText)
+  }
+
+  override def visitColNameFilter(ctx: ColNameFilterContext): String = {
+    unescapeSQLString(ctx.colNamePattern.getText)
   }
 
   override def visitTypesFilter(ctx: TypesFilterContext): List[String] = {

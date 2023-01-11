@@ -20,7 +20,7 @@ package org.apache.kyuubi.parser.trino
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetColumns, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
 
 class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
   val parser = new KyuubiTrinoFeParser()
@@ -244,5 +244,114 @@ class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
       schema = "%aa",
       tableName = "bb%",
       types = List("ykf_type", "ykf2_type"))
+  }
+
+  test("Support GetColumns for Trino Fe") {
+    def check(
+        query: String,
+        catalog: String = null,
+        schema: String = null,
+        tableName: String = null,
+        colName: String = null): Unit = {
+      parse(query) match {
+        case GetColumns(catalogName, schemaPattern, tableNamePattern, colNamePattern) =>
+          assert(catalog == catalogName)
+          assert(schema == schemaPattern)
+          assert(tableName == tableNamePattern)
+          assert(colName == colNamePattern)
+        case _ => fail(s"Query $query parse failed. ")
+      }
+    }
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, DATA_TYPE,
+        | TYPE_NAME, COLUMN_SIZE, BUFFER_LENGTH, DECIMAL_DIGITS, NUM_PREC_RADIX,
+        | NULLABLE, REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB,
+        | CHAR_OCTET_LENGTH, ORDINAL_POSITION, IS_NULLABLE,
+        | SCOPE_CATALOG, SCOPE_SCHEMA, SCOPE_TABLE,
+        | SOURCE_DATA_TYPE, IS_AUTOINCREMENT, IS_GENERATEDCOLUMN
+        | FROM system.jdbc.columns
+        | ORDER BY TABLE_CAT, TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION
+        |""".stripMargin)
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, DATA_TYPE,
+        | TYPE_NAME, COLUMN_SIZE, BUFFER_LENGTH, DECIMAL_DIGITS, NUM_PREC_RADIX,
+        | NULLABLE, REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB,
+        | CHAR_OCTET_LENGTH, ORDINAL_POSITION, IS_NULLABLE,
+        | SCOPE_CATALOG, SCOPE_SCHEMA, SCOPE_TABLE,
+        | SOURCE_DATA_TYPE, IS_AUTOINCREMENT, IS_GENERATEDCOLUMN
+        | FROM system.jdbc.columns
+        | WHERE TABLE_CAT IS NULL
+        | ORDER BY TABLE_CAT, TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION
+        |""".stripMargin)
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, DATA_TYPE,
+        | TYPE_NAME, COLUMN_SIZE, BUFFER_LENGTH, DECIMAL_DIGITS, NUM_PREC_RADIX,
+        | NULLABLE, REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB,
+        | CHAR_OCTET_LENGTH, ORDINAL_POSITION, IS_NULLABLE,
+        | SCOPE_CATALOG, SCOPE_SCHEMA, SCOPE_TABLE,
+        | SOURCE_DATA_TYPE, IS_AUTOINCREMENT, IS_GENERATEDCOLUMN
+        | FROM system.jdbc.columns
+        | WHERE TABLE_CAT = 'ykf_catalog'
+        | ORDER BY TABLE_CAT, TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION
+        |""".stripMargin,
+      catalog = "ykf_catalog")
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, DATA_TYPE,
+        | TYPE_NAME, COLUMN_SIZE, BUFFER_LENGTH, DECIMAL_DIGITS, NUM_PREC_RADIX,
+        | NULLABLE, REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB,
+        | CHAR_OCTET_LENGTH, ORDINAL_POSITION, IS_NULLABLE,
+        | SCOPE_CATALOG, SCOPE_SCHEMA, SCOPE_TABLE,
+        | SOURCE_DATA_TYPE, IS_AUTOINCREMENT, IS_GENERATEDCOLUMN
+        | FROM system.jdbc.columns
+        | WHERE TABLE_CAT = 'ykf_catalog' AND TABLE_NAME LIKE '%aa' ESCAPE '\'
+        | ORDER BY TABLE_CAT, TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION
+        |""".stripMargin,
+      catalog = "ykf_catalog",
+      tableName = "%aa")
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, DATA_TYPE,
+        | TYPE_NAME, COLUMN_SIZE, BUFFER_LENGTH, DECIMAL_DIGITS, NUM_PREC_RADIX,
+        | NULLABLE, REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB,
+        | CHAR_OCTET_LENGTH, ORDINAL_POSITION, IS_NULLABLE,
+        | SCOPE_CATALOG, SCOPE_SCHEMA, SCOPE_TABLE,
+        | SOURCE_DATA_TYPE, IS_AUTOINCREMENT, IS_GENERATEDCOLUMN
+        | FROM system.jdbc.columns
+        | WHERE TABLE_CAT = 'ykf_catalog' AND TABLE_NAME LIKE '%aa' ESCAPE '\'
+        | AND COLUMN_NAME  LIKE '%bb' ESCAPE '\'
+        | ORDER BY TABLE_CAT, TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION
+        |""".stripMargin,
+      catalog = "ykf_catalog",
+      tableName = "%aa",
+      colName = "%bb")
+
+    check(
+      """
+        | SELECT TABLE_CAT, TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, DATA_TYPE,
+        | TYPE_NAME, COLUMN_SIZE, BUFFER_LENGTH, DECIMAL_DIGITS, NUM_PREC_RADIX,
+        | NULLABLE, REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB,
+        | CHAR_OCTET_LENGTH, ORDINAL_POSITION, IS_NULLABLE,
+        | SCOPE_CATALOG, SCOPE_SCHEMA, SCOPE_TABLE,
+        | SOURCE_DATA_TYPE, IS_AUTOINCREMENT, IS_GENERATEDCOLUMN
+        | FROM system.jdbc.columns
+        | WHERE TABLE_CAT = 'ykf_catalog'
+        | AND TABLE_SCHEM  LIKE '%cc' ESCAPE '\'
+        | AND TABLE_NAME LIKE '%aa' ESCAPE '\'
+        | AND COLUMN_NAME  LIKE '%bb' ESCAPE '\'
+        | ORDER BY TABLE_CAT, TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION
+        |""".stripMargin,
+      catalog = "ykf_catalog",
+      schema = "%cc",
+      tableName = "%aa",
+      colName = "%bb")
   }
 }

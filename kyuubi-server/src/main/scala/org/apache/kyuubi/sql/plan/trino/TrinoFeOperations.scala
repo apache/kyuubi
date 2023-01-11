@@ -47,3 +47,11 @@ case class GetTables(
     emptyResult: Boolean = false) extends KyuubiTreeNode {
   override def name(): String = "Get Tables"
 }
+
+case class GetColumns(
+    catalogName: String,
+    schemaPattern: String,
+    tableNamePattern: String,
+    colNamePattern: String) extends KyuubiTreeNode {
+  override def name(): String = "Get Columns"
+}

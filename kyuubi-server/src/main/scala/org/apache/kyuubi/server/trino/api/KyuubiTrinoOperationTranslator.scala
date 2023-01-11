@@ -25,7 +25,7 @@ import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
 import org.apache.kyuubi.sql.plan.PassThroughNode
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetColumns, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
 
 class KyuubiTrinoOperationTranslator(backendService: BackendService) {
   lazy val parser = new KyuubiTrinoFeParser()
@@ -61,6 +61,13 @@ class KyuubiTrinoOperationTranslator(backendService: BackendService) {
           tableTypes.asJava)
         operationHandle.setHasResultSet(!emptyResult)
         operationHandle
+      case GetColumns(catalogName, schemaPattern, tableNamePattern, colNamePattern) =>
+        backendService.getColumns(
+          sessionHandle,
+          catalogName,
+          schemaPattern,
+          tableNamePattern,
+          colNamePattern)
       case PassThroughNode() =>
         backendService.executeStatement(sessionHandle, statement, configs, runAsync, queryTimeout)
     }
