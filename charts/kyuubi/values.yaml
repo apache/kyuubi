@@ -57,12 +57,60 @@ probe:
     failureThreshold: 10
     successThreshold: 1
 
-server:
-  bind:
-    host: 0.0.0.0
+# Kyuubi frontends
+frontend:
+  # Thrift Binary protocol (HiveServer2 compatible)
+  thriftBinary:
+    enabled: true
     port: 10009
-  confDir: /opt/kyuubi/conf
-  conf:
+    service:
+      type: ClusterIP
+      port: "{{ .Values.frontend.thriftBinary.port }}"
+      nodePort: ~
+      annotations: {}
+
+  # Thrift HTTP protocol (HiveServer2 compatible)
+  thriftHttp:
+    enabled: false
+    port: 10010
+    service:
+      type: ClusterIP
+      port: "{{ .Values.frontend.thriftHttp.port }}"
+      nodePort: ~
+      annotations: {}
+
+  # REST API protocol (experimental)
+  rest:
+    enabled: false
+    port: 10099
+    service:
+      type: ClusterIP
+      port: "{{ .Values.frontend.rest.port }}"
+      nodePort: ~
+      annotations: {}
+
+  # MySQL compatible text protocol (experimental)
+  mysql:
+    enabled: false
+    port: 3309
+    service:
+      type: ClusterIP
+      port: "{{ .Values.frontend.mysql.port }}"
+      nodePort: ~
+      annotations: {}
+
+  # Trino compatible http protocol (experimental)
+  trino:
+    enabled: false
+    port: 10999
+    service:
+      type: ClusterIP
+      port: "{{ .Values.frontend.trino.port }}"
+      nodePort: ~
+      annotations: {}
+
+kyuubiConfDir: /opt/kyuubi/conf
+kyuubiConf:
     # The value (templated string) is used for kyuubi-env.sh file
     # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments for more details
     kyuubiEnv: ~
@@ -88,15 +136,6 @@ volumeMounts: []
 initContainers: []
 # Additional containers for Kyuubi pod (templated)
 containers: []
-
-service:
-  type: NodePort
-  # The default port limit of kubernetes is 30000-32767
-  # to change:
-  #   vim kube-apiserver.yaml (usually under path: /etc/kubernetes/manifests/)
-  #   add or change line 'service-node-port-range=1-32767' under kube-apiserver
-  port: 30009
-  annotations: {}
 
 resources: {}
   # Used to specify resource, default unlimited.

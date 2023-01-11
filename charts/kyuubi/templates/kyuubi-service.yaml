@@ -15,27 +15,34 @@
 # limitations under the License.
 #
 
+{{- range $name, $frontend := .Values.frontend }}
+{{- if $frontend.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ $.Release.Name }}-{{ $name | kebabcase }}
   labels:
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-  {{- with .Values.service.annotations }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version }}
+    app.kubernetes.io/name: {{ $.Chart.Name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/version: {{ $.Values.image.tag | default $.Chart.AppVersion | quote }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+  {{- with $frontend.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
+  type: {{ $frontend.service.type }}
   ports:
-    - name: http
-      nodePort: {{ .Values.service.port }}
-      port: {{ .Values.server.bind.port }}
-      protocol: TCP
-  type: {{ .Values.service.type }}
+    - name: {{ $name | kebabcase }}
+      port: {{ tpl $frontend.service.port $ }}
+      targetPort: {{ $frontend.port }}
+      {{- if and (eq $frontend.service.type "NodePort") ($frontend.service.nodePort) }}
+      nodePort: {{ $frontend.service.nodePort }}
+      {{- end }}
   selector:
-    app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ $.Chart.Name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+{{- end }}
+{{- end }}
