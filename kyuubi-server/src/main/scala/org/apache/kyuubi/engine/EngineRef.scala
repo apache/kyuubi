@@ -101,7 +101,7 @@ private[kyuubi] class EngineRef(
         case "POLLING" =>
           val snPath =
             DiscoveryPaths.makePath(
-              s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_seq_num",
+              s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_seqNum",
               appUser,
               clientPoolName)
           DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
