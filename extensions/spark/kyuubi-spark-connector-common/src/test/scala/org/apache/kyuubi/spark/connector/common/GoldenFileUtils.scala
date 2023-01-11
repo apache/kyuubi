@@ -43,7 +43,11 @@ object GoldenFileUtils {
   private val regenerateGoldenFiles: Boolean = sys.env.get("KYUUBI_UPDATE").contains("1")
 
   private val baseResourcePath: Path =
-    Paths.get("src", "main", "resources")
+    Paths.get(
+      Option(Thread.currentThread().getContextClassLoader).getOrElse(getClass.getClassLoader)
+        .getResource(".")
+        .getPath,
+      Seq("..", "..", "..", "src", "main", "resources"): _*)
 
   private def fileToString(file: Path): String = {
     new String(Files.readAllBytes(file), StandardCharsets.UTF_8)
