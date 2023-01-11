@@ -102,12 +102,12 @@ and others would not be possible without your help.
 ## Online Documentation
 
 Since Kyuubi 1.3.0-incubating, the Kyuubi online documentation is hosted by [https://kyuubi.apache.org/](https://kyuubi.apache.org/).
-You can find the latest Kyuubi documentation on [this web page](https://kyuubi.apache.org/docs/latest/).
+You can find the latest Kyuubi documentation on [this web page](https://kyuubi.readthedocs.io/en/master/).
 For 1.2 and earlier versions, please check the [Readthedocs](https://kyuubi.readthedocs.io/en/v1.2.0/) directly.
 
 ## Quick Start
 
-Ready? [Getting Started](https://kyuubi.apache.org/docs/latest/quick_start/quick_start.html) with Kyuubi.
+Ready? [Getting Started](https://kyuubi.readthedocs.io/en/master/quick_start/) with Kyuubi.
 
 ## [Contributing](./CONTRIBUTING.md)
 
