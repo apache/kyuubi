@@ -6,7 +6,9 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "ALTERDATABASE"
+  "opType" : "ALTERDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
   "databaseDescs" : [ {
@@ -23,7 +25,9 @@
     },
     "isInput" : false
   } ],
-  "opType" : "CREATEDATABASE"
+  "opType" : "CREATEDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace",
   "databaseDescs" : [ {
@@ -32,7 +36,9 @@
     "catalogDesc" : null,
     "isInput" : true
   } ],
-  "opType" : "DESCDATABASE"
+  "opType" : "DESCDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropNamespace",
   "databaseDescs" : [ {
@@ -41,7 +47,9 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "DROPDATABASE"
+  "opType" : "DROPDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace",
   "databaseDescs" : [ {
@@ -58,7 +66,9 @@
     },
     "isInput" : true
   } ],
-  "opType" : "SWITCHDATABASE"
+  "opType" : "SWITCHDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation",
   "databaseDescs" : [ {
@@ -67,7 +77,9 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "ALTERDATABASE_LOCATION"
+  "opType" : "ALTERDATABASE_LOCATION",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties",
   "databaseDescs" : [ {
@@ -76,7 +88,26 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "ALTERDATABASE"
+  "opType" : "ALTERDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowNamespaces",
+  "databaseDescs" : [ ],
+  "opType" : "SHOWDATABASES",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : "ShowNamespaceExecRewriter"
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowTables",
+  "databaseDescs" : [ {
+    "fieldName" : "namespace",
+    "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : true
+  } ],
+  "opType" : "SHOWTABLES",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : "ShowTablesExecRewriter"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand",
   "databaseDescs" : [ {
@@ -85,7 +116,9 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "ALTERDATABASE"
+  "opType" : "ALTERDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",
   "databaseDescs" : [ {
@@ -94,7 +127,9 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "ALTERDATABASE_LOCATION"
+  "opType" : "ALTERDATABASE_LOCATION",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
   "databaseDescs" : [ {
@@ -103,7 +138,9 @@
     "catalogDesc" : null,
     "isInput" : true
   } ],
-  "opType" : "ANALYZE_TABLE"
+  "opType" : "ANALYZE_TABLE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
   "databaseDescs" : [ {
@@ -112,7 +149,9 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "CREATEDATABASE"
+  "opType" : "CREATEDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeDatabaseCommand",
   "databaseDescs" : [ {
@@ -121,7 +160,9 @@
     "catalogDesc" : null,
     "isInput" : true
   } ],
-  "opType" : "DESCDATABASE"
+  "opType" : "DESCDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DropDatabaseCommand",
   "databaseDescs" : [ {
@@ -130,7 +171,9 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "DROPDATABASE"
+  "opType" : "DROPDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.execution.command.SetDatabaseCommand",
   "databaseDescs" : [ {
@@ -139,7 +182,9 @@
     "catalogDesc" : null,
     "isInput" : true
   } ],
-  "opType" : "SWITCHDATABASE"
+  "opType" : "SWITCHDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
 }, {
   "classname" : "org.apache.spark.sql.execution.command.SetNamespaceCommand",
   "databaseDescs" : [ {
@@ -148,5 +193,29 @@
     "catalogDesc" : null,
     "isInput" : true
   } ],
-  "opType" : "SWITCHDATABASE"
+  "opType" : "SWITCHDATABASE",
+  "logicalPlanRewriter" : null,
+  "sparkPlanRewriter" : null
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.ShowFunctionsCommand",
+  "databaseDescs" : [ {
+    "fieldName" : "db",
+    "fieldExtractor" : "StringDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : true
+  } ],
+  "opType" : "SHOWFUNCTIONS",
+  "logicalPlanRewriter" : "ShowFunctionsCommandRewriter",
+  "sparkPlanRewriter" : null
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.ShowTablesCommand",
+  "databaseDescs" : [ {
+    "fieldName" : "databaseName",
+    "fieldExtractor" : "StringOptionDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : true
+  } ],
+  "opType" : "SHOWTABLES",
+  "logicalPlanRewriter" : "ShowTablesCommandRewriter",
+  "sparkPlanRewriter" : null
 } ]

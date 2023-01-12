@@ -49,10 +49,6 @@ object RuleAuthorization {
     val ugi = getAuthzUgi(spark.sparkContext)
     val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
     val requests = new ArrayBuffer[AccessRequest]()
-    if (inputs.isEmpty && opType == OperationType.SHOWDATABASES) {
-      val resource = AccessResource(DATABASE, null, None)
-      requests += AccessRequest(resource, ugi, opType, AccessType.USE)
-    }
 
     def addAccessRequest(objects: Seq[PrivilegeObject], isInput: Boolean): Unit = {
       objects.foreach { obj =>

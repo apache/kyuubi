@@ -58,9 +58,10 @@ object AccessType extends Enumeration {
               SHOW_TBLPROPERTIES |
               SHOWPARTITIONS |
               ANALYZE_TABLE => SELECT
-          case SHOWCOLUMNS | DESCTABLE => SELECT
-          case SHOWDATABASES | SWITCHDATABASE | DESCDATABASE | SHOWTABLES | SHOWFUNCTIONS => USE
+          case DESCTABLE => SELECT
+          case SWITCHDATABASE | DESCDATABASE => USE
           case TRUNCATETABLE => UPDATE
+          case SHOWDATABASES | SHOWTABLES | SHOWFUNCTIONS | SHOWCOLUMNS => NONE
           case _ => NONE
         }
       case PrivilegeObjectActionType.DELETE => DROP

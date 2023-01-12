@@ -81,6 +81,30 @@ object DatabaseCommands {
       ANALYZE_TABLE)
   }
 
+  val ShowTables = {
+    val cmd = "org.apache.spark.sql.execution.command.ShowTablesCommand"
+    DatabaseCommandSpec(
+      cmd,
+      Seq(DatabaseDesc(
+        "databaseName",
+        classOf[StringOptionDatabaseExtractor],
+        isInput = true)),
+      SHOWTABLES,
+      logicalPlanRewriter = Some(classOf[ShowTablesCommandRewriter]))
+  }
+
+  val ShowFunctions = {
+    val cmd = "org.apache.spark.sql.execution.command.ShowFunctionsCommand"
+    DatabaseCommandSpec(
+      cmd,
+      Seq(DatabaseDesc(
+        "db",
+        classOf[StringDatabaseExtractor],
+        isInput = true)),
+      opType = SHOWFUNCTIONS,
+      logicalPlanRewriter = Some(classOf[ShowFunctionsCommandRewriter]))
+  }
+
   val SetDatabase = {
     val cmd = "org.apache.spark.sql.execution.command.SetDatabaseCommand"
     val databaseDesc =
@@ -132,6 +156,27 @@ object DatabaseCommands {
     DatabaseCommandSpec(cmd, Seq(databaseDesc), DESCDATABASE)
   }
 
+  val ShowNamespaces = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.ShowNamespaces"
+    DatabaseCommandSpec(
+      cmd,
+      Nil,
+      SHOWDATABASES,
+      sparkPlanRewriter = Some(classOf[ShowNamespaceExecRewriter]))
+  }
+
+  val ShowTablesV2 = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.ShowTables"
+    DatabaseCommandSpec(
+      cmd,
+      Seq(DatabaseDesc(
+        "namespace",
+        classOf[ResolvedNamespaceDatabaseExtractor],
+        isInput = true)),
+      SHOWTABLES,
+      sparkPlanRewriter = Some(classOf[ShowTablesExecRewriter]))
+  }
+
   val data: Array[DatabaseCommandSpec] = Array(
     AlterDatabaseProperties,
     AlterDatabaseProperties.copy(
@@ -153,5 +198,9 @@ object DatabaseCommands {
     SetDatabase,
     SetNamespace,
     SetNamespaceProperties,
-    SetNamespaceLocation)
+    SetNamespaceLocation,
+    ShowFunctions,
+    ShowNamespaces,
+    ShowTables,
+    ShowTablesV2)
 }

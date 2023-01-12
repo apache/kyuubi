@@ -443,7 +443,11 @@ object TableCommands {
   val ShowColumns = {
     val cmd = "org.apache.spark.sql.execution.command.ShowColumnsCommand"
     val tableDesc = tableNameDesc.copy(isInput = true)
-    TableCommandSpec(cmd, Seq(tableDesc), SHOWCOLUMNS)
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      SHOWCOLUMNS,
+      logicalPlanRewriter = Some(classOf[ShowColumnsCommandRewriter]))
   }
 
   val ShowCreateTable = {

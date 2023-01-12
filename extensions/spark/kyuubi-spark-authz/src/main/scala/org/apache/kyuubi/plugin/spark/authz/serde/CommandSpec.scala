@@ -52,7 +52,9 @@ trait CommandSpec extends {
 case class DatabaseCommandSpec(
     classname: String,
     databaseDescs: Seq[DatabaseDesc],
-    opType: String = "QUERY") extends CommandSpec {}
+    opType: String = "QUERY",
+    logicalPlanRewriter: Option[String] = None,
+    sparkPlanRewriter: Option[String] = None) extends CommandSpec {}
 
 /**
  * A specification describe a function command
@@ -78,7 +80,9 @@ case class TableCommandSpec(
     classname: String,
     tableDescs: Seq[TableDesc],
     opType: String = OperationType.QUERY.toString,
-    queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec {
+    queryDescs: Seq[QueryDesc] = Nil,
+    logicalPlanRewriter: Option[String] = None,
+    sparkPlanRewriter: Option[String] = None) extends CommandSpec {
   def queries: LogicalPlan => Seq[LogicalPlan] = plan => {
     queryDescs.flatMap { qd =>
       try {
