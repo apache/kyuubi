@@ -155,8 +155,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     try {
       batchSession.open()
       setSession(handle, batchSession)
-      info(s"$user's batch session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
+      info(s"$user's batch session with" +
+        s" $handle${batchSession.name.map("/" + _).getOrElse("")} is opened," +
+        s" current opening sessions $getOpenSessionCount")
       handle
     } catch {
       case e: Exception =>
