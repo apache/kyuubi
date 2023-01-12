@@ -33,10 +33,11 @@ private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
     output: ByteArrayOutputStream)
   extends SparkILoop(None, new JPrintWriter(output)) {
+  import KyuubiSparkILoop._
 
   val result = new DataFrameHolder(spark)
 
-  private def initialize(): Unit = {
+  private def initialize(): Unit = withLockRequired {
     settings = new Settings
     val interpArguments = List(
       "-Yrepl-class-based",
@@ -99,14 +100,13 @@ private[spark] case class KyuubiSparkILoop private (
 
   def clearResult(statementId: String): Unit = result.unset(statementId)
 
-  def interpretWithRedirectOutError(statement: String): IR.Result =
-    KyuubiSparkILoop.withLockRequired {
-      Console.withOut(output) {
-        Console.withErr(output) {
-          this.interpret(statement)
-        }
+  def interpretWithRedirectOutError(statement: String): IR.Result = withLockRequired {
+    Console.withOut(output) {
+      Console.withErr(output) {
+        this.interpret(statement)
       }
     }
+  }
 
   def getOutput: String = {
     val res = output.toString.trim
@@ -124,7 +124,7 @@ private[spark] object KyuubiSparkILoop {
   }
 
   private val lock = new ReentrantLock()
-  private[spark] def withLockRequired[T](block: => T): T = {
+  private def withLockRequired[T](block: => T): T = {
     try {
       lock.lock()
       block
