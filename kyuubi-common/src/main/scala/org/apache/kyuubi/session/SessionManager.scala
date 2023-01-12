@@ -88,6 +88,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       ipAddress: String,
       conf: Map[String, String]): Session
 
+  protected def logSessionCountInfo(session: Session, action: String): Unit = {
+    info(s"${session.user}'s session with" +
+      s" ${session.handle}${session.name.map("/" + _).getOrElse("")} is $action," +
+      s" current opening sessions $getOpenSessionCount")
+  }
+
   def openSession(
       protocol: TProtocolVersion,
       user: String,
@@ -100,8 +106,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       val handle = session.handle
       session.open()
       setSession(handle, session)
-      info(s"$user's session with $handle${session.name.map("/" + _).getOrElse("")} is opened," +
-        s" current opening sessions $getOpenSessionCount")
+      logSessionCountInfo(session, "opened")
       handle
     } catch {
       case e: Exception =>
@@ -121,9 +126,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
-    info(s"${session.user}'s session with" +
-      s" $sessionHandle${session.name.map("/" + _).getOrElse("")} is closed," +
-      s" current opening sessions $getOpenSessionCount")
+    logSessionCountInfo(session, "closed")
     try {
       session.close()
     } finally {
