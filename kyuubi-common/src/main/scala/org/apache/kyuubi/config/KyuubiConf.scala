@@ -1997,42 +1997,42 @@ object KyuubiConf {
   val LDAP_GROUP_PROVIDER_URL: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.group.ldap.url")
       .doc("SPACE character separated LDAP connection URL(s).")
-      .version("1.0.0")
+      .version("1.7.0")
       .stringConf
       .createOptional
 
   val LDAP_GROUP_PROVIDER_BIND_DN: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.group.ldap.bind.dn")
       .doc("LDAP bind DN used to connect ldap server.")
-      .version("1.0.0")
+      .version("1.7.0")
       .stringConf
       .createOptional
 
   val LDAP_GROUP_PROVIDER_BASED_DN: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.group.ldap.based.dn")
       .doc("LDAP base DN.")
-      .version("1.0.0")
+      .version("1.7.0")
       .stringConf
       .createOptional
 
   val LDAP_GROUP_PROVIDER_BIND_PASSWORD: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.group.ldap.bind.password")
       .doc("LDAP bind password connect ldap server with bind DN.")
-      .version("1.0.0")
+      .version("1.7.0")
       .stringConf
       .createOptional
 
   val LDAP_GROUP_PROVIDER_GROUP_MEMBER_ATTR: ConfigEntry[String] =
     buildConf("kyuubi.session.group.ldap.group.member.attr")
       .doc("LDAP group member attribute")
-      .version("1.0.0")
+      .version("1.7.0")
       .stringConf
       .createWithDefault("member")
 
   val LDAP_GROUP_PROVIDER_GROUP_NAME_ATTR: ConfigEntry[String] =
     buildConf("kyuubi.session.group.ldap.group.name.attr")
       .doc("LDAP group name attribute")
-      .version("1.0.0")
+      .version("1.7.0")
       .stringConf
       .createWithDefault("cn")
 
@@ -2040,7 +2040,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.group.ldap.group.search.filter")
       .doc("LDAP group search filter, if version of ldap > 2.0, it can use default value, else" +
         " it may be set (objectClass=group)")
-      .version("1.0.0")
+      .version("1.7.0")
       .stringConf
       .createWithDefault("(objectClass=groupOfNames)")
 
@@ -2048,7 +2048,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.group.ldap.user.search.filter")
       .doc("LDAP user search filter, if version of ldap > 2.0, it can use default value, else" +
         " it may be set (&(objectClass=user)(sAMAccountName={0}))")
-      .version("1.0.0")
+      .version("1.7.0")
       .stringConf
       .createWithDefault("(&(objectClass=person)(cn={0}))")
 

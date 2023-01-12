@@ -30,46 +30,48 @@ import org.apache.kyuubi.config.KyuubiConf.{LDAP_GROUP_PROVIDER_BASED_DN, LDAP_G
 import org.apache.kyuubi.plugin.GroupProvider
 
 class LDAPGroupProvider extends GroupProvider with Logging {
-  private var ctx: InitialDirContext = null
-  private var serverConf: KyuubiConf = null
+  private var ctx: InitialDirContext = _
+  private val serverConf: KyuubiConf = new KyuubiConf().loadFileDefaults()
 
-  def getDirContext(): InitialDirContext = {
-    if (ctx == null) {
-      val serverConf = getServerConf()
-      val bindDn = serverConf.get(LDAP_GROUP_PROVIDER_BIND_DN).get
-      val bindPw = serverConf.get(LDAP_GROUP_PROVIDER_BIND_PASSWORD).get
-      val env = new java.util.Hashtable[String, Any]()
-      env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-      env.put(Context.SECURITY_AUTHENTICATION, "simple")
+  private def initDirContext(): InitialDirContext = {
+    val bindDn = serverConf.get(LDAP_GROUP_PROVIDER_BIND_DN).get
+    val bindPw = serverConf.get(LDAP_GROUP_PROVIDER_BIND_PASSWORD).get
+    val env = new java.util.Hashtable[String, Any]()
+    env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
+    env.put(Context.SECURITY_AUTHENTICATION, "simple")
 
-      env.put(Context.SECURITY_PRINCIPAL, bindDn)
-      env.put(Context.SECURITY_CREDENTIALS, bindPw)
-      serverConf
-        .get(LDAP_GROUP_PROVIDER_URL)
-        .foreach(env.put(Context.PROVIDER_URL, _))
-      try {
-        ctx = new InitialDirContext(env)
-      } catch {
-        case e: NamingException =>
-          throw new AuthenticationException(
-            s"Error validating LDAP user: $bindDn",
-            e)
-      }
+    env.put(Context.SECURITY_PRINCIPAL, bindDn)
+    env.put(Context.SECURITY_CREDENTIALS, bindPw)
+    serverConf
+      .get(LDAP_GROUP_PROVIDER_URL)
+      .foreach(env.put(Context.PROVIDER_URL, _))
+    try {
+      ctx = new InitialDirContext(env)
+    } catch {
+      case e: NamingException =>
+        ctx = null
+        throw new AuthenticationException(
+          s"Error validating LDAP user: $bindDn",
+          e)
     }
     ctx
   }
-  def getServerConf(): KyuubiConf = {
-    if (serverConf == null) {
-      serverConf = new KyuubiConf().loadFileDefaults()
+
+  private def getDirContext(): InitialDirContext = {
+    if (ctx == null) {
+      synchronized {
+        if (ctx == null) {
+          ctx = initDirContext()
+        }
+      }
     }
-    serverConf
+    ctx
   }
 
   override def primaryGroup(user: String, sessionConf: JMap[String, String]): String =
     groups(user, sessionConf).head
 
   override def groups(user: String, sessionConf: JMap[String, String]): Array[String] = {
-    val serverConf = getServerConf()
     val userBasedDN = serverConf.get(LDAP_GROUP_PROVIDER_BASED_DN).get
     val groupMemberAttr = serverConf.get(LDAP_GROUP_PROVIDER_GROUP_MEMBER_ATTR)
     val groupNameAttr = serverConf.get(LDAP_GROUP_PROVIDER_GROUP_NAME_ATTR)
@@ -102,8 +104,10 @@ class LDAPGroupProvider extends GroupProvider with Logging {
 
     } catch {
       case e: NamingException =>
-        ctx.close()
-        ctx = null
+        if (ctx != null) {
+          ctx.close()
+          ctx = null
+        }
         throw new AuthenticationException(
           s"Error search group for user: $user",
           e)

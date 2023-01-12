@@ -95,7 +95,6 @@ class PluginLoaderSuite extends KyuubiFunSuite {
     assert(groupProvider.primaryGroup(user, Map.empty[String, String].asJava) === user)
     assert(groupProvider.groups(user, Map.empty[String, String].asJava) === Array(user))
   }
-
 }
 
 class InvalidSessionConfAdvisor
