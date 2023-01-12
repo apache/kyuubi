@@ -2255,6 +2255,13 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val OPERATION_SPARK_SCALA_LOCK_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.spark.scala.lock.enabled")
+      .doc("When set to true, Spark engine need to require lock before executing scala statements.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_JDBC_DRIVER_CLASS: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.driver.class")
       .doc("The driver class for jdbc engine connection")

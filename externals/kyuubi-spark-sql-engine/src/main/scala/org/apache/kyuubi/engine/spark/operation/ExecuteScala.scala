@@ -29,6 +29,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_SPARK_LISTENER_ENABLED, OPERATION_SPARK_SCALA_LOCK_ENABLED}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
@@ -57,6 +58,12 @@ class ExecuteScala(
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   override protected def supportProgress: Boolean = true
+
+  protected val scalaLockEnabled =
+    spark.conf.getOption(OPERATION_SPARK_SCALA_LOCK_ENABLED.key) match {
+      case Some(s) => s.toBoolean
+      case _ => session.sessionManager.getConf.get(OPERATION_SPARK_SCALA_LOCK_ENABLED)
+    }
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -104,7 +111,7 @@ class ExecuteScala(
         }
       }
 
-      repl.interpretWithRedirectOutError(statement) match {
+      repl.interpretWithRedirectOutError(statement, scalaLockEnabled) match {
         case Success =>
           iter = {
             result = repl.getResult(statementId)
