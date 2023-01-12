@@ -99,7 +99,7 @@ class BatchJobSubmission(
   }
 
   override private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo] = {
-    if (isTerminal(state)) return applicationInfo
+    if (isTerminal(state) && applicationInfo.nonEmpty) return applicationInfo
     // only the ApplicationInfo with non-empty id is valid for the operation
     val appInfo =
       applicationManager.getApplicationInfo(builder.clusterManager(), batchId).filter(_.id != null)
