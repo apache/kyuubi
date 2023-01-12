@@ -24,8 +24,9 @@ import scala.util.Try
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.sql.{Row, SparkSessionExtensions}
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.{AnalysisException, Row, SparkSessionExtensions}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, TableAlreadyExistsException}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
@@ -48,6 +49,19 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       new PrivilegedExceptionAction[T] {
         override def run(): T = f
       })
+  }
+
+  protected def doAsSessionUser[T](user: String, f: => T): T = {
+    spark.sparkContext.setLocalProperty("kyuubi.session.user", user)
+    try f
+    finally {
+      spark.sparkContext.setLocalProperty("kyuubi.session.user", null)
+    }
+  }
+
+  protected def checkTableOwner(db: String, table: String, expectedOwner: String): Unit = {
+    val metadata = spark.sessionState.catalog.getTableMetadata(TableIdentifier(table, Some(db)))
+    assert(metadata.owner === expectedOwner)
   }
 
   override def afterAll(): Unit = {
@@ -671,6 +685,68 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           s" AS select * from values(1)")).isSuccess)
     }
     doAs("admin", assert(sql("show tables from global_temp").collect().length == 0))
+  }
+
+  test("Set table owner to authz user when create table") {
+    val table1 = "set_table_owner_1"
+    val table2 = "set_table_owner_2"
+    withCleanTmpResources(Seq((s"default.$table1", "table"), (s"default.$table2", "table"))) {
+      doAsSessionUser("bob", sql(s"CREATE TABLE default.$table1 (i int) USING $format"))
+      checkTableOwner("default", table1, "bob")
+
+      doAsSessionUser(
+        "bob",
+        sql(s"CREATE TABLE default.$table2 USING $format AS SELECT a.i i, b.i j " +
+          s"FROM default.$table1 a JOIN default.$table1 b ON a.i = b.i"))
+      checkTableOwner("default", table2, "bob")
+    }
+  }
+
+  test("Set table owner to authz user for CreateTableLikeCommand") {
+    val srcTable = "create_table_like_src"
+    val dstTable = "create_table_like_dst_1"
+    withCleanTmpResources(Seq((s"default.$srcTable", "table"), (s"default.$dstTable", "table"))) {
+      doAsSessionUser("bob", sql(s"CREATE TABLE default.$srcTable (i int) USING $format"))
+
+      doAsSessionUser(
+        "bob",
+        sql(s"CREATE TABLE default.$dstTable LIKE default.$srcTable USING $format"))
+      checkTableOwner("default", dstTable, "bob")
+
+      doAsSessionUser(
+        "admin", {
+          intercept[TableAlreadyExistsException](
+            sql(s"CREATE TABLE default.$dstTable LIKE default.$srcTable USING $format"))
+          sql(
+            s"CREATE TABLE IF NOT EXISTS default.$dstTable LIKE default.$srcTable USING $format")
+        })
+      checkTableOwner("default", dstTable, "bob")
+    }
+  }
+
+  test("Set table owner to authz user for CreateViewCommand") {
+    val table = "create_view_command_src_table"
+    val view = "create_view_command"
+    withCleanTmpResources(Seq((s"default.$table", "table"), (s"default.$view", "view"))) {
+      doAsSessionUser("bob", sql(s"CREATE TABLE default.$table (i int) USING $format"))
+
+      doAsSessionUser("bob", sql(s"CREATE VIEW default.$view AS SELECT * FROM default.$table"))
+      checkTableOwner("default", view, "bob")
+
+      doAsSessionUser(
+        "admin", {
+          intercept[AnalysisException](
+            sql(s"CREATE VIEW default.$view AS SELECT * FROM default.$table"))
+          sql(s"CREATE VIEW IF NOT EXISTS default.$view AS SELECT * FROM default.$table")
+        })
+      checkTableOwner("default", view, "bob")
+
+      doAsSessionUser(
+        "admin", {
+          sql(s"CREATE OR REPLACE VIEW default.$view AS SELECT * FROM default.$table")
+        })
+      checkTableOwner("default", view, "admin")
+    }
   }
 }
 

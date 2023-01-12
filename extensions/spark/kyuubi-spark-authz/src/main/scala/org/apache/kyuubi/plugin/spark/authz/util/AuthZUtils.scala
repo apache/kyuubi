@@ -54,6 +54,18 @@ private[authz] object AuthZUtils {
 
   def getFieldValOpt[T](o: Any, name: String): Option[T] = Try(getFieldVal[T](o, name)).toOption
 
+  def setFieldVal(o: Any, name: String, value: Any): Unit = {
+    Try {
+      val field = o.getClass.getDeclaredField(name)
+      field.setAccessible(true)
+      field.set(o, value)
+    } match {
+      case Success(_) =>
+      case Failure(e) =>
+        throw new RuntimeException(s"Failed to set ${o.getClass} field $name with value $value", e)
+    }
+  }
+
   def invoke(
       obj: AnyRef,
       methodName: String,

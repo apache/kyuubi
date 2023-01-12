@@ -19,6 +19,9 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 // scalastyle:off
 import scala.util.Try
 
+import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, TableAlreadyExistsException}
+import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
+
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 
@@ -71,6 +74,23 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     super.afterAll()
     spark.sessionState.catalog.reset()
     spark.sessionState.conf.clear()
+  }
+
+  protected def checkV2TableOwner(tableName: String, expectedOwner: String): Unit = {
+    val table = spark.sessionState.catalogManager.catalog(catalogV2) match {
+      case tableCatalog: TableCatalog =>
+        try {
+          Some(tableCatalog.loadTable(Identifier.of(Array(namespace1), tableName)))
+        } catch {
+          case _: NoSuchTableException =>
+            None
+        }
+      case _ =>
+        None
+    }
+    assert(table.isDefined)
+    val actualOwner = table.get.properties().get(TableCatalog.PROP_OWNER)
+    assert(actualOwner != null && actualOwner === expectedOwner)
   }
 
   test("[KYUUBI #3515] MERGE INTO") {
@@ -220,6 +240,49 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
           val rowCount = countOutputTable(0).get(0)
           assert(rowCount === 1)
         })
+    }
+  }
+
+  test("Set table owner for create/replace table commands") {
+    assume(isSparkV32OrGreater)
+
+    val createOrReplace = s"$catalogV2.$namespace1.set_table_owner_create_or_replace"
+    val createOrReplaceShort = createOrReplace.split("\\.").last
+    val createOrReplaceAsSelect =
+      s"$catalogV2.$namespace1.set_table_owner_create_or_replace_as_select"
+    val createOrReplaceAsSelectShort = createOrReplaceAsSelect.split("\\.").last
+    withCleanTmpResources(Seq((createOrReplace, "table"))) {
+      doAsSessionUser("bob", sql(s"CREATE TABLE $createOrReplace (i int)"))
+      checkV2TableOwner(createOrReplaceShort, "bob")
+
+      doAsSessionUser(
+        "admin", {
+          intercept[TableAlreadyExistsException](sql(s"CREATE TABLE $createOrReplace (i int)"))
+          sql(s"CREATE TABLE IF NOT EXISTS $createOrReplace (i int)")
+        })
+      checkV2TableOwner(createOrReplaceShort, "bob")
+
+      doAsSessionUser(
+        "bob",
+        sql(s"CREATE TABLE $createOrReplaceAsSelect AS SELECT * FROM $createOrReplace"))
+      checkV2TableOwner(createOrReplaceAsSelectShort, "bob")
+
+      doAsSessionUser(
+        "admin", {
+          intercept[TableAlreadyExistsException](
+            sql(s"CREATE TABLE $createOrReplaceAsSelect AS SELECT * FROM $createOrReplace"))
+          sql(s"CREATE TABLE IF NOT EXISTS $createOrReplaceAsSelect " +
+            s"AS SELECT * FROM $createOrReplace")
+        })
+      checkV2TableOwner(createOrReplaceAsSelectShort, "bob")
+
+      doAsSessionUser("admin", sql(s"REPLACE TABLE $createOrReplace (i int)"))
+      checkV2TableOwner(createOrReplaceShort, "admin")
+
+      doAsSessionUser(
+        "admin",
+        sql(s"REPLACE TABLE $createOrReplaceAsSelect AS SELECT * FROM $createOrReplace"))
+      checkV2TableOwner(createOrReplaceShort, "admin")
     }
   }
 }

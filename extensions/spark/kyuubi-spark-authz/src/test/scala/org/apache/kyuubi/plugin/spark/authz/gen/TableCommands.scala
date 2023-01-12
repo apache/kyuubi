@@ -209,7 +209,11 @@ object TableCommands {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
-    TableCommandSpec(cmd, Seq(tableDesc, resolvedDbObjectNameDesc), CREATETABLE)
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc, resolvedDbObjectNameDesc),
+      CREATETABLE,
+      sparkPlanRewriter = Some(classOf[CreateTableV2ExecRewriter]))
   }
 
   val CreateV2Table = {
@@ -218,7 +222,11 @@ object TableCommands {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
-    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      CREATETABLE,
+      sparkPlanRewriter = Some(classOf[CreateTableV2ExecRewriter]))
   }
 
   val CreateTableAsSelectV2 = {
@@ -231,7 +239,8 @@ object TableCommands {
       cmd,
       Seq(tableDesc, resolvedDbObjectNameDesc.copy(fieldName = "left")),
       CREATETABLE_AS_SELECT,
-      Seq(queryQueryDesc))
+      Seq(queryQueryDesc),
+      sparkPlanRewriter = Some(classOf[CreateTableV2ExecRewriter]))
   }
 
   val CommentOnTable = {
@@ -342,7 +351,8 @@ object TableCommands {
       cmd,
       Seq(tableDesc),
       CREATEVIEW,
-      queryDescs = Seq(queryDesc1, queryDesc2))
+      queryDescs = Seq(queryDesc1, queryDesc2),
+      logicalPlanRewriter = Some(classOf[CreateViewCommandTableOwnerRewriter]))
   }
 
   val CreateTempViewUsing = {
@@ -353,7 +363,11 @@ object TableCommands {
   val CreateDataSourceTable = {
     val cmd = "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand"
     val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
-    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      CREATETABLE,
+      logicalPlanRewriter = Some(classOf[CatalogTableCommandTableOwnerRewriter]))
   }
 
   val CreateDataSourceTableAsSelect = {
@@ -361,7 +375,8 @@ object TableCommands {
     CreateDataSourceTable.copy(
       classname = cmd,
       opType = CREATETABLE_AS_SELECT,
-      queryDescs = Seq(queryQueryDesc))
+      queryDescs = Seq(queryQueryDesc),
+      logicalPlanRewriter = Some(classOf[CatalogTableCommandTableOwnerRewriter]))
   }
 
   val CreateHiveTableAsSelect = {
@@ -370,7 +385,12 @@ object TableCommands {
     val tableDesc =
       TableDesc("tableDesc", classOf[CatalogTableTableExtractor], Some(columnDesc))
     val queryDesc = queryQueryDesc
-    TableCommandSpec(cmd, Seq(tableDesc), "CREATETABLE_AS_SELECT", queryDescs = Seq(queryDesc))
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      CREATETABLE_AS_SELECT,
+      queryDescs = Seq(queryDesc),
+      logicalPlanRewriter = Some(classOf[CatalogTableCommandTableOwnerRewriter]))
   }
 
   val CreateTableLike = {
@@ -384,7 +404,11 @@ object TableCommands {
       classOf[TableIdentifierTableExtractor],
       isInput = true,
       setCurrentDatabaseIfMissing = true)
-    TableCommandSpec(cmd, Seq(tableDesc1, tableDesc2), CREATETABLE)
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc1, tableDesc2),
+      CREATETABLE,
+      logicalPlanRewriter = Some(classOf[RunnableCommandTableOwnerRewriter]))
   }
 
   val DescribeColumn = {
@@ -443,7 +467,12 @@ object TableCommands {
   val ShowColumns = {
     val cmd = "org.apache.spark.sql.execution.command.ShowColumnsCommand"
     val tableDesc = tableNameDesc.copy(isInput = true)
-    TableCommandSpec(cmd, Seq(tableDesc), SHOWCOLUMNS)
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      SHOWCOLUMNS,
+      logicalPlanRewriter =
+        Some(classOf[ShowColumnsCommandRewriter]))
   }
 
   val ShowCreateTable = {
