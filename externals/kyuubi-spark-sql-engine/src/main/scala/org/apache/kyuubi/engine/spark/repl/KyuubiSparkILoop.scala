@@ -29,8 +29,6 @@ import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
 
-import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop.withLockRequired
-
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
     output: ByteArrayOutputStream)
@@ -103,7 +101,7 @@ private[spark] case class KyuubiSparkILoop private (
 
   def interpretWithRedirectOutError(
       statement: String,
-      lockRequired: Boolean): IR.Result = withLockRequired(lockRequired) {
+      lockRequired: Boolean): IR.Result = KyuubiSparkILoop.withLockRequired(lockRequired) {
     Console.withOut(output) {
       Console.withErr(output) {
         this.interpret(statement)

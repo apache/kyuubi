@@ -2255,9 +2255,9 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  val OPERATION_SPARK_SCALA_LOCK_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.operation.spark.scala.lock.enabled")
-      .doc("When set to true, Spark engine need to require lock before executing scala statements.")
+  val OPERATION_SPARK_SCALA_SYNCHRONIZED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.spark.scala.synchronized")
+      .doc("When set to true, Spark engine will execute scala statements synchronized.")
       .version("1.7.0")
       .booleanConf
       .createWithDefault(false)
