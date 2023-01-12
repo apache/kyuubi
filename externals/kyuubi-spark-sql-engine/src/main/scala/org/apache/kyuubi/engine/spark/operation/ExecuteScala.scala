@@ -29,7 +29,6 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.OPERATION_SPARK_SCALA_SYNCHRONIZED
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
@@ -58,12 +57,6 @@ class ExecuteScala(
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   override protected def supportProgress: Boolean = true
-
-  protected val executeScalaSynchronized =
-    spark.conf.getOption(OPERATION_SPARK_SCALA_SYNCHRONIZED.key) match {
-      case Some(s) => s.toBoolean
-      case _ => session.sessionManager.getConf.get(OPERATION_SPARK_SCALA_SYNCHRONIZED)
-    }
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -111,7 +104,7 @@ class ExecuteScala(
         }
       }
 
-      repl.interpretWithRedirectOutError(statement, executeScalaSynchronized) match {
+      repl.interpretWithRedirectOutError(statement) match {
         case Success =>
           iter = {
             result = repl.getResult(statementId)

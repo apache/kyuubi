@@ -99,15 +99,14 @@ private[spark] case class KyuubiSparkILoop private (
 
   def clearResult(statementId: String): Unit = result.unset(statementId)
 
-  def interpretWithRedirectOutError(
-      statement: String,
-      lockRequired: Boolean): IR.Result = KyuubiSparkILoop.withLockRequired(lockRequired) {
-    Console.withOut(output) {
-      Console.withErr(output) {
-        this.interpret(statement)
+  def interpretWithRedirectOutError(statement: String): IR.Result =
+    KyuubiSparkILoop.withLockRequired {
+      Console.withOut(output) {
+        Console.withErr(output) {
+          this.interpret(statement)
+        }
       }
     }
-  }
 
   def getOutput: String = {
     val res = output.toString.trim
@@ -125,14 +124,10 @@ private[spark] object KyuubiSparkILoop {
   }
 
   private val lock = new ReentrantLock()
-  private[spark] def withLockRequired[T](lockRequired: Boolean)(block: => T): T = {
-    if (lockRequired) {
-      try {
-        lock.lock()
-        block
-      } finally lock.unlock()
-    } else {
+  private[spark] def withLockRequired[T](block: => T): T = {
+    try {
+      lock.lock()
       block
-    }
+    } finally lock.unlock()
   }
 }
