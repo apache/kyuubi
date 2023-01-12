@@ -246,7 +246,6 @@ kyuubi.engine.jdbc.memory|1g|The heap memory for the jdbc query engine|string|1.
 kyuubi.engine.jdbc.type|&lt;undefined&gt;|The short name of jdbc type|string|1.6.0
 kyuubi.engine.operation.convert.catalog.database.enabled|true|When set to true, The engine converts the JDBC methods of set/get Catalog and set/get Schema to the implementation of different engines|boolean|1.6.0
 kyuubi.engine.operation.log.dir.root|engine_operation_logs|Root directory for query operation log at engine-side.|string|1.4.0
-kyuubi.engine.pool.first|false|Used for arbitration when engine pool conditions are met and subdomain is specified.|boolean|1.7.0
 kyuubi.engine.pool.name|engine-pool|The name of engine pool.|string|1.5.0
 kyuubi.engine.pool.selectPolicy|RANDOM|The select policy of an engine from the corresponding engine pool engine for a session. <ul><li>RANDOM - Randomly use the engine in the pool</li><li>POLLING - Polling use the engine in the pool</li></ul>|string|1.7.0
 kyuubi.engine.pool.size|-1|The size of engine pool. Note that, if the size is less than 1, the engine pool will not be enabled; otherwise, the size of the engine pool will be min(this, kyuubi.engine.pool.size.threshold).|int|1.4.0

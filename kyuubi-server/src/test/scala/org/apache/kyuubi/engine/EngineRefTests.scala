@@ -293,12 +293,12 @@ trait EngineRefTests extends KyuubiFunSuite {
     }
   }
 
-  test("support arbitration when when engine pool conditions are met and subdomain is specified") {
+  test("support to ignore subdomain when engine pool conditions are met") {
     val id = UUID.randomUUID().toString
 
     // set subdomain and disable engine pool
     conf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
-    conf.set(ENGINE_POOL_FIRST, false)
+    conf.set(ENGINE_POOL_IGNORE_SUBDOMAIN, false)
     conf.set(ENGINE_POOL_SIZE, -1)
     val engine1 = new EngineRef(conf, user, "grp", id, null)
     assert(engine1.subdomain === "abc")
@@ -312,8 +312,8 @@ trait EngineRefTests extends KyuubiFunSuite {
     assert(engine3.subdomain.startsWith("engine-pool-"))
 
     conf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
-    conf.set(ENGINE_POOL_FIRST, true)
+    conf.set(ENGINE_POOL_IGNORE_SUBDOMAIN, true)
     val engine4 = new EngineRef(conf, user, "grp", id, null)
-    assert(engine3.subdomain.startsWith("engine-pool-"))
+    assert(engine4.subdomain.startsWith("engine-pool-"))
   }
 }
