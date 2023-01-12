@@ -17,5 +17,3 @@
 
 org.apache.kyuubi.plugin.spark.authz.serde.ShowNamespaceExecRewriter
 org.apache.kyuubi.plugin.spark.authz.serde.ShowTablesExecRewriter
-
-

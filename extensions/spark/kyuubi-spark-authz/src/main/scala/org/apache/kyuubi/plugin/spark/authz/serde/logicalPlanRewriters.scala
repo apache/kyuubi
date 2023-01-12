@@ -33,13 +33,7 @@ trait LogicalPlanRewriter extends Rewriter {
 }
 
 object LogicalPlanRewriter {
-  val logicalPlanRewriters: Map[String, LogicalPlanRewriter] = {
-    ServiceLoader.load(classOf[LogicalPlanRewriter])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
-  }
+  val logicalPlanRewriters: Map[String, LogicalPlanRewriter] = loadRewritersToMap
 }
 
 class ShowTablesCommandRewriter extends LogicalPlanRewriter {

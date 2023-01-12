@@ -15,8 +15,9 @@
 # limitations under the License.
 #
 
-org.apache.kyuubi.plugin.spark.authz.serde.ShowTablesCommandRewriter
-org.apache.kyuubi.plugin.spark.authz.serde.ShowFunctionsCommandRewriter
 org.apache.kyuubi.plugin.spark.authz.serde.ShowColumnsCommandRewriter
+org.apache.kyuubi.plugin.spark.authz.serde.ShowFunctionsCommandRewriter
+org.apache.kyuubi.plugin.spark.authz.serde.ShowTablesCommandRewriter
+
 
 

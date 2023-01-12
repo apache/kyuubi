@@ -33,11 +33,17 @@ package object serde {
 
   final val mapper = JsonMapper.builder().addModule(DefaultScalaModule).build()
 
-  def loadExtractorsToMap[T <: Extractor](implicit ct: ClassTag[T]): Map[String, T] = {
+  private def loadServiceToMap[T](toKey: T => String)(implicit ct: ClassTag[T]): Map[String, T] = {
     ServiceLoader.load(ct.runtimeClass).iterator().asScala
-      .map { case e: Extractor => (e.key, e.asInstanceOf[T]) }
+      .map { case service: T => (toKey(service), service) }
       .toMap
   }
+
+  def loadExtractorsToMap[T <: Extractor](implicit ct: ClassTag[T]): Map[String, T] =
+    loadServiceToMap(_.key)
+
+  def loadRewritersToMap[T <: Rewriter](implicit ct: ClassTag[T]): Map[String, T] =
+    loadServiceToMap(_.key)
 
   final lazy val DB_COMMAND_SPECS: Map[String, DatabaseCommandSpec] = {
     val is = getClass.getClassLoader.getResourceAsStream("database_command_spec.json")

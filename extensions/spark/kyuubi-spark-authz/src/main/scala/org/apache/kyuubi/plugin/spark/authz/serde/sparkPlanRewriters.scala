@@ -33,13 +33,7 @@ trait SparkPlanRewriter extends Rewriter {
 }
 
 object SparkPlanRewriter {
-  val sparkPlanRewriters: Map[String, SparkPlanRewriter] = {
-    ServiceLoader.load(classOf[SparkPlanRewriter])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
-  }
+  val sparkPlanRewriters: Map[String, SparkPlanRewriter] = loadRewritersToMap
 }
 
 class ShowNamespaceExecRewriter extends SparkPlanRewriter {
