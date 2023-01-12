@@ -95,7 +95,8 @@ class BatchJobSubmission(
   }
 
   override private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo] = {
-    applicationManager.getApplicationInfo(builder.clusterManager(), batchId)
+    // only the ApplicationInfo with non-empty id is valid for the operation
+    applicationManager.getApplicationInfo(builder.clusterManager(), batchId).filter(_.id != null)
   }
 
   private[kyuubi] def killBatchApplication(): KillResponse = {
@@ -104,6 +105,8 @@ class BatchJobSubmission(
 
   private val applicationCheckInterval =
     session.sessionConf.get(KyuubiConf.BATCH_APPLICATION_CHECK_INTERVAL)
+  private val applicationStarvationTimeout =
+    session.sessionConf.get(KyuubiConf.BATCH_APPLICATION_STARVATION_TIMEOUT)
 
   private def updateBatchMetadata(): Unit = {
     val endTime =
@@ -112,6 +115,13 @@ class BatchJobSubmission(
       } else {
         0L
       }
+
+    if (isTerminalState(state)) {
+      if (applicationInfo.isEmpty) {
+        applicationInfo =
+          Option(ApplicationInfo(id = null, name = null, state = ApplicationState.NOT_FOUND))
+      }
+    }
 
     applicationInfo.foreach { status =>
       val metadataToUpdate = Metadata(
@@ -195,15 +205,25 @@ class BatchJobSubmission(
 
   private def submitAndMonitorBatchJob(): Unit = {
     var appStatusFirstUpdated = false
+    var lastStarvationCheckTime = createTime
     try {
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
       applicationInfo = currentApplicationInfo
       while (!applicationFailed(applicationInfo) && process.isAlive) {
-        if (!appStatusFirstUpdated && applicationInfo.isDefined) {
-          setStateIfNotCanceled(OperationState.RUNNING)
-          updateBatchMetadata()
-          appStatusFirstUpdated = true
+        if (!appStatusFirstUpdated) {
+          if (applicationInfo.isDefined) {
+            setStateIfNotCanceled(OperationState.RUNNING)
+            updateBatchMetadata()
+            appStatusFirstUpdated = true
+          } else {
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastStarvationCheckTime > applicationStarvationTimeout) {
+              lastStarvationCheckTime = currentTime
+              warn(s"Batch[$batchId] has not started, check the Kyuubi server to ensure" +
+                s" that batch jobs can be submitted.")
+            }
+          }
         }
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
         applicationInfo = currentApplicationInfo
@@ -246,7 +266,7 @@ class BatchJobSubmission(
       while (applicationInfo.isDefined && !applicationTerminated(applicationInfo)) {
         Thread.sleep(applicationCheckInterval)
         val newApplicationStatus = currentApplicationInfo
-        if (newApplicationStatus != applicationInfo) {
+        if (newApplicationStatus.map(_.state) != applicationInfo.map(_.state)) {
           applicationInfo = newApplicationStatus
           info(s"Batch report for $batchId, $applicationInfo")
         }
@@ -277,6 +297,7 @@ class BatchJobSubmission(
       }
 
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
+
       // fast fail
       if (isTerminalState(state)) {
         killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
@@ -288,16 +309,23 @@ class BatchJobSubmission(
         killMessage = killBatchApplication()
         builder.close()
       } finally {
-        if (killMessage._1 && !isTerminalState(state)) {
-          // kill success and we can change state safely
-          // note that, the batch operation state should never be closed
+        if (state == OperationState.INITIALIZED) {
+          // if state is INITIALIZED, it means that the batch submission has not started to run, set
+          // the state to CANCELED manually and regardless of kill result
           setState(OperationState.CANCELED)
           updateBatchMetadata()
-        } else if (killMessage._1) {
-          // we can not change state safely
-          killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
-        } else if (!isTerminalState(state)) {
-          // failed to kill, the kill message is enough
+        } else {
+          if (killMessage._1 && !isTerminalState(state)) {
+            // kill success and we can change state safely
+            // note that, the batch operation state should never be closed
+            setState(OperationState.CANCELED)
+            updateBatchMetadata()
+          } else if (killMessage._1) {
+            // we can not change state safely
+            killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
+          } else if (!isTerminalState(state)) {
+            // failed to kill, the kill message is enough
+          }
         }
       }
     }
@@ -306,6 +334,8 @@ class BatchJobSubmission(
   override def cancel(): Unit = {
     throw new IllegalStateException("Use close instead.")
   }
+
+  override def isTimedOut: Boolean = false
 }
 
 object BatchJobSubmission {

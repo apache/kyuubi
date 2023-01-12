@@ -25,24 +25,37 @@ replicaCount: 2
 image:
   repository: apache/kyuubi
   pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "master-snapshot"
+  tag: ~
+
+imagePullSecrets: []
 
 # ServiceAccount used for Kyuubi create/list/delete pod in kubernetes
 serviceAccount:
-  name: default
+  create: true
+  name: ~
+
+rbac:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: ["pods"]
+      verbs: ["create", "list", "delete"]
 
 probe:
   liveness:
     enabled: true
     initialDelaySeconds: 30
     periodSeconds: 10
+    timeoutSeconds: 2
     failureThreshold: 10
+    successThreshold: 1
   readiness:
     enabled: true
     initialDelaySeconds: 30
     periodSeconds: 10
+    timeoutSeconds: 2
     failureThreshold: 10
+    successThreshold: 1
 
 server:
   bind:
@@ -51,8 +64,9 @@ server:
   conf:
     mountPath: /opt/kyuubi/conf
 
-environments:
-  KYUUBI_HOME: /opt/kyuubi
+# Environment variables (templated)
+env: []
+envFrom: []
 
 service:
   type: NodePort
@@ -74,3 +88,10 @@ resources: {}
   # requests:
   #   cpu: 2
   #   memory: 4Gi
+
+# Constrain Kyuubi server pods to specific nodes
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+securityContext: {}

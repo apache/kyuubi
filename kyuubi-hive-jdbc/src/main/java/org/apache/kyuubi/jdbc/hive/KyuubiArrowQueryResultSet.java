@@ -190,6 +190,9 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
     }
     this.isScrollable = builder.isScrollable;
     this.protocol = builder.getProtocolVersion();
+    arrowSchema =
+        ArrowUtils.toArrowSchema(
+            columnNames, convertComplexTypeToStringType(columnTypes), columnAttributes);
     if (allocator == null) {
       initArrowSchemaAndAllocator();
     }
@@ -201,7 +204,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
    * @param primitiveTypeEntry primitive type
    * @return generated ColumnAttributes, or null
    */
-  private static JdbcColumnAttributes getColumnAttributes(TPrimitiveTypeEntry primitiveTypeEntry) {
+  public static JdbcColumnAttributes getColumnAttributes(TPrimitiveTypeEntry primitiveTypeEntry) {
     JdbcColumnAttributes ret = null;
     if (primitiveTypeEntry.isSetTypeQualifiers()) {
       TTypeQualifiers tq = primitiveTypeEntry.getTypeQualifiers();

@@ -44,4 +44,5 @@ case class PrivilegeObject(
     dbname: String,
     objectName: String,
     @Nonnull columns: Seq[String] = Nil,
-    owner: Option[String] = None)
+    owner: Option[String] = None,
+    catalog: Option[String] = None)

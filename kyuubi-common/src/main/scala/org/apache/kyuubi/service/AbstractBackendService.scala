@@ -21,7 +21,7 @@ import java.util.concurrent.{ExecutionException, TimeoutException, TimeUnit}
 
 import scala.concurrent.CancellationException
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TGetResultSetMetadataResp, TProtocolVersion, TRowSet}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
@@ -188,7 +188,7 @@ abstract class AbstractBackendService(name: String)
       .getOperation(operationHandle).getSession.closeOperation(operationHandle)
   }
 
-  override def getResultSetMetadata(operationHandle: OperationHandle): TTableSchema = {
+  override def getResultSetMetadata(operationHandle: OperationHandle): TGetResultSetMetadataResp = {
     sessionManager.operationManager
       .getOperation(operationHandle).getSession.getResultSetMetadata(operationHandle)
   }

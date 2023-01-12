@@ -206,7 +206,10 @@ class ZooKeeperHiveClientHelper {
         }
         // KERBEROS
         if (matcher.group(1).equalsIgnoreCase("hive.server2.authentication.kerberos.principal")
-            && !(connParams.getSessionVars().containsKey(JdbcConnectionParams.AUTH_PRINCIPAL))) {
+            && !(connParams.getSessionVars().containsKey(JdbcConnectionParams.AUTH_PRINCIPAL)
+                && !(connParams
+                    .getSessionVars()
+                    .containsKey(JdbcConnectionParams.AUTH_KYUUBI_SERVER_PRINCIPAL)))) {
           connParams.getSessionVars().put(JdbcConnectionParams.AUTH_PRINCIPAL, matcher.group(2));
         }
       }

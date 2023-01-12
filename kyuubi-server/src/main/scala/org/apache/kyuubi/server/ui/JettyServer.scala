@@ -71,9 +71,8 @@ private[kyuubi] case class JettyServer(
 
 object JettyServer {
 
-  def apply(name: String, host: String, port: Int): JettyServer = {
-    // TODO: Configurable pool size
-    val pool = new QueuedThreadPool()
+  def apply(name: String, host: String, port: Int, poolSize: Int): JettyServer = {
+    val pool = new QueuedThreadPool(poolSize)
     pool.setName(name)
     pool.setDaemon(true)
     val server = new Server(pool)

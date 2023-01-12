@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.operation
 import java.io.IOException
 import java.time.ZoneId
 
-import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
@@ -37,7 +37,7 @@ import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationS
 import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.{AbstractSession, Session}
+import org.apache.kyuubi.session.Session
 
 abstract class SparkOperation(session: Session)
   extends AbstractOperation(session) {
@@ -160,8 +160,15 @@ abstract class SparkOperation(session: Session)
     }
   }
 
-  override def getResultSetSchema: TTableSchema =
-    SchemaHelper.toTTableSchema(resultSchema, timeZone.toString)
+  def getResultSetMetadataHints(): Seq[String] = Seq.empty
+
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
+    val resp = new TGetResultSetMetadataResp
+    val schema = SchemaHelper.toTTableSchema(resultSchema, timeZone.toString)
+    resp.setSchema(schema)
+    resp.setStatus(okStatusWithHints(getResultSetMetadataHints()))
+    resp
+  }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet =
     withLocalProperties {
@@ -200,12 +207,14 @@ abstract class SparkOperation(session: Session)
   override def shouldRunAsync: Boolean = false
 
   protected def arrowEnabled(): Boolean = {
-    // normalized config is required, to pass unit test
-    session.asInstanceOf[AbstractSession].normalizedConf
-      .getOrElse("kyuubi.operation.result.codec", "simple")
-      .equalsIgnoreCase("arrow") &&
+    resultCodec().equalsIgnoreCase("arrow") &&
     // TODO: (fchen) make all operation support arrow
     getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
+  }
+
+  protected def resultCodec(): String = {
+    // TODO: respect the config of the operation ExecuteStatement, if it was set.
+    spark.conf.get("kyuubi.operation.result.codec", "simple")
   }
 
   protected def setSessionUserSign(): Unit = {

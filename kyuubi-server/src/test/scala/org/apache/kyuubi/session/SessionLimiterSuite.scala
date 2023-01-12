@@ -96,4 +96,25 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
       .foreach(c => assert(c.get() == 0))
   }
+
+  test("test session limiter with user unlimitted list") {
+    val user = "user001"
+    val ipAddress = "127.0.0.1"
+    val userLimit = 30
+    val ipAddressLimit = 20
+    val userIpAddressLimit = 10
+    val limiter = SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, Set(user))
+    for (i <- 0 until 50) {
+      val userIpAddress = UserIpAddress(user, ipAddress)
+      limiter.increment(userIpAddress)
+    }
+    limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
+      .foreach(c => assert(c.get() == 0))
+    for (i <- 0 until 50) {
+      val userIpAddress = UserIpAddress(user, ipAddress)
+      limiter.decrement(userIpAddress)
+    }
+    limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
+      .foreach(c => assert(c.get() == 0))
+  }
 }

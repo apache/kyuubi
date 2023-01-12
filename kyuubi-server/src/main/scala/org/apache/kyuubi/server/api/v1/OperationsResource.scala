@@ -104,7 +104,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
     try {
       val operationHandle = OperationHandle(operationHandleStr)
       new ResultSetMetaData(
-        fe.be.getResultSetMetadata(operationHandle).getColumns.asScala.map(c => {
+        fe.be.getResultSetMetadata(operationHandle).getSchema.getColumns.asScala.map(c => {
           val tPrimitiveTypeEntry = c.getTypeDesc.getTypes.get(0).getPrimitiveEntry
           var precision = 0
           var scale = 0

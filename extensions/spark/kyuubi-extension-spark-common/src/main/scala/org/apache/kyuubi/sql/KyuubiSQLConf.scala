@@ -176,4 +176,11 @@ object KyuubiSQLConf {
       .intConf
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(3)
+
+  val INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE =
+    buildConf("spark.sql.optimizer.insertRepartitionBeforeWriteIfNoShuffle.enabled")
+      .doc("When true, add repartition even if the original plan does not have shuffle.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
 }

@@ -48,6 +48,7 @@ spec:
       labels:
         app: kyuubi-server
     spec:
+      serviceAccountName: default
       containers:
         - name: kyuubi-server
           # TODO: replace this with the stable tag

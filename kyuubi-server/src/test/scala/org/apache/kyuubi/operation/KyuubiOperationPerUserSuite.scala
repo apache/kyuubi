@@ -298,7 +298,7 @@ class KyuubiOperationPerUserSuite
         // force kill engine without shutdown hook
         exitReq.setStatement("java.lang.Runtime.getRuntime().halt(-1)")
         exitReq.setSessionHandle(handle)
-        exitReq.setRunAsync(true)
+        exitReq.setRunAsync(false)
         client.ExecuteStatement(exitReq)
       }
       withSessionHandle { (client, handle) =>

@@ -59,7 +59,7 @@ install:
   - ./build/mvn --version
 
 before_script:
-  - export MVN_ARGS="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -V -B -ntp -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
+  - export MVN_ARGS="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -V -B -ntp -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded"
   - ./build/mvn clean install -DskipTests $MVN_ARGS
 
 

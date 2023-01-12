@@ -57,7 +57,6 @@ import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.buildZookeeperClient
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.getGracefulStopThreadDelay
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient.connectionChecker
-import org.apache.kyuubi.util.KyuubiHadoopUtils
 import org.apache.kyuubi.util.ThreadUtils
 
 class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
@@ -338,8 +337,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     confsToPublish += ("hive.server2.authentication" -> authenticationMethod)
     if (authenticationMethod.equalsIgnoreCase("KERBEROS")) {
       confsToPublish += ("hive.server2.authentication.kerberos.principal" ->
-        conf.get(KyuubiConf.SERVER_PRINCIPAL).map(KyuubiHadoopUtils.getServerPrincipal)
-          .getOrElse(""))
+        conf.get(KyuubiConf.SERVER_PRINCIPAL).getOrElse(""))
     }
     confsToPublish.map { case (k, v) => k + "=" + v }.mkString(";")
   }

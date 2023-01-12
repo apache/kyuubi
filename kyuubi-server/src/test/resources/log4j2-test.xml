@@ -19,6 +19,9 @@
 <!-- Extra logging related to initialization of Log4j. 
  Set to debug or trace if log4j initialization is failing. -->
 <Configuration status="WARN">
+    <Properties>
+        <Property name="restAuditLogPath">target/rest-audit.log</Property>
+    </Properties>
     <Appenders>
         <Console name="stdout" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} %p %c: %m%n"/>
@@ -33,11 +36,17 @@
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
         </File>
+        <File name="restAudit" fileName="${sys:restAuditLogPath}">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %p %c{1}: %m%n"/>
+        </File>
     </Appenders>
     <Loggers>
         <Root level="INFO">
             <AppenderRef ref="stdout"/>
             <AppenderRef ref="file"/>
         </Root>
+        <Logger name="org.apache.kyuubi.server.http.authentication.AuthenticationAuditLogger" additivity="false">
+            <AppenderRef ref="restAudit" />
+        </Logger>
     </Loggers>
 </Configuration>

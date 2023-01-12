@@ -175,6 +175,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     DiscoveryPaths.makePath(
       s"${serverSpace}_${engine.getVersion}_${engine.getSharelevel}_${engine.getEngineType}",
       engine.getUser,
-      Array(engine.getSubdomain))
+      engine.getSubdomain)
   }
 }

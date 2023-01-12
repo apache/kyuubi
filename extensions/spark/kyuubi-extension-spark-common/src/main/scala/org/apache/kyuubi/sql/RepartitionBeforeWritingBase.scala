@@ -108,14 +108,37 @@ abstract class RepartitionBeforeWritingHiveBase extends RepartitionBuilder {
   }
 }
 
-trait RepartitionBeforeWriteHelper {
-  def canInsertRepartitionByExpression(plan: LogicalPlan): Boolean = plan match {
-    case Project(_, child) => canInsertRepartitionByExpression(child)
-    case SubqueryAlias(_, child) => canInsertRepartitionByExpression(child)
-    case Limit(_, _) => false
-    case _: Sort => false
-    case _: RepartitionByExpression => false
-    case _: Repartition => false
-    case _ => true
+trait RepartitionBeforeWriteHelper extends Rule[LogicalPlan] {
+  private def hasBenefit(plan: LogicalPlan): Boolean = {
+    def probablyHasShuffle: Boolean = plan.find {
+      case _: Join => true
+      case _: Aggregate => true
+      case _: Distinct => true
+      case _: Deduplicate => true
+      case _: Window => true
+      case s: Sort if s.global => true
+      case _: RepartitionOperation => true
+      case _: GlobalLimit => true
+      case _ => false
+    }.isDefined
+
+    conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE) || probablyHasShuffle
+  }
+
+  def canInsertRepartitionByExpression(plan: LogicalPlan): Boolean = {
+    def canInsert(p: LogicalPlan): Boolean = p match {
+      case Project(_, child) => canInsert(child)
+      case SubqueryAlias(_, child) => canInsert(child)
+      case Limit(_, _) => false
+      case _: Sort => false
+      case _: RepartitionByExpression => false
+      case _: Repartition => false
+      case _ => true
+    }
+
+    // 1. make sure AQE is enabled, otherwise it is no meaning to add a shuffle
+    // 2. make sure it does not break the semantics of original plan
+    // 3. try to avoid adding a shuffle if it has potential performance regression
+    conf.adaptiveExecutionEnabled && canInsert(plan) && hasBenefit(plan)
   }
 }

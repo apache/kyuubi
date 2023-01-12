@@ -17,13 +17,16 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.net.InetAddress
 import java.time.Instant
+import java.util.{Locale, UUID}
 import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
@@ -192,6 +195,18 @@ object SparkSQLEngine extends Logging {
 
     if (Utils.isOnK8s) {
       kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
+
+      // https://github.com/apache/incubator-kyuubi/issues/3385
+      // Set unset executor pod prefix to prevent kubernetes pod length limit error
+      // due to the long app name
+      _sparkConf.setIfMissing(
+        "spark.kubernetes.executor.podNamePrefix",
+        generateExecutorPodNamePrefixForK8s(user))
+
+      if (!isOnK8sClusterMode) {
+        // set driver host to ip instead of kyuubi pod name
+        _sparkConf.set("spark.driver.host", InetAddress.getLocalHost.getHostAddress)
+      }
     }
 
     // Set web ui port 0 to avoid port conflicts during non-k8s cluster mode
@@ -342,4 +357,23 @@ object SparkSQLEngine extends Logging {
     // only spark driver pod will build with `SPARK_APPLICATION_ID` env.
     Utils.isOnK8s && sys.env.contains("SPARK_APPLICATION_ID")
   }
+
+  @VisibleForTesting
+  def generateExecutorPodNamePrefixForK8s(userName: String): String = {
+    val resolvedUserName =
+      userName.trim.toLowerCase(Locale.ROOT)
+        .replaceAll("[^a-z0-9\\-]", "-")
+        .replaceAll("-+", "-")
+        .replaceAll("^-", "")
+    val podNamePrefixWithUser = s"kyuubi-$resolvedUserName-${Instant.now().toEpochMilli}"
+    if (podNamePrefixWithUser.length <= EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
+      podNamePrefixWithUser
+    } else {
+      s"kyuubi-${UUID.randomUUID()}"
+    }
+  }
+
+  // Kubernetes pod name max length - '-exec-' - Int.MAX_VALUE.length
+  // 253 - 10 - 6
+  val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
 }

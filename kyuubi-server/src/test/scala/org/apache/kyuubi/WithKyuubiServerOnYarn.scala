@@ -122,6 +122,12 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       assert(appInfo.exists(_.id.startsWith("application_")))
     }
 
+    eventually(timeout(10.seconds)) {
+      val metadata = session.sessionManager.getBatchMetadata(session.handle.identifier.toString)
+      assert(metadata.state === "RUNNING")
+      assert(metadata.engineId.startsWith("application_"))
+    }
+
     val killResponse = yarnOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(killResponse._1)
     assert(killResponse._2 startsWith "Succeeded to terminate:")
@@ -169,8 +175,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      assert(batchJobSubmissionOp.currentApplicationInfo.isDefined)
-      assert(batchJobSubmissionOp.currentApplicationInfo.get.id == null)
+      assert(batchJobSubmissionOp.currentApplicationInfo.isEmpty)
       assert(batchJobSubmissionOp.getStatus.state === OperationState.ERROR)
     }
   }

@@ -214,10 +214,15 @@ The last step is to connect to Kyuubi with the right JDBC URL.
 The JDBC URL should be in format: 
 
 ```
-jdbc:hive2://<kyuubi_server_a ddress>:<kyuubi_server_port>/<db>;principal=<kyuubi_server_principal>
+jdbc:hive2://<kyuubi_server_address>:<kyuubi_server_port>/<db>;principal=<kyuubi_server_principal>
+```
+or
+```
+jdbc:hive2://<kyuubi_server_address>:<kyuubi_server_port>/<db>;kyuubiServerPrincipal=<kyuubi_server_principal>
 ```
 
 **Note**:  
+- `principal` is inherited from Hive JDBC Driver and is a little ambiguous, and we could use `kyuubiServerPrincipal` as its alias.
 - `kyuubi_server_principal` is the value of `kyuubi.kinit.principal` set in `kyuubi-defaults.conf`.
 - As a command line argument, JDBC URL should be quoted to avoid being split into 2 commands by ";".
 - As to DBeaver, `<db>;principal=<kyuubi_server_principal>` should be set as the `Database/Schema` argument.

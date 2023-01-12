@@ -53,6 +53,8 @@ abstract class AbstractSession(
     if (lastIdleTime > 0) System.currentTimeMillis() - _lastIdleTime else 0
   }
 
+  override val sessionIdleTimeoutThreshold: Long = sessionManager.getConf.get(SESSION_IDLE_TIMEOUT)
+
   val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
 
   override lazy val name: Option[String] = normalizedConf.get(SESSION_NAME.key)
@@ -223,7 +225,7 @@ abstract class AbstractSession(
   }
 
   override def getResultSetMetadata(
-      operationHandle: OperationHandle): TTableSchema = withAcquireRelease() {
+      operationHandle: OperationHandle): TGetResultSetMetadataResp = withAcquireRelease() {
     sessionManager.operationManager.getOperationResultSetSchema(operationHandle)
   }
 

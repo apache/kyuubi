@@ -19,10 +19,11 @@ package org.apache.kyuubi.operation
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TProtocolVersion}
+import org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TOperationState, TProtocolVersion}
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.{EventBus, KyuubiOperationEvent}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -79,6 +80,10 @@ class ExecuteStatement(
       }
 
       var isComplete = false
+      var lastState: TOperationState = null
+      var lastStateUpdateTime: Long = 0L
+      val stateUpdateInterval =
+        session.sessionManager.getConf.get(KyuubiConf.OPERATION_STATUS_UPDATE_INTERVAL)
       while (!isComplete) {
         fetchQueryLog()
         verifyTStatus(statusResp.getStatus)
@@ -86,7 +91,12 @@ class ExecuteStatement(
           setOperationJobProgress(statusResp.getProgressUpdateResponse)
         }
         val remoteState = statusResp.getOperationState
-        info(s"Query[$statementId] in ${remoteState.name()}")
+        if (lastState != remoteState ||
+          System.currentTimeMillis() - lastStateUpdateTime > stateUpdateInterval) {
+          lastStateUpdateTime = System.currentTimeMillis()
+          info(s"Query[$statementId] in ${remoteState.name()}")
+        }
+        lastState = remoteState
         isComplete = true
         remoteState match {
           case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
