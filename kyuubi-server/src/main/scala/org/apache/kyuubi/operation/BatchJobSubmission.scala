@@ -98,7 +98,7 @@ class BatchJobSubmission(
     }
   }
 
-  override private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo] = {
+  override protected def currentApplicationInfo: Option[ApplicationInfo] = {
     if (isTerminal(state) && applicationInfo.nonEmpty) return applicationInfo
     // only the ApplicationInfo with non-empty id is valid for the operation
     val appInfo =
