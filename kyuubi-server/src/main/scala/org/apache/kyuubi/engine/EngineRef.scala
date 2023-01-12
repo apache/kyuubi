@@ -72,6 +72,8 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
+  private val enginePoolFirst: Boolean = conf.get(ENGINE_POOL_FIRST)
+
   private val enginePoolBalancePolicy: String = conf.get(ENGINE_POOL_BALANCE_POLICY)
 
   // In case the multi kyuubi instances have the small gap of timeout, here we add
@@ -89,7 +91,7 @@ private[kyuubi] class EngineRef(
 
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
-    case Some(_subdomain) => _subdomain
+    case Some(_subdomain) if !enginePoolFirst || clientPoolSize <= 0 => _subdomain
     case None if clientPoolSize > 0 =>
       val poolSize = math.min(clientPoolSize, poolThreshold)
       if (poolSize < clientPoolSize) {

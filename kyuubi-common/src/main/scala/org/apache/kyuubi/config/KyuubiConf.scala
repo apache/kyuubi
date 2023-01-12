@@ -1652,6 +1652,12 @@ object KyuubiConf {
     .checkValues(EngineType.values.map(_.toString))
     .createWithDefault(EngineType.SPARK_SQL.toString)
 
+  val ENGINE_POOL_FIRST: ConfigEntry[Boolean] = buildConf("kyuubi.engine.pool.enabled")
+    .doc("Used for arbitration when engine pool conditions are met and subdomain is specified.")
+    .version("1.7.0")
+    .booleanConf
+    .createWithDefault(false)
+
   val ENGINE_POOL_NAME: ConfigEntry[String] = buildConf("kyuubi.engine.pool.name")
     .doc("The name of engine pool.")
     .version("1.5.0")
