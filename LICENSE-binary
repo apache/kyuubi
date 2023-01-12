@@ -322,7 +322,9 @@ org.apache.zookeeper:zookeeper
 
 BSD
 ------------
+org.antlr:antlr-runtime
 org.antlr:antlr4-runtime
+org.antlr:ST4
 jline:jline
 com.thoughtworks.paranamer:paranamer
 dk.brics.automaton:automaton
