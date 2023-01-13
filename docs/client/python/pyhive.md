@@ -24,7 +24,7 @@
 PyHive works with Python 2.7 / Python 3. Install PyHive via pip for the Hive interface.
 
 ```
-pip install 'pyhive[hive]'
+pip install pyhive[hive]
 ```
 
 ## Usage
@@ -34,6 +34,8 @@ For further information about usages and features, e.g. DB-API async fetching, u
 
 ### DB-API
 
+When hive does not have permission control and user permission control, it is not necessary to set `auth='NOSASL'` to connect via `hive.connect()`. if set, The error `thrift.transport.TTransport.TTransportException: TSocket read 0 bytes` is appear.
+
 ```python
 from pyhive import hive
 cursor = hive.connect(host=kyuubi_host,port=10009).cursor()
@@ -42,8 +44,30 @@ print(cursor.fetchone())
 print(cursor.fetchall())
 ```
 
+you can use `dbapi` connect kyuubi server.
+
+```
+pip install impyla
+```
+
+if hive does not have permission control and user permission control, use `dbapi.connect()`, it is necessary  to set `auth_mechanism='PLAIN'`.
+
+```python
+from impala import dbapi
+
+# connect info
+conn_conf = dict(host=kyuubi_host, port=10009, database='default', auth_mechanism='PLAIN',
+                 user='hive', password=None, timeout=3600)
+# open connection
+conn = dbapi.connect(**conn_conf)
+cursor = conn.cursor()
+cursor.execute('SELECT * FROM my_awesome_data LIMIT 10')
+print(cursor.fetchone())
+print(cursor.fetchall())
+```
 
 ### Use PyHive with Pandas
+
 PyHive provides a handy way to establish a SQLAlchemy compatible connection and works with Pandas dataframe for executing SQL and reading data via [`pandas.read_sql`](https://pandas.pydata.org/docs/reference/api/pandas.read_sql.html).
 
 ```python
