@@ -25,6 +25,7 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
 
+@SuppressWarnings("deprecation")
 public interface SQLCallableStatement extends CallableStatement {
 
   @Override
