@@ -1858,7 +1858,7 @@ object KyuubiConf {
         " Note that: Kyuubi supports custom event handlers with the Java SPI." +
         " To register a custom event handler," +
         " the user needs to implement a subclass" +
-        " of org.apache.kyuubi.events.handler.CustomEventHandlerProvider" +
+        " of `org.apache.kyuubi.events.handler.CustomEventHandlerProvider`" +
         " which has a zero-arg constructor.")
       .version("1.3.0")
       .stringConf
@@ -1921,7 +1921,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.security.secret.provider")
       .internal
       .doc("The class used to manage the internal security secret. This class must be a " +
-        "subclass of EngineSecuritySecretProvider.")
+        "subclass of `EngineSecuritySecretProvider`.")
       .version("1.5.0")
       .stringConf
       .createWithDefault(
@@ -2058,8 +2058,8 @@ object KyuubiConf {
     buildConf("kyuubi.session.conf.advisor")
       .doc("A config advisor plugin for Kyuubi Server. This plugin can provide some custom " +
         "configs for different users or session configs and overwrite the session configs before " +
-        "open a new session. This config value should be a subclass of " +
-        "'org.apache.kyuubi.plugin.SessionConfAdvisor' which has a zero-arg constructor.")
+        "opening a new session. This config value should be a subclass of " +
+        "`org.apache.kyuubi.plugin.SessionConfAdvisor` which has a zero-arg constructor.")
       .version("1.5.0")
       .stringConf
       .createOptional
@@ -2068,7 +2068,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.group.provider")
       .doc("A group provider plugin for Kyuubi Server. This plugin can provide primary group " +
         "and groups information for different users or session configs. This config value " +
-        "should be a subclass of 'org.apache.kyuubi.plugin.GroupProvider' which " +
+        "should be a subclass of `org.apache.kyuubi.plugin.GroupProvider` which " +
         "has a zero-arg constructor. Kyuubi provides the following built-in implementations: " +
         "<li>hadoop: delegate the user group mapping to hadoop UserGroupInformation.</li>")
       .version("1.7.0")
