@@ -1654,7 +1654,8 @@ object KyuubiConf {
 
   val ENGINE_POOL_IGNORE_SUBDOMAIN: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.pool.ignoreSubdomain")
-      .doc("Whether to ignore subdomain when engine pool conditions are met.")
+      .doc(s"Whether to ignore ${ENGINE_SHARE_LEVEL_SUBDOMAIN.key}" +
+        s" when engine pool conditions met.")
       .internal
       .version("1.7.0")
       .booleanConf
