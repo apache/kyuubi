@@ -30,7 +30,7 @@ import org.apache.kyuubi.events.{EventBus, KyuubiOperationEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_STATE, OPERATION_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.operation.OperationState.OperationState
+import org.apache.kyuubi.operation.OperationState.{isTerminal, OperationState}
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, Session}
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -176,7 +176,9 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   override def setState(newState: OperationState): Unit = {
     MetricsSystem.tracing { ms =>
-      ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase), -1)
+      if (!isTerminal(state)) {
+        ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase), -1)
+      }
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, newState.toString.toLowerCase))
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, newState.toString.toLowerCase))
     }
