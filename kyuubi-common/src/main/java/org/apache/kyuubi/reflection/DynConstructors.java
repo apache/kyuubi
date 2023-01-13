@@ -119,7 +119,7 @@ public class DynConstructors {
     return new Builder(baseClass);
   }
 
-  @SuppressWarnings( "rawtypes")
+  @SuppressWarnings("rawtypes")
   public static class Builder {
     private final Class<?> baseClass;
     private ClassLoader loader = Thread.currentThread().getContextClassLoader();
