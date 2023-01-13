@@ -45,7 +45,7 @@ You can make various types of contributions to Kyuubi, including the following b
 
 - Answer questions in the  [Mailing Lists](https://kyuubi.apache.org/mailing_lists.html)
 - [Share your success stories with us](https://github.com/apache/kyuubi/discussions/925) 
-- Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
+- Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/master/)
 - Test latest releases - [![Latest tag](https://img.shields.io/github/v/tag/apache/kyuubi?label=tag)](https://github.com/apache/kyuubi/tags)
 - Improve test coverage - [![codecov](https://codecov.io/gh/apache/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/kyuubi)
 - Report bugs and better help developers to reproduce

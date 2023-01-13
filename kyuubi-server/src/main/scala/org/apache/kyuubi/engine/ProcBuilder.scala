@@ -335,7 +335,7 @@ trait ProcBuilder {
 
   protected def validateEnv(requiredEnv: String): Throwable = {
     KyuubiSQLException(s"$requiredEnv is not set! For more information on installing and " +
-      s"configuring $requiredEnv, please visit https://kyuubi.apache.org/docs/latest/" +
+      s"configuring $requiredEnv, please visit https://kyuubi.readthedocs.io/en/master/" +
       s"deployment/settings.html#environments")
   }
 
