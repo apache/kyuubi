@@ -70,7 +70,12 @@ class BatchJobSubmission(
   private[kyuubi] val batchId: String = session.handle.identifier.toString
 
   @volatile private var _applicationInfo: Option[ApplicationInfo] = None
-  def getApplicationInfo: Option[ApplicationInfo] = _applicationInfo
+  def getOrFetchCurrentApplicationInfo: Option[ApplicationInfo] = {
+    _applicationInfo match {
+      case Some(_) => _applicationInfo
+      case None => currentApplicationInfo
+    }
+  }
 
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
