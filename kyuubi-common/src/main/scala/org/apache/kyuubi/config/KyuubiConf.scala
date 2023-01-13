@@ -1998,7 +1998,7 @@ object KyuubiConf {
 
   val OPERATION_PLAN_ONLY_OUT_STYLE: ConfigEntry[String] =
     buildConf("kyuubi.operation.plan.only.output.style")
-      .doc("Configures the planOnly output style. The value can be 'plain' or 'json', and" +
+      .doc("Configures the planOnly output style. The value can be 'plain' or 'json', and " +
         "the default value is 'plain'. This configuration supports only the output styles " +
         "of the Spark engine")
       .version("1.7.0")
