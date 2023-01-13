@@ -28,6 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
 import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
 import org.apache.kyuubi.zookeeper.ZookeeperConf
 
@@ -329,6 +330,23 @@ class KyuubiOperationPerUserSuite
       assert(result.getString(1) === "spark.kyuubi.engine.credentials")
       assert(result.getString(2).isEmpty)
       assert(!result.next())
+    }
+  }
+
+  test("accumulate the operation terminal state") {
+    val opType = classOf[ExecuteStatement].getSimpleName
+    val finishedMetric = s"${MetricsConstants.OPERATION_STATE}.$opType" +
+      s".${OperationState.FINISHED.toString.toLowerCase}"
+    val closedMetric = s"${MetricsConstants.OPERATION_STATE}.$opType" +
+      s".${OperationState.CLOSED.toString.toLowerCase}"
+    val finishedCount = MetricsSystem.meterValue(finishedMetric).getOrElse(0L)
+    val closedCount = MetricsSystem.meterValue(finishedMetric).getOrElse(0L)
+    withJdbcStatement() { statement =>
+      statement.executeQuery("select engine_name()")
+    }
+    eventually(timeout(5.seconds), interval(100.milliseconds)) {
+      assert(MetricsSystem.meterValue(finishedMetric).getOrElse(0L) > finishedCount)
+      assert(MetricsSystem.meterValue(closedMetric).getOrElse(0L) > closedCount)
     }
   }
 }
