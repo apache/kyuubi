@@ -962,7 +962,7 @@ object KyuubiConf {
 
   val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.context")
-      .doc("The desired context from your kubernetes config file used to configure the K8S " +
+      .doc("The desired context from your kubernetes config file used to configure the K8s " +
         "client for interacting with the cluster.")
       .version("1.6.0")
       .stringConf
@@ -1608,7 +1608,7 @@ object KyuubiConf {
   val ENGINE_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.connection.url.use.hostname")
       .doc("(deprecated) " +
-        "When true, the engine registers with hostname to zookeeper. When Spark runs on k8s" +
+        "When true, the engine registers with hostname to zookeeper. When Spark runs on K8s" +
         " with cluster mode, set to false to ensure that server can connect to engine")
       .version("1.3.0")
       .booleanConf

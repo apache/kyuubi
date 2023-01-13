@@ -219,7 +219,7 @@ kyuubi.delegation.token.renew.interval|PT168H|unused yet|duration|1.0.0
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
-kyuubi.engine.connection.url.use.hostname|true|(deprecated) When true, the engine registers with hostname to zookeeper. When Spark runs on k8s with cluster mode, set to false to ensure that server can connect to engine|boolean|1.3.0
+kyuubi.engine.connection.url.use.hostname|true|(deprecated) When true, the engine registers with hostname to zookeeper. When Spark runs on K8s with cluster mode, set to false to ensure that server can connect to engine|boolean|1.3.0
 kyuubi.engine.deregister.exception.classes||A comma-separated list of exception classes. If there is any exception thrown, whose class matches the specified classes, the engine would deregister itself.|seq|1.2.0
 kyuubi.engine.deregister.exception.messages||A comma-separated list of exception messages. If there is any exception thrown, whose message or stacktrace matches the specified message list, the engine would deregister itself.|seq|1.2.0
 kyuubi.engine.deregister.exception.ttl|PT30M|Time to live(TTL) for exceptions pattern specified in kyuubi.engine.deregister.exception.classes and kyuubi.engine.deregister.exception.messages to deregister engines. Once the total error count hits the kyuubi.engine.deregister.job.max.failures within the TTL, an engine will deregister itself and wait for self-terminated. Otherwise, we suppose that the engine has recovered from temporary failures.|duration|1.2.0
@@ -393,7 +393,7 @@ kyuubi.kubernetes.authenticate.clientCertFile|&lt;undefined&gt;|Path to the clie
 kyuubi.kubernetes.authenticate.clientKeyFile|&lt;undefined&gt;|Path to the client key file for connecting to the Kubernetes API server over TLS from the kyuubi. Specify this as a path as opposed to a URI (i.e. do not provide a scheme)|string|1.7.0
 kyuubi.kubernetes.authenticate.oauthToken|&lt;undefined&gt;|The OAuth token to use when authenticating against the Kubernetes API server. Note that unlike, the other authentication options, this must be the exact string value of the token to use for the authentication.|string|1.7.0
 kyuubi.kubernetes.authenticate.oauthTokenFile|&lt;undefined&gt;|Path to the file containing the OAuth token to use when authenticating against the Kubernetes API server. Specify this as a path as opposed to a URI (i.e. do not provide a scheme)|string|1.7.0
-kyuubi.kubernetes.context|&lt;undefined&gt;|The desired context from your kubernetes config file used to configure the K8S client for interacting with the cluster.|string|1.6.0
+kyuubi.kubernetes.context|&lt;undefined&gt;|The desired context from your kubernetes config file used to configure the K8s client for interacting with the cluster.|string|1.6.0
 kyuubi.kubernetes.master.address|&lt;undefined&gt;|The internal Kubernetes master (API server) address to be used for kyuubi.|string|1.7.0
 kyuubi.kubernetes.namespace|default|The namespace that will be used for running the kyuubi pods and find engines.|string|1.7.0
 kyuubi.kubernetes.trust.certificates|false|If set to true then client can submit to kubernetes cluster only with token|boolean|1.7.0
