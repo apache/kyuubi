@@ -1652,6 +1652,15 @@ object KyuubiConf {
     .checkValues(EngineType.values.map(_.toString))
     .createWithDefault(EngineType.SPARK_SQL.toString)
 
+  val ENGINE_POOL_IGNORE_SUBDOMAIN: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.pool.ignoreSubdomain")
+      .doc(s"Whether to ignore ${ENGINE_SHARE_LEVEL_SUBDOMAIN.key}" +
+        s" when engine pool conditions met.")
+      .internal
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_POOL_NAME: ConfigEntry[String] = buildConf("kyuubi.engine.pool.name")
     .doc("The name of engine pool.")
     .version("1.5.0")
