@@ -727,7 +727,8 @@ object KyuubiConf {
       .createWithDefault("X-Real-IP")
 
   val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("kyuubi.authentication")
-    .doc("A comma-separated list of client authentication types.<ul>" +
+    .doc("A comma-separated list of client authentication types." +
+      "<ul>" +
       " <li>NOSASL: raw transport.</li>" +
       " <li>NONE: no authentication check.</li>" +
       " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
@@ -735,11 +736,28 @@ object KyuubiConf {
       " <li>JDBC: JDBC query authentication.</li>" +
       " <li>LDAP: Lightweight Directory Access Protocol authentication.</li>" +
       "</ul>" +
-      " Note that: For KERBEROS, it is SASL/GSSAPI mechanism," +
-      " and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanisms." +
-      " If only NOSASL is specified, the authentication will be NOSASL." +
-      " For SASL authentication, KERBEROS and PLAIN auth types are supported at the same time," +
-      " and only the first specified PLAIN auth type is valid.")
+      "The following tree describes the catalog of each option." +
+      "<ul>" +
+      "  <li><code>NOSASL</code></li>" +
+      "  <li>SASL" +
+      "    <ul>" +
+      "      <li>SASL/PLAIN</li>" +
+      "        <ul>" +
+      "          <li><code>NONE</code></li>" +
+      "          <li><code>LDAP</code></li>" +
+      "          <li><code>JDBC</code></li>" +
+      "          <li><code>CUSTOM</code></li>" +
+      "        </ul>" +
+      "      <li>SASL/GSSAPI" +
+      "        <ul>" +
+      "          <li><code>KERBEROS</code></li>" +
+      "        </ul>" +
+      "      </li>" +
+      "    </ul>" +
+      "  </li>" +
+      "</ul>" +
+      " Note that: for SASL authentication, KERBEROS and PLAIN auth types are supported" +
+      " at the same time, and only the first specified PLAIN auth type is valid.")
     .version("1.0.0")
     .serverOnly
     .stringConf
