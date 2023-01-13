@@ -28,7 +28,7 @@ object CtlConf {
   val CTL_REST_CLIENT_BASE_URL: OptionalConfigEntry[String] =
     buildConf("kyuubi.ctl.rest.base.url")
       .doc("The REST API base URL, " +
-        "which contains the scheme (http:// or https://), host name, port number")
+        "which contains the scheme (http:// or https://), hostname, port number")
       .version("1.6.0")
       .stringConf
       .createOptional
@@ -49,7 +49,7 @@ object CtlConf {
 
   val CTL_REST_CLIENT_CONNECT_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.ctl.rest.connect.timeout")
-      .doc("The timeout[ms] for establishing the connection with the kyuubi server." +
+      .doc("The timeout[ms] for establishing the connection with the kyuubi server. " +
         "A timeout value of zero is interpreted as an infinite timeout.")
       .version("1.6.0")
       .timeConf
@@ -58,7 +58,7 @@ object CtlConf {
 
   val CTL_REST_CLIENT_SOCKET_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.ctl.rest.socket.timeout")
-      .doc("The timeout[ms] for waiting for data packets after connection is established." +
+      .doc("The timeout[ms] for waiting for data packets after connection is established. " +
         "A timeout value of zero is interpreted as an infinite timeout.")
       .version("1.6.0")
       .timeConf

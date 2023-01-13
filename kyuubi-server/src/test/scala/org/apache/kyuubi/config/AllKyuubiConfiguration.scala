@@ -120,7 +120,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       " `kyuubi.engineEnv.VAR_NAME`. For example, with `kyuubi.engineEnv.SPARK_DRIVER_MEMORY=4g`," +
       " the environment variable `SPARK_DRIVER_MEMORY` with value `4g` would be transferred into" +
       " engine side. With `kyuubi.engineEnv.SPARK_CONF_DIR=/apache/confs/spark/conf`, the" +
-      " value of `SPARK_CONF_DIR` in engine side is set to `/apache/confs/spark/conf`."
+      " value of `SPARK_CONF_DIR` on the engine side is set to `/apache/confs/spark/conf`."
 
     newOutput += ""
     newOutput += "## Kyuubi Configurations"
@@ -194,7 +194,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     newOutput += ""
     newOutput += ("  - For [Static SQL Configurations](" +
       "http://spark.apache.org/docs/latest/configuration.html#static-sql-configuration) and" +
-      " other spark core configs, e.g. `spark.executor.memory`, they will take affect if there" +
+      " other spark core configs, e.g. `spark.executor.memory`, they will take effect if there" +
       " is no existing SQL engine application. Otherwise, they will just be ignored")
     newOutput += ""
     newOutput += ("### Via SET Syntax")
@@ -257,7 +257,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     newOutput += ""
     newOutput += ("### Hadoop Configurations")
     newOutput += ""
-    newOutput += ("Specifying `HADOOP_CONF_DIR` to the directory contains hadoop configuration" +
+    newOutput += ("Specifying `HADOOP_CONF_DIR` to the directory containing Hadoop configuration" +
       " files or treating them as Spark properties with a `spark.hadoop.` prefix." +
       " Please refer to the Spark official online documentation for" +
       " [Inheriting Hadoop Cluster Configuration](http://spark.apache.org/docs/latest/" +
@@ -269,7 +269,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     newOutput += ""
     newOutput += ("These configurations are used for SQL engine application to talk to" +
       " Hive MetaStore and could be configured in a `hive-site.xml`." +
-      " Placed it in `$SPARK_HOME/conf` directory, or treating them as Spark properties with" +
+      " Placed it in `$SPARK_HOME/conf` directory, or treat them as Spark properties with" +
       " a `spark.hadoop.` prefix.")
 
     newOutput += ""
