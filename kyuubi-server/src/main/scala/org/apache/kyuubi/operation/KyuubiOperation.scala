@@ -158,7 +158,9 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   override def setState(newState: OperationState): Unit = {
     MetricsSystem.tracing { ms =>
-      ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase), -1)
+      if (!OperationState.isTerminal(state)) {
+        ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase), -1)
+      }
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, newState.toString.toLowerCase))
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, newState.toString.toLowerCase))
     }
