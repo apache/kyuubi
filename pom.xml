@@ -1750,7 +1750,7 @@
                         <maxmem>1024m</maxmem>
                         <fork>true</fork>
                         <compilerArgs>
-                            <arg>-Xlint:all,-serial,-path</arg>
+                            <arg>-Xlint:all,-serial,-path,-processing</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
@@ -1778,7 +1778,7 @@
                             <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
                         </jvmArgs>
                         <javacArgs>
-                            <javacArg>-Xlint:all,-serial,-path,-try</javacArg>
+                            <javacArg>-Xlint:all,-serial,-path,-try,-processing</javacArg>
                         </javacArgs>
                         <compilerPlugins>
                             <compilerPlugin>
