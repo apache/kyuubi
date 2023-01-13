@@ -376,7 +376,7 @@ object KyuubiConf {
 
   val FRONTEND_PROTOCOLS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.frontend.protocols")
-      .doc("A comma separated list for all frontend protocols " +
+      .doc("A comma-separated list for all frontend protocols " +
         "<ul>" +
         " <li>THRIFT_BINARY - HiveServer2 compatible thrift binary protocol.</li>" +
         " <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li>" +
@@ -454,7 +454,7 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_BINARY_SSL_INCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.frontend.thrift.binary.ssl.include.ciphersuites")
-      .doc("A comma separated list of include SSL cipher suite names for thrift binary frontend.")
+      .doc("A comma-separated list of include SSL cipher suite names for thrift binary frontend.")
       .version("1.7.0")
       .stringConf
       .toSequence()
@@ -700,7 +700,7 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_HTTP_SSL_EXCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.frontend.thrift.http.ssl.exclude.ciphersuites")
-      .doc("A comma separated list of exclude SSL cipher suite names for thrift http frontend.")
+      .doc("A comma-separated list of exclude SSL cipher suite names for thrift http frontend.")
       .version("1.7.0")
       .stringConf
       .toSequence()
@@ -727,7 +727,7 @@ object KyuubiConf {
       .createWithDefault("X-Real-IP")
 
   val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("kyuubi.authentication")
-    .doc("A comma separated list of client authentication types.<ul>" +
+    .doc("A comma-separated list of client authentication types.<ul>" +
       " <li>NOSASL: raw transport.</li>" +
       " <li>NONE: no authentication check.</li>" +
       " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
@@ -1242,7 +1242,7 @@ object KyuubiConf {
 
   val SESSION_CONF_IGNORE_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.conf.ignore.list")
-      .doc("A comma separated list of ignored keys. If the client connection contains any of" +
+      .doc("A comma-separated list of ignored keys. If the client connection contains any of" +
         " them, the key and the corresponding value will be removed silently during engine" +
         " bootstrap and connection setup." +
         " Note that this rule is for server-side protection defined via administrators to" +
@@ -1255,7 +1255,7 @@ object KyuubiConf {
 
   val SESSION_CONF_RESTRICT_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.conf.restrict.list")
-      .doc("A comma separated list of restricted keys. If the client connection contains any of" +
+      .doc("A comma-separated list of restricted keys. If the client connection contains any of" +
         " them, the connection will be rejected explicitly during engine bootstrap and connection" +
         " setup." +
         " Note that this rule is for server-side protection defined via administrators to" +
@@ -1335,7 +1335,7 @@ object KyuubiConf {
 
   val BATCH_CONF_IGNORE_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.batch.conf.ignore.list")
-      .doc("A comma separated list of ignored keys for batch conf. If the batch conf contains" +
+      .doc("A comma-separated list of ignored keys for batch conf. If the batch conf contains" +
         " any of them, the key and the corresponding value will be removed silently during batch" +
         " job submission." +
         " Note that this rule is for server-side protection defined via administrators to" +
@@ -1727,7 +1727,7 @@ object KyuubiConf {
 
   val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.deregister.exception.classes")
-      .doc("A comma separated list of exception classes. If there is any exception thrown," +
+      .doc("A comma-separated list of exception classes. If there is any exception thrown," +
         " whose class matches the specified classes, the engine would deregister itself.")
       .version("1.2.0")
       .stringConf
@@ -1736,7 +1736,7 @@ object KyuubiConf {
 
   val ENGINE_DEREGISTER_EXCEPTION_MESSAGES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.deregister.exception.messages")
-      .doc("A comma separated list of exception messages. If there is any exception thrown," +
+      .doc("A comma-separated list of exception messages. If there is any exception thrown," +
         " whose message or stacktrace matches the specified message list, the engine would" +
         " deregister itself.")
       .version("1.2.0")
@@ -1826,7 +1826,7 @@ object KyuubiConf {
 
   val SERVER_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.backend.server.event.loggers")
-      .doc("A comma separated list of server history loggers, where session/operation etc" +
+      .doc("A comma-separated list of server history loggers, where session/operation etc" +
         " events go.<ul>" +
         s" <li>JSON: the events will be written to the location of" +
         s" ${SERVER_EVENT_JSON_LOG_PATH.key}</li>" +
@@ -1848,7 +1848,7 @@ object KyuubiConf {
   @deprecated("using kyuubi.engine.spark.event.loggers instead", "1.6.0")
   val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.event.loggers")
-      .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
+      .doc("A comma-separated list of engine history loggers, where engine/session/operation etc" +
         " events go.<ul>" +
         " <li>SPARK: the events will be written to the Spark listener bus.</li>" +
         " <li>JSON: the events will be written to the location of" +
@@ -2425,7 +2425,7 @@ object KyuubiConf {
 
   val ENGINE_SPARK_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.spark.event.loggers")
-      .doc("A comma separated list of engine loggers, where engine/session/operation etc" +
+      .doc("A comma-separated list of engine loggers, where engine/session/operation etc" +
         " events go.<ul>" +
         " <li>SPARK: the events will be written to the Spark listener bus.</li>" +
         " <li>JSON: the events will be written to the location of" +
@@ -2459,7 +2459,7 @@ object KyuubiConf {
 
   val ENGINE_HIVE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.hive.event.loggers")
-      .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
+      .doc("A comma-separated list of engine history loggers, where engine/session/operation etc" +
         " events go.<ul>" +
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
@@ -2476,7 +2476,7 @@ object KyuubiConf {
 
   val ENGINE_TRINO_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.trino.event.loggers")
-      .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
+      .doc("A comma-separated list of engine history loggers, where engine/session/operation etc" +
         " events go.<ul>" +
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +

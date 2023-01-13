@@ -34,7 +34,7 @@ object MetricsConf {
       .createWithDefault(true)
 
   val METRICS_REPORTERS: ConfigEntry[Seq[String]] = buildConf("kyuubi.metrics.reporters")
-    .doc("A comma separated list for all metrics reporters" +
+    .doc("A comma-separated list for all metrics reporters" +
       "<ul>" +
       " <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE periodically.</li>" +
       " <li>JMX - JmxReporter which listens for new metrics and exposes them as MBeans.</li> " +
