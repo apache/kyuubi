@@ -69,8 +69,8 @@ class BatchJobSubmission(
 
   private[kyuubi] val batchId: String = session.handle.identifier.toString
 
-  @volatile private var applicationInfo: Option[ApplicationInfo] = None
-  def getApplicationInfo: Option[ApplicationInfo] = applicationInfo
+  @volatile private var _applicationInfo: Option[ApplicationInfo] = None
+  def getApplicationInfo: Option[ApplicationInfo] = _applicationInfo
 
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
@@ -99,16 +99,16 @@ class BatchJobSubmission(
   }
 
   override protected def currentApplicationInfo: Option[ApplicationInfo] = {
-    if (isTerminal(state) && applicationInfo.nonEmpty) return applicationInfo
+    if (isTerminal(state) && _applicationInfo.nonEmpty) return _applicationInfo
     // only the ApplicationInfo with non-empty id is valid for the operation
-    val appInfo =
+    val applicationInfo =
       applicationManager.getApplicationInfo(builder.clusterManager(), batchId).filter(_.id != null)
-    appInfo.foreach { _ =>
+    applicationInfo.foreach { _ =>
       if (_appStartTime <= 0) {
         _appStartTime = System.currentTimeMillis()
       }
     }
-    appInfo
+    applicationInfo
   }
 
   private[kyuubi] def killBatchApplication(): KillResponse = {
@@ -129,13 +129,13 @@ class BatchJobSubmission(
       }
 
     if (isTerminalState(state)) {
-      if (applicationInfo.isEmpty) {
-        applicationInfo =
+      if (_applicationInfo.isEmpty) {
+        _applicationInfo =
           Option(ApplicationInfo(id = null, name = null, state = ApplicationState.NOT_FOUND))
       }
     }
 
-    applicationInfo.foreach { status =>
+    _applicationInfo.foreach { status =>
       val metadataToUpdate = Metadata(
         identifier = batchId,
         state = state.toString,
@@ -156,7 +156,7 @@ class BatchJobSubmission(
   private def setStateIfNotCanceled(newState: OperationState): Unit = state.synchronized {
     if (state != CANCELED) {
       setState(newState)
-      applicationInfo.filter(_.id != null).foreach { ai =>
+      _applicationInfo.filter(_.id != null).foreach { ai =>
         session.getSessionEvent.foreach(_.engineId = ai.id)
       }
       if (newState == RUNNING) {
@@ -186,8 +186,8 @@ class BatchJobSubmission(
           // submitted batch application.
           recoveryMetadata.map { metadata =>
             if (metadata.state == OperationState.PENDING.toString) {
-              applicationInfo = currentApplicationInfo
-              applicationInfo.map(_.id) match {
+              _applicationInfo = currentApplicationInfo
+              _applicationInfo.map(_.id) match {
                 case Some(null) =>
                   submitAndMonitorBatchJob()
                 case Some(appId) =>
@@ -228,10 +228,10 @@ class BatchJobSubmission(
     try {
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
-      applicationInfo = currentApplicationInfo
-      while (!applicationFailed(applicationInfo) && process.isAlive) {
+      _applicationInfo = currentApplicationInfo
+      while (!applicationFailed(_applicationInfo) && process.isAlive) {
         if (!appStatusFirstUpdated) {
-          if (applicationInfo.isDefined) {
+          if (_applicationInfo.isDefined) {
             setStateIfNotCanceled(OperationState.RUNNING)
             updateBatchMetadata()
             appStatusFirstUpdated = true
@@ -245,19 +245,19 @@ class BatchJobSubmission(
           }
         }
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
-        applicationInfo = currentApplicationInfo
+        _applicationInfo = currentApplicationInfo
       }
 
-      if (applicationFailed(applicationInfo)) {
+      if (applicationFailed(_applicationInfo)) {
         process.destroyForcibly()
-        throw new RuntimeException(s"Batch job failed: $applicationInfo")
+        throw new RuntimeException(s"Batch job failed: $_applicationInfo")
       } else {
         process.waitFor()
         if (process.exitValue() != 0) {
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
 
-        Option(applicationInfo.map(_.id)).foreach {
+        Option(_applicationInfo.map(_.id)).foreach {
           case Some(appId) => monitorBatchJob(appId)
           case _ =>
         }
@@ -269,30 +269,30 @@ class BatchJobSubmission(
 
   private def monitorBatchJob(appId: String): Unit = {
     info(s"Monitoring submitted $batchType batch[$batchId] job: $appId")
-    if (applicationInfo.isEmpty) {
-      applicationInfo = currentApplicationInfo
+    if (_applicationInfo.isEmpty) {
+      _applicationInfo = currentApplicationInfo
     }
     if (state == OperationState.PENDING) {
       setStateIfNotCanceled(OperationState.RUNNING)
     }
-    if (applicationInfo.isEmpty) {
+    if (_applicationInfo.isEmpty) {
       info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
-    } else if (applicationFailed(applicationInfo)) {
-      throw new RuntimeException(s"$batchType batch[$batchId] job failed: $applicationInfo")
+    } else if (applicationFailed(_applicationInfo)) {
+      throw new RuntimeException(s"$batchType batch[$batchId] job failed: $_applicationInfo")
     } else {
       updateBatchMetadata()
       // TODO: add limit for max batch job submission lifetime
-      while (applicationInfo.isDefined && !applicationTerminated(applicationInfo)) {
+      while (_applicationInfo.isDefined && !applicationTerminated(_applicationInfo)) {
         Thread.sleep(applicationCheckInterval)
         val newApplicationStatus = currentApplicationInfo
-        if (newApplicationStatus.map(_.state) != applicationInfo.map(_.state)) {
-          applicationInfo = newApplicationStatus
-          info(s"Batch report for $batchId, $applicationInfo")
+        if (newApplicationStatus.map(_.state) != _applicationInfo.map(_.state)) {
+          _applicationInfo = newApplicationStatus
+          info(s"Batch report for $batchId, $_applicationInfo")
         }
       }
 
-      if (applicationFailed(applicationInfo)) {
-        throw new RuntimeException(s"$batchType batch[$batchId] job failed: $applicationInfo")
+      if (applicationFailed(_applicationInfo)) {
+        throw new RuntimeException(s"$batchType batch[$batchId] job failed: $_applicationInfo")
       }
     }
   }
