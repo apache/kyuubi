@@ -255,7 +255,7 @@ class BatchJobSubmission(
 
       if (applicationFailed(_applicationInfo)) {
         process.destroyForcibly()
-        throw new RuntimeException(s"Batch job failed: $_applicationInfo")
+        throw new RuntimeException(s"Batch job failed: ${_applicationInfo}")
       } else {
         process.waitFor()
         if (process.exitValue() != 0) {
@@ -283,7 +283,7 @@ class BatchJobSubmission(
     if (_applicationInfo.isEmpty) {
       info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
     } else if (applicationFailed(_applicationInfo)) {
-      throw new RuntimeException(s"$batchType batch[$batchId] job failed: $_applicationInfo")
+      throw new RuntimeException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
     } else {
       updateBatchMetadata()
       // TODO: add limit for max batch job submission lifetime
@@ -292,12 +292,12 @@ class BatchJobSubmission(
         val newApplicationStatus = currentApplicationInfo
         if (newApplicationStatus.map(_.state) != _applicationInfo.map(_.state)) {
           _applicationInfo = newApplicationStatus
-          info(s"Batch report for $batchId, $_applicationInfo")
+          info(s"Batch report for $batchId, ${_applicationInfo}")
         }
       }
 
       if (applicationFailed(_applicationInfo)) {
-        throw new RuntimeException(s"$batchType batch[$batchId] job failed: $_applicationInfo")
+        throw new RuntimeException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
       }
     }
   }
