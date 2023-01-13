@@ -130,12 +130,6 @@ class KyuubiSessionImpl(
         openEngineSessionConf =
           optimizedConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
       }
-      val passwd =
-        if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
-          InternalSecurityAccessor.get().issueToken()
-        } else {
-          Option(password).filter(_.nonEmpty).getOrElse("anonymous")
-        }
 
       if (sessionConf.get(SESSION_USER_SIGN_ENABLED)) {
         openEngineSessionConf = openEngineSessionConf +
@@ -154,6 +148,12 @@ class KyuubiSessionImpl(
       while (attempt <= maxAttempts && shouldRetry) {
         val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
         try {
+          val passwd =
+            if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
+              InternalSecurityAccessor.get().issueToken()
+            } else {
+              Option(password).filter(_.nonEmpty).getOrElse("anonymous")
+            }
           _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
           _engineSessionHandle = _client.openSession(protocol, user, passwd, openEngineSessionConf)
           logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
