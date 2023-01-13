@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 public class JdbcConnectionParams {
+
   // Note on client side parameter naming convention:
   // Prefer using a shorter camelCase param name instead of using the same name as the
   // corresponding
@@ -106,6 +107,8 @@ public class JdbcConnectionParams {
   static final String SUNX509_ALGORITHM_STRING = "SunX509";
   static final String SUNJSSE_ALGORITHM_STRING = "SunJSSE";
   // --------------- End 2 way ssl options ----------------------------
+  public static final String AWS_PROVIDER = "awsProvider";
+  public static final String AWS_PROFILE = "awsProfile";
 
   // Non-configurable params:
   // Currently supports JKS keystore format

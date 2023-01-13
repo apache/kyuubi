@@ -28,6 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.hive.service.rpc.thrift.TStatus;
 import org.apache.hive.service.rpc.thrift.TStatusCode;
+import org.apache.kyuubi.jdbc.hive.auth.aws.AwsAuthent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -286,6 +287,14 @@ public class Utils {
     }
 
     connParams.setJdbcUriString(uri);
+
+    if (connParams.getSessionVars().containsKey(AWS_PROVIDER)) {
+      connParams
+          .getHiveConfs()
+          .putAll(
+              AwsAuthent.enrichAws(
+                  connParams.getSessionVars().get(AWS_PROVIDER), connParams.getSessionVars()));
+    }
     return connParams;
   }
 
