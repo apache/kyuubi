@@ -184,7 +184,7 @@ kyuubi.credentials.check.interval|PT5M|The interval to check the expiration of c
 kyuubi.credentials.hadoopfs.enabled|true|Whether to renew Hadoop filesystem delegation tokens|boolean|1.4.0
 kyuubi.credentials.hadoopfs.uris||Extra Hadoop filesystem URIs for which to request delegation tokens. The filesystem that hosts fs.defaultFS does not need to be listed here.|seq|1.4.0
 kyuubi.credentials.hive.enabled|true|Whether to renew Hive metastore delegation token|boolean|1.4.0
-kyuubi.credentials.idle.timeout|PT6H|inactive users' credentials will be expired after a configured timeout|duration|1.6.0
+kyuubi.credentials.idle.timeout|PT6H|The inactive users' credentials will be expired after a configured timeout|duration|1.6.0
 kyuubi.credentials.renewal.interval|PT1H|How often Kyuubi renews one user's delegation tokens|duration|1.4.0
 kyuubi.credentials.renewal.retry.wait|PT1M|How long to wait before retrying to fetch new credentials after a failure.|duration|1.4.0
 kyuubi.credentials.update.wait.timeout|PT1M|How long to wait until the credentials are ready.|duration|1.5.0
@@ -227,12 +227,12 @@ kyuubi.engine.deregister.job.max.failures|4|Number of failures of job before der
 kyuubi.engine.event.json.log.path|file:///tmp/kyuubi/events|The location where all the engine events go for the built-in JSON logger.<ul><li>Local Path: start with 'file://'</li><li>HDFS Path: start with 'hdfs://'</li></ul>|string|1.3.0
 kyuubi.engine.event.loggers|SPARK|A comma-separated list of engine history loggers, where engine/session/operation etc events go.<ul> <li>SPARK: the events will be written to the Spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: User-defined event handlers.</li></ul> Note that: Kyuubi supports custom event handlers with the Java SPI. To register a custom event handler, the user needs to implement a subclass of `org.apache.kyuubi.events.handler.CustomEventHandlerProvider` which has a zero-arg constructor.|seq|1.3.0
 kyuubi.engine.flink.extra.classpath|&lt;undefined&gt;|The extra classpath for the Flink SQL engine, for configuring the location of hadoop client jars, etc|string|1.6.0
-kyuubi.engine.flink.java.options|&lt;undefined&gt;|The extra java options for the Flink SQL engine|string|1.6.0
+kyuubi.engine.flink.java.options|&lt;undefined&gt;|The extra Java options for the Flink SQL engine|string|1.6.0
 kyuubi.engine.flink.memory|1g|The heap memory for the Flink SQL engine|string|1.6.0
 kyuubi.engine.hive.event.loggers|JSON|A comma-separated list of engine history loggers, where engine/session/operation etc events go.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
-kyuubi.engine.hive.extra.classpath|&lt;undefined&gt;|The extra classpath for the hive query engine, for configuring location of the hadoop client jars and etc.|string|1.6.0
-kyuubi.engine.hive.java.options|&lt;undefined&gt;|The extra java options for the hive query engine|string|1.6.0
-kyuubi.engine.hive.memory|1g|The heap memory for the hive query engine|string|1.6.0
+kyuubi.engine.hive.extra.classpath|&lt;undefined&gt;|The extra classpath for the Hive query engine, for configuring location of the hadoop client jars and etc.|string|1.6.0
+kyuubi.engine.hive.java.options|&lt;undefined&gt;|The extra Java options for the Hive query engine|string|1.6.0
+kyuubi.engine.hive.memory|1g|The heap memory for the Hive query engine|string|1.6.0
 kyuubi.engine.initialize.sql|SHOW DATABASES|SemiColon-separated list of SQL statements to be initialized in the newly created engine before queries. i.e. use `SHOW DATABASES` to eagerly active HiveClient. This configuration can not be used in JDBC url due to the limitation of Beeline/JDBC driver.|seq|1.2.0
 kyuubi.engine.jdbc.connection.password|&lt;undefined&gt;|The password is used for connecting to server|string|1.6.0
 kyuubi.engine.jdbc.connection.properties||The additional properties are used for connecting to server|seq|1.6.0
@@ -241,7 +241,7 @@ kyuubi.engine.jdbc.connection.url|&lt;undefined&gt;|The server url that engine w
 kyuubi.engine.jdbc.connection.user|&lt;undefined&gt;|The user is used for connecting to server|string|1.6.0
 kyuubi.engine.jdbc.driver.class|&lt;undefined&gt;|The driver class for JDBC engine connection|string|1.6.0
 kyuubi.engine.jdbc.extra.classpath|&lt;undefined&gt;|The extra classpath for the JDBC query engine, for configuring the location of the JDBC driver and etc.|string|1.6.0
-kyuubi.engine.jdbc.java.options|&lt;undefined&gt;|The extra java options for the JDBC query engine|string|1.6.0
+kyuubi.engine.jdbc.java.options|&lt;undefined&gt;|The extra Java options for the JDBC query engine|string|1.6.0
 kyuubi.engine.jdbc.memory|1g|The heap memory for the JDBC query engine|string|1.6.0
 kyuubi.engine.jdbc.type|&lt;undefined&gt;|The short name of JDBC type|string|1.6.0
 kyuubi.engine.operation.convert.catalog.database.enabled|true|When set to true, The engine converts the JDBC methods of set/get Catalog and set/get Schema to the implementation of different engines|boolean|1.6.0
@@ -256,12 +256,12 @@ kyuubi.engine.share.level.sub.domain|&lt;undefined&gt;|(deprecated) - Using kyuu
 kyuubi.engine.share.level.subdomain|&lt;undefined&gt;|Allow end-users to create a subdomain for the share level of an engine. A subdomain is a case-insensitive string values that must be a valid zookeeper subpath. For example, for the `USER` share level, an end-user can share a certain engine within a subdomain, not for all of its clients. End-users are free to create multiple engines in the `USER` share level. When disable engine pool, use 'default' if absent.|string|1.4.0
 kyuubi.engine.single.spark.session|false|When set to true, this engine is running in a single session mode. All the JDBC/ODBC connections share the temporary views, function registries, SQL configuration and the current database.|boolean|1.3.0
 kyuubi.engine.spark.event.loggers|SPARK|A comma-separated list of engine loggers, where engine/session/operation etc events go.<ul> <li>SPARK: the events will be written to the Spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
-kyuubi.engine.spark.python.env.archive|&lt;undefined&gt;|Portable python env archive used for Spark engine python language mode.|string|1.7.0
-kyuubi.engine.spark.python.env.archive.exec.path|bin/python|The python exec path under the python env archive.|string|1.7.0
-kyuubi.engine.spark.python.home.archive|&lt;undefined&gt;|Spark archive containing $SPARK_HOME/python directory, which is used to init session python worker for python language mode.|string|1.7.0
+kyuubi.engine.spark.python.env.archive|&lt;undefined&gt;|Portable Python env archive used for Spark engine Python language mode.|string|1.7.0
+kyuubi.engine.spark.python.env.archive.exec.path|bin/python|The Python exec path under the Python env archive.|string|1.7.0
+kyuubi.engine.spark.python.home.archive|&lt;undefined&gt;|Spark archive containing $SPARK_HOME/python directory, which is used to init session Python worker for Python language mode.|string|1.7.0
 kyuubi.engine.trino.event.loggers|JSON|A comma-separated list of engine history loggers, where engine/session/operation etc events go.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
 kyuubi.engine.trino.extra.classpath|&lt;undefined&gt;|The extra classpath for the Trino query engine, for configuring other libs which may need by the Trino engine |string|1.6.0
-kyuubi.engine.trino.java.options|&lt;undefined&gt;|The extra java options for the Trino query engine|string|1.6.0
+kyuubi.engine.trino.java.options|&lt;undefined&gt;|The extra Java options for the Trino query engine|string|1.6.0
 kyuubi.engine.trino.memory|1g|The heap memory for the Trino query engine|string|1.6.0
 kyuubi.engine.type|SPARK_SQL|Specify the detailed engine supported by Kyuubi. The engine type bindings to SESSION scope. This configuration is experimental. Currently, available configs are: <ul> <li>SPARK_SQL: specify this engine type will launch a Spark engine which can provide all the capacity of the Apache Spark. Note, it's a default engine type.</li> <li>FLINK_SQL: specify this engine type will launch a Flink engine which can provide all the capacity of the Apache Flink.</li> <li>TRINO: specify this engine type will launch a Trino engine which can provide all the capacity of the Trino.</li> <li>HIVE_SQL: specify this engine type will launch a Hive engine which can provide all the capacity of the Hive Server2.</li> <li>JDBC: specify this engine type will launch a JDBC engine which can provide a MySQL protocol connector, for now we only support Doris dialect.</li></ul>|string|1.4.0
 kyuubi.engine.ui.retainedSessions|200|The number of SQL client sessions kept in the Kyuubi Query Engine web UI.|int|1.4.0
@@ -441,7 +441,7 @@ kyuubi.operation.idle.timeout|PT3H|Operation will be closed when it's not access
 kyuubi.operation.interrupt.on.cancel|true|When true, all running tasks will be interrupted if one cancels a query. When false, all running tasks will remain until finished.|boolean|1.2.0
 kyuubi.operation.language|SQL|Choose a programing language for the following inputs <ul><li>SQL: (Default) Run all following statements as SQL queries.</li> <li>SCALA: Run all following input a scala codes</li></ul>|string|1.5.0
 kyuubi.operation.log.dir.root|server_operation_logs|Root directory for query operation log at server-side.|string|1.4.0
-kyuubi.operation.plan.only.excludes|ResetCommand,SetCommand,SetNamespaceCommand,UseStatement,SetCatalogAndNamespace|Comma-separated list of query plan names, in the form of simple class names, i.e, for `set abc=xyz`, the value will be `SetCommand`. For those auxiliary plans, such as `switch databases`, `set properties`, or `create temporary view` etc., which are used for setup evaluating environments for analyzing actual queries, we can use this config to exclude them and let them take effect. See also kyuubi.operation.plan.only.mode.|seq|1.5.0
+kyuubi.operation.plan.only.excludes|ResetCommand,SetCommand,SetNamespaceCommand,UseStatement,SetCatalogAndNamespace|Comma-separated list of query plan names, in the form of simple class names, i.e, for `SET abc=xyz`, the value will be `SetCommand`. For those auxiliary plans, such as `switch databases`, `set properties`, or `create temporary view` etc., which are used for setup evaluating environments for analyzing actual queries, we can use this config to exclude them and let them take effect. See also kyuubi.operation.plan.only.mode.|seq|1.5.0
 kyuubi.operation.plan.only.mode|none|Configures the statement performed mode, The value can be 'parse', 'analyze', 'optimize', 'optimize_with_stats', 'physical', 'execution', or 'none', when it is 'none', indicate to the statement will be fully executed, otherwise only way without executing the query. different engines currently support different modes, the Spark engine supports all modes, and the Flink engine supports 'parse', 'physical', and 'execution', other engines do not support planOnly currently.|string|1.4.0
 kyuubi.operation.plan.only.output.style|plain|Configures the planOnly output style. The value can be 'plain' or 'json', and the default value is 'plain'. This configuration supports only the output styles of the Spark engine|string|1.7.0
 kyuubi.operation.progress.enabled|false|Whether to enable the operation progress. When true, the operation progress will be returned in `GetOperationStatus`.|boolean|1.6.0

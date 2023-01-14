@@ -336,7 +336,7 @@ object KyuubiConf {
 
   val CREDENTIALS_IDLE_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.credentials.idle.timeout")
-      .doc("inactive users' credentials will be expired after a configured timeout")
+      .doc("The inactive users' credentials will be expired after a configured timeout")
       .version("1.6.0")
       .timeConf
       .checkValue(_ >= Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
@@ -2013,7 +2013,7 @@ object KyuubiConf {
   val OPERATION_PLAN_ONLY_EXCLUDES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.operation.plan.only.excludes")
       .doc("Comma-separated list of query plan names, in the form of simple class names, i.e, " +
-        "for `set abc=xyz`, the value will be `SetCommand`. For those auxiliary plans, such as " +
+        "for `SET abc=xyz`, the value will be `SetCommand`. For those auxiliary plans, such as " +
         "`switch databases`, `set properties`, or `create temporary view` etc., " +
         "which are used for setup evaluating environments for analyzing actual queries, " +
         "we can use this config to exclude them and let them take effect. " +
@@ -2128,7 +2128,7 @@ object KyuubiConf {
 
   val ENGINE_TRINO_JAVA_OPTIONS: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.trino.java.options")
-      .doc("The extra java options for the Trino query engine")
+      .doc("The extra Java options for the Trino query engine")
       .version("1.6.0")
       .stringConf
       .createOptional
@@ -2143,21 +2143,21 @@ object KyuubiConf {
 
   val ENGINE_HIVE_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.hive.memory")
-      .doc("The heap memory for the hive query engine")
+      .doc("The heap memory for the Hive query engine")
       .version("1.6.0")
       .stringConf
       .createWithDefault("1g")
 
   val ENGINE_HIVE_JAVA_OPTIONS: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.hive.java.options")
-      .doc("The extra java options for the hive query engine")
+      .doc("The extra Java options for the Hive query engine")
       .version("1.6.0")
       .stringConf
       .createOptional
 
   val ENGINE_HIVE_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.hive.extra.classpath")
-      .doc("The extra classpath for the hive query engine, for configuring location" +
+      .doc("The extra classpath for the Hive query engine, for configuring location" +
         " of the hadoop client jars and etc.")
       .version("1.6.0")
       .stringConf
@@ -2172,7 +2172,7 @@ object KyuubiConf {
 
   val ENGINE_FLINK_JAVA_OPTIONS: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.flink.java.options")
-      .doc("The extra java options for the Flink SQL engine")
+      .doc("The extra Java options for the Flink SQL engine")
       .version("1.6.0")
       .stringConf
       .createOptional
@@ -2410,7 +2410,7 @@ object KyuubiConf {
 
   val ENGINE_JDBC_JAVA_OPTIONS: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.java.options")
-      .doc("The extra java options for the JDBC query engine")
+      .doc("The extra Java options for the JDBC query engine")
       .version("1.6.0")
       .stringConf
       .createOptional
@@ -2438,21 +2438,21 @@ object KyuubiConf {
   val ENGINE_SPARK_PYTHON_HOME_ARCHIVE: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.spark.python.home.archive")
       .doc("Spark archive containing $SPARK_HOME/python directory, which is used to init session" +
-        " python worker for python language mode.")
+        " Python worker for Python language mode.")
       .version("1.7.0")
       .stringConf
       .createOptional
 
   val ENGINE_SPARK_PYTHON_ENV_ARCHIVE: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.spark.python.env.archive")
-      .doc("Portable python env archive used for Spark engine python language mode.")
+      .doc("Portable Python env archive used for Spark engine Python language mode.")
       .version("1.7.0")
       .stringConf
       .createOptional
 
   val ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH: ConfigEntry[String] =
     buildConf("kyuubi.engine.spark.python.env.archive.exec.path")
-      .doc("The python exec path under the python env archive.")
+      .doc("The Python exec path under the Python env archive.")
       .version("1.7.0")
       .stringConf
       .createWithDefault("bin/python")
