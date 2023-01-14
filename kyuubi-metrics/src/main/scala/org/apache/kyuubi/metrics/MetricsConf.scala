@@ -58,13 +58,13 @@ object MetricsConf {
     .createWithDefault(Duration.ofSeconds(5).toMillis)
 
   val METRICS_JSON_LOCATION: ConfigEntry[String] = buildConf("kyuubi.metrics.json.location")
-    .doc("Where the json metrics file located")
+    .doc("Where the JSON metrics file located")
     .version("1.2.0")
     .stringConf
     .createWithDefault("metrics")
 
   val METRICS_JSON_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.json.interval")
-    .doc("How often should report metrics to json file")
+    .doc("How often should report metrics to JSON file")
     .version("1.2.0")
     .timeConf
     .createWithDefault(Duration.ofSeconds(5).toMillis)
