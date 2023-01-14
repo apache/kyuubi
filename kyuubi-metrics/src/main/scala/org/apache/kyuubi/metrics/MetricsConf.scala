@@ -39,7 +39,7 @@ object MetricsConf {
       " <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE periodically.</li>" +
       " <li>JMX - JmxReporter which listens for new metrics and exposes them as MBeans.</li> " +
       " <li>JSON - JsonReporter which outputs measurements to json file periodically.</li>" +
-      " <li>PROMETHEUS - PrometheusReporter which exposes metrics in prometheus format.</li>" +
+      " <li>PROMETHEUS - PrometheusReporter which exposes metrics in Prometheus format.</li>" +
       " <li>SLF4J - Slf4jReporter which outputs measurements to system log periodically.</li>" +
       "</ul>")
     .version("1.2.0")

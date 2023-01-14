@@ -429,7 +429,7 @@ kyuubi.metrics.json.interval|PT5S|How often should report metrics to json file|d
 kyuubi.metrics.json.location|metrics|Where the json metrics file located|string|1.2.0
 kyuubi.metrics.prometheus.path|/metrics|URI context path of prometheus metrics HTTP server|string|1.2.0
 kyuubi.metrics.prometheus.port|10019|Prometheus metrics HTTP server port|int|1.2.0
-kyuubi.metrics.reporters|JSON|A comma-separated list for all metrics reporters<ul> <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE periodically.</li> <li>JMX - JmxReporter which listens for new metrics and exposes them as MBeans.</li>  <li>JSON - JsonReporter which outputs measurements to json file periodically.</li> <li>PROMETHEUS - PrometheusReporter which exposes metrics in prometheus format.</li> <li>SLF4J - Slf4jReporter which outputs measurements to system log periodically.</li></ul>|seq|1.2.0
+kyuubi.metrics.reporters|JSON|A comma-separated list for all metrics reporters<ul> <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE periodically.</li> <li>JMX - JmxReporter which listens for new metrics and exposes them as MBeans.</li>  <li>JSON - JsonReporter which outputs measurements to json file periodically.</li> <li>PROMETHEUS - PrometheusReporter which exposes metrics in Prometheus format.</li> <li>SLF4J - Slf4jReporter which outputs measurements to system log periodically.</li></ul>|seq|1.2.0
 kyuubi.metrics.slf4j.interval|PT5S|How often should report metrics to SLF4J logger|duration|1.2.0
 
 
