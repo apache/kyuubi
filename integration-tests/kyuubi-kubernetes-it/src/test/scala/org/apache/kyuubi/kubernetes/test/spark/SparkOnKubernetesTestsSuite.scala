@@ -206,7 +206,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val appInfo = batchJobSubmissionOp.currentApplicationInfo
+      val appInfo = batchJobSubmissionOp.getOrFetchCurrentApplicationInfo
       assert(appInfo.nonEmpty)
       assert(appInfo.exists(_.state == RUNNING))
       assert(appInfo.exists(_.name.startsWith(driverPodNamePrefix)))
