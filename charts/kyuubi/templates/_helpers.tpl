@@ -16,7 +16,7 @@
 */}}
 
 {{/*
-A comma separated string of enabled frontend protocols, e.g. "MYSQL,REST,THRIFT_BINARY".
+A comma separated string of enabled frontend protocols, e.g. "REST,THRIFT_BINARY".
 For details, see 'kyuubi.frontend.protocols': https://kyuubi.readthedocs.io/en/master/deployment/settings.html#frontend
 */}}
 {{- define "kyuubi.frontend.protocols" -}}

@@ -66,7 +66,7 @@ spec:
           {{- if .Values.probe.liveness.enabled }}
           livenessProbe:
             exec:
-              command: ["/bin/sh", "-c", "bin/kyuubi status"]
+              command: ["/bin/bash", "-c", "bin/kyuubi status"]
             initialDelaySeconds: {{ .Values.probe.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probe.liveness.periodSeconds }}
             timeoutSeconds: {{ .Values.probe.liveness.timeoutSeconds }}
@@ -76,7 +76,7 @@ spec:
           {{- if .Values.probe.readiness.enabled }}
           readinessProbe:
             exec:
-              command: [ "/bin/sh", "-c", "$KYUUBI_HOME/bin/kyuubi status" ]
+              command: ["/bin/bash", "-c", "$KYUUBI_HOME/bin/kyuubi status"]
             initialDelaySeconds: {{ .Values.probe.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probe.readiness.periodSeconds }}
             timeoutSeconds: {{ .Values.probe.readiness.timeoutSeconds }}
