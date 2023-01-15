@@ -1287,6 +1287,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
   }
 
+  @SuppressWarnings("fallthrough")
   public void waitLaunchEngineToComplete() throws SQLException {
     if (launchEngineOpHandle == null) return;
 
