@@ -1769,6 +1769,7 @@
                             <arg>-explaintypes</arg>
                             <arg>-Yno-adapted-args</arg>
                             <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
+                            <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
                             <arg>-Xfatal-warnings</arg>
                             <arg>-Ywarn-unused:imports</arg>
                         </args>
