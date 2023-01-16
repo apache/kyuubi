@@ -30,6 +30,7 @@ import org.glassfish.jersey.servlet.ServletContainer
 
 import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.api.{ApiRequestContext, FrontendServiceContext, OpenAPIConfig, WebProxyServlet}
 
@@ -94,12 +95,14 @@ private[server] object ApiRootResource {
     FrontendServiceContext.set(handler, fe)
     handler.addServlet(holder, "/*")
     contextHandlerCollection.addHandler(handler)
-    addProxyHandler(contextHandlerCollection)
+    addProxyHandler(contextHandlerCollection, fe.getConf)
     contextHandlerCollection
   }
 
-  def addProxyHandler(contextHandlerCollection: ContextHandlerCollection): Unit = {
-    val proxyServlet = new WebProxyServlet()
+  def addProxyHandler(
+      contextHandlerCollection: ContextHandlerCollection,
+      conf: KyuubiConf): Unit = {
+    val proxyServlet = new WebProxyServlet(conf)
     val holder = new ServletHolder(proxyServlet)
     val contextHandler = new ServletContextHandler();
     contextHandler.setContextPath("/proxy");
