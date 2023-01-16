@@ -39,5 +39,6 @@ object KyuubiReservedKeys {
   final val KYUUBI_OPERATION_GET_CURRENT_DATABASE = "kyuubi.operation.get.current.database"
   final val KYUUBI_ENGINE_MEMORY = "kyuubi.engine.memory"
   final val KYUUBI_ENGINE_CPU = "kyuubi.engine.cpu"
+  final val KYUUBI_DRIVER_HOST = "kyuubi.driver.host"
 
 }
