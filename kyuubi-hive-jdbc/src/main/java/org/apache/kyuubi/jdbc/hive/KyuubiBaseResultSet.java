@@ -32,6 +32,7 @@ import org.apache.kyuubi.jdbc.hive.common.HiveIntervalYearMonth;
 import org.apache.kyuubi.jdbc.hive.common.TimestampTZUtil;
 
 /** Data independent base class which implements the common part of all Kyuubi result sets. */
+@SuppressWarnings("deprecation")
 public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   protected Statement statement = null;

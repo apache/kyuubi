@@ -119,6 +119,7 @@ public class DynConstructors {
     return new Builder(baseClass);
   }
 
+  @SuppressWarnings("rawtypes")
   public static class Builder {
     private final Class<?> baseClass;
     private ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -182,7 +183,7 @@ public class DynConstructors {
       return this;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public Builder hiddenImpl(String className, Class<?>... types) {
       // don't do any work if an implementation has been found
       if (ctor != null) {

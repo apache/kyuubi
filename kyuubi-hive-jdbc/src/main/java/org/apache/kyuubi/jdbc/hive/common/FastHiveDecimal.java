@@ -457,6 +457,7 @@ public class FastHiveDecimal {
         fastSignum, fast0, fast1, fast2, fastIntegerDigitCount, fastScale, n, fastResult);
   }
 
+  @SuppressWarnings("deprecation")
   protected static String fastRoundingModeToString(int roundingMode) {
     String roundingModeString;
     switch (roundingMode) {

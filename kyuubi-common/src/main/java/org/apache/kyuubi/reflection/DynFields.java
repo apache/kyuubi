@@ -300,6 +300,7 @@ public class DynFields {
      * @see Class#forName(String)
      * @see Class#getField(String)
      */
+    @SuppressWarnings("rawtypes")
     public Builder hiddenImpl(Class<?> targetClass, String fieldName) {
       // don't do any work if an implementation has been found
       if (field != null || targetClass == null) {

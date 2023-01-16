@@ -9369,7 +9369,7 @@ public class FastHiveDecimalImpl extends FastHiveDecimal {
   public static String displayBytes(byte[] bytes, int start, int length) {
     StringBuilder sb = new StringBuilder();
     for (int i = start; i < start + length; i++) {
-      sb.append(String.format("\\%03d", (int) (bytes[i] & 0xff)));
+      sb.append(String.format("\\%03d", bytes[i] & 0xff));
     }
     return sb.toString();
   }
