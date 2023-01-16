@@ -31,7 +31,7 @@ object HighAvailabilityConf {
 
   @deprecated("using kyuubi.ha.addresses instead", "1.6.0")
   val HA_ZK_QUORUM: ConfigEntry[String] = buildConf("kyuubi.ha.zookeeper.quorum")
-    .doc("(deprecated) The connection string for the zookeeper ensemble")
+    .doc("(deprecated) The connection string for the ZooKeeper ensemble")
     .version("1.0.0")
     .stringConf
     .createWithDefault("")
@@ -69,14 +69,14 @@ object HighAvailabilityConf {
     "1.3.2")
   val HA_ZK_ACL_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.ha.zookeeper.acl.enabled")
-      .doc("Set to true if the zookeeper ensemble is kerberized")
+      .doc("Set to true if the ZooKeeper ensemble is kerberized")
       .version("1.0.0")
       .booleanConf
       .createWithDefault(UserGroupInformation.isSecurityEnabled)
 
   val HA_ZK_AUTH_TYPE: ConfigEntry[String] =
     buildConf("kyuubi.ha.zookeeper.auth.type")
-      .doc("The type of zookeeper authentication, all candidates are " +
+      .doc("The type of ZooKeeper authentication, all candidates are " +
         s"${AuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.3.2")
       .stringConf
@@ -85,7 +85,7 @@ object HighAvailabilityConf {
 
   val HA_ZK_ENGINE_AUTH_TYPE: ConfigEntry[String] =
     buildConf("kyuubi.ha.zookeeper.engine.auth.type")
-      .doc("The type of zookeeper authentication for engine, all candidates are " +
+      .doc("The type of ZooKeeper authentication for the engine, all candidates are " +
         s"${AuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.3.2")
       .stringConf
@@ -94,31 +94,31 @@ object HighAvailabilityConf {
 
   val HA_ZK_AUTH_PRINCIPAL: ConfigEntry[Option[String]] =
     buildConf("kyuubi.ha.zookeeper.auth.principal")
-      .doc("Name of the Kerberos principal is used for zookeeper authentication.")
+      .doc("Name of the Kerberos principal is used for ZooKeeper authentication.")
       .version("1.3.2")
       .fallbackConf(KyuubiConf.SERVER_PRINCIPAL)
 
   val HA_ZK_AUTH_KEYTAB: ConfigEntry[Option[String]] = buildConf("kyuubi.ha.zookeeper.auth.keytab")
-    .doc("Location of Kyuubi server's keytab is used for zookeeper authentication.")
+    .doc("Location of the Kyuubi server's keytab is used for ZooKeeper authentication.")
     .version("1.3.2")
     .fallbackConf(KyuubiConf.SERVER_KEYTAB)
 
   val HA_ZK_AUTH_DIGEST: OptionalConfigEntry[String] = buildConf("kyuubi.ha.zookeeper.auth.digest")
-    .doc("The digest auth string is used for zookeeper authentication, like: username:password.")
+    .doc("The digest auth string is used for ZooKeeper authentication, like: username:password.")
     .version("1.3.2")
     .stringConf
     .createOptional
 
   val HA_ZK_CONN_MAX_RETRIES: ConfigEntry[Int] =
     buildConf("kyuubi.ha.zookeeper.connection.max.retries")
-      .doc("Max retry times for connecting to the zookeeper ensemble")
+      .doc("Max retry times for connecting to the ZooKeeper ensemble")
       .version("1.0.0")
       .intConf
       .createWithDefault(3)
 
   val HA_ZK_CONN_BASE_RETRY_WAIT: ConfigEntry[Int] =
     buildConf("kyuubi.ha.zookeeper.connection.base.retry.wait")
-      .doc("Initial amount of time to wait between retries to the zookeeper ensemble")
+      .doc("Initial amount of time to wait between retries to the ZooKeeper ensemble")
       .version("1.0.0")
       .intConf
       .createWithDefault(1000)
@@ -133,7 +133,7 @@ object HighAvailabilityConf {
       .createWithDefault(30 * 1000)
 
   val HA_ZK_CONN_TIMEOUT: ConfigEntry[Int] = buildConf("kyuubi.ha.zookeeper.connection.timeout")
-    .doc("The timeout(ms) of creating the connection to the zookeeper ensemble")
+    .doc("The timeout(ms) of creating the connection to the ZooKeeper ensemble")
     .version("1.0.0")
     .intConf
     .createWithDefault(15 * 1000)
@@ -146,7 +146,7 @@ object HighAvailabilityConf {
 
   val HA_ZK_CONN_RETRY_POLICY: ConfigEntry[String] =
     buildConf("kyuubi.ha.zookeeper.connection.retry.policy")
-      .doc("The retry policy for connecting to the zookeeper ensemble, all candidates are:" +
+      .doc("The retry policy for connecting to the ZooKeeper ensemble, all candidates are:" +
         s" ${RetryPolicies.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.0.0")
       .stringConf
@@ -155,7 +155,7 @@ object HighAvailabilityConf {
 
   val HA_ZK_NODE_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.ha.zookeeper.node.creation.timeout")
-      .doc("Timeout for creating zookeeper node")
+      .doc("Timeout for creating ZooKeeper node")
       .version("1.2.0")
       .timeConf
       .checkValue(_ > 0, "Must be positive")
@@ -163,7 +163,7 @@ object HighAvailabilityConf {
 
   val HA_ENGINE_REF_ID: OptionalConfigEntry[String] =
     buildConf("kyuubi.ha.engine.ref.id")
-      .doc("The engine reference id will be attached to zookeeper node when engine started, " +
+      .doc("The engine reference id will be attached to ZooKeeper node when engine started, " +
         "and the kyuubi server will check it cyclically.")
       .internal
       .version("1.3.2")
@@ -172,7 +172,7 @@ object HighAvailabilityConf {
 
   val HA_ZK_PUBLISH_CONFIGS: ConfigEntry[Boolean] =
     buildConf("kyuubi.ha.zookeeper.publish.configs")
-      .doc("When set to true, publish Kerberos configs to Zookeeper." +
+      .doc("When set to true, publish Kerberos configs to Zookeeper. " +
         "Note that the Hive driver needs to be greater than 1.3 or 2.0 or apply HIVE-11581 patch.")
       .version("1.4.0")
       .booleanConf
@@ -189,8 +189,8 @@ object HighAvailabilityConf {
 
   val HA_ETCD_LEASE_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.ha.etcd.lease.timeout")
-      .doc("Timeout for etcd keep alive lease. The kyuubi server will known " +
-        "unexpected loss of engine after up to this seconds.")
+      .doc("Timeout for etcd keep alive lease. The kyuubi server will know " +
+        "the unexpected loss of engine after up to this seconds.")
       .version("1.6.0")
       .timeConf
       .checkValue(_ > 0, "Must be positive")
@@ -198,7 +198,7 @@ object HighAvailabilityConf {
 
   val HA_ETCD_SSL_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.ha.etcd.ssl.enabled")
-      .doc("When set to true, will build a ssl secured etcd client.")
+      .doc("When set to true, will build an SSL secured etcd client.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
