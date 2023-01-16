@@ -129,7 +129,7 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 # kyuubi.frontend.bind.port       10009
 #
 
-# Details in https://kyuubi.apache.org/docs/latest/deployment/settings.html
+# Details in https://kyuubi.readthedocs.io/en/master/deployment/settings.html
 ```
 
 ### Authentication
