@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.SparkPlan
 
@@ -33,7 +29,8 @@ trait SparkPlanRewriter extends Rewriter {
 }
 
 object SparkPlanRewriter {
-  val sparkPlanRewriters: Map[String, SparkPlanRewriter] = loadRewritersToMap
+  val sparkPlanRewriters: Map[String, SparkPlanRewriter] =
+    loadRewritersToMap[SparkPlanRewriter]
 }
 
 class ShowNamespaceExecRewriter extends SparkPlanRewriter {

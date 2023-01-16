@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.RunnableCommand
@@ -33,7 +29,8 @@ trait LogicalPlanRewriter extends Rewriter {
 }
 
 object LogicalPlanRewriter {
-  val logicalPlanRewriters: Map[String, LogicalPlanRewriter] = loadRewritersToMap
+  val logicalPlanRewriters: Map[String, LogicalPlanRewriter] =
+    loadRewritersToMap[LogicalPlanRewriter]
 }
 
 class ShowTablesCommandRewriter extends LogicalPlanRewriter {

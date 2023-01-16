@@ -40,10 +40,10 @@ package object serde {
   }
 
   def loadExtractorsToMap[T <: Extractor](implicit ct: ClassTag[T]): Map[String, T] =
-    loadServiceToMap(_.key)
+    loadServiceToMap { e: Extractor => e.key }
 
   def loadRewritersToMap[T <: Rewriter](implicit ct: ClassTag[T]): Map[String, T] =
-    loadServiceToMap(_.key)
+    loadServiceToMap { r: Rewriter => r.key }
 
   final lazy val DB_COMMAND_SPECS: Map[String, DatabaseCommandSpec] = {
     val is = getClass.getClassLoader.getResourceAsStream("database_command_spec.json")
