@@ -405,7 +405,7 @@ public class KyuubiCommands extends Commands {
       }
     }
 
-    for (Iterator i = props.keySet().iterator(); i.hasNext(); ) {
+    for (Iterator<Object> i = props.keySet().iterator(); i.hasNext(); ) {
       String key = (String) i.next();
       for (int j = 0; j < keys.length; j++) {
         if (key.endsWith(keys[j])) {
@@ -472,7 +472,7 @@ public class KyuubiCommands extends Commands {
         password =
             beeLine
                 .getConsoleReader()
-                .readLine("Enter password for " + urlForPrompt + ": ", new Character('*'));
+                .readLine("Enter password for " + urlForPrompt + ": ", '*');
       }
       props.setProperty(AUTH_PASSWD, password);
     }
