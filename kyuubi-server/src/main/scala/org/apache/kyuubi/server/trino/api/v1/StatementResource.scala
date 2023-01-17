@@ -18,15 +18,17 @@
 package org.apache.kyuubi.server.trino.api.v1
 
 import javax.ws.rs._
-import javax.ws.rs.core.{Context, HttpHeaders, MediaType}
+import javax.ws.rs.core.{Context, HttpHeaders, MediaType, Response, UriInfo}
 
+import io.airlift.units.Duration
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.trino.client.QueryResults
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.server.trino.api.{ApiRequestContext, KyuubiTrinoOperationTranslator}
+import org.apache.kyuubi.server.trino.api.{ApiRequestContext, KyuubiTrinoOperationTranslator, Query, QueryId, QueryManager, Slug, TrinoContext}
+import org.apache.kyuubi.server.trino.api.Slug.Context.{EXECUTING_QUERY, QUEUED_QUERY}
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 
 @Tag(name = "Statement")
@@ -34,6 +36,7 @@ import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 private[v1] class StatementResource extends ApiRequestContext with Logging {
 
   lazy val translator = new KyuubiTrinoOperationTranslator(fe.be)
+  lazy val queryManager = new QueryManager()
 
   @ApiResponse(
     responseCode = "200",
@@ -53,8 +56,15 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
   @GET
   @Path("/")
   @Consumes(Array(MediaType.TEXT_PLAIN))
-  def query(statement: String, @Context headers: HttpHeaders): QueryResults = {
-    throw new UnsupportedOperationException
+  def query(
+      statement: String,
+      @Context headers: HttpHeaders,
+      @Context uriInfo: UriInfo): QueryResults = {
+    val remoteAddr = httpRequest.getRemoteAddr
+    val trinoContext = TrinoContext(headers, Option(remoteAddr))
+    val query = Query(statement, trinoContext, translator)
+    queryManager.addQuery(query)
+    query.getQueryResults(query.getLastToken, uriInfo)
   }
 
   @ApiResponse(
@@ -65,11 +75,15 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
   @GET
   @Path("/queued/{queryId}/{slug}/{token}")
   def getQueuedStatementStatus(
-      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
-      @PathParam("token") token: Long): QueryResults = {
-    throw new UnsupportedOperationException
+      @PathParam("token") token: Long,
+      @QueryParam("maxWait") maxWait: Duration,
+      @Context uriInfo: UriInfo): QueryResults = {
+
+    val query = getQuery(QueryId(queryId), slug, token, QUEUED_QUERY)
+    query.getQueryResults(token, uriInfo)
+
   }
 
   @ApiResponse(
@@ -80,11 +94,14 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
   @GET
   @Path("/executing/{queryId}/{slug}/{token}")
   def getExecutingStatementStatus(
-      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
-      @PathParam("token") token: Long): QueryResults = {
-    throw new UnsupportedOperationException
+      @PathParam("token") token: Long,
+      @QueryParam("maxWait") maxWait: Duration,
+      @Context uriInfo: UriInfo): QueryResults = {
+
+    val query = getQuery(QueryId(queryId), slug, token, EXECUTING_QUERY)
+    query.getQueryResults(token, uriInfo)
   }
 
   @ApiResponse(
@@ -95,11 +112,12 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
   @DELETE
   @Path("/queued/{queryId}/{slug}/{token}")
   def cancelQueuedStatement(
-      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
-      @PathParam("token") token: Long): QueryResults = {
-    throw new UnsupportedOperationException
+      @PathParam("token") token: Long): Response = {
+
+    getQuery(QueryId(queryId), slug, token, QUEUED_QUERY).cancel
+    Response.noContent.build
   }
 
   @ApiResponse(
@@ -110,11 +128,29 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
   @DELETE
   @Path("/executing/{queryId}/{slug}/{token}")
   def cancelExecutingStatementStatus(
-      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
-      @PathParam("token") token: Long): QueryResults = {
-    throw new UnsupportedOperationException
+      @PathParam("token") token: Long): Response = {
+
+    getQuery(QueryId(queryId), slug, token, EXECUTING_QUERY).cancel
+    Response.noContent.build
+  }
+
+  private def createQueryResultsResponse(results: QueryResults) = {
+    val builder = Response.ok(results)
+    builder.build
+  }
+
+  private def getQuery(
+      queryId: QueryId,
+      slug: String,
+      token: Long,
+      slugContext: Slug.Context.Context): Query = {
+    queryManager.getQuery(queryId) match {
+      case Some(query) if query.getSlug.isValid(slugContext, slug, token) => query
+      case _ =>
+        throw new NotFoundException("Query not found")
+    }
   }
 
 }

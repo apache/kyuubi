@@ -58,6 +58,7 @@ case class TrinoContext(
     source: Option[String] = None,
     catalog: Option[String] = None,
     schema: Option[String] = None,
+    remoteUserAddress: Option[String] = None,
     language: Option[String] = None,
     traceToken: Option[String] = None,
     clientInfo: Option[String] = None,
@@ -72,7 +73,7 @@ object TrinoContext {
   private val GENERIC_INTERNAL_ERROR_NAME = "GENERIC_INTERNAL_ERROR_NAME"
   private val GENERIC_INTERNAL_ERROR_TYPE = "INTERNAL_ERROR"
 
-  def apply(headers: HttpHeaders): TrinoContext = {
+  def apply(headers: HttpHeaders, remoteAddress: Option[String]): TrinoContext = {
     apply(headers.getRequestHeaders.asScala.toMap.map {
       case (k, v) => (k, v.asScala.toList)
     })
