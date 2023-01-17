@@ -17,17 +17,11 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.RunnableCommand
-import org.apache.spark.sql.execution.metric.SQLMetric
 
 import org.apache.kyuubi.plugin.spark.authz.serde.{DB_COMMAND_SPECS, LogicalPlanRewriter, TABLE_COMMAND_SPECS}
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getAuthzUgi
-import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChildren
 
 class RuleRewriteCommand(spark: SparkSession) extends Rule[LogicalPlan] {
 
@@ -42,28 +36,4 @@ class RuleRewriteCommand(spark: SparkSession) extends Rule[LogicalPlan] {
         plan
     }
   }
-}
-
-case class RewriteTableOwnerRunnableCommand(
-    delegate: RunnableCommand,
-    tableId: TableIdentifier)
-  extends RunnableCommand with WithInternalChildren {
-
-  override lazy val metrics: Map[String, SQLMetric] = delegate.metrics
-
-  override val output: Seq[Attribute] = delegate.output
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    val ret = delegate.run(sparkSession)
-
-    val catalog = sparkSession.sessionState.catalog
-    val metadata = catalog.getTableMetadata(tableId)
-    val authzUser = getAuthzUgi(sparkSession.sparkContext).getShortUserName
-    if (metadata.owner != authzUser) {
-      catalog.alterTable(metadata.copy(owner = authzUser))
-    }
-    ret
-  }
-
-  override def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = this
 }

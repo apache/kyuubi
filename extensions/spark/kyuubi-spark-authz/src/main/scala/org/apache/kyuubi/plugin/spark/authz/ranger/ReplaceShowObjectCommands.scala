@@ -21,29 +21,10 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.{RunnableCommand, ShowColumnsCommand}
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
-import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, ObjectFilterPlaceHolder, WithInternalChildren}
-
-class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
-  override def apply(plan: LogicalPlan): LogicalPlan = plan match {
-    case r: RunnableCommand if r.nodeName == "ShowTablesCommand" => FilteredShowTablesCommand(r)
-    case n: LogicalPlan if n.nodeName == "ShowTables" =>
-      ObjectFilterPlaceHolder(n)
-    // show databases in spark2.4.x
-    case r: RunnableCommand if r.nodeName == "ShowDatabasesCommand" =>
-      FilteredShowDatabasesCommand(r)
-    case n: LogicalPlan if n.nodeName == "ShowNamespaces" =>
-      ObjectFilterPlaceHolder(n)
-    case r: RunnableCommand if r.nodeName == "ShowFunctionsCommand" =>
-      FilteredShowFunctionsCommand(r)
-    case r: RunnableCommand if r.nodeName == "ShowColumnsCommand" =>
-      FilteredShowColumnsCommand(r)
-    case _ => plan
-  }
-}
+import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, WithInternalChildren}
 
 case class FilteredShowTablesCommand(delegated: RunnableCommand)
   extends FilteredShowObjectCommand(delegated) {
