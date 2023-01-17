@@ -101,16 +101,15 @@ class SparkTBinaryFrontendService(
 
     val cores = sc.getExecutorMemoryStatus.size + "*" +
       settings.get(SPARK_ENGINE_EXECUTOR_CORES).orNull
-
+    val address = java.net.InetAddress.getLocalHost.getHostAddress
     Map(
       KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
       KYUUBI_ENGINE_URL -> sc.uiWebUrl.get.replace("//", ""),
       KYUUBI_ENGINE_SUBMIT_TIME -> sc.startTime.toString,
       KYUUBI_ENGINE_MEMORY -> memory,
       KYUUBI_ENGINE_CPU -> cores,
-      KYUUBI_ENGINE_DRIVER_HOST -> sc.getConf.get("spark.driver.host"),
+      KYUUBI_ENGINE_DRIVER_IP -> address,
       KYUUBI_ENGINE_UI_PORT -> sc.getConf.get("spark.ui.port"))
-
   }
 }
 
