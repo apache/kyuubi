@@ -108,7 +108,8 @@ class SparkTBinaryFrontendService(
       KYUUBI_ENGINE_SUBMIT_TIME -> sc.startTime.toString,
       KYUUBI_ENGINE_MEMORY -> memory,
       KYUUBI_ENGINE_CPU -> cores,
-      KYUUBI_DRIVER_HOST -> sc.getConf.get(KYUUBI_DRIVER_HOST))
+      KYUUBI_ENGINE_DRIVER_HOST -> sc.getConf.get("spark.driver.host"),
+      KYUUBI_ENGINE_UI_PORT -> sc.getConf.get("spark.ui.port"))
 
   }
 }

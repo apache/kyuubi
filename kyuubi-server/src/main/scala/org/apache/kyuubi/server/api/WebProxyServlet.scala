@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.server.api
 
-import java.net.InetAddress
 import javax.servlet.http.HttpServletRequest
 
 import scala.collection.mutable
@@ -36,9 +35,8 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     val url = request.getParameterMap.get("url")
     logger.info("url is {}", url)
     if (url != null && url.length > 0) {
-      val serviceName = url(0).split(":")(1)
+      val ipAddress = url(0).split(":")(1)
       val port = url(0).split(":")(2).toInt
-      val ipAddress = InetAddress.getByName(serviceName).getHostAddress
       request.setAttribute(
         this.getClass.getSimpleName,
         new HttpHost(ipAddress, port, "http"))
