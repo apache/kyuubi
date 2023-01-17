@@ -80,6 +80,7 @@ import java.util.Arrays;
  * <p>The original V1 public methods and fields are annotated with @HiveDecimalVersionV1; new public
  * methods and fields are annotated with @HiveDecimalVersionV2.
  */
+@SuppressWarnings("deprecation")
 public final class HiveDecimal extends FastHiveDecimal implements Comparable<HiveDecimal> {
 
   /*

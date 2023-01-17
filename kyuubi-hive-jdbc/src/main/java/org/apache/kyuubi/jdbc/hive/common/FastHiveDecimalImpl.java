@@ -32,6 +32,7 @@ import java.util.Arrays;
  * vectorization to implement decimals by storing the fast0, fast1, and fast2 longs and the
  * fastSignum, fastScale, etc ints in the DecimalColumnVector class.
  */
+@SuppressWarnings("deprecation")
 public class FastHiveDecimalImpl extends FastHiveDecimal {
 
   /**
