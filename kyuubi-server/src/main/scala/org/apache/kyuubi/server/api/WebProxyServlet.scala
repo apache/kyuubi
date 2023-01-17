@@ -28,6 +28,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 
 private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with Logging {
+  val ATTR_TARGET_HOST = this.getClass.getSimpleName + ".targetHost";
   override def rewriteTarget(request: HttpServletRequest): String = {
     var targetUrl = "/no-ui-error"
     val requestUrl = request.getRequestURI
@@ -38,10 +39,15 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
       val ipAddress = url(0).split(":")(1)
       val port = url(0).split(":")(2).toInt
       request.setAttribute(
-        this.getClass.getSimpleName,
+        ATTR_TARGET_HOST,
         new HttpHost(ipAddress, port, "http"))
-      targetUrl = new mutable.StringBuilder().append("/jobs/").toString()
-      logger.info("ui -> http://{}:{}{}", ipAddress, port.toString, targetUrl)
+      targetUrl =
+        String.format(
+          "http://%s:%s%s",
+          ipAddress,
+          port.toString,
+          new mutable.StringBuilder().append("/jobs/").toString())
+      logger.info("ui -> {}", targetUrl)
     }
     targetUrl
   }
