@@ -470,9 +470,7 @@ public class KyuubiCommands extends Commands {
       props.setProperty(AUTH_USER, username);
       if (password == null) {
         password =
-            beeLine
-                .getConsoleReader()
-                .readLine("Enter password for " + urlForPrompt + ": ", '*');
+            beeLine.getConsoleReader().readLine("Enter password for " + urlForPrompt + ": ", '*');
       }
       props.setProperty(AUTH_PASSWD, password);
     }
