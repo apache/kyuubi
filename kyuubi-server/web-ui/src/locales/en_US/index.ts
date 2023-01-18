@@ -57,6 +57,7 @@ export default {
   type: 'Type',
   operation_type: 'Operation Type',
   state: 'State',
+  engine_ui: 'Engine UI',
   confirm: 'Confirm',
   cancel: 'Cancel',
   cancel_confirm: 'Cancel?',

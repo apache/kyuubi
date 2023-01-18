@@ -101,6 +101,18 @@
         min-width="20%"
       />
       <el-table-column prop="status" :label="$t('status')" min-width="20%" />
+      <el-table-column fixed="right" :label="$t('operation')" width="120">
+        <template #default="scope">
+          <el-tooltip effect="dark" :content="$t('engine_ui')" placement="top">
+            <el-button
+              type="primary"
+              icon="Link"
+              circle
+              @click="openEngineUi(scope.row.url)"
+            />
+          </el-tooltip>
+        </template>
+      </el-table-column>
     </el-table>
     <div class="pagination-container">
       <el-pagination
@@ -139,6 +151,10 @@
     handleCurrentChange,
     getList: _getList
   } = useTable()
+
+  const openEngineUi = (ui: string) => {
+    window.open(`${import.meta.env.VITE_APP_DEV_WEB_URL}proxy/ui?url=${ui}`)
+  }
 
   const getList = () => {
     _getList(getAllEngines, searchParam)
