@@ -277,4 +277,22 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(Entity.entity(getCrossReferenceReq, MediaType.APPLICATION_JSON_TYPE))
     assert(404 == response.getStatus)
   }
+
+  test("post session exception if failed to open engine session") {
+    val requestObj = new SessionOpenRequest(
+      1,
+      Map("spark.master" -> "invalid").asJava)
+
+    var response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+
+    val sessionHandle = response.readEntity(classOf[SessionHandle]).getIdentifier
+
+    eventually(timeout(1.minutes), interval(200.milliseconds)) {
+      response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().get()
+      val sessionEvent = response.readEntity(classOf[String])
+      assert(sessionEvent.contains("SparkException: Master"))
+    }
+  }
 }
