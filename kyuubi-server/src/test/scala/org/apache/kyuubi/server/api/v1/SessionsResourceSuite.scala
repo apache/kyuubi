@@ -31,6 +31,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
@@ -281,7 +282,9 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   test("post session exception if failed to open engine session") {
     val requestObj = new SessionOpenRequest(
       1,
-      Map("spark.master" -> "invalid").asJava)
+      Map(
+        "spark.master" -> "invalid",
+        KyuubiConf.ENGINE_SHARE_LEVEL.key -> ShareLevel.CONNECTION.toString).asJava)
 
     var response = webTarget.path("api/v1/sessions")
       .request(MediaType.APPLICATION_JSON_TYPE)
