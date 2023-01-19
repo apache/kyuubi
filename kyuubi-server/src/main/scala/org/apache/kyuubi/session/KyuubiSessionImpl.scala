@@ -122,80 +122,82 @@ class KyuubiSessionImpl(
     runOperation(launchEngineOp)
   }
 
-  private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
-    withDiscoveryClient(sessionConf) { discoveryClient =>
-      var openEngineSessionConf = optimizedConf
-      if (engineCredentials.nonEmpty) {
-        sessionConf.set(KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
-        openEngineSessionConf =
-          optimizedConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
-      }
+  private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit =
+    handleSessionException {
+      withDiscoveryClient(sessionConf) { discoveryClient =>
+        var openEngineSessionConf = optimizedConf
+        if (engineCredentials.nonEmpty) {
+          sessionConf.set(KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
+          openEngineSessionConf =
+            optimizedConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
+        }
 
-      if (sessionConf.get(SESSION_USER_SIGN_ENABLED)) {
-        openEngineSessionConf = openEngineSessionConf +
-          (SESSION_USER_SIGN_ENABLED.key ->
-            sessionConf.get(SESSION_USER_SIGN_ENABLED).toString) +
-          (KYUUBI_SESSION_SIGN_PUBLICKEY ->
-            Base64.getEncoder.encodeToString(
-              sessionManager.signingPublicKey.getEncoded)) +
-          (KYUUBI_SESSION_USER_SIGN -> sessionUserSignBase64)
-      }
+        if (sessionConf.get(SESSION_USER_SIGN_ENABLED)) {
+          openEngineSessionConf = openEngineSessionConf +
+            (SESSION_USER_SIGN_ENABLED.key ->
+              sessionConf.get(SESSION_USER_SIGN_ENABLED).toString) +
+            (KYUUBI_SESSION_SIGN_PUBLICKEY ->
+              Base64.getEncoder.encodeToString(
+                sessionManager.signingPublicKey.getEncoded)) +
+            (KYUUBI_SESSION_USER_SIGN -> sessionUserSignBase64)
+        }
 
-      val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)
-      val retryWait = sessionManager.getConf.get(ENGINE_OPEN_RETRY_WAIT)
-      var attempt = 0
-      var shouldRetry = true
-      while (attempt <= maxAttempts && shouldRetry) {
-        val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
-        try {
-          val passwd =
-            if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
-              InternalSecurityAccessor.get().issueToken()
-            } else {
-              Option(password).filter(_.nonEmpty).getOrElse("anonymous")
-            }
-          _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
-          _engineSessionHandle = _client.openSession(protocol, user, passwd, openEngineSessionConf)
-          logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
-            s" with ${_engineSessionHandle}]")
-          shouldRetry = false
-        } catch {
-          case e: org.apache.thrift.transport.TTransportException
-              if attempt < maxAttempts && e.getCause.isInstanceOf[java.net.ConnectException] &&
-                e.getCause.getMessage.contains("Connection refused (Connection refused)") =>
-            warn(
-              s"Failed to open [${engine.defaultEngineName} $host:$port] after" +
-                s" $attempt/$maxAttempts times, retrying",
-              e.getCause)
-            Thread.sleep(retryWait)
-            shouldRetry = true
-          case e: Throwable =>
-            error(
-              s"Opening engine [${engine.defaultEngineName} $host:$port]" +
-                s" for $user session failed",
-              e)
-            throw e
-        } finally {
-          attempt += 1
-          if (shouldRetry && _client != null) {
-            try {
-              _client.closeSession()
-            } catch {
-              case e: Throwable =>
-                warn(
-                  "Error on closing broken client of engine " +
-                    s"[${engine.defaultEngineName} $host:$port]",
-                  e)
+        val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)
+        val retryWait = sessionManager.getConf.get(ENGINE_OPEN_RETRY_WAIT)
+        var attempt = 0
+        var shouldRetry = true
+        while (attempt <= maxAttempts && shouldRetry) {
+          val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
+          try {
+            val passwd =
+              if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
+                InternalSecurityAccessor.get().issueToken()
+              } else {
+                Option(password).filter(_.nonEmpty).getOrElse("anonymous")
+              }
+            _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
+            _engineSessionHandle =
+              _client.openSession(protocol, user, passwd, openEngineSessionConf)
+            logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
+              s" with ${_engineSessionHandle}]")
+            shouldRetry = false
+          } catch {
+            case e: org.apache.thrift.transport.TTransportException
+                if attempt < maxAttempts && e.getCause.isInstanceOf[java.net.ConnectException] &&
+                  e.getCause.getMessage.contains("Connection refused (Connection refused)") =>
+              warn(
+                s"Failed to open [${engine.defaultEngineName} $host:$port] after" +
+                  s" $attempt/$maxAttempts times, retrying",
+                e.getCause)
+              Thread.sleep(retryWait)
+              shouldRetry = true
+            case e: Throwable =>
+              error(
+                s"Opening engine [${engine.defaultEngineName} $host:$port]" +
+                  s" for $user session failed",
+                e)
+              throw e
+          } finally {
+            attempt += 1
+            if (shouldRetry && _client != null) {
+              try {
+                _client.closeSession()
+              } catch {
+                case e: Throwable =>
+                  warn(
+                    "Error on closing broken client of engine " +
+                      s"[${engine.defaultEngineName} $host:$port]",
+                    e)
+              }
             }
           }
         }
+        sessionEvent.openedTime = System.currentTimeMillis()
+        sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
+        _client.engineId.foreach(e => sessionEvent.engineId = e)
+        EventBus.post(sessionEvent)
       }
-      sessionEvent.openedTime = System.currentTimeMillis()
-      sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
-      _client.engineId.foreach(e => sessionEvent.engineId = e)
-      EventBus.post(sessionEvent)
     }
-  }
 
   override protected def runOperation(operation: Operation): OperationHandle = {
     if (operation != launchEngineOp) {

@@ -31,6 +31,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
@@ -276,5 +277,26 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(getCrossReferenceReq, MediaType.APPLICATION_JSON_TYPE))
     assert(404 == response.getStatus)
+  }
+
+  test("post session exception if failed to open engine session") {
+    val requestObj = new SessionOpenRequest(
+      1,
+      Map(
+        "spark.master" -> "invalid",
+        KyuubiConf.ENGINE_SHARE_LEVEL.key -> ShareLevel.CONNECTION.toString).asJava)
+
+    var response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+
+    val sessionHandle = response.readEntity(classOf[SessionHandle]).getIdentifier
+
+    eventually(timeout(1.minutes), interval(200.milliseconds)) {
+      response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().get()
+      // will meet json parse exception with response.readEntity(classOf[KyuubiSessionEvent])
+      val sessionEvent = response.readEntity(classOf[String])
+      assert(sessionEvent.contains("SparkException: Master"))
+    }
   }
 }
