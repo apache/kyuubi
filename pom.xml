@@ -882,6 +882,10 @@
                     </exclusion>
                     <exclusion>
                         <groupId>io.netty</groupId>
+                        <artifactId>netty-handler-ssl-ocsp</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
                         <artifactId>netty-resolver-dns-classes-macos</artifactId>
                     </exclusion>
                     <exclusion>
