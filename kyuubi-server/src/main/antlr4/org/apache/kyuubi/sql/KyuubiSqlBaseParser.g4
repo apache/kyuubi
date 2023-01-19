@@ -14,20 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 parser grammar KyuubiSqlBaseParser;
 
-options { tokenVocab = KyuubiSqlBaseLexer; }
 
+options { tokenVocab = KyuubiSqlBaseLexer; }
 singleStatement
-    : statement SEMICOLON* EOF
-    ;
+   : statement SEMICOLON* EOF
+   ;
 
 statement
-    : (KYUUBI | KYUUBIADMIN) runnableCommand                        #runnable
-    | .*?                                                           #passThrough
-    ;
+   : (KYUUBI | KYUUBIADMIN) runnableCommand # runnable
+   | .*? # passThrough
+   ;
 
 runnableCommand
-    : (DESC | DESCRIBE) SESSION                                     #describeSession
-    ;
+   : (DESC | DESCRIBE) SESSION # describeSession
+   ;
+

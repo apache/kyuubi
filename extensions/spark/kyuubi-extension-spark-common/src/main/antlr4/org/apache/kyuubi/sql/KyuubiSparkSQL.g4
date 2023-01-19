@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 grammar KyuubiSparkSQL;
 
-@members {
+@ members
+{
    /**
     * Verify whether current token is a valid decimal token (which contains dot).
     * Returns true if the character that follows the token is not a digit or letter or underscore.
@@ -40,197 +40,274 @@ grammar KyuubiSparkSQL;
      }
    }
  }
-
-tokens {
-    DELIMITER
-}
-
+tokens { DELIMITER }
 singleStatement
-    : statement EOF
-    ;
+   : statement EOF
+   ;
 
 statement
-    : OPTIMIZE multipartIdentifier whereClause? zorderClause        #optimizeZorder
-    | .*?                                                           #passThrough
-    ;
+   : OPTIMIZE multipartIdentifier whereClause? zorderClause # optimizeZorder
+   | .*? # passThrough
+   ;
 
 whereClause
-    : WHERE booleanExpression
-    ;
+   : WHERE booleanExpression
+   ;
 
 zorderClause
-    : ZORDER BY order+=multipartIdentifier (',' order+=multipartIdentifier)*
-    ;
+   : ZORDER BY order += multipartIdentifier (',' order += multipartIdentifier)*
+   ;
 
 booleanExpression
-    : query                                                              #logicalQuery
-    | left=booleanExpression operator=AND right=booleanExpression        #logicalBinary
-    | left=booleanExpression operator=OR right=booleanExpression         #logicalBinary
-    ;
+   : query # logicalQuery
+   | left = booleanExpression operator = AND right = booleanExpression # logicalBinary
+   | left = booleanExpression operator = OR right = booleanExpression # logicalBinary
+   ;
 
 query
-    : '('? multipartIdentifier comparisonOperator constant ')'?
-    ;
+   : '('? multipartIdentifier comparisonOperator constant ')'?
+   ;
 
 comparisonOperator
-    : EQ | NEQ | NEQJ | LT | LTE | GT | GTE | NSEQ
-    ;
+   : EQ
+   | NEQ
+   | NEQJ
+   | LT
+   | LTE
+   | GT
+   | GTE
+   | NSEQ
+   ;
 
 constant
-    : NULL                     #nullLiteral
-    | identifier STRING        #typeConstructor
-    | number                   #numericLiteral
-    | booleanValue             #booleanLiteral
-    | STRING+                  #stringLiteral
-    ;
+   : NULL # nullLiteral
+   | identifier STRING # typeConstructor
+   | number # numericLiteral
+   | booleanValue # booleanLiteral
+   | STRING+ # stringLiteral
+   ;
 
 multipartIdentifier
-    : parts+=identifier ('.' parts+=identifier)*
-    ;
+   : parts += identifier ('.' parts += identifier)*
+   ;
 
 booleanValue
-    : TRUE | FALSE
-    ;
+   : TRUE
+   | FALSE
+   ;
 
 number
-    : MINUS? DECIMAL_VALUE             #decimalLiteral
-    | MINUS? INTEGER_VALUE             #integerLiteral
-    | MINUS? BIGINT_LITERAL            #bigIntLiteral
-    | MINUS? SMALLINT_LITERAL          #smallIntLiteral
-    | MINUS? TINYINT_LITERAL           #tinyIntLiteral
-    | MINUS? DOUBLE_LITERAL            #doubleLiteral
-    | MINUS? BIGDECIMAL_LITERAL        #bigDecimalLiteral
-    ;
+   : MINUS? DECIMAL_VALUE # decimalLiteral
+   | MINUS? INTEGER_VALUE # integerLiteral
+   | MINUS? BIGINT_LITERAL # bigIntLiteral
+   | MINUS? SMALLINT_LITERAL # smallIntLiteral
+   | MINUS? TINYINT_LITERAL # tinyIntLiteral
+   | MINUS? DOUBLE_LITERAL # doubleLiteral
+   | MINUS? BIGDECIMAL_LITERAL # bigDecimalLiteral
+   ;
 
 identifier
-    : strictIdentifier
-    ;
+   : strictIdentifier
+   ;
 
 strictIdentifier
-    : IDENTIFIER              #unquotedIdentifier
-    | quotedIdentifier        #quotedIdentifierAlternative
-    | nonReserved             #unquotedIdentifier
-    ;
+   : IDENTIFIER # unquotedIdentifier
+   | quotedIdentifier # quotedIdentifierAlternative
+   | nonReserved # unquotedIdentifier
+   ;
 
 quotedIdentifier
-    : BACKQUOTED_IDENTIFIER
-    ;
+   : BACKQUOTED_IDENTIFIER
+   ;
 
 nonReserved
-    : AND
-    | BY
-    | FALSE
-    | DATE
-    | INTERVAL
-    | OPTIMIZE
-    | OR
-    | TABLE
-    | TIMESTAMP
-    | TRUE
-    | WHERE
-    | ZORDER
-    ;
+   : AND
+   | BY
+   | FALSE
+   | DATE
+   | INTERVAL
+   | OPTIMIZE
+   | OR
+   | TABLE
+   | TIMESTAMP
+   | TRUE
+   | WHERE
+   | ZORDER
+   ;
 
-AND: 'AND';
-BY: 'BY';
-FALSE: 'FALSE';
-DATE: 'DATE';
-INTERVAL: 'INTERVAL';
-NULL: 'NULL';
-OPTIMIZE: 'OPTIMIZE';
-OR: 'OR';
-TABLE: 'TABLE';
-TIMESTAMP: 'TIMESTAMP';
-TRUE: 'TRUE';
-WHERE: 'WHERE';
-ZORDER: 'ZORDER';
+AND
+   : 'AND'
+   ;
 
-EQ  : '=' | '==';
-NSEQ: '<=>';
-NEQ : '<>';
-NEQJ: '!=';
-LT  : '<';
-LTE : '<=' | '!>';
-GT  : '>';
-GTE : '>=' | '!<';
+BY
+   : 'BY'
+   ;
 
-MINUS: '-';
+FALSE
+   : 'FALSE'
+   ;
+
+DATE
+   : 'DATE'
+   ;
+
+INTERVAL
+   : 'INTERVAL'
+   ;
+
+NULL
+   : 'NULL'
+   ;
+
+OPTIMIZE
+   : 'OPTIMIZE'
+   ;
+
+OR
+   : 'OR'
+   ;
+
+TABLE
+   : 'TABLE'
+   ;
+
+TIMESTAMP
+   : 'TIMESTAMP'
+   ;
+
+TRUE
+   : 'TRUE'
+   ;
+
+WHERE
+   : 'WHERE'
+   ;
+
+ZORDER
+   : 'ZORDER'
+   ;
+
+EQ
+   : '='
+   | '=='
+   ;
+
+NSEQ
+   : '<=>'
+   ;
+
+NEQ
+   : '<>'
+   ;
+
+NEQJ
+   : '!='
+   ;
+
+LT
+   : '<'
+   ;
+
+LTE
+   : '<='
+   | '!>'
+   ;
+
+GT
+   : '>'
+   ;
+
+GTE
+   : '>='
+   | '!<'
+   ;
+
+MINUS
+   : '-'
+   ;
 
 STRING
-    : '\'' ( ~('\''|'\\') | ('\\' .) )* '\''
-    | '"' ( ~('"'|'\\') | ('\\' .) )* '"'
-    ;
+   : '\'' (~ ('\'' | '\\') | ('\\' .))* '\''
+   | '"' (~ ('"' | '\\') | ('\\' .))* '"'
+   ;
 
 BIGINT_LITERAL
-    : DIGIT+ 'L'
-    ;
+   : DIGIT+ 'L'
+   ;
 
 SMALLINT_LITERAL
-    : DIGIT+ 'S'
-    ;
+   : DIGIT+ 'S'
+   ;
 
 TINYINT_LITERAL
-    : DIGIT+ 'Y'
-    ;
+   : DIGIT+ 'Y'
+   ;
 
 INTEGER_VALUE
-    : DIGIT+
-    ;
+   : DIGIT+
+   ;
 
 DECIMAL_VALUE
-    : DIGIT+ EXPONENT
-    | DECIMAL_DIGITS EXPONENT? {isValidDecimal()}?
-    ;
+   : DIGIT+ EXPONENT
+   | DECIMAL_DIGITS EXPONENT?
+   {isValidDecimal()}?
+   ;
 
 DOUBLE_LITERAL
-    : DIGIT+ EXPONENT? 'D'
-    | DECIMAL_DIGITS EXPONENT? 'D' {isValidDecimal()}?
-    ;
+   : DIGIT+ EXPONENT? 'D'
+   | DECIMAL_DIGITS EXPONENT? 'D'
+   {isValidDecimal()}?
+   ;
 
 BIGDECIMAL_LITERAL
-    : DIGIT+ EXPONENT? 'BD'
-    | DECIMAL_DIGITS EXPONENT? 'BD' {isValidDecimal()}?
-    ;
+   : DIGIT+ EXPONENT? 'BD'
+   | DECIMAL_DIGITS EXPONENT? 'BD'
+   {isValidDecimal()}?
+   ;
 
 BACKQUOTED_IDENTIFIER
-    : '`' ( ~'`' | '``' )* '`'
-    ;
+   : '`' (~ '`' | '``')* '`'
+   ;
 
 IDENTIFIER
-    : (LETTER | DIGIT | '_')+
-    ;
+   : (LETTER | DIGIT | '_')+
+   ;
 
 fragment DECIMAL_DIGITS
-    : DIGIT+ '.' DIGIT*
-    | '.' DIGIT+
-    ;
+   : DIGIT+ '.' DIGIT*
+   | '.' DIGIT+
+   ;
 
 fragment EXPONENT
-    : 'E' [+-]? DIGIT+
-    ;
+   : 'E' [+-]? DIGIT+
+   ;
 
 fragment DIGIT
-    : [0-9]
-    ;
+   : [0-9]
+   ;
 
 fragment LETTER
-    : [A-Z]
-    ;
+   : [A-Z]
+   ;
 
 SIMPLE_COMMENT
-    : '--' ~[\r\n]* '\r'? '\n'? -> channel(HIDDEN)
-    ;
+   : '--' ~ [\r\n]* '\r'? '\n'? -> channel (HIDDEN)
+   ;
 
 BRACKETED_COMMENT
-    : '/*' .*? '*/' -> channel(HIDDEN)
-    ;
+   : '/*' .*? '*/' -> channel (HIDDEN)
+   ;
 
-WS  : [ \r\n\t]+ -> channel(HIDDEN)
-    ;
-
-// Catch-all for anything we can't recognize.
-// We use this to be able to ignore and recover all the text
-// when splitting statements with DelimiterLexer
+WS
+   : [ \r\n\t]+ -> channel (HIDDEN)
+   ;
+   // Catch-all for anything we can't recognize.
+   
+   // We use this to be able to ignore and recover all the text
+   
+   // when splitting statements with DelimiterLexer
+   
 UNRECOGNIZED
-    : .
-    ;
+   : .
+   ;
+

@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 lexer grammar KyuubiSqlBaseLexer;
 
-@members {
+@ members
+{
    /**
     * Verify whether current token is a valid decimal token (which contains dot).
     * Returns true if the character that follows the token is not a digit or letter or underscore.
@@ -40,66 +40,84 @@ lexer grammar KyuubiSqlBaseLexer;
      }
    }
  }
+SEMICOLON
+   : ';'
+   ;
 
-SEMICOLON: ';';
+DESC
+   : 'DESC'
+   ;
 
-DESC: 'DESC';
-DESCRIBE: 'DESCRIBE';
+DESCRIBE
+   : 'DESCRIBE'
+   ;
 
-KYUUBI: 'KYUUBI';
-KYUUBIADMIN: 'KYUUBIADMIN';
+KYUUBI
+   : 'KYUUBI'
+   ;
 
-SESSION: 'SESSION';
+KYUUBIADMIN
+   : 'KYUUBIADMIN'
+   ;
+
+SESSION
+   : 'SESSION'
+   ;
 
 BACKQUOTED_IDENTIFIER
-    : '`' ( ~'`' | '``' )* '`'
-    ;
+   : '`' (~ '`' | '``')* '`'
+   ;
 
 DECIMAL_VALUE
-    : DECIMAL_DIGITS {isValidDecimal()}?
-    ;
+   : DECIMAL_DIGITS
+   {isValidDecimal()}?
+   ;
 
 INTEGER_VALUE
-    : DIGIT+
-    ;
+   : DIGIT+
+   ;
 
 IDENTIFIER
-    : [A-Za-z_$0-9\u0080-\uFFFF]*?[A-Za-z_$\u0080-\uFFFF]+?[A-Za-z_$0-9\u0080-\uFFFF]*
-    ;
+   : [A-Za-z_$0-9\u0080-\uFFFF]*? [A-Za-z_$\u0080-\uFFFF]+? [A-Za-z_$0-9\u0080-\uFFFF]*
+   ;
 
 STRING
-    : '\'' ( ~('\''|'\\') | ('\\' .) )* '\''
-    | 'R\'' (~'\'')* '\''
-    | 'R"'(~'"')* '"'
-    ;
+   : '\'' (~ ('\'' | '\\') | ('\\' .))* '\''
+   | 'R\'' (~ '\'')* '\''
+   | 'R"' (~ '"')* '"'
+   ;
 
 fragment DIGIT
-    : [0-9]
-    ;
+   : [0-9]
+   ;
 
 fragment DECIMAL_DIGITS
-    : DIGIT+ '.' DIGIT*
-    | '.' DIGIT+
-    ;
+   : DIGIT+ '.' DIGIT*
+   | '.' DIGIT+
+   ;
 
 fragment LETTER
-    : [A-Z]
-    ;
+   : [A-Z]
+   ;
 
 SIMPLE_COMMENT
-    : '--' ~[\r\n]* '\r'? '\n'? -> channel(HIDDEN)
-    ;
+   : '--' ~ [\r\n]* '\r'? '\n'? -> channel (HIDDEN)
+   ;
 
 BRACKETED_COMMENT
-    : '/*' .*? '*/' -> channel(HIDDEN)
-    ;
+   : '/*' .*? '*/' -> channel (HIDDEN)
+   ;
 
-WS  : [ \r\n\t]+ -> channel(HIDDEN)
-    ;
-
-// Catch-all for anything we can't recognize.
-// We use this to be able to ignore and recover all the text
-// when splitting statements with DelimiterLexer
+WS
+   : [ \r\n\t]+ -> channel (HIDDEN)
+   ;
+   // Catch-all for anything we can't recognize.
+   
+   // We use this to be able to ignore and recover all the text
+   
+   // when splitting statements with DelimiterLexer
+   
 UNRECOGNIZED
-    : .
-    ;
+   : .
+   ;
+
