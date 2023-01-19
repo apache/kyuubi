@@ -19,9 +19,6 @@ package org.apache.kyuubi.server.api
 
 import javax.servlet.http.HttpServletRequest
 
-import scala.collection.mutable
-
-import org.apache.http.HttpHost
 import org.eclipse.jetty.proxy.ProxyServlet
 
 import org.apache.kyuubi.Logging
@@ -38,15 +35,15 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     if (url != null && url.length > 0) {
       val ipAddress = url(0).split(":")(1)
       val port = url(0).split(":")(2).toInt
-      request.setAttribute(
+      /*     request.setAttribute(
         ATTR_TARGET_HOST,
-        new HttpHost(ipAddress, port, "http"))
+        new HttpHost(ipAddress, port, "http"))*/
       targetUrl =
         String.format(
-          "http://%s:%s%s",
+          "http://%s:%s/%s/",
           ipAddress,
           port.toString,
-          new mutable.StringBuilder().append("/jobs/").toString())
+          "jobs")
       logger.info("ui -> {}", targetUrl)
     }
     targetUrl
