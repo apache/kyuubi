@@ -112,7 +112,7 @@ class ExecuteScala(
               new ArrayFetchIterator[Row](result.collect())
             } else {
               val output = repl.getOutput
-              info("scala repl output:\n" + output)
+              debug("scala repl output:\n" + output)
               new ArrayFetchIterator[Row](Array(Row(output)))
             }
           }
