@@ -294,6 +294,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     eventually(timeout(1.minutes), interval(200.milliseconds)) {
       response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().get()
+      // will meet json parse exception with response.readEntity(classOf[KyuubiSessionEvent])
       val sessionEvent = response.readEntity(classOf[String])
       assert(sessionEvent.contains("SparkException: Master"))
     }
