@@ -82,7 +82,7 @@ object KyuubiServer extends Logging {
         |                /\___/
         |                \/__/
        """.stripMargin)
-    info(s"Version: $KYUUBI_VERSION, Revision: $REVISION, Branch: $BRANCH," +
+    info(s"Version: $KYUUBI_VERSION, Revision: $REVISION ($REVISION_TIME), Branch: $BRANCH," +
       s" Java: $JAVA_COMPILE_VERSION, Scala: $SCALA_COMPILE_VERSION," +
       s" Spark: $SPARK_COMPILE_VERSION, Hadoop: $HADOOP_COMPILE_VERSION," +
       s" Hive: $HIVE_COMPILE_VERSION, Flink: $FLINK_COMPILE_VERSION," +
