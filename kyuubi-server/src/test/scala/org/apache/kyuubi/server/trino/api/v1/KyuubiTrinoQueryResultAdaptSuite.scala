@@ -21,7 +21,7 @@ import javax.ws.rs.core.MediaType
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
+import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V9
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
@@ -48,7 +48,29 @@ class KyuubiTrinoQueryResultAdaptSuite extends KyuubiFunSuite with RestFrontendT
 
     print(results.toString)
     assert(results.getColumns.get(0).getType.equals("INT_TYPE"))
-    assert(results.getData.asScala.last.get(0).toString.equals("TI32Value(value:1)"))
+    assert(results.getData.asScala.last.get(0) == 1)
+  }
+
+  test("test convert from table") {
+    initSql("CREATE DATABASE IF NOT EXISTS INIT_DB")
+    initSql("CREATE TABLE IF NOT EXISTS INIT_DB.test(a int) USING CSV;")
+    initSql("INSERT INTO INIT_DB.test VALUES (2)")
+
+    val opHandle = getOpHandle("SELECT * FROM INIT_DB.test")
+    val opHandleStr = opHandle.identifier.toString
+    checkOpState(opHandleStr, FINISHED)
+
+    val metadataResp = fe.be.getResultSetMetadata(opHandle)
+    val tRowSet = fe.be.fetchResults(opHandle, FetchOrientation.FETCH_NEXT, 1000, false)
+    val status = fe.be.getOperationStatus(opHandle)
+
+    val uri = new URI("sfdsfsdfdsf")
+    val results = KyuubiTrinoQueryResultAdapt
+      .createQueryResults("/xdfd/xdf", uri, uri, status, Option(metadataResp), Option(tRowSet))
+
+    print(results.toString)
+    assert(results.getColumns.get(0).getType.equals("INT_TYPE"))
+    assert(results.getData.asScala.last.get(0) == 2)
   }
 
   def getOpHandleStr(statement: String = "show tables"): String = {
@@ -57,14 +79,14 @@ class KyuubiTrinoQueryResultAdaptSuite extends KyuubiFunSuite with RestFrontendT
 
   def getOpHandle(statement: String = "show tables"): OperationHandle = {
     val sessionHandle = fe.be.openSession(
-      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      HIVE_CLI_SERVICE_PROTOCOL_V9,
       "admin",
       "123456",
       "localhost",
       Map("testConfig" -> "testValue"))
 
     if (statement.nonEmpty) {
-      fe.be.executeStatement(sessionHandle, statement, Map.empty, runAsync = true, 3000)
+      fe.be.executeStatement(sessionHandle, statement, Map.empty, runAsync = false, 5000)
     } else {
       fe.be.getCatalogs(sessionHandle)
     }
@@ -78,5 +100,11 @@ class KyuubiTrinoQueryResultAdaptSuite extends KyuubiFunSuite with RestFrontendT
       val operationEvent = response.readEntity(classOf[KyuubiOperationEvent])
       assert(operationEvent.state === state.name())
     }
+  }
+
+  private def initSql(sql: String): Unit = {
+    val initOpHandle = getOpHandle(sql)
+    val initOpHandleStr = initOpHandle.identifier.toString
+    checkOpState(initOpHandleStr, FINISHED)
   }
 }

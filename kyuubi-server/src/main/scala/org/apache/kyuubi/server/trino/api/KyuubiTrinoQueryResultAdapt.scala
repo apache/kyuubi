@@ -27,7 +27,6 @@ import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
 import org.apache.kyuubi.operation.OperationStatus
 
-
 object KyuubiTrinoQueryResultAdapt {
   private val defaultWarning: util.List[Warning] = new util.ArrayList[Warning]()
   private val GENERIC_INTERNAL_ERROR_CODE = 65536
@@ -35,21 +34,28 @@ object KyuubiTrinoQueryResultAdapt {
   private val GENERIC_INTERNAL_ERROR_TYPE = "INTERNAL_ERROR"
 
   def createQueryResults(
-                          queryId: String,
-                          nextUri: URI,
-                          queryHtmlUri: URI,
-                          queryStatus: OperationStatus,
-                          columns: Option[TGetResultSetMetadataResp] = None,
-                          data: Option[TRowSet] = None): QueryResults = {
+      queryId: String,
+      nextUri: URI,
+      queryHtmlUri: URI,
+      queryStatus: OperationStatus,
+      columns: Option[TGetResultSetMetadataResp] = None,
+      data: Option[TRowSet] = None): QueryResults = {
 
     //    val queryHtmlUri = uriInfo.getRequestUriBuilder
     //      .replacePath("ui/query.html").replaceQuery(queryId).build()
 
-    new QueryResults(queryId, queryHtmlUri, nextUri, nextUri,
+    new QueryResults(
+      queryId,
+      queryHtmlUri,
+      nextUri,
+      nextUri,
       convertTColumn(columns),
       convertTRowSet(data),
       StatementStats.builder.setState(queryStatus.state.name()).build(),
-      toQueryError(queryStatus), defaultWarning, null, 0L)
+      toQueryError(queryStatus),
+      defaultWarning,
+      null,
+      0L)
   }
 
   def convertTColumn(columns: Option[TGetResultSetMetadataResp]): util.List[Column] = {
@@ -230,10 +236,14 @@ object KyuubiTrinoQueryResultAdapt {
     if (exception.isEmpty) {
       null
     } else {
-      new QueryError(exception.get.getMessage, queryStatus.state.name(),
-        GENERIC_INTERNAL_ERROR_CODE, GENERIC_INTERNAL_ERROR_NAME,
+      new QueryError(
+        exception.get.getMessage,
+        queryStatus.state.name(),
+        GENERIC_INTERNAL_ERROR_CODE,
+        GENERIC_INTERNAL_ERROR_NAME,
         GENERIC_INTERNAL_ERROR_TYPE,
-        null, null)
+        null,
+        null)
     }
   }
 }
