@@ -96,7 +96,7 @@ Taking ``Streaming Query`` as a example,
    SET 'execution.runtime-mode' = 'streaming';
    SELECT * FROM MyTable /*+ OPTIONS ('log.scan'='latest') */;
 
-Taking ``Rescale Bucket` as a example,
+Taking ``Rescale Bucket`` as a example,
 
 .. code-block:: sql
 
