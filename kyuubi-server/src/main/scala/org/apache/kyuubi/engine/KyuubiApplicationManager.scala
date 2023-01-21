@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine
 
 import java.io.File
 import java.net.{URI, URISyntaxException}
+import java.nio.file.{Files, Path}
 import java.util.{Locale, ServiceLoader}
 
 import scala.collection.JavaConverters._
@@ -58,6 +59,7 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
         case NonFatal(e) => warn(s"Error stopping ${op.getClass.getSimpleName}: ${e.getMessage}")
       }
     }
+    deleteTempDirForUpload()
     super.stop()
   }
 
@@ -90,6 +92,17 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
       case None => None
     }
   }
+
+  private def deleteTempDirForUpload(): Unit = {
+    try {
+      Utils.deleteDirectoryRecursively(KyuubiApplicationManager.tempDirForUpload.toFile)
+    } catch {
+      case e: Exception => error(
+          "Failed to delete temporary folder for uploading " +
+            s"${KyuubiApplicationManager.tempDirForUpload}",
+          e)
+    }
+  }
 }
 
 object KyuubiApplicationManager {
@@ -107,6 +120,15 @@ object KyuubiApplicationManager {
     val originalTag = conf.getOption(FlinkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("")
     val newTag = s"${originalTag}KYUUBI" + Some(tag).filterNot(_.isEmpty).map("," + _).getOrElse("")
     conf.set(FlinkProcessBuilder.TAG_KEY, newTag)
+  }
+
+  lazy val tempDirForUpload: Path = {
+    val path = Utils.getAbsolutePathFromWork("upload")
+    val pathFile = path.toFile
+    if (!pathFile.exists()) {
+      Files.createDirectories(path)
+    }
+    path
   }
 
   private[kyuubi] def checkApplicationAccessPath(path: String, conf: KyuubiConf): Unit = {

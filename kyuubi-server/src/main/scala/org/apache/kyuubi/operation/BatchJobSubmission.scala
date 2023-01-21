@@ -25,7 +25,7 @@ import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
@@ -267,6 +267,9 @@ class BatchJobSubmission(
       }
     } finally {
       builder.close()
+      if (session.isResourceUploaded) {
+        Utils.deleteFile(resource, "Failed to delete temporary uploaded resource file")
+      }
     }
   }
 

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.api
 
+import org.glassfish.jersey.media.multipart.MultiPartFeature
 import org.glassfish.jersey.server.ResourceConfig
 
 import org.apache.kyuubi.server.api.v1.KyuubiOpenApiResource
@@ -26,4 +27,5 @@ class OpenAPIConfig extends ResourceConfig {
   register(classOf[KyuubiOpenApiResource])
   register(classOf[KyuubiScalaObjectMapper])
   register(classOf[RestExceptionMapper])
+  register(classOf[MultiPartFeature])
 }
