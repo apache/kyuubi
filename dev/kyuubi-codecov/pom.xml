@@ -126,12 +126,6 @@
             <artifactId>kyuubi-spark-connector-tpch_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-hive-jdbc</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
