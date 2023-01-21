@@ -81,7 +81,7 @@ jobs:
             python-version: '3.9'
       - name: Build Kyuubi and Spark with maven w/o linters
         run: |
-          INSTALL_MODULES="dev/kyuubi-codecov,kyuubi-hive-jdbc"
+          INSTALL_MODULES="dev/kyuubi-codecov,kyuubi-hive-jdbc,kyuubi-hive-jdbc-shaded"
           ./build/mvn clean install -DskipTests ${MVN_OPT} -pl ${INSTALL_MODULES} -am \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Test Kyuubi and Spark with maven w/o linters
