@@ -2048,6 +2048,12 @@
                                 <version>${spotless.python.black.version}</version>
                             </black>
                         </python>
+                        <markdown>
+                            <includes>
+                                <include>docs/**/*.md</include>
+                            </includes>
+                            <flexmark></flexmark>
+                        </markdown>
                     </configuration>
                     <executions>
                         <execution>
