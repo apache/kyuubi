@@ -178,6 +178,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @FormDataParam("batchRequest") batchRequest: BatchRequest,
       @FormDataParam("resourceFile") resourceFileInputStream: InputStream,
       @FormDataParam("resourceFile") resourceFileMetadata: FormDataContentDisposition): Batch = {
+    require(
+      batchRequest != null,
+      "batchRequest is required and please check the content type" +
+        " of batchRequest is application/json")
     val tempFile = Utils.writeToTempFile(
       resourceFileInputStream,
       KyuubiApplicationManager.tempDirForUpload,
