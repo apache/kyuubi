@@ -1,19 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Contributing to Apache Kyuubi
 
@@ -44,7 +44,7 @@ There are many ways to make valuable contributions to the project and community.
 You can make various types of contributions to Kyuubi, including the following but not limited to,
 
 - Answer questions in the  [Mailing Lists](https://kyuubi.apache.org/mailing_lists.html)
-- [Share your success stories with us](https://github.com/apache/kyuubi/discussions/925) 
+- [Share your success stories with us](https://github.com/apache/kyuubi/discussions/925)
 - Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/master/)
 - Test latest releases - [![Latest tag](https://img.shields.io/github/v/tag/apache/kyuubi?label=tag)](https://github.com/apache/kyuubi/tags)
 - Improve test coverage - [![codecov](https://codecov.io/gh/apache/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/kyuubi)
@@ -59,4 +59,5 @@ You can make various types of contributions to Kyuubi, including the following b
 TBD, please be patient for the surprise.
 
 ## IDE Setup Guide
+
 [IntelliJ IDEA Setup Guide](https://kyuubi.readthedocs.io/en/master/develop_tools/idea_setup.html)
