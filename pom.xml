@@ -132,6 +132,7 @@
         <delta.version>2.2.0</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
+        <flexmark.version>0.62.2</flexmark.version>
         <flink.version>1.15.2</flink.version>
         <flink.module.scala.suffix></flink.module.scala.suffix>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
@@ -674,6 +675,12 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-all</artifactId>
+                <version>${flexmark.version}</version>
             </dependency>
 
             <dependency>
@@ -2052,7 +2059,9 @@
                             <includes>
                                 <include>docs/**/*.md</include>
                             </includes>
-                            <flexmark></flexmark>
+                            <flexmark>
+                                <version>${flexmark.version}</version>
+                            </flexmark>
                         </markdown>
                     </configuration>
                     <executions>
