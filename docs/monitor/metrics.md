@@ -49,6 +49,9 @@ Metrics Prefix | Metrics Suffix | Type | Since | Description
 `kyuubi.connection.opened`  | `${user}` | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> current active connections count requested by a `${user}`</div>
 `kyuubi.connection.failed`  | | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative failed connection count</div>
 `kyuubi.connection.failed`  | `${user}` | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative failed connections for a `${user}`</div>
+`kyuubi.connection.total`   | `${sessionType}` | counter | 1.7.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative connection count with session type `${sessionType}`</div>
+`kyuubi.connection.opened`  | `${sessionType}` | counter | 1.7.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> current active connections count with session type `${sessionType}`</div>
+`kyuubi.connection.failed`  | `${sessionType}` | counter | 1.7.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative failed connection count with session type `${sessionType}`</div>
 `kyuubi.operation.total`    | | counter | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative opened operation count</div>
 `kyuubi.operation.total`    | `${operationType}` | counter | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative opened count for the operation `${operationType}`</div>
 `kyuubi.operation.opened`   | | gauge | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  current opened operation count</div>
@@ -84,9 +87,6 @@ Metrics Prefix | Metrics Suffix | Type | Since | Description
 `kyuubi.metadata.request.total`                  | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> metadata requests time and rate </div>
 `kyuubi.metadata.request.failed`                 | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> metadata requests failure time and rate </div>
 `kyuubi.metadata.request.retrying`               | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> retrying metadata requests time and rate, it is not cumulative </div>
-`kyuubi.connection.total`                        | `${sessionType}`| counter | 1.7.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative connection count with session type `${sessionType}`</div>
-`kyuubi.connection.opened`                       | `${sessionType}`| counter | 1.7.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> current active connections count with session type `${sessionType}`</div>
-`kyuubi.connection.failed`                       | `${sessionType}`| counter | 1.7.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative failed connection count with session type `${sessionType}`</div>
 
 Before v1.5.0, if you use these metrics:
 - `kyuubi.statement.total`
