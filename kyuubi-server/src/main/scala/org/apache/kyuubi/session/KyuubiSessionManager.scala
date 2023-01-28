@@ -106,6 +106,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       case e: Throwable =>
         MetricsSystem.tracing { ms =>
           ms.incCount(CONN_FAIL)
+          ms.incCount(MetricRegistry.name(CONN_FAIL, SessionType.INTERACTIVE.toString))
           ms.incCount(MetricRegistry.name(CONN_FAIL, user))
         }
         throw KyuubiSQLException(
@@ -167,6 +168,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         }
         MetricsSystem.tracing { ms =>
           ms.incCount(CONN_FAIL)
+          ms.incCount(MetricRegistry.name(CONN_FAIL, SessionType.BATCH.toString))
           ms.incCount(MetricRegistry.name(CONN_FAIL, user))
         }
         throw KyuubiSQLException(
