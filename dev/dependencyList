@@ -171,7 +171,7 @@ simpleclient_tracer_common/0.16.0//simpleclient_tracer_common-0.16.0.jar
 simpleclient_tracer_otel/0.16.0//simpleclient_tracer_otel-0.16.0.jar
 simpleclient_tracer_otel_agent/0.16.0//simpleclient_tracer_otel_agent-0.16.0.jar
 slf4j-api/1.7.36//slf4j-api-1.7.36.jar
-snakeyaml/1.31//snakeyaml-1.31.jar
+snakeyaml/1.33//snakeyaml-1.33.jar
 swagger-annotations/2.2.1//swagger-annotations-2.2.1.jar
 swagger-core/2.2.1//swagger-core-2.2.1.jar
 swagger-integration/2.2.1//swagger-integration-2.2.1.jar
