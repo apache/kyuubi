@@ -18,7 +18,7 @@
 #
 
 #
-# Script to create a binary distribution for easy deploys of Spark.
+# Script to create a binary distribution for easy deploys of Kyuubi.
 # The distribution directory defaults to dist/ but can be overridden below.
 # The distribution contains fat (assembly) jars that include the Scala library,
 # so it is completely self contained.
