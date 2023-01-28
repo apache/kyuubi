@@ -184,11 +184,13 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       "spark.sql.shuffle.partitions=2;spark.executor.memory=5g" +
       "```")
     newOutput += ""
-    newOutput += "- **Runtime SQL Configuration**"
+    newOutput += ("- **Runtime SQL Configuration**")
+    newOutput += ""
     newOutput += ("  - For [Runtime SQL Configurations](" +
       "http://spark.apache.org/docs/latest/configuration.html#runtime-sql-configuration), they" +
       " will take affect every time")
-    newOutput += "- **Static SQL and Spark Core Configuration**"
+    newOutput += ("- **Static SQL and Spark Core Configuration**")
+    newOutput += ""
     newOutput += ("  - For [Static SQL Configurations](" +
       "http://spark.apache.org/docs/latest/configuration.html#static-sql-configuration) and" +
       " other spark core configs, e.g. `spark.executor.memory`, they will take effect if there" +
