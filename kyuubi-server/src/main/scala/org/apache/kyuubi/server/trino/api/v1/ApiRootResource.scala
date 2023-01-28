@@ -37,8 +37,7 @@ private[v1] class ApiRootResource extends ApiRequestContext {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "Get the version of Kyuubi server.")
   @GET
   @Path("version")
