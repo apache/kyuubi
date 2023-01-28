@@ -243,9 +243,8 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
 
   test("trace the connection metrics with session type") {
     val connOpenMetric = s"${MetricsConstants.CONN_OPEN}.${SessionType.INTERACTIVE}"
-    val connTotalMetric = s"${MetricsConstants.CONN_FAIL}.${SessionType.INTERACTIVE}"
+    val connTotalMetric = s"${MetricsConstants.CONN_TOTAL}.${SessionType.INTERACTIVE}"
     val connFailedMetric = s"${MetricsConstants.CONN_FAIL}.${SessionType.INTERACTIVE}"
-    val connOpenCount = MetricsSystem.counterValue(connOpenMetric).getOrElse(0L)
     val connTotalCount = MetricsSystem.counterValue(connTotalMetric).getOrElse(0L)
     val connFailedCount = MetricsSystem.counterValue(connFailedMetric).getOrElse(0L)
 
@@ -253,20 +252,24 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       statement.executeQuery("select engine_name()")
     }
     eventually(timeout(5.seconds), interval(100.milliseconds)) {
-      assert(MetricsSystem.meterValue(connOpenMetric).getOrElse(0L) > connOpenCount)
-      assert(MetricsSystem.meterValue(connTotalMetric).getOrElse(0L) > connTotalCount)
+      assert(MetricsSystem.counterValue(connTotalMetric).getOrElse(0L) > connTotalCount)
+      assert(MetricsSystem.counterValue(connOpenMetric).getOrElse(0L) === 0)
     }
 
-    withSessionConf(Map.empty)(Map.empty)(Map("spark.master" -> "invalid")) {
-      withJdbcStatement() { statement =>
-        statement.executeQuery("select engine_name()")
+    withSessionConf(Map.empty)(Map.empty)(Map(
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false",
+      "spark.master" -> "invalid")) {
+      intercept[Exception] {
+        withJdbcStatement() { statement =>
+          statement.executeQuery("select engine_name()")
+        }
       }
     }
 
     eventually(timeout(5.seconds), interval(100.milliseconds)) {
-      assert(MetricsSystem.meterValue(connOpenMetric).getOrElse(0L) - connOpenCount > 1)
-      assert(MetricsSystem.meterValue(connTotalMetric).getOrElse(0L) - connTotalCount > 1)
-      assert(MetricsSystem.meterValue(connFailedMetric).getOrElse(0L) > connFailedCount)
+      assert(MetricsSystem.counterValue(connTotalMetric).getOrElse(0L) - connTotalCount > 1)
+      assert(MetricsSystem.counterValue(connOpenMetric).getOrElse(0L) === 0)
+      assert(MetricsSystem.counterValue(connFailedMetric).getOrElse(0L) > connFailedCount)
     }
   }
 }
