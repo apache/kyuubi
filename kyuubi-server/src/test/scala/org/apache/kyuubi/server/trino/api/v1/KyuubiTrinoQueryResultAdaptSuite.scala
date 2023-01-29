@@ -30,7 +30,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
-import org.apache.kyuubi.server.trino.api.KyuubiTrinoQueryResultAdapt
+import org.apache.kyuubi.server.trino.api.TrinoContext
 
 class KyuubiTrinoQueryResultAdaptSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -44,7 +44,7 @@ class KyuubiTrinoQueryResultAdaptSuite extends KyuubiFunSuite with RestFrontendT
     val status = fe.be.getOperationStatus(opHandle)
 
     val uri = new URI("sfdsfsdfdsf")
-    val results = KyuubiTrinoQueryResultAdapt
+    val results = TrinoContext
       .createQueryResults("/xdfd/xdf", uri, uri, status, Option(metadataResp), Option(tRowSet))
 
     print(results.toString)
@@ -66,7 +66,7 @@ class KyuubiTrinoQueryResultAdaptSuite extends KyuubiFunSuite with RestFrontendT
     val status = fe.be.getOperationStatus(opHandle)
 
     val uri = new URI("sfdsfsdfdsf")
-    val results = KyuubiTrinoQueryResultAdapt
+    val results = TrinoContext
       .createQueryResults("/xdfd/xdf", uri, uri, status, Option(metadataResp), Option(tRowSet))
 
     print(results.toString)
