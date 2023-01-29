@@ -21,7 +21,6 @@ import java.util.Base64
 
 import scala.collection.JavaConverters._
 
-import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -32,8 +31,6 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KE
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
-import org.apache.kyuubi.metrics.MetricsConstants._
-import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
@@ -109,10 +106,7 @@ class KyuubiSessionImpl(
   private var _engineSessionHandle: SessionHandle = _
 
   override def open(): Unit = handleSessionException {
-    MetricsSystem.tracing { ms =>
-      ms.incCount(CONN_TOTAL)
-      ms.incCount(MetricRegistry.name(CONN_OPEN, user))
-    }
+    traceMetricsOnOpen()
 
     checkSessionAccessPathURIs()
 
@@ -256,7 +250,7 @@ class KyuubiSessionImpl(
       if (engine != null) engine.close()
       sessionEvent.endTime = System.currentTimeMillis()
       EventBus.post(sessionEvent)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
+      traceMetricsOnClose()
     }
   }
 

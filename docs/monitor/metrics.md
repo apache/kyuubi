@@ -45,10 +45,13 @@ Metrics Prefix | Metrics Suffix | Type | Since | Description
 `kyuubi.exec.pool.threads.alive`  | | gauge | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> threads keepAlive in the backend executive thread pool</div>
 `kyuubi.exec.pool.threads.active` | | gauge | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> threads active in the backend executive thread pool</div>
 `kyuubi.connection.total`   | | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative connection count</div>
+`kyuubi.connection.total`   | `${sessionType}` | counter | 1.7.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative connection count with session type `${sessionType}`</div>
 `kyuubi.connection.opened`  | | gauge | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> current active connection count</div>
 `kyuubi.connection.opened`  | `${user}` | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> current active connections count requested by a `${user}`</div>
+`kyuubi.connection.opened`  | `${sessionType}` | counter | 1.7.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> current active connections count with session type `${sessionType}`</div>
 `kyuubi.connection.failed`  | | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative failed connection count</div>
 `kyuubi.connection.failed`  | `${user}` | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative failed connections for a `${user}`</div>
+`kyuubi.connection.failed`  | `${sessionType}` | counter | 1.7.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative failed connection count with session type `${sessionType}`</div>
 `kyuubi.operation.total`    | | counter | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative opened operation count</div>
 `kyuubi.operation.total`    | `${operationType}` | counter | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative opened count for the operation `${operationType}`</div>
 `kyuubi.operation.opened`   | | gauge | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  current opened operation count</div>
