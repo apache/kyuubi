@@ -37,8 +37,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "test")
   @GET
   @Path("test")
@@ -60,8 +59,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description =
       "Get queued statement status")
   @GET
@@ -76,8 +74,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description =
       "Get executing statement status")
   @GET
@@ -92,8 +89,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description =
       "Cancel queued statement")
   @DELETE
@@ -108,8 +104,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description =
       "Cancel executing statement")
   @DELETE

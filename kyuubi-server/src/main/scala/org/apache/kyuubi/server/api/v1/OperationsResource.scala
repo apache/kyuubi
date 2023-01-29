@@ -64,8 +64,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description =
       "apply an action for an operation")
   @PUT
