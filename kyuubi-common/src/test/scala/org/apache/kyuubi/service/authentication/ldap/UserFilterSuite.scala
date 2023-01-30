@@ -25,13 +25,12 @@ import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 
 class UserFilterSuite extends KyuubiFunSuite {
-  private var factory: FilterFactory = _
+  private val factory: FilterFactory = UserFilterFactory
   private var conf: KyuubiConf = _
   private var search: DirSearch = _
 
   override def beforeEach(): Unit = {
     conf = new KyuubiConf()
-    factory = new UserFilterFactory
     search = mock[DirSearch]
     super.beforeEach()
   }

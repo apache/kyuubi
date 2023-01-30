@@ -22,7 +22,7 @@ import javax.security.sasl.AuthenticationException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 
-class UserFilterFactory extends FilterFactory with Logging {
+object UserFilterFactory extends FilterFactory with Logging {
   override def getInstance(conf: KyuubiConf): Option[Filter] = {
     val userFilter = conf.get(KyuubiConf.AUTHENTICATION_LDAP_USER_FILTER)
     if (userFilter.isEmpty) None else Some(new UserFilter(userFilter))

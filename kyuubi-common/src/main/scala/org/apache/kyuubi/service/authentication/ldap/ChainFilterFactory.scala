@@ -28,7 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf
  * The filters will be applied in the order they are mentioned in the factory constructor.
  */
 
-class ChainFilterFactory(chainedFactories: Seq[FilterFactory]) extends FilterFactory {
+class ChainFilterFactory(chainedFactories: FilterFactory*) extends FilterFactory {
   override def getInstance(conf: KyuubiConf): Option[Filter] = {
     val maybeFilters = chainedFactories.map(_.getInstance(conf))
     val filters = maybeFilters.flatten

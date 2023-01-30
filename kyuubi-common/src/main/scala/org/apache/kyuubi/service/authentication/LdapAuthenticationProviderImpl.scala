@@ -119,5 +119,5 @@ class LdapAuthenticationProviderImpl(
 object LdapAuthenticationProviderImpl {
   val FILTER_FACTORIES: Array[FilterFactory] = Array[FilterFactory](
     CustomQueryFilterFactory,
-    new ChainFilterFactory(Seq(UserSearchFilterFactory, new UserFilterFactory, GroupFilterFactory)))
+    new ChainFilterFactory(UserSearchFilterFactory, UserFilterFactory, GroupFilterFactory))
 }

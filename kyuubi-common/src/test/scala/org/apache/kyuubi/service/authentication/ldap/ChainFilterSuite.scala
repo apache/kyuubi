@@ -45,7 +45,7 @@ class ChainFilterSuite extends KyuubiFunSuite {
     factory1 = mock[FilterFactory]
     factory2 = mock[FilterFactory]
     factory3 = mock[FilterFactory]
-    factory = new ChainFilterFactory(Seq(factory1, factory2, factory3))
+    factory = new ChainFilterFactory(factory1, factory2, factory3)
     search = mock[DirSearch]
     super.beforeEach()
   }
@@ -58,7 +58,7 @@ class ChainFilterSuite extends KyuubiFunSuite {
   }
 
   test("FactoryAllEmpty") {
-    val emptyFactory = new ChainFilterFactory(Seq.empty)
+    val emptyFactory = new ChainFilterFactory()
     assert(emptyFactory.getInstance(conf).isEmpty)
   }
 
