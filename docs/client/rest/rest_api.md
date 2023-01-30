@@ -357,6 +357,7 @@ Returns all the batches.
 Create a new batch.
 
 #### Request Body
+
 - Media type: `application-json`
 - JSON structure:
 
@@ -377,7 +378,8 @@ The created [Batch](#batch) object.
 
 Create a new batch with uploading resource file.
 
-Example of using `curl` command to send POST request to `/v1/batches` in `multipart-formdata` media type with uploading resource file from local path. 
+Example of using `curl` command to send POST request to `/v1/batches` in `multipart-formdata` media type with uploading resource file from local path.
+
 ```shell
 curl --location --request POST 'http://localhost:10099/api/v1/batches' \
 --form 'batchRequest="{\"batchType\":\"SPARK\",\"className\":\"org.apache.spark.examples.SparkPi\",\"name\":\"Spark Pi\"}";type=application/json' \
@@ -385,12 +387,13 @@ curl --location --request POST 'http://localhost:10099/api/v1/batches' \
 ```
 
 #### Request Body
+
 - Media type: `multipart-formdata`
 - Request body structure in multiparts:
 
-| Name         | Description                                                                                      | Media Type       |
-|:-------------|:-------------------------------------------------------------------------------------------------|:-----------------|
-| batchRequest | The batch request in JSON format as request body requried in [POST /batches](#post-batches)      | application/json |
+| Name         | Description                                                                                       | Media Type       |
+|:-------------|:--------------------------------------------------------------------------------------------------|:-----------------|
+| batchRequest | The batch request in JSON format as request body requried in [POST /batches](#post-batches)       | application/json |
 | resourceFile | The resource to upload and execute, which will be cached on server and cleaned up after execution | File             |
 
 #### Response Body
