@@ -141,7 +141,7 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
       catalog.getTablesByName(identifiers).flatMap { t =>
         val tableSchema =
           if (t.provider.getOrElse("").equalsIgnoreCase("delta")) {
-            spark.table(t.identifier.table).schema
+            spark.table(f"${db}.${t.identifier.table}").schema
           } else {
             t.schema
           }
