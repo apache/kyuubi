@@ -1,20 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Cloudera Hue
 
@@ -43,8 +42,8 @@ Welcome to
 
 ## Run Hue in Docker
 
-Here we demo running Kyuubi on macOS and Hue on [Docker for Mac](https://docs.docker.com/docker-for-mac/), 
-there are several known limitations of network, and you can find 
+Here we demo running Kyuubi on macOS and Hue on [Docker for Mac](https://docs.docker.com/docker-for-mac/),
+there are several known limitations of network, and you can find
 [workarounds from here](https://docs.docker.com/docker-for-mac/networking/#known-limitations-use-cases-and-workarounds).
 
 ### Configuration
@@ -98,7 +97,7 @@ Having fun with Hue and Kyuubi!
 
 ## For CDH 6.x Users
 
-If you are using CDH 6.x, there is a trick that CDH 6.x blocks Spark in default, you need to modify the configuration to 
+If you are using CDH 6.x, there is a trick that CDH 6.x blocks Spark in default, you need to modify the configuration to
 overwrite the `desktop.app_blacklist` to remove this restriction.
 
 Config Hue in Cloudera Manager.
@@ -106,6 +105,7 @@ Config Hue in Cloudera Manager.
 ![](../../imgs/hue/cloudera_manager.png)
 
 Refer following configuration and tune it to fit your environment.
+
 ```
 [desktop]
  app_blacklist=zookeeper,hbase,impala,search,sqoop,security

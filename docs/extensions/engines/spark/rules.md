@@ -1,20 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Auxiliary Optimization Rules
 
@@ -24,11 +23,10 @@ And don't worry, Kyuubi will support the new Apache Spark version in the future.
 ## Features
 
 - merging small files automatically
-  
+
   Small files is a long time issue with Apache Spark. Kyuubi can merge small files by adding an extra shuffle.
   Currently, Kyuubi supports handle small files with datasource table and hive table, and also Kyuubi support optimize dynamic partition insertion.
   For example, a common write query `INSERT INTO TABLE $table1 SELECT * FROM $table2`, Kyuubi will introduce an extra shuffle before write and then the small files will go away.
-
 
 - insert shuffle node before Join to make AQE OptimizeSkewedJoin work
 
@@ -36,14 +34,12 @@ And don't worry, Kyuubi will support the new Apache Spark version in the future.
   However, in complex scenario this assuming will be broken easily. Kyuubi can guarantee the join is standard by adding an extra shuffle node before join.
   So that, OptimizeSkewedJoin can work better.
 
-
 - stage level config isolation in AQE
 
   As we know, `spark.sql.adaptive.advisoryPartitionSizeInBytes` is a key config in Apache Spark AQE.
   It controls how big data size per-task should handle during shuffle, so we always use a 64MB or a smaller value to make parallelism enough.
   However, in general, we expect a file is big enough like 256MB or 512MB. Kyuubi can make the config isolation to solve the conflict so that
   we can make staging partition data size small and last partition data size big.
-
 
 ## Usage
 
@@ -63,12 +59,11 @@ And don't worry, Kyuubi will support the new Apache Spark version in the future.
 
 Now, you can enjoy the Kyuubi SQL Extension.
 
-
 ## Additional Configurations
 
 Kyuubi provides some configs to make these feature easy to use.
 
-| Name                                                                | Default Value | Description                                                                                                                                                                                                                                                                                                                                          | Since |
+|                                Name                                 | Default Value |                                                                                                                                                                     Description                                                                                                                                                                      | Since |
 |---------------------------------------------------------------------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------|
 | spark.sql.optimizer.insertRepartitionBeforeWrite.enabled            | true          | Add repartition node at the top of query plan. An approach of merging small files.                                                                                                                                                                                                                                                                   | 1.2.0 |
 | spark.sql.optimizer.insertRepartitionNum                            | none          | The partition number if `spark.sql.optimizer.insertRepartitionBeforeWrite.enabled` is enabled. If AQE is disabled, the default value is `spark.sql.shuffle.partitions`. If AQE is enabled, the default value is none that means depend on AQE.                                                                                                       | 1.2.0 |
@@ -88,3 +83,4 @@ Kyuubi provides some configs to make these feature easy to use.
 | spark.sql.optimizer.inferRebalanceAndSortOrdersMaxColumns           | 3             | The max columns of inferred columns.                                                                                                                                                                                                                                                                                                                 | 1.7.0 |
 | spark.sql.optimizer.insertRepartitionBeforeWriteIfNoShuffle.enabled | false         | When true, add repartition even if the original plan does not have shuffle.                                                                                                                                                                                                                                                                          | 1.7.0 |
 | spark.sql.optimizer.finalStageConfigIsolationWriteOnly.enabled      | true          | When true, only enable final stage isolation for writing.                                                                                                                                                                                                                                                                                            | 1.7.0 |
+

@@ -1,20 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # How To Use Spark Adaptive Query Execution (AQE) in Kyuubi
 
@@ -197,7 +196,6 @@ By default, if there are only less than 20% partitions of the dataset contain da
 
 This optimization rule detects and converts a Join to an empty LocalRelation.
 
-
 #### Disabling the Hidden Features
 
 We can exclude some of the AQE additional rules if performance regression or bug occurs. For example,
@@ -209,7 +207,6 @@ SET spark.sql.adaptive.optimizer.excludedRules=org.apache.spark.sql.execution.ad
 ## Best Practices for Applying AQE to Kyuubi
 
 Kyuubi is a long-running service to make it easier for end-users to use Spark SQL without having much of Spark's basic knowledge. It is essential to have a basic configuration that works for most scenarios on the server-side.
-
 
 ### Setting Default Configurations
 
@@ -234,7 +231,9 @@ spark.sql.adaptive.nonEmptyPartitionRatioForBroadcastJoin=0.2
 spark.sql.adaptive.optimizer.excludedRules
 spark.sql.autoBroadcastJoinThreshold=-1
 ```
+
 #### Tips
+
 Turn on AQE by default can significantly improve the user experience.
 Other sub-features are all enabled.
 `advisoryPartitionSizeInBytes` is targeting the HDFS block size
@@ -245,7 +244,6 @@ Since AQE requires at least one shuffle, ideally, we need to set `autoBroadcastJ
 ### Dynamically Setting
 
 All AQE related configurations are runtime changeable, which means that it can still modify some specific configs by `SET` syntaxes for each SQL query with more precise control on the client-side.
-
 
 ## Spark Known issues
 
@@ -262,3 +260,4 @@ For other potential problems that may be found in the AQE features of Spark, you
 3. [SPARK-31412: New Adaptive Query Execution in Spark SQL](https://issues.apache.org/jira/browse/SPARK-31412)
 4. [SPARK-28560: Optimize shuffle reader to local shuffle reader when smj converted to bhj in adaptive execution](https://issues.apache.org/jira/browse/SPARK-28560)
 5. [Coalesce and Repartition Hint for SQL Queries](https://issues.apache.org/jira/browse/SPARK-24940)
+

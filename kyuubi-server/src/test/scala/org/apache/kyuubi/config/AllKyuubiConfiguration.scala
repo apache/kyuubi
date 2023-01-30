@@ -189,7 +189,6 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     newOutput += ("  - For [Runtime SQL Configurations](" +
       "http://spark.apache.org/docs/latest/configuration.html#runtime-sql-configuration), they" +
       " will take affect every time")
-    newOutput += ""
     newOutput += ("- **Static SQL and Spark Core Configuration**")
     newOutput += ""
     newOutput += ("  - For [Static SQL Configurations](" +
