@@ -97,11 +97,10 @@ object TestUtils {
       val linesInFile = Files.readAllLines(markdown, StandardCharsets.UTF_8)
       val formatted = formatMarkdown(newOutput)
       linesInFile.asScala.zipWithIndex.zip(formatted).foreach { case ((str1, index), str2) =>
-        withClue(
-          s"$markdown out of date, as line ${index + 1} is not expected." +
-            " Please update doc with KYUUBI_UPDATE=1 build/mvn clean test" +
-            s" -pl $module -am" +
-            s" -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=$agent") {
+        withClue(s"$markdown out of date, as line ${index + 1} is not expected." +
+          " Please update doc with KYUUBI_UPDATE=1 build/mvn clean test" +
+          s" -pl $module -am -Pflink-provided,spark-provided,hive-provided" +
+          s" -DwildcardSuites=$agent") {
           assertResult(str2)(str1)
         }
       }
