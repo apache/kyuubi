@@ -28,7 +28,7 @@ trait WithLdapServer extends KyuubiFunSuite {
   protected var ldapServer: InMemoryDirectoryServer = _
   protected val ldapBaseDn: Array[String] = Array("ou=users")
   protected val ldapUser: String = Utils.currentUser
-  protected val ldapUserPasswd: String = Random.nextString(16)
+  protected val ldapUserPasswd: String = Random.alphanumeric.take(16).mkString
 
   protected def ldapUrl = s"ldap://localhost:${ldapServer.getListenPort}"
 
@@ -54,7 +54,7 @@ trait WithLdapServer extends KyuubiFunSuite {
   }
 
   override def afterAll(): Unit = {
-    super.afterAll()
     ldapServer.close()
+    super.afterAll()
   }
 }
