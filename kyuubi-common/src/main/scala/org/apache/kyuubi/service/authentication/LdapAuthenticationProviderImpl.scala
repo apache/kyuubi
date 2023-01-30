@@ -33,8 +33,8 @@ class LdapAuthenticationProviderImpl(
     searchFactory: DirSearchFactory = new LdapSearchFactory)
   extends PasswdAuthenticationProvider with Logging {
 
-  val filter: Option[Filter] = FILTER_FACTORIES
-    .map(_.getInstance(conf))
+  private val filterOpt: Option[Filter] = FILTER_FACTORIES
+    .map { f => f.getInstance(conf) }
     .collectFirst { case Some(f: Filter) => f }
 
   /**
@@ -97,22 +97,19 @@ class LdapAuthenticationProviderImpl(
     val iterator = principals.iterator
     while (iterator.hasNext) {
       val principal = iterator.next
-      try return searchFactory.getInstance(conf, principal, password)
-      catch {
-        case ex: AuthenticationException =>
-          if (!iterator.hasNext) throw ex
+      try {
+        return searchFactory.getInstance(conf, principal, password)
+      } catch {
+        case rethrow: AuthenticationException if iterator.isEmpty => throw rethrow
       }
     }
     throw new AuthenticationException(s"No candidate principals for $user was found.")
   }
 
   @throws[AuthenticationException]
-  private def applyFilter(client: DirSearch, user: String): Unit = filter.foreach {
-    if (LdapUtils.hasDomain(user)) {
-      _.apply(client, LdapUtils.extractUserName(user))
-    } else {
-      _.apply(client, user)
-    }
+  private def applyFilter(client: DirSearch, user: String): Unit = filterOpt.foreach { filter =>
+    val username = if (LdapUtils.hasDomain(user)) LdapUtils.extractUserName(user) else user
+    filter.apply(client, username)
   }
 }
 
