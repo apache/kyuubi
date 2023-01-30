@@ -97,7 +97,7 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 
 For the environment variables that only needed to be transferred into engine side, you can set it with a Kyuubi configuration item formatted `kyuubi.engineEnv.VAR_NAME`. For example, with `kyuubi.engineEnv.SPARK_DRIVER_MEMORY=4g`, the environment variable `SPARK_DRIVER_MEMORY` with value `4g` would be transferred into engine side. With `kyuubi.engineEnv.SPARK_CONF_DIR=/apache/confs/spark/conf`, the value of `SPARK_CONF_DIR` on the engine side is set to `/apache/confs/spark/conf`.
 
-## Kyuubi Configurations [SOMETHING-IN-FILE]
+## Kyuubi Configurations
 
 You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.conf`. For example:
 
