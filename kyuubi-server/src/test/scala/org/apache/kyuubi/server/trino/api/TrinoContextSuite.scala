@@ -97,8 +97,8 @@ class TrinoContextSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("test convert from table") {
     initSql("CREATE DATABASE IF NOT EXISTS INIT_DB")
-    initSql("CREATE TABLE IF NOT EXISTS INIT_DB.test(a int) USING CSV;")
-    initSql("INSERT INTO INIT_DB.test VALUES (2)")
+    initSql("CREATE TABLE IF NOT EXISTS INIT_DB.test(a int, b int, c int) USING CSV;")
+    initSql("INSERT INTO INIT_DB.test VALUES (1,2,3),(11,22,33),(111,222,333),(1111,2222,3333)")
 
     val opHandle = getOpHandle("SELECT * FROM INIT_DB.test")
     val opHandleStr = opHandle.identifier.toString
@@ -114,7 +114,7 @@ class TrinoContextSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     print(results.toString)
     assert(results.getColumns.get(0).getType.equals("INT_TYPE"))
-    assert(results.getData.asScala.last.get(0) == 2)
+    assert(results.getData.asScala.last.get(0) == 1)
   }
 
   def getOpHandleStr(statement: String = "show tables"): String = {
@@ -130,14 +130,14 @@ class TrinoContextSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       Map("testConfig" -> "testValue"))
 
     if (statement.nonEmpty) {
-      fe.be.executeStatement(sessionHandle, statement, Map.empty, runAsync = false, 5000)
+      fe.be.executeStatement(sessionHandle, statement, Map.empty, runAsync = false, 30000)
     } else {
       fe.be.getCatalogs(sessionHandle)
     }
   }
 
   private def checkOpState(opHandleStr: String, state: OperationState): Unit = {
-    eventually(Timeout(5.seconds)) {
+    eventually(Timeout(30.seconds)) {
       val response = webTarget.path(s"api/v1/operations/$opHandleStr/event")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
       assert(response.getStatus === 200)

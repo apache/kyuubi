@@ -183,9 +183,6 @@ object TrinoContext {
       columns: Option[TGetResultSetMetadataResp] = None,
       data: Option[TRowSet] = None): QueryResults = {
 
-    //    val queryHtmlUri = uriInfo.getRequestUriBuilder
-    //      .replacePath("ui/query.html").replaceQuery(queryId).build()
-
     val columnList = columns match {
       case Some(value) => convertTColumn(value)
       case None => null
@@ -217,7 +214,7 @@ object TrinoContext {
   }
 
   def convertTRowSet(rowSet: TRowSet): util.List[util.List[Object]] = {
-    var dataSet: Array[scala.List[Object]] = Array()
+    val dataResult = new util.LinkedList[util.List[Object]]
 
     if (rowSet.getColumns == null) {
       return rowSet.getRows.asScala
@@ -228,150 +225,110 @@ object TrinoContext {
     rowSet.getColumns.asScala.foreach {
       case tColumn if tColumn.isSetBoolVal =>
         val nulls = util.BitSet.valueOf(tColumn.getBoolVal.getNulls)
-        if (dataSet.isEmpty) {
-          dataSet = tColumn.getBoolVal.getValues.asScala.zipWithIndex
-            .foldLeft(Array[scala.List[Object]]()) {
-              case (acc, x) if nulls.get(x._2) =>
-                acc ++ List(List(None))
-              case (acc, x) if !nulls.get(x._2) =>
-                acc ++ List(List(x._1))
-            }
-        } else {
-          tColumn.getBoolVal.getValues.asScala.zipWithIndex.foreach {
-            case (_, rowIdx) if nulls.get(rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(None)
-            case (v, rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(v)
-          }
+        if (dataResult.isEmpty) {
+          (1 to tColumn.getBoolVal.getValuesSize).foreach(_ =>
+            dataResult.add(new util.LinkedList[Object]()))
+        }
+
+        tColumn.getBoolVal.getValues.asScala.zipWithIndex.foreach {
+          case (_, rowIdx) if nulls.get(rowIdx) =>
+            dataResult.get(rowIdx).add(None)
+          case (v, rowIdx) =>
+            dataResult.get(rowIdx).add(v)
         }
       case tColumn if tColumn.isSetByteVal =>
         val nulls = util.BitSet.valueOf(tColumn.getByteVal.getNulls)
-        if (dataSet.isEmpty) {
-          dataSet = tColumn.getByteVal.getValues.asScala.zipWithIndex
-            .foldLeft(Array[scala.List[Object]]()) {
-              case (acc, x) if nulls.get(x._2) =>
-                acc ++ List(scala.List(None))
-              case (acc, x) if !nulls.get(x._2) =>
-                acc ++ List(scala.List(x._1))
-            }
-        } else {
-          tColumn.getByteVal.getValues.asScala.zipWithIndex.foreach {
-            case (_, rowIdx) if nulls.get(rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(None)
-            case (v, rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(v)
-          }
+        if (dataResult.isEmpty) {
+          (1 to tColumn.getByteVal.getValuesSize).foreach(_ =>
+            dataResult.add(new util.LinkedList[Object]()))
+        }
+
+        tColumn.getByteVal.getValues.asScala.zipWithIndex.foreach {
+          case (_, rowIdx) if nulls.get(rowIdx) =>
+            dataResult.get(rowIdx).add(None)
+          case (v, rowIdx) =>
+            dataResult.get(rowIdx).add(v)
         }
       case tColumn if tColumn.isSetI16Val =>
         val nulls = util.BitSet.valueOf(tColumn.getI16Val.getNulls)
-        if (dataSet.isEmpty) {
-          dataSet = tColumn.getI16Val.getValues.asScala.zipWithIndex
-            .foldLeft(Array[scala.List[Object]]()) {
-              case (acc, x) if nulls.get(x._2) =>
-                acc ++ List(List(None))
-              case (acc, x) if !nulls.get(x._2) =>
-                acc ++ List(List(x._1))
-            }
-        } else {
-          tColumn.getI16Val.getValues.asScala.zipWithIndex.foreach {
-            case (_, rowIdx) if nulls.get(rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(None)
-            case (v, rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(v)
-          }
+        if (dataResult.isEmpty) {
+          (1 to tColumn.getI16Val.getValuesSize).foreach(_ =>
+            dataResult.add(new util.LinkedList[Object]()))
+        }
+
+        tColumn.getI16Val.getValues.asScala.zipWithIndex.foreach {
+          case (_, rowIdx) if nulls.get(rowIdx) =>
+            dataResult.get(rowIdx).add(None)
+          case (v, rowIdx) =>
+            dataResult.get(rowIdx).add(v)
         }
       case tColumn if tColumn.isSetI32Val =>
         val nulls = util.BitSet.valueOf(tColumn.getI32Val.getNulls)
-        if (dataSet.isEmpty) {
-          dataSet = tColumn.getI32Val.getValues.asScala.zipWithIndex
-            .foldLeft(Array[scala.List[Object]]()) {
-              case (acc, x) if nulls.get(x._2) =>
-                acc ++ List(List(None))
-              case (acc, x) if !nulls.get(x._2) =>
-                acc ++ List(List(x._1))
-            }
-        } else {
-          tColumn.getI32Val.getValues.asScala.zipWithIndex.foreach {
-            case (_, rowIdx) if nulls.get(rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(None)
-            case (v, rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(v)
-          }
+        if (dataResult.isEmpty) {
+          (1 to tColumn.getI32Val.getValuesSize).foreach(_ =>
+            dataResult.add(new util.LinkedList[Object]()))
+        }
+
+        tColumn.getI32Val.getValues.asScala.zipWithIndex.foreach {
+          case (_, rowIdx) if nulls.get(rowIdx) =>
+            dataResult.get(rowIdx).add(None)
+          case (v, rowIdx) =>
+            dataResult.get(rowIdx).add(v)
         }
       case tColumn if tColumn.isSetI64Val =>
         val nulls = util.BitSet.valueOf(tColumn.getI64Val.getNulls)
-        if (dataSet.isEmpty) {
-          dataSet = tColumn.getI64Val.getValues.asScala.zipWithIndex
-            .foldLeft(Array[scala.List[Object]]()) {
-              case (acc, x) if nulls.get(x._2) =>
-                acc ++ List(List(None))
-              case (acc, x) if !nulls.get(x._2) =>
-                acc ++ List(List(x._1))
-            }
-        } else {
-          tColumn.getI64Val.getValues.asScala.zipWithIndex.foreach {
-            case (_, rowIdx) if nulls.get(rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(None)
-            case (v, rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(v)
-          }
+        if (dataResult.isEmpty) {
+          (1 to tColumn.getI64Val.getValuesSize).foreach(_ =>
+            dataResult.add(new util.LinkedList[Object]()))
+        }
+
+        tColumn.getI64Val.getValues.asScala.zipWithIndex.foreach {
+          case (_, rowIdx) if nulls.get(rowIdx) =>
+            dataResult.get(rowIdx).add(None)
+          case (v, rowIdx) =>
+            dataResult.get(rowIdx).add(v)
         }
       case tColumn if tColumn.isSetDoubleVal =>
         val nulls = util.BitSet.valueOf(tColumn.getDoubleVal.getNulls)
-        if (dataSet.isEmpty) {
-          dataSet = tColumn.getDoubleVal.getValues.asScala.zipWithIndex
-            .foldLeft(Array[scala.List[Object]]()) {
-              case (acc, x) if nulls.get(x._2) =>
-                acc ++ List(List(None))
-              case (acc, x) if !nulls.get(x._2) =>
-                acc ++ List(List(x._1))
-            }
-        } else {
-          tColumn.getDoubleVal.getValues.asScala.zipWithIndex.foreach {
-            case (_, rowIdx) if nulls.get(rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(None)
-            case (v, rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(v)
-          }
+        if (dataResult.isEmpty) {
+          (1 to tColumn.getDoubleVal.getValuesSize).foreach(_ =>
+            dataResult.add(new util.LinkedList[Object]()))
+        }
+
+        tColumn.getDoubleVal.getValues.asScala.zipWithIndex.foreach {
+          case (_, rowIdx) if nulls.get(rowIdx) =>
+            dataResult.get(rowIdx).add(None)
+          case (v, rowIdx) =>
+            dataResult.get(rowIdx).add(v)
         }
       case tColumn if tColumn.isSetBinaryVal =>
         val nulls = util.BitSet.valueOf(tColumn.getBinaryVal.getNulls)
-        if (dataSet.isEmpty) {
-          dataSet = tColumn.getBinaryVal.getValues.asScala.zipWithIndex
-            .foldLeft(Array[scala.List[Object]]()) {
-              case (acc, x) if nulls.get(x._2) =>
-                acc ++ List(List(None))
-              case (acc, x) if !nulls.get(x._2) =>
-                acc ++ List(List(x._1))
-            }
-        } else {
-          tColumn.getBinaryVal.getValues.asScala.zipWithIndex.foreach {
-            case (_, rowIdx) if nulls.get(rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(None)
-            case (v, rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(v)
-          }
+        if (dataResult.isEmpty) {
+          (1 to tColumn.getBinaryVal.getValuesSize).foreach(_ =>
+            dataResult.add(new util.LinkedList[Object]()))
+        }
+
+        tColumn.getBinaryVal.getValues.asScala.zipWithIndex.foreach {
+          case (_, rowIdx) if nulls.get(rowIdx) =>
+            dataResult.get(rowIdx).add(None)
+          case (v, rowIdx) =>
+            dataResult.get(rowIdx).add(v)
         }
       case tColumn =>
         val nulls = util.BitSet.valueOf(tColumn.getStringVal.getNulls)
-        if (dataSet.isEmpty) {
-          dataSet = tColumn.getStringVal.getValues.asScala.zipWithIndex
-            .foldLeft(Array[scala.List[Object]]()) {
-              case (acc, x) if nulls.get(x._2) =>
-                acc ++ List(List(None))
-              case (acc, x) if !nulls.get(x._2) =>
-                acc ++ List(List(x._1))
-            }
-        } else {
-          tColumn.getStringVal.getValues.asScala.zipWithIndex.foreach {
-            case (_, rowIdx) if nulls.get(rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(None)
-            case (v, rowIdx) =>
-              dataSet(rowIdx) = dataSet(rowIdx) ++ List(v)
-          }
+        if (dataResult.isEmpty) {
+          (1 to tColumn.getStringVal.getValuesSize).foreach(_ =>
+            dataResult.add(new util.LinkedList[Object]()))
+        }
+
+        tColumn.getStringVal.getValues.asScala.zipWithIndex.foreach {
+          case (_, rowIdx) if nulls.get(rowIdx) =>
+            dataResult.get(rowIdx).add(None)
+          case (v, rowIdx) =>
+            dataResult.get(rowIdx).add(v)
         }
     }
-    dataSet.toList.map(_.asJava).asJava
+    dataResult
   }
 
   def toQueryError(queryStatus: OperationStatus): QueryError = {
