@@ -787,7 +787,7 @@ object KyuubiConf {
     buildConf("kyuubi.authentication.ldap.baseDN")
       .withAlternative("kyuubi.authentication.ldap.base.dn")
       .doc("LDAP base DN.")
-      .version("1.0.0")
+      .version("1.7.0")
       .stringConf
       .createOptional
 
