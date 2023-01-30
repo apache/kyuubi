@@ -100,7 +100,7 @@ class LdapAuthenticationProviderImpl(
       try {
         return searchFactory.getInstance(conf, principal, password)
       } catch {
-        case rethrow: AuthenticationException if iterator.isEmpty => throw rethrow
+        case ex: AuthenticationException => if (iterator.isEmpty) throw ex
       }
     }
     throw new AuthenticationException(s"No candidate principals for $user was found.")
