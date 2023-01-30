@@ -104,7 +104,7 @@ final class QueryFactory(conf: KyuubiConf) {
    * Returns a query for checking whether specified user is a member of specified group.
    *
    * The query requires [[KyuubiConf.AUTHENTICATION_LDAP_USER_MEMBERSHIP_KEY]]
-   * Hive configuration property to be set.
+   * configuration property to be set.
    *
    * @param userId  user unique identifier
    * @param groupDn group DN
