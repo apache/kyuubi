@@ -19,11 +19,13 @@ package org.apache.kyuubi.operation
 
 import scala.collection.JavaConverters._
 
+import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TOperationState, TProtocolVersion}
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -130,6 +132,12 @@ class ExecuteStatement(
             throw KyuubiSQLException(s"UNKNOWN STATE for $statement")
         }
         sendCredentialsIfNeeded()
+      }
+      MetricsSystem.tracing { ms =>
+        val execTime = System.currentTimeMillis() - startTime
+        ms.updateHistogram(
+          MetricRegistry.name(MetricsConstants.OPERATION_EXEC_TIME, opType),
+          execTime)
       }
       // see if anymore log could be fetched
       fetchQueryLog()
