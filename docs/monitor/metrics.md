@@ -87,7 +87,7 @@ These metrics include:
 | `kyuubi.metadata.request.total`                  |                                        | meter   | 1.6.0 | <div style='width: 150pt;word-wrap: break-word;white-space: normal'> metadata requests time and rate </div>                                                                                                                                                                                |
 | `kyuubi.metadata.request.failed`                 |                                        | meter   | 1.6.0 | <div style='width: 150pt;word-wrap: break-word;white-space: normal'> metadata requests failure time and rate </div>                                                                                                                                                                        |
 | `kyuubi.metadata.request.retrying`               |                                        | meter   | 1.6.0 | <div style='width: 150pt;word-wrap: break-word;white-space: normal'> retrying metadata requests time and rate, it is not cumulative </div>                                                                                                                                                 |
-
+| `kyuubi.statement_exec_time`                     |                                        | histogram | 1.7.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> Statement execution time histogram </div>
 Before v1.5.0, if you use these metrics:
 - `kyuubi.statement.total`
 - `kyuubi.statement.opened`
