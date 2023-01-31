@@ -24,6 +24,7 @@ import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -131,6 +132,9 @@ class ExecuteStatement(
         }
         sendCredentialsIfNeeded()
       }
+      MetricsSystem.tracing(_.updateHistogram(
+        MetricsConstants.STATEMENT_EXEC_TIME,
+        System.currentTimeMillis() - startTime))
       // see if anymore log could be fetched
       fetchQueryLog()
     } catch onError()
