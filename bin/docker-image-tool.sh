@@ -27,19 +27,20 @@ function error {
 if [ -z "${KYUUBI_HOME}" ]; then
   KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
 fi
-
-CTX_DIR="$KYUUBI_HOME/target/tmp/docker"
+KYUUBI_IMAGE_NAME="kyuubi"
 
 function is_dev_build {
   [ ! -f "$KYUUBI_HOME/RELEASE" ]
 }
 
-function cleanup_ctx_dir {
-  if is_dev_build; then
-    rm -rf "$CTX_DIR"
-  fi
-}
-trap cleanup_ctx_dir EXIT
+if is_dev_build; then
+  cat <<EOF
+  Current docker-image-tool.sh only support build docker image from binary package.
+  You can download Kyuubi binary package from kyuubi web-sit https://kyuubi.apache.org/releases.html.
+  Or you can build binary from source code with $KYUUBI_HOME/build/dist, find more detail about build binary in that script
+EOF
+  exit 1
+fi
 
 function image_ref {
   local image="$1"
@@ -77,44 +78,13 @@ function resolve_file {
   echo $FILE
 }
 
-# Create a smaller build context for docker in dev builds to make the build faster. Docker
-# uploads all of the current directory to the daemon, and it can get pretty big with dev
-# builds that contain test log files and other artifacts.
-#
-# Note: docker does not support symlinks in the build context.
-function create_dev_build_context {(
-  set -e
-  local BASE_CTX="$CTX_DIR/base"
-  mkdir -p "$BASE_CTX/docker"
-  cp -r "docker/" "$BASE_CTX/docker"
-
-  cp -r "kyuubi-assembly/target/scala-${KYUUBI_SCALA_VERSION}/jars" "$BASE_CTX/jars"
-
-  mkdir -p "$BASE_CTX/externals/engines/spark"
-  cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine_${KYUUBI_SCALA_VERSION}-${KYUUBI_VERSION}.jar" "$BASE_CTX/externals/engines/spark"
-
-  for other in bin conf; do
-    cp -r "$other" "$BASE_CTX/$other"
-  done
-)}
-
 function img_ctx_dir {
-  if is_dev_build; then
-    echo "$CTX_DIR/$1"
-  else
-    echo "$KYUUBI_HOME"
-  fi
+  echo "$KYUUBI_HOME"
 }
 
 function build {
   local BUILD_ARGS
   local KYUUBI_ROOT="$KYUUBI_HOME"
-
-  if is_dev_build; then
-    create_dev_build_context || error "Failed to create docker build context."
-    KYUUBI_ROOT="$CTX_DIR/base"
-  fi
-
   local BUILD_ARGS=(${BUILD_PARAMS})
 
   # mkdir spark-binary to cache spark
@@ -140,18 +110,16 @@ function build {
 
   # Verify that the Docker image content directory is present
   if [ ! -d "$KYUUBI_ROOT/docker" ]; then
-    error "Cannot find docker image. This script must be run from a runnable distribution of Apache Kyuubi."
+    error "Can't find Kyuubi docker context $KYUUBI_ROOT/docker, please check whether the binary package is complete."
   fi
 
-  # Verify that Kyuubi has actually been built/is a runnable distribution
-  # i.e. the Kyuubi JARs that the Docker files will place into the image are present
+  # Verify that that Kyuubi need JARS is present
   local TOTAL_JARS=$(ls $KYUUBI_ROOT/jars/kyuubi-* | wc -l)
   TOTAL_JARS=$(( $TOTAL_JARS ))
   if [ "${TOTAL_JARS}" -eq 0 ]; then
-    error "Cannot find Kyuubi JARs. This script assumes that Apache Kyuubi has first been built locally or this is a runnable distribution."
+    error "Cannot find Kyuubi JARs. Please check whether the binary package is complete."
   fi
 
-  # If a custom Kyuubi_UID was set add it to build arguments
   if [ -n "$KYUUBI_UID" ]; then
     BUILD_ARGS+=(--build-arg kyuubi_uid=$KYUUBI_UID)
   fi
@@ -160,70 +128,69 @@ function build {
   local ARCHS=${ARCHS:-"--platform linux/amd64,linux/arm64"}
 
   (cd $(img_ctx_dir base) && docker build $NOCACHEARG "${BUILD_ARGS[@]}" \
-    -t $(image_ref kyuubi) \
+    -t $(image_ref $KYUUBI_IMAGE_NAME) \
     -f "$BASEDOCKERFILE" .)
   if [ $? -ne 0 ]; then
     error "Failed to build Kyuubi JVM Docker image, please refer to Docker build output for details."
   fi
   if [ "${CROSS_BUILD}" != "false" ]; then
   (cd $(img_ctx_dir base) && docker buildx build $ARCHS $NOCACHEARG "${BUILD_ARGS[@]}" --push \
-    -t $(image_ref kyuubi) \
+    -t $(image_ref $KYUUBI_IMAGE_NAME) \
     -f "$BASEDOCKERFILE" .)
   fi
 }
 
 function push {
-  docker_push "kyuubi"
+  docker_push $KYUUBI_IMAGE_NAME
 }
 
 function usage {
   cat <<EOF
-Usage: $0 [options] [command]
-Builds or pushes the built-in Kyuubi Docker image.
+  Usage: $0 [options] [command]
+  Builds or pushes the built-in Kyuubi Docker image.
 
-Commands:
-  build       Build image. Requires a repository address to be provided if the image will be
-              pushed to a different registry.
-  push        Push a pre-built image to a registry. Requires a repository address to be provided.
+  Commands:
+    build       Build image. Requires a repository address to be provided if the image will be
+                pushed to a different registry.
+    push        Push a pre-built image to a registry. Requires a repository address to be provided.
 
-Options:
-  -f                    Dockerfile to build for JVM based Jobs. By default builds the Dockerfile shipped with Kyuubi.
-  -r                    Repository address.
-  -t                    Tag to apply to the built image, or to identify the image to be pushed.
-  -n                    Build docker image with --no-cache
-  -u                    UID to use in the USER directive to set the user the main Kyuubi process runs as inside the
-                        resulting container
-  -X                    Use docker buildx to cross build. Automatically pushes.
-                        See https://docs.docker.com/buildx/working-with-buildx/ for steps to setup buildx.
-  -b                    Build arg to build or push the image. For multiple build args, this option needs to
-                        be used separately for each build arg.
-  -s                    Put the specified Spark into the Kyuubi image to be used as the internal SPARK_HOME
-                        of the container.
-  -S                    Declare SPARK_HOME in Docker Image. When you configured -S, you need to provide an image
-                        with Spark as BASE_IMAGE.
+  Options:
+    -f                    Dockerfile to build for JVM based Jobs. By default builds the Dockerfile shipped with Kyuubi.
+    -r                    Repository address.
+    -t                    Tag to apply to the built image, or to identify the image to be pushed.
+    -n                    Build docker image with --no-cache
+    -u                    UID to use in the USER directive to set the user the main Kyuubi process runs as inside the
+                          resulting container
+    -X                    Use docker buildx to cross build. Automatically pushes.
+                          See https://docs.docker.com/buildx/working-with-buildx/ for steps to setup buildx.
+    -b                    Build arg to build or push the image. For multiple build args, this option needs to
+                          be used separately for each build arg.
+    -s                    Put the specified Spark into the Kyuubi image to be used as the internal SPARK_HOME
+                          of the container.
+    -S                    Declare SPARK_HOME in Docker Image. When you configured -S, you need to provide an image
+                          with Spark as BASE_IMAGE.
 
-Examples:
+  Examples:
 
-  - Build and push image with tag "v1.4.0" to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v1.4.0 build
-    $0 -r docker.io/myrepo -t v1.4.0 push
+    - Build and push image with tag "v1.4.0" to docker.io/myrepo
+      $0 -r docker.io/myrepo -t v1.4.0 build
+      $0 -r docker.io/myrepo -t v1.4.0 push
 
-  - Build and push with tag "v1.4.0" and Spark-3.2.1 as base image to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v1.4.0 -b BASE_IMAGE=repo/spark:3.2.1 build
-    $0 -r docker.io/myrepo -t v1.4.0 push
+    - Build and push with tag "v1.4.0" and Spark-3.2.1 as base image to docker.io/myrepo
+      $0 -r docker.io/myrepo -t v1.4.0 -b BASE_IMAGE=repo/spark:3.2.1 build
+      $0 -r docker.io/myrepo -t v1.4.0 push
 
-  - Build and push for multiple archs to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v1.4.0 -X build
+    - Build and push for multiple archs to docker.io/myrepo
+      $0 -r docker.io/myrepo -t v1.4.0 -X build
 
-    # Note: buildx, which does cross building, needs to do the push during build
-    # So there is no separate push step with -X
+      # Note: buildx, which does cross building, needs to do the push during build
+      # So there is no separate push step with -X
 
-  - Build with Spark placed "/path/spark"
-    $0 -s /path/spark build
+    - Build with Spark placed "/path/spark"
+      $0 -s /path/spark build
 
-  - Build with Spark Image myrepo/spark:3.1.0
-    $0 -S /opt/spark -b BASE_IMAGE=myrepo/spark:3.1.0 build
-
+    - Build with Spark Image myrepo/spark:3.1.0
+      $0 -S /opt/spark -b BASE_IMAGE=myrepo/spark:3.1.0 build
 EOF
 }
 
