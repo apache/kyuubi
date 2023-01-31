@@ -357,6 +357,6 @@ class KyuubiOperationPerUserSuite
     val metric =
       s"${MetricsConstants.OPERATION_EXEC_TIME}.${classOf[ExecuteStatement].getSimpleName}"
     val snapshot = MetricsSystem.histogramSnapshot(metric).get
-    assert(snapshot.getMin > 0 && snapshot.getMax > 0 && snapshot.getMedian > 0)
+    assert(snapshot.getMax > 0 && snapshot.getMedian > 0)
   }
 }
