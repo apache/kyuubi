@@ -30,7 +30,7 @@ import com.vladsch.flexmark.parser.{Parser, ParserEmulationProfile, PegdownExten
 import com.vladsch.flexmark.profile.pegdown.PegdownOptionsAdapter
 import com.vladsch.flexmark.util.data.{MutableDataHolder, MutableDataSet}
 import com.vladsch.flexmark.util.sequence.SequenceUtils
-import org.scalatest.Assertions.convertToEqualizer
+import org.scalatest.Assertions.{assertResult, withClue}
 
 object TestUtils {
 
@@ -81,7 +81,11 @@ object TestUtils {
       })
   }
 
-  def verifyOutput(markdown: Path, newOutput: ArrayBuffer[String], agent: String): Unit = {
+  def verifyOutput(
+      markdown: Path,
+      newOutput: ArrayBuffer[String],
+      agent: String,
+      module: String): Unit = {
     if (System.getenv("KYUUBI_UPDATE") == "1") {
       val formatted = formatMarkdown(newOutput)
       Files.write(
@@ -92,11 +96,14 @@ object TestUtils {
     } else {
       val linesInFile = Files.readAllLines(markdown, StandardCharsets.UTF_8)
       val formatted = formatMarkdown(newOutput)
-      val hint = s"$markdown out of date, please update doc with " +
-        s"KYUUBI_UPDATE=1 build/mvn clean install -Pflink-provided,spark-provided,hive-provided " +
-        s"-DwildcardSuites=$agent"
-      assert(linesInFile.size() === formatted.size, hint)
-      linesInFile.asScala.zip(formatted).foreach { case (out, in) => assert(out === in, hint) }
+      linesInFile.asScala.zipWithIndex.zip(formatted).foreach { case ((str1, index), str2) =>
+        withClue(s"$markdown out of date, as line ${index + 1} is not expected." +
+          " Please update doc with KYUUBI_UPDATE=1 build/mvn clean test" +
+          s" -pl $module -am -Pflink-provided,spark-provided,hive-provided" +
+          s" -DwildcardSuites=$agent") {
+          assertResult(str2)(str1)
+        }
+      }
     }
   }
 

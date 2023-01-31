@@ -30,12 +30,12 @@ import org.apache.kyuubi.{KyuubiFunSuite, TestUtils, Utils}
  *
  * To run the entire test suite:
  * {{{
- *   build/mvn clean install -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite
+ *   build/mvn clean test -pl externals/kyuubi-spark-sql-engine -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite
  * }}}
  *
  * To re-generate golden files for entire suite, run:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn clean install -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite
+ *   KYUUBI_UPDATE=1 build/mvn clean test -pl externals/kyuubi-spark-sql-engine -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite
  * }}}
  */
 // scalastyle:on line.size.limit
@@ -83,6 +83,10 @@ class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
       newOutput += s"${func.name} | ${func.description} | ${func.returnType} | ${func.since}"
     }
     newOutput += ""
-    TestUtils.verifyOutput(markdown, newOutput, getClass.getCanonicalName)
+    TestUtils.verifyOutput(
+      markdown,
+      newOutput,
+      getClass.getCanonicalName,
+      "externals/kyuubi-spark-sql-engine")
   }
 }

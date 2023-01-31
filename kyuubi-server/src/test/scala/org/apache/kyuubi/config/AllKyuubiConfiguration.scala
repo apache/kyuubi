@@ -37,12 +37,12 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
  *
  * To run the entire test suite:
  * {{{
- *   build/mvn clean package -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
+ *   build/mvn clean test -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
  * }}}
  *
  * To re-generate golden files for entire suite, run:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn clean package -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
+ *   KYUUBI_UPDATE=1 build/mvn clean test -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
  * }}}
  */
 // scalastyle:on line.size.limit
@@ -300,6 +300,6 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       " executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand," +
       " for those users who do not have custom configurations will use system defaults."
 
-    TestUtils.verifyOutput(markdown, newOutput, getClass.getCanonicalName)
+    TestUtils.verifyOutput(markdown, newOutput, getClass.getCanonicalName, "kyuubi-server")
   }
 }
