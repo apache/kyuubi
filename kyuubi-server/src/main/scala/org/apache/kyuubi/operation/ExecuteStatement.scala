@@ -135,8 +135,7 @@ class ExecuteStatement(
       }
       MetricsSystem.tracing(_.updateHistogram(
         MetricRegistry.name(MetricsConstants.OPERATION_EXEC_TIME, opType),
-        System.currentTimeMillis() - startTime
-      ))
+        System.currentTimeMillis() - startTime))
       // see if anymore log could be fetched
       fetchQueryLog()
     } catch onError()

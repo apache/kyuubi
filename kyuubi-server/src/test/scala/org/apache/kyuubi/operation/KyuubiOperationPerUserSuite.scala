@@ -350,11 +350,13 @@ class KyuubiOperationPerUserSuite
     }
   }
 
-  test("trace statement exec time histogram") {
+  test("trace ExecuteStatement exec time histogram") {
     withJdbcStatement() { statement =>
       statement.executeQuery("select engine_name()")
     }
-    val snapshot = MetricsSystem.histogram(MetricsConstants.STATEMENT_EXEC_TIME).get
+    val metric =
+      s"${MetricsConstants.OPERATION_EXEC_TIME}.${classOf[ExecuteStatement].getSimpleName}"
+    val snapshot = MetricsSystem.histogramSnapshot(metric).get
     assert(snapshot.getMin > 0 && snapshot.getMax > 0 && snapshot.getMedian > 0)
   }
 }

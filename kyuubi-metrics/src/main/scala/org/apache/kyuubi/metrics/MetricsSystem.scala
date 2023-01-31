@@ -122,7 +122,7 @@ object MetricsSystem {
     maybeSystem.map(_.registry.meter(name).getCount)
   }
 
-  def histogram(name: String): Option[Snapshot] = {
+  def histogramSnapshot(name: String): Option[Snapshot] = {
     maybeSystem.map(_.registry.histogram(name).getSnapshot)
   }
 }
