@@ -19,6 +19,7 @@ package org.apache.kyuubi.operation
 
 import scala.collection.JavaConverters._
 
+import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TOperationState, TProtocolVersion}
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
@@ -133,8 +134,9 @@ class ExecuteStatement(
         sendCredentialsIfNeeded()
       }
       MetricsSystem.tracing(_.updateHistogram(
-        MetricsConstants.STATEMENT_EXEC_TIME,
-        System.currentTimeMillis() - startTime))
+        MetricRegistry.name(MetricsConstants.OPERATION_EXEC_TIME, opType),
+        System.currentTimeMillis() - startTime
+      ))
       // see if anymore log could be fetched
       fetchQueryLog()
     } catch onError()
