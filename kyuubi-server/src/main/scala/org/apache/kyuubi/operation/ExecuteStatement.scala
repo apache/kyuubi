@@ -133,9 +133,12 @@ class ExecuteStatement(
         }
         sendCredentialsIfNeeded()
       }
-      MetricsSystem.tracing(_.updateHistogram(
-        MetricRegistry.name(MetricsConstants.OPERATION_EXEC_TIME, opType),
-        System.currentTimeMillis() - startTime))
+      MetricsSystem.tracing { ms =>
+        val execTime = System.currentTimeMillis() - startTime
+        ms.updateHistogram(
+          MetricRegistry.name(MetricsConstants.OPERATION_EXEC_TIME, opType),
+          execTime)
+      }
       // see if anymore log could be fetched
       fetchQueryLog()
     } catch onError()
