@@ -38,6 +38,7 @@ if is_dev_build; then
   Current docker-image-tool.sh only support build docker image from binary package.
   You can download Kyuubi binary package from kyuubi web-sit https://kyuubi.apache.org/releases.html.
   Or you can build binary from source code with $KYUUBI_HOME/build/dist, find more detail about build binary in that script
+
 EOF
   exit 1
 fi
@@ -103,7 +104,11 @@ function build {
     BUILD_ARGS+=(--build-arg spark_provided="spark_provided")
   else
     if [[ ! -d "$SPARK_HOME" ]]; then
-      error "Cannot found dir $SPARK_HOME, you must configure SPARK_HOME correct."
+      if [[ -d "$KYUUBI_ROOT/externals/spark-*" ]]; then
+        SPARK_HOME="$(find "$KYUUBI_ROOT/externals" -name 'spark-*' -type d)"
+      else
+        error "Cannot found dir SPARK_HOME $SPARK_HOME, you must configure SPARK_HOME correct."
+      fi
     fi
     cp -r "$SPARK_HOME/" "$KYUUBI_ROOT/spark-binary/"
   fi
@@ -146,51 +151,52 @@ function push {
 
 function usage {
   cat <<EOF
-  Usage: $0 [options] [command]
-  Builds or pushes the built-in Kyuubi Docker image.
+Usage: $0 [options] [command]
+Builds or pushes the built-in Kyuubi Docker image.
 
-  Commands:
-    build       Build image. Requires a repository address to be provided if the image will be
-                pushed to a different registry.
-    push        Push a pre-built image to a registry. Requires a repository address to be provided.
+Commands:
+  build       Build image. Requires a repository address to be provided if the image will be
+              pushed to a different registry.
+  push        Push a pre-built image to a registry. Requires a repository address to be provided.
 
-  Options:
-    -f                    Dockerfile to build for JVM based Jobs. By default builds the Dockerfile shipped with Kyuubi.
-    -r                    Repository address.
-    -t                    Tag to apply to the built image, or to identify the image to be pushed.
-    -n                    Build docker image with --no-cache
-    -u                    UID to use in the USER directive to set the user the main Kyuubi process runs as inside the
-                          resulting container
-    -X                    Use docker buildx to cross build. Automatically pushes.
-                          See https://docs.docker.com/buildx/working-with-buildx/ for steps to setup buildx.
-    -b                    Build arg to build or push the image. For multiple build args, this option needs to
-                          be used separately for each build arg.
-    -s                    Put the specified Spark into the Kyuubi image to be used as the internal SPARK_HOME
-                          of the container.
-    -S                    Declare SPARK_HOME in Docker Image. When you configured -S, you need to provide an image
-                          with Spark as BASE_IMAGE.
+Options:
+  -f                    Dockerfile to build for JVM based Jobs. By default builds the Dockerfile shipped with Kyuubi.
+  -r                    Repository address.
+  -t                    Tag to apply to the built image, or to identify the image to be pushed.
+  -n                    Build docker image with --no-cache
+  -u                    UID to use in the USER directive to set the user the main Kyuubi process runs as inside the
+                        resulting container
+  -X                    Use docker buildx to cross build. Automatically pushes.
+                        See https://docs.docker.com/buildx/working-with-buildx/ for steps to setup buildx.
+  -b                    Build arg to build or push the image. For multiple build args, this option needs to
+                        be used separately for each build arg.
+  -s                    Put the specified Spark into the Kyuubi image to be used as the internal SPARK_HOME
+                        of the container.
+  -S                    Declare SPARK_HOME in Docker Image. When you configured -S, you need to provide an image
+                        with Spark as BASE_IMAGE.
 
-  Examples:
+Examples:
 
-    - Build and push image with tag "v1.4.0" to docker.io/myrepo
-      $0 -r docker.io/myrepo -t v1.4.0 build
-      $0 -r docker.io/myrepo -t v1.4.0 push
+  - Build and push image with tag "v1.4.0" to docker.io/myrepo
+    $0 -r docker.io/myrepo -t v1.4.0 build
+    $0 -r docker.io/myrepo -t v1.4.0 push
 
-    - Build and push with tag "v1.4.0" and Spark-3.2.1 as base image to docker.io/myrepo
-      $0 -r docker.io/myrepo -t v1.4.0 -b BASE_IMAGE=repo/spark:3.2.1 build
-      $0 -r docker.io/myrepo -t v1.4.0 push
+  - Build and push with tag "v1.4.0" and Spark-3.2.1 as base image to docker.io/myrepo
+    $0 -r docker.io/myrepo -t v1.4.0 -b BASE_IMAGE=repo/spark:3.2.1 build
+    $0 -r docker.io/myrepo -t v1.4.0 push
 
-    - Build and push for multiple archs to docker.io/myrepo
-      $0 -r docker.io/myrepo -t v1.4.0 -X build
+  - Build and push for multiple archs to docker.io/myrepo
+    $0 -r docker.io/myrepo -t v1.4.0 -X build
 
-      # Note: buildx, which does cross building, needs to do the push during build
-      # So there is no separate push step with -X
+    # Note: buildx, which does cross building, needs to do the push during build
+    # So there is no separate push step with -X
 
-    - Build with Spark placed "/path/spark"
-      $0 -s /path/spark build
+  - Build with Spark placed "/path/spark"
+    $0 -s /path/spark build
 
-    - Build with Spark Image myrepo/spark:3.1.0
-      $0 -S /opt/spark -b BASE_IMAGE=myrepo/spark:3.1.0 build
+  - Build with Spark Image myrepo/spark:3.1.0
+    $0 -S /opt/spark -b BASE_IMAGE=myrepo/spark:3.1.0 build
+
 EOF
 }
 
