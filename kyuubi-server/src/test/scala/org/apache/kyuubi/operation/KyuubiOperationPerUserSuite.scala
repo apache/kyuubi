@@ -349,4 +349,12 @@ class KyuubiOperationPerUserSuite
       assert(MetricsSystem.meterValue(closedMetric).getOrElse(0L) > closedCount)
     }
   }
+
+  test("trace statement exec time histogram") {
+    withJdbcStatement() { statement =>
+      statement.executeQuery("select engine_name()")
+    }
+    val snapshot = MetricsSystem.histogram(MetricsConstants.STATEMENT_EXEC_TIME).get
+    assert(snapshot.getMin > 0 && snapshot.getMax > 0 && snapshot.getMedian > 0)
+  }
 }
