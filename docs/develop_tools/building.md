@@ -79,6 +79,15 @@ For example,
 build/mvn clean package -Pmirror-cdn
 ```
 
-The profile migrates your download repo to the Apache offically suggested site - https://dlcdn.apache.org.
+The profile migrates your download repo to the Apache officially suggested site - https://dlcdn.apache.org.
 Note that, this site only holds the latest versions of Apache releases. You may fail if the specific version
 defined by `spark.version` or `flink.version` is overdue.
+
+## Building with the `fast` profile
+
+The `fast` profile helps to significantly reduce build time, which is useful for development or compilation validation, by skipping running the tests, code style checks, building scaladoc, enforcer rules and downloading engine archives downloading used for tests.
+
+```bash
+build/mvn clean package -Pfast
+```
+
