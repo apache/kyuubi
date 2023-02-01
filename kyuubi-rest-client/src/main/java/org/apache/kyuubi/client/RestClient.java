@@ -32,6 +32,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
@@ -90,9 +91,8 @@ public class RestClient implements IRestClient {
   @Override
   public <T> T post(String path, HttpEntity requestEntity, Class<T> type, String authHeader) {
     RequestBuilder postRequestBuilder = RequestBuilder.post(buildURI(path));
-    if (requestEntity != null) {
-      postRequestBuilder.setEntity(requestEntity);
-    }
+    postRequestBuilder.setEntity(requestEntity);
+    postRequestBuilder.setHeader(requestEntity.getContentType());
     String responseJson = doRequest(buildURI(path), authHeader, postRequestBuilder);
     return JsonUtils.fromJson(responseJson, type);
   }
@@ -111,11 +111,12 @@ public class RestClient implements IRestClient {
   private String doRequest(URI uri, String authHeader, RequestBuilder requestBuilder) {
     String response;
     try {
+      if (requestBuilder.getFirstHeader(HttpHeaders.CONTENT_TYPE) == null) {
+        requestBuilder.setHeader(
+            HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+      }
       if (StringUtils.isNotBlank(authHeader)) {
         requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
-      }
-      if (requestBuilder.getEntity() != null) {
-        requestBuilder.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
       }
       HttpUriRequest httpRequest = requestBuilder.setUri(uri).build();
 
