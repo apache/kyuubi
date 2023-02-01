@@ -19,6 +19,7 @@ package org.apache.kyuubi.client;
 
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
+import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
@@ -31,7 +32,6 @@ import org.apache.hc.core5.http.config.Registry;
 import org.apache.hc.core5.http.config.RegistryBuilder;
 import org.apache.hc.core5.ssl.SSLContexts;
 import org.apache.hc.core5.ssl.TrustStrategy;
-import org.apache.hc.core5.util.Timeout;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,9 +42,7 @@ public class HttpClientFactory {
   public static CloseableHttpClient createHttpClient(RestClientConf conf) {
     RequestConfig requestConfig =
         RequestConfig.custom()
-            // todo: httpclient5
-            //            .setSocketTimeout(conf.getSocketTimeout())
-            .setConnectTimeout(Timeout.of(conf.getConnectTimeout(), TimeUnit.MILLISECONDS))
+            .setResponseTimeout(conf.getSocketTimeout(), TimeUnit.MILLISECONDS)
             .build();
     Registry<ConnectionSocketFactory> socketFactoryRegistry;
     SSLConnectionSocketFactory sslSocketFactory;
@@ -64,6 +62,11 @@ public class HttpClientFactory {
     }
     BasicHttpClientConnectionManager cm =
         new BasicHttpClientConnectionManager(socketFactoryRegistry);
+    ConnectionConfig connConfig =
+        ConnectionConfig.custom()
+            .setConnectTimeout(conf.getConnectTimeout(), TimeUnit.MILLISECONDS)
+            .build();
+    cm.setConnectionConfig(connConfig);
 
     return HttpClientBuilder.create()
         .setDefaultRequestConfig(requestConfig)
