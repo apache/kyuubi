@@ -34,7 +34,6 @@ import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
-import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
 import org.apache.kyuubi.client.exception.RetryableKyuubiRestException;
@@ -105,7 +104,8 @@ public class RestClient implements IRestClient {
       if (StringUtils.isNotBlank(authHeader)) {
         requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
       }
-      ClassicHttpRequest httpRequest = requestBuilder
+      ClassicHttpRequest httpRequest =
+          requestBuilder
               .setUri(uri)
               .setHeader(HttpHeaders.CONTENT_TYPE, "application/json")
               .build();
