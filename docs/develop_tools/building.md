@@ -79,7 +79,7 @@ For example,
 build/mvn clean package -Pmirror-cdn
 ```
 
-The profile migrates your download repo to the Apache offically suggested site - https://dlcdn.apache.org.
+The profile migrates your download repo to the Apache officially suggested site - https://dlcdn.apache.org.
 Note that, this site only holds the latest versions of Apache releases. You may fail if the specific version
 defined by `spark.version` or `flink.version` is overdue.
 
