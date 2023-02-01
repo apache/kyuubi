@@ -176,7 +176,7 @@ Here is a config setting that we use in our platform when deploying Kyuubi.
 
 ```properties
 spark.dynamicAllocation.enabled=true
-##false if perfer shuffle tracking than ESS
+##false if prefer shuffle tracking than ESS
 spark.shuffle.service.enabled=true
 spark.dynamicAllocation.initialExecutors=10
 spark.dynamicAllocation.minExecutors=10
@@ -184,7 +184,7 @@ spark.dynamicAllocation.maxExecutors=500
 spark.dynamicAllocation.executorAllocationRatio=0.5
 spark.dynamicAllocation.executorIdleTimeout=60s
 spark.dynamicAllocation.cachedExecutorIdleTimeout=30min
-# true if perfer shuffle tracking than ESS
+# true if prefer shuffle tracking than ESS
 spark.dynamicAllocation.shuffleTracking.enabled=false
 spark.dynamicAllocation.shuffleTracking.timeout=30min
 spark.dynamicAllocation.schedulerBacklogTimeout=1s
@@ -211,7 +211,7 @@ In this case, the user named `kent` can only use 20 executors for his engines, b
 
 ### Dynamically Setting
 
-All AQE related configurations are static of Spark core and unchangeable by `SET` syntaxes before each SQL query. For example,
+All AQE related configurations are static of Spark core and unchangeable by `SET` commands before each SQL query. For example,
 
 ```sql
 SET spark.dynamicAllocation.maxExecutors=33;

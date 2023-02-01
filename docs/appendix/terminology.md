@@ -121,7 +121,7 @@ As an enterprise service, SLA commitment is essential. Deploying Kyuubi in High 
 
 #### Apache Curator
 
-> Apache Curator is a Java/JVM client library for Apache ZooKeeper, a distributed coordination service. It includes a highlevel API framework and utilities to make using Apache ZooKeeper much easier and more reliable. It also includes recipes for common use cases and extensions such as service discovery and a Java 8 asynchronous DSL.
+> Apache Curator is a Java/JVM client library for Apache ZooKeeper, a distributed coordination service. It includes a high-level API framework and utilities to make using Apache ZooKeeper much easier and more reliable. It also includes recipes for common use cases and extensions such as service discovery and a Java 8 asynchronous DSL.
 
 <p align=right>
 <em>
