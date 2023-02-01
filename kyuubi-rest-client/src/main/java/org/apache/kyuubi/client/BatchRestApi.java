@@ -50,13 +50,13 @@ public class BatchRestApi {
   }
 
   public Batch createBatch(BatchRequest request, File resourceFile) {
-    MultipartEntityBuilder builder =
+    MultipartEntityBuilder entityBuilder =
         MultipartEntityBuilder.create().setCharset(StandardCharsets.UTF_8);
-    builder.addPart(
+    entityBuilder.addPart(
         "batchRequest", new StringBody(JsonUtils.toJson(request), ContentType.APPLICATION_JSON));
-    builder.addPart("resourceFile", new FileBody(resourceFile, ContentType.DEFAULT_BINARY));
+    entityBuilder.addPart("resourceFile", new FileBody(resourceFile));
     return this.getClient()
-        .post(API_BASE_PATH, builder.build(), Batch.class, client.getAuthHeader());
+        .post(API_BASE_PATH, entityBuilder.build(), Batch.class, client.getAuthHeader());
   }
 
   public Batch getBatchById(String batchId) {
