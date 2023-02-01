@@ -22,8 +22,13 @@ import javax.net.ssl.SSLContext;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager;
+import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
+import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.core5.http.config.Registry;
+import org.apache.hc.core5.http.config.RegistryBuilder;
 import org.apache.hc.core5.ssl.SSLContexts;
 import org.apache.hc.core5.ssl.TrustStrategy;
 import org.apache.hc.core5.util.Timeout;
@@ -41,21 +46,28 @@ public class HttpClientFactory {
             //            .setSocketTimeout(conf.getSocketTimeout())
             .setConnectTimeout(Timeout.of(conf.getConnectTimeout(), TimeUnit.MILLISECONDS))
             .build();
+    Registry<ConnectionSocketFactory> socketFactoryRegistry;
     SSLConnectionSocketFactory sslSocketFactory;
     try {
       TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
       SSLContext sslContext =
           SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
       sslSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+      socketFactoryRegistry =
+          RegistryBuilder.<ConnectionSocketFactory>create()
+              .register("https", sslSocketFactory)
+              .register("http", new PlainConnectionSocketFactory())
+              .build();
     } catch (Exception e) {
       LOG.error("Error: ", e);
       throw new KyuubiRestException("Failed to create HttpClient", e);
     }
+    BasicHttpClientConnectionManager cm =
+        new BasicHttpClientConnectionManager(socketFactoryRegistry);
 
     return HttpClientBuilder.create()
         .setDefaultRequestConfig(requestConfig)
-        // todo: httpclient5
-        //        .setSSLSocketFactory(sslSocketFactory)
+        .setConnectionManager(cm)
         .build();
   }
 }
