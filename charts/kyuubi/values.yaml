@@ -57,15 +57,14 @@ probe:
     failureThreshold: 10
     successThreshold: 1
 
-# Kyuubi frontends
-frontend:
+server:
   # Thrift Binary protocol (HiveServer2 compatible)
   thriftBinary:
     enabled: true
     port: 10009
     service:
       type: ClusterIP
-      port: "{{ .Values.frontend.thriftBinary.port }}"
+      port: "{{ .Values.server.thriftBinary.port }}"
       nodePort: ~
       annotations: {}
 
@@ -75,7 +74,7 @@ frontend:
     port: 10010
     service:
       type: ClusterIP
-      port: "{{ .Values.frontend.thriftHttp.port }}"
+      port: "{{ .Values.server.thriftHttp.port }}"
       nodePort: ~
       annotations: {}
 
@@ -85,7 +84,7 @@ frontend:
     port: 10099
     service:
       type: ClusterIP
-      port: "{{ .Values.frontend.rest.port }}"
+      port: "{{ .Values.server.rest.port }}"
       nodePort: ~
       annotations: {}
 
@@ -95,17 +94,7 @@ frontend:
     port: 3309
     service:
       type: ClusterIP
-      port: "{{ .Values.frontend.mysql.port }}"
-      nodePort: ~
-      annotations: {}
-
-  # Trino compatible http protocol (experimental)
-  trino:
-    enabled: false
-    port: 10999
-    service:
-      type: ClusterIP
-      port: "{{ .Values.frontend.trino.port }}"
+      port: "{{ .Values.server.mysql.port }}"
       nodePort: ~
       annotations: {}
 

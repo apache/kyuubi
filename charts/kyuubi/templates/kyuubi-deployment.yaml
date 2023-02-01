@@ -57,7 +57,7 @@ spec:
           envFrom: {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
           ports:
-            {{- range $name, $frontend := .Values.frontend }}
+            {{- range $name, $frontend := .Values.server }}
             {{- if $frontend.enabled }}
             - name: {{ $name | kebabcase }}
               containerPort: {{ $frontend.port }}

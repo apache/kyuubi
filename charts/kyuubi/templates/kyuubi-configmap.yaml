@@ -35,11 +35,10 @@ data:
     ## Helm chart provided Kyuubi configurations
     kyuubi.kubernetes.namespace={{ .Release.Namespace }}
     kyuubi.frontend.bind.host=localhost
-    kyuubi.frontend.thrift.binary.bind.port={{ .Values.frontend.thriftBinary.port }}
-    kyuubi.frontend.thrift.http.bind.port={{ .Values.frontend.thriftHttp.port }}
-    kyuubi.frontend.rest.bind.port={{ .Values.frontend.rest.port }}
-    kyuubi.frontend.mysql.bind.port={{ .Values.frontend.mysql.port }}
-    kyuubi.frontend.trino.bind.port={{ .Values.frontend.trino.port }}
+    kyuubi.frontend.thrift.binary.bind.port={{ .Values.server.thriftBinary.port }}
+    kyuubi.frontend.thrift.http.bind.port={{ .Values.server.thriftHttp.port }}
+    kyuubi.frontend.rest.bind.port={{ .Values.server.rest.port }}
+    kyuubi.frontend.mysql.bind.port={{ .Values.server.mysql.port }}
     kyuubi.frontend.protocols={{ include "kyuubi.frontend.protocols" . }}
 
     ## User provided Kyuubi configurations

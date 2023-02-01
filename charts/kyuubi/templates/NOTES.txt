@@ -23,9 +23,9 @@ In order to check the release status, use:
   helm get all {{ .Release.Name }} -n {{ .Release.Namespace }}
 
 ************************
-*** Kyuubi frontends ***
+******* Services *******
 ************************
-{{- range $name, $frontend := .Values.frontend }}
+{{- range $name, $frontend := .Values.server }}
 {{- if $frontend.enabled }}
 {{ $name | snakecase | upper }}:
 - To access {{ $.Release.Name }}-{{ $name | kebabcase }} service within the cluster, use the following URL:
