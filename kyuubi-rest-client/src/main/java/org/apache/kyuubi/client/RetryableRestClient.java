@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Random;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.kyuubi.client.exception.RetryableKyuubiRestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

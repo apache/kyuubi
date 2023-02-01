@@ -24,17 +24,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.ConnectTimeoutException;
+import org.apache.hc.client5.http.HttpResponseException;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
+import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
+import org.apache.hc.core5.net.URIBuilder;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
 import org.apache.kyuubi.client.exception.RetryableKyuubiRestException;
 import org.apache.kyuubi.client.util.JsonUtils;
@@ -69,7 +70,7 @@ public class RestClient implements IRestClient {
 
   @Override
   public String get(String path, Map<String, Object> params, String authHeader) {
-    return doRequest(buildURI(path, params), authHeader, RequestBuilder.get());
+    return doRequest(buildURI(path, params), authHeader, ClassicRequestBuilder.get());
   }
 
   @Override
@@ -80,7 +81,7 @@ public class RestClient implements IRestClient {
 
   @Override
   public String post(String path, String body, String authHeader) {
-    RequestBuilder postRequestBuilder = RequestBuilder.post();
+    ClassicRequestBuilder postRequestBuilder = ClassicRequestBuilder.post();
     if (body != null) {
       postRequestBuilder.setEntity(new StringEntity(body, StandardCharsets.UTF_8));
     }
@@ -95,26 +96,25 @@ public class RestClient implements IRestClient {
 
   @Override
   public String delete(String path, Map<String, Object> params, String authHeader) {
-    return doRequest(buildURI(path, params), authHeader, RequestBuilder.delete());
+    return doRequest(buildURI(path, params), authHeader, ClassicRequestBuilder.delete());
   }
 
-  private String doRequest(URI uri, String authHeader, RequestBuilder requestBuilder) {
+  private String doRequest(URI uri, String authHeader, ClassicRequestBuilder requestBuilder) {
     String response;
     try {
       if (StringUtils.isNotBlank(authHeader)) {
         requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
       }
-      HttpUriRequest httpRequest =
-          requestBuilder
+      ClassicHttpRequest httpRequest = requestBuilder
               .setUri(uri)
               .setHeader(HttpHeaders.CONTENT_TYPE, "application/json")
               .build();
 
       LOG.debug("Executing {} request: {}", httpRequest.getMethod(), uri);
 
-      ResponseHandler<String> responseHandler =
+      HttpClientResponseHandler<String> responseHandler =
           resp -> {
-            int status = resp.getStatusLine().getStatusCode();
+            int status = resp.getCode();
             HttpEntity entity = resp.getEntity();
             String entityStr = entity != null ? EntityUtils.toString(entity) : null;
             if (status >= 200 && status < 300) {
