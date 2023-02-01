@@ -88,8 +88,7 @@ public class RestClient implements IRestClient {
   }
 
   @Override
-  public <T> T post(
-          String path, HttpEntity requestEntity, Class<T> type, String authHeader) {
+  public <T> T post(String path, HttpEntity requestEntity, Class<T> type, String authHeader) {
     RequestBuilder postRequestBuilder = RequestBuilder.post(buildURI(path));
     if (requestEntity != null) {
       postRequestBuilder.setEntity(requestEntity);
