@@ -88,6 +88,17 @@ public class RestClient implements IRestClient {
   }
 
   @Override
+  public <T> T post(
+          String path, HttpEntity requestEntity, Class<T> type, String authHeader) {
+    RequestBuilder postRequestBuilder = RequestBuilder.post(buildURI(path));
+    if (requestEntity != null) {
+      postRequestBuilder.setEntity(requestEntity);
+    }
+    String responseJson = doRequest(buildURI(path), authHeader, postRequestBuilder);
+    return JsonUtils.fromJson(responseJson, type);
+  }
+
+  @Override
   public <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     String responseJson = delete(path, params, authHeader);
     return JsonUtils.fromJson(responseJson, type);
@@ -104,11 +115,10 @@ public class RestClient implements IRestClient {
       if (StringUtils.isNotBlank(authHeader)) {
         requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
       }
-      HttpUriRequest httpRequest =
-          requestBuilder
-              .setUri(uri)
-              .setHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-              .build();
+      if (requestBuilder.getEntity() != null) {
+        requestBuilder.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+      }
+      HttpUriRequest httpRequest = requestBuilder.setUri(uri).build();
 
       LOG.debug("Executing {} request: {}", httpRequest.getMethod(), uri);
 

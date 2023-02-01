@@ -18,6 +18,7 @@
 package org.apache.kyuubi.client;
 
 import java.util.Map;
+import org.apache.http.HttpEntity;
 
 /** A underlying http client interface for common rest request. */
 public interface IRestClient extends AutoCloseable {
@@ -26,6 +27,8 @@ public interface IRestClient extends AutoCloseable {
   String get(String path, Map<String, Object> params, String authHeader);
 
   <T> T post(String path, String body, Class<T> type, String authHeader);
+
+  <T> T post(String path, HttpEntity requestEntity, Class<T> type, String authHeader);
 
   String post(String path, String body, String authHeader);
 
