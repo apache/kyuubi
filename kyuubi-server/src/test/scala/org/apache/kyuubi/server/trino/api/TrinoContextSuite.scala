@@ -34,6 +34,7 @@ import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
 
 class TrinoContextSuite extends KyuubiFunSuite with RestFrontendTestHelper {
+
   import TrinoContext._
 
   test("create trino request context with header") {
@@ -91,14 +92,19 @@ class TrinoContextSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .createQueryResults("/xdfd/xdf", uri, uri, status, Option(metadataResp), Option(tRowSet))
 
     print(results.toString)
-    assert(results.getColumns.get(0).getType.equals("INT_TYPE"))
+    assert(results.getColumns.get(0).getType.equals("integer"))
     assert(results.getData.asScala.last.get(0) == 1)
   }
 
   test("test convert from table") {
     initSql("CREATE DATABASE IF NOT EXISTS INIT_DB")
-    initSql("CREATE TABLE IF NOT EXISTS INIT_DB.test(a int, b int, c int) USING CSV;")
-    initSql("INSERT INTO INIT_DB.test VALUES (1,2,3),(11,22,33),(111,222,333),(1111,2222,3333)")
+    initSql(
+      "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int, b double, c String," +
+        "d BOOLEAN,e DATE,f TIMESTAMP,g ARRAY<String>,h DECIMAL," +
+        "i MAP<String,String>) USING PARQUET;")
+    initSql(
+      "INSERT INTO INIT_DB.test VALUES (1,2.2,'3',true,current_date()," +
+        "current_timestamp(),array('1','2'),2.0, map('m','p') )")
 
     val opHandle = getOpHandle("SELECT * FROM INIT_DB.test")
     val opHandleStr = opHandle.identifier.toString
@@ -113,8 +119,8 @@ class TrinoContextSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .createQueryResults("/xdfd/xdf", uri, uri, status, Option(metadataResp), Option(tRowSet))
 
     print(results.toString)
-    assert(results.getColumns.get(0).getType.equals("INT_TYPE"))
-    assert(results.getData.asScala.last.get(0) == 1)
+    assert(results.getColumns.get(0).getType.equals("integer"))
+    assert(results.getData.asScala.last.get(0) != null)
   }
 
   def getOpHandleStr(statement: String = "show tables"): String = {

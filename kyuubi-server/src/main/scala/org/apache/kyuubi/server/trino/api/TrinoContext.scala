@@ -24,9 +24,9 @@ import javax.ws.rs.core.{HttpHeaders, Response}
 
 import scala.collection.JavaConverters._
 
-import io.trino.client.{ClientTypeSignature, Column, QueryError, QueryResults, StatementStats, Warning}
+import io.trino.client.{ClientStandardTypes, ClientTypeSignature, Column, QueryError, QueryResults, StatementStats, Warning}
 import io.trino.client.ProtocolHeaders.TRINO_HEADERS
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet, TTypeId}
 
 import org.apache.kyuubi.operation.OperationStatus
 
@@ -199,7 +199,8 @@ object TrinoContext {
       nextUri,
       columnList,
       rowList,
-      StatementStats.builder.setState(queryStatus.state.name()).build(),
+      StatementStats.builder.setState(queryStatus.state.name()).setQueued(false)
+        .setElapsedTimeMillis(0).setQueuedTimeMillis(0).build(),
       toQueryError(queryStatus),
       defaultWarning,
       null,
@@ -208,7 +209,26 @@ object TrinoContext {
 
   def convertTColumn(columns: TGetResultSetMetadataResp): util.List[Column] = {
     columns.getSchema.getColumns.asScala.map(c => {
-      val tp = c.getTypeDesc.getTypes.get(0).getPrimitiveEntry.getType.name()
+      val tp = c.getTypeDesc.getTypes.get(0).getPrimitiveEntry.getType match {
+        case TTypeId.BOOLEAN_TYPE => ClientStandardTypes.BOOLEAN
+        case TTypeId.TINYINT_TYPE => ClientStandardTypes.TINYINT
+        case TTypeId.SMALLINT_TYPE => ClientStandardTypes.SMALLINT
+        case TTypeId.INT_TYPE => ClientStandardTypes.INTEGER
+        case TTypeId.BIGINT_TYPE => ClientStandardTypes.BIGINT
+        case TTypeId.FLOAT_TYPE => ClientStandardTypes.DOUBLE
+        case TTypeId.DOUBLE_TYPE => ClientStandardTypes.DOUBLE
+        case TTypeId.STRING_TYPE => ClientStandardTypes.VARCHAR
+        case TTypeId.TIMESTAMP_TYPE => ClientStandardTypes.TIMESTAMP
+        case TTypeId.BINARY_TYPE => ClientStandardTypes.VARBINARY
+        case TTypeId.DECIMAL_TYPE => ClientStandardTypes.DECIMAL
+        case TTypeId.DATE_TYPE => ClientStandardTypes.DATE
+        case TTypeId.VARCHAR_TYPE => ClientStandardTypes.VARCHAR
+        case TTypeId.CHAR_TYPE => ClientStandardTypes.CHAR
+        case TTypeId.INTERVAL_YEAR_MONTH_TYPE => ClientStandardTypes.INTERVAL_YEAR_TO_MONTH
+        case TTypeId.INTERVAL_DAY_TIME_TYPE => ClientStandardTypes.TIME_WITH_TIME_ZONE
+        case TTypeId.TIMESTAMPLOCALTZ_TYPE => ClientStandardTypes.TIMESTAMP_WITH_TIME_ZONE
+        case _ => ClientStandardTypes.VARCHAR
+      }
       new Column(c.getColumnName, tp, new ClientTypeSignature(tp))
     }).toList.asJava
   }
@@ -232,7 +252,7 @@ object TrinoContext {
 
         tColumn.getBoolVal.getValues.asScala.zipWithIndex.foreach {
           case (_, rowIdx) if nulls.get(rowIdx) =>
-            dataResult.get(rowIdx).add(None)
+            dataResult.get(rowIdx).add(null)
           case (v, rowIdx) =>
             dataResult.get(rowIdx).add(v)
         }
@@ -245,7 +265,7 @@ object TrinoContext {
 
         tColumn.getByteVal.getValues.asScala.zipWithIndex.foreach {
           case (_, rowIdx) if nulls.get(rowIdx) =>
-            dataResult.get(rowIdx).add(None)
+            dataResult.get(rowIdx).add(null)
           case (v, rowIdx) =>
             dataResult.get(rowIdx).add(v)
         }
@@ -258,7 +278,7 @@ object TrinoContext {
 
         tColumn.getI16Val.getValues.asScala.zipWithIndex.foreach {
           case (_, rowIdx) if nulls.get(rowIdx) =>
-            dataResult.get(rowIdx).add(None)
+            dataResult.get(rowIdx).add(null)
           case (v, rowIdx) =>
             dataResult.get(rowIdx).add(v)
         }
@@ -271,7 +291,7 @@ object TrinoContext {
 
         tColumn.getI32Val.getValues.asScala.zipWithIndex.foreach {
           case (_, rowIdx) if nulls.get(rowIdx) =>
-            dataResult.get(rowIdx).add(None)
+            dataResult.get(rowIdx).add(null)
           case (v, rowIdx) =>
             dataResult.get(rowIdx).add(v)
         }
@@ -284,7 +304,7 @@ object TrinoContext {
 
         tColumn.getI64Val.getValues.asScala.zipWithIndex.foreach {
           case (_, rowIdx) if nulls.get(rowIdx) =>
-            dataResult.get(rowIdx).add(None)
+            dataResult.get(rowIdx).add(null)
           case (v, rowIdx) =>
             dataResult.get(rowIdx).add(v)
         }
@@ -297,7 +317,7 @@ object TrinoContext {
 
         tColumn.getDoubleVal.getValues.asScala.zipWithIndex.foreach {
           case (_, rowIdx) if nulls.get(rowIdx) =>
-            dataResult.get(rowIdx).add(None)
+            dataResult.get(rowIdx).add(null)
           case (v, rowIdx) =>
             dataResult.get(rowIdx).add(v)
         }
@@ -310,7 +330,7 @@ object TrinoContext {
 
         tColumn.getBinaryVal.getValues.asScala.zipWithIndex.foreach {
           case (_, rowIdx) if nulls.get(rowIdx) =>
-            dataResult.get(rowIdx).add(None)
+            dataResult.get(rowIdx).add(null)
           case (v, rowIdx) =>
             dataResult.get(rowIdx).add(v)
         }
@@ -323,7 +343,7 @@ object TrinoContext {
 
         tColumn.getStringVal.getValues.asScala.zipWithIndex.foreach {
           case (_, rowIdx) if nulls.get(rowIdx) =>
-            dataResult.get(rowIdx).add(None)
+            dataResult.get(rowIdx).add(null)
           case (v, rowIdx) =>
             dataResult.get(rowIdx).add(v)
         }
