@@ -165,11 +165,11 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
 
     private String password;
 
-    // 5 minutes
-    private int socketTimeout = 5 * 60 * 1000;
+    // 2 minutes
+    private int socketTimeout = 2 * 60 * 1000;
 
-    // 9s
-    private int connectTimeout = 9 * 1000;
+    // 30s
+    private int connectTimeout = 30 * 1000;
 
     private int maxAttempts = 3;
 
