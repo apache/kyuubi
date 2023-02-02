@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client;
 
+import java.io.File;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,8 +27,10 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.ConnectTimeoutException;
 import org.apache.hc.client5.http.HttpResponseException;
+import org.apache.hc.client5.http.entity.mime.*;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
@@ -35,6 +38,7 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.hc.core5.net.URIBuilder;
+import org.apache.kyuubi.client.api.v1.dto.MultiPart;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
 import org.apache.kyuubi.client.exception.RetryableKyuubiRestException;
 import org.apache.kyuubi.client.util.JsonUtils;
@@ -88,6 +92,39 @@ public class RestClient implements IRestClient {
   }
 
   @Override
+  public <T> T post(
+      String path, Map<String, MultiPart> multiPartMap, Class<T> type, String authHeader) {
+    MultipartEntityBuilder entityBuilder =
+        MultipartEntityBuilder.create()
+            .setCharset(StandardCharsets.UTF_8)
+            .setMode(HttpMultipartMode.EXTENDED);
+    multiPartMap.forEach(
+        (s, multiPart) -> {
+          ContentBody contentBody;
+          Object payload = multiPart.getPayload();
+          switch (multiPart.getType()) {
+            case JSON:
+              String string =
+                  (payload instanceof String) ? (String) payload : JsonUtils.toJson(payload);
+              contentBody = new StringBody(string, ContentType.APPLICATION_JSON);
+              break;
+            case FILE:
+              contentBody = new FileBody((File) payload);
+              break;
+            default:
+              throw new RuntimeException("Unsupported multi part type:" + multiPart);
+          }
+          entityBuilder.addPart(s, contentBody);
+        });
+    HttpEntity httpEntity = entityBuilder.build();
+    ClassicRequestBuilder postRequestBuilder = ClassicRequestBuilder.post(buildURI(path));
+    postRequestBuilder.setHeader(HttpHeaders.CONTENT_TYPE, httpEntity.getContentType());
+    postRequestBuilder.setEntity(httpEntity);
+    String responseJson = doRequest(buildURI(path), authHeader, postRequestBuilder);
+    return JsonUtils.fromJson(responseJson, type);
+  }
+
+  @Override
   public <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     String responseJson = delete(path, params, authHeader);
     return JsonUtils.fromJson(responseJson, type);
@@ -101,14 +138,14 @@ public class RestClient implements IRestClient {
   private String doRequest(URI uri, String authHeader, ClassicRequestBuilder requestBuilder) {
     String response;
     try {
+      if (requestBuilder.getFirstHeader(HttpHeaders.CONTENT_TYPE) == null) {
+        requestBuilder.setHeader(
+            HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+      }
       if (StringUtils.isNotBlank(authHeader)) {
         requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
       }
-      ClassicHttpRequest httpRequest =
-          requestBuilder
-              .setUri(uri)
-              .setHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-              .build();
+      ClassicHttpRequest httpRequest = requestBuilder.setUri(uri).build();
 
       LOG.debug("Executing {} request: {}", httpRequest.getMethod(), uri);
 
