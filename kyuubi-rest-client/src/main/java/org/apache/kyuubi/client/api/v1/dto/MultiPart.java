@@ -15,24 +15,35 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.client;
+package org.apache.kyuubi.client.api.v1.dto;
 
-import java.util.Map;
-import org.apache.kyuubi.client.api.v1.dto.MultiPart;
+public class MultiPart {
+  private MultiPartType type;
+  private Object payload;
 
-/** A underlying http client interface for common rest request. */
-public interface IRestClient extends AutoCloseable {
-  <T> T get(String path, Map<String, Object> params, Class<T> type, String authHeader);
+  public enum MultiPartType {
+    FILE,
+    JSON
+  }
 
-  String get(String path, Map<String, Object> params, String authHeader);
+  public MultiPart(MultiPartType type, Object obj) {
+    this.type = type;
+    this.payload = obj;
+  }
 
-  <T> T post(String path, String body, Class<T> type, String authHeader);
+  public Object getPayload() {
+    return payload;
+  }
 
-  <T> T post(String path, Map<String, MultiPart> multiPartMap, Class<T> type, String authHeader);
+  public void setPayload(Object payload) {
+    this.payload = payload;
+  }
 
-  String post(String path, String body, String authHeader);
+  public MultiPartType getType() {
+    return type;
+  }
 
-  <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader);
-
-  String delete(String path, Map<String, Object> params, String authHeader);
+  public void setType(MultiPartType type) {
+    this.type = type;
+  }
 }

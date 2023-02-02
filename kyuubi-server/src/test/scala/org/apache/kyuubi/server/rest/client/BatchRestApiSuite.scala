@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.rest.client
 
+import java.nio.file.Paths
 import java.util.Base64
 
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
@@ -80,6 +81,25 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     assert(e.getCause.toString.contains(
       s"Failed to validate proxy privilege of ${ldapUser} for fake"))
 
+    basicKyuubiRestClient.close()
+  }
+
+  test("basic batch rest client with uploading resource file") {
+    val basicKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
+        .username(ldapUser)
+        .password(ldapUserPasswd)
+        .socketTimeout(30000)
+        .build()
+    val batchRestApi: BatchRestApi = new BatchRestApi(basicKyuubiRestClient)
+
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
+    val exampleJarFile = Paths.get(sparkBatchTestResource.get).toFile
+    val batch: Batch = batchRestApi.createBatch(requestObj, exampleJarFile)
+
+    assert(batch.getKyuubiInstance === fe.connectionUrl)
+    assert(batch.getBatchType === "SPARK")
     basicKyuubiRestClient.close()
   }
 
