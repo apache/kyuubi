@@ -90,7 +90,7 @@ Kyuubi supports hot upgrade one of server in a HA cluster which is transparent t
 
 - If you use a random port for Kyuubi server
 
-  You can just start the new Kyuubi Server, then runing cmd using `bin/kyuubi-ctl`:
+  You can just start the new Kyuubi Server, and then run cmd using `bin/kyuubi-ctl`:
 
   ```shell
   ./bin/kyuubi-ctl delete server --host "kyuubi.host" --port "${PORT_FPR_OLD_KYUUBI_SERVER}"

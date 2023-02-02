@@ -150,7 +150,6 @@ spark.stop()
 Z-order Optimize statement:
 
 ```sql
-
 set spark.sql.hive.convertMetastoreParquet=false;
 
 OPTIMIZE conn_zorder_only_ip ZORDER BY src_ip, dst_ip;
@@ -164,13 +163,11 @@ ORDER BY statement:
 INSERT overwrite table conn_order_only_ip select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, dst_ip;
 
 INSERT overwrite table conn_order select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, src_port, dst_ip, dst_port;
-
 ```
 
 Query statement:
 
 ```sql
-
 set spark.sql.hive.convertMetastoreParquet=true;
 
 select count(*) from conn_random_parquet where src_ip like '157%' and dst_ip like '216.%';

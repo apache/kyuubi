@@ -166,7 +166,7 @@ environment variable.
 |---------|---------------------------------------------------------------------------------------------|
 | Linux   | System scope: `/etc/krb5.conf`                                                              |
 | MacOS   | User scope: `$HOME/Library/Preferences/edu.mit.Kerberos`<br/>System scope: `/etc/krb5.conf` |
-| Windows | User scoep: `%USERPROFILE%\krb5.ini`<br/>System scope: `%windir%\krb5.ini`                  |
+| Windows | User scope: `%USERPROFILE%\krb5.ini`<br/>System scope: `%windir%\krb5.ini`                  |
 
 You can use JVM system property, `java.security.krb5.conf`, to overwrite the default location.
 

@@ -85,7 +85,7 @@ defined by `spark.version` or `flink.version` is overdue.
 
 ## Building with the `fast` profile
 
-The `fast` profile helps to significantly reduce build time, which is useful for development or compilation validation, by skipping running the tests, code style checks, building scaladoc, enforcer rules and downloading engine archives downloading used for tests.
+The `fast` profile helps to significantly reduce build time, which is useful for development or compilation validation, by skipping running the tests, code style checks, building scaladoc, enforcer rules and downloading engine archives used for tests.
 
 ```bash
 build/mvn clean package -Pfast

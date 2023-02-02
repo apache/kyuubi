@@ -231,7 +231,7 @@ After the vote passes, to upload the binaries to Apache mirrors, you move the bi
 be where they are voted) to release directory. This "moving" is the only way you can add stuff to the actual release
 directory. (Note: only PMC members can move to release directory)
 
-Move the sub-directory in "dev" to the corresponding directory in "release". If you've added your signing key to the
+Move the subdirectory in "dev" to the corresponding directory in "release". If you've added your signing key to the
 KEYS file, also update the release copy.
 
 ```shell
