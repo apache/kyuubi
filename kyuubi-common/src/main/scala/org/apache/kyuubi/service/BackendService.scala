@@ -91,7 +91,7 @@ trait BackendService {
       foreignTable: String): OperationHandle
   def getQueryId(operationHandle: OperationHandle): String
 
-  def getOperationStatus(operationHandle: OperationHandle): OperationStatus
+  def getOperationStatus(operationHandle: OperationHandle, maxWait: Long = 0): OperationStatus
   def cancelOperation(operationHandle: OperationHandle): Unit
   def closeOperation(operationHandle: OperationHandle): Unit
   def getResultSetMetadata(operationHandle: OperationHandle): TGetResultSetMetadataResp

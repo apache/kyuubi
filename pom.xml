@@ -184,6 +184,7 @@
         <scopt.version>4.1.0</scopt.version>
         <slf4j.version>1.7.36</slf4j.version>
         <snakeyaml.version>1.33</snakeyaml.version>
+        <jackson.datatype.version>2.12.3</jackson.datatype.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `maven.plugin.scalatest.exclude.tags`
@@ -1640,6 +1641,12 @@
                 <groupId>net.sf.py4j</groupId>
                 <artifactId>py4j</artifactId>
                 <version>${py4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${jackson.datatype.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

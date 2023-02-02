@@ -22,12 +22,10 @@ import java.util.concurrent.ConcurrentHashMap
 class QueryManager() {
   private val queries = new ConcurrentHashMap[QueryId, Query]()
 
-  def removeQuery(queryId: QueryId): Unit = ???
+  def removeQuery(queryId: QueryId): Unit = {}
 
-  def getQuery(queryId: QueryId): Option[Query] = ???
+  def getQuery(queryId: QueryId): Option[Query] = None
 
-  def addQuery(query: Query): Unit = ???
+  def addQuery(query: Query): Unit = {}
 
 }
-
-

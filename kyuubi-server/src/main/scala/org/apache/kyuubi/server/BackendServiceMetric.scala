@@ -152,7 +152,9 @@ trait BackendServiceMetric extends BackendService {
     }
   }
 
-  abstract override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
+  abstract override def getOperationStatus(
+      operationHandle: OperationHandle,
+      maxWait: Long): OperationStatus = {
     MetricsSystem.timerTracing(MetricsConstants.BS_GET_OPERATION_STATUS) {
       super.getOperationStatus(operationHandle)
     }
