@@ -144,20 +144,6 @@ object Utils extends Logging {
   }
 
   /**
-   * delete file in path with logging
-   * @param filePath path to file for deletion
-   * @param errorMessage message as prefix logging with error exception
-   */
-  def deleteFile(filePath: String, errorMessage: String): Unit = {
-    try {
-      Files.delete(Paths.get(filePath))
-    } catch {
-      case e: Exception =>
-        error(s"$errorMessage: $filePath ", e)
-    }
-  }
-
-  /**
    * Create a temporary directory inside the given parent directory. The directory will be
    * automatically deleted when the VM shuts down.
    */

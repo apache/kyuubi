@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi.operation
 
-import java.io.{File, IOException}
+import java.io.IOException
+import java.nio.file.{Files, Paths}
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -25,7 +26,7 @@ import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Utils}
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
@@ -365,8 +366,12 @@ class BatchJobSubmission(
   override protected def eventEnabled: Boolean = true
 
   private def cleanupUploadedResourceIfNeeded(): Unit = {
-    if (session.isResourceUploaded && new File(resource).exists()) {
-      Utils.deleteFile(resource, "Failed to delete temporary uploaded resource file")
+    if (session.isResourceUploaded) {
+      try {
+        Files.deleteIfExists(Paths.get(resource))
+      } catch {
+        case e: Throwable => error(s"Error deleting the uploaded resource: $resource", e)
+      }
     }
   }
 }
