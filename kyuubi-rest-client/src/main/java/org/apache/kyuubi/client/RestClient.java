@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client;
 
+import java.io.File;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -34,8 +35,13 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.ContentBody;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.apache.kyuubi.client.api.v1.dto.MultiPart;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
 import org.apache.kyuubi.client.exception.RetryableKyuubiRestException;
 import org.apache.kyuubi.client.util.JsonUtils;
@@ -89,10 +95,32 @@ public class RestClient implements IRestClient {
   }
 
   @Override
-  public <T> T post(String path, HttpEntity requestEntity, Class<T> type, String authHeader) {
+  public <T> T post(
+      String path, Map<String, MultiPart> multiPartMap, Class<T> type, String authHeader) {
+    MultipartEntityBuilder entityBuilder =
+        MultipartEntityBuilder.create().setCharset(StandardCharsets.UTF_8);
+    multiPartMap.forEach(
+        (s, multiPart) -> {
+          ContentBody contentBody;
+          Object payload = multiPart.getPayload();
+          switch (multiPart.getType()) {
+            case JSON:
+              String string =
+                  (payload instanceof String) ? (String) payload : JsonUtils.toJson(payload);
+              contentBody = new StringBody(string, ContentType.APPLICATION_JSON);
+              break;
+            case FILE:
+              contentBody = new FileBody((File) payload);
+              break;
+            default:
+              throw new RuntimeException("Unsupported multi part type:" + multiPart);
+          }
+          entityBuilder.addPart(s, contentBody);
+        });
+    HttpEntity httpEntity = entityBuilder.build();
     RequestBuilder postRequestBuilder = RequestBuilder.post(buildURI(path));
-    postRequestBuilder.setEntity(requestEntity);
-    postRequestBuilder.setHeader(requestEntity.getContentType());
+    postRequestBuilder.setHeader(httpEntity.getContentType());
+    postRequestBuilder.setEntity(httpEntity);
     String responseJson = doRequest(buildURI(path), authHeader, postRequestBuilder);
     return JsonUtils.fromJson(responseJson, type);
   }

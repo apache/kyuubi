@@ -18,18 +18,9 @@
 package org.apache.kyuubi.client;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.entity.mime.content.StringBody;
-import org.apache.kyuubi.client.api.v1.dto.Batch;
-import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
-import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
-import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
-import org.apache.kyuubi.client.api.v1.dto.OperationLog;
+import org.apache.kyuubi.client.api.v1.dto.*;
 import org.apache.kyuubi.client.util.JsonUtils;
 
 public class BatchRestApi {
@@ -50,13 +41,10 @@ public class BatchRestApi {
   }
 
   public Batch createBatch(BatchRequest request, File resourceFile) {
-    MultipartEntityBuilder entityBuilder =
-        MultipartEntityBuilder.create().setCharset(StandardCharsets.UTF_8);
-    entityBuilder.addPart(
-        "batchRequest", new StringBody(JsonUtils.toJson(request), ContentType.APPLICATION_JSON));
-    entityBuilder.addPart("resourceFile", new FileBody(resourceFile));
-    return this.getClient()
-        .post(API_BASE_PATH, entityBuilder.build(), Batch.class, client.getAuthHeader());
+    Map<String, MultiPart> multiPartMap = new HashMap<>();
+    multiPartMap.put("batchRequest", new MultiPart(MultiPart.MultiPartType.JSON, request));
+    multiPartMap.put("resourceFile", new MultiPart(MultiPart.MultiPartType.FILE, resourceFile));
+    return this.getClient().post(API_BASE_PATH, multiPartMap, Batch.class, client.getAuthHeader());
   }
 
   public Batch getBatchById(String batchId) {
