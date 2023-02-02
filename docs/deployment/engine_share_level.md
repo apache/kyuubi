@@ -159,4 +159,4 @@ All supported share levels can be used together in a single Kyuubi server or clu
 
 ## Conclusion
 
-With This feature, end-users are able to leverage engines in different ways to handle their different workloads, such as large-scale ETL jobs and interactive ad hoc queries.
+With this feature, end-users are able to leverage engines in different ways to handle their different workloads, such as large-scale ETL jobs and interactive ad hoc queries.
