@@ -184,7 +184,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         " of batchRequest is application/json")
     val tempFile = Utils.writeToTempFile(
       resourceFileInputStream,
-      KyuubiApplicationManager.tempDirForUpload,
+      KyuubiApplicationManager.uploadWorkDir,
       resourceFileMetadata.getFileName)
     batchRequest.setResource(tempFile.getPath)
     openBatchSessionInternal(batchRequest, isResourceFromUpload = true)

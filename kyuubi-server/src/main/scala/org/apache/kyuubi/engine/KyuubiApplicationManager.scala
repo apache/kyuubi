@@ -59,7 +59,6 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
         case NonFatal(e) => warn(s"Error stopping ${op.getClass.getSimpleName}: ${e.getMessage}")
       }
     }
-    deleteTempDirForUpload()
     super.stop()
   }
 
@@ -92,17 +91,6 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
       case None => None
     }
   }
-
-  private def deleteTempDirForUpload(): Unit = {
-    try {
-      Utils.deleteDirectoryRecursively(KyuubiApplicationManager.tempDirForUpload.toFile)
-    } catch {
-      case e: Exception => error(
-          "Failed to delete temporary folder for uploading " +
-            s"${KyuubiApplicationManager.tempDirForUpload}",
-          e)
-    }
-  }
 }
 
 object KyuubiApplicationManager {
@@ -122,7 +110,7 @@ object KyuubiApplicationManager {
     conf.set(FlinkProcessBuilder.TAG_KEY, newTag)
   }
 
-  lazy val tempDirForUpload: Path = {
+  val uploadWorkDir: Path = {
     val path = Utils.getAbsolutePathFromWork("upload")
     val pathFile = path.toFile
     if (!pathFile.exists()) {
