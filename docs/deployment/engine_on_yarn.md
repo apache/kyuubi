@@ -23,11 +23,11 @@
 
 When you want to deploy Kyuubi's Spark SQL engines on YARN, you'd better have cognition upon the following things.
 
-- Knowing the basics about [Running Spark on YARN](http://spark.apache.org/docs/latest/running-on-yarn.html)
+- Knowing the basics about [Running Spark on YARN](https://spark.apache.org/docs/latest/running-on-yarn.html)
 - A binary distribution of Spark which is built with YARN support
   - You can use the built-in Spark distribution
   - You can get it from [Spark official website](https://spark.apache.org/downloads.html) directly
-  - You can [Build Spark](http://spark.apache.org/docs/latest/building-spark.html#specifying-the-hadoop-version-and-enabling-yarn) with `-Pyarn` maven option
+  - You can [Build Spark](https://spark.apache.org/docs/latest/building-spark.html#specifying-the-hadoop-version-and-enabling-yarn) with `-Pyarn` maven option
 - An active [Apache Hadoop YARN](https://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html) cluster
 - An active Apache Hadoop HDFS cluster
 - Setup Hadoop client configurations at the machine the Kyuubi server locates
@@ -92,7 +92,7 @@ and how many cpus and memory will Spark driver, ApplicationMaster and each execu
 | spark.executor.memory         | 1g                                         | Amount of memory to use for the executor process                                                                                                                          |
 | spark.executor.memoryOverhead | executorMemory * 0.10, with minimum of 384 | Amount of additional memory to be allocated per executor process. This is memory that accounts for things like VM overheads, interned strings other native overheads, etc |
 
-It is recommended to use [Dynamic Allocation](http://spark.apache.org/docs/3.0.1/configuration.html#dynamic-allocation) with Kyuubi,
+It is recommended to use [Dynamic Allocation](https://spark.apache.org/docs/3.0.1/configuration.html#dynamic-allocation) with Kyuubi,
 since the SQL engine will be long-running for a period, execute user's queries from clients periodically,
 and the demand for computing resources is not the same for those queries.
 It is better for Spark to release some executors when either the query is lightweight, or the SQL engine is being idled.
@@ -104,11 +104,11 @@ which allows YARN to cache it on nodes so that it doesn't need to be distributed
 
 ##### Others
 
-Please refer to [Spark properties](http://spark.apache.org/docs/latest/running-on-yarn.html#spark-properties) to check other acceptable configs.
+Please refer to [Spark properties](https://spark.apache.org/docs/latest/running-on-yarn.html#spark-properties) to check other acceptable configs.
 
 ### Kerberos
 
-Kyuubi currently does not support Spark's [YARN-specific Kerberos Configuration](http://spark.apache.org/docs/3.0.1/running-on-yarn.html#kerberos),
+Kyuubi currently does not support Spark's [YARN-specific Kerberos Configuration](https://spark.apache.org/docs/3.0.1/running-on-yarn.html#kerberos),
 so `spark.kerberos.keytab` and `spark.kerberos.principal` should not use now.
 
 Instead, you can schedule a periodically `kinit` process via `crontab` task on the local machine that hosts Kyuubi server or simply use [Kyuubi Kinit](settings.html#kinit).

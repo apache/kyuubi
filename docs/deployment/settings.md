@@ -522,7 +522,7 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 
 ### Via spark-defaults.conf
 
-Setting them in `$SPARK_HOME/conf/spark-defaults.conf` supplies with default values for SQL engine application. Available properties can be found at Spark official online documentation for [Spark Configurations](http://spark.apache.org/docs/latest/configuration.html)
+Setting them in `$SPARK_HOME/conf/spark-defaults.conf` supplies with default values for SQL engine application. Available properties can be found at Spark official online documentation for [Spark Configurations](https://spark.apache.org/docs/latest/configuration.html)
 
 ### Via kyuubi-defaults.conf
 
@@ -533,13 +533,13 @@ Setting them in `$KYUUBI_HOME/conf/kyuubi-defaults.conf` supplies with default v
 Setting them in the JDBC Connection URL supplies session-specific for each SQL engine. For example: ```jdbc:hive2://localhost:10009/default;#spark.sql.shuffle.partitions=2;spark.executor.memory=5g```
 
 - **Runtime SQL Configuration**
-  - For [Runtime SQL Configurations](http://spark.apache.org/docs/latest/configuration.html#runtime-sql-configuration), they will take affect every time
+  - For [Runtime SQL Configurations](https://spark.apache.org/docs/latest/configuration.html#runtime-sql-configuration), they will take affect every time
 - **Static SQL and Spark Core Configuration**
-  - For [Static SQL Configurations](http://spark.apache.org/docs/latest/configuration.html#static-sql-configuration) and other spark core configs, e.g. `spark.executor.memory`, they will take effect if there is no existing SQL engine application. Otherwise, they will just be ignored
+  - For [Static SQL Configurations](https://spark.apache.org/docs/latest/configuration.html#static-sql-configuration) and other spark core configs, e.g. `spark.executor.memory`, they will take effect if there is no existing SQL engine application. Otherwise, they will just be ignored
 
 ### Via SET Syntax
 
-Please refer to the Spark official online documentation for [SET Command](http://spark.apache.org/docs/latest/sql-ref-syntax-aux-conf-mgmt-set.html)
+Please refer to the Spark official online documentation for [SET Command](https://spark.apache.org/docs/latest/sql-ref-syntax-aux-conf-mgmt-set.html)
 
 ## Flink Configurations
 
@@ -641,7 +641,7 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
 
 ### Hadoop Configurations
 
-Specifying `HADOOP_CONF_DIR` to the directory containing Hadoop configuration files or treating them as Spark properties with a `spark.hadoop.` prefix. Please refer to the Spark official online documentation for [Inheriting Hadoop Cluster Configuration](http://spark.apache.org/docs/latest/configuration.html#inheriting-hadoop-cluster-configuration). Also, please refer to the [Apache Hadoop](http://hadoop.apache.org)'s online documentation for an overview on how to configure Hadoop.
+Specifying `HADOOP_CONF_DIR` to the directory containing Hadoop configuration files or treating them as Spark properties with a `spark.hadoop.` prefix. Please refer to the Spark official online documentation for [Inheriting Hadoop Cluster Configuration](https://spark.apache.org/docs/latest/configuration.html#inheriting-hadoop-cluster-configuration). Also, please refer to the [Apache Hadoop](https://hadoop.apache.org)'s online documentation for an overview on how to configure Hadoop.
 
 ### Hive Configurations
 

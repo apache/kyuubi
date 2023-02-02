@@ -97,7 +97,7 @@ Currently supported column lineage for spark's `Command` and `Query` type:
 
 ### Build with Apache Maven
 
-Kyuubi Spark Lineage Listener Extension is built using [Apache Maven](http://maven.apache.org).
+Kyuubi Spark Lineage Listener Extension is built using [Apache Maven](https://maven.apache.org).
 To build it, `cd` to the root direct of kyuubi project and run:
 
 ```shell

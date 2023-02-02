@@ -104,5 +104,5 @@ hadoop.proxyuser.<user name in principal>.hosts *
 ## Further Readings
 
 - [Hadoop in Secure Mode](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/SecureMode.html)
-- [Use Kerberos for authentication in Spark](http://spark.apache.org/docs/latest/security.html#kerberos)
+- [Use Kerberos for authentication in Spark](https://spark.apache.org/docs/latest/security.html#kerberos)
 
