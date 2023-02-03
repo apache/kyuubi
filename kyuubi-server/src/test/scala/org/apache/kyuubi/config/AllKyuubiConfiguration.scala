@@ -60,7 +60,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
   test("Check all kyuubi configs") {
     loadConfigs
 
-    val builder = new MarkdownBuilder().licence().generationHint(getClass.getName)
+    val builder = MarkdownBuilder(licenced = true, getClass.getName)
 
     builder
       .lines(s"""

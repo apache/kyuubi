@@ -46,7 +46,7 @@ class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
       .toAbsolutePath
 
   test("verify or update kyuubi spark sql functions") {
-    val builder = new MarkdownBuilder().licence().generationHint(getClass.getName)
+    val builder = MarkdownBuilder(licenced = true, getClass.getName)
 
     builder
       .line("# Auxiliary SQL Functions")

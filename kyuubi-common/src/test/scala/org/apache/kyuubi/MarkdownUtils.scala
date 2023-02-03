@@ -186,3 +186,12 @@ class MarkdownBuilder {
       })
   }
 }
+
+object MarkdownBuilder {
+  def apply(licenced: Boolean = true, className: String = null): MarkdownBuilder = {
+    val builder = new MarkdownBuilder
+    if (licenced) { builder.licence() }
+    if (className != null) { builder.generationHint(className) }
+    builder
+  }
+}
