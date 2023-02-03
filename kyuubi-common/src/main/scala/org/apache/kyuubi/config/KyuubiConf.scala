@@ -484,7 +484,9 @@ object KyuubiConf {
         "via the binary protocol with SSL enabled.")
       .version("1.7.0")
       .serverOnly
-      .fallbackConf(FRONTEND_THRIFT_BINARY_BIND_PORT)
+      .intConf
+      .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+      .createWithDefault(10011)
 
   val FRONTEND_THRIFT_HTTP_BIND_HOST: ConfigEntry[Option[String]] =
     buildConf("kyuubi.frontend.thrift.http.bind.host")
