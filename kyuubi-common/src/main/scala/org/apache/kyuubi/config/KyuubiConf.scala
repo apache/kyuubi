@@ -371,7 +371,7 @@ object KyuubiConf {
 
   object FrontendProtocols extends Enumeration {
     type FrontendProtocol = Value
-    val THRIFT_BINARY, THRIFT_HTTP, REST, MYSQL, TRINO = Value
+    val THRIFT_BINARY, THRIFT_BINARY_SSL, THRIFT_HTTP, REST, MYSQL, TRINO = Value
   }
 
   val FRONTEND_PROTOCOLS: ConfigEntry[Seq[String]] =
@@ -477,6 +477,14 @@ object KyuubiConf {
       .version("1.4.0")
       .serverOnly
       .fallbackConf(FRONTEND_BIND_PORT)
+
+  val FRONTEND_THRIFT_BINARY_SSL_BIND_PORT: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.thrift.binary.ssl.bind.port")
+      .doc("Port of the machine on which to run the thrift frontend service " +
+        "via the binary protocol with SSL enabled.")
+      .version("1.7.0")
+      .serverOnly
+      .fallbackConf(FRONTEND_THRIFT_BINARY_BIND_PORT)
 
   val FRONTEND_THRIFT_HTTP_BIND_HOST: ConfigEntry[Option[String]] =
     buildConf("kyuubi.frontend.thrift.http.bind.host")

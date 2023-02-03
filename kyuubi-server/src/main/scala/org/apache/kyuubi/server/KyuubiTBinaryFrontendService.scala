@@ -27,6 +27,7 @@ import org.apache.thrift.server.ServerContext
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.cli.Handle
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.metrics.MetricsConstants._
@@ -35,7 +36,7 @@ import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, FeServiceServerContext, OK_STATUS}
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
-final class KyuubiTBinaryFrontendService(
+class KyuubiTBinaryFrontendService(
     override val serverable: Serverable)
   extends TBinaryFrontendService("KyuubiTBinaryFrontend") {
 
@@ -51,6 +52,10 @@ final class KyuubiTBinaryFrontendService(
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     super.initialize(conf)
+    if (sslEnabled) {
+      warn(s"$getName starting with SSL enabled," +
+        s" ${FrontendProtocols.THRIFT_BINARY_SSL} protocol is recommended.")
+    }
 
     server.foreach(_.setServerEventHandler(new FeTServerEventHandler() {
       override def createContext(input: TProtocol, output: TProtocol): ServerContext = {

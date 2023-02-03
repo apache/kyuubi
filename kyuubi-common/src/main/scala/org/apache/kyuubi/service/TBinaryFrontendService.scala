@@ -48,7 +48,9 @@ abstract class TBinaryFrontendService(name: String)
    */
   final override protected lazy val serverHost: Option[String] =
     conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
-  final override protected lazy val portNum: Int = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
+  override protected lazy val portNum: Int = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
+  // only enable ssl for server side
+  protected def sslEnabled: Boolean = isServer() && conf.get(FRONTEND_THRIFT_BINARY_SSL_ENABLED)
 
   protected var server: Option[TServer] = None
   private var _actualPort: Int = _
@@ -72,8 +74,7 @@ abstract class TBinaryFrontendService(name: String)
       val transFactory = authFactory.getTTransportFactory
       val tProcFactory = authFactory.getTProcessorFactory(this)
       val tServerSocket =
-        // only enable ssl for server side
-        if (isServer() && conf.get(FRONTEND_THRIFT_BINARY_SSL_ENABLED)) {
+        if (sslEnabled) {
           val keyStorePath = conf.get(FRONTEND_SSL_KEYSTORE_PATH)
           val keyStorePassword = conf.get(FRONTEND_SSL_KEYSTORE_PASSWORD)
           val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
