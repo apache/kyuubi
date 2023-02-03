@@ -17,11 +17,10 @@
 
 package org.apache.kyuubi.zookeeper
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.{ConfigEntry, OptionalConfigEntry}
+import org.apache.kyuubi.config.KyuubiConf.buildConf
 
 object ZookeeperConf {
-
-  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
   @deprecated("using kyuubi.zookeeper.embedded.client.port instead", since = "1.2.0")
   val EMBEDDED_ZK_PORT: ConfigEntry[Int] = buildConf("kyuubi.zookeeper.embedded.port")
