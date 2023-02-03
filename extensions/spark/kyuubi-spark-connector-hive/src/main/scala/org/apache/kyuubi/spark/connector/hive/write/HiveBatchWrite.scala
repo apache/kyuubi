@@ -37,6 +37,7 @@ import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConne
 import org.apache.kyuubi.spark.connector.hive.write.HiveWriteHelper.getPartitionSpec
 
 class HiveBatchWrite(
+    sparkSession: SparkSession,
     table: CatalogTable,
     hiveTableCatalog: HiveTableCatalog,
     tmpLocation: Option[Path],
@@ -66,8 +67,6 @@ class HiveBatchWrite(
       // expected to be dropped at the normal termination of VM since deleteOnExit is used.
       deleteExternalTmpPath(hadoopConf)
     }
-
-    val sparkSession = SparkSession.active
 
     // un-cache this table.
     hiveTableCatalog.catalog.invalidateCachedTable(table.identifier)
