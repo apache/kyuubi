@@ -63,9 +63,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
               case FAILED | UNKNOWN =>
                 (false, s"Target Driver Pod $podName is in FAILED or UNKNOWN status")
               case _ =>
+                // Imitate from fabric8io/kubernetes-client
+                // kubernetes-tests/CustomResourceTest.java#testDeleteNonExistentItem
                 (
-                  kubernetesClient.pods().inNamespace(podName).withName(
-                    pod.getMetadata.getName).delete(),
+                  !kubernetesClient.pods().inNamespace(podName).withName(
+                    pod.getMetadata.getName).delete().isEmpty,
                   s"Operation of deleted app: $podName is completed")
             }
           case None =>
