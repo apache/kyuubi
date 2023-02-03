@@ -56,4 +56,6 @@ jobs:
           -DskipTests
           -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Check dependency list
-        run: build/dependency.sh
+        run: |
+          /usr/bin/mvn --version
+          build/dependency.sh
