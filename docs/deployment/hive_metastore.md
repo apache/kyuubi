@@ -30,7 +30,7 @@ In this section, you will learn how to configure Kyuubi to interact with Hive Me
 - A Spark binary distribution built with `-Phive` support
   - Use the built-in one in the Kyuubi distribution
   - Download from [Spark official website](https://spark.apache.org/downloads.html)
-  - Build from Spark source, [Building With Hive and JDBC Support](http://spark.apache.org/docs/latest/building-spark.html#building-with-hive-and-jdbc-support)
+  - Build from Spark source, [Building With Hive and JDBC Support](https://spark.apache.org/docs/latest/building-spark.html#building-with-hive-and-jdbc-support)
 - A copy of Hive client configuration
 
 So the whole thing here is to let Spark applications use this copy of Hive configuration to start a Hive metastore client for their own to talk to the Hive metastore server.
@@ -199,13 +199,13 @@ Caused by: org.apache.thrift.TApplicationException: Invalid method name: 'get_ta
 	... 93 more
 ```
 
-To prevent this problem, we can use Spark's [Interacting with Different Versions of Hive Metastore](http://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html#interacting-with-different-versions-of-hive-metastore).
+To prevent this problem, we can use Spark's [Interacting with Different Versions of Hive Metastore](https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html#interacting-with-different-versions-of-hive-metastore).
 
 ## Further Readings
 
 - Hive Wiki
   - [Hive Metastore Administration](https://cwiki.apache.org/confluence/display/Hive/AdminManual+Metastore+Administration)
 - Spark Online Documentation
-  - [Custom Hadoop/Hive Configuration](http://spark.apache.org/docs/latest/configuration.html#custom-hadoophive-configuration)
-  - [Hive Tables](http://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html)
+  - [Custom Hadoop/Hive Configuration](https://spark.apache.org/docs/latest/configuration.html#custom-hadoophive-configuration)
+  - [Hive Tables](https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html)
 

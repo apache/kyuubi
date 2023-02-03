@@ -107,7 +107,7 @@ and these applications can be placed in different shared domains for other conne
 Kyuubi does not occupy any resources from the Cluster Manager(e.g. Yarn) during startup and will give all resources back if there
 is not any active session interacting with a `SparkContext`.
 
-Spark also provides [Dynamic Resource Allocation](http://spark.apache.org/docs/latest/job-scheduling.html#dynamic-resource-allocation) to dynamically adjust the resources your application occupies based on the workload. It means
+Spark also provides [Dynamic Resource Allocation](https://spark.apache.org/docs/latest/job-scheduling.html#dynamic-resource-allocation) to dynamically adjust the resources your application occupies based on the workload. It means
 that your application may give resources back to the cluster if they are no longer used and request them again later when
 there is demand. This feature is handy if multiple applications share resources in your Spark cluster.
 
@@ -172,5 +172,5 @@ We also create a [Submarine: Spark Security](https://mvnrepository.com/artifact/
 
 ## Conclusions
 
-Kyuubi is a unified multi-tenant JDBC interface for large-scale data processing and analytics, built on top of [Apache Spark™](http://spark.apache.org/).
+Kyuubi is a unified multi-tenant JDBC interface for large-scale data processing and analytics, built on top of [Apache Spark™](https://spark.apache.org/).
 It extends the Spark Thrift Server's scenarios in enterprise applications, the most important of which is multi-tenancy support.

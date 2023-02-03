@@ -19,7 +19,7 @@
 
 ## Introductions
 
-The Apache Spark [Thrift JDBC/ODBC Server](http://spark.apache.org/docs/latest/sql-distributed-sql-engine.html) is a Thrift service implemented by the Apache Spark community based on HiveServer2.
+The Apache Spark [Thrift JDBC/ODBC Server](https://spark.apache.org/docs/latest/sql-distributed-sql-engine.html) is a Thrift service implemented by the Apache Spark community based on HiveServer2.
 Designed to be seamlessly compatible with HiveServer2, it provides Spark SQL capabilities to end-users in a pure SQL way through a JDBC interface.
 This "out-of-the-box" model minimizes the barriers and costs for users to use Spark.
 
