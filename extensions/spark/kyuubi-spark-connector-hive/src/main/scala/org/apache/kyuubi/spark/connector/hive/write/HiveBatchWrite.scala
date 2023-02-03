@@ -33,11 +33,12 @@ import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hive, toSQLValue, HiveExternalCatalog}
 import org.apache.spark.sql.types.StringType
 
-import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorException
+import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConnectorException}
 import org.apache.kyuubi.spark.connector.hive.write.HiveWriteHelper.getPartitionSpec
 
 class HiveBatchWrite(
     table: CatalogTable,
+    hiveTableCatalog: HiveTableCatalog,
     tmpLocation: Option[Path],
     partition: Map[String, Option[String]],
     partitionColumnNames: Seq[String],
@@ -67,9 +68,23 @@ class HiveBatchWrite(
     }
 
     val sparkSession = SparkSession.active
+
     // un-cache this table.
-    CommandUtils.uncacheTableOrView(sparkSession, table.identifier.quotedString)
-    CommandUtils.updateTableStats(sparkSession, table)
+    hiveTableCatalog.catalog.invalidateCachedTable(table.identifier)
+
+    val catalog = hiveTableCatalog.catalog
+    if (sparkSession.sessionState.conf.autoSizeUpdateEnabled) {
+      val newTable = catalog.getTableMetadata(table.identifier)
+      val newSize = CommandUtils.calculateTotalSize(sparkSession, newTable)
+      val newStats = CatalogStatistics(sizeInBytes = newSize)
+      catalog.alterTableStats(table.identifier, Some(newStats))
+    } else if (table.stats.nonEmpty) {
+      catalog.alterTableStats(table.identifier, None)
+    } else {
+      // In other cases, we still need to invalidate the table relation cache.
+      catalog.refreshTable(table.identifier)
+    }
+
   }
 
   override def abort(messages: Array[WriterCommitMessage]): Unit = {

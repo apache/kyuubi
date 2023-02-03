@@ -103,6 +103,7 @@ case class HiveWrite(
 
     new HiveBatchWrite(
       table,
+      hiveTableCatalog,
       Some(tmpLocation),
       partition,
       partitionColumnNames,
