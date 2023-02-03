@@ -250,7 +250,7 @@ class KyuubiSessionImpl(
     try {
       if (_client != null) _client.closeSession()
     } finally {
-      openSessionError.foreach {_ => if (engine != null) engine.close()}
+      openSessionError.foreach { _ => if (engine != null) engine.close() }
       sessionEvent.endTime = System.currentTimeMillis()
       EventBus.post(sessionEvent)
       traceMetricsOnClose()
