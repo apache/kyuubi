@@ -54,9 +54,21 @@ trait Logging {
     }
   }
 
+  def debug(message: => Any, t: Throwable): Unit = {
+    if (logger.isDebugEnabled) {
+      logger.debug(message.toString, t)
+    }
+  }
+
   def info(message: => Any): Unit = {
     if (logger.isInfoEnabled) {
       logger.info(message.toString)
+    }
+  }
+
+  def info(message: => Any, t: Throwable): Unit = {
+    if (logger.isInfoEnabled) {
+      logger.info(message.toString, t)
     }
   }
 
