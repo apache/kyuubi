@@ -18,6 +18,7 @@
 package org.apache.kyuubi.operation
 
 import java.io.IOException
+import java.nio.file.{Files, Paths}
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -25,7 +26,7 @@ import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Utils}
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
@@ -267,9 +268,7 @@ class BatchJobSubmission(
       }
     } finally {
       builder.close()
-      if (session.isResourceUploaded) {
-        Utils.deleteFile(resource, "Failed to delete temporary uploaded resource file")
-      }
+      cleanupUploadedResourceIfNeeded()
     }
   }
 
@@ -327,12 +326,14 @@ class BatchJobSubmission(
       if (isTerminalState(state)) {
         killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
         builder.close()
+        cleanupUploadedResourceIfNeeded()
         return
       }
 
       try {
         killMessage = killBatchApplication()
         builder.close()
+        cleanupUploadedResourceIfNeeded()
       } finally {
         if (state == OperationState.INITIALIZED) {
           // if state is INITIALIZED, it means that the batch submission has not started to run, set
@@ -363,6 +364,16 @@ class BatchJobSubmission(
   override def isTimedOut: Boolean = false
 
   override protected def eventEnabled: Boolean = true
+
+  private def cleanupUploadedResourceIfNeeded(): Unit = {
+    if (session.isResourceUploaded) {
+      try {
+        Files.deleteIfExists(Paths.get(resource))
+      } catch {
+        case e: Throwable => error(s"Error deleting the uploaded resource: $resource", e)
+      }
+    }
+  }
 }
 
 object BatchJobSubmission {
