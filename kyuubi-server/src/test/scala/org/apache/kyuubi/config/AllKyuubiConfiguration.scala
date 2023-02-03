@@ -165,7 +165,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     newOutput += ("Setting them in `$SPARK_HOME/conf/spark-defaults.conf`" +
       " supplies with default values for SQL engine application. Available properties can be" +
       " found at Spark official online documentation for" +
-      " [Spark Configurations](http://spark.apache.org/docs/latest/configuration.html)")
+      " [Spark Configurations](https://spark.apache.org/docs/latest/configuration.html)")
 
     newOutput += ""
     newOutput += ("### Via kyuubi-defaults.conf")
@@ -187,19 +187,19 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     newOutput += ("- **Runtime SQL Configuration**")
     newOutput += ""
     newOutput += ("  - For [Runtime SQL Configurations](" +
-      "http://spark.apache.org/docs/latest/configuration.html#runtime-sql-configuration), they" +
+      "https://spark.apache.org/docs/latest/configuration.html#runtime-sql-configuration), they" +
       " will take affect every time")
     newOutput += ("- **Static SQL and Spark Core Configuration**")
     newOutput += ""
     newOutput += ("  - For [Static SQL Configurations](" +
-      "http://spark.apache.org/docs/latest/configuration.html#static-sql-configuration) and" +
+      "https://spark.apache.org/docs/latest/configuration.html#static-sql-configuration) and" +
       " other spark core configs, e.g. `spark.executor.memory`, they will take effect if there" +
       " is no existing SQL engine application. Otherwise, they will just be ignored")
     newOutput += ""
     newOutput += ("### Via SET Syntax")
     newOutput += ""
     newOutput += ("Please refer to the Spark official online documentation for" +
-      " [SET Command](http://spark.apache.org/docs/latest/sql-ref-syntax-aux-conf-mgmt-set.html)")
+      " [SET Command](https://spark.apache.org/docs/latest/sql-ref-syntax-aux-conf-mgmt-set.html)")
     newOutput += ""
 
     newOutput += ("## Flink Configurations")
@@ -259,9 +259,9 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     newOutput += ("Specifying `HADOOP_CONF_DIR` to the directory containing Hadoop configuration" +
       " files or treating them as Spark properties with a `spark.hadoop.` prefix." +
       " Please refer to the Spark official online documentation for" +
-      " [Inheriting Hadoop Cluster Configuration](http://spark.apache.org/docs/latest/" +
+      " [Inheriting Hadoop Cluster Configuration](https://spark.apache.org/docs/latest/" +
       "configuration.html#inheriting-hadoop-cluster-configuration)." +
-      " Also, please refer to the [Apache Hadoop](http://hadoop.apache.org)'s" +
+      " Also, please refer to the [Apache Hadoop](https://hadoop.apache.org)'s" +
       " online documentation for an overview on how to configure Hadoop.")
     newOutput += ""
     newOutput += ("### Hive Configurations")
