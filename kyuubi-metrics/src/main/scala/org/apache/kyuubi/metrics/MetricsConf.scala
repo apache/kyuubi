@@ -19,12 +19,11 @@ package org.apache.kyuubi.metrics
 
 import java.time.Duration
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.config.ConfigEntry
+import org.apache.kyuubi.config.KyuubiConf.buildConf
 import org.apache.kyuubi.metrics.ReporterType._
 
 object MetricsConf {
-
-  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
   val METRICS_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.metrics.enabled")
