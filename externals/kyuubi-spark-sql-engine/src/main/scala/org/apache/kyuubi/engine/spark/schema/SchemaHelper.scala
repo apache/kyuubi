@@ -41,6 +41,24 @@ object SchemaHelper {
    */
   final val YEAR_MONTH_INTERVAL = "YearMonthIntervalType"
 
+  /**
+   * Spark 3.2.0 DataType UserDefinedType's class name.
+   * And UDT API has been public since Spark 3.2.0.
+   * Return true if dt is subClass of UserDefinedType, which has been set to public
+   * since Spark 3.2.0
+   */
+  final private val isUserDefinedType = (dt: DataType) => {
+    val dataType = "DataType"
+    val userDefinedType = "UserDefinedType"
+
+    var curClass: Class[_] = dt.getClass
+    while (!curClass.getSimpleName.equals(userDefinedType)
+      && !curClass.getSimpleName.equals(dataType)) {
+      curClass = curClass.getSuperclass
+    }
+    curClass.getSimpleName.equals(userDefinedType)
+  }
+
   def toTTypeId(typ: DataType): TTypeId = typ match {
     case NullType => TTypeId.NULL_TYPE
     case BooleanType => TTypeId.BOOLEAN_TYPE
@@ -64,7 +82,7 @@ object SchemaHelper {
     case _: ArrayType => TTypeId.ARRAY_TYPE
     case _: MapType => TTypeId.MAP_TYPE
     case _: StructType => TTypeId.STRUCT_TYPE
-    // TODO: it is private now, case udt: UserDefinedType => TTypeId.USER_DEFINED_TYPE
+    case dt: DateType if isUserDefinedType(dt) => TTypeId.USER_DEFINED_TYPE
     case other =>
       throw new IllegalArgumentException(s"Unrecognized type name: ${other.catalogString}")
   }
