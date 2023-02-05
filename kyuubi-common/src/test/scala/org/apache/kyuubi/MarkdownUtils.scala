@@ -71,7 +71,7 @@ object MarkdownUtils {
 }
 
 class MarkdownBuilder {
-  val buffer = new ArrayBuffer[String]()
+  private val buffer = new ArrayBuffer[String]()
 
   /**
    * append a single line
