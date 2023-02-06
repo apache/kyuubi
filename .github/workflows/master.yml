@@ -352,7 +352,7 @@ jobs:
         uses: manusa/actions-setup-minikube@v2.7.2
         with:
           minikube version: 'v1.29.0'
-          kubernetes version: 'v1.26.1'
+          kubernetes version: 'v1.25.4'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: kubectl pre-check
         run: |
@@ -399,7 +399,7 @@ jobs:
         uses: manusa/actions-setup-minikube@v2.7.2
         with:
           minikube version: 'v1.29.0'
-          kubernetes version: 'v1.26.1'
+          kubernetes version: 'v1.25.4'
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
           start args: '--extra-config=kubeadm.ignore-preflight-errors=NumCPU --force --cpus 2 --memory 4096'
