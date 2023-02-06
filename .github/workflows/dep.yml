@@ -23,8 +23,11 @@ on:
       - master
       - branch-*
     paths:
-      # dependency check happens only pom changes
+      # dependency check happens when pom changes
       - '**/pom.xml'
+      # dependency check happens when workflow changes
+      - .github/workflows/dep.yaml
+      - .github/actions/setup-mvnd/*.yaml
 
 concurrency:
   group: dep-${{ github.ref }}
@@ -43,11 +46,13 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Setup Mvnd
+        uses: ./.github/actions/setup-mvnd
       - name: build
         env:
           MAVEN_OPTS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error
         run: >-
-          build/mvn clean install
+          build/mvnd clean install
           -Pflink-provided,spark-provided,hive-provided
           -Dmaven.javadoc.skip=true
           -Drat.skip=true
