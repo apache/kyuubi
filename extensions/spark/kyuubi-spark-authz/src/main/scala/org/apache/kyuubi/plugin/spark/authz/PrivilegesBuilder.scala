@@ -144,7 +144,7 @@ object PrivilegesBuilder {
         }
       } catch {
         case e: Exception =>
-          LOG.warn(tableDesc.error(plan, e))
+          LOG.debug(tableDesc.error(plan, e))
           Nil
       }
     }
@@ -162,7 +162,7 @@ object PrivilegesBuilder {
             }
           } catch {
             case e: Exception =>
-              LOG.warn(databaseDesc.error(plan, e))
+              LOG.debug(databaseDesc.error(plan, e))
           }
         }
         desc.operationType
@@ -193,7 +193,7 @@ object PrivilegesBuilder {
             }
           } catch {
             case e: Exception =>
-              LOG.warn(fd.error(plan, e))
+              LOG.debug(fd.error(plan, e))
           }
         }
         spec.operationType

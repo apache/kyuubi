@@ -85,7 +85,7 @@ case class TableCommandSpec(
         qd.extract(plan)
       } catch {
         case e: Exception =>
-          LOG.warn(qd.error(plan, e))
+          LOG.debug(qd.error(plan, e))
           None
       }
     }
@@ -102,7 +102,7 @@ case class ScanSpec(
         td.extract(plan, spark)
       } catch {
         case e: Exception =>
-          LOG.warn(td.error(plan, e))
+          LOG.debug(td.error(plan, e))
           None
       }
     }
