@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine
 
 import java.io.File
 import java.net.{URI, URISyntaxException}
+import java.nio.file.{Files, Path}
 import java.util.{Locale, ServiceLoader}
 
 import scala.collection.JavaConverters._
@@ -107,6 +108,15 @@ object KyuubiApplicationManager {
     val originalTag = conf.getOption(FlinkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("")
     val newTag = s"${originalTag}KYUUBI" + Some(tag).filterNot(_.isEmpty).map("," + _).getOrElse("")
     conf.set(FlinkProcessBuilder.TAG_KEY, newTag)
+  }
+
+  val uploadWorkDir: Path = {
+    val path = Utils.getAbsolutePathFromWork("upload")
+    val pathFile = path.toFile
+    if (!pathFile.exists()) {
+      Files.createDirectories(path)
+    }
+    path
   }
 
   private[kyuubi] def checkApplicationAccessPath(path: String, conf: KyuubiConf): Unit = {

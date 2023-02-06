@@ -19,12 +19,11 @@ package org.apache.kyuubi.server.metadata.jdbc
 
 import java.util.{Locale, Properties}
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.KyuubiConf.buildConf
 
 object JDBCMetadataStoreConf {
   final val METADATA_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.metadata.store.jdbc.datasource"
-
-  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
   /** Get metadata store jdbc datasource properties. */
   def getMetadataStoreJDBCDataSourceProperties(conf: KyuubiConf): Properties = {

@@ -108,7 +108,7 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <maven.version>3.8.6</maven.version>
+        <maven.version>3.8.7</maven.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.17</scala.version>
@@ -118,6 +118,7 @@
         <arrow.version>10.0.1</arrow.version>
         <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
         <antlr4.version>4.9.3</antlr4.version>
+        <antlr.st4.version>4.3.4</antlr.st4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.2.8</codahale.metrics.version>
@@ -132,6 +133,7 @@
         <delta.version>2.2.0</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
+        <flexmark.version>0.62.2</flexmark.version>
         <flink.version>1.15.2</flink.version>
         <flink.module.scala.suffix></flink.module.scala.suffix>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
@@ -139,7 +141,6 @@
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <grpc.version>1.48.0</grpc.version>
-        <gson.version>2.8.9</gson.version>
         <guava.version>31.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
         <hadoop.version>3.3.4</hadoop.version>
@@ -153,8 +154,8 @@
         <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
         <hive.archive.download.skip>false</hive.archive.download.skip>
-        <httpclient.version>4.5.13</httpclient.version>
-        <httpcore.version>4.4.15</httpcore.version>
+        <httpclient.version>4.5.14</httpclient.version>
+        <httpcore.version>4.4.16</httpcore.version>
         <hudi.version>0.12.0</hudi.version>
         <iceberg.version>1.1.0</iceberg.version>
         <jackson.version>2.14.1</jackson.version>
@@ -170,7 +171,7 @@
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.19.0</log4j.version>
         <mysql.jdbc.version>8.0.31</mysql.jdbc.version>
-        <netty.version>4.1.84.Final</netty.version>
+        <netty.version>4.1.87.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -181,7 +182,7 @@
         <scalatestplus.version>3.2.15.0</scalatestplus.version>
         <scopt.version>4.1.0</scopt.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <snakeyaml.version>1.31</snakeyaml.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `maven.plugin.scalatest.exclude.tags`
@@ -193,7 +194,7 @@
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.2.1</swagger.version>
         <swagger-ui.version>4.9.1</swagger-ui.version>
-        <testcontainers-scala.version>0.40.7</testcontainers-scala.version>
+        <testcontainers-scala.version>0.40.12</testcontainers-scala.version>
         <thrift.version>0.9.3</thrift.version>
         <trino.client.version>363</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
@@ -235,7 +236,7 @@
         <spotless.java.googlejavaformat.version>1.7</spotless.java.googlejavaformat.version>
         <spotless.python.includes></spotless.python.includes>
         <spotless.python.black.version>22.3.0</spotless.python.black.version>
-        <spotless.scala.scalafmt.version>3.6.1</spotless.scala.scalafmt.version>
+        <spotless.scala.scalafmt.version>3.7.1</spotless.scala.scalafmt.version>
 
         <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
         <distMgmtReleaseName>Apache Release Distribution Repository</distMgmtReleaseName>
@@ -251,6 +252,11 @@
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
                 <version>${antlr4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>ST4</artifactId>
+                <version>${antlr.st4.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.arrow</groupId>
@@ -678,6 +684,12 @@
             </dependency>
 
             <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-all</artifactId>
+                <version>${flexmark.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
                 <version>${slf4j.version}</version>
@@ -803,6 +815,12 @@
 
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpmime</artifactId>
+                <version>${httpclient.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>${httpcore.version}</version>
             </dependency>
@@ -879,6 +897,10 @@
                     <exclusion>
                         <groupId>io.netty</groupId>
                         <artifactId>netty-codec-xml</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-handler-ssl-ocsp</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>io.netty</groupId>
@@ -1462,6 +1484,19 @@
             </dependency>
 
             <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-multipart</artifactId>
+                <version>${jersey.version}</version>
+                <exclusions>
+                    <!--todo: remove this exclusion when Jersey 2.39 released with scope fix for Junit dependency-->
+                    <exclusion>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
                 <groupId>org.glassfish.jersey.test-framework</groupId>
                 <artifactId>jersey-test-framework-core</artifactId>
                 <version>${jersey.version}</version>
@@ -1581,12 +1616,6 @@
                         <artifactId>log4j-slf4j-impl</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>${gson.version}</version>
             </dependency>
 
             <dependency>
@@ -2038,6 +2067,14 @@
                                 <version>${spotless.python.black.version}</version>
                             </black>
                         </python>
+                        <markdown>
+                            <includes>
+                                <include>docs/**/*.md</include>
+                            </includes>
+                            <flexmark>
+                                <version>${flexmark.version}</version>
+                            </flexmark>
+                        </markdown>
                     </configuration>
                     <executions>
                         <execution>

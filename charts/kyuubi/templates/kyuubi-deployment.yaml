@@ -57,13 +57,16 @@ spec:
           envFrom: {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
           ports:
-            - name: frontend-port
-              containerPort: {{ .Values.server.bind.port }}
-              protocol: TCP
+            {{- range $name, $frontend := .Values.server }}
+            {{- if $frontend.enabled }}
+            - name: {{ $name | kebabcase }}
+              containerPort: {{ $frontend.port }}
+            {{- end }}
+            {{- end }}
           {{- if .Values.probe.liveness.enabled }}
           livenessProbe:
-            tcpSocket:
-              port: {{ .Values.server.bind.port }}
+            exec:
+              command: ["/bin/bash", "-c", "bin/kyuubi status"]
             initialDelaySeconds: {{ .Values.probe.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probe.liveness.periodSeconds }}
             timeoutSeconds: {{ .Values.probe.liveness.timeoutSeconds }}
@@ -72,8 +75,8 @@ spec:
           {{- end }}
           {{- if .Values.probe.readiness.enabled }}
           readinessProbe:
-            tcpSocket:
-              port: {{ .Values.server.bind.port }}
+            exec:
+              command: ["/bin/bash", "-c", "$KYUUBI_HOME/bin/kyuubi status"]
             initialDelaySeconds: {{ .Values.probe.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probe.readiness.periodSeconds }}
             timeoutSeconds: {{ .Values.probe.readiness.timeoutSeconds }}
@@ -85,7 +88,7 @@ spec:
           {{- end }}
           volumeMounts:
             - name: conf
-              mountPath: {{ .Values.server.confDir }}
+              mountPath: {{ .Values.kyuubiConfDir }}
             {{- with .Values.volumeMounts }}
               {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}

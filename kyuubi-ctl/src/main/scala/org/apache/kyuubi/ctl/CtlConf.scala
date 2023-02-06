@@ -19,11 +19,10 @@ package org.apache.kyuubi.ctl
 
 import java.time.Duration
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.{ConfigEntry, OptionalConfigEntry}
+import org.apache.kyuubi.config.KyuubiConf.buildConf
 
 object CtlConf {
-
-  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
   val CTL_REST_CLIENT_BASE_URL: OptionalConfigEntry[String] =
     buildConf("kyuubi.ctl.rest.base.url")

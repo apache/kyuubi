@@ -21,13 +21,12 @@ import java.time.Duration
 
 import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.KyuubiConf.buildConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.ha.client.RetryPolicies
 
 object HighAvailabilityConf {
-
-  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
   @deprecated("using kyuubi.ha.addresses instead", "1.6.0")
   val HA_ZK_QUORUM: ConfigEntry[String] = buildConf("kyuubi.ha.zookeeper.quorum")

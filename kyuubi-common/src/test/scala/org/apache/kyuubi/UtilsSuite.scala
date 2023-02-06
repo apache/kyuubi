@@ -49,6 +49,7 @@ class UtilsSuite extends KyuubiFunSuite {
     assert(props.getProperty("kyuubi_trino_version") === TRINO_COMPILE_VERSION)
     assert(props.getProperty("branch") === BRANCH)
     assert(props.getProperty("revision") === REVISION)
+    assert(props.getProperty("revision_time") === REVISION_TIME)
     assert(props.getProperty("user") === BUILD_USER)
     assert(props.getProperty("url") === REPO_URL)
     assert(props.getProperty("date") === BUILD_DATE)

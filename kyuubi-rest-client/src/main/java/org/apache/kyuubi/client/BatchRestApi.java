@@ -17,13 +17,10 @@
 
 package org.apache.kyuubi.client;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.kyuubi.client.api.v1.dto.Batch;
-import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
-import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
-import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
-import org.apache.kyuubi.client.api.v1.dto.OperationLog;
+import org.apache.kyuubi.client.api.v1.dto.*;
 import org.apache.kyuubi.client.util.JsonUtils;
 
 public class BatchRestApi {
@@ -41,6 +38,13 @@ public class BatchRestApi {
   public Batch createBatch(BatchRequest request) {
     String requestBody = JsonUtils.toJson(request);
     return this.getClient().post(API_BASE_PATH, requestBody, Batch.class, client.getAuthHeader());
+  }
+
+  public Batch createBatch(BatchRequest request, File resourceFile) {
+    Map<String, MultiPart> multiPartMap = new HashMap<>();
+    multiPartMap.put("batchRequest", new MultiPart(MultiPart.MultiPartType.JSON, request));
+    multiPartMap.put("resourceFile", new MultiPart(MultiPart.MultiPartType.FILE, resourceFile));
+    return this.getClient().post(API_BASE_PATH, multiPartMap, Batch.class, client.getAuthHeader());
   }
 
   public Batch getBatchById(String batchId) {

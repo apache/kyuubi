@@ -228,7 +228,7 @@ abstract class TFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        error("Error getting type info: ", e)
+        error("Error getting info: ", e)
         resp.setInfoValue(TGetInfoValue.lenValue(0))
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }

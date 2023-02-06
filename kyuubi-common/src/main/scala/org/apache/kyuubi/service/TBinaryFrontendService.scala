@@ -163,7 +163,7 @@ abstract class TBinaryFrontendService(name: String)
           }
         }
         sslServerSocket.setEnabledProtocols(enabledProtocols)
-        info(s"SSL Server Socket enabled protocols: $enabledProtocols")
+        info(s"SSL Server Socket enabled protocols: ${enabledProtocols.mkString(",")}")
 
       case _ =>
     }

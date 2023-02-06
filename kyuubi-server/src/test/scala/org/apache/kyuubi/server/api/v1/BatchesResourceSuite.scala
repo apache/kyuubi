@@ -28,12 +28,14 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.DurationInt
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.glassfish.jersey.media.multipart.FormDataMultiPart
+import org.glassfish.jersey.media.multipart.file.FileDataBodyPart
 
 import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.ApplicationInfo
+import org.apache.kyuubi.engine.{ApplicationInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
@@ -197,6 +199,32 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       .delete()
     assert(200 == deleteBatchResponse.getStatus)
     assert(!deleteBatchResponse.readEntity(classOf[CloseBatchResponse]).isSuccess)
+  }
+
+  test("open batch session with uploading resource") {
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
+    val exampleJarFile = Paths.get(sparkBatchTestResource.get).toFile
+    val multipart = new FormDataMultiPart()
+      .field("batchRequest", requestObj, MediaType.APPLICATION_JSON_TYPE)
+      .bodyPart(new FileDataBodyPart("resourceFile", exampleJarFile))
+      .asInstanceOf[FormDataMultiPart]
+
+    val response = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON)
+      .post(Entity.entity(multipart, MediaType.MULTIPART_FORM_DATA))
+    assert(200 == response.getStatus)
+    val batch = response.readEntity(classOf[Batch])
+    assert(batch.getKyuubiInstance === fe.connectionUrl)
+    assert(batch.getBatchType === "SPARK")
+    assert(batch.getName === sparkBatchTestAppName)
+    assert(batch.getCreateTime > 0)
+    assert(batch.getEndTime === 0)
+
+    webTarget.path(s"api/v1/batches/${batch.getId()}").request(
+      MediaType.APPLICATION_JSON_TYPE).delete()
+    eventually(timeout(3.seconds)) {
+      assert(KyuubiApplicationManager.uploadWorkDir.toFile.listFiles().isEmpty)
+    }
   }
 
   test("get batch session list") {

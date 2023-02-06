@@ -1,28 +1,25 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Building Kyuubi Spark AuthZ Plugin
 
-
 ## Build with Apache Maven
 
-Kyuubi Spark AuthZ Plugin is built using [Apache Maven](http://maven.apache.org).
+Kyuubi Spark AuthZ Plugin is built using [Apache Maven](https://maven.apache.org).
 To build it, `cd` to the root direct of kyuubi project and run:
 
 ```shell
@@ -48,14 +45,14 @@ build/mvn clean package -pl :kyuubi-spark-authz_2.12 -DskipTests -Dspark.version
 
 The available `spark.version`s are shown in the following table.
 
-|   Spark Version   |  Supported  |                                                         Remark                                                         |
-|:-----------------:|:-----------:|:----------------------------------------------------------------------------------------------------------------------:|
-|      master       |      √      |                                                           -                                                            |
-|       3.3.x       |      √      |                                                           -                                                            |
-|       3.2.x       |      √      |                                                           -                                                            |
-|       3.1.x       |      √      |                                                           -                                                            |
-|       3.0.x       |      √      |                                                           -                                                            |
-| 2.4.x and earlier |      ×      | [PR 2367](https://github.com/apache/kyuubi/pull/2367) is used to track how we work with older releases with scala 2.11 |
+|   Spark Version   | Supported |                                                         Remark                                                         |
+|:-----------------:|:---------:|:----------------------------------------------------------------------------------------------------------------------:|
+|      master       |     √     |                                                           -                                                            |
+|       3.3.x       |     √     |                                                           -                                                            |
+|       3.2.x       |     √     |                                                           -                                                            |
+|       3.1.x       |     √     |                                                           -                                                            |
+|       3.0.x       |     √     |                                                           -                                                            |
+| 2.4.x and earlier |     ×     | [PR 2367](https://github.com/apache/kyuubi/pull/2367) is used to track how we work with older releases with scala 2.11 |
 
 Currently, Spark released with Scala 2.12 are supported.
 
@@ -71,21 +68,22 @@ build/mvn clean package -pl :kyuubi-spark-authz_2.12 -DskipTests -Dranger.versio
 
 The available `ranger.version`s are shown in the following table.
 
-| Ranger Version |  Supported  | Remark |
-|:--------------:|:-----------:|:------:|
-|     2.3.x      |      √      |   -    |
-|     2.2.x      |      √      |   -    |
-|     2.1.x      |      √      |   -    |
-|     2.0.x      |      √      |   -    |
-|     1.2.x      |      √      |   -    |
-|     1.1.x      |      √      |   -    |
-|     1.0.x      |      √      |   -    |
-|     0.7.x      |      √      |   -    |
-|     0.6.x      |      √      |   -    |
+| Ranger Version | Supported | Remark |
+|:--------------:|:---------:|:------:|
+|     2.3.x      |     √     |   -    |
+|     2.2.x      |     √     |   -    |
+|     2.1.x      |     √     |   -    |
+|     2.0.x      |     √     |   -    |
+|     1.2.x      |     √     |   -    |
+|     1.1.x      |     √     |   -    |
+|     1.0.x      |     √     |   -    |
+|     0.7.x      |     √     |   -    |
+|     0.6.x      |     √     |   -    |
 
 Currently, all ranger releases are supported.
 
 ## Test with ScalaTest Maven plugin
+
 If you omit `-DskipTests` option in the command above, you will also get all unit tests run.
 
 ```shell

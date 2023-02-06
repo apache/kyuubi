@@ -727,7 +727,8 @@ object KyuubiConf {
       .createWithDefault("X-Real-IP")
 
   val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("kyuubi.authentication")
-    .doc("A comma-separated list of client authentication types.<ul>" +
+    .doc("A comma-separated list of client authentication types." +
+      "<ul>" +
       " <li>NOSASL: raw transport.</li>" +
       " <li>NONE: no authentication check.</li>" +
       " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
@@ -735,11 +736,28 @@ object KyuubiConf {
       " <li>JDBC: JDBC query authentication.</li>" +
       " <li>LDAP: Lightweight Directory Access Protocol authentication.</li>" +
       "</ul>" +
-      " Note that: For KERBEROS, it is SASL/GSSAPI mechanism," +
-      " and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanisms." +
-      " If only NOSASL is specified, the authentication will be NOSASL." +
-      " For SASL authentication, KERBEROS and PLAIN auth types are supported at the same time," +
-      " and only the first specified PLAIN auth type is valid.")
+      "The following tree describes the catalog of each option." +
+      "<ul>" +
+      "  <li><code>NOSASL</code></li>" +
+      "  <li>SASL" +
+      "    <ul>" +
+      "      <li>SASL/PLAIN</li>" +
+      "        <ul>" +
+      "          <li><code>NONE</code></li>" +
+      "          <li><code>LDAP</code></li>" +
+      "          <li><code>JDBC</code></li>" +
+      "          <li><code>CUSTOM</code></li>" +
+      "        </ul>" +
+      "      <li>SASL/GSSAPI" +
+      "        <ul>" +
+      "          <li><code>KERBEROS</code></li>" +
+      "        </ul>" +
+      "      </li>" +
+      "    </ul>" +
+      "  </li>" +
+      "</ul>" +
+      " Note that: for SASL authentication, KERBEROS and PLAIN auth types are supported" +
+      " at the same time, and only the first specified PLAIN auth type is valid.")
     .version("1.0.0")
     .serverOnly
     .stringConf
@@ -765,10 +783,11 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val AUTHENTICATION_LDAP_BASEDN: OptionalConfigEntry[String] =
-    buildConf("kyuubi.authentication.ldap.base.dn")
+  val AUTHENTICATION_LDAP_BASE_DN: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.baseDN")
+      .withAlternative("kyuubi.authentication.ldap.base.dn")
       .doc("LDAP base DN.")
-      .version("1.0.0")
+      .version("1.7.0")
       .stringConf
       .createOptional
 
@@ -779,13 +798,108 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val AUTHENTICATION_LDAP_GUIDKEY: ConfigEntry[String] =
+  val AUTHENTICATION_LDAP_GROUP_DN_PATTERN: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.groupDNPattern")
+      .doc("COLON-separated list of patterns to use to find DNs for group entities in " +
+        "this directory. Use %s where the actual group name is to be substituted for. " +
+        "For example: CN=%s,CN=Groups,DC=subdomain,DC=domain,DC=com.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_LDAP_USER_DN_PATTERN: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.userDNPattern")
+      .doc("COLON-separated list of patterns to use to find DNs for users in this directory. " +
+        "Use %s where the actual group name is to be substituted for. " +
+        "For example: CN=%s,CN=Users,DC=subdomain,DC=domain,DC=com.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_LDAP_GROUP_FILTER: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.authentication.ldap.groupFilter")
+      .doc("COMMA-separated list of LDAP Group names (short name not full DNs). " +
+        "For example: HiveAdmins,HadoopAdmins,Administrators")
+      .version("1.7.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
+  val AUTHENTICATION_LDAP_USER_FILTER: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.authentication.ldap.userFilter")
+      .doc("COMMA-separated list of LDAP usernames (just short names, not full DNs). " +
+        "For example: hiveuser,impalauser,hiveadmin,hadoopadmin")
+      .version("1.7.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
+  val AUTHENTICATION_LDAP_GUID_KEY: ConfigEntry[String] =
     buildConf("kyuubi.authentication.ldap.guidKey")
-      .doc("LDAP attribute name whose values are unique in this LDAP server." +
-        "For example:uid or cn.")
+      .doc("LDAP attribute name whose values are unique in this LDAP server. " +
+        "For example: uid or CN.")
       .version("1.2.0")
       .stringConf
       .createWithDefault("uid")
+
+  val AUTHENTICATION_LDAP_GROUP_MEMBERSHIP_KEY: ConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.groupMembershipKey")
+      .doc("LDAP attribute name on the group object that contains the list of distinguished " +
+        "names for the user, group, and contact objects that are members of the group. " +
+        "For example: member, uniqueMember or memberUid")
+      .version("1.7.0")
+      .stringConf
+      .createWithDefault("member")
+
+  val AUTHENTICATION_LDAP_USER_MEMBERSHIP_KEY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.userMembershipKey")
+      .doc("LDAP attribute name on the user object that contains groups of which the user is " +
+        "a direct member, except for the primary group, which is represented by the " +
+        "primaryGroupId. For example: memberOf")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_LDAP_GROUP_CLASS_KEY: ConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.groupClassKey")
+      .doc("LDAP attribute name on the group entry that is to be used in LDAP group searches. " +
+        "For example: group, groupOfNames or groupOfUniqueNames.")
+      .version("1.7.0")
+      .stringConf
+      .createWithDefault("groupOfNames")
+
+  val AUTHENTICATION_LDAP_CUSTOM_LDAP_QUERY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.customLDAPQuery")
+      .doc("A full LDAP query that LDAP Atn provider uses to execute against LDAP Server. " +
+        "If this query returns a null resultset, the LDAP Provider fails the Authentication " +
+        "request, succeeds if the user is part of the resultset." +
+        "For example: `(&(objectClass=group)(objectClass=top)(instanceType=4)(cn=Domain*))`, " +
+        "`(&(objectClass=person)(|(sAMAccountName=admin)" +
+        "(|(memberOf=CN=Domain Admins,CN=Users,DC=domain,DC=com)" +
+        "(memberOf=CN=Administrators,CN=Builtin,DC=domain,DC=com))))`")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_LDAP_BIND_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.binddn")
+      .doc("The user with which to bind to the LDAP server, and search for the full domain name " +
+        "of the user being authenticated. This should be the full domain name of the user, and " +
+        "should have search access across all users in the LDAP tree. If not specified, then " +
+        "the user being authenticated will be used as the bind user. " +
+        "For example: CN=bindUser,CN=Users,DC=subdomain,DC=domain,DC=com")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_LDAP_BIND_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.bindpw")
+      .doc("The password for the bind user, to be used to search for the full name of the " +
+        "user being authenticated. If the username is specified, this parameter must also be " +
+        "specified.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
 
   val AUTHENTICATION_JDBC_DRIVER: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.jdbc.driver.class")
