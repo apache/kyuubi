@@ -118,9 +118,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       pathNames.foreach(name => schemaUrls += s"$schemaPackage/$name")
     }
 
-    def getLatestSchemaUrl(schemaUrls: Seq[String]): Option[String] = {}
-
-    schemaUrls.sorted.lastOption.map { schemaUrl =>
+    schemaUrls.sortWith { (u1, u2) =>
+      val version1 = getSchemaVersion(u1)
+      val version2 = getSchemaVersion(u2)
+    }.lastOption.map { schemaUrl =>
       val inputStream = classLoader.getResourceAsStream(schemaUrl)
       try {
         new BufferedReader(new InputStreamReader(inputStream)).lines()
@@ -131,10 +132,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
-  def getSchemaVersion(schemaUrl: String): Option[(Int, Int, Int)] =
+  def getSchemaVersion(schemaUrl: String): (Int, Int, Int) =
     SCHEMA_URL_PATTERN.findFirstMatchIn(schemaUrl) match {
-      case Some(group) => Some(group.group(0).toInt, group.group(1).toInt, group.group(2).toInt)
-      case _ => None
+      case Some(group) => (group.group(0).toInt, group.group(1).toInt, group.group(2).toInt)
+      case _ => throw new KyuubiException(s"Invalid schema url: $schemaUrl")
     }
 
   override def close(): Unit = {
