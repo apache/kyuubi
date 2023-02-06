@@ -25,7 +25,6 @@ import java.util.stream.Collectors
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
-import scala.util.matching.Regex
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
@@ -131,7 +130,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
   def getSchemaVersion(schemaUrl: String): (Int, Int, Int) =
     SCHEMA_URL_PATTERN.findFirstMatchIn(schemaUrl) match {
-      case Some(group) => (group.group(0).toInt, group.group(1).toInt, group.group(2).toInt)
+      case Some(group) => (group.group(1).toInt, group.group(2).toInt, group.group(3).toInt)
       case _ => throw new KyuubiException(s"Invalid schema url: $schemaUrl")
     }
 
@@ -521,7 +520,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 }
 
 object JDBCMetadataStore {
-  private val SCHEMA_URL_PATTERN = """^metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
+  private val SCHEMA_URL_PATTERN = """metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
   private val METADATA_TABLE = "metadata"
   private val METADATA_STATE_ONLY_COLUMNS = Seq(
     "identifier",
