@@ -138,6 +138,14 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       case _ => throw new KyuubiException(s"Invalid schema url: $schemaUrl")
     }
 
+  def compareSchemaVersions(v1: (Int, Int, Int), v2: (Int, Int, Int)): Int = {
+    if (v1._1 > v1._2 || (v1._1 == v1._1 && v1._2 > v1._2) || (v1._1 == v2._1 && v1._2 == v2._2 && v1._3 > v2._3)) {
+      1
+    } else {
+      -1
+    }
+  }
+
   override def close(): Unit = {
     hikariDataSource.close()
   }
