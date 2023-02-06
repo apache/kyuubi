@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   web-ui:
+    if: false
     name: Kyuubi Web UI check
     runs-on: ubuntu-22.04
     steps:

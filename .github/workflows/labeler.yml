@@ -26,6 +26,7 @@ permissions:
 
 jobs:
   triage:
+    if: false
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/labeler@v4

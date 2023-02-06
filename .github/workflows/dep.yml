@@ -43,6 +43,9 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Install Mvnd
+        id: install-mvnd
+        uses: ./.github/actions/install-mvnd
       - name: build
         env:
           MAVEN_OPTS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error

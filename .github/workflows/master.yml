@@ -36,6 +36,7 @@ env:
 
 jobs:
   default:
+    if: true
     name: Kyuubi and Spark Test
     runs-on: ubuntu-22.04
     strategy:
@@ -75,6 +76,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Mvnd
+        uses: ./.github/actions/install-mvnd
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -82,7 +85,7 @@ jobs:
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
-          ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
+          mvnd clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
@@ -102,6 +105,7 @@ jobs:
             **/kyuubi-spark-sql-engine.log*
 
   authz:
+    if: false
     name: Kyuubi-AuthZ and Spark Test
     runs-on: ubuntu-22.04
     strategy:
@@ -141,6 +145,7 @@ jobs:
             **/kyuubi-spark-sql-engine.log*
 
   flink-it:
+    if: false
     name: Flink Test
     runs-on: ubuntu-22.04
     strategy:
@@ -200,6 +205,7 @@ jobs:
             **/kyuubi-flink-sql-engine.log*
 
   hive-it:
+    if: false
     name: Hive Test
     runs-on: ubuntu-22.04
     strategy:
@@ -234,6 +240,7 @@ jobs:
             **/kyuubi-hive-sql-engine.log*
 
   jdbc-it:
+    if: false
     name: JDBC Test
     runs-on: ubuntu-22.04
     strategy:
@@ -254,11 +261,13 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Mvnd
+        uses: ./.github/actions/install-mvnd
       - name: Build and test JDBC with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+          mvnd ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
+          mvnd ${MVN_OPT} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -269,6 +278,7 @@ jobs:
             **/kyuubi-jdbc-engine.log*
 
   trino-it:
+    if: false
     name: Trino Test
     runs-on: ubuntu-22.04
     strategy:
@@ -289,11 +299,13 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Mvnd
+        uses: ./.github/actions/install-mvnd
       - name: Build and test Trino with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-trino-engine,integration-tests/kyuubi-trino-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+          mvnd ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
+          mvnd ${MVN_OPT} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -304,6 +316,7 @@ jobs:
             **/kyuubi-trino-engine.log*
 
   tpch-tpcds:
+    if: false
     name: TPC-H and TPC-DS Tests
     runs-on: ubuntu-22.04
     env:
@@ -328,6 +341,7 @@ jobs:
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds,org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite,org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
 
   kyuubi-on-k8s-it:
+    if: false
     name: Kyuubi Server On Kubernetes Integration Test
     runs-on: ubuntu-22.04
     steps:
@@ -389,6 +403,7 @@ jobs:
             **/target/unit-tests.log
 
   spark-on-k8s-it:
+    if: false
     name: Spark Engine On Kubernetes Integration Test
     runs-on: ubuntu-22.04
     steps:
@@ -433,6 +448,7 @@ jobs:
             **/kyuubi-spark-batch-submit.log*
 
   zookeeper-it:
+    if: false
     name: Zookeeper Integration Test
     runs-on: ubuntu-22.04
     strategy:

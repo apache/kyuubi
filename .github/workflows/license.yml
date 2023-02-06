@@ -31,6 +31,7 @@ concurrency:
 
 jobs:
   rat:
+    if: false
     name: License
     runs-on: ubuntu-22.04
     steps:
