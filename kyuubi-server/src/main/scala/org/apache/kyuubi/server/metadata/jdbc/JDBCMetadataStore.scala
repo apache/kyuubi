@@ -25,6 +25,7 @@ import java.util.stream.Collectors
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+import scala.util.matching.Regex
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
@@ -118,6 +119,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       pathNames.foreach(name => schemaUrls += s"$schemaPackage/$name")
     }
 
+    def getLatestSchemaUrl(schemaUrls: Seq[String]): Option[String] = {}
+
     schemaUrls.sorted.lastOption.map { schemaUrl =>
       val inputStream = classLoader.getResourceAsStream(schemaUrl)
       try {
@@ -128,6 +131,12 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       }
     }
   }
+
+  def getSchemaVersion(schemaUrlPattern: Regex, schemaUrl: String): Option[(Int, Int, Int)] =
+    schemaUrlPattern.findFirstMatchIn(schemaUrl) match {
+      case Some(group) => Some(group.group(0).toInt, group.group(1).toInt, group.group(2).toInt)
+      case _ => None
+    }
 
   override def close(): Unit = {
     hikariDataSource.close()
