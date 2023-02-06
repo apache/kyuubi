@@ -97,7 +97,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   private[jdbc] def getInitSchema(dbType: DatabaseType): Option[String] = {
     val classLoader = Utils.getContextOrKyuubiClassLoader
     val schemaPackage = s"sql/${dbType.toString.toLowerCase}"
-    val schemaUrlPattern = """^metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
     val schemaUrls = ListBuffer[String]()
 
     Option(classLoader.getResource(schemaPackage)).map(_.toURI).foreach { uri =>
@@ -106,14 +105,14 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         try {
           Files.walk(fs.getPath(schemaPackage), 1).iterator().asScala.map(
             _.getFileName.toString).filter { name =>
-            schemaUrlPattern.findFirstMatchIn(name).isDefined
+            SCHEMA_URL_PATTERN.findFirstMatchIn(name).isDefined
           }.toArray
         } finally {
           fs.close()
         }
       } else {
         Paths.get(uri).toFile.listFiles((_, name) => {
-          schemaUrlPattern.findFirstMatchIn(name).isDefined
+          SCHEMA_URL_PATTERN.findFirstMatchIn(name).isDefined
         }).map(_.getName)
       }
       pathNames.foreach(name => schemaUrls += s"$schemaPackage/$name")
@@ -132,8 +131,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
-  def getSchemaVersion(schemaUrlPattern: Regex, schemaUrl: String): Option[(Int, Int, Int)] =
-    schemaUrlPattern.findFirstMatchIn(schemaUrl) match {
+  def getSchemaVersion(schemaUrl: String): Option[(Int, Int, Int)] =
+    SCHEMA_URL_PATTERN.findFirstMatchIn(schemaUrl) match {
       case Some(group) => Some(group.group(0).toInt, group.group(1).toInt, group.group(2).toInt)
       case _ => None
     }
@@ -514,6 +513,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 }
 
 object JDBCMetadataStore {
+  private val SCHEMA_URL_PATTERN = """^metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
   private val METADATA_TABLE = "metadata"
   private val METADATA_STATE_ONLY_COLUMNS = Seq(
     "identifier",
