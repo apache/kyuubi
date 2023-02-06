@@ -188,14 +188,6 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
     val catalog = getCatalog(spark, catalogName)
 
     catalog match {
-      case builtin if builtin.name() == SESSION_CATALOG =>
-        super.getColumnsByCatalog(
-          spark,
-          SESSION_CATALOG,
-          schemaPattern,
-          tablePattern,
-          columnPattern)
-
       case tc: TableCatalog =>
         val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
         val tp = tablePattern.r.pattern
@@ -210,6 +202,14 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
           table.schema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
             .map { case (f, i) => toColumnResult(tc.name(), namespace, tableName, f, i) }
         }
+
+      case builtin if builtin.name() == SESSION_CATALOG =>
+        super.getColumnsByCatalog(
+          spark,
+          SESSION_CATALOG,
+          schemaPattern,
+          tablePattern,
+          columnPattern)
     }
   }
 }
