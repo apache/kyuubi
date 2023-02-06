@@ -95,11 +95,14 @@ class KyuubiSessionImpl(
 
   private var _engineSessionHandle: SessionHandle = _
 
+  private var openSessionError: Option[Throwable] = None
+
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
+
 
     checkSessionAccessPathURIs()
 
@@ -123,12 +126,14 @@ class KyuubiSessionImpl(
           InternalSecurityAccessor.get().issueToken()
         } else {
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
+
         }
       try {
         _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
         _engineSessionHandle = _client.openSession(protocol, user, passwd, openEngineSessionConf)
       } catch {
         case e: Throwable =>
+          openSessionError = Some(e)
           error(
             s"Opening engine [${engine.defaultEngineName} $host:$port]" +
               s" for $user session failed",
@@ -198,7 +203,7 @@ class KyuubiSessionImpl(
     try {
       if (_client != null) _client.closeSession()
     } finally {
-      if (engine != null) engine.close()
+      openSessionError.foreach { _ => if (engine != null) engine.close() }
       sessionEvent.endTime = System.currentTimeMillis()
       EventBus.post(sessionEvent)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
