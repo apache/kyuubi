@@ -220,6 +220,20 @@
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ]
 }, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeRelation",
+  "tableDescs" : [ {
+    "fieldName" : "relation",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : true
+  } ],
+  "opType" : "DESCTABLE",
+  "queryDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropColumns",
   "tableDescs" : [ {
     "fieldName" : "child",

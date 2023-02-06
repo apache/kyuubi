@@ -410,6 +410,16 @@ object TableCommands {
     TableCommandSpec(cmd, Seq(tableDesc), DESCTABLE)
   }
 
+  val DescribeRelationTable = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.DescribeRelation"
+    val tableDesc = TableDesc(
+      "relation",
+      classOf[ResolvedTableTableExtractor],
+      isInput = true,
+      setCurrentDatabaseIfMissing = true)
+    TableCommandSpec(cmd, Seq(tableDesc), DESCTABLE)
+  }
+
   val DropTable = {
     val cmd = "org.apache.spark.sql.execution.command.DropTableCommand"
     val tableTypeDesc =
@@ -614,6 +624,7 @@ object TableCommands {
     DeleteFromTable,
     DescribeColumn,
     DescribeTable,
+    DescribeRelationTable,
     DropTable,
     DropTableV2,
     InsertIntoDataSource,
