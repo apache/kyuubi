@@ -96,9 +96,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   private[jdbc] def getInitSchema(dbType: DatabaseType): Option[String] = {
     val classLoader = Utils.getContextOrKyuubiClassLoader
     val schemaPackage = s"sql/${dbType.toString.toLowerCase}"
-    val schemaUrls = ListBuffer[String]()
 
-    Option(classLoader.getResource(schemaPackage)).map(_.toURI).foreach { uri =>
+    Option(classLoader.getResource(schemaPackage)).map(_.toURI).flatMap { uri =>
       val pathNames = if (uri.getScheme == "jar") {
         val fs = FileSystems.newFileSystem(uri, Map.empty[String, AnyRef].asJava)
         try {
@@ -114,18 +113,16 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           SCHEMA_URL_PATTERN.findFirstMatchIn(name).isDefined
         }).map(_.getName)
       }
-      pathNames.foreach(name => schemaUrls += s"$schemaPackage/$name")
-    }
-
-    getLatestSchemaUrl(schemaUrls).map { schemaUrl =>
-      val inputStream = classLoader.getResourceAsStream(schemaUrl)
-      try {
-        new BufferedReader(new InputStreamReader(inputStream)).lines()
-          .collect(Collectors.joining("\n"))
-      } finally {
-        inputStream.close()
+      getLatestSchemaUrl(pathNames).map(name => s"$schemaPackage/$name").map { schemaUrl =>
+        val inputStream = classLoader.getResourceAsStream(schemaUrl)
+        try {
+          new BufferedReader(new InputStreamReader(inputStream)).lines()
+            .collect(Collectors.joining("\n"))
+        } finally {
+          inputStream.close()
+        }
       }
-    }
+    }.headOption
   }
 
   def getSchemaVersion(schemaUrl: String): (Int, Int, Int) =
@@ -520,7 +517,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 }
 
 object JDBCMetadataStore {
-  private val SCHEMA_URL_PATTERN = """metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
+  private val SCHEMA_URL_PATTERN = """^metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
   private val METADATA_TABLE = "metadata"
   private val METADATA_STATE_ONLY_COLUMNS = Seq(
     "identifier",
