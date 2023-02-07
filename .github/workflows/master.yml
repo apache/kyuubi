@@ -348,13 +348,11 @@ jobs:
           load: true
           tags: apache/kyuubi:latest
       - name: Setup Minikube
-        uses: medyagh/setup-minikube@v0.0.11
-        with:
-          cache: false
-          minikube-version: 1.29.0
-          driver: docker
-          container-runtime: containerd
-          kubernetes-version: v1.26.1
+        run: |
+          # https://minikube.sigs.k8s.io/docs/start/
+          curl -LO https://github.com/kubernetes/minikube/releases/download/v1.29.0/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+          minikube start --cpus 2 --memory 4096 --kubernetes-version=v1.26.1 --force
       - name: kubectl pre-check
         run: |
           kubectl get nodes
@@ -397,13 +395,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Setup Minikube
-        uses: medyagh/setup-minikube@v0.0.11
-        with:
-          cache: false
-          minikube-version: 1.29.0
-          driver: docker
-          container-runtime: containerd
-          kubernetes-version: v1.26.1
+        run: |
+          # https://minikube.sigs.k8s.io/docs/start/
+          curl -LO https://github.com/kubernetes/minikube/releases/download/v1.29.0/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+          minikube start --cpus 2 --memory 4096 --kubernetes-version=v1.26.1 --force
       # in case: https://spark.apache.org/docs/latest/running-on-kubernetes.html#rbac
       - name: Create Service Account
         run: |
