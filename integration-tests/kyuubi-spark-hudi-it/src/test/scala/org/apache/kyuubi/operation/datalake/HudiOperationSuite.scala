@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation.datalake
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.HudiMetadataTests
+import org.apache.kyuubi.engine.spark.operation.HudiMetadataTests
 import org.apache.kyuubi.tags.HudiTest
 
 @HudiTest

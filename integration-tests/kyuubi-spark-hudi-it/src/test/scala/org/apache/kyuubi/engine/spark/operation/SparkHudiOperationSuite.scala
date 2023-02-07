@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.HudiMetadataTests
 import org.apache.kyuubi.tags.HudiTest
 
 @HudiTest

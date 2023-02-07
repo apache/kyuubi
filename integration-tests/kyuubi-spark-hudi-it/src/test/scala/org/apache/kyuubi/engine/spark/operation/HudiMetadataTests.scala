@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.kyuubi.HudiSuiteMixin
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 trait HudiMetadataTests extends HiveJDBCTestHelper with HudiSuiteMixin {
