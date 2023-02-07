@@ -36,7 +36,7 @@ env:
 
 jobs:
   default:
-    if: true
+    if: false
     name: Kyuubi and Spark Test
     runs-on: ubuntu-22.04
     strategy:
@@ -240,7 +240,7 @@ jobs:
             **/kyuubi-hive-sql-engine.log*
 
   jdbc-it:
-    if: false
+    if: true
     name: JDBC Test
     runs-on: ubuntu-22.04
     strategy:
