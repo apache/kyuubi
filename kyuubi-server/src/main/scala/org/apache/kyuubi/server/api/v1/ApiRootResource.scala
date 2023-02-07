@@ -104,7 +104,7 @@ private[server] object ApiRootResource {
       conf: KyuubiConf): Unit = {
     val proxyServlet = new WebProxyServlet(conf)
     val holder = new ServletHolder(proxyServlet)
-    val contextHandler = new ServletContextHandler();
+    val contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
     contextHandler.setContextPath("/proxy");
     contextHandler.addServlet(holder, "/*");
     contextHandlerCollection.addHandler(contextHandler)
