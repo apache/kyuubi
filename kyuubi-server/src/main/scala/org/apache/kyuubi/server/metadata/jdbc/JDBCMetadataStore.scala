@@ -127,7 +127,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
   def getSchemaVersion(schemaUrl: String): (Int, Int, Int) =
     SCHEMA_URL_PATTERN.findFirstMatchIn(schemaUrl) match {
-      case Some(group) => (group.group(1).toInt, group.group(2).toInt, group.group(3).toInt)
+      case Some(m) => (m.group(1).toInt, m.group(2).toInt, m.group(3).toInt)
       case _ => throw new KyuubiException(s"Invalid schema url: $schemaUrl")
     }
 
