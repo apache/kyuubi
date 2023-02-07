@@ -347,7 +347,6 @@ jobs:
           file: build/Dockerfile
           load: true
           tags: apache/kyuubi:latest
-      # from https://github.com/marketplace/actions/setup-minikube-kubernetes-cluster
       - name: Setup Minikube
         uses: medyagh/setup-minikube@v0.0.11
         with:
@@ -397,7 +396,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      # from https://github.com/marketplace/actions/setup-minikube-kubernetes-cluster
       - name: Setup Minikube
         uses: medyagh/setup-minikube@v0.0.11
         with:
