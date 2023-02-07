@@ -356,6 +356,7 @@ jobs:
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: kubectl pre-check
         run: |
+          kubectl get nodes
           kubectl get serviceaccount
           kubectl create serviceaccount kyuubi
           kubectl create clusterrolebinding kyuubi-role --clusterrole=edit --serviceaccount=default:kyuubi
