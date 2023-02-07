@@ -86,6 +86,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
+          cache:
+            - 'npm'
+            - 'pnpm'
+          cache-dependency-path: |
+            kyuubi-server/web-ui/package-lock.json
+            kyuubi-server/web-ui/pnpm-lock.yaml
       - name: Web UI Style with node
         run: |
           cd ./kyuubi-server/web-ui
