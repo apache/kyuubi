@@ -352,8 +352,9 @@ jobs:
         uses: manusa/actions-setup-minikube@v2.7.2
         with:
           minikube version: 'v1.29.0'
-          kubernetes version: 'v1.25.4'
+          kubernetes version: 'v1.26.1'
           github token: ${{ secrets.GITHUB_TOKEN }}
+          start args: --container-runtime=containerd
       - name: kubectl pre-check
         run: |
           kubectl get nodes
@@ -400,10 +401,10 @@ jobs:
         uses: manusa/actions-setup-minikube@v2.7.2
         with:
           minikube version: 'v1.29.0'
-          kubernetes version: 'v1.25.4'
+          kubernetes version: 'v1.26.1'
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: '--extra-config=kubeadm.ignore-preflight-errors=NumCPU --force --cpus 2 --memory 4096'
+          start args: '--container-runtime=containerd --extra-config=kubeadm.ignore-preflight-errors=NumCPU --force --cpus 2 --memory 4096'
       # in case: https://spark.apache.org/docs/latest/running-on-kubernetes.html#rbac
       - name: Create Service Account
         run: |
