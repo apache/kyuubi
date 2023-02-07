@@ -354,7 +354,7 @@ jobs:
           minikube version: 'v1.29.0'
           kubernetes version: 'v1.26.1'
           github token: ${{ secrets.GITHUB_TOKEN }}
-          start args: --container-runtime=containerd
+          start args: '--container-runtime=containerd --alsologtostderr --v=10'
       - name: kubectl pre-check
         run: |
           kubectl get nodes
@@ -404,7 +404,7 @@ jobs:
           kubernetes version: 'v1.26.1'
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: '--container-runtime=containerd --extra-config=kubeadm.ignore-preflight-errors=NumCPU --force --cpus 2 --memory 4096'
+          start args: '--container-runtime=containerd --extra-config=kubeadm.ignore-preflight-errors=NumCPU --force --cpus 2 --memory 4096 --alsologtostderr --v=10'
       # in case: https://spark.apache.org/docs/latest/running-on-kubernetes.html#rbac
       - name: Create Service Account
         run: |
