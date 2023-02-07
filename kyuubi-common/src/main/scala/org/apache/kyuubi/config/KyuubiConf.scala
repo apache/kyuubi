@@ -2160,8 +2160,12 @@ object KyuubiConf {
   val OPERATION_LANGUAGE: ConfigEntry[String] =
     buildConf("kyuubi.operation.language")
       .doc("Choose a programing language for the following inputs" +
-        " <ul><li>SQL: (Default) Run all following statements as SQL queries.</li>" +
-        " <li>SCALA: Run all following input a scala codes</li></ul>")
+        "<ul>" +
+        "<li>SQL: (Default) Run all following statements as SQL queries.</li>" +
+        "<li>SCALA: Run all following input as scala codes</li>" +
+        "<li>PYTHON: (Experimental) Run all following input as Python codes with Spark engine" +
+        "</li>" +
+        "</ul>")
       .version("1.5.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))

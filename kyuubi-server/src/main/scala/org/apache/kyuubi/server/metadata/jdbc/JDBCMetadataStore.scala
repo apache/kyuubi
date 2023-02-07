@@ -96,37 +96,49 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   private[jdbc] def getInitSchema(dbType: DatabaseType): Option[String] = {
     val classLoader = Utils.getContextOrKyuubiClassLoader
     val schemaPackage = s"sql/${dbType.toString.toLowerCase}"
-    val schemaUrlPattern = """^metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
-    val schemaUrls = ListBuffer[String]()
 
-    Option(classLoader.getResource(schemaPackage)).map(_.toURI).foreach { uri =>
+    Option(classLoader.getResource(schemaPackage)).map(_.toURI).flatMap { uri =>
       val pathNames = if (uri.getScheme == "jar") {
         val fs = FileSystems.newFileSystem(uri, Map.empty[String, AnyRef].asJava)
         try {
           Files.walk(fs.getPath(schemaPackage), 1).iterator().asScala.map(
             _.getFileName.toString).filter { name =>
-            schemaUrlPattern.findFirstMatchIn(name).isDefined
+            SCHEMA_URL_PATTERN.findFirstMatchIn(name).isDefined
           }.toArray
         } finally {
           fs.close()
         }
       } else {
         Paths.get(uri).toFile.listFiles((_, name) => {
-          schemaUrlPattern.findFirstMatchIn(name).isDefined
+          SCHEMA_URL_PATTERN.findFirstMatchIn(name).isDefined
         }).map(_.getName)
       }
-      pathNames.foreach(name => schemaUrls += s"$schemaPackage/$name")
+      getLatestSchemaUrl(pathNames).map(name => s"$schemaPackage/$name").map { schemaUrl =>
+        val inputStream = classLoader.getResourceAsStream(schemaUrl)
+        try {
+          new BufferedReader(new InputStreamReader(inputStream)).lines()
+            .collect(Collectors.joining("\n"))
+        } finally {
+          inputStream.close()
+        }
+      }
+    }.headOption
+  }
+
+  def getSchemaVersion(schemaUrl: String): (Int, Int, Int) =
+    SCHEMA_URL_PATTERN.findFirstMatchIn(schemaUrl) match {
+      case Some(m) => (m.group(1).toInt, m.group(2).toInt, m.group(3).toInt)
+      case _ => throw new KyuubiException(s"Invalid schema url: $schemaUrl")
     }
 
-    schemaUrls.sorted.lastOption.map { schemaUrl =>
-      val inputStream = classLoader.getResourceAsStream(schemaUrl)
-      try {
-        new BufferedReader(new InputStreamReader(inputStream)).lines()
-          .collect(Collectors.joining("\n"))
-      } finally {
-        inputStream.close()
-      }
-    }
+  def getLatestSchemaUrl(schemaUrls: Seq[String]): Option[String] = {
+    schemaUrls.sortWith { (u1, u2) =>
+      val v1 = getSchemaVersion(u1)
+      val v2 = getSchemaVersion(u2)
+      v1._1 > v2._1 ||
+      (v1._1 == v2._1 && v1._2 > v2._2) ||
+      (v1._1 == v2._1 && v1._2 == v2._2 && v1._3 > v2._3)
+    }.headOption
   }
 
   override def close(): Unit = {
@@ -505,6 +517,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 }
 
 object JDBCMetadataStore {
+  private val SCHEMA_URL_PATTERN = """^metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
   private val METADATA_TABLE = "metadata"
   private val METADATA_STATE_ONLY_COLUMNS = Seq(
     "identifier",
