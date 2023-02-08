@@ -1658,7 +1658,7 @@ object KyuubiConf {
       .internal
       .doc("When true, the executor side result will be sequentially calculated and returned to" +
         s" the Spark driver side. Note that, ${OPERATION_RESULT_MAX_ROWS.key} will be ignored" +
-        s" on incremental collect mode.")
+        " on incremental collect mode.")
       .version("1.4.0")
       .booleanConf
       .createWithDefault(false)
