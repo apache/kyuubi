@@ -166,20 +166,20 @@ class KyuubiOperationPerUserSuite
     assert(r1 !== r2)
   }
 
-  test("max result size") {
+  test("max result rows") {
     Seq("true", "false").foreach { incremental =>
       Seq("thrift", "arrow").foreach { resultFormat =>
-        Seq("0", "1").foreach { maxResultSize =>
+        Seq("0", "1").foreach { maxResultRows =>
           withSessionConf()(Map.empty)(Map(
             KyuubiConf.OPERATION_RESULT_FORMAT.key -> resultFormat,
-            KyuubiConf.OPERATION_RESULT_MAX_ROWS.key -> maxResultSize,
+            KyuubiConf.OPERATION_RESULT_MAX_ROWS.key -> maxResultRows,
             KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> incremental)) {
             withJdbcStatement("va") { statement =>
               statement.executeQuery("create temporary view va as select * from values(1),(2)")
               val resultLimit = statement.executeQuery("select * from va")
               assert(resultLimit.next())
-              // always ignore max result size on incremental collect mode
-              if (incremental == "true" || maxResultSize == "0") assert(resultLimit.next())
+              // always ignore max result rows on incremental collect mode
+              if (incremental == "true" || maxResultRows == "0") assert(resultLimit.next())
               assert(!resultLimit.next())
             }
           }
