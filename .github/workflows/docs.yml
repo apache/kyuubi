@@ -15,15 +15,15 @@
 # limitations under the License.
 #
 
-name: Doc Build
+name: Docs
 
 on:
   pull_request:
     branches:
       - master
       - branch-*
-    paths:
-      - 'docs/**'
+#    paths:
+#      - 'docs/**'
 
 concurrency:
   group: dep-${{ github.ref }}
