@@ -21,16 +21,13 @@ on:
   pull_request:
     branches:
       - master
-      - branch-*
-#    paths:
-#      - 'docs/**'
 
 concurrency:
   group: dep-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  dep:
+  sphinx:
     name: sphinx-build
     runs-on: ubuntu-22.04
     steps:
