@@ -2190,7 +2190,7 @@ object KyuubiConf {
         "has a zero-arg constructor. Kyuubi provides the following built-in implementations: " +
         "<li>hadoop: delegate the user group mapping to hadoop UserGroupInformation.</li>" +
         "<li>ldap: delegate the user group mapping to ldap.</li>")
-             .version("1.7.0")
+      .version("1.7.0")
       .stringConf
       .transform {
         case "hadoop" => "org.apache.kyuubi.session.HadoopGroupProvider"
