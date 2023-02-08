@@ -166,20 +166,21 @@ class KyuubiOperationPerUserSuite
     assert(r1 !== r2)
   }
 
-  test("test engine spark result format") {
-    Seq("thrift", "arrow").foreach { resultFormat =>
-      Seq("0", "1").foreach { maxResultSize =>
-        Seq("true", "false").foreach { incremental =>
+  test("max result size") {
+    Seq("true", "false").foreach { incremental =>
+      Seq("thrift", "arrow").foreach { resultFormat =>
+        Seq("0", "1").foreach { maxResultSize =>
           withSessionConf()(Map.empty)(Map(
             KyuubiConf.OPERATION_RESULT_FORMAT.key -> resultFormat,
             KyuubiConf.OPERATION_RESULT_MAX_ROWS.key -> maxResultSize,
             KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> incremental)) {
             withJdbcStatement("va") { statement =>
               statement.executeQuery("create temporary view va as select * from values(1),(2)")
-              val resultLimit1 = statement.executeQuery("select * from va")
-              assert(resultLimit1.next())
-              if (maxResultSize == "0") assert(resultLimit1.next())
-              assert(!resultLimit1.next())
+              val resultLimit = statement.executeQuery("select * from va")
+              assert(resultLimit.next())
+              // always ignore max result size on incremental collect mode
+              if (incremental == "true" || maxResultSize == "0") assert(resultLimit.next())
+              assert(!resultLimit.next())
             }
           }
         }

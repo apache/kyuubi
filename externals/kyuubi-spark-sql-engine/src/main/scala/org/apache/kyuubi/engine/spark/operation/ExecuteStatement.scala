@@ -73,22 +73,13 @@ class ExecuteStatement(
       val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
         .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
       iter = if (incrementalCollect) {
-        val internalIterator = if (resultMaxRows <= 0) {
-          info("Execute in incremental collect mode")
-          if (arrowEnabled) {
-            SparkDatasetHelper.toArrowBatchRdd(convertComplexType(result)).toLocalIterator
-          } else {
-            result.toLocalIterator().asScala
-          }
+        if (resultMaxRows > 0) {
+          logger.warn(s"Ignore ${OPERATION_RESULT_MAX_ROWS.key} on incremental collect mode.")
+        }
+        val internalIterator = if (arrowEnabled) {
+          SparkDatasetHelper.toArrowBatchRdd(convertComplexType(result)).toLocalIterator
         } else {
-          info(s"Execute in incremental collect mode max result rows[$resultMaxRows]")
-          if (arrowEnabled) {
-            // this will introduce shuffle and hurt performance
-            val limitedResult = result.limit(resultMaxRows)
-            SparkDatasetHelper.toArrowBatchRdd(convertComplexType(limitedResult)).toLocalIterator
-          } else {
-            result.toLocalIterator().asScala.take(resultMaxRows)
-          }
+          result.toLocalIterator().asScala
         }
         new IterableFetchIterator[Any](new Iterable[Any] {
           override def iterator: Iterator[Any] = internalIterator
