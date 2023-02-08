@@ -68,10 +68,10 @@ class ExecuteStatement(
       info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       addOperationListener()
+      result = spark.sql(statement)
 
       val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
         .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
-      result = spark.sql(statement)
       iter = if (incrementalCollect) {
         if (resultMaxRows <= 0) {
           info("Execute in incremental collect mode")
