@@ -169,15 +169,18 @@ class KyuubiOperationPerUserSuite
   test("test engine spark result format") {
     Seq("thrift", "arrow").foreach { resultFormat =>
       Seq("0", "1").foreach { maxResultSize =>
-        withSessionConf()(Map.empty)(Map(
-          KyuubiConf.OPERATION_RESULT_FORMAT.key -> resultFormat,
-          KyuubiConf.OPERATION_RESULT_MAX_ROWS.key -> maxResultSize)) {
-          withJdbcStatement("va") { statement =>
-            statement.executeQuery("create temporary view va as select * from values(1),(2)")
-            val resultLimit1 = statement.executeQuery("select * from va")
-            assert(resultLimit1.next())
-            if (maxResultSize == "0") assert(resultLimit1.next())
-            assert(!resultLimit1.next())
+        Seq("true", "false").foreach { incremental =>
+          withSessionConf()(Map.empty)(Map(
+            KyuubiConf.OPERATION_RESULT_FORMAT.key -> resultFormat,
+            KyuubiConf.OPERATION_RESULT_MAX_ROWS.key -> maxResultSize,
+            KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> incremental)) {
+            withJdbcStatement("va") { statement =>
+              statement.executeQuery("create temporary view va as select * from values(1),(2)")
+              val resultLimit1 = statement.executeQuery("select * from va")
+              assert(resultLimit1.next())
+              if (maxResultSize == "0") assert(resultLimit1.next())
+              assert(!resultLimit1.next())
+            }
           }
         }
       }
