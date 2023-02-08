@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.LinkedHashMap
 
+import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
 
@@ -59,6 +60,23 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
   def useUserGroupsFromUserStoreEnabled: Boolean = getRangerConf.getBoolean(
     s"ranger.plugin.$getServiceType.use.usergroups.from.userstore.enabled",
     false)
+
+  /**
+   * plugin initialization
+   * with cleanup shutdown hook registered
+   */
+  def initialize(): Unit = {
+    this.init()
+    registerCleanupShutdownHook(this)
+  }
+
+  /**
+   * register shutdown hook for plugin cleanup
+   */
+  private def registerCleanupShutdownHook(plugin: RangerBasePlugin): Unit = {
+    ShutdownHookManager.get()
+      .addShutdownHook(() => { if (plugin != null) { this.cleanup() } }, Integer.MAX_VALUE)
+  }
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
     val result = evalRowFilterPolicies(req, null)
@@ -149,4 +167,5 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
       }
     }
   }
+
 }
