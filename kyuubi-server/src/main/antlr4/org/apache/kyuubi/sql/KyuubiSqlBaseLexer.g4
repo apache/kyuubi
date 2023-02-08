@@ -43,19 +43,13 @@ lexer grammar KyuubiSqlBaseLexer;
 
 SEMICOLON: ';';
 
-BQ: '`';
-COMMA: ',';
-DOT: '.';
-EQ  : '=' | '==';
-LEFT_PAREN: '(';
-RIGHT_PAREN: ')';
-
 DESC: 'DESC';
 DESCRIBE: 'DESCRIBE';
-SESSION: 'SESSION';
 
 KYUUBI: 'KYUUBI';
 KYUUBIADMIN: 'KYUUBIADMIN';
+
+SESSION: 'SESSION';
 
 BACKQUOTED_IDENTIFIER
     : '`' ( ~'`' | '``' )* '`'
@@ -74,7 +68,9 @@ IDENTIFIER
     ;
 
 STRING
-    : '"' ( '\\'. | '""' | ~('"'| '\\') )* '"'
+    : '\'' ( ~('\''|'\\') | ('\\' .) )* '\''
+    | 'R\'' (~'\'')* '\''
+    | 'R"'(~'"')* '"'
     ;
 
 fragment DIGIT

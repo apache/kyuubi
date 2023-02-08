@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.nio.charset.StandardCharsets
 import java.util
+import java.util.Base64
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{GenericType, MediaType, Response}
 
@@ -29,9 +31,12 @@ import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
+import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
+import org.apache.kyuubi.session.SessionType
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -45,9 +50,6 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   test("open/close and count session") {
     val requestObj = new SessionOpenRequest(
       1,
-      "admin",
-      "123456",
-      "localhost",
       Map("testConfig" -> "testValue").asJava)
 
     var response = webTarget.path("api/v1/sessions")
@@ -81,9 +83,6 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   test("getSessionList") {
     val requestObj = new SessionOpenRequest(
       1,
-      "admin",
-      "123456",
-      "localhost",
       Map("testConfig" -> "testValue").asJava)
 
     var response = webTarget.path("api/v1/sessions")
@@ -112,13 +111,15 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   test("get session event") {
     val sessionOpenRequest = new SessionOpenRequest(
       1,
-      "admin",
-      "123456",
-      "localhost",
       Map("testConfig" -> "testValue").asJava)
+
+    val user = "kyuubi".getBytes()
 
     val sessionOpenResp = webTarget.path("api/v1/sessions")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(
+        AUTHORIZATION_HEADER,
+        s"Basic ${new String(Base64.getEncoder().encode(user), StandardCharsets.UTF_8)}")
       .post(Entity.entity(sessionOpenRequest, MediaType.APPLICATION_JSON_TYPE))
 
     val sessionHandle = sessionOpenResp.readEntity(classOf[SessionHandle]).getIdentifier
@@ -128,7 +129,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == sessionOpenResp.getStatus)
     val sessions = response.readEntity(classOf[KyuubiSessionEvent])
     assert(sessions.conf("testConfig").equals("testValue"))
-    assert(sessions.sessionType.equals("SQL"))
+    assert(sessions.sessionType.equals(SessionType.INTERACTIVE.toString))
+    assert(sessions.user.equals("kyuubi"))
 
     // close an opened session
     response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
@@ -147,9 +149,6 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val requestObj = new SessionOpenRequest(
       1,
-      "admin",
-      "123456",
-      "localhost",
       Map("testConfig" -> "testValue", KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER").asJava)
 
     var response: Response = webTarget.path("api/v1/sessions")
@@ -163,7 +162,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response.getStatus)
     val sessions = response.readEntity(classOf[InfoDetail])
     assert(sessions.getInfoType.equals("CLI_SERVER_NAME") &&
-      sessions.getInfoValue.equals("Apache Kyuubi (Incubating)"))
+      sessions.getInfoValue.equals("Apache Kyuubi"))
     // Invalid sessionHandleStr
     val handle = "b88d6b56-d200-4bb6-bf0a-5da0ea572e11|0c4aad4e-ccf7-4abd-9305-943d4bfd2d9a|0"
     response = webTarget.path(s"api/v1/sessions/$handle/info/13").request().get()
@@ -191,9 +190,6 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   test("submit operation and get operation handle") {
     val requestObj = new SessionOpenRequest(
       1,
-      "admin",
-      "123456",
-      "localhost",
       Map("testConfig" -> "testValue").asJava)
 
     var response: Response = webTarget.path("api/v1/sessions")
@@ -281,5 +277,26 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(getCrossReferenceReq, MediaType.APPLICATION_JSON_TYPE))
     assert(404 == response.getStatus)
+  }
+
+  test("post session exception if failed to open engine session") {
+    val requestObj = new SessionOpenRequest(
+      1,
+      Map(
+        "spark.master" -> "invalid",
+        KyuubiConf.ENGINE_SHARE_LEVEL.key -> ShareLevel.CONNECTION.toString).asJava)
+
+    var response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+
+    val sessionHandle = response.readEntity(classOf[SessionHandle]).getIdentifier
+
+    eventually(timeout(1.minutes), interval(200.milliseconds)) {
+      response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().get()
+      // will meet json parse exception with response.readEntity(classOf[KyuubiSessionEvent])
+      val sessionEvent = response.readEntity(classOf[String])
+      assert(sessionEvent.contains("SparkException: Master"))
+    }
   }
 }

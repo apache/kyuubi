@@ -1,0 +1,113 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+dn: ou=People,dc=example,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: People
+description: Contains entries which describe persons (seamen)
+
+dn: ou=Groups,dc=example,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: Groups
+description: Contains entries which describe groups (crews, for instance)
+
+dn: uid=group1,ou=Groups,dc=example,dc=com
+objectClass: top
+objectClass: groupOfNames
+objectClass: uidObject
+uid: group1
+cn: group1
+ou: Groups
+member: uid=user1,ou=People,dc=example,dc=com
+
+dn: uid=group2,ou=Groups,dc=example,dc=com
+objectClass: top
+objectClass: groupOfNames
+objectClass: uidObject
+uid: group2
+cn: group2
+ou: Groups
+member: uid=user2,ou=People,dc=example,dc=com
+
+dn: cn=group3,ou=Groups,dc=example,dc=com
+objectClass: top
+objectClass: groupOfNames
+objectClass: uidObject
+uid: group3
+cn: group3
+ou: Groups
+member: cn=user3,ou=People,dc=example,dc=com
+
+dn: cn=group4,ou=Groups,dc=example,dc=com
+objectClass: top
+objectClass: groupOfUniqueNames
+objectClass: uidObject
+uid: group4
+ou: Groups
+cn: group4
+uniqueMember: cn=user4,ou=People,dc=example,dc=com
+
+dn: uid=user1,ou=People,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: uidObject
+givenName: Test1
+cn: Test User1
+sn: user1
+uid: user1
+userPassword: user1
+
+dn: uid=user2,ou=People,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: uidObject
+givenName: Test2
+cn: Test User2
+sn: user2
+uid: user2
+userPassword: user2
+
+dn: cn=user3,ou=People,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: uidObject
+givenName: Test3
+cn: Test User3
+sn: user3
+uid: user3
+userPassword: user3
+
+dn: cn=user4,ou=People,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: uidObject
+givenName: Test4
+cn: Test User4
+sn: user4
+uid: user4
+userPassword: user4
+

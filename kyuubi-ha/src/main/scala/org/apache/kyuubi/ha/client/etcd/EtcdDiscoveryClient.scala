@@ -45,6 +45,7 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.DiscoveryClient
@@ -222,11 +223,14 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         val path = DiscoveryPaths.makePath(namespace, p)
         val instance = new String(getData(path), UTF_8)
         val (host, port) = DiscoveryClient.parseInstanceHostPort(instance)
-        val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
-        val engineRefId = p.split(";").find(_.startsWith("refId=")).map(_.stripPrefix("refId="))
         val attributes =
-          p.split(";").map(_.split("=", 2)).filter(_.size == 2).map(kv => (kv.head, kv.last)).toMap
-        info(s"Get service instance:$instance and version:$version under $namespace")
+          p.split(";").map(_.split("=", 2)).filter(_.length == 2).map(kv =>
+            (kv.head, kv.last)).toMap
+        val version = attributes.get("version")
+        val engineRefId = attributes.get("refId")
+        val engineIdStr = attributes.get(KYUUBI_ENGINE_ID).map(" engine id:" + _).getOrElse("")
+        info(s"Get service instance:$instance$engineIdStr and version:${version.getOrElse("")} " +
+          s"under $namespace")
         ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes)
       }
     } catch {

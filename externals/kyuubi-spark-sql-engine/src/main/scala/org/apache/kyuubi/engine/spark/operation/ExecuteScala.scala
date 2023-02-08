@@ -56,6 +56,7 @@ class ExecuteScala(
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
+  override protected def supportProgress: Boolean = true
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -80,6 +81,7 @@ class ExecuteScala(
       setState(OperationState.RUNNING)
       info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+      addOperationListener()
       val legacyOutput = repl.getOutput
       if (legacyOutput.nonEmpty) {
         warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
@@ -110,7 +112,7 @@ class ExecuteScala(
               new ArrayFetchIterator[Row](result.collect())
             } else {
               val output = repl.getOutput
-              info("scala repl output:\n" + output)
+              debug("scala repl output:\n" + output)
               new ArrayFetchIterator[Row](Array(Row(output)))
             }
           }

@@ -45,7 +45,7 @@ public class KyuubiCommands extends Commands {
 
   /** Extract and clean up the first command in the input. */
   private String getFirstCmd(String cmd, int length) {
-    return cmd.substring(length);
+    return cmd.substring(length).trim();
   }
 
   private String[] tokenizeCmd(String cmd) {
@@ -82,9 +82,8 @@ public class KyuubiCommands extends Commands {
     BufferedReader reader = null;
     try {
       reader = new BufferedReader(new FileReader(sourceFile));
-      String extra = reader.readLine();
-      String lines = null;
-      while (extra != null) {
+      String lines = null, extra;
+      while ((extra = reader.readLine()) != null) {
         if (beeLine.isComment(extra)) {
           continue;
         }
@@ -93,7 +92,6 @@ public class KyuubiCommands extends Commands {
         } else {
           lines += "\n" + extra;
         }
-        extra = reader.readLine();
       }
       String[] cmds = lines.split(";");
       for (String c : cmds) {
@@ -407,7 +405,7 @@ public class KyuubiCommands extends Commands {
       }
     }
 
-    for (Iterator i = props.keySet().iterator(); i.hasNext(); ) {
+    for (Iterator<Object> i = props.keySet().iterator(); i.hasNext(); ) {
       String key = (String) i.next();
       for (int j = 0; j < keys.length; j++) {
         if (key.endsWith(keys[j])) {
@@ -472,9 +470,7 @@ public class KyuubiCommands extends Commands {
       props.setProperty(AUTH_USER, username);
       if (password == null) {
         password =
-            beeLine
-                .getConsoleReader()
-                .readLine("Enter password for " + urlForPrompt + ": ", new Character('*'));
+            beeLine.getConsoleReader().readLine("Enter password for " + urlForPrompt + ": ", '*');
       }
       props.setProperty(AUTH_PASSWD, password);
     }

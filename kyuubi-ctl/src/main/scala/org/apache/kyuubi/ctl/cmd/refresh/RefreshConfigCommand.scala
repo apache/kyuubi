@@ -21,6 +21,7 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.client.AdminRestApi
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.AdminCtlCommand
+import org.apache.kyuubi.ctl.cmd.refresh.RefreshConfigCommandConfigType.{HADOOP_CONF, USER_DEFAULTS_CONF}
 import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ctl.util.{Tabulator, Validator}
 
@@ -33,7 +34,8 @@ class RefreshConfigCommand(cliConfig: CliConfig) extends AdminCtlCommand[String]
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val adminRestApi = new AdminRestApi(kyuubiRestClient)
       normalizedCliConfig.adminConfigOpts.configType match {
-        case "hadoopConf" => adminRestApi.refreshHadoopConf()
+        case HADOOP_CONF => adminRestApi.refreshHadoopConf()
+        case USER_DEFAULTS_CONF => adminRestApi.refreshUserDefaultsConf()
         case configType => throw new KyuubiException(s"Invalid config type:$configType")
       }
     }
@@ -42,4 +44,8 @@ class RefreshConfigCommand(cliConfig: CliConfig) extends AdminCtlCommand[String]
   def render(resp: String): Unit = {
     info(Tabulator.format("", Array("Response"), Array(Array(resp))))
   }
+}
+object RefreshConfigCommandConfigType {
+  final val HADOOP_CONF = "hadoopConf"
+  final val USER_DEFAULTS_CONF = "userDefaultsConf"
 }

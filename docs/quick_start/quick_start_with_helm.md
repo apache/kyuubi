@@ -1,20 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Getting Started With Kyuubi on kubernetes
 
@@ -29,15 +28,19 @@ Please go to [Install Helm](https://helm.sh/docs/intro/install/) page to get and
 ### Get Kyuubi Started
 
 #### [Optional] Create namespace on kubernetes
+
 ```bash
 create ns kyuubi
 ```
 
 #### Get kyuubi started
+
 ```bash
-helm install kyuubi-helm ${KYUUBI_HOME}/docker/helm -n ${namespace_name}
+helm install kyuubi-helm ${KYUUBI_HOME}/charts/kyuubi -n ${namespace_name}
 ```
+
 It will print variables and the way to get kyuubi expose ip and port.
+
 ```bash
 NAME: kyuubi-helm
 LAST DEPLOYED: Wed Oct 20 15:22:47 2021
@@ -52,10 +55,12 @@ Get kyuubi expose URL by running these commands:
   echo $NODE_IP:$NODE_PORT
 ```
 
-#### Using hive beeline  
+#### Using hive beeline
+
 [Using Hive Beeline](./quick_start.html#using-hive-beeline) to opening a connection.
 
 #### Remove kyuubi
+
 ```bash
 helm uninstall kyuubi-helm -n ${namespace_name}
 ```
@@ -63,6 +68,7 @@ helm uninstall kyuubi-helm -n ${namespace_name}
 #### Edit server config
 
 Modify `values.yaml` under `${KYUUBI_HOME}/docker/helm`:
+
 ```yaml
 # Kyuubi server numbers
 replicaCount: 2
@@ -89,18 +95,25 @@ service:
   port: 30009
 ```
 
-#### Get server log  
+#### Get server log
+
 List all server pods:
+
 ```bash
 kubectl get po -n ${namespace_name}
 ```
+
 The server pods will print:
+
 ```text
 NAME                             READY   STATUS    RESTARTS   AGE
 kyuubi-server-585d8944c5-m7j5s   1/1     Running   0          30m
 kyuubi-server-32sdsa1245-2d2sj   1/1     Running   0          30m
 ```
+
 then, use pod name to get logs:
+
 ```bash
 kubectl -n ${namespace_name} logs kyuubi-server-585d8944c5-m7j5s
 ```
+

@@ -135,8 +135,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "Open(create) a session")
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
@@ -146,7 +145,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     val handle = fe.be.openSession(
       TProtocolVersion.findByValue(request.getProtocolVersion),
       userName,
-      request.getPassword,
+      "",
       ipAddress,
       (request.getConfigs.asScala ++ Map(
         KYUUBI_CLIENT_IP_KEY -> ipAddress,
@@ -158,8 +157,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "Close a session")
   @DELETE
   @Path("{sessionHandle}")

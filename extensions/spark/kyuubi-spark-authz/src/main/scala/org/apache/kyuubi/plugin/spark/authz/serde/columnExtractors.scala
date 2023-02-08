@@ -17,21 +17,13 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.types.StructField
 
 trait ColumnExtractor extends (AnyRef => Seq[String]) with Extractor
 
 object ColumnExtractor {
   val columnExtractors: Map[String, ColumnExtractor] = {
-    ServiceLoader.load(classOf[ColumnExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[ColumnExtractor]
   }
 }
 class StringColumnExtractor extends ColumnExtractor {
@@ -58,6 +50,9 @@ class StringSeqOptionColumnExtractor extends ColumnExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.types.StructField
+ */
 class StructFieldSeqColumnExtractor extends ColumnExtractor {
   override def apply(v1: AnyRef): Seq[String] = {
     v1.asInstanceOf[Seq[StructField]].map(_.name)

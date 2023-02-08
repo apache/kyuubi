@@ -35,7 +35,7 @@ import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.sql.parser.KyuubiParser
+import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.util.SignUtils
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
@@ -107,6 +107,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         MetricsSystem.tracing { ms =>
           ms.incCount(CONN_FAIL)
           ms.incCount(MetricRegistry.name(CONN_FAIL, user))
+          ms.incCount(MetricRegistry.name(CONN_FAIL, SessionType.INTERACTIVE.toString))
         }
         throw KyuubiSQLException(
           s"Error opening session for $username client ip $ipAddress, due to ${e.getMessage}",
@@ -155,8 +156,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     try {
       batchSession.open()
       setSession(handle, batchSession)
-      info(s"$user's batch session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
+      logSessionCountInfo(batchSession, "opened")
       handle
     } catch {
       case e: Exception =>
@@ -169,6 +169,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         MetricsSystem.tracing { ms =>
           ms.incCount(CONN_FAIL)
           ms.incCount(MetricRegistry.name(CONN_FAIL, user))
+          ms.incCount(MetricRegistry.name(CONN_FAIL, SessionType.BATCH.toString))
         }
         throw KyuubiSQLException(
           s"Error opening batch session[$handle] for $user client ip $ipAddress," +

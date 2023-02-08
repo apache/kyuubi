@@ -56,6 +56,12 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     assert(jdbcMetadataStore.hikariDataSource.getIdleTimeout == 60000)
   }
 
+  test("test get init schema stream") {
+    assert(jdbcMetadataStore.getInitSchema(DatabaseType.DERBY).isDefined)
+    assert(jdbcMetadataStore.getInitSchema(DatabaseType.MYSQL).isDefined)
+    assert(jdbcMetadataStore.getInitSchema(DatabaseType.CUSTOM).isEmpty)
+  }
+
   test("jdbc metadata store") {
     val batchId = UUID.randomUUID().toString
     val kyuubiInstance = "localhost:10099"
@@ -124,7 +130,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
 
     batches = jdbcMetadataStore.getMetadataList(
       MetadataFilter(
-        sessionType = SessionType.SQL,
+        sessionType = SessionType.INTERACTIVE,
         engineType = "Spark",
         username = "kyuubi",
         state = "PENDING"),
@@ -272,5 +278,21 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     intercept[KyuubiException] {
       jdbcMetadataStore.updateMetadata(metadata)
     }
+  }
+
+  test("get schema urls with correct version ordering") {
+    val url1 = "metadata-store-schema-1.7.0.mysql.sql"
+    val url2 = "metadata-store-schema-1.7.1.mysql.sql"
+    val url3 = "metadata-store-schema-1.8.0.mysql.sql"
+    val url4 = "metadata-store-schema-1.10.0.mysql.sql"
+    val url5 = "metadata-store-schema-2.1.0.mysql.sql"
+    assert(jdbcMetadataStore.getSchemaVersion(url1) === ((1, 7, 0)))
+    assert(jdbcMetadataStore.getSchemaVersion(url2) === ((1, 7, 1)))
+    assert(jdbcMetadataStore.getSchemaVersion(url3) === ((1, 8, 0)))
+    assert(jdbcMetadataStore.getSchemaVersion(url4) === ((1, 10, 0)))
+    assert(jdbcMetadataStore.getSchemaVersion(url5) === ((2, 1, 0)))
+    assert(jdbcMetadataStore.getLatestSchemaUrl(Seq(url1, url2, url3, url4)).get === url4)
+    assert(jdbcMetadataStore.getLatestSchemaUrl(Seq(url1, url3, url4, url2)).get === url4)
+    assert(jdbcMetadataStore.getLatestSchemaUrl(Seq(url1, url2, url3, url4, url5)).get === url5)
   }
 }

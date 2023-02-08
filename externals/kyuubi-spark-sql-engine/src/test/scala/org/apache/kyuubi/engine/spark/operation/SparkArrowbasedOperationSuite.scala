@@ -30,26 +30,26 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   override def withKyuubiConf: Map[String, String] = Map.empty
 
   override def jdbcVars: Map[String, String] = {
-    Map(KyuubiConf.OPERATION_RESULT_CODEC.key -> resultCodec)
+    Map(KyuubiConf.OPERATION_RESULT_FORMAT.key -> resultFormat)
   }
 
-  override def resultCodec: String = "arrow"
+  override def resultFormat: String = "arrow"
 
-  test("detect resultSet codec") {
+  test("detect resultSet format") {
     withJdbcStatement() { statement =>
-      checkResultSetCodec(statement, "arrow")
-      statement.executeQuery(s"set ${KyuubiConf.OPERATION_RESULT_CODEC.key}=simple")
-      checkResultSetCodec(statement, "simple")
+      checkResultSetFormat(statement, "arrow")
+      statement.executeQuery(s"set ${KyuubiConf.OPERATION_RESULT_FORMAT.key}=thrift")
+      checkResultSetFormat(statement, "thrift")
     }
   }
 
-  def checkResultSetCodec(statement: Statement, expectCodec: String): Unit = {
+  def checkResultSetFormat(statement: Statement, expectFormat: String): Unit = {
     val query =
       s"""
-         |SELECT '$${hivevar:${KyuubiConf.OPERATION_RESULT_CODEC.key}}' AS col
+         |SELECT '$${hivevar:${KyuubiConf.OPERATION_RESULT_FORMAT.key}}' AS col
          |""".stripMargin
     val resultSet = statement.executeQuery(query)
     assert(resultSet.next())
-    assert(resultSet.getString("col") === expectCodec)
+    assert(resultSet.getString("col") === expectFormat)
   }
 }

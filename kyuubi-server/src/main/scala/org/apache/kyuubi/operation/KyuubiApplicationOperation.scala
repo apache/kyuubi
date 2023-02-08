@@ -31,7 +31,7 @@ import org.apache.kyuubi.util.ThriftUtils
 
 abstract class KyuubiApplicationOperation(session: Session) extends KyuubiOperation(session) {
 
-  private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo]
+  protected def currentApplicationInfo: Option[ApplicationInfo]
 
   override def getResultSetMetadata: TGetResultSetMetadataResp = {
     val schema = new TTableSchema()

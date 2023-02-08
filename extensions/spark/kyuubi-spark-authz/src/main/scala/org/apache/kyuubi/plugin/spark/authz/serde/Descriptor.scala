@@ -97,11 +97,18 @@ case class ColumnDesc(
 case class DatabaseDesc(
     fieldName: String,
     fieldExtractor: String,
+    catalogDesc: Option[CatalogDesc] = None,
     isInput: Boolean = false) extends Descriptor {
-  override def extract(v: AnyRef): String = {
+  override def extract(v: AnyRef): Database = {
     val databaseVal = invoke(v, fieldName)
     val databaseExtractor = dbExtractors(fieldExtractor)
-    databaseExtractor(databaseVal)
+    val db = databaseExtractor(databaseVal)
+    if (db.catalog.isEmpty && catalogDesc.nonEmpty) {
+      val maybeCatalog = catalogDesc.get.extract(v)
+      db.copy(catalog = maybeCatalog)
+    } else {
+      db
+    }
   }
 }
 
@@ -117,17 +124,17 @@ case class FunctionTypeDesc(
     fieldExtractor: String,
     skipTypes: Seq[String]) extends Descriptor {
   override def extract(v: AnyRef): FunctionType = {
-    getValue(v, SparkSession.active)
+    extract(v, SparkSession.active)
   }
 
-  def getValue(v: AnyRef, spark: SparkSession): FunctionType = {
+  def extract(v: AnyRef, spark: SparkSession): FunctionType = {
     val functionTypeVal = invoke(v, fieldName)
     val functionTypeExtractor = functionTypeExtractors(fieldExtractor)
     functionTypeExtractor(functionTypeVal, spark)
   }
 
   def skip(v: AnyRef, spark: SparkSession): Boolean = {
-    skipTypes.exists(skipType => getValue(v, spark) == FunctionType.withName(skipType))
+    skipTypes.exists(skipType => extract(v, spark) == FunctionType.withName(skipType))
   }
 }
 
@@ -151,7 +158,10 @@ case class FunctionDesc(
     val functionExtractor = functionExtractors(fieldExtractor)
     var function = functionExtractor(functionVal)
     if (function.database.isEmpty) {
-      function = function.copy(database = databaseDesc.map(_.extract(v)))
+      val maybeDatabase = databaseDesc.map(_.extract(v))
+      if (maybeDatabase.isDefined) {
+        function = function.copy(database = Some(maybeDatabase.get.database))
+      }
     }
     function
   }
@@ -168,7 +178,7 @@ case class FunctionDesc(
 case class QueryDesc(
     fieldName: String,
     fieldExtractor: String = "LogicalPlanQueryExtractor") extends Descriptor {
-  override def extract(v: AnyRef): LogicalPlan = {
+  override def extract(v: AnyRef): Option[LogicalPlan] = {
     val queryVal = invoke(v, fieldName)
     val queryExtractor = queryExtractors(fieldExtractor)
     queryExtractor(queryVal)
@@ -251,8 +261,8 @@ case class TableDesc(
  * @param actionType the explicitly given action type which take precedence over extracting
  */
 case class ActionTypeDesc(
-    fieldName: String,
-    fieldExtractor: String,
+    fieldName: String = null,
+    fieldExtractor: String = null,
     actionType: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): PrivilegeObjectActionType = {
     actionType.map(PrivilegeObjectActionType.withName).getOrElse {
@@ -276,5 +286,32 @@ case class CatalogDesc(
     val catalogVal = invoke(v, fieldName)
     val extractor = catalogExtractors(fieldExtractor)
     extractor(catalogVal)
+  }
+}
+
+case class ScanDesc(
+    fieldName: String,
+    fieldExtractor: String,
+    catalogDesc: Option[CatalogDesc] = None) extends Descriptor {
+  override def extract(v: AnyRef): Option[Table] = {
+    extract(v, SparkSession.active)
+  }
+
+  def extract(v: AnyRef, spark: SparkSession): Option[Table] = {
+    val tableVal = if (fieldName == null) {
+      v
+    } else {
+      invoke(v, fieldName)
+    }
+    val tableExtractor = tableExtractors(fieldExtractor)
+    val maybeTable = tableExtractor(spark, tableVal)
+    maybeTable.map { t =>
+      if (t.catalog.isEmpty && catalogDesc.nonEmpty) {
+        val newCatalog = catalogDesc.get.extract(v)
+        t.copy(catalog = newCatalog)
+      } else {
+        t
+      }
+    }
   }
 }

@@ -17,29 +17,43 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
-
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 trait CatalogExtractor extends (AnyRef => Option[String]) with Extractor
 
 object CatalogExtractor {
   val catalogExtractors: Map[String, CatalogExtractor] = {
-    ServiceLoader.load(classOf[CatalogExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[CatalogExtractor]
   }
 }
 
 /**
- * CatalogPlugin ->
+ * org.apache.spark.sql.connector.catalog.CatalogPlugin
  */
 class CatalogPluginCatalogExtractor extends CatalogExtractor {
   override def apply(v1: AnyRef): Option[String] = {
     Option(invokeAs[String](v1, "name"))
+  }
+}
+
+/**
+ * Option[org.apache.spark.sql.connector.catalog.CatalogPlugin]
+ */
+class CatalogPluginOptionCatalogExtractor extends CatalogExtractor {
+  override def apply(v1: AnyRef): Option[String] = {
+    v1 match {
+      case Some(catalogPlugin: AnyRef) =>
+        new CatalogPluginCatalogExtractor().apply(catalogPlugin)
+      case _ => None
+    }
+  }
+}
+
+/**
+ * Option[String]
+ */
+class StringOptionCatalogExtractor extends CatalogExtractor {
+  override def apply(v1: AnyRef): Option[String] = {
+    v1.asInstanceOf[Option[String]]
   }
 }

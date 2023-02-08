@@ -34,6 +34,7 @@ import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatchRow;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowUtils;
 
 /** Data independent base class which implements the common part of all Kyuubi result sets. */
+@SuppressWarnings("deprecation")
 public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
 
   protected Statement statement = null;

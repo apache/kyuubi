@@ -17,11 +17,13 @@
 
 package org.apache.kyuubi.server.metadata.jdbc
 
-import java.io.{BufferedReader, InputStream, InputStreamReader}
+import java.io.{BufferedReader, InputStreamReader}
+import java.nio.file.{Files, FileSystems, Paths}
 import java.sql.{Connection, PreparedStatement, ResultSet, SQLException}
 import java.util.Locale
 import java.util.stream.Collectors
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -77,30 +79,66 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   }
 
   private def initSchema(): Unit = {
-    val classLoader = Utils.getContextOrKyuubiClassLoader
-    val initSchemaStream: Option[InputStream] = dbType match {
-      case DERBY =>
-        Option(classLoader.getResourceAsStream("sql/derby/metadata-store-schema-derby.sql"))
-      case MYSQL =>
-        Option(classLoader.getResourceAsStream("sql/mysql/metadata-store-schema-mysql.sql"))
-      case CUSTOM => None
-    }
-    initSchemaStream.foreach { inputStream =>
-      try {
-        val ddlStatements = new BufferedReader(new InputStreamReader(inputStream)).lines()
-          .collect(Collectors.joining("\n")).trim.split(";")
-        withConnection() { connection =>
-          Utils.tryLogNonFatalError {
-            ddlStatements.foreach { ddlStatement =>
-              execute(connection, ddlStatement)
-              info(s"Execute init schema ddl: $ddlStatement successfully.")
-            }
+    getInitSchema(dbType).foreach { schema =>
+      val ddlStatements = schema.trim.split(";")
+      withConnection() { connection =>
+        Utils.tryLogNonFatalError {
+          ddlStatements.foreach { ddlStatement =>
+            execute(connection, ddlStatement)
+            info(s"Execute init schema ddl: $ddlStatement successfully.")
           }
         }
-      } finally {
-        inputStream.close()
       }
     }
+  }
+
+  // Visible for testing.
+  private[jdbc] def getInitSchema(dbType: DatabaseType): Option[String] = {
+    val classLoader = Utils.getContextOrKyuubiClassLoader
+    val schemaPackage = s"sql/${dbType.toString.toLowerCase}"
+
+    Option(classLoader.getResource(schemaPackage)).map(_.toURI).flatMap { uri =>
+      val pathNames = if (uri.getScheme == "jar") {
+        val fs = FileSystems.newFileSystem(uri, Map.empty[String, AnyRef].asJava)
+        try {
+          Files.walk(fs.getPath(schemaPackage), 1).iterator().asScala.map(
+            _.getFileName.toString).filter { name =>
+            SCHEMA_URL_PATTERN.findFirstMatchIn(name).isDefined
+          }.toArray
+        } finally {
+          fs.close()
+        }
+      } else {
+        Paths.get(uri).toFile.listFiles((_, name) => {
+          SCHEMA_URL_PATTERN.findFirstMatchIn(name).isDefined
+        }).map(_.getName)
+      }
+      getLatestSchemaUrl(pathNames).map(name => s"$schemaPackage/$name").map { schemaUrl =>
+        val inputStream = classLoader.getResourceAsStream(schemaUrl)
+        try {
+          new BufferedReader(new InputStreamReader(inputStream)).lines()
+            .collect(Collectors.joining("\n"))
+        } finally {
+          inputStream.close()
+        }
+      }
+    }.headOption
+  }
+
+  def getSchemaVersion(schemaUrl: String): (Int, Int, Int) =
+    SCHEMA_URL_PATTERN.findFirstMatchIn(schemaUrl) match {
+      case Some(m) => (m.group(1).toInt, m.group(2).toInt, m.group(3).toInt)
+      case _ => throw new KyuubiException(s"Invalid schema url: $schemaUrl")
+    }
+
+  def getLatestSchemaUrl(schemaUrls: Seq[String]): Option[String] = {
+    schemaUrls.sortWith { (u1, u2) =>
+      val v1 = getSchemaVersion(u1)
+      val v2 = getSchemaVersion(u2)
+      v1._1 > v2._1 ||
+      (v1._1 == v2._1 && v1._2 > v2._2) ||
+      (v1._1 == v2._1 && v1._2 == v2._2 && v1._3 > v2._3)
+    }.headOption
   }
 
   override def close(): Unit = {
@@ -238,6 +276,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     if (metadata.endTime > 0) {
       setClauses += " end_time = ? "
       params += metadata.endTime
+    }
+    if (metadata.engineOpenTime > 0) {
+      setClauses += " engine_open_time = ? "
+      params += metadata.engineOpenTime
     }
     Option(metadata.engineId).foreach { _ =>
       setClauses += " engine_id = ? "
@@ -475,6 +517,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 }
 
 object JDBCMetadataStore {
+  private val SCHEMA_URL_PATTERN = """^metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
   private val METADATA_TABLE = "metadata"
   private val METADATA_STATE_ONLY_COLUMNS = Seq(
     "identifier",

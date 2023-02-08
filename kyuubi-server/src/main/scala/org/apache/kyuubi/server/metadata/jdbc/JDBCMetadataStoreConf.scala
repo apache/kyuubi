@@ -19,12 +19,11 @@ package org.apache.kyuubi.server.metadata.jdbc
 
 import java.util.{Locale, Properties}
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.KyuubiConf.buildConf
 
 object JDBCMetadataStoreConf {
   final val METADATA_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.metadata.store.jdbc.datasource"
-
-  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
   /** Get metadata store jdbc datasource properties. */
   def getMetadataStoreJDBCDataSourceProperties(conf: KyuubiConf): Properties = {
@@ -38,11 +37,11 @@ object JDBCMetadataStoreConf {
   val METADATA_STORE_JDBC_DATABASE_TYPE: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.database.type")
       .doc("The database type for server jdbc metadata store.<ul>" +
-        " <li>DERBY: Apache Derby, jdbc driver `org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
-        " <li>MYSQL: MySQL, jdbc driver `com.mysql.jdbc.Driver`.</li>" +
-        " <li>CUSTOM: User-defined database type, need to specify corresponding jdbc driver.</li>" +
-        " Note that: The jdbc datasource is powered by HiKariCP, for datasource properties," +
-        " please specify them with prefix: kyuubi.metadata.store.jdbc.datasource." +
+        " <li>DERBY: Apache Derby, JDBC driver `org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
+        " <li>MYSQL: MySQL, JDBC driver `com.mysql.jdbc.Driver`.</li>" +
+        " <li>CUSTOM: User-defined database type, need to specify corresponding JDBC driver.</li>" +
+        " Note that: The JDBC datasource is powered by HiKariCP, for datasource properties," +
+        " please specify them with the prefix: kyuubi.metadata.store.jdbc.datasource." +
         " For example, kyuubi.metadata.store.jdbc.datasource.connectionTimeout=10000.")
       .version("1.6.0")
       .serverOnly
@@ -52,7 +51,7 @@ object JDBCMetadataStoreConf {
 
   val METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT: ConfigEntry[Boolean] =
     buildConf("kyuubi.metadata.store.jdbc.database.schema.init")
-      .doc("Whether to init the jdbc metadata store database schema.")
+      .doc("Whether to init the JDBC metadata store database schema.")
       .version("1.6.0")
       .serverOnly
       .booleanConf
@@ -68,9 +67,10 @@ object JDBCMetadataStoreConf {
 
   val METADATA_STORE_JDBC_URL: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.url")
-      .doc("The jdbc url for server jdbc metadata store. By defaults, it is a DERBY in-memory" +
+      .doc("The JDBC url for server JDBC metadata store. By default, it is a DERBY in-memory" +
         " database url, and the state information is not shared across kyuubi instances. To" +
-        " enable multiple kyuubi instances high available, please specify a production jdbc url.")
+        " enable high availability for multiple kyuubi instances," +
+        " please specify a production JDBC url.")
       .version("1.6.0")
       .serverOnly
       .stringConf
@@ -78,7 +78,7 @@ object JDBCMetadataStoreConf {
 
   val METADATA_STORE_JDBC_USER: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.user")
-      .doc("The username for server jdbc metadata store.")
+      .doc("The username for server JDBC metadata store.")
       .version("1.6.0")
       .serverOnly
       .stringConf
@@ -86,7 +86,7 @@ object JDBCMetadataStoreConf {
 
   val METADATA_STORE_JDBC_PASSWORD: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.password")
-      .doc("The password for server jdbc metadata store.")
+      .doc("The password for server JDBC metadata store.")
       .version("1.6.0")
       .serverOnly
       .stringConf

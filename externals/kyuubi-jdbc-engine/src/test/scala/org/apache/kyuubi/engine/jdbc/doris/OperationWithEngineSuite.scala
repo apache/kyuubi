@@ -16,7 +16,7 @@
  */
 package org.apache.kyuubi.engine.jdbc.doris
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetInfoReq, TGetInfoType, TStatusCode}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
@@ -57,6 +57,23 @@ class OperationWithEngineSuite extends DorisOperationSuite with HiveJDBCTestHelp
         req5.setInfoType(TGetInfoType.CLI_MAX_TABLE_NAME_LEN)
         assert(client.GetInfo(req5).getInfoValue.getLenValue == metaData.getMaxTableNameLength)
       }
+    }
+  }
+
+  test("JDBC ExecuteStatement operation should contain operationLog") {
+    withSessionHandle { (client, handle) =>
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(handle)
+      tExecuteStatementReq.setStatement("SELECT 1")
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(1)
+      tFetchResultsReq.setMaxRows(1)
+
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     }
   }
 }

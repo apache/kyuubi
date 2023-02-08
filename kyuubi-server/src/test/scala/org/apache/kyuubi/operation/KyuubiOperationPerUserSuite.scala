@@ -28,6 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
 import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
 import org.apache.kyuubi.zookeeper.ZookeeperConf
 
@@ -49,7 +50,7 @@ class KyuubiOperationPerUserSuite
     withSessionConf()(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER"))(Map.empty) {
       withJdbcStatement() { statement =>
         val metaData = statement.getConnection.getMetaData
-        assert(metaData.getDatabaseProductName === "Apache Kyuubi (Incubating)")
+        assert(metaData.getDatabaseProductName === "Apache Kyuubi")
         assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
         val ver = SemanticVersion(KYUUBI_VERSION)
         assert(metaData.getDatabaseMajorVersion === ver.majorVersion)
@@ -265,7 +266,7 @@ class KyuubiOperationPerUserSuite
         val req = new TGetInfoReq()
         req.setSessionHandle(handle)
         req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
-        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi")
       }
     }
   }
@@ -330,5 +331,32 @@ class KyuubiOperationPerUserSuite
       assert(result.getString(2).isEmpty)
       assert(!result.next())
     }
+  }
+
+  test("accumulate the operation terminal state") {
+    val opType = classOf[ExecuteStatement].getSimpleName
+    val finishedMetric = s"${MetricsConstants.OPERATION_STATE}.$opType" +
+      s".${OperationState.FINISHED.toString.toLowerCase}"
+    val closedMetric = s"${MetricsConstants.OPERATION_STATE}.$opType" +
+      s".${OperationState.CLOSED.toString.toLowerCase}"
+    val finishedCount = MetricsSystem.meterValue(finishedMetric).getOrElse(0L)
+    val closedCount = MetricsSystem.meterValue(finishedMetric).getOrElse(0L)
+    withJdbcStatement() { statement =>
+      statement.executeQuery("select engine_name()")
+    }
+    eventually(timeout(5.seconds), interval(100.milliseconds)) {
+      assert(MetricsSystem.meterValue(finishedMetric).getOrElse(0L) > finishedCount)
+      assert(MetricsSystem.meterValue(closedMetric).getOrElse(0L) > closedCount)
+    }
+  }
+
+  test("trace ExecuteStatement exec time histogram") {
+    withJdbcStatement() { statement =>
+      statement.executeQuery("select engine_name()")
+    }
+    val metric =
+      s"${MetricsConstants.OPERATION_EXEC_TIME}.${classOf[ExecuteStatement].getSimpleName}"
+    val snapshot = MetricsSystem.histogramSnapshot(metric).get
+    assert(snapshot.getMax > 0 && snapshot.getMedian > 0)
   }
 }

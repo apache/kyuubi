@@ -26,17 +26,18 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import io.trino.client.QueryResults
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.server.trino.api.ApiRequestContext
+import org.apache.kyuubi.server.trino.api.{ApiRequestContext, KyuubiTrinoOperationTranslator}
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 
 @Tag(name = "Statement")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class StatementResource extends ApiRequestContext with Logging {
 
+  lazy val translator = new KyuubiTrinoOperationTranslator(fe.be)
+
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "test")
   @GET
   @Path("test")
@@ -58,13 +59,13 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description =
       "Get queued statement status")
   @GET
   @Path("/queued/{queryId}/{slug}/{token}")
   def getQueuedStatementStatus(
+      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
       @PathParam("token") token: Long): QueryResults = {
@@ -73,13 +74,13 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description =
       "Get executing statement status")
   @GET
   @Path("/executing/{queryId}/{slug}/{token}")
   def getExecutingStatementStatus(
+      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
       @PathParam("token") token: Long): QueryResults = {
@@ -88,13 +89,13 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description =
       "Cancel queued statement")
   @DELETE
   @Path("/queued/{queryId}/{slug}/{token}")
   def cancelQueuedStatement(
+      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
       @PathParam("token") token: Long): QueryResults = {
@@ -103,13 +104,13 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description =
       "Cancel executing statement")
   @DELETE
   @Path("/executing/{queryId}/{slug}/{token}")
   def cancelExecutingStatementStatus(
+      @Context headers: HttpHeaders,
       @PathParam("queryId") queryId: String,
       @PathParam("slug") slug: String,
       @PathParam("token") token: Long): QueryResults = {

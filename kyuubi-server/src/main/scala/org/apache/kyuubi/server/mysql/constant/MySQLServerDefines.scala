@@ -24,5 +24,5 @@ object MySQLServerDefines {
   val CHARSET = 0x2D // utf8mb4_general_ci
   val MYSQL_VERSION = "5.7.22"
   val MYSQL_KYUUBI_SERVER_VERSION = s"$MYSQL_VERSION-Kyuubi-Server $KYUUBI_VERSION"
-  val KYUUBI_SERVER_DESCRIPTION = s"Apache Kyuubi (Incubating) v$KYUUBI_VERSION revision $REVISION"
+  val KYUUBI_SERVER_DESCRIPTION = s"Apache Kyuubi v$KYUUBI_VERSION revision $REVISION"
 }

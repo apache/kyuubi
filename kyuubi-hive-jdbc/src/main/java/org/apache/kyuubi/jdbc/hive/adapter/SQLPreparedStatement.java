@@ -23,6 +23,7 @@ import java.net.URL;
 import java.sql.*;
 import java.util.Calendar;
 
+@SuppressWarnings("deprecation")
 public interface SQLPreparedStatement extends PreparedStatement {
 
   @Override

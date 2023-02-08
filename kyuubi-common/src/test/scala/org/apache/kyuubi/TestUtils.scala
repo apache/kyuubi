@@ -14,54 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.kyuubi
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, StandardOpenOption}
 import java.sql.ResultSet
 
 import scala.collection.mutable.ArrayBuffer
 
 import com.jakewharton.fliptables.FlipTable
-import org.scalatest.Assertions.convertToEqualizer
 
 object TestUtils {
-
-  def verifyOutput(markdown: Path, newOutput: ArrayBuffer[String], agent: String): Unit = {
-    if (System.getenv("KYUUBI_UPDATE") == "1") {
-      val writer = Files.newBufferedWriter(
-        markdown,
-        StandardCharsets.UTF_8,
-        StandardOpenOption.TRUNCATE_EXISTING,
-        StandardOpenOption.CREATE)
-      try {
-        newOutput.foreach { line =>
-          writer.write(line)
-          writer.newLine()
-        }
-      } finally {
-        writer.close()
-      }
-    } else {
-      val expected = new ArrayBuffer[String]()
-
-      val reader = Files.newBufferedReader(markdown, StandardCharsets.UTF_8)
-      var line = reader.readLine()
-      while (line != null) {
-        expected += line
-        line = reader.readLine()
-      }
-      reader.close()
-      val hint = s"$markdown out of date, please update doc with " +
-        s"KYUUBI_UPDATE=1 build/mvn clean install -Pflink-provided,spark-provided,hive-provided " +
-        s"-DwildcardSuites=$agent"
-      assert(newOutput.size === expected.size, hint)
-
-      newOutput.zip(expected).foreach { case (out, in) => assert(out === in, hint) }
-    }
-  }
-
   def displayResultSet(resultSet: ResultSet): Unit = {
     if (resultSet == null) throw new NullPointerException("resultSet == null")
     val resultSetMetaData = resultSet.getMetaData

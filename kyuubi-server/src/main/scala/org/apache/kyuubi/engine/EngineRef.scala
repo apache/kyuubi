@@ -72,6 +72,8 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
+  private val enginePoolIgnoreSubdomain: Boolean = conf.get(ENGINE_POOL_IGNORE_SUBDOMAIN)
+
   private val enginePoolBalancePolicy: String = conf.get(ENGINE_POOL_BALANCE_POLICY)
 
   // In case the multi kyuubi instances have the small gap of timeout, here we add
@@ -89,8 +91,7 @@ private[kyuubi] class EngineRef(
 
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
-    case Some(_subdomain) => _subdomain
-    case None if clientPoolSize > 0 =>
+    case subdomain if clientPoolSize > 0 && (subdomain.isEmpty || enginePoolIgnoreSubdomain) =>
       val poolSize = math.min(clientPoolSize, poolThreshold)
       if (poolSize < clientPoolSize) {
         warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to " +
@@ -111,6 +112,7 @@ private[kyuubi] class EngineRef(
           Random.nextInt(poolSize)
       }
       s"$clientPoolName-${seqNum % poolSize}"
+    case Some(_subdomain) => _subdomain
     case _ => "default" // [KYUUBI #1293]
   }
 

@@ -1248,6 +1248,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return protocol;
   }
 
+  @SuppressWarnings("rawtypes")
   public static TCLIService.Iface newSynchronizedClient(TCLIService.Iface client) {
     return (TCLIService.Iface)
         Proxy.newProxyInstance(
@@ -1286,6 +1287,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
   }
 
+  @SuppressWarnings("fallthrough")
   public void waitLaunchEngineToComplete() throws SQLException {
     if (launchEngineOpHandle == null) return;
 

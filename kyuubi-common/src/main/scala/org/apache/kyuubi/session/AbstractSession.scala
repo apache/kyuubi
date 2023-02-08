@@ -111,7 +111,7 @@ abstract class AbstractSession(
   override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
     infoType match {
       case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
-        TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
+        TGetInfoValue.stringValue("Apache Kyuubi")
       case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(org.apache.kyuubi.KYUUBI_VERSION)
       case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
       case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |

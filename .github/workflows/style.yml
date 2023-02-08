@@ -100,3 +100,15 @@ jobs:
           echo "If there is a problem that cannot be fixed by the command, "
           echo "you need to manually fix it by following the information told by the command above"
           echo "---------------------------------------------------------------------------------"
+
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: check bin directory
+        uses: ludeeus/action-shellcheck@1.1.0
+        with:
+          # TODO: enable for all folders step by step
+          scandir: './bin'
+          severity: error

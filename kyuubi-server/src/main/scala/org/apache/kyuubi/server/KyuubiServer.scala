@@ -19,6 +19,7 @@ package org.apache.kyuubi.server
 
 import scala.util.Properties
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
@@ -81,7 +82,7 @@ object KyuubiServer extends Logging {
         |                /\___/
         |                \/__/
        """.stripMargin)
-    info(s"Version: $KYUUBI_VERSION, Revision: $REVISION, Branch: $BRANCH," +
+    info(s"Version: $KYUUBI_VERSION, Revision: $REVISION ($REVISION_TIME), Branch: $BRANCH," +
       s" Java: $JAVA_COMPILE_VERSION, Scala: $SCALA_COMPILE_VERSION," +
       s" Spark: $SPARK_COMPILE_VERSION, Hadoop: $HADOOP_COMPILE_VERSION," +
       s" Hive: $HIVE_COMPILE_VERSION, Flink: $FLINK_COMPILE_VERSION," +
@@ -104,6 +105,28 @@ object KyuubiServer extends Logging {
   private[kyuubi] def reloadHadoopConf(): Unit = synchronized {
     val _hadoopConf = KyuubiHadoopUtils.newHadoopConf(new KyuubiConf().loadFileDefaults())
     hadoopConf = _hadoopConf
+  }
+
+  private[kyuubi] def refreshUserDefaultsConf(): Unit = kyuubiServer.conf.synchronized {
+    val existedUserDefaults = kyuubiServer.conf.getAllUserDefaults
+    val refreshedUserDefaults = KyuubiConf().loadFileDefaults().getAllUserDefaults
+    var (unsetCount, updatedCount, addedCount) = (0, 0, 0)
+    for ((k, _) <- existedUserDefaults if !refreshedUserDefaults.contains(k)) {
+      kyuubiServer.conf.unset(k)
+      unsetCount = unsetCount + 1
+    }
+    for ((k, v) <- refreshedUserDefaults) {
+      if (existedUserDefaults.contains(k)) {
+        if (!StringUtils.equals(existedUserDefaults.get(k).orNull, v)) {
+          updatedCount = updatedCount + 1
+        }
+      } else {
+        addedCount = addedCount + 1
+      }
+      kyuubiServer.conf.set(k, v)
+    }
+    info(s"Refreshed user defaults configs with changes of " +
+      s"unset: $unsetCount, updated: $updatedCount, added: $addedCount")
   }
 }
 

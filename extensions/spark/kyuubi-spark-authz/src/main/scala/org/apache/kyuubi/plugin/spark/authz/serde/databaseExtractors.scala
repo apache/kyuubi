@@ -17,21 +17,13 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
-
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
-trait DatabaseExtractor extends (AnyRef => String) with Extractor
+trait DatabaseExtractor extends (AnyRef => Database) with Extractor
 
 object DatabaseExtractor {
   val dbExtractors: Map[String, DatabaseExtractor] = {
-    ServiceLoader.load(classOf[DatabaseExtractor])
-      .iterator()
-      .asScala
-      .map(e => (e.key, e))
-      .toMap
+    loadExtractorsToMap[DatabaseExtractor]
   }
 }
 
@@ -39,8 +31,8 @@ object DatabaseExtractor {
  * String
  */
 class StringDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
-    v1.asInstanceOf[String]
+  override def apply(v1: AnyRef): Database = {
+    Database(None, v1.asInstanceOf[String])
   }
 }
 
@@ -48,8 +40,8 @@ class StringDatabaseExtractor extends DatabaseExtractor {
  * Option[String]
  */
 class StringOptionDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
-    v1.asInstanceOf[Option[String]].orNull
+  override def apply(v1: AnyRef): Database = {
+    Database(None, v1.asInstanceOf[Option[String]].orNull)
   }
 }
 
@@ -57,8 +49,8 @@ class StringOptionDatabaseExtractor extends DatabaseExtractor {
  * Seq[String]
  */
 class StringSeqDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
-    quote(v1.asInstanceOf[Seq[String]])
+  override def apply(v1: AnyRef): Database = {
+    Database(None, quote(v1.asInstanceOf[Seq[String]]))
   }
 }
 
@@ -66,8 +58,8 @@ class StringSeqDatabaseExtractor extends DatabaseExtractor {
  * Option[Seq[String]]
  */
 class StringSeqOptionDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
-    v1.asInstanceOf[Option[Seq[String]]].map(quote).orNull
+  override def apply(v1: AnyRef): Database = {
+    Database(None, v1.asInstanceOf[Option[Seq[String]]].map(quote).orNull)
   }
 }
 
@@ -75,15 +67,22 @@ class StringSeqOptionDatabaseExtractor extends DatabaseExtractor {
  * org.apache.spark.sql.catalyst.analysis.ResolvedNamespace
  */
 class ResolvedNamespaceDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
+  override def apply(v1: AnyRef): Database = {
+    val catalogVal = invoke(v1, "catalog")
+    val catalog = new CatalogPluginCatalogExtractor().apply(catalogVal)
     val namespace = getFieldVal[Seq[String]](v1, "namespace")
-    quote(namespace)
+    Database(catalog, quote(namespace))
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.analysis.ResolvedDbObjectName
+ */
 class ResolvedDBObjectNameDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
+  override def apply(v1: AnyRef): Database = {
+    val catalogVal = invoke(v1, "catalog")
+    val catalog = new CatalogPluginCatalogExtractor().apply(catalogVal)
     val namespace = getFieldVal[Seq[String]](v1, "nameParts")
-    quote(namespace)
+    Database(catalog, quote(namespace))
   }
 }

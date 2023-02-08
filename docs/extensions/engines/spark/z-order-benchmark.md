@@ -1,20 +1,19 @@
 <!--
- - x to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- x to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Z-order Benchmark
 
@@ -75,7 +74,6 @@ Step4: do optimize with z-order and do optimize with order by, sort column: src_
 INSERT overwrite table conn_order select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, src_port, dst_ip, dst_port;
 OPTIMIZE conn_zorder ZORDER BY src_ip, src_port, dst_ip, dst_port;
 ```
-
 
 The complete code is as follows:
 
@@ -152,7 +150,6 @@ spark.stop()
 Z-order Optimize statement:
 
 ```sql
-
 set spark.sql.hive.convertMetastoreParquet=false;
 
 OPTIMIZE conn_zorder_only_ip ZORDER BY src_ip, dst_ip;
@@ -166,13 +163,11 @@ ORDER BY statement:
 INSERT overwrite table conn_order_only_ip select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, dst_ip;
 
 INSERT overwrite table conn_order select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, src_port, dst_ip, dst_port;
-
 ```
 
 Query statement:
 
 ```sql
-
 set spark.sql.hive.convertMetastoreParquet=true;
 
 select count(*) from conn_random_parquet where src_ip like '157%' and dst_ip like '216.%';
@@ -182,10 +177,9 @@ select count(*) from conn_zorder_only_ip where src_ip like '157%' and dst_ip lik
 select count(*) from conn_zorder where src_ip like '157%' and dst_ip like '216.%';
 ```
 
-
 ## Benchmark result
 
-We have done two performance tests: one is to compare the efficiency of  Z-order Optimize and Order by Sort, 
+We have done two performance tests: one is to compare the efficiency of  Z-order Optimize and Order by Sort,
 and the other is to query based on the optimized Z-order by data and Random data.
 
 ### Efficiency of Z-order Optimize and Order-by Sort
@@ -194,17 +188,17 @@ and the other is to query based on the optimized Z-order by data and Random data
 
 Z-order by or order by only ip:
 
-| Table               | row count      | optimize  time     |
-| ------------------- | -------------- | ------------------ |
-| conn_order_only_ip  | 10,000,000,000 | 1591.99 s          |
-| conn_zorder_only_ip | 10,000,000,000 | 8371.405 s         |
+|        Table        |   row count    | optimize  time |
+|---------------------|----------------|----------------|
+| conn_order_only_ip  | 10,000,000,000 | 1591.99 s      |
+| conn_zorder_only_ip | 10,000,000,000 | 8371.405 s     |
 
 Z-order by or order by all columns:
 
-| Table               | row count      | optimize  time     |
-| ------------------- | -------------- | ------------------ |
-| conn_order          | 10,000,000,000 | 1515.298 s         |
-| conn_zorder         | 10,000,000,000 | 11057.194 s        |
+|    Table    |   row count    | optimize  time |
+|-------------|----------------|----------------|
+| conn_order  | 10,000,000,000 | 1515.298 s     |
+| conn_zorder | 10,000,000,000 | 11057.194 s    |
 
 ### Z-order by benchmark result
 
@@ -212,28 +206,24 @@ By querying the tables before and after optimization, we find that:
 
 **10 billion data and 200 files and Query resource: 200 core 600G memory**
 
-| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
-| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
+|        Table        | Average File Size | Scan row count | Average query time | row count Skipping ratio |
+|---------------------|-------------------|----------------|--------------------|--------------------------|
 | conn_random_parquet | 1.2 G             | 10,000,000,000 | 27.554 s           | 0.0%                     |
 | conn_zorder_only_ip | 890 M             | 43,170,600     | 2.459 s            | 99.568%                  |
 | conn_zorder         | 890 M             | 54,841,302     | 3.185 s            | 99.451%                  |
 
-
-
 **10 billion data and 1000 files and Query resource: 200 core 600G memory**
 
-| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
-| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
+|        Table        | Average File Size | Scan row count | Average query time | row count Skipping ratio |
+|---------------------|-------------------|----------------|--------------------|--------------------------|
 | conn_random_parquet | 234.8 M           | 10,000,000,000 | 27.031 s           | 0.0%                     |
 | conn_zorder_only_ip | 173.9 M           | 53,499,068     | 3.120 s            | 99.465%                  |
 | conn_zorder         | 174.0 M           | 35,910,500     | 3.103 s            | 99.640%                  |
 
-
-
 **1 billion data and 10000 files and Query resource: 10 core 40G memory**
 
-| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
-| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
+|        Table        | Average File Size | Scan row count | Average query time | row count Skipping ratio |
+|---------------------|-------------------|----------------|--------------------|--------------------------|
 | conn_random_parquet | 2.7 M             | 1,000,000,000  | 76.772 s           | 0.0%                     |
 | conn_zorder_only_ip | 2.1 M             | 406,572        | 3.963 s            | 99.959%                  |
 | conn_zorder         | 2.2 M             | 387,942        | 3.621s             | 99.961%                  |

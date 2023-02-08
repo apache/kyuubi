@@ -17,17 +17,18 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
-import org.apache.kyuubi.plugin.spark.authz.serde.{ActionTypeDesc, QueryDesc, TableCommandSpec, TableDesc}
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
+import org.apache.kyuubi.plugin.spark.authz.serde._
 
 object IcebergCommands {
 
   val DeleteFromIcebergTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.DeleteFromIcebergTable"
-    val actionTypeDesc = ActionTypeDesc(null, null, Some("UPDATE"))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
     val tableDesc =
       TableDesc(
         "table",
-        "DataSourceV2RelationTableExtractor",
+        classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
   }
@@ -39,17 +40,19 @@ object IcebergCommands {
 
   val MergeIntoIcebergTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable"
-    val actionTypeDesc = ActionTypeDesc(null, null, Some("UPDATE"))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
     val tableDesc = TableDesc(
       "targetTable",
-      "DataSourceV2RelationTableExtractor",
+      classOf[DataSourceV2RelationTableExtractor],
       actionTypeDesc = Some(actionTypeDesc))
     val queryDesc = QueryDesc("sourceTable")
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
   }
 
-  val data = Array(
+  val data: Array[TableCommandSpec] = Array(
     DeleteFromIcebergTable,
     UpdateIcebergTable,
-    MergeIntoIcebergTable)
+    MergeIntoIcebergTable,
+    MergeIntoIcebergTable.copy(classname =
+      "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable"))
 }

@@ -19,12 +19,11 @@ package org.apache.kyuubi.metrics
 
 import java.time.Duration
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.config.ConfigEntry
+import org.apache.kyuubi.config.KyuubiConf.buildConf
 import org.apache.kyuubi.metrics.ReporterType._
 
 object MetricsConf {
-
-  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
   val METRICS_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.metrics.enabled")
@@ -34,12 +33,12 @@ object MetricsConf {
       .createWithDefault(true)
 
   val METRICS_REPORTERS: ConfigEntry[Seq[String]] = buildConf("kyuubi.metrics.reporters")
-    .doc("A comma separated list for all metrics reporters" +
+    .doc("A comma-separated list for all metrics reporters" +
       "<ul>" +
       " <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE periodically.</li>" +
       " <li>JMX - JmxReporter which listens for new metrics and exposes them as MBeans.</li> " +
       " <li>JSON - JsonReporter which outputs measurements to json file periodically.</li>" +
-      " <li>PROMETHEUS - PrometheusReporter which exposes metrics in prometheus format.</li>" +
+      " <li>PROMETHEUS - PrometheusReporter which exposes metrics in Prometheus format.</li>" +
       " <li>SLF4J - Slf4jReporter which outputs measurements to system log periodically.</li>" +
       "</ul>")
     .version("1.2.0")
@@ -58,13 +57,13 @@ object MetricsConf {
     .createWithDefault(Duration.ofSeconds(5).toMillis)
 
   val METRICS_JSON_LOCATION: ConfigEntry[String] = buildConf("kyuubi.metrics.json.location")
-    .doc("Where the json metrics file located")
+    .doc("Where the JSON metrics file located")
     .version("1.2.0")
     .stringConf
     .createWithDefault("metrics")
 
   val METRICS_JSON_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.json.interval")
-    .doc("How often should report metrics to json file")
+    .doc("How often should report metrics to JSON file")
     .version("1.2.0")
     .timeConf
     .createWithDefault(Duration.ofSeconds(5).toMillis)

@@ -31,20 +31,24 @@ import org.apache.kyuubi.plugin.spark.authz.serde.{mapper, CommandSpec}
 object JsonSpecFileGenerator {
 
   def main(args: Array[String]): Unit = {
-    write(DatabaseCommands.data, "database")
-    write(TableCommands.data ++ IcebergCommands.data, "table")
-    write(FunctionCommands.data, "function")
+    writeCommandSpecJson("database", DatabaseCommands.data)
+    writeCommandSpecJson("table", TableCommands.data ++ IcebergCommands.data)
+    writeCommandSpecJson("function", FunctionCommands.data)
+    writeCommandSpecJson("scan", Scans.data)
   }
 
-  def write[T <: CommandSpec](data: Array[T], filename: String): Unit = {
+  def writeCommandSpecJson[T <: CommandSpec](commandType: String, specArr: Array[T]): Unit = {
     val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
       .split("target").head
+    val filename = s"${commandType}_command_spec.json"
     val writer = {
-      val p =
-        Paths.get(pluginHome, "src", "main", "resources", s"${filename}_command_spec.json")
+      val p = Paths.get(pluginHome, "src", "main", "resources", filename)
       Files.newBufferedWriter(p, StandardCharsets.UTF_8)
     }
-    mapper.writerWithDefaultPrettyPrinter().writeValue(writer, data.sortBy(_.classname))
+    // scalastyle:off println
+    println(s"writing ${specArr.length} specs to $filename")
+    // scalastyle:on println
+    mapper.writerWithDefaultPrettyPrinter().writeValue(writer, specArr.sortBy(_.classname))
     writer.close()
   }
 }

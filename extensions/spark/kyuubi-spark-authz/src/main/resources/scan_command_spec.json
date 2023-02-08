@@ -1,0 +1,29 @@
+[ {
+  "classname" : "org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker",
+  "scanDescs" : [ {
+    "fieldName" : "catalogTable",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "catalogDesc" : null
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.catalog.HiveTableRelation",
+  "scanDescs" : [ {
+    "fieldName" : "tableMeta",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "catalogDesc" : null
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.datasources.LogicalRelation",
+  "scanDescs" : [ {
+    "fieldName" : "catalogTable",
+    "fieldExtractor" : "CatalogTableOptionTableExtractor",
+    "catalogDesc" : null
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation",
+  "scanDescs" : [ {
+    "fieldName" : null,
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "catalogDesc" : null
+  } ]
+} ]
