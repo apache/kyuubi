@@ -24,6 +24,7 @@ import scala.collection.mutable.LinkedHashMap
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
+import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -31,6 +32,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider
 
 object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
   with RangerConfigProvider {
+  final private val LOG = LoggerFactory.getLogger(getClass)
 
   /**
    * For a Spark SQL query, it may contain 0 or more privilege objects to verify, e.g. a typical
@@ -74,8 +76,14 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
    * register shutdown hook for plugin cleanup
    */
   private def registerCleanupShutdownHook(plugin: RangerBasePlugin): Unit = {
-    ShutdownHookManager.get()
-      .addShutdownHook(() => { if (plugin != null) { this.cleanup() } }, Integer.MAX_VALUE)
+    ShutdownHookManager.get().addShutdownHook(
+      () => {
+        if (plugin != null) {
+          LOG.info(s"clean up ranger plugin, appId: ${plugin.getAppId}")
+          this.cleanup()
+        }
+      },
+      Integer.MAX_VALUE)
   }
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
