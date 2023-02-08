@@ -103,7 +103,6 @@ class KyuubiSessionImpl(
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
 
-
     checkSessionAccessPathURIs()
 
     // we should call super.open before running launch engine operation
