@@ -23,7 +23,7 @@ on:
       - master
       - branch-*
     paths:
-      - 'docs'
+      - 'docs/**'
 
 concurrency:
   group: dep-${{ github.ref }}
