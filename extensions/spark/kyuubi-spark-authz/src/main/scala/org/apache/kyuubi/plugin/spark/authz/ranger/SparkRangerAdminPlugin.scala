@@ -167,5 +167,4 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
       }
     }
   }
-
 }
