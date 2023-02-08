@@ -355,6 +355,7 @@ jobs:
           curl -LO https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64
           sudo install minikube-linux-amd64 /usr/local/bin/minikube
           minikube start --cpus 2 --memory 4096 --kubernetes-version=${KUBERNETES_VERSION} --force
+          # https://minikube.sigs.k8s.io/docs/handbook/pushing/#7-loading-directly-to-in-cluster-container-runtime
           minikube image load apache/kyuubi:latest
       - name: kubectl pre-check
         run: |
