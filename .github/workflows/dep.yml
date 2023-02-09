@@ -23,8 +23,9 @@ on:
       - master
       - branch-*
     paths:
-      # dependency check happens only pom changes
+      # when pom or dependency workflow changes
       - '**/pom.xml'
+      - '.github/workflows/dep.yml'
 
 concurrency:
   group: dep-${{ github.ref }}
@@ -57,3 +58,7 @@ jobs:
           -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Check dependency list
         run: build/dependency.sh
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        with:
+          fail-on-severity: moderate
