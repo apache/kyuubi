@@ -18,7 +18,11 @@
 package org.apache.kyuubi.operation
 
 import java.sql.{Date, Timestamp}
+import java.util.UUID
 
+import org.apache.commons.io.FileUtils
+
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.SemanticVersion
 
 trait SparkDataTypeTests extends HiveJDBCTestHelper {
@@ -316,6 +320,116 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
     }
   }
 
+  test("execute statement - select userDefinedType") {
+    assume(resultFormat == "thrift" || (resultFormat == "arrow" && SPARK_ENGINE_VERSION >= "3.2"))
+    val jarDir = Utils.createTempDir().toFile
+    withJdbcStatement() { statement =>
+      // Register udt
+      val userDefinedTypeCode =
+        """
+          |package test.udt
+          |
+          |import org.apache.spark.sql.catalyst.InternalRow
+          |import org.apache.spark.sql.catalyst.expressions.{GenericInternalRow, UnsafeArrayData}
+          |import org.apache.spark.sql.types._
+          |
+          |@SQLUserDefinedType(udt = classOf[KyuubiDummyUDT])
+          |@SerialVersionUID(1L)
+          |case class KyuubiDummyType(data: Array[Float], dim: Int) extends Serializable
+          |
+          |object KyuubiDummyType {
+          |  def apply(data: Array[Float]): KyuubiDummyType = KyuubiDummyType(data, data.length)
+          |}
+          |
+          |case class KyuubiDummyUDT() extends UserDefinedType[KyuubiDummyType] {
+          |
+          |  override def sqlType: DataType = StructType(
+          |    Seq(
+          |      StructField("data", ArrayType(FloatType, containsNull = false), nullable = true),
+          |      StructField("dim", IntegerType, nullable = true)
+          |    )
+          |  )
+          |
+          |  override def serialize(obj: KyuubiDummyType): InternalRow = {
+          |    val row = new GenericInternalRow(2)
+          |    row.update(0, UnsafeArrayData.fromPrimitiveArray(obj.data))
+          |    row.setInt(1, obj.dim)
+          |    row
+          |  }
+          |
+          |  override def deserialize(datum: Any): KyuubiDummyType = {
+          |    datum match {
+          |      case row: InternalRow =>
+          |        KyuubiDummyType(row.getArray(0).toFloatArray())
+          |    }
+          |  }
+          |
+          |  override def userClass: Class[KyuubiDummyType] = classOf[KyuubiDummyType]
+          |}
+          |""".stripMargin
+
+      val jarFile = UserJarTestUtils.createJarFile(
+        userDefinedTypeCode,
+        "test",
+        s"test-udt-${UUID.randomUUID}.jar",
+        jarDir.toString)
+      val jarBytes = FileUtils.readFileToByteArray(jarFile)
+      val jarStr = new String(java.util.Base64.getEncoder().encode(jarBytes))
+      val jarName = s"test-udt-${UUID.randomUUID}.jar"
+
+      val code0 = """spark.sql("SET kyuubi.operation.language").show(false)"""
+      statement.execute(code0)
+
+      val tempUDTViewName = s"kyuubi_test_udt_${UUID.randomUUID.toString.replace("-", "_")}"
+
+      // scalastyle:off
+      // Generate a jar package in spark engine
+      val batchCode =
+        s"""
+           |import java.io.{BufferedOutputStream, File, FileOutputStream}
+           |val dir = spark.sparkContext.getConf.get("spark.repl.class.outputDir")
+           |val jarFile = new File(dir, "$jarName")
+           |val bos = new BufferedOutputStream(new FileOutputStream(jarFile))
+           |val path = "$jarStr"
+           |bos.write(java.util.Base64.getDecoder.decode(path))
+           |bos.close()
+           |val jarPath = jarFile.getAbsolutePath
+           |val fileSize = jarFile.length
+           |spark.sql("add jar " + jarPath)
+           |
+           |import test.udt.{KyuubiDummyType, KyuubiDummyUDT}
+           |import org.apache.spark.sql.Row
+           |import org.apache.spark.sql.types.{StructType, StructField}
+           |val rowRDD = spark.sparkContext.parallelize(Seq(Row(KyuubiDummyType(Array(1.0f, 2.0f)))))
+           |val schema = new StructType(Array(StructField("udt", new KyuubiDummyUDT, nullable = true)))
+           |spark.createDataFrame(rowRDD, schema).createOrReplaceTempView("$tempUDTViewName")
+           |""".stripMargin
+      // scalastyle:on
+      batchCode.split("\n").filter(_.nonEmpty).foreach { code =>
+        val rs = statement.executeQuery(code)
+        rs.next()
+        // scalastyle:off
+        println(rs.getString(1))
+      // scalastyle:on
+      }
+
+      // Query udt
+      val set = s"""spark.conf.set("kyuubi.operation.language", "SQL")"""
+      val queryUDT = s"select udt from $tempUDTViewName"
+      statement.execute(set)
+      val resultSet = statement.executeQuery(queryUDT)
+      assert(resultSet.next())
+      assert(resultSet.getObject("udt").isInstanceOf[KyuubiDummyType])
+      val dummyType = resultSet.getObject("udt").asInstanceOf[KyuubiDummyType]
+      assert(dummyType.dim == 2)
+      assert(dummyType.data.head == 1.0f)
+      assert(dummyType.data.last == 2.0f)
+
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.STRUCT)
+    }
+  }
+
   def sparkEngineMajorMinorVersion: SemanticVersion = {
     var sparkRuntimeVer = ""
     withJdbcStatement() { stmt =>
@@ -327,3 +441,6 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
     SemanticVersion(sparkRuntimeVer)
   }
 }
+
+@SerialVersionUID(1L)
+case class KyuubiDummyType(data: Array[Float], dim: Int) extends Serializable
