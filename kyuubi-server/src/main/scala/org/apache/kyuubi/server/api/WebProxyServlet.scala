@@ -19,6 +19,7 @@ package org.apache.kyuubi.server.api
 
 import javax.servlet.http.HttpServletRequest
 
+import org.eclipse.jetty.client.api.Request
 import org.eclipse.jetty.proxy.ProxyServlet
 
 import org.apache.kyuubi.Logging
@@ -54,6 +55,22 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
       logger.info("ui -> {}", targetUrl)
     }
     targetUrl
+  }
+
+  override def addXForwardedHeaders(
+      clientRequest: HttpServletRequest,
+      proxyRequest: Request): Unit = {
+    val forHeaderName = "X-Forwarded-For"
+    var forHeader = clientRequest.getRemoteAddr()
+    val existingForHeader = clientRequest.getHeader(forHeaderName)
+    if (existingForHeader != null) {
+      forHeader = existingForHeader + ", " + forHeader
+    }
+    proxyRequest.header(forHeaderName, forHeader)
+    val protoHeaderName = "X-Forwarded-Proto"
+    val protoHeader = clientRequest.getScheme()
+    proxyRequest.header(protoHeaderName, protoHeader)
+
   }
 
 }
