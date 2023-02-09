@@ -102,7 +102,6 @@ object TableCommands {
 
   val AlterTableRename = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableRenameCommand"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(DELETE))
 
     val oldTableTableTypeDesc =
       TableTypeDesc(
@@ -112,12 +111,9 @@ object TableCommands {
     val oldTableD = TableDesc(
       "oldName",
       tite,
-      tableTypeDesc = Some(oldTableTableTypeDesc),
-      actionTypeDesc = Some(actionTypeDesc))
+      tableTypeDesc = Some(oldTableTableTypeDesc))
 
-    val newTableD =
-      TableDesc("newName", tite, tableTypeDesc = Some(oldTableTableTypeDesc))
-    TableCommandSpec(cmd, Seq(oldTableD, newTableD), ALTERTABLE_RENAME)
+    TableCommandSpec(cmd, Seq(oldTableD), ALTERTABLE_RENAME)
   }
 
   // this is for spark 3.1 or below
