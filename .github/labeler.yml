@@ -45,7 +45,6 @@
   - ".gitattributes"
   - ".github/**/*"
   - ".gitignore"
-  - ".travis.yml"
   - "LICENSE"
   - "LICENSE-binary"
   - "NOTICE"

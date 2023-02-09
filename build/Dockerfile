@@ -37,7 +37,7 @@ ARG MVN_ARG
 
 # Pass the environment variable `CI` into container, for internal use only.
 #
-# Continuous integration(aka. CI) services like GitHub Actions, Travis always provide
+# Continuous integration(aka. CI) services like GitHub Actions always provide
 # an environment variable `CI` in runners, and we detect this variable to run some
 # specific actions, e.g. run `mvn` in batch mode to suppress noisy logs.
 ARG CI
