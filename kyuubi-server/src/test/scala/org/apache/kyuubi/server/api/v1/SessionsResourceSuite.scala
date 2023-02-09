@@ -296,7 +296,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().get()
       // will meet json parse exception with response.readEntity(classOf[KyuubiSessionEvent])
       val sessionEvent = response.readEntity(classOf[String])
-      assert(sessionEvent.contains("SparkException: Master"))
+      assert(sessionEvent.contains("The last 10 line(s) of log are:"))
     }
   }
 }
