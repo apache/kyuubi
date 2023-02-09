@@ -23,10 +23,9 @@ on:
       - master
       - branch-*
     paths:
-      # when pom changes
+      # when pom or dependency workflow changes
       - '**/pom.xml'
-      # when dependency workflow changes
-      - .github/workflows/dep.yaml
+      - '.github/workflows/dep.yml'
       - .github/actions/setup-mvnd/*.yaml
 
 concurrency:
@@ -62,3 +61,7 @@ jobs:
           -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Check dependency list
         run: build/dependency.sh
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        with:
+          fail-on-severity: moderate
