@@ -45,16 +45,16 @@ install_app() {
   curl_opts="--progress-bar ${curl_opts}"
   wget_opts="--progress=bar:force ${wget_opts}"
 
-  if [ -z "$3" -o ! -f "$binary" ]; then
+  if [ -z "$3" ] ||[ ! -f "$binary" ]; then
     # check if we already have the tarball
     # check if we have curl installed
     # download application
     rm -f "$local_tarball"
-    [ ! -f "${local_tarball}" ] && [ $(command -v curl) ] && \
+    [ ! -f "${local_tarball}" ] && [ "$(command -v curl)" ] && \
       echo "exec: curl ${curl_opts} ${remote_tarball}" 1>&2 && \
       curl ${curl_opts} "${remote_tarball}" > "${local_tarball}"
     # if the file still doesn't exist, lets try `wget` and cross our fingers
-    [ ! -f "${local_tarball}" ] && [ $(command -v wget) ] && \
+    [ ! -f "${local_tarball}" ] && [ "$(command -v wget)" ] && \
       echo "exec: wget ${wget_opts} ${remote_tarball}" 1>&2 && \
       wget ${wget_opts} -O "${local_tarball}" "${remote_tarball}"
     # if both were unsuccessful, exit
@@ -91,11 +91,11 @@ function get_os_arch(){
   echo "$arch"
 }
 
-# Determine the Maven version from the root pom.xml file and
-# install maven under the build/ folder if needed.
-install_mvn() {
-  local MVND_VERSION=`grep "<mvnd.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
-  local MVN_VERSION=`grep "<maven.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
+# Determine the Mvnd version from the root pom.xml file and
+# install mvnd under the build/ folder if needed.
+install_mvnd() {
+  local MVND_VERSION=$(grep "<mvnd.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
+  local MVN_VERSION=$(grep "<maven.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
   MVND_BIN="$(command -v mvnd)"
   if [ "$MVND_BIN" ]; then
     local MVND_DETECTED_VERSION="$(mvnd -v 2>&1| grep '(mvnd)' | awk '{print $5}')"
@@ -117,14 +117,14 @@ install_mvn() {
 
     MVND_BIN="${_DIR}/maven-mvnd-${MVND_VERSION}-${OS_TYPE}-${ARCH}/bin/mvnd"
   else
-    if [ $(version $MVN_DETECTED_VERSION) -ne $(version $MVN_VERSION) ]; then
+    if [ "$(version $MVN_DETECTED_VERSION)" -ne "$(version $MVN_VERSION)" ]; then
       echo "Mvnd $MVND_DETECTED_VERSION embedded maven version $MVN_DETECTED_VERSION is not equivalent to $MVN_VERSION required in pom."
       exit 1
     fi
   fi
 }
 
-install_mvn
+install_mvnd
 
 cd "${_CALLING_DIR}"
 
