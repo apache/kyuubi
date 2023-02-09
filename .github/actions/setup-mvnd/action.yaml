@@ -18,7 +18,7 @@
 name: 'setup-mvnd'
 description: 'Setup the maven daemon'
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Cache Mvnd
       uses: actions/cache@v3
@@ -26,7 +26,7 @@ runs:
         path: |
           build/maven-mvnd-*
           build/apache-maven-*
-        key: ${{ runner.os }}-mvnd
+        key: setup-mvnd-${{ runner.os }}-mvnd
     - name: Check Mvnd
       run: build/mvnd -v
       shell: bash
