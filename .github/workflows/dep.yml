@@ -23,9 +23,9 @@ on:
       - master
       - branch-*
     paths:
-      # dependency check happens when pom changes
+      # when pom changes
       - '**/pom.xml'
-      # dependency check happens when workflow changes
+      # when dependency workflow changes
       - .github/workflows/dep.yaml
       - .github/actions/setup-mvnd/*.yaml
 
