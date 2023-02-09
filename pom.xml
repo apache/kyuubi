@@ -229,6 +229,8 @@
         <!-- Needed for consistent times -->
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 
+        <maven.compiler.heap.size>1024m</maven.compiler.heap.size>
+
         <!-- Package to use when relocating shaded classes. -->
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
 
@@ -1776,7 +1778,7 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <configuration>
-                        <maxmem>1024m</maxmem>
+                        <maxmem>${maven.compiler.heap.size}</maxmem>
                         <fork>true</fork>
                         <compilerArgs>
                             <arg>-Xlint:all,-serial,-path,-processing</arg>
@@ -1804,8 +1806,8 @@
                             <arg>-Ywarn-unused:imports</arg>
                         </args>
                         <jvmArgs>
-                            <jvmArg>-Xms1024m</jvmArg>
-                            <jvmArg>-Xmx1024m</jvmArg>
+                            <jvmArg>-Xms${maven.compiler.heap.size}</jvmArg>
+                            <jvmArg>-Xmx${maven.compiler.heap.size}</jvmArg>
                             <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
                         </jvmArgs>
                         <javacArgs>
