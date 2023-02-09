@@ -15,40 +15,34 @@
 # limitations under the License.
 #
 
-name: License check
-
-# This GitHub workflow checks Apache License v2.0 Header is added if needed
+name: Docs
 
 on:
   pull_request:
     branches:
       - master
-      - branch-*
 
 concurrency:
-  group: license-${{ github.head_ref || github.run_id }}
+  group: docs-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  rat:
-    name: License
+  sphinx:
+    name: sphinx-build
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - name: Setup JDK 8
-        uses: actions/setup-java@v3
+      - uses: actions/setup-python@v4
         with:
-          distribution: temurin
-          java-version: 8
-          cache: 'maven'
-          check-latest: false
-      - run: >-
-          build/mvn org.apache.rat:apache-rat-plugin:check
-          -Ptpcds -Pspark-block-cleaner -Pkubernetes-it
-          -Pspark-3.1 -Pspark-3.2 -Pspark-3.3
-      - name: Upload rat report
-        if: failure()
+          python-version: '3.9'
+          cache: 'pip'
+          cache-dependency-path: docs/requirements.txt
+      - run: pip install -r docs/requirements.txt
+      - name: make html
+        run: make -d --directory docs html
+      - name: upload html
         uses: actions/upload-artifact@v3
         with:
-          name: rat-report
-          path: "**/target/rat*.txt"
+          path: |
+            docs/_build/html/
+            !docs/_build/html/_sources/

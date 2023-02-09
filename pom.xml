@@ -115,7 +115,7 @@
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
-        <arrow.version>10.0.1</arrow.version>
+        <arrow.version>11.0.0</arrow.version>
         <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
         <antlr4.version>4.9.3</antlr4.version>
         <antlr.st4.version>4.3.4</antlr.st4.version>
@@ -2328,7 +2328,7 @@
         <profile>
             <id>flink-1.14</id>
             <properties>
-                <flink.version>1.14.5</flink.version>
+                <flink.version>1.14.6</flink.version>
                 <flink.module.scala.suffix>_${scala.binary.version}</flink.module.scala.suffix>
             </properties>
         </profile>
@@ -2336,7 +2336,7 @@
         <profile>
             <id>flink-1.15</id>
             <properties>
-                <flink.version>1.15.2</flink.version>
+                <flink.version>1.15.3</flink.version>
                 <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
         </profile>
@@ -2344,7 +2344,7 @@
         <profile>
             <id>flink-1.16</id>
             <properties>
-                <flink.version>1.16.0</flink.version>
+                <flink.version>1.16.1</flink.version>
                 <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
         </profile>
