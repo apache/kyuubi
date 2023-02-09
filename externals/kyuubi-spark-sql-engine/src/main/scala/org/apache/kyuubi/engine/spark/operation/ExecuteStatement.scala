@@ -76,13 +76,13 @@ class ExecuteStatement(
         if (resultMaxRows > 0) {
           logger.warn(s"Ignore ${OPERATION_RESULT_MAX_ROWS.key} on incremental collect mode.")
         }
-        val internalIterator = if (arrowEnabled) {
+        def internalIterator(): Iterator[Any] = if (arrowEnabled) {
           SparkDatasetHelper.toArrowBatchRdd(convertComplexType(result)).toLocalIterator
         } else {
           result.toLocalIterator().asScala
         }
         new IterableFetchIterator[Any](new Iterable[Any] {
-          override def iterator: Iterator[Any] = internalIterator
+          override def iterator: Iterator[Any] = internalIterator()
         })
       } else {
         val internalArray = if (resultMaxRows <= 0) {
