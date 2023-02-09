@@ -691,23 +691,6 @@
     "fieldName" : "oldName",
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : null,
-    "actionTypeDesc" : {
-      "fieldName" : null,
-      "fieldExtractor" : null,
-      "actionType" : "DELETE"
-    },
-    "tableTypeDesc" : {
-      "fieldName" : "oldName",
-      "fieldExtractor" : "TableIdentifierTableTypeExtractor",
-      "skipTypes" : [ "TEMP_VIEW" ]
-    },
-    "catalogDesc" : null,
-    "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
-  }, {
-    "fieldName" : "newName",
-    "fieldExtractor" : "TableIdentifierTableExtractor",
-    "columnDesc" : null,
     "actionTypeDesc" : null,
     "tableTypeDesc" : {
       "fieldName" : "oldName",
