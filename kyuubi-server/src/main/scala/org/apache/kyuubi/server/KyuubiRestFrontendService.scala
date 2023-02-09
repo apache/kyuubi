@@ -89,7 +89,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     server.addHandler(
       authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandlerCollection))
     server.addStaticHandler("org/apache/kyuubi/ui/static", "/static/")
-    // server.addRedirectHandler("/", "/static/")
+    server.addRedirectHandler("/", "/proxy/")
     server.addRedirectHandler("/static", "/static/")
     server.addStaticHandler("META-INF/resources/webjars/swagger-ui/4.9.1/", "/swagger-static/")
     server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger/")
