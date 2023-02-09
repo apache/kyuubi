@@ -18,7 +18,7 @@
 #
 
 # Determine the current working directory
-_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Preserve the calling directory
 _CALLING_DIR="$(pwd)"
 # Options used during compilation
@@ -45,7 +45,7 @@ install_app() {
   curl_opts="--progress-bar ${curl_opts}"
   wget_opts="--progress=bar:force ${wget_opts}"
 
-  if [ -z "$3" ] ||[ ! -f "$binary" ]; then
+  if [ -z "$3" ] || [ ! -f "$binary" ]; then
     # check if we already have the tarball
     # check if we have curl installed
     # download application
@@ -67,45 +67,44 @@ install_app() {
   fi
 }
 
-function get_os_type(){
+function get_os_type() {
   local unameOsOut=$(uname -s)
   local osType
   case "${unameOsOut}" in
-      Linux*)     osType=linux;;
-      Darwin*)    osType=darwin;;
-      CYGWIN*)    osType=windows;;
-      MINGW*)     osType=windows;;
-      *)          osType="UNKNOWN:${unameOsOut}"
+  Linux*) osType=linux ;;
+  Darwin*) osType=darwin ;;
+  CYGWIN*) osType=windows ;;
+  MINGW*) osType=windows ;;
+  *) osType="UNKNOWN:${unameOsOut}" ;;
   esac
   echo "$osType"
 }
 
-function get_os_arch(){
+function get_os_arch() {
   local unameArchOut="$(uname -m)"
   local arch
   case "${unameArchOut}" in
-      x86_64*)    arch=amd64;;
-      arm64*)     arch=aarch64;;
-      *)          arch="UNKNOWN:${unameOsOut}"
+  x86_64*) arch=amd64 ;;
+  arm64*) arch=aarch64 ;;
+  *) arch="UNKNOWN:${unameOsOut}" ;;
   esac
   echo "$arch"
 }
 
 # Determine the Mvnd version from the root pom.xml file and
 # install mvnd under the build/ folder if needed.
-install_mvnd() {
+function install_mvnd() {
   local MVND_VERSION=$(grep "<mvnd.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
   local MVN_VERSION=$(grep "<maven.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
   MVND_BIN="$(command -v mvnd)"
   if [ "$MVND_BIN" ]; then
-    local MVND_DETECTED_VERSION="$(mvnd -v 2>&1| grep '(mvnd)' | awk '{print $5}')"
+    local MVND_DETECTED_VERSION="$(mvnd -v 2>&1 | grep '(mvnd)' | awk '{print $5}')"
     local MVN_DETECTED_VERSION="$(mvnd -v 2>&1 | grep 'Apache Maven' | awk 'NR==2 {print $3}')"
   fi
   # See simple version normalization: http://stackoverflow.com/questions/16989598/bash-comparing-version-numbers
   function version { echo "$@" | awk -F. '{ printf("%03d%03d%03d\n", $1,$2,$3); }'; }
 
-  if [ $(version $MVND_DETECTED_VERSION) -ne $(version $MVND_VERSION) ]
-  then
+  if [ $(version $MVND_DETECTED_VERSION) -ne $(version $MVND_VERSION) ]; then
     local APACHE_MIRROR=${APACHE_MIRROR:-'https://downloads.apache.org'}
     local OS_TYPE=$(get_os_type)
     local ARCH=$(get_os_arch)
