@@ -74,8 +74,9 @@ class ExecuteStatement(
         .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
       iter = if (incrementalCollect) {
         if (resultMaxRows > 0) {
-          logger.warn(s"Ignore ${OPERATION_RESULT_MAX_ROWS.key} on incremental collect mode.")
+          warn(s"Ignore ${OPERATION_RESULT_MAX_ROWS.key} on incremental collect mode.")
         }
+        info("Execute in incremental collect mode")
         def internalIterator(): Iterator[Any] = if (arrowEnabled) {
           SparkDatasetHelper.toArrowBatchRdd(convertComplexType(result)).toLocalIterator
         } else {
