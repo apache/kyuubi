@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: Publish Snapshot
+name: Publish Snapshot Nexus
 
 on:
   schedule:
@@ -52,7 +52,7 @@ jobs:
         java-version: 8
         cache: 'maven'
         check-latest: false
-    - name: Publish snapshot - ${{ matrix.branch }}
+    - name: Publish Snapshot Jar to Nexus - ${{ matrix.branch }}
       env:
         ASF_USERNAME: ${{ secrets.NEXUS_USER }}
         ASF_PASSWORD: ${{ secrets.NEXUS_PW }}
