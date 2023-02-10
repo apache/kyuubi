@@ -28,6 +28,7 @@ import org.apache.kyuubi.metrics.MetricsConf.METRICS_REPORTERS
 import org.apache.kyuubi.metrics.MetricsSystem.maybeSystem
 import org.apache.kyuubi.metrics.ReporterType._
 import org.apache.kyuubi.service.CompositeService
+import org.apache.kyuubi.util.SSLUtils
 
 class MetricsSystem extends CompositeService("MetricsSystem") {
 
@@ -81,6 +82,12 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
       case CONSOLE => addService(new ConsoleReporterService(registry))
       case JMX => addService(new JMXReporterService(registry))
       case PROMETHEUS => addService(new PrometheusReporterService(registry))
+    }
+    SSLUtils.getFrontendKeyStoreExpirationTime(conf).foreach { expiration =>
+      def getExpirationInMs(): Long = {
+        expiration - System.currentTimeMillis()
+      }
+      registerGauge(MetricsConstants.KEYSTORE_EXPIRATION, getExpirationInMs(), Long.MaxValue)
     }
     super.initialize(conf)
   }

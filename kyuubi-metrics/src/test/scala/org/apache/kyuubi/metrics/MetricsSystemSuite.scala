@@ -94,4 +94,24 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     checkJsonFileMetrics(reportFile, "20181117")
     metricsSystem.stop()
   }
+
+  test("metrics - keystore expiration time") {
+    val reportPath = Utils.createTempDir()
+    val conf = KyuubiConf()
+      .set(MetricsConf.METRICS_ENABLED, true)
+      .set(
+        MetricsConf.METRICS_REPORTERS,
+        ReporterType.values.filterNot(_ == ReporterType.PROMETHEUS).map(_.toString).toSeq)
+      .set(MetricsConf.METRICS_JSON_INTERVAL, Duration.ofSeconds(1).toMillis)
+      .set(MetricsConf.METRICS_JSON_LOCATION, reportPath.toString)
+      .set(
+        KyuubiConf.FRONTEND_SSL_KEYSTORE_PATH,
+        Utils.getContextOrKyuubiClassLoader.getResource("ssl/keystore.jks").getPath)
+      .set(KyuubiConf.FRONTEND_SSL_KEYSTORE_PASSWORD, "KyuubiJDBC")
+    val metricsSystem = new MetricsSystem()
+    metricsSystem.initialize(conf)
+    metricsSystem.start()
+    val reportFile = Paths.get(reportPath.toString, "report.json")
+    checkJsonFileMetrics(reportFile, MetricsConstants.KEYSTORE_EXPIRATION)
+  }
 }

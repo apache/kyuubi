@@ -28,28 +28,34 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_SSL_KEYSTORE_TYPE
 
 object SSLUtils extends Logging {
+
   /**
    * Get the keystore certificate latest expiration time.
    */
-  def getKeyStoreExpirationTime(conf: KyuubiConf): Option[Long] = {
-    val keyStorePath = conf.get(KyuubiConf.FRONTEND_SSL_KEYSTORE_PATH)
-    val keyStorePassword = conf.get(KyuubiConf.FRONTEND_SSL_KEYSTORE_PASSWORD)
-    val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE).getOrElse(KeyStore.getDefaultType)
-
+  private[kyuubi] def getKeyStoreExpirationTime(
+      keyStorePath: String,
+      keyStorePassword: String,
+      keyStoreType: Option[String]): Option[Long] = {
     try {
-      keyStorePath.zip(keyStorePassword) match {
-        case Seq((path, password)) =>
-          val keyStore = KeyStore.getInstance(keyStoreType)
-          keyStore.load(new FileInputStream(path), password.toCharArray)
-          keyStore.aliases().asScala.toSeq.map { alias =>
-            keyStore.getCertificate(alias).asInstanceOf[X509Certificate].getNotAfter.getTime
-          }.sorted.headOption
-        case _ => None
-      }
+      val keyStore = KeyStore.getInstance(keyStoreType.getOrElse(KeyStore.getDefaultType))
+      keyStore.load(new FileInputStream(keyStorePath), keyStorePassword.toCharArray)
+      keyStore.aliases().asScala.toSeq.map { alias =>
+        keyStore.getCertificate(alias).asInstanceOf[X509Certificate].getNotAfter.getTime
+      }.sorted.headOption
     } catch {
       case e: Throwable =>
         error("Error getting keystore expiration time.", e)
         None
+    }
+  }
+
+  def getFrontendKeyStoreExpirationTime(conf: KyuubiConf): Option[Long] = {
+    val keyStorePath = conf.get(KyuubiConf.FRONTEND_SSL_KEYSTORE_PATH)
+    val keyStorePassword = conf.get(KyuubiConf.FRONTEND_SSL_KEYSTORE_PASSWORD)
+    val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
+    keyStorePath.zip(keyStorePassword) match {
+      case Seq((path, password)) => getKeyStoreExpirationTime(path, password, keyStoreType)
+      case _ => None
     }
   }
 }
