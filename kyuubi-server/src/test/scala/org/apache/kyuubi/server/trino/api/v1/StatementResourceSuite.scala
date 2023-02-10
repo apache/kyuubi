@@ -22,16 +22,22 @@ import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
 
+import io.trino.client.{QueryError, QueryResults}
 import io.trino.client.ProtocolHeaders.TRINO_HEADERS
-import io.trino.client.QueryResults
 
-import org.apache.kyuubi.{KyuubiSQLException, TrinoRestFrontendTestHelper}
+import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, TrinoRestFrontendTestHelper}
 import org.apache.kyuubi.operation.{OperationHandle, OperationState}
 import org.apache.kyuubi.server.trino.api.TrinoContext
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 import org.apache.kyuubi.session.SessionHandle
 
-class StatementResourceSuite extends TrinoRestFrontendTestHelper {
+class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHelper {
+
+  case class TrinoResponse(
+      response: Option[Response] = None,
+      queryError: Option[QueryError] = None,
+      data: List[List[Any]] = List[List[Any]](),
+      isEnd: Boolean = false)
 
   test("statement test") {
     val response = webTarget.path("v1/statement/test").request().get()
@@ -39,10 +45,28 @@ class StatementResourceSuite extends TrinoRestFrontendTestHelper {
     assert(result == new Ok("trino server is running"))
   }
 
+  test("statement submit for query error") {
+
+    val response = webTarget.path("v1/statement")
+      .request().post(Entity.entity("select a", MediaType.TEXT_PLAIN_TYPE))
+
+    val trinoResponseIter = Iterator.iterate(TrinoResponse(response = Option(response)))(getData)
+    val isErr = trinoResponseIter.takeWhile(_.isEnd == false).exists { t =>
+      t.queryError != None && t.response == None
+    }
+    assert(isErr == true)
+  }
+
   test("statement submit and get result") {
     val response = webTarget.path("v1/statement")
       .request().post(Entity.entity("select 1", MediaType.TEXT_PLAIN_TYPE))
-    checkResult(response)
+
+    val trinoResponseIter = Iterator.iterate(TrinoResponse(response = Option(response)))(getData)
+    val dataSet = trinoResponseIter
+      .takeWhile(_.isEnd == false)
+      .map(_.data)
+      .flatten.toList
+    assert(dataSet == List(List(1)))
   }
 
   test("query cancel") {
@@ -74,20 +98,21 @@ class StatementResourceSuite extends TrinoRestFrontendTestHelper {
 
   }
 
-  private def checkResult(response: Response): Unit = {
-    assert(response.getStatus == 200)
-    val qr = response.readEntity(classOf[QueryResults])
-    if (qr.getData.iterator().hasNext) {
-      val resultSet = qr.getData.iterator()
-      assert(resultSet.next.asScala == List(1))
-    }
-    if (qr.getNextUri != null) {
-      val path = qr.getNextUri.getPath
-      val headers = response.getHeaders
-      val nextResponse = webTarget.path(path).request().headers(headers).get()
-      checkResult(nextResponse)
-    }
-
+  private def getData(current: TrinoResponse): TrinoResponse = {
+    current.response.map { response =>
+      assert(response.getStatus == 200)
+      val qr = response.readEntity(classOf[QueryResults])
+      val nextData = Option(qr.getData)
+        .map(_.asScala.toList.map(_.asScala.toList))
+        .getOrElse(List[List[Any]]())
+      val nextResponse = Option(qr.getNextUri).map {
+        uri =>
+          val path = uri.getPath
+          val headers = response.getHeaders
+          webTarget.path(path).request().headers(headers).get()
+      }
+      TrinoResponse(nextResponse, Option(qr.getError), nextData)
+    }.getOrElse(TrinoResponse(isEnd = true))
   }
 
 }

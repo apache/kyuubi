@@ -51,7 +51,7 @@ case class Query(
 
   def getQueryResults(token: Long, uriInfo: UriInfo, maxWait: Long = 0): QueryResults = {
     val status =
-      be.getOperationStatus(queryId.operationHandle, maxWait)
+      be.getOperationStatus(queryId.operationHandle, Some(maxWait))
     val nextUri = if (status.exception.isEmpty) {
       getNextUri(token + 1, uriInfo, toSlugContext(status.state))
     } else null
@@ -155,14 +155,12 @@ object Query {
   private def createSession(
       context: TrinoContext,
       backendService: BackendService): SessionHandle = {
-    context.session
-      .get("sessionId")
-      .fold(backendService.openSession(
-        TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
-        context.user,
-        "",
-        context.remoteUserAddress.getOrElse(""),
-        context.session))(SessionHandle.fromUUID)
+    backendService.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      context.user,
+      "",
+      context.remoteUserAddress.getOrElse(""),
+      context.session)
   }
 
 }

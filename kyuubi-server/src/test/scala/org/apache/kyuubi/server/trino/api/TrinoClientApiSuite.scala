@@ -54,7 +54,7 @@ class TrinoClientApiSuite extends KyuubiFunSuite with TrinoRestFrontendTestHelpe
     val result1 = execute(trino1)
     val sessionId1 = trino1.getSetSessionProperties.asScala.get("sessionId")
     assert(result1 == List(List(2)))
-    assert(sessionId == sessionId1)
+    assert(sessionId != sessionId1)
 
     trino.close()
   }

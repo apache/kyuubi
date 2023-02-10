@@ -26,10 +26,9 @@ import scala.collection.JavaConverters._
 
 import io.trino.client.{ClientStandardTypes, ClientTypeSignature, Column, QueryError, QueryResults, StatementStats, Warning}
 import io.trino.client.ProtocolHeaders.TRINO_HEADERS
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
-
 import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet, TTypeId}
 
+import org.apache.kyuubi.operation.OperationState.FINISHED
 import org.apache.kyuubi.operation.OperationStatus
 
 /**
@@ -193,14 +192,16 @@ object TrinoContext {
       case None => null
     }
 
-    val updatedNextUri =
-      if (rowList == null || rowList.isEmpty || rowList.get(0).isEmpty) null else nextUri
+    val updatedNextUri = queryStatus.state match {
+      case FINISHED if rowList == null || rowList.isEmpty || rowList.get(0).isEmpty => null
+      case _ => nextUri
+    }
 
     new QueryResults(
       queryId,
       queryHtmlUri,
       nextUri,
-      nextUri,
+      updatedNextUri,
       columnList,
       rowList,
       StatementStats.builder.setState(queryStatus.state.name()).setQueued(false)

@@ -26,15 +26,6 @@ class TrinoScalaObjectMapper extends ContextResolver[ObjectMapper] {
 
   private lazy val mapper = new ObjectMapper()
     .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-//      .disable(MapperFeature.AUTO_DETECT_CREATORS)
-//      .disable(MapperFeature.AUTO_DETECT_FIELDS)
-//      .disable(MapperFeature.AUTO_DETECT_SETTERS)
-//      .disable(MapperFeature.AUTO_DETECT_GETTERS)
-//      .disable(MapperFeature.AUTO_DETECT_IS_GETTERS)
-//      .disable(MapperFeature.USE_GETTERS_AS_SETTERS)
-//      .disable(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS)
-//      .disable(MapperFeature.INFER_PROPERTY_MUTATORS)
-//      .disable(MapperFeature.ALLOW_FINAL_FIELDS_AS_MUTATORS)
     .registerModule(new Jdk8Module)
 
   override def getContext(aClass: Class[_]): ObjectMapper = mapper

@@ -158,11 +158,11 @@ abstract class AbstractBackendService(name: String)
 
   override def getOperationStatus(
       operationHandle: OperationHandle,
-      maxWait: Long = timeout): OperationStatus = {
+      maxWait: Option[Long]): OperationStatus = {
     val operation = sessionManager.operationManager.getOperation(operationHandle)
     if (operation.shouldRunAsync) {
       try {
-        val waitTime = maxWait
+        val waitTime = maxWait.getOrElse(timeout)
         operation.getBackgroundHandle.get(waitTime, TimeUnit.MILLISECONDS)
       } catch {
         case e: TimeoutException =>

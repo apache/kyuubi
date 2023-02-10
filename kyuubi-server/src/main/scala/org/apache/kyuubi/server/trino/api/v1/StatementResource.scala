@@ -32,7 +32,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import io.trino.client.QueryResults
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.server.trino.api.{ApiRequestContext, KyuubiTrinoOperationTranslator, Query, QueryId, QueryManager, Slug, TrinoContext}
+import org.apache.kyuubi.server.trino.api.{ApiRequestContext, KyuubiTrinoOperationTranslator, Query, QueryId, Slug, TrinoContext}
 import org.apache.kyuubi.server.trino.api.Slug.Context.{EXECUTING_QUERY, QUEUED_QUERY}
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 import org.apache.kyuubi.service.BackendService
@@ -42,7 +42,6 @@ import org.apache.kyuubi.service.BackendService
 private[v1] class StatementResource extends ApiRequestContext with Logging {
 
   lazy val translator = new KyuubiTrinoOperationTranslator(fe.be)
-  lazy val queryManager = new QueryManager()
 
   @ApiResponse(
     responseCode = "200",
@@ -117,7 +116,6 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
         case NonFatal(e) =>
           val errorMsg =
             s"Error executing for query id $queryId"
-          e.printStackTrace()
           error(errorMsg, e)
           throw badRequest(NOT_FOUND, "Query not found")
       }.get
@@ -150,7 +148,6 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
         case NonFatal(e) =>
           val errorMsg =
             s"Error executing for query id $queryId"
-          e.printStackTrace()
           error(errorMsg, e)
           throw badRequest(NOT_FOUND, "Query not found")
       }.get
@@ -225,7 +222,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
   }
 
   private def badRequest(status: Response.Status, message: String) =
-    throw new WebApplicationException(
+    new WebApplicationException(
       Response.status(status)
         .`type`(TEXT_PLAIN_TYPE)
         .entity(message)
