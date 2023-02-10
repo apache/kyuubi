@@ -259,13 +259,13 @@ abstract class SparkOperation(session: Session)
 
   override def shouldRunAsync: Boolean = false
 
-  protected def arrowEnabled(): Boolean = {
-    resultFormat().equalsIgnoreCase("arrow") &&
+  protected def arrowEnabled: Boolean = {
+    resultFormat.equalsIgnoreCase("arrow") &&
     // TODO: (fchen) make all operation support arrow
     getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
   }
 
-  protected def resultFormat(): String = {
+  protected def resultFormat: String = {
     // TODO: respect the config of the operation ExecuteStatement, if it was set.
     spark.conf.get("kyuubi.operation.result.format", "thrift")
   }

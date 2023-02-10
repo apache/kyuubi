@@ -515,6 +515,24 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assert(accessType === AccessType.UPDATE)
   }
 
+  test("DescribeTable") {
+    val plan = executePlan(s"DESCRIBE TABLE $catalogTable").analyzed
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === DESCTABLE)
+    assert(inputs.size === 1)
+    val po = inputs.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
+    assert(po.dbname === namespace)
+    assert(po.objectName === catalogTableShort)
+    assert(po.columns.isEmpty)
+    checkV2TableOwner(po)
+    val accessType = AccessType(po, operationType, isInput = true)
+    assert(accessType === AccessType.SELECT)
+    assert(outputs.size === 0)
+  }
+
   // with V2AlterTableCommand
 
   test("AddColumns") {
