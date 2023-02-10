@@ -40,7 +40,7 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
       val ipAddress = url(2).split(":")(0)
       val port = url(2).split(":")(1).toInt
       val path = requestUrl.substring(("/" + url(1) + "/" + url(2) + "/").length)
-      String.format(
+      targetUrl = String.format(
         "http://%s:%s/%s/",
         ipAddress,
         port.toString,
