@@ -903,6 +903,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         statement.getConnection.setCatalog("cat_a")
         val changedCatalog = statement.getConnection.getCatalog
         assert(changedCatalog == "cat_a")
+        statement.getConnection.setCatalog("default_catalog")
         assert(statement.execute("drop catalog cat_a"))
       }
     }

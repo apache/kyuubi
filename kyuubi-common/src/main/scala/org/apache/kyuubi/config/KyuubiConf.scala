@@ -1645,11 +1645,20 @@ object KyuubiConf {
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
 
+  val OPERATION_RESULT_MAX_ROWS: ConfigEntry[Int] =
+    buildConf("kyuubi.operation.result.max.rows")
+      .doc("Max rows of Spark query results. Rows exceeding the limit would be ignored. " +
+        "By setting this value to 0 to disable the max rows limit.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(0)
+
   val OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.incremental.collect")
       .internal
       .doc("When true, the executor side result will be sequentially calculated and returned to" +
-        " the Spark driver side.")
+        s" the Spark driver side. Note that, ${OPERATION_RESULT_MAX_ROWS.key} will be ignored" +
+        " on incremental collect mode.")
       .version("1.4.0")
       .booleanConf
       .createWithDefault(false)
@@ -1666,14 +1675,6 @@ object KyuubiConf {
       .checkValues(Set("arrow", "thrift"))
       .transform(_.toLowerCase(Locale.ROOT))
       .createWithDefault("thrift")
-
-  val OPERATION_RESULT_MAX_ROWS: ConfigEntry[Int] =
-    buildConf("kyuubi.operation.result.max.rows")
-      .doc("Max rows of Spark query results. Rows exceeding the limit would be ignored. " +
-        "By setting this value to 0 to disable the max rows limit.")
-      .version("1.6.0")
-      .intConf
-      .createWithDefault(0)
 
   val SERVER_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
     buildConf("kyuubi.operation.log.dir.root")
@@ -1806,7 +1807,7 @@ object KyuubiConf {
     .intConf
     .createWithDefault(-1)
 
-  val ENGINE_POOL_BALANCE_POLICY: ConfigEntry[String] =
+  val ENGINE_POOL_SELECT_POLICY: ConfigEntry[String] =
     buildConf("kyuubi.engine.pool.selectPolicy")
       .doc("The select policy of an engine from the corresponding engine pool engine for " +
         "a session. <ul>" +
