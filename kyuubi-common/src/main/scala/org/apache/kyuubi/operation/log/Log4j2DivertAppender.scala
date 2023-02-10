@@ -52,10 +52,10 @@ class Log4j2DivertAppender(
 
   addFilter(new AbstractFilter() {
     override def filter(event: LogEvent): Filter.Result = {
-      if (OperationLog.getCurrentOperationLog == null) {
-        Filter.Result.DENY
-      } else {
+      if (OperationLog.getCurrentOperationLog.isDefined) {
         Filter.Result.NEUTRAL
+      } else {
+        Filter.Result.DENY
       }
     }
   })
@@ -75,11 +75,12 @@ class Log4j2DivertAppender(
    */
   override def append(event: LogEvent): Unit = {
     super.append(event)
-    // That should've gone into our writer. Notify the LogContext.
-    val logOutput = writer.toString
-    writer.reset()
-    val log = OperationLog.getCurrentOperationLog
-    if (log != null) log.write(logOutput)
+    writer.synchronized {
+      // That should've gone into our writer. Notify the LogContext.
+      val logOutput = writer.toString
+      writer.reset()
+      OperationLog.getCurrentOperationLog.foreach(_.write(logOutput))
+    }
   }
 }
 
@@ -95,7 +96,7 @@ object Log4j2DivertAppender {
 
   def initialize(): Unit = {
     val ap = new Log4j2DivertAppender()
-    org.apache.logging.log4j.LogManager.getRootLogger()
+    org.apache.logging.log4j.LogManager.getRootLogger
       .asInstanceOf[org.apache.logging.log4j.core.Logger].addAppender(ap)
     ap.start()
   }

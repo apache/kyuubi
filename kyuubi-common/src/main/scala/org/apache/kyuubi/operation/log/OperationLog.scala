@@ -34,17 +34,13 @@ import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThriftUtils
 
 object OperationLog extends Logging {
-  final private val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
-    new InheritableThreadLocal[OperationLog] {
-      override def initialValue(): OperationLog = null
-    }
-  }
+  final private val OPERATION_LOG = new ThreadLocal[OperationLog]
 
   def setCurrentOperationLog(operationLog: OperationLog): Unit = {
     OPERATION_LOG.set(operationLog)
   }
 
-  def getCurrentOperationLog: OperationLog = OPERATION_LOG.get()
+  def getCurrentOperationLog: Option[OperationLog] = Option(OPERATION_LOG.get)
 
   def removeCurrentOperationLog(): Unit = OPERATION_LOG.remove()
 
