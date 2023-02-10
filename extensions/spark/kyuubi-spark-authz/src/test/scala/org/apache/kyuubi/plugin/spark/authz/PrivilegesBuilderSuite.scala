@@ -143,7 +143,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
         val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
         assert(operationType === ALTERTABLE_RENAME)
         assert(in.isEmpty)
-        assert(out.size === 2)
+        assert(out.size === 1)
         out.foreach { po =>
           assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
           assert(po.catalog.isEmpty)
@@ -151,10 +151,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
           assert(Set(oldTableShort, "efg").contains(po.objectName))
           assert(po.columns.isEmpty)
           val accessType = ranger.AccessType(po, operationType, isInput = false)
-          assert(Set(AccessType.CREATE, AccessType.DROP).contains(accessType))
-          if (accessType == AccessType.DROP) {
-            checkTableOwner(po)
-          }
+          assert(accessType == AccessType.ALTER)
         }
       }
     }

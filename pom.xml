@@ -27,7 +27,7 @@
 
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
-    <version>1.7.0-SNAPSHOT</version>
+    <version>1.8.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
@@ -109,6 +109,7 @@
     <properties>
         <java.version>1.8</java.version>
         <maven.version>3.8.7</maven.version>
+        <mvnd.version>0.9.0</mvnd.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.17</scala.version>
@@ -134,7 +135,7 @@
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
-        <flink.version>1.15.2</flink.version>
+        <flink.version>1.16.1</flink.version>
         <flink.module.scala.suffix></flink.module.scala.suffix>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
@@ -158,7 +159,7 @@
         <httpcore.version>4.4.16</httpcore.version>
         <hudi.version>0.12.0</hudi.version>
         <iceberg.version>1.1.0</iceberg.version>
-        <jackson.version>2.14.1</jackson.version>
+        <jackson.version>2.14.2</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
@@ -2308,9 +2309,20 @@
         <profile>
             <id>spark-master</id>
             <properties>
-                <spark.version>3.4.0-SNAPSHOT</spark.version>
+                <spark.version>3.5.0-SNAPSHOT</spark.version>
+                <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
+                <threeten.version>1.7.0</threeten.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
             </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.threeten</groupId>
+                        <artifactId>threeten-extra</artifactId>
+                        <version>${threeten.version}</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
             <repositories>
                 <repository>
                     <releases>
@@ -2344,7 +2356,7 @@
         <profile>
             <id>flink-1.16</id>
             <properties>
-                <flink.version>1.16.0</flink.version>
+                <flink.version>1.16.1</flink.version>
                 <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
         </profile>

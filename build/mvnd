@@ -18,7 +18,7 @@
 #
 
 # Determine the current working directory
-_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Preserve the calling directory
 _CALLING_DIR="$(pwd)"
 # Options used during compilation
@@ -45,15 +45,16 @@ install_app() {
   curl_opts="--progress-bar ${curl_opts}"
   wget_opts="--progress=bar:force ${wget_opts}"
 
-  if [ -z "$3" -o ! -f "$binary" ]; then
+  if [ -z "$3" ] || [ ! -f "$binary" ]; then
     # check if we already have the tarball
     # check if we have curl installed
     # download application
-    [ ! -f "${local_tarball}" ] && [ $(command -v curl) ] && \
+    rm -f "$local_tarball"
+    [ ! -f "${local_tarball}" ] && [ "$(command -v curl)" ] && \
       echo "exec: curl ${curl_opts} ${remote_tarball}" 1>&2 && \
       curl ${curl_opts} "${remote_tarball}" > "${local_tarball}"
     # if the file still doesn't exist, lets try `wget` and cross our fingers
-    [ ! -f "${local_tarball}" ] && [ $(command -v wget) ] && \
+    [ ! -f "${local_tarball}" ] && [ "$(command -v wget)" ] && \
       echo "exec: wget ${wget_opts} ${remote_tarball}" 1>&2 && \
       wget ${wget_opts} -O "${local_tarball}" "${remote_tarball}"
     # if both were unsuccessful, exit
@@ -66,34 +67,68 @@ install_app() {
   fi
 }
 
-# Determine the Maven version from the root pom.xml file and
-# install maven under the build/ folder if needed.
-install_mvn() {
-  local MVN_VERSION=`grep "<maven.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
-  MVN_BIN="$(command -v mvn)"
-  if [ "$MVN_BIN" ]; then
-    local MVN_DETECTED_VERSION="$(mvn --version | head -n1 | awk '{print $3}')"
+function get_os_type() {
+  local unameOsOut=$(uname -s)
+  local osType
+  case "${unameOsOut}" in
+  Linux*) osType=linux ;;
+  Darwin*) osType=darwin ;;
+  CYGWIN*) osType=windows ;;
+  MINGW*) osType=windows ;;
+  *) osType="UNKNOWN:${unameOsOut}" ;;
+  esac
+  echo "$osType"
+}
+
+function get_os_arch() {
+  local unameArchOut="$(uname -m)"
+  local arch
+  case "${unameArchOut}" in
+  x86_64*) arch=amd64 ;;
+  arm64*) arch=aarch64 ;;
+  *) arch="UNKNOWN:${unameOsOut}" ;;
+  esac
+  echo "$arch"
+}
+
+# Determine the Mvnd version from the root pom.xml file and
+# install mvnd under the build/ folder if needed.
+function install_mvnd() {
+  local MVND_VERSION=$(grep "<mvnd.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
+  local MVN_VERSION=$(grep "<maven.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
+  MVND_BIN="$(command -v mvnd)"
+  if [ "$MVND_BIN" ]; then
+    local MVND_DETECTED_VERSION="$(mvnd -v 2>&1 | grep '(mvnd)' | awk '{print $5}')"
+    local MVN_DETECTED_VERSION="$(mvnd -v 2>&1 | grep 'Apache Maven' | awk 'NR==2 {print $3}')"
   fi
   # See simple version normalization: http://stackoverflow.com/questions/16989598/bash-comparing-version-numbers
   function version { echo "$@" | awk -F. '{ printf("%03d%03d%03d\n", $1,$2,$3); }'; }
-  if [ $(version $MVN_DETECTED_VERSION) -ne $(version $MVN_VERSION) ]; then
-    local APACHE_MIRROR=${APACHE_MIRROR:-'https://archive.apache.org/dist/'}
+
+  if [ $(version $MVND_DETECTED_VERSION) -ne $(version $MVND_VERSION) ]; then
+    local APACHE_MIRROR=${APACHE_MIRROR:-'https://downloads.apache.org'}
+    local OS_TYPE=$(get_os_type)
+    local ARCH=$(get_os_arch)
 
     install_app \
-      "${APACHE_MIRROR}/maven/maven-3/${MVN_VERSION}/binaries" \
-      "apache-maven-${MVN_VERSION}-bin.tar.gz" \
-      "apache-maven-${MVN_VERSION}/bin/mvn"
+      "${APACHE_MIRROR}/maven/mvnd/${MVND_VERSION}" \
+      "maven-mvnd-${MVND_VERSION}-${OS_TYPE}-${ARCH}.tar.gz" \
+      "maven-mvnd-${MVND_VERSION}-${OS_TYPE}-${ARCH}/bin/mvnd"
 
-    MVN_BIN="${_DIR}/apache-maven-${MVN_VERSION}/bin/mvn"
+    MVND_BIN="${_DIR}/maven-mvnd-${MVND_VERSION}-${OS_TYPE}-${ARCH}/bin/mvnd"
+  else
+    if [ "$(version $MVN_DETECTED_VERSION)" -ne "$(version $MVN_VERSION)" ]; then
+      echo "Mvnd $MVND_DETECTED_VERSION embedded maven version $MVN_DETECTED_VERSION is not equivalent to $MVN_VERSION required in pom."
+      exit 1
+    fi
   fi
 }
 
-install_mvn
+install_mvnd
 
 cd "${_CALLING_DIR}"
 
 # Set any `mvn` options if not already present
 export MAVEN_OPTS=${MAVEN_OPTS:-"$_COMPILE_JVM_OPTS"}
 
-echo "Using \`mvn\` from path: $MVN_BIN" 1>&2
-${MVN_BIN} $MAVEN_CLI_OPTS "$@"
+echo "Using \`mvnd\` from path: $MVND_BIN" 1>&2
+${MVND_BIN} $MAVEN_CLI_OPTS "$@"

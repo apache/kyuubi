@@ -24,7 +24,6 @@
 [![](https://tokei.rs/b1/github.com/apache/kyuubi)](https://github.com/apache/kyuubi)
 [![codecov](https://codecov.io/gh/apache/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/kyuubi)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/apache/kyuubi/Kyuubi/master?style=plastic)
-[![Travis](https://api.travis-ci.com/apache/kyuubi.svg?branch=master)](https://travis-ci.com/apache/kyuubi)
 [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/master/)
 ![GitHub top language](https://img.shields.io/github/languages/top/apache/kyuubi)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/apache/kyuubi)](https://github.com/apache/kyuubi/graphs/commit-activity)

@@ -21,7 +21,7 @@ import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.types._
 
@@ -70,43 +70,41 @@ class ExecuteStatement(
       addOperationListener()
       result = spark.sql(statement)
 
-      iter =
-        if (incrementalCollect) {
-          info("Execute in incremental collect mode")
+      val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
+        .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
+      iter = if (incrementalCollect) {
+        if (resultMaxRows > 0) {
+          warn(s"Ignore ${OPERATION_RESULT_MAX_ROWS.key} on incremental collect mode.")
+        }
+        info("Execute in incremental collect mode")
+        def internalIterator(): Iterator[Any] = if (arrowEnabled) {
+          SparkDatasetHelper.toArrowBatchRdd(convertComplexType(result)).toLocalIterator
+        } else {
+          result.toLocalIterator().asScala
+        }
+        new IterableFetchIterator[Any](new Iterable[Any] {
+          override def iterator: Iterator[Any] = internalIterator()
+        })
+      } else {
+        val internalArray = if (resultMaxRows <= 0) {
+          info("Execute in full collect mode")
           if (arrowEnabled) {
-            new IterableFetchIterator[Array[Byte]](new Iterable[Array[Byte]] {
-              override def iterator: Iterator[Array[Byte]] = SparkDatasetHelper.toArrowBatchRdd(
-                convertComplexType(result)).toLocalIterator
-            })
+            SparkDatasetHelper.toArrowBatchRdd(convertComplexType(result)).collect()
           } else {
-            new IterableFetchIterator[Row](new Iterable[Row] {
-              override def iterator: Iterator[Row] = result.toLocalIterator().asScala
-            })
+            result.collect()
           }
         } else {
-          val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
-            .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
-          if (resultMaxRows <= 0) {
-            info("Execute in full collect mode")
-            if (arrowEnabled) {
-              new ArrayFetchIterator(
-                SparkDatasetHelper.toArrowBatchRdd(
-                  convertComplexType(result)).collect())
-            } else {
-              new ArrayFetchIterator(result.collect())
-            }
+          info(s"Execute with max result rows[$resultMaxRows]")
+          if (arrowEnabled) {
+            // this will introduce shuffle and hurt performance
+            val limitedResult = result.limit(resultMaxRows)
+            SparkDatasetHelper.toArrowBatchRdd(convertComplexType(limitedResult)).collect()
           } else {
-            info(s"Execute with max result rows[$resultMaxRows]")
-            if (arrowEnabled) {
-              // this will introduce shuffle and hurt performance
-              new ArrayFetchIterator(
-                SparkDatasetHelper.toArrowBatchRdd(
-                  convertComplexType(result.limit(resultMaxRows))).collect())
-            } else {
-              new ArrayFetchIterator(result.take(resultMaxRows))
-            }
+            result.take(resultMaxRows)
           }
         }
+        new ArrayFetchIterator(internalArray)
+      }
       setCompiledStateIfNeeded()
       setState(OperationState.FINISHED)
     } catch {

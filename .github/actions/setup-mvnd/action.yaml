@@ -6,7 +6,7 @@
 # (the "License"); you may not use this file except in compliance with
 # the License.  You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#      http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,17 +15,18 @@
 # limitations under the License.
 #
 
-.github/ export-ignore
-.idea/ export-ignore
-.readthedocs.yml export-ignore
-_config.yml export-ignore
-codecov.yml export-ignore
-licenses-binary/ export-ignore
-LICENSE-binary export-ignore
-NOTICE-binary export-ignore
-*.bat text eol=crlf
-*.cmd text eol=crlf
-*.java text eol=lf
-*.scala text eol=lf
-*.xml text eol=lf
-*.py text eol=lf
+name: 'setup-mvnd'
+description: 'Setup the maven daemon'
+runs:
+  using: composite
+  steps:
+    - name: Cache Mvnd
+      uses: actions/cache@v3
+      with:
+        path: |
+          build/maven-mvnd-*
+          build/apache-maven-*
+        key: setup-mvnd-${{ runner.os }}-mvnd
+    - name: Check Mvnd
+      run: build/mvnd -v
+      shell: bash
