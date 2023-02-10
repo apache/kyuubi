@@ -34,17 +34,17 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     val requestUrl = request.getRequestURI
     logger.info("requestUrl is {}", requestUrl)
     val url = requestUrl.split("/")
+    // /proxy/spark-fd0b6b8638cacb8d-driver-svc.kyuubi-lab.svc:4045/jobs
     logger.info("url is {}", url)
     if (url != null && url.length > 0) {
-      val ipAddress = url(1).split(":")(1)
-      val port = url(1).split(":")(2).toInt
-      val path = url(2)
-      targetUrl =
-        String.format(
-          "http://%s:%s/%s/",
-          ipAddress,
-          port.toString,
-          path)
+      val ipAddress = url(2).split(":")(0)
+      val port = url(2).split(":")(1).toInt
+      val path = requestUrl.substring(("/" + url(1) + "/" + url(2) + "/").length)
+      String.format(
+        "http://%s:%s/%s/",
+        ipAddress,
+        port.toString,
+        path)
       logger.info("ui -> {}", targetUrl)
     }
     targetUrl
@@ -63,7 +63,6 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     val protoHeaderName = "X-Forwarded-Proto"
     val protoHeader = clientRequest.getScheme()
     proxyRequest.header(protoHeaderName, protoHeader)
-
   }
 
 }
