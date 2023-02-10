@@ -66,17 +66,17 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   @volatile private var serviceNode: PersistentNode = _
   private var watcher: DeRegisterWatcher = _
 
-  def createClient(): Unit = {
+  override def createClient(): Unit = {
     zkClient.start()
   }
 
-  def closeClient(): Unit = {
+  override def closeClient(): Unit = {
     if (zkClient != null) {
       zkClient.close()
     }
   }
 
-  def create(path: String, mode: String, createParent: Boolean = true): String = {
+  override def create(path: String, mode: String, createParent: Boolean = true): String = {
     val builder =
       if (createParent) zkClient.create().creatingParentsIfNeeded() else zkClient.create()
     builder
@@ -84,27 +84,27 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       .forPath(path)
   }
 
-  def getData(path: String): Array[Byte] = {
+  override def getData(path: String): Array[Byte] = {
     zkClient.getData.forPath(path)
   }
 
-  def setData(path: String, data: Array[Byte]): Boolean = {
+  override def setData(path: String, data: Array[Byte]): Boolean = {
     zkClient.setData().forPath(path, data) != null
   }
 
-  def getChildren(path: String): List[String] = {
+  override def getChildren(path: String): List[String] = {
     zkClient.getChildren.forPath(path).asScala.toList
   }
 
-  def pathExists(path: String): Boolean = {
+  override def pathExists(path: String): Boolean = {
     zkClient.checkExists().forPath(path) != null
   }
 
-  def pathNonExists(path: String): Boolean = {
+  override def pathNonExists(path: String): Boolean = {
     zkClient.checkExists().forPath(path) == null
   }
 
-  def delete(path: String, deleteChildren: Boolean = false): Unit = {
+  override def delete(path: String, deleteChildren: Boolean = false): Unit = {
     if (deleteChildren) {
       zkClient.delete().deletingChildrenIfNeeded().forPath(path)
     } else {
@@ -112,7 +112,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def monitorState(serviceDiscovery: ServiceDiscovery): Unit = {
+  override def monitorState(serviceDiscovery: ServiceDiscovery): Unit = {
     zkClient
       .getConnectionStateListenable.addListener(new ConnectionStateListener {
         private val isConnected = new AtomicBoolean(false)
@@ -141,7 +141,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       })
   }
 
-  def tryWithLock[T](lockPath: String, timeout: Long)(f: => T): T = {
+  override def tryWithLock[T](lockPath: String, timeout: Long)(f: => T): T = {
     var lock: InterProcessSemaphoreMutex = null
     try {
       try {
@@ -189,7 +189,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def getServerHost(namespace: String): Option[(String, Int)] = {
+  override def getServerHost(namespace: String): Option[(String, Int)] = {
     // TODO: use last one because to avoid touching some maybe-crashed engines
     // We need a big improvement here.
     getServiceNodesInfo(namespace, Some(1), silent = true) match {
@@ -198,7 +198,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def getEngineByRefId(
+  override def getEngineByRefId(
       namespace: String,
       engineRefId: String): Option[(String, Int)] = {
     getServiceNodesInfo(namespace, silent = true)
@@ -206,7 +206,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       .map(data => (data.host, data.port))
   }
 
-  def getServiceNodesInfo(
+  override def getServiceNodesInfo(
       namespace: String,
       sizeOpt: Option[Int] = None,
       silent: Boolean = false): Seq[ServiceNodeInfo] = {
@@ -235,7 +235,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def registerService(
+  override def registerService(
       conf: KyuubiConf,
       namespace: String,
       serviceDiscovery: ServiceDiscovery,
@@ -254,7 +254,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     watchNode()
   }
 
-  def deregisterService(): Unit = {
+  override def deregisterService(): Unit = {
     // close the EPHEMERAL_SEQUENTIAL node in zk
     if (serviceNode != null) {
       try {
@@ -268,7 +268,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def postDeregisterService(namespace: String): Boolean = {
+  override def postDeregisterService(namespace: String): Boolean = {
     if (namespace != null) {
       try {
         delete(namespace, true)
@@ -283,7 +283,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def createAndGetServiceNode(
+  override def createAndGetServiceNode(
       conf: KyuubiConf,
       namespace: String,
       instance: String,
@@ -293,7 +293,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   @VisibleForTesting
-  def startSecretNode(
+  override def startSecretNode(
       createMode: String,
       basePath: String,
       initData: String,
@@ -307,7 +307,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     secretNode.start()
   }
 
-  def getAndIncrement(path: String, delta: Int = 1): Int = {
+  override def getAndIncrement(path: String, delta: Int = 1): Int = {
     val dai = new DistributedAtomicInteger(zkClient, path, new RetryForever(1000))
     var atomicVal: AtomicValue[Integer] = null
     do {

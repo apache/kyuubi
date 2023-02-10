@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM openjdk:8-jre-slim
+FROM eclipse-temurin:8-jdk-focal
 
 RUN apt-get update && \
     apt install -y tini && \
+    rm -rf /var/cache/apt/* && \
     mkdir /data && \
     mkdir -p /opt/block-cleaner && \
     mkdir -p /log/cleanerLog
