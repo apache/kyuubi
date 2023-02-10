@@ -15,26 +15,24 @@
  - limitations under the License.
  -->
 
-<div style="text-align: center;">
-  <img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" height="120px" align="center" />
-</div>
-<br>
-<div style="text-align: center;">
-    <div>
+<p align="center">
+  <img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" height="120px"/>
+</p>
+
+<p align="center">
         <img src="https://img.shields.io/github/license/apache/kyuubi" />
         <img src="https://img.shields.io/github/v/release/apache/kyuubi" />
         <img src="https://img.shields.io/github/issues-pr-closed/apache/kyuubi" />
         <img src="https://img.shields.io/github/contributors/apache/kyuubi" />
         <img src="https://img.shields.io/github/stars/apache/kyuubi?style=social" />
-    </div>
-    <div>
+</p>
+<p align="center">
         <a href="https://kyuubi.apache.org/">Project</a>
         -
         <a href="https://kyuubi.readthedocs.io/">Documentation</a>
         -
         <a href="https://kyuubi.apache.org/powered_by.html">Who's using</a>
-    </div>
-</div>
+</p>
 
 # Apache Kyuubi
 Apache Kyuubi™ is a distributed and multi-tenant gateway to provide serverless
