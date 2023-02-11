@@ -166,7 +166,7 @@
         <jersey.version>2.38</jersey.version>
         <jetty.version>9.4.50.v20221201</jetty.version>
         <jline.version>0.9.94</jline.version>
-        <junit.version>4.13.1</junit.version>
+        <junit.version>4.13.2</junit.version>
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
