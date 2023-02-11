@@ -20,9 +20,9 @@
 </p>
 
 <p align="center">
-        <img src="https://img.shields.io/github/license/apache/kyuubi" />
         <img src="https://img.shields.io/github/v/release/apache/kyuubi" />
         <img src="https://img.shields.io/github/issues-pr-closed/apache/kyuubi" />
+        <img src="https://img.shields.io/tokei/lines/github/apache/kyuubi" />
         <img src="https://img.shields.io/github/contributors/apache/kyuubi" />
         <img src="https://img.shields.io/github/stars/apache/kyuubi?style=social" />
 </p>
