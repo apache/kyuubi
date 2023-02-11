@@ -2070,6 +2070,7 @@
                         </python>
                         <markdown>
                             <includes>
+                                <include>**/README.md</include>
                                 <include>docs/**/*.md</include>
                             </includes>
                             <flexmark>

@@ -1,19 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Apache Kyuubi
 
@@ -30,7 +30,6 @@
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/apache/kyuubi.svg)](http://isitmaintained.com/project/apache/kyuubi "Average time to resolve an issue")
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/apache/kyuubi.svg)](http://isitmaintained.com/project/apache/kyuubi "Percentage of issues still open")
 
-
 ## What is Kyuubi?
 
 Apache Kyuubi™ is a distributed and multi-tenant gateway to provide serverless
@@ -44,11 +43,9 @@ Kyuubi provides a pure SQL gateway through Thrift JDBC/ODBC interface for end-us
 - [x] Multi-tenant Spark Support
 - [x] Running Spark in a serverless way
 
-
 ### Target Users
 
 Kyuubi's goal is to make it easy and efficient for `anyone` to use Spark(maybe other engines soon) and facilitate users to handle big data like ordinary data. Here, `anyone` means that users do not need to have a Spark technical background but a human language, SQL only. Sometimes, SQL skills are unnecessary when integrating Kyuubi with Apache Superset, which supports rich visualizations and dashboards.
-
 
 In typical big data production environments with Kyuubi, there should be system administrators and end-users.
 
@@ -56,7 +53,6 @@ In typical big data production environments with Kyuubi, there should be system 
 - End-users: Focus on business data of their own, not where it stores, how it computes.
 
 Additionally, the Kyuubi community will continuously optimize the whole system with various features, such as History-Based Optimizer, Auto-tuning, Materialized View, SQL Dialects, Functions, e.t.c.
-
 
 ### Usage scenarios
 
@@ -70,7 +66,6 @@ HiveServer2 can identify and authenticate a caller, and then if the caller also 
 
 Kyuubi extends the use of STS in a multi-tenant model based on a unified interface and relies on the concept of multi-tenancy to interact with cluster managers to finally gain the ability of resources sharing/isolation and data security. The loosely coupled architecture of the Kyuubi server and engine dramatically improves the client concurrency and service stability of the service itself.
 
-
 #### DataLake/LakeHouse Support
 
 The vision of Kyuubi is to unify the portal and become an easy-to-use data lake management platform. Different kinds of workloads, such as ETL processing and BI analytics, can be supported by one platform, using one copy of data, with one SQL interface.
@@ -79,24 +74,18 @@ The vision of Kyuubi is to unify the portal and become an easy-to-use data lake 
 - Multiple Catalogs support
 - SQL Standard Authorization support for DataLake(coming)
 
-
 #### Cloud Native Support
 
 Kyuubi can deploy its engines on different kinds of Cluster Managers, such as, Hadoop YARN, Kubernetes, etc.
 
-
 ![](./docs/imgs/kyuubi_migrating_yarn_to_k8s.png)
 
-
 ### The Kyuubi Ecosystem(present and future)
-
 
 The figure below shows our vision for the Kyuubi Ecosystem. Some of them have been realized, some in development,
 and others would not be possible without your help.
 
 ![](./docs/imgs/kyuubi_ecosystem.drawio.png)
-
-
 
 ## Online Documentation
 
