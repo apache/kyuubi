@@ -49,12 +49,12 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     targetUrl
   }
 
-  override def newProxyResponseListener(
-      request: HttpServletRequest,
-      response: HttpServletResponse): Response.Listener = {
-
-    if (response.getContentType.contains("text/html")) {
-      val wrapResponse = new WrapResponse(response)
+  override def onProxyResponseSuccess(
+      clientRequest: HttpServletRequest,
+      proxyResponse: HttpServletResponse,
+      serverResponse: Response): Unit = {
+    if (proxyResponse != null && proxyResponse.getContentType.contains("text/html")) {
+      val wrapResponse = new WrapResponse(proxyResponse)
       val data = wrapResponse.getData
       val firstReplacement = "href=\"/proxy/" + s"$ipAddress:$port/"
       val secondReplacement = "src=\"/proxy/" + s"$ipAddress:$port/"
@@ -64,11 +64,11 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
         .replaceAll("src=\"/", secondReplacement)
         .replaceAll("/api/v1/", thirdReplacement)
         .replaceAll("/static/", fourthReplacement)
-      val out = response.getWriter
+      val out = proxyResponse.getWriter
       out.write(newData)
-      out.flush
+      out.flush()
       out.close
     }
-    super.newProxyResponseListener(request, response)
+    super.onProxyResponseSuccess(clientRequest, proxyResponse, serverResponse)
   }
 }
