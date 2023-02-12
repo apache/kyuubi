@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.server.api
 
+import java.net.URI
 import javax.servlet.http.HttpServletRequest
 
-import org.eclipse.jetty.client.api.Request
+import org.eclipse.jetty.client.api.Response
 import org.eclipse.jetty.proxy.ProxyServlet
 
 import org.apache.kyuubi.Logging
@@ -34,7 +35,6 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     val requestUrl = request.getRequestURI
     logger.info("requestUrl is {}", requestUrl)
     val url = requestUrl.split("/")
-    // /proxy/spark-fd0b6b8638cacb8d-driver-svc.kyuubi-lab.svc:4045/jobs
     logger.info("url is {}", url)
     if (url != null && url.length > 0) {
       val ipAddress = url(2).split(":")(0)
@@ -50,19 +50,42 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     targetUrl
   }
 
-  override def addXForwardedHeaders(
+  override def filterServerResponseHeader(
       clientRequest: HttpServletRequest,
-      proxyRequest: Request): Unit = {
-    val forHeaderName = "X-Forwarded-For"
-    var forHeader = clientRequest.getRemoteAddr()
-    val existingForHeader = clientRequest.getHeader(forHeaderName)
-    if (existingForHeader != null) {
-      forHeader = existingForHeader + ", " + forHeader
+      serverResponse: Response,
+      headerName: String,
+      headerValue: String): String = {
+
+    if (headerName.equalsIgnoreCase("location")) {
+      val newHeader = createProxyLocationHeader(
+        clientRequest.getContextPath,
+        headerValue,
+        clientRequest,
+        serverResponse.getRequest().getURI())
+      logger.info("new location header is", newHeader)
+      if (newHeader != null) {
+        return newHeader
+      }
     }
-    proxyRequest.header(forHeaderName, forHeader)
-    val protoHeaderName = "X-Forwarded-Proto"
-    val protoHeader = clientRequest.getScheme()
-    proxyRequest.header(protoHeaderName, protoHeader)
+    super.filterServerResponseHeader(
+      clientRequest,
+      serverResponse,
+      headerName,
+      headerValue)
   }
 
+  def createProxyLocationHeader(
+      prefix: String,
+      headerValue: String,
+      clientRequest: HttpServletRequest,
+      targetUri: URI): String = {
+    val toReplace = targetUri.getScheme() + "://" + targetUri.getAuthority()
+    if (headerValue.startsWith(toReplace)) {
+      clientRequest.getScheme() + "://" + clientRequest.getHeader("host") +
+        prefix + headerValue.substring(toReplace.length())
+    } else {
+      null
+    }
+
+  }
 }
