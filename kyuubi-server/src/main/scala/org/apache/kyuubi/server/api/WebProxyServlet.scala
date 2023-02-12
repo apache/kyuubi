@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.server.api
 
-import java.net.URI
-import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import org.eclipse.jetty.client.api.Response
 import org.eclipse.jetty.proxy.ProxyServlet
@@ -27,8 +26,8 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 
 private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with Logging {
-  val ATTR_TARGET_HOST = classOf[ProxyServlet].getSimpleName + ".targetHost"
-  val ATTR_TARGET_URI = classOf[ProxyServlet].getSimpleName() + ".targetUri"
+  var ipAddress: String = _
+  var port: Int = _
 
   override def rewriteTarget(request: HttpServletRequest): String = {
     var targetUrl = "/no-ui-error"
@@ -37,8 +36,8 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     val url = requestUrl.split("/")
     logger.info("url is {}", url)
     if (url != null && url.length > 0) {
-      val ipAddress = url(2).split(":")(0)
-      val port = url(2).split(":")(1).toInt
+      ipAddress = url(2).split(":")(0)
+      port = url(2).split(":")(1).toInt
       val path = requestUrl.substring(("/" + url(1) + "/" + url(2) + "/").length)
       targetUrl = String.format(
         "http://%s:%s/%s/",
@@ -50,42 +49,21 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     targetUrl
   }
 
-  override def filterServerResponseHeader(
-      clientRequest: HttpServletRequest,
-      serverResponse: Response,
-      headerName: String,
-      headerValue: String): String = {
-
-    if (headerName.equalsIgnoreCase("location")) {
-      val newHeader = createProxyLocationHeader(
-        clientRequest.getContextPath,
-        headerValue,
-        clientRequest,
-        serverResponse.getRequest().getURI())
-      logger.info("new location header is", newHeader)
-      if (newHeader != null) {
-        return newHeader
-      }
+  override def newProxyResponseListener(
+      request: HttpServletRequest,
+      response: HttpServletResponse): Response.Listener = {
+    if (response.getContentType.contains("text/html")) {
+      val wrapResponse = new WrapResponse(response)
+      val data = wrapResponse.getData
+      val newData = data.replace("href=\"/", s"href=\"/proxy/$ipAddress:$port/")
+        .replace("src=\"/", s"src=\"/proxy/$ipAddress:$port/")
+        .replace("/api/v1/", s"/proxy/$ipAddress:$port/api/v1/")
+        .replace("/static/", s"/proxy/$ipAddress:$port/static/")
+      val out = response.getWriter
+      out.write(newData)
+      out.flush
+      out.close
     }
-    super.filterServerResponseHeader(
-      clientRequest,
-      serverResponse,
-      headerName,
-      headerValue)
-  }
-
-  def createProxyLocationHeader(
-      prefix: String,
-      headerValue: String,
-      clientRequest: HttpServletRequest,
-      targetUri: URI): String = {
-    val toReplace = targetUri.getScheme() + "://" + targetUri.getAuthority()
-    if (headerValue.startsWith(toReplace)) {
-      clientRequest.getScheme() + "://" + clientRequest.getHeader("host") +
-        prefix + headerValue.substring(toReplace.length())
-    } else {
-      null
-    }
-
+    super.newProxyResponseListener(request, response)
   }
 }
