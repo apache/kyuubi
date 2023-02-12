@@ -52,13 +52,18 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
   override def newProxyResponseListener(
       request: HttpServletRequest,
       response: HttpServletResponse): Response.Listener = {
+
     if (response.getContentType.contains("text/html")) {
       val wrapResponse = new WrapResponse(response)
       val data = wrapResponse.getData
-      val newData = data.replace("href=\"/", s"href=\"/proxy/$ipAddress:$port/")
-        .replace("src=\"/", s"src=\"/proxy/$ipAddress:$port/")
-        .replace("/api/v1/", s"/proxy/$ipAddress:$port/api/v1/")
-        .replace("/static/", s"/proxy/$ipAddress:$port/static/")
+      val firstReplacement = "href=\"/proxy/" + s"$ipAddress:$port/"
+      val secondReplacement = "src=\"/proxy/" + s"$ipAddress:$port/"
+      val thirdReplacement = s"/proxy/$ipAddress:$port/api/v1/"
+      val fourthReplacement = s"/proxy/$ipAddress:$port/static/"
+      val newData = data.replaceAll("href=\"/", firstReplacement)
+        .replaceAll("src=\"/", secondReplacement)
+        .replaceAll("/api/v1/", thirdReplacement)
+        .replaceAll("/static/", fourthReplacement)
       val out = response.getWriter
       out.write(newData)
       out.flush

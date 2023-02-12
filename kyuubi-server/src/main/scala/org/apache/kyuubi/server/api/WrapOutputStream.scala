@@ -19,12 +19,18 @@
 package org.apache.kyuubi.server.api
 
 import java.io.ByteArrayOutputStream
-import javax.servlet.ServletOutputStream
+import javax.servlet.{ServletOutputStream, WriteListener}
 
-class WrapOutputStream(stream: ByteArrayOutputStream) extends ServletOutputStream(stream) {
+class WrapOutputStream(stream: ByteArrayOutputStream) extends ServletOutputStream {
   var out: ByteArrayOutputStream = stream
 
-  override def write(b: Array[Byte]): Unit = {
+  override def write(b: Int): Unit = {
     out.write(b)
   }
+
+  override def isReady: Boolean = {
+    false
+  }
+
+  override def setWriteListener(writeListener: WriteListener): Unit = {}
 }
