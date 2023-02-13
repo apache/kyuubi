@@ -49,7 +49,7 @@ jobs:
         uses: ./.github/actions/setup-mvnd
       - name: Check kyuubi modules available
         id: modules-check
-        run: |
+        run: >-
           build/mvnd dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile"
           -Pflink-provided,spark-provided,hive-provided
           -Dmaven.javadoc.skip=true
