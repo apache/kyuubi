@@ -112,7 +112,7 @@ private[server] object ApiRootResource {
     contextHandler.addFilter(
       new FilterHolder(new ResponseFilter()),
       "/*",
-      EnumSet.allOf(classOf[DispatcherType]))
+      EnumSet.of(DispatcherType.REQUEST))
     contextHandlerCollection.addHandler(contextHandler)
   }
 }

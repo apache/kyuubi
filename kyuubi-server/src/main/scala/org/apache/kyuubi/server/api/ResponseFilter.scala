@@ -41,11 +41,13 @@ class ResponseFilter extends Filter with Logging {
     val ipAddress = httpRequest.getAttribute(ATTR_TARGET_IP)
     val port = httpRequest.getAttribute(ATTR_TARGET_PORT)
     val httpResponse = response.asInstanceOf[HttpServletResponse]
+    logger.info("content type is {}", httpResponse.getContentType)
     if (httpResponse != null &&
       httpResponse.getContentType != null && httpResponse.getContentType.contains("text/html")
       && ipAddress != null) {
       val wrapResponse = new WrapResponse(httpResponse)
       val data = wrapResponse.getData
+      logger.info("content is {}", data)
       val firstReplacement = "href=\"/proxy/" + s"$ipAddress:$port/"
       val secondReplacement = "src=\"/proxy/" + s"$ipAddress:$port/"
       val thirdReplacement = s"/proxy/$ipAddress:$port/api/v1/"
@@ -54,6 +56,7 @@ class ResponseFilter extends Filter with Logging {
         .replaceAll("src=\"/", secondReplacement)
         .replaceAll("/api/v1/", thirdReplacement)
         .replaceAll("/static/", fourthReplacement)
+      logger.info("new content is {}", newData)
       val out = httpResponse.getWriter
       out.write(newData)
       out.flush()
