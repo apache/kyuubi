@@ -240,7 +240,7 @@ object RowSet {
         if (!row.isNullAt(ordinal)) {
           tStrValue.setValue(
             HiveResult.toHiveString(
-              (row.get(ordinal), types(ordinal).dataType),
+              row.get(ordinal) -> types(ordinal).dataType,
               false,
               getTimeFormatters(timeZone)))
         }
