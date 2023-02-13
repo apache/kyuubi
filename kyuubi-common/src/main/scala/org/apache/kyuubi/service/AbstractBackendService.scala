@@ -156,11 +156,14 @@ abstract class AbstractBackendService(name: String)
     queryId
   }
 
-  override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
+  override def getOperationStatus(
+      operationHandle: OperationHandle,
+      maxWait: Option[Long]): OperationStatus = {
     val operation = sessionManager.operationManager.getOperation(operationHandle)
     if (operation.shouldRunAsync) {
       try {
-        operation.getBackgroundHandle.get(timeout, TimeUnit.MILLISECONDS)
+        val waitTime = maxWait.getOrElse(timeout)
+        operation.getBackgroundHandle.get(waitTime, TimeUnit.MILLISECONDS)
       } catch {
         case e: TimeoutException =>
           debug(s"$operationHandle: Long polling timed out, ${e.getMessage}")

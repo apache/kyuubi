@@ -15,15 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.trino.api
+package org.apache.kyuubi
 
-import javax.ws.rs.ext.ContextResolver
+import org.glassfish.jersey.client.ClientConfig
+import org.glassfish.jersey.test.JerseyTest
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
+import org.apache.kyuubi.server.trino.api.TrinoScalaObjectMapper
 
-class KyuubiScalaObjectMapper extends ContextResolver[ObjectMapper] {
-  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
+trait TrinoRestFrontendTestHelper extends RestFrontendTestHelper {
 
-  override def getContext(aClass: Class[_]): ObjectMapper = mapper
+  private class TrinoRestBaseSuite extends RestFrontendTestHelper.RestApiBaseSuite {
+    override def configureClient(config: ClientConfig): Unit = {
+      config.register(classOf[TrinoScalaObjectMapper])
+    }
+  }
+
+  override protected val frontendProtocols: Seq[FrontendProtocol] =
+    FrontendProtocols.TRINO :: Nil
+
+  override protected val restApiBaseSuite: JerseyTest = new TrinoRestBaseSuite
+
 }
