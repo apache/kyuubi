@@ -246,7 +246,7 @@ abstract class SparkOperation(session: Session)
           } else {
             val taken = iter.take(rowSetSize)
             RowSet.toTRowSet(
-              taken.toList.asInstanceOf[List[Row]],
+              taken.toSeq.asInstanceOf[Seq[Row]],
               resultSchema,
               getProtocolVersion,
               timeZone)

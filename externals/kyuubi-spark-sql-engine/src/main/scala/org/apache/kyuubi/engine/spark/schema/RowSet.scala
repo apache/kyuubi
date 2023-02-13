@@ -157,7 +157,7 @@ object RowSet {
           val row = rows(i)
           nulls.set(i, row.isNullAt(ordinal))
           values.add(
-            HiveResult.toHiveString((row.get(ordinal), typ), false, getTimeFormatters(timeZone)))
+            HiveResult.toHiveString(row.get(ordinal) -> typ, false, getTimeFormatters(timeZone)))
           i += 1
         }
         TColumn.stringVal(new TStringColumn(values, nulls))
