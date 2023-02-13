@@ -15,25 +15,43 @@
 - limitations under the License.
 -->
 
+<p align="center">
+  <img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" height="120px"/>
+</p>
+
+<p align="center">
+  <a href="https://kyuubi.apache.org/releases.html">
+    <img src="https://img.shields.io/github/v/release/apache/kyuubi" />
+  </a>
+  <a href="https://github.com/apache/kyuubi/pulls">
+    <img src="https://img.shields.io/github/issues-pr-closed/apache/kyuubi" />
+  </a>
+  <a href="https://github.com/apache/kyuubi/pulse">
+    <img src="https://img.shields.io/tokei/lines/github/apache/kyuubi" />
+  </a>
+  <a href="https://github.com/apache/kyuubi/graphs/contributors">
+    <img src="https://img.shields.io/github/contributors/apache/kyuubi" />
+  </a>
+  <a class="github-button" href="https://github.com/apache/kyuubi" data-icon="octicon-star" aria-label="Star apache/kyuubi on GitHub">
+    <img src="https://img.shields.io/github/stars/apache/kyuubi?style=social" />
+  </a>
+</p>
+<p align="center">
+        <a href="https://kyuubi.apache.org/">Project</a>
+        -
+        <a href="https://kyuubi.readthedocs.io/">Documentation</a>
+        -
+        <a href="https://kyuubi.apache.org/powered_by.html">Who's using</a>
+</p>
+
 # Apache Kyuubi
-
-<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" height="120px" align="right" />
-
-[![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![Release](https://img.shields.io/github/v/release/apache/kyuubi?label=release)](https://github.com/apache/kyuubi/releases)
-[![](https://tokei.rs/b1/github.com/apache/kyuubi)](https://github.com/apache/kyuubi)
-[![codecov](https://codecov.io/gh/apache/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/kyuubi)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/apache/kyuubi/Kyuubi/master?style=plastic)
-[![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/master/)
-![GitHub top language](https://img.shields.io/github/languages/top/apache/kyuubi)
-[![Commit activity](https://img.shields.io/github/commit-activity/m/apache/kyuubi)](https://github.com/apache/kyuubi/graphs/commit-activity)
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/apache/kyuubi.svg)](http://isitmaintained.com/project/apache/kyuubi "Average time to resolve an issue")
-[![Percentage of issues still open](http://isitmaintained.com/badge/open/apache/kyuubi.svg)](http://isitmaintained.com/project/apache/kyuubi "Percentage of issues still open")
-
-## What is Kyuubi?
 
 Apache Kyuubi™ is a distributed and multi-tenant gateway to provide serverless
 SQL on data warehouses and lakehouses.
+
+<https://kyuubi.apache.org/>
+
+## What is Kyuubi?
 
 Kyuubi provides a pure SQL gateway through Thrift JDBC/ODBC interface for end-users to manipulate large-scale data with pre-programmed and extensible Spark SQL engines. This "out-of-the-box" model minimizes the barriers and costs for end-users to use Spark at the client side. At the server-side, Kyuubi server and engines' multi-tenant architecture provides the administrators a way to achieve computing resource isolation, data security, high availability, high client concurrency, etc.
 
