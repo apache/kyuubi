@@ -60,6 +60,7 @@ class ResponseFilter extends Filter with Logging {
       logger.info("new content is {}", newContent)
       val out = httpResponse.getWriter
       out.write(newContent)
+      httpResponse.setContentLength(newContent.getBytes().length)
     }
   }
 
