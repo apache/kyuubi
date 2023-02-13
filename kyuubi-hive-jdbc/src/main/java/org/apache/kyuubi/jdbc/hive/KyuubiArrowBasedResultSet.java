@@ -50,6 +50,7 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
   protected Schema arrowSchema;
   protected VectorSchemaRoot root;
   protected ArrowColumnarBatchRow row;
+  protected boolean timestampAsString = true;
 
   protected BufferAllocator allocator;
 
@@ -312,7 +313,7 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
       if (wasNull) {
         return null;
       } else {
-        return row.get(columnIndex - 1, columnType);
+        return row.get(columnIndex - 1, columnType, timestampAsString);
       }
     } catch (Exception e) {
       e.printStackTrace();

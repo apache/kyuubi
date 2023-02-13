@@ -279,6 +279,10 @@ abstract class SparkOperation(session: Session)
     spark.conf.get("kyuubi.operation.result.format", "thrift")
   }
 
+  protected def timestampAsString: Boolean = {
+    spark.conf.get("kyuubi.operation.result.arrow.timestampAsString", "true").toBoolean
+  }
+
   protected def setSessionUserSign(): Unit = {
     (
       session.conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY),

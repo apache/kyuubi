@@ -1676,6 +1676,14 @@ object KyuubiConf {
       .transform(_.toLowerCase(Locale.ROOT))
       .createWithDefault("thrift")
 
+  val ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.result.arrow.timestampAsString")
+      .doc("When true, arrow-based rowsets will convert columns of type timestamp to strings for" +
+        " transmission.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val SERVER_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
     buildConf("kyuubi.operation.log.dir.root")
       .doc("Root directory for query operation log at server-side.")

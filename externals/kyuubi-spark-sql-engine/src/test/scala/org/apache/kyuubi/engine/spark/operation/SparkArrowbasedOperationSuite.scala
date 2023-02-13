@@ -43,7 +43,48 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     }
   }
 
-  def checkResultSetFormat(statement: Statement, expectFormat: String): Unit = {
+  test("Spark session timezone format") {
+    withJdbcStatement() { statement =>
+      def check(expect: String): Unit = {
+        val query =
+          """
+            |SELECT
+            |  from_utc_timestamp(
+            |    from_unixtime(
+            |      1670404535000 / 1000, 'yyyy-MM-dd HH:mm:ss'
+            |    ),
+            |    'GMT+08:00'
+            |  )
+            |""".stripMargin
+        val resultSet = statement.executeQuery(query)
+        assert(resultSet.next())
+        assert(resultSet.getString(1) == expect)
+      }
+
+      def setTimeZone(timeZone: String): Unit = {
+        val rs = statement.executeQuery(s"set spark.sql.session.timeZone=$timeZone")
+        assert(rs.next())
+      }
+
+      // timestampAsString = true
+      statement.executeQuery(s"set ${KyuubiConf.ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING.key}=true")
+      checkArrowBasedRowSetTimestampAsString(statement, "true")
+      setTimeZone("UTC")
+      check("2022-12-07 17:15:35.0")
+      setTimeZone("GMT+8")
+      check("2022-12-08 01:15:35.0")
+
+      // timestampAsString = false
+      statement.executeQuery(s"set ${KyuubiConf.ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING.key}=false")
+      checkArrowBasedRowSetTimestampAsString(statement, "false")
+      setTimeZone("UTC")
+      check("2022-12-08 01:15:35.0")
+      setTimeZone("GMT+8")
+      check("2022-12-08 01:15:35.0")
+    }
+  }
+
+  private def checkResultSetFormat(statement: Statement, expectFormat: String): Unit = {
     val query =
       s"""
          |SELECT '$${hivevar:${KyuubiConf.OPERATION_RESULT_FORMAT.key}}' AS col
@@ -51,5 +92,17 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     val resultSet = statement.executeQuery(query)
     assert(resultSet.next())
     assert(resultSet.getString("col") === expectFormat)
+  }
+
+  private def checkArrowBasedRowSetTimestampAsString(
+      statement: Statement,
+      expect: String): Unit = {
+    val query =
+      s"""
+         |SELECT '$${hivevar:${KyuubiConf.ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING.key}}' AS col
+         |""".stripMargin
+    val resultSet = statement.executeQuery(query)
+    assert(resultSet.next())
+    assert(resultSet.getString("col") === expect)
   }
 }

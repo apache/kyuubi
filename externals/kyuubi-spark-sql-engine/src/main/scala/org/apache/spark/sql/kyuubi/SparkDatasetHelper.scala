@@ -21,6 +21,8 @@ import java.time.ZoneId
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import org.apache.spark.sql.catalyst.util.{DateFormatter, TimestampFormatter}
+import org.apache.spark.sql.execution.HiveResult.TimeFormatters
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
@@ -31,12 +33,14 @@ object SparkDatasetHelper {
     ds.toArrowBatchRdd
   }
 
-  def convertTopLevelComplexTypeToHiveString(df: DataFrame): DataFrame = {
+  def convertTopLevelComplexTypeToHiveString(
+      df: DataFrame,
+      timestampAsString: Boolean): DataFrame = {
     val timeZone = ZoneId.of(df.sparkSession.sessionState.conf.sessionLocalTimeZone)
 
     val quotedCol = (name: String) => col(quoteIfNeeded(name))
 
-    // an udf to call `RowSet.toHiveString` on complex types(struct/array/map).
+    // an udf to call `RowSet.toHiveString` on complex types(struct/array/map) and timestamp type.
     val toHiveStringUDF = udf[String, Row, String]((row, schemaDDL) => {
       val dt = DataType.fromDDL(schemaDDL)
       dt match {
@@ -46,6 +50,8 @@ object SparkDatasetHelper {
           RowSet.toHiveString((row.toSeq.head, at), nested = true)
         case StructType(Array(StructField(_, mt: MapType, _, _))) =>
           RowSet.toHiveString((row.toSeq.head, mt), nested = true)
+        case StructType(Array(StructField(_, tt: TimestampType, _, _))) =>
+          RowSet.toHiveString((row.toSeq.head, tt), nested = true, getTimeFormatters(timeZone))
         case _ =>
           throw new UnsupportedOperationException
       }
@@ -55,6 +61,8 @@ object SparkDatasetHelper {
       case sf @ StructField(name, _: StructType, _, _) =>
         toHiveStringUDF(quotedCol(name), lit(sf.toDDL)).as(name)
       case sf @ StructField(name, _: MapType | _: ArrayType, _, _) =>
+        toHiveStringUDF(struct(quotedCol(name)), lit(sf.toDDL)).as(name)
+      case sf @ StructField(name, _: TimestampType, _, _) if timestampAsString =>
         toHiveStringUDF(struct(quotedCol(name)), lit(sf.toDDL)).as(name)
       case StructField(name, _, _, _) => quotedCol(name)
     }
@@ -71,5 +79,11 @@ object SparkDatasetHelper {
     } else {
       s"`${part.replace("`", "``")}`"
     }
+  }
+
+  private def getTimeFormatters(timeZone: ZoneId): TimeFormatters = {
+    val dateFormatter = DateFormatter()
+    val timestampFormatter = TimestampFormatter.getFractionFormatter(timeZone)
+    TimeFormatters(dateFormatter, timestampFormatter)
   }
 }

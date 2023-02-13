@@ -104,7 +104,7 @@ public class ArrowColumnarBatchRow {
     throw new UnsupportedOperationException();
   }
 
-  public Object get(int ordinal, TTypeId dataType) {
+  public Object get(int ordinal, TTypeId dataType, boolean timestampAsString) {
     long seconds;
     long milliseconds;
     long microseconds;
@@ -131,11 +131,15 @@ public class ArrowColumnarBatchRow {
       case STRING_TYPE:
         return getString(ordinal);
       case TIMESTAMP_TYPE:
-        microseconds = getLong(ordinal);
-        nanos = (int) (microseconds % 1000000) * 1000;
-        Timestamp timestamp = new Timestamp(microseconds / 1000);
-        timestamp.setNanos(nanos);
-        return timestamp;
+        if (timestampAsString) {
+          return Timestamp.valueOf(getString(ordinal));
+        } else {
+          microseconds = getLong(ordinal);
+          nanos = (int) (microseconds % 1000000) * 1000;
+          Timestamp timestamp = new Timestamp(microseconds / 1000);
+          timestamp.setNanos(nanos);
+          return timestamp;
+        }
       case DATE_TYPE:
         return DateUtils.internalToDate(getInt(ordinal));
       case INTERVAL_DAY_TIME_TYPE:
