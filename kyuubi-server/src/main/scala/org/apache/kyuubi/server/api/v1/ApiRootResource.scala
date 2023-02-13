@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.util.EnumSet
+import javax.servlet.DispatcherType
 import javax.ws.rs.{GET, Path, Produces}
 import javax.ws.rs.core.{MediaType, Response}
 
@@ -107,7 +109,10 @@ private[server] object ApiRootResource {
     val contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
     contextHandler.setContextPath("/proxy");
     contextHandler.addServlet(holder, "/*")
-    contextHandler.addFilter(new FilterHolder(new ResponseFilter()), "/*", null)
+    contextHandler.addFilter(
+      new FilterHolder(new ResponseFilter()),
+      "/*",
+      EnumSet.allOf(classOf[DispatcherType]))
     contextHandlerCollection.addHandler(contextHandler)
   }
 }
