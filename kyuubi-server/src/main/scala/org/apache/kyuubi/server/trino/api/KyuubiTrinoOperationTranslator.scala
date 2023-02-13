@@ -19,10 +19,9 @@ package org.apache.kyuubi.server.trino.api
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.service.BackendService
+import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
 import org.apache.kyuubi.sql.plan.PassThroughNode
 import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetColumns, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
@@ -32,17 +31,10 @@ class KyuubiTrinoOperationTranslator(backendService: BackendService) {
 
   def transform(
       statement: String,
-      user: String,
-      ipAddress: String,
+      sessionHandle: SessionHandle,
       configs: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = {
-    val sessionHandle = backendService.openSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
-      user,
-      "",
-      ipAddress,
-      configs)
     parser.parsePlan(statement) match {
       case GetSchemas(catalogName, schemaPattern) =>
         backendService.getSchemas(sessionHandle, catalogName, schemaPattern)

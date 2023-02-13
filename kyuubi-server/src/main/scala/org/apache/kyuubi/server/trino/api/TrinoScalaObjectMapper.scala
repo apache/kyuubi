@@ -17,10 +17,16 @@
 
 package org.apache.kyuubi.server.trino.api
 
-import org.glassfish.jersey.server.ResourceConfig
+import javax.ws.rs.ext.ContextResolver
 
-class TrinoServerConfig extends ResourceConfig {
-  packages("org.apache.kyuubi.server.trino.api.v1")
-  register(classOf[TrinoScalaObjectMapper])
-  register(classOf[RestExceptionMapper])
+import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
+
+class TrinoScalaObjectMapper extends ContextResolver[ObjectMapper] {
+
+  private lazy val mapper = new ObjectMapper()
+    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+    .registerModule(new Jdk8Module)
+
+  override def getContext(aClass: Class[_]): ObjectMapper = mapper
 }

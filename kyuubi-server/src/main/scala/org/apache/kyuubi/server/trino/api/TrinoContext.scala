@@ -28,6 +28,7 @@ import io.trino.client.{ClientStandardTypes, ClientTypeSignature, Column, QueryE
 import io.trino.client.ProtocolHeaders.TRINO_HEADERS
 import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet, TTypeId}
 
+import org.apache.kyuubi.operation.OperationState.FINISHED
 import org.apache.kyuubi.operation.OperationStatus
 
 /**
@@ -58,6 +59,7 @@ case class TrinoContext(
     source: Option[String] = None,
     catalog: Option[String] = None,
     schema: Option[String] = None,
+    remoteUserAddress: Option[String] = None,
     language: Option[String] = None,
     traceToken: Option[String] = None,
     clientInfo: Option[String] = None,
@@ -72,10 +74,11 @@ object TrinoContext {
   private val GENERIC_INTERNAL_ERROR_NAME = "GENERIC_INTERNAL_ERROR_NAME"
   private val GENERIC_INTERNAL_ERROR_TYPE = "INTERNAL_ERROR"
 
-  def apply(headers: HttpHeaders): TrinoContext = {
-    apply(headers.getRequestHeaders.asScala.toMap.map {
+  def apply(headers: HttpHeaders, remoteAddress: Option[String]): TrinoContext = {
+    val context = apply(headers.getRequestHeaders.asScala.toMap.map {
       case (k, v) => (k, v.asScala.toList)
     })
+    context.copy(remoteUserAddress = remoteAddress)
   }
 
   def apply(headers: Map[String, List[String]]): TrinoContext = {
@@ -134,7 +137,6 @@ object TrinoContext {
     }
   }
 
-  // TODO: Building response with TrinoContext and other information
   def buildTrinoResponse(qr: QueryResults, trinoContext: TrinoContext): Response = {
     val responseBuilder = Response.ok(qr)
 
@@ -156,8 +158,6 @@ object TrinoContext {
       responseBuilder.header(TRINO_HEADERS.responseDeallocatedPrepare, urlEncode(v))
     }
 
-    responseBuilder.header(TRINO_HEADERS.responseClearSession, s"responseClearSession")
-    responseBuilder.header(TRINO_HEADERS.responseClearTransactionId, "false")
     responseBuilder.build()
   }
 
@@ -192,11 +192,16 @@ object TrinoContext {
       case None => null
     }
 
+    val updatedNextUri = queryStatus.state match {
+      case FINISHED if rowList == null || rowList.isEmpty || rowList.get(0).isEmpty => null
+      case _ => nextUri
+    }
+
     new QueryResults(
       queryId,
       queryHtmlUri,
       nextUri,
-      nextUri,
+      updatedNextUri,
       columnList,
       rowList,
       StatementStats.builder.setState(queryStatus.state.name()).setQueued(false)
