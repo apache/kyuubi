@@ -159,11 +159,23 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
     }
   }
 
-  test("execute statement - select timestamp") {
+  test("execute statement - select timestamp - second") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT TIMESTAMP '2018-11-17 13:33:33' AS col")
       assert(resultSet.next())
       assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2018-11-17 13:33:33"))
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
+      assert(metaData.getPrecision(1) === 29)
+      assert(metaData.getScale(1) === 9)
+    }
+  }
+
+  test("execute statement - select timestamp - millisecond") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT TIMESTAMP '2018-11-17 13:33:33.12345' AS col")
+      assert(resultSet.next())
+      assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2018-11-17 13:33:33.12345"))
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
       assert(metaData.getPrecision(1) === 29)

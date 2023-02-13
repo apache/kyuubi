@@ -26,11 +26,11 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.CalendarInterval
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.engine.spark.schema.RowSet.toHiveString
 
 class RowSetSuite extends KyuubiFunSuite {
 
@@ -159,22 +159,28 @@ class RowSetSuite extends KyuubiFunSuite {
 
     val decCol = cols.next().getStringVal
     decCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b.isEmpty)
+      case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b === s"$i.$i")
     }
 
     val dateCol = cols.next().getStringVal
     dateCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b.isEmpty)
+      case (b, 11) => assert(b === "NULL")
       case (b, i) =>
-        assert(b === toHiveString((Date.valueOf(s"2018-11-${i + 1}"), DateType), zoneId))
+        assert(b === HiveResult.toHiveString(
+          (Date.valueOf(s"2018-11-${i + 1}"), DateType),
+          false,
+          HiveResult.getTimeFormatters))
     }
 
     val tsCol = cols.next().getStringVal
     tsCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b.isEmpty)
+      case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b ===
-          toHiveString((Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TimestampType), zoneId))
+          HiveResult.toHiveString(
+            (Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TimestampType),
+            false,
+            HiveResult.getTimeFormatters))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -185,23 +191,25 @@ class RowSetSuite extends KyuubiFunSuite {
 
     val arrCol = cols.next().getStringVal
     arrCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b === "")
-      case (b, i) => assert(b === toHiveString(
+      case (b, 11) => assert(b === "NULL")
+      case (b, i) => assert(b === HiveResult.toHiveString(
           (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ArrayType(DoubleType)),
-          zoneId))
+          false,
+          HiveResult.getTimeFormatters))
     }
 
     val mapCol = cols.next().getStringVal
     mapCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b === "")
-      case (b, i) => assert(b === toHiveString(
+      case (b, 11) => assert(b === "NULL")
+      case (b, i) => assert(b === HiveResult.toHiveString(
           (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MapType(IntegerType, DoubleType)),
-          zoneId))
+          false,
+          HiveResult.getTimeFormatters))
     }
 
     val intervalCol = cols.next().getStringVal
     intervalCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b === "")
+      case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b === new CalendarInterval(i, i, i).toString)
     }
   }
@@ -237,7 +245,7 @@ class RowSetSuite extends KyuubiFunSuite {
     assert(r6.get(9).getStringVal.getValue === "2018-11-06")
 
     val r7 = iter.next().getColVals
-    assert(r7.get(10).getStringVal.getValue === "2018-11-17 13:33:33.600")
+    assert(r7.get(10).getStringVal.getValue === "2018-11-17 13:33:33.6")
     assert(r7.get(11).getStringVal.getValue === new String(
       Array.fill[Byte](6)(6.toByte),
       StandardCharsets.UTF_8))
@@ -245,7 +253,10 @@ class RowSetSuite extends KyuubiFunSuite {
     val r8 = iter.next().getColVals
     assert(r8.get(12).getStringVal.getValue === Array.fill(7)(7.7d).mkString("[", ",", "]"))
     assert(r8.get(13).getStringVal.getValue ===
-      toHiveString((Map(7 -> 7.7d), MapType(IntegerType, DoubleType)), zoneId))
+      HiveResult.toHiveString(
+        (Map(7 -> 7.7d), MapType(IntegerType, DoubleType)),
+        false,
+        HiveResult.getTimeFormatters))
 
     val r9 = iter.next().getColVals
     assert(r9.get(14).getStringVal.getValue === new CalendarInterval(8, 8, 8).toString)
