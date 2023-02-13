@@ -51,12 +51,7 @@ jobs:
         id: modules-check
         run: >-
           build/mvnd dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile"
-          -Pflink-provided,spark-provided,hive-provided
-          -Dmaven.javadoc.skip=true
-          -Drat.skip=true
-          -Dscalastyle.skip=true
-          -Dspotless.check.skip
-          -DskipTests
+          -Pfast -Denforcer.skip=true
           -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
         continue-on-error: true
       - name: build
