@@ -51,7 +51,7 @@ jobs:
         id: modules-check
         run: >-
           build/mvnd dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile"
-          -Pfast -Denforcer.skip=true
+          -Pfast
           -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
         continue-on-error: true
       - name: build
