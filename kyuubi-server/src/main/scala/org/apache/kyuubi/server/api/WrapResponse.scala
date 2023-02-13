@@ -17,30 +17,55 @@
 
 package org.apache.kyuubi.server.api
 
-import java.io.{ByteArrayOutputStream, PrintWriter}
+import java.io.{ByteArrayOutputStream, OutputStreamWriter, PrintWriter}
 import javax.servlet.ServletOutputStream
 import javax.servlet.http.{HttpServletResponse, HttpServletResponseWrapper}
 
 class WrapResponse(response: HttpServletResponse) extends HttpServletResponseWrapper(response) {
-  var out: ByteArrayOutputStream = new ByteArrayOutputStream()
-  var stream: ServletOutputStream = new WrapOutputStream(out)
-  var writer: PrintWriter = new PrintWriter(out)
+  var out: ByteArrayOutputStream = new ByteArrayOutputStream(response.getBufferSize())
+  var output: ServletOutputStream = _
+  var writer: PrintWriter = _
 
   override def getOutputStream: ServletOutputStream = {
-    stream
+    if (writer != null) {
+      throw new IllegalStateException("getWriter() has already been called on this response.");
+    }
+    if (output == null) {
+      output = new WrapOutputStream(out)
+    }
+    output
   }
 
   override def getWriter: PrintWriter = {
+    if (output != null) {
+      throw new IllegalStateException(
+        "getOutputStream() has already been called on this response.");
+    }
+    if (writer == null) {
+      writer = new PrintWriter(new OutputStreamWriter(out, getCharacterEncoding()));
+    }
     writer
   }
 
-  def getData: String = {
-    if (stream != null) {
-      stream.flush()
-    }
+  override def flushBuffer(): Unit = {
+    super.flushBuffer()
     if (writer != null) {
-      writer.flush()
+      writer.flush();
+    } else if (output != null) {
+      output.flush();
     }
-    out.toString()
+  }
+
+  def getCaptureAsBytes(): Array[Byte] = {
+    if (writer != null) {
+      writer.close();
+    } else if (output != null) {
+      output.close()
+    }
+    out.toByteArray()
+  }
+
+  def getCaptureAsString(): String = {
+    new String(getCaptureAsBytes(), getCharacterEncoding())
   }
 }

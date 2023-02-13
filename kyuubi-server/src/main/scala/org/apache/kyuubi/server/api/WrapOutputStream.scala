@@ -32,4 +32,12 @@ class WrapOutputStream(stream: ByteArrayOutputStream) extends ServletOutputStrea
   }
 
   override def setWriteListener(writeListener: WriteListener): Unit = {}
+
+  override def flush(): Unit = {
+    out.flush()
+  }
+
+  override def close(): Unit = {
+    out.flush()
+  }
 }
