@@ -20,11 +20,21 @@
 </p>
 
 <p align="center">
-        <img src="https://img.shields.io/github/v/release/apache/kyuubi" />
-        <img src="https://img.shields.io/github/issues-pr-closed/apache/kyuubi" />
-        <img src="https://img.shields.io/tokei/lines/github/apache/kyuubi" />
-        <img src="https://img.shields.io/github/contributors/apache/kyuubi" />
-        <img src="https://img.shields.io/github/stars/apache/kyuubi?style=social" />
+  <a href="https://kyuubi.apache.org/releases.html">
+    <img src="https://img.shields.io/github/v/release/apache/kyuubi" />
+  </a>
+  <a href="https://github.com/apache/kyuubi/pulls">
+    <img src="https://img.shields.io/github/issues-pr-closed/apache/kyuubi" />
+  </a>
+  <a href="https://github.com/apache/kyuubi/pulse">
+    <img src="https://img.shields.io/tokei/lines/github/apache/kyuubi" />
+  </a>
+  <a href="https://github.com/apache/kyuubi/graphs/contributors">
+    <img src="https://img.shields.io/github/contributors/apache/kyuubi" />
+  </a>
+  <a class="github-button" href="https://github.com/apache/kyuubi" data-icon="octicon-star" aria-label="Star apache/kyuubi on GitHub">
+    <img src="https://img.shields.io/github/stars/apache/kyuubi?style=social" />
+  </a>
 </p>
 <p align="center">
         <a href="https://kyuubi.apache.org/">Project</a>
