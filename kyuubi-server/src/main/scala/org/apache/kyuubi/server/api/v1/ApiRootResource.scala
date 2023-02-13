@@ -24,7 +24,7 @@ import com.google.common.annotations.VisibleForTesting
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
-import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
+import org.eclipse.jetty.servlet.{FilterHolder, ServletContextHandler, ServletHolder}
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 
@@ -32,7 +32,7 @@ import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.api.{ApiRequestContext, FrontendServiceContext, OpenAPIConfig, WebProxyServlet}
+import org.apache.kyuubi.server.api._
 
 @Path("/v1")
 private[v1] class ApiRootResource extends ApiRequestContext {
@@ -106,7 +106,8 @@ private[server] object ApiRootResource {
     val holder = new ServletHolder(proxyServlet)
     val contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
     contextHandler.setContextPath("/proxy");
-    contextHandler.addServlet(holder, "/*");
+    contextHandler.addServlet(holder, "/*")
+    contextHandler.addFilter(new FilterHolder(new ResponseFilter()), "/*", null)
     contextHandlerCollection.addHandler(contextHandler)
   }
 }

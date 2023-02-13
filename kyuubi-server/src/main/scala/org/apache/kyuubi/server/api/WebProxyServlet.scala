@@ -17,9 +17,8 @@
 
 package org.apache.kyuubi.server.api
 
-import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
+import javax.servlet.http.HttpServletRequest
 
-import org.eclipse.jetty.client.api.Response
 import org.eclipse.jetty.proxy.ProxyServlet
 
 import org.apache.kyuubi.Logging
@@ -28,6 +27,8 @@ import org.apache.kyuubi.config.KyuubiConf
 private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with Logging {
   var ipAddress: String = _
   var port: Int = _
+  val ATTR_TARGET_IP = classOf[ProxyServlet].getSimpleName + ".ipAddress"
+  val ATTR_TARGET_PORT = classOf[ProxyServlet].getSimpleName + ".port"
 
   override def rewriteTarget(request: HttpServletRequest): String = {
     var targetUrl = "/no-ui-error"
@@ -44,31 +45,11 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
         ipAddress,
         port.toString,
         path)
+      request.setAttribute(ATTR_TARGET_IP, ipAddress)
+      request.setAttribute(ATTR_TARGET_PORT, port)
       logger.info("ui -> {}", targetUrl)
     }
     targetUrl
   }
 
-  override def onProxyResponseSuccess(
-      clientRequest: HttpServletRequest,
-      proxyResponse: HttpServletResponse,
-      serverResponse: Response): Unit = {
-    if (proxyResponse != null && proxyResponse.getContentType.contains("text/html")) {
-      val wrapResponse = new WrapResponse(proxyResponse)
-      val data = wrapResponse.getData
-      val firstReplacement = "href=\"/proxy/" + s"$ipAddress:$port/"
-      val secondReplacement = "src=\"/proxy/" + s"$ipAddress:$port/"
-      val thirdReplacement = s"/proxy/$ipAddress:$port/api/v1/"
-      val fourthReplacement = s"/proxy/$ipAddress:$port/static/"
-      val newData = data.replaceAll("href=\"/", firstReplacement)
-        .replaceAll("src=\"/", secondReplacement)
-        .replaceAll("/api/v1/", thirdReplacement)
-        .replaceAll("/static/", fourthReplacement)
-      val out = proxyResponse.getWriter
-      out.write(newData)
-      out.flush()
-      out.close
-    }
-    super.onProxyResponseSuccess(clientRequest, proxyResponse, serverResponse)
-  }
 }
