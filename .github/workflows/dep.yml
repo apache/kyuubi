@@ -47,9 +47,18 @@ jobs:
           check-latest: false
       - name: Setup Mvnd
         uses: ./.github/actions/setup-mvnd
+      - name: Check kyuubi modules available
+        id: modules-check
+        run: >-
+          build/mvnd dependency:resolve validate
+          -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile"
+          -Pfast -Denforcer.skip=false
+          -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
+        continue-on-error: true
       - name: build
         env:
           MAVEN_OPTS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error
+        if: steps.modules-check.conclusion == 'success' && steps.modules-check.outcome == 'failure'
         run: >-
           build/mvnd clean install
           -Pflink-provided,spark-provided,hive-provided
