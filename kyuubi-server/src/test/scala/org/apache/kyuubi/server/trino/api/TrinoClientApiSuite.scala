@@ -45,16 +45,24 @@ class TrinoClientApiSuite extends KyuubiFunSuite with TrinoRestFrontendTestHelpe
   test("submit query with trino client api") {
     val trino = getTrinoStatementClient("select 1")
     val result = execute(trino)
-    val sessionId = trino.getSetSessionProperties.asScala.get("sessionId")
+    val sessionId = trino.getSetSessionProperties.asScala.get(Query.KYUUBI_SESSION_ID)
     assert(result == List(List(1)))
 
     updateClientSession(trino)
 
-    val trino1 = getTrinoStatementClient("select 2")
+    val trino1 = getTrinoStatementClient("set k=v")
     val result1 = execute(trino1)
-    val sessionId1 = trino1.getSetSessionProperties.asScala.get("sessionId")
-    assert(result1 == List(List(2)))
-    assert(sessionId != sessionId1)
+    val sessionId1 = trino1.getSetSessionProperties.asScala.get(Query.KYUUBI_SESSION_ID)
+    assert(result1 == List(List("k", "v")))
+    assert(sessionId == sessionId1)
+
+    updateClientSession(trino)
+
+    val trino2 = getTrinoStatementClient("set k")
+    val result2 = execute(trino2)
+    val sessionId2 = trino2.getSetSessionProperties.asScala.get(Query.KYUUBI_SESSION_ID)
+    assert(result2 == List(List("k", "v")))
+    assert(sessionId == sessionId2)
 
     trino.close()
   }
