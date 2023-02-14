@@ -41,6 +41,7 @@ import org.apache.kyuubi.session.SessionHandle
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
+@Consumes(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext with Logging {
   implicit def toSessionHandle(str: String): SessionHandle = SessionHandle.fromUUID(str)
   private def sessionManager = fe.be.sessionManager
@@ -138,7 +139,6 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "Open(create) a session")
   @POST
-  @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): dto.SessionHandle = {
     val userName = fe.getSessionUser(request.getConfigs.asScala.toMap)
     val ipAddress = fe.getIpAddress
