@@ -26,7 +26,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.CalendarInterval
 
@@ -167,20 +166,14 @@ class RowSetSuite extends KyuubiFunSuite {
     dateCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
       case (b, i) =>
-        assert(b === HiveResult.toHiveString(
-          (Date.valueOf(s"2018-11-${i + 1}"), DateType),
-          false,
-          HiveResult.getTimeFormatters))
+        assert(b === RowSet.toHiveString(Date.valueOf(s"2018-11-${i + 1}") -> DateType))
     }
 
     val tsCol = cols.next().getStringVal
     tsCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b ===
-          HiveResult.toHiveString(
-            (Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TimestampType),
-            false,
-            HiveResult.getTimeFormatters))
+          RowSet.toHiveString(Timestamp.valueOf(s"2018-11-17 13:33:33.$i") -> TimestampType))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -192,19 +185,15 @@ class RowSetSuite extends KyuubiFunSuite {
     val arrCol = cols.next().getStringVal
     arrCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
-      case (b, i) => assert(b === HiveResult.toHiveString(
-          (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ArrayType(DoubleType)),
-          false,
-          HiveResult.getTimeFormatters))
+      case (b, i) => assert(b === RowSet.toHiveString(
+          Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq -> ArrayType(DoubleType)))
     }
 
     val mapCol = cols.next().getStringVal
     mapCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
-      case (b, i) => assert(b === HiveResult.toHiveString(
-          (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MapType(IntegerType, DoubleType)),
-          false,
-          HiveResult.getTimeFormatters))
+      case (b, i) => assert(b === RowSet.toHiveString(
+          Map(i -> java.lang.Double.valueOf(s"$i.$i")) -> MapType(IntegerType, DoubleType)))
     }
 
     val intervalCol = cols.next().getStringVal
@@ -253,10 +242,7 @@ class RowSetSuite extends KyuubiFunSuite {
     val r8 = iter.next().getColVals
     assert(r8.get(12).getStringVal.getValue === Array.fill(7)(7.7d).mkString("[", ",", "]"))
     assert(r8.get(13).getStringVal.getValue ===
-      HiveResult.toHiveString(
-        (Map(7 -> 7.7d), MapType(IntegerType, DoubleType)),
-        false,
-        HiveResult.getTimeFormatters))
+      RowSet.toHiveString(Map(7 -> 7.7d) -> MapType(IntegerType, DoubleType)))
 
     val r9 = iter.next().getColVals
     assert(r9.get(14).getStringVal.getValue === new CalendarInterval(8, 8, 8).toString)

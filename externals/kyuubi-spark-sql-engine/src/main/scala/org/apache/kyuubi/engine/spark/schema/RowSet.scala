@@ -31,6 +31,12 @@ import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
 
+  def toHiveString(valueAndType: (Any, DataType), nested: Boolean = false): String = {
+    // compatible w/ Spark 3.1 and above
+    val timeFormatters = HiveResult.getTimeFormatters
+    HiveResult.toHiveString(valueAndType, nested, timeFormatters)
+  }
+
   def toTRowSet(
       bytes: Array[Byte],
       protocolVersion: TProtocolVersion): TRowSet = {
@@ -148,8 +154,7 @@ object RowSet {
         while (i < rowSize) {
           val row = rows(i)
           nulls.set(i, row.isNullAt(ordinal))
-          val timeFormatters = HiveResult.getTimeFormatters
-          values.add(HiveResult.toHiveString(row.get(ordinal) -> typ, false, timeFormatters))
+          values.add(toHiveString(row.get(ordinal) -> typ))
           i += 1
         }
         TColumn.stringVal(new TStringColumn(values, nulls))
@@ -230,11 +235,7 @@ object RowSet {
       case _ =>
         val tStrValue = new TStringValue
         if (!row.isNullAt(ordinal)) {
-          tStrValue.setValue(
-            HiveResult.toHiveString(
-              row.get(ordinal) -> types(ordinal).dataType,
-              false,
-              HiveResult.getTimeFormatters))
+          tStrValue.setValue(toHiveString(row.get(ordinal) -> types(ordinal).dataType))
         }
         TColumnValue.stringVal(tStrValue)
     }
