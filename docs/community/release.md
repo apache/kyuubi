@@ -49,6 +49,8 @@ The release process consists of several steps:
 6. If necessary, fix any issues and go back to step 3.
 7. Finalize the release
 8. Promote the release
+9. Remove the dist repo directories for deprecated release candidates
+10. Publish docker image
 
 ## Decide to release
 
@@ -280,3 +282,6 @@ svn delete https://dist.apache.org/repos/dist/dev/kyuubi/{RELEASE_TAG} \
   --message "Remove deprecated Apache Kyuubi ${RELEASE_TAG}" 
 ```
 
+## Publish docker image
+
+See steps in `https://github.com/apache/kyuubi-docker/blob/master/release/release_guide.md`
