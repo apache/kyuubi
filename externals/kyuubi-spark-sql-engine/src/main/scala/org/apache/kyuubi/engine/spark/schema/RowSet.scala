@@ -24,7 +24,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.util.{DateFormatter, TimestampFormatter}
 import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.execution.HiveResult.TimeFormatters
 import org.apache.spark.sql.types._
@@ -34,9 +33,7 @@ import org.apache.kyuubi.util.RowSetUtils._
 object RowSet {
 
   def getTimeFormatters(timeZone: ZoneId): TimeFormatters = {
-    val dateFormatter = DateFormatter()
-    val timestampFormatter = TimestampFormatter.getFractionFormatter(timeZone)
-    TimeFormatters(dateFormatter, timestampFormatter)
+    HiveResult.getTimeFormatters
   }
 
   def toTRowSet(

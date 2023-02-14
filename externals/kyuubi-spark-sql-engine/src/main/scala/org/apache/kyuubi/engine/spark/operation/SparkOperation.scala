@@ -135,7 +135,9 @@ abstract class SparkOperation(session: Session)
     spark.sparkContext.setLocalProperty
 
   protected def withLocalProperties[T](f: => T): T = {
+    val originalSession = SparkSession.getActiveSession
     try {
+      SparkSession.setActiveSession(spark)
       spark.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
@@ -156,6 +158,10 @@ abstract class SparkOperation(session: Session)
       spark.sparkContext.clearJobGroup()
       if (isSessionUserSignEnabled) {
         clearSessionUserSign()
+      }
+      originalSession match {
+        case Some(session) => SparkSession.setActiveSession(session)
+        case None => SparkSession.clearActiveSession()
       }
     }
   }
