@@ -42,9 +42,10 @@ class ResponseFilter extends Filter with Logging {
     val ipAddress = httpRequest.getAttribute(ATTR_TARGET_IP)
     val port = httpRequest.getAttribute(ATTR_TARGET_PORT)
     val httpResponse = response.asInstanceOf[HttpServletResponse]
-    logger.info("content type is {}", httpResponse.getContentType)
+    val contentType = httpResponse.getHeader("Content-Type")
+    logger.info("content type is {}", contentType)
     if (httpResponse != null &&
-      httpResponse.getContentType != null && httpResponse.getContentType.contains("text/html")
+      contentType != null && contentType.contains("text/html")
       && ipAddress != null) {
       val wrapResponse = new WrapResponse(httpResponse)
       val content = wrapResponse.getCaptureAsString()
