@@ -64,7 +64,7 @@ class Log4j2DivertAppender(
   })
 
   private val writeLock = DynFields.builder()
-    .hiddenImpl(this.getClass, "readWriteLock")
+    .hiddenImpl(classOf[AbstractWriterAppender[_]], "readWriteLock")
     .build[ReadWriteLock](this)
     .get()
     .writeLock
