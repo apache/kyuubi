@@ -55,3 +55,7 @@ case class GetColumns(
     colNamePattern: String) extends KyuubiTreeNode {
   override def name(): String = "Get Columns"
 }
+
+case class GetPrimaryKeys() extends KyuubiTreeNode {
+  override def name(): String = "Get Primary Keys"
+}
