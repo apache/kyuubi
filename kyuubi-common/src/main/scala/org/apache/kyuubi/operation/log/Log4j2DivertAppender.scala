@@ -63,19 +63,10 @@ class Log4j2DivertAppender(
     }
   })
 
-  def initLayout(): StringLayout = {
-    LogManager.getRootLogger.asInstanceOf[org.apache.logging.log4j.core.Logger]
-      .getAppenders.values().asScala
-      .find(ap => ap.isInstanceOf[ConsoleAppender] && ap.getLayout.isInstanceOf[StringLayout])
-      .map(_.getLayout.asInstanceOf[StringLayout])
-      .getOrElse(PatternLayout.newBuilder().withPattern(
-        "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n").build())
-  }
-
   private val writeLock = DynFields.builder()
     .hiddenImpl(this.getClass, "readWriteLock")
-    .build(this)
-    .get[ReadWriteLock]
+    .build[ReadWriteLock](this)
+    .get()
     .writeLock
 
   /**
