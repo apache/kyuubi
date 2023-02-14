@@ -18,6 +18,7 @@
 package org.apache.kyuubi.operation.log
 
 import java.io.CharArrayWriter
+import java.util.concurrent.locks.ReadWriteLock
 
 import scala.collection.JavaConverters._
 
@@ -26,6 +27,8 @@ import org.apache.logging.log4j.core.{Filter, LogEvent, StringLayout}
 import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAppender, WriterManager}
 import org.apache.logging.log4j.core.filter.AbstractFilter
 import org.apache.logging.log4j.core.layout.PatternLayout
+
+import org.apache.kyuubi.reflection.DynFields
 
 class Log4j2DivertAppender(
     name: String,
@@ -69,17 +72,26 @@ class Log4j2DivertAppender(
         "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n").build())
   }
 
+  private val writeLock = DynFields.builder()
+    .hiddenImpl(this.getClass, "readWriteLock")
+    .build(this)
+    .get[ReadWriteLock]
+    .writeLock
+
   /**
    * Overrides AbstractWriterAppender.append(), which does the real logging. No need
    * to worry about concurrency since log4j calls this synchronously.
    */
   override def append(event: LogEvent): Unit = {
     super.append(event)
-    writer.synchronized {
+    writeLock.lock()
+    try {
       // That should've gone into our writer. Notify the LogContext.
       val logOutput = writer.toString
       writer.reset()
       OperationLog.getCurrentOperationLog.foreach(_.write(logOutput))
+    } finally {
+      writeLock.unlock()
     }
   }
 }
