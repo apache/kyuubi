@@ -37,11 +37,11 @@ class ResponseFilter extends Filter with Logging {
       request: ServletRequest,
       response: ServletResponse,
       filterChain: FilterChain): Unit = {
+    filterChain.doFilter(request, response)
     val httpRequest = request.asInstanceOf[HttpServletRequest]
     val ipAddress = httpRequest.getAttribute(ATTR_TARGET_IP)
     val port = httpRequest.getAttribute(ATTR_TARGET_PORT)
     val httpResponse = response.asInstanceOf[HttpServletResponse]
-    filterChain.doFilter(request, httpResponse)
     logger.info("content type is {}", httpResponse.getContentType)
     if (httpResponse != null &&
       httpResponse.getContentType != null && httpResponse.getContentType.contains("text/html")
