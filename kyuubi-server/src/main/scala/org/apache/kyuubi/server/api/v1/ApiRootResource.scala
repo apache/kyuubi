@@ -111,7 +111,7 @@ private[server] object ApiRootResource {
     contextHandler.addServlet(holder, "/*")
     contextHandler.addFilter(
       new FilterHolder(new ResponseFilter()),
-      "/proxy/*",
+      "/*",
       EnumSet.of(DispatcherType.REQUEST))
     contextHandlerCollection.addHandler(contextHandler)
   }
