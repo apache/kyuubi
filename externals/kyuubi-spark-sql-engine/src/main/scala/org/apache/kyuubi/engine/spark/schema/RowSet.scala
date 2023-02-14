@@ -25,16 +25,11 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.HiveResult
-import org.apache.spark.sql.execution.HiveResult.TimeFormatters
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
-
-  def getTimeFormatters(timeZone: ZoneId): TimeFormatters = {
-    HiveResult.getTimeFormatters
-  }
 
   def toTRowSet(
       bytes: Array[Byte],
@@ -153,8 +148,8 @@ object RowSet {
         while (i < rowSize) {
           val row = rows(i)
           nulls.set(i, row.isNullAt(ordinal))
-          values.add(
-            HiveResult.toHiveString(row.get(ordinal) -> typ, false, getTimeFormatters(timeZone)))
+          val timeFormatters = HiveResult.getTimeFormatters
+          values.add(HiveResult.toHiveString(row.get(ordinal) -> typ, false, timeFormatters))
           i += 1
         }
         TColumn.stringVal(new TStringColumn(values, nulls))
@@ -239,7 +234,7 @@ object RowSet {
             HiveResult.toHiveString(
               row.get(ordinal) -> types(ordinal).dataType,
               false,
-              getTimeFormatters(timeZone)))
+              HiveResult.getTimeFormatters))
         }
         TColumnValue.stringVal(tStrValue)
     }

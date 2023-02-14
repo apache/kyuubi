@@ -25,8 +25,6 @@ import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.engine.spark.schema.RowSet
-
 object SparkDatasetHelper {
   def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
     ds.toArrowBatchRdd
@@ -42,11 +40,11 @@ object SparkDatasetHelper {
       val dt = DataType.fromDDL(schemaDDL)
       dt match {
         case StructType(Array(StructField(_, st: StructType, _, _))) =>
-          HiveResult.toHiveString((row, st), true, RowSet.getTimeFormatters(timeZone))
+          HiveResult.toHiveString((row, st), true, HiveResult.getTimeFormatters)
         case StructType(Array(StructField(_, at: ArrayType, _, _))) =>
-          HiveResult.toHiveString((row.toSeq.head, at), true, RowSet.getTimeFormatters(timeZone))
+          HiveResult.toHiveString((row.toSeq.head, at), true, HiveResult.getTimeFormatters)
         case StructType(Array(StructField(_, mt: MapType, _, _))) =>
-          HiveResult.toHiveString((row.toSeq.head, mt), true, RowSet.getTimeFormatters(timeZone))
+          HiveResult.toHiveString((row.toSeq.head, mt), true, HiveResult.getTimeFormatters)
         case _ =>
           throw new UnsupportedOperationException
       }
