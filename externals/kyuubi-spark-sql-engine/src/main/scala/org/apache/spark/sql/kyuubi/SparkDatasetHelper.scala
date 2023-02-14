@@ -22,7 +22,7 @@ import java.time.ZoneId
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.{ArrayType, DataType, MapType, StructField, StructType}
+import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.engine.spark.schema.RowSet
 
@@ -41,11 +41,11 @@ object SparkDatasetHelper {
       val dt = DataType.fromDDL(schemaDDL)
       dt match {
         case StructType(Array(StructField(_, st: StructType, _, _))) =>
-          RowSet.toHiveString((row, st), timeZone)
+          RowSet.toHiveString((row, st), nested = true)
         case StructType(Array(StructField(_, at: ArrayType, _, _))) =>
-          RowSet.toHiveString((row.toSeq.head, at), timeZone)
+          RowSet.toHiveString((row.toSeq.head, at), nested = true)
         case StructType(Array(StructField(_, mt: MapType, _, _))) =>
-          RowSet.toHiveString((row.toSeq.head, mt), timeZone)
+          RowSet.toHiveString((row.toSeq.head, mt), nested = true)
         case _ =>
           throw new UnsupportedOperationException
       }
@@ -54,7 +54,7 @@ object SparkDatasetHelper {
     val cols = df.schema.map {
       case sf @ StructField(name, _: StructType, _, _) =>
         toHiveStringUDF(quotedCol(name), lit(sf.toDDL)).as(name)
-      case sf @ StructField(name, (_: MapType | _: ArrayType), _, _) =>
+      case sf @ StructField(name, _: MapType | _: ArrayType, _, _) =>
         toHiveStringUDF(struct(quotedCol(name)), lit(sf.toDDL)).as(name)
       case StructField(name, _, _, _) => quotedCol(name)
     }

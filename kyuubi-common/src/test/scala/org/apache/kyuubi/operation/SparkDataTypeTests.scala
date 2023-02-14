@@ -159,11 +159,38 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
     }
   }
 
-  test("execute statement - select timestamp") {
+  test("execute statement - select timestamp - second") {
     withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT TIMESTAMP '2018-11-17 13:33:33' AS col")
+      val resultSet = statement.executeQuery(
+        "SELECT TIMESTAMP '2018-11-17 13:33:33' AS col")
       assert(resultSet.next())
       assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2018-11-17 13:33:33"))
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
+      assert(metaData.getPrecision(1) === 29)
+      assert(metaData.getScale(1) === 9)
+    }
+  }
+
+  test("execute statement - select timestamp - millisecond") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery(
+        "SELECT TIMESTAMP '2018-11-17 13:33:33.12345' AS col")
+      assert(resultSet.next())
+      assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2018-11-17 13:33:33.12345"))
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
+      assert(metaData.getPrecision(1) === 29)
+      assert(metaData.getScale(1) === 9)
+    }
+  }
+
+  test("execute statement - select timestamp - overflow") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery(
+        "SELECT TIMESTAMP '2018-11-17 13:33:33.1234567' AS col")
+      assert(resultSet.next())
+      assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2018-11-17 13:33:33.123456"))
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
       assert(metaData.getPrecision(1) === 29)
@@ -175,9 +202,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
     assume(SPARK_ENGINE_VERSION >= "3.4")
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
-        "SELECT make_timestamp_ntz(2022, 03, 24, 18, 08, 31.800) AS col")
+        "SELECT make_timestamp_ntz(2022, 03, 24, 18, 08, 31.8888) AS col")
       assert(resultSet.next())
-      assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2022-03-24 18:08:31.800"))
+      assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2022-03-24 18:08:31.8888"))
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
       assert(metaData.getPrecision(1) === 29)
