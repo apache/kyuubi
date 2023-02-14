@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.AtomicLong
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.{Response, UriInfo}
 
+import scala.collection.mutable
+
 import Slug.Context.{EXECUTING_QUERY, QUEUED_QUERY}
 import com.google.common.hash.Hashing
 import io.trino.client.QueryResults
@@ -32,6 +34,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, INITIALIZED, OperationState, PENDING}
+import org.apache.kyuubi.server.trino.api.Query.KYUUBI_SESSION_ID
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.session.SessionHandle
 
@@ -90,7 +93,7 @@ case class Query(
 
   private def clear = {
     be.closeOperation(queryId.operationHandle)
-    context.session.get("sessionId").foreach { id =>
+    context.session.get(KYUUBI_SESSION_ID).foreach { id =>
       be.closeSession(SessionHandle.fromUUID(id))
     }
   }
@@ -128,23 +131,24 @@ case class Query(
 
 object Query {
 
+  val KYUUBI_SESSION_ID = "kyuubi.session.id"
+
   def apply(
       statement: String,
       context: TrinoContext,
       translator: KyuubiTrinoOperationTranslator,
       backendService: BackendService,
       queryTimeout: Long = 0): Query = {
-
-    val sessionHandle = createSession(context, backendService)
+    val sessionHandle = getOrCreateSession(context, backendService)
     val operationHandle = translator.transform(
       statement,
       sessionHandle,
       context.session,
       true,
       queryTimeout)
-    val newSessionProperties =
-      context.session + ("sessionId" -> sessionHandle.identifier.toString)
-    val updatedContext = context.copy(session = newSessionProperties)
+    val sessionWithId =
+      context.session + (KYUUBI_SESSION_ID -> sessionHandle.identifier.toString)
+    val updatedContext = context.copy(session = sessionWithId)
     Query(QueryId(operationHandle), updatedContext, backendService)
   }
 
@@ -152,15 +156,39 @@ object Query {
     Query(QueryId(id), context, backendService)
   }
 
-  private def createSession(
+  private def getOrCreateSession(
       context: TrinoContext,
       backendService: BackendService): SessionHandle = {
-    backendService.openSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
-      context.user,
-      "",
-      context.remoteUserAddress.getOrElse(""),
-      context.session)
+    context.session.get(KYUUBI_SESSION_ID).map(SessionHandle.fromUUID).getOrElse {
+      // transform Trino information to session and engine as far as possible.
+      val trinoInfo = new mutable.HashMap[String, String]()
+      context.clientInfo.foreach { info =>
+        trinoInfo.put("trino.client.info", info)
+      }
+      context.source.foreach { source =>
+        trinoInfo.put("trino.request.source", source)
+      }
+      context.traceToken.foreach { traceToken =>
+        trinoInfo.put("trino.trace.token", traceToken)
+      }
+      context.timeZone.foreach { timeZone =>
+        trinoInfo.put("trino.time.zone", timeZone)
+      }
+      context.language.foreach { language =>
+        trinoInfo.put("trino.language", language)
+      }
+      if (context.clientTags.nonEmpty) {
+        trinoInfo.put("trino.client.info", context.clientTags.mkString(","))
+      }
+
+      val newSessionConfigs = context.session ++ trinoInfo
+      backendService.openSession(
+        TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+        context.user,
+        "",
+        context.remoteUserAddress.getOrElse(""),
+        newSessionConfigs)
+    }
   }
 
 }

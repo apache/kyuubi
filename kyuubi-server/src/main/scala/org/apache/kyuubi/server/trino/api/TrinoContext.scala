@@ -30,7 +30,9 @@ import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet, T
 
 import org.apache.kyuubi.operation.OperationState.FINISHED
 import org.apache.kyuubi.operation.OperationStatus
+import org.apache.kyuubi.server.trino.api.Query.KYUUBI_SESSION_ID
 
+// TODO: Support replace `preparedStatement` for Trino-jdbc
 /**
  * The description and functionality of trino request
  * and response's context
@@ -140,15 +142,17 @@ object TrinoContext {
   def buildTrinoResponse(qr: QueryResults, trinoContext: TrinoContext): Response = {
     val responseBuilder = Response.ok(qr)
 
-    trinoContext.catalog.foreach(
-      responseBuilder.header(TRINO_HEADERS.responseSetCatalog, _))
-    trinoContext.schema.foreach(
-      responseBuilder.header(TRINO_HEADERS.responseSetSchema, _))
+    // Note, We have injected kyuubi session id to session context so that the next query can find
+    // the previous session to restore the query context.
+    // It's hard to follow the Trino style that set all context to http headers.
+    // Because we do not know the context at server side. e.g. `set k=v`, `use database`.
+    // We also can not inject other session context into header before we supporting to map
+    // query result to session context.
+    require(trinoContext.session.contains(KYUUBI_SESSION_ID), s"$KYUUBI_SESSION_ID must be set.")
+    responseBuilder.header(
+      TRINO_HEADERS.responseSetSession,
+      s"$KYUUBI_SESSION_ID=${urlEncode(trinoContext.session(KYUUBI_SESSION_ID))}")
 
-    trinoContext.session.foreach {
-      case (k, v) =>
-        responseBuilder.header(TRINO_HEADERS.responseSetSession, s"${k}=${urlEncode(v)}")
-    }
     trinoContext.preparedStatement.foreach {
       case (k, v) =>
         responseBuilder.header(TRINO_HEADERS.responseAddedPrepare, s"${k}=${urlEncode(v)}")
