@@ -19,9 +19,12 @@ package org.apache.kyuubi.server.trino.api.v1
 
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
+
 import scala.collection.JavaConverters._
+
 import io.trino.client.{QueryError, QueryResults}
 import io.trino.client.ProtocolHeaders.TRINO_HEADERS
+
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, TrinoRestFrontendTestHelper}
 import org.apache.kyuubi.operation.{OperationHandle, OperationState}
 import org.apache.kyuubi.server.trino.api.{Query, TrinoContext}
