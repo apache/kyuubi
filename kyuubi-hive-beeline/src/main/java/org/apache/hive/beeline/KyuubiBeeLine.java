@@ -29,6 +29,7 @@ import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.hive.common.util.HiveStringUtils;
 
 public class KyuubiBeeLine extends BeeLine {
   public static final String KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER =
@@ -176,7 +177,7 @@ public class KyuubiBeeLine extends BeeLine {
     }
     if (!commands.isEmpty()) {
       for (Iterator<String> i = commands.iterator(); i.hasNext(); ) {
-        String command = i.next().toString();
+        String command = HiveStringUtils.removeComments(i.next().toString());
         debug(loc("executing-command", command));
         if (!dispatch(command)) {
           code++;
