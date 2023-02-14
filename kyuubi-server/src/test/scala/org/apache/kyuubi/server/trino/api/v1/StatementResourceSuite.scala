@@ -19,15 +19,12 @@ package org.apache.kyuubi.server.trino.api.v1
 
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
-
 import scala.collection.JavaConverters._
-
 import io.trino.client.{QueryError, QueryResults}
 import io.trino.client.ProtocolHeaders.TRINO_HEADERS
-
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, TrinoRestFrontendTestHelper}
 import org.apache.kyuubi.operation.{OperationHandle, OperationState}
-import org.apache.kyuubi.server.trino.api.TrinoContext
+import org.apache.kyuubi.server.trino.api.{Query, TrinoContext}
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 import org.apache.kyuubi.session.SessionHandle
 
@@ -78,7 +75,7 @@ class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHe
       response.getStringHeaders.get(TRINO_HEADERS.responseSetSession).asScala
         .map(_.split("="))
         .find {
-          case Array("sessionId", _) => true
+          case Array(Query.KYUUBI_SESSION_ID, _) => true
         }
         .map {
           case Array(_, value) => SessionHandle.fromUUID(TrinoContext.urlDecode(value))
@@ -90,12 +87,12 @@ class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHe
     val path = qr.getNextUri.getPath
     val nextResponse = webTarget.path(path).request().header(
       TRINO_HEADERS.requestSession(),
-      s"sessionId=${TrinoContext.urlEncode(sessionHandle.identifier.toString)}").delete()
+      s"${Query.KYUUBI_SESSION_ID}=${TrinoContext.urlEncode(sessionHandle.identifier.toString)}")
+      .delete()
     assert(nextResponse.getStatus == 204)
     assert(operation.getStatus.state == OperationState.CLOSED)
     val exception = intercept[KyuubiSQLException](sessionManager.getSession(sessionHandle))
     assert(exception.getMessage === s"Invalid $sessionHandle")
-
   }
 
   private def getData(current: TrinoResponse): TrinoResponse = {

@@ -215,9 +215,10 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       slug: String,
       token: Long,
       slugContext: Slug.Context.Context): Try[Query] = {
-
-    Try(be.sessionManager.operationManager.getOperation(queryId.operationHandle)).map { _ =>
-      Query(queryId, context, be)
+    Try(be.sessionManager.operationManager.getOperation(queryId.operationHandle)).map { op =>
+      val sessionWithId = context.session ++
+        Map(Query.KYUUBI_SESSION_ID -> op.getSession.handle.identifier.toString)
+      Query(queryId, context.copy(session = sessionWithId), be)
     }.filter(_.getSlug.isValid(slugContext, slug, token))
   }
 
