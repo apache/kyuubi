@@ -21,7 +21,10 @@ import java.io.{ByteArrayOutputStream, OutputStreamWriter, PrintWriter}
 import javax.servlet.{ServletOutputStream, WriteListener}
 import javax.servlet.http.{HttpServletResponse, HttpServletResponseWrapper}
 
-class WrapResponse(response: HttpServletResponse) extends HttpServletResponseWrapper(response) {
+import org.apache.kyuubi.Logging
+
+class WrapResponse(response: HttpServletResponse) extends HttpServletResponseWrapper(response)
+  with Logging {
   var buffer: ByteArrayOutputStream = new ByteArrayOutputStream()
   var writer: PrintWriter = _
   var open: Boolean = false
@@ -38,6 +41,7 @@ class WrapResponse(response: HttpServletResponse) extends HttpServletResponseWra
       override def setWriteListener(writeListener: WriteListener): Unit = {}
 
       override def write(b: Int): Unit = {
+        logger.info("buffer in response", b)
         buffer.write(b)
       }
     }
