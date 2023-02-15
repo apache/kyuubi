@@ -21,10 +21,10 @@ import java.io.ByteArrayOutputStream
 import javax.servlet.{ServletOutputStream, WriteListener}
 
 class WrapOutputStream(stream: ByteArrayOutputStream) extends ServletOutputStream {
-  var out: ByteArrayOutputStream = stream
+  var bos: ByteArrayOutputStream = stream
 
   override def write(b: Int): Unit = {
-    out.write(b)
+    bos.write(b)
   }
 
   override def isReady: Boolean = {
@@ -34,10 +34,10 @@ class WrapOutputStream(stream: ByteArrayOutputStream) extends ServletOutputStrea
   override def setWriteListener(writeListener: WriteListener): Unit = {}
 
   override def flush(): Unit = {
-    out.flush()
+    bos.flush()
   }
 
   override def close(): Unit = {
-    out.flush()
+    bos.flush()
   }
 }

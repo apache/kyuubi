@@ -49,6 +49,7 @@ class ResponseFilter extends Filter with Logging {
     val contentType = wrapResponse.getHeader("content-type")
     logger.info("content type is {}", contentType)
     wrapResponse.getHeaderNames.forEach(logger.info("header name is {}", _))
+    logger.info("content  is {}", wrapResponse.getCaptureAsString())
     if (wrapResponse != null &&
       // contentType != null && contentType.contains("text/html") &&
       ipAddress != null) {

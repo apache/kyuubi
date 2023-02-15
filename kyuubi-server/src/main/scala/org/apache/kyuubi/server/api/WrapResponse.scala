@@ -22,7 +22,7 @@ import javax.servlet.ServletOutputStream
 import javax.servlet.http.{HttpServletResponse, HttpServletResponseWrapper}
 
 class WrapResponse(response: HttpServletResponse) extends HttpServletResponseWrapper(response) {
-  var out: ByteArrayOutputStream = new ByteArrayOutputStream(response.getBufferSize())
+  var buffer: ByteArrayOutputStream = new ByteArrayOutputStream()
   var output: ServletOutputStream = _
   var writer: PrintWriter = _
 
@@ -31,7 +31,7 @@ class WrapResponse(response: HttpServletResponse) extends HttpServletResponseWra
       throw new IllegalStateException("getWriter() has already been called on this response.");
     }
     if (output == null) {
-      output = new WrapOutputStream(out)
+      output = new WrapOutputStream(buffer)
     }
     output
   }
@@ -42,7 +42,7 @@ class WrapResponse(response: HttpServletResponse) extends HttpServletResponseWra
         "getOutputStream() has already been called on this response.");
     }
     if (writer == null) {
-      writer = new PrintWriter(new OutputStreamWriter(out, getCharacterEncoding()));
+      writer = new PrintWriter(new OutputStreamWriter(buffer, getCharacterEncoding()));
     }
     writer
   }
@@ -62,7 +62,7 @@ class WrapResponse(response: HttpServletResponse) extends HttpServletResponseWra
     } else if (output != null) {
       output.close()
     }
-    out.toByteArray()
+    buffer.toByteArray()
   }
 
   def getCaptureAsString(): String = {
