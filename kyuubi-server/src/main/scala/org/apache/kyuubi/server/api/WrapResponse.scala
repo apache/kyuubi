@@ -56,16 +56,8 @@ class WrapResponse(response: HttpServletResponse) extends HttpServletResponseWra
     }
   }
 
-  def getCaptureAsBytes(): Array[Byte] = {
-    if (writer != null) {
-      writer.close();
-    } else if (output != null) {
-      output.close()
-    }
-    buffer.toByteArray()
-  }
-
-  def getCaptureAsString(): String = {
-    new String(getCaptureAsBytes(), getCharacterEncoding())
+  def getContent(): String = {
+    flushBuffer()
+    new String(buffer.toByteArray)
   }
 }
