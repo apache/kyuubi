@@ -29,4 +29,13 @@ public class KyuubiBeeLineTest {
     int result = kyuubiBeeLine.initArgs(new String[0]);
     assertEquals(0, result);
   }
+
+  @Test
+  public void testKyuubiBeelineComment() {
+    KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
+    int result = kyuubiBeeLine.initArgsFromCliVars(new String[] { "-e", "--comment show database;" });
+    assertEquals(0, result);
+    result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment\n show database;" });
+    assertEquals(1, result);
+  }
 }

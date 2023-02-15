@@ -177,7 +177,7 @@ public class KyuubiBeeLine extends BeeLine {
     }
     if (!commands.isEmpty()) {
       for (Iterator<String> i = commands.iterator(); i.hasNext(); ) {
-        String command = HiveStringUtils.removeComments(i.next().toString());
+        String command = i.next().toString();
         debug(loc("executing-command", command));
         if (!dispatch(command)) {
           code++;
@@ -192,5 +192,10 @@ public class KyuubiBeeLine extends BeeLine {
       }
     }
     return code;
+  }
+
+  @Override
+  boolean dispatch(String line) {
+    return super.dispatch(HiveStringUtils.removeComments(line));
   }
 }
