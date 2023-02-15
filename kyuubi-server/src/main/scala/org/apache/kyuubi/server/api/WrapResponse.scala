@@ -18,46 +18,41 @@
 package org.apache.kyuubi.server.api
 
 import java.io.{ByteArrayOutputStream, OutputStreamWriter, PrintWriter}
-import javax.servlet.ServletOutputStream
+import javax.servlet.{ServletOutputStream, WriteListener}
 import javax.servlet.http.{HttpServletResponse, HttpServletResponseWrapper}
 
 class WrapResponse(response: HttpServletResponse) extends HttpServletResponseWrapper(response) {
   var buffer: ByteArrayOutputStream = new ByteArrayOutputStream()
-  var output: ServletOutputStream = _
   var writer: PrintWriter = _
+  var open: Boolean = false
 
   override def getOutputStream: ServletOutputStream = {
-    if (writer != null) {
-      throw new IllegalStateException("getWriter() has already been called on this response.");
+    if (open) {
+      throw new IllegalStateException("Cannot re-open output stream!")
     }
-    if (output == null) {
-      output = new WrapOutputStream(buffer)
+    open = true
+    new ServletOutputStream() {
+
+      override def isReady: Boolean = true
+
+      override def setWriteListener(writeListener: WriteListener): Unit = {}
+
+      override def write(b: Int): Unit = {
+        buffer.write(b)
+      }
     }
-    output
   }
 
   override def getWriter: PrintWriter = {
-    if (output != null) {
-      throw new IllegalStateException(
-        "getOutputStream() has already been called on this response.");
+    if (open) {
+      throw new IllegalStateException("Cannot re-open writer!")
     }
-    if (writer == null) {
-      writer = new PrintWriter(new OutputStreamWriter(buffer, getCharacterEncoding()));
-    }
+    open = true
+    writer = new PrintWriter(new OutputStreamWriter(buffer, getCharacterEncoding()))
     writer
   }
 
-  override def flushBuffer(): Unit = {
-    super.flushBuffer()
-    if (writer != null) {
-      writer.flush();
-    } else if (output != null) {
-      output.flush();
-    }
-  }
-
   def getContent(): String = {
-    flushBuffer()
     new String(buffer.toByteArray)
   }
 }
