@@ -24,7 +24,7 @@ import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TProgressU
 import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.execution.SQLExecution
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
@@ -136,7 +136,7 @@ abstract class SparkOperation(session: Session)
     spark.sparkContext.setLocalProperty
 
   protected def withLocalProperties[T](f: => T): T = {
-    SQLConf.withExistingConf(spark.sessionState.conf) {
+    SQLExecution.withSQLConfPropagated(spark) {
       val originalSession = SparkSession.getActiveSession
       try {
         SparkSession.setActiveSession(spark)

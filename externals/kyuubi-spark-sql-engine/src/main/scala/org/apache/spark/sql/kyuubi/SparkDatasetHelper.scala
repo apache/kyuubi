@@ -17,12 +17,8 @@
 
 package org.apache.spark.sql.kyuubi
 
-import java.time.ZoneId
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
-import org.apache.spark.sql.catalyst.util.{DateFormatter, TimestampFormatter}
-import org.apache.spark.sql.execution.HiveResult.TimeFormatters
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
@@ -36,7 +32,6 @@ object SparkDatasetHelper {
   def convertTopLevelComplexTypeToHiveString(
       df: DataFrame,
       timestampAsString: Boolean): DataFrame = {
-    val timeZone = ZoneId.of(df.sparkSession.sessionState.conf.sessionLocalTimeZone)
 
     val quotedCol = (name: String) => col(quoteIfNeeded(name))
 
@@ -51,7 +46,7 @@ object SparkDatasetHelper {
         case StructType(Array(StructField(_, mt: MapType, _, _))) =>
           RowSet.toHiveString((row.toSeq.head, mt), nested = true)
         case StructType(Array(StructField(_, tt: TimestampType, _, _))) =>
-          RowSet.toHiveString((row.toSeq.head, tt), nested = true, getTimeFormatters(timeZone))
+          RowSet.toHiveString((row.toSeq.head, tt), nested = true)
         case _ =>
           throw new UnsupportedOperationException
       }
@@ -79,11 +74,5 @@ object SparkDatasetHelper {
     } else {
       s"`${part.replace("`", "``")}`"
     }
-  }
-
-  private def getTimeFormatters(timeZone: ZoneId): TimeFormatters = {
-    val dateFormatter = DateFormatter()
-    val timestampFormatter = TimestampFormatter.getFractionFormatter(timeZone)
-    TimeFormatters(dateFormatter, timestampFormatter)
   }
 }

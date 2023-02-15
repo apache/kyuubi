@@ -1679,7 +1679,8 @@ object KyuubiConf {
   val ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.result.arrow.timestampAsString")
       .doc("When true, arrow-based rowsets will convert columns of type timestamp to strings for" +
-        " transmission.")
+        " transmission. Note that the timestamp column has a different behavior compared to" +
+        " thrift when it's false, but it brings better transfer performance.")
       .version("1.7.0")
       .booleanConf
       .createWithDefault(true)

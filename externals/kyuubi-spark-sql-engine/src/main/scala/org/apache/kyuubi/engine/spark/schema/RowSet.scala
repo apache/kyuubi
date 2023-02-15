@@ -25,7 +25,6 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.HiveResult
-import org.apache.spark.sql.execution.HiveResult.TimeFormatters
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.util.RowSetUtils._
@@ -34,11 +33,9 @@ object RowSet {
 
   def toHiveString(
       valueAndType: (Any, DataType),
-      nested: Boolean = false,
-      timeFormatters: TimeFormatters = HiveResult.getTimeFormatters): String = {
+      nested: Boolean = false): String = {
     // compatible w/ Spark 3.1 and above
-//    val timeFormatters = HiveResult.getTimeFormatters
-    HiveResult.toHiveString(valueAndType, nested, timeFormatters)
+    HiveResult.toHiveString(valueAndType, nested, HiveResult.getTimeFormatters)
   }
 
   def toTRowSet(
