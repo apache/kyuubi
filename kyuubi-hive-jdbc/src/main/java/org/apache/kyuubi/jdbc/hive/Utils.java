@@ -26,7 +26,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hive.service.rpc.thrift.TStatus;
 import org.apache.hive.service.rpc.thrift.TStatusCode;
@@ -205,7 +204,9 @@ public class Utils {
         String connParam = confMatcher.group(1);
         if (StringUtils.isNotBlank(connParam) && connParam.contains("=")) {
           int symbolIndex = connParam.indexOf('=');
-          connParams.getHiveConfs().put(connParam.substring(0, symbolIndex), connParam.substring(symbolIndex + 1));
+          connParams
+              .getHiveConfs()
+              .put(connParam.substring(0, symbolIndex), connParam.substring(symbolIndex + 1));
         }
       }
     }

@@ -21,14 +21,13 @@ package org.apache.kyuubi.jdbc.hive;
 import static org.apache.kyuubi.jdbc.hive.Utils.extractURLComponents;
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.collect.ImmutableMap;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
-
-import com.google.common.collect.ImmutableMap;
-import com.sun.jndi.toolkit.url.UrlUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -40,26 +39,59 @@ public class UtilsTest {
   private String expectedPort;
   private String expectedCatalog;
   private String expectedDb;
-  private Map<String,String> expectedHiveConf;
+  private Map<String, String> expectedHiveConf;
   private String uri;
 
   @Parameterized.Parameters
   public static Collection<Object[]> data() throws UnsupportedEncodingException {
     return Arrays.asList(
         new Object[][] {
-          {"localhost", "10009", null, "db", new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
-            "jdbc:hive2:///db;k1=v1?k2=v2#k3=v3"},
-          {"localhost", "10009", null, "default", new ImmutableMap.Builder<String, String>().build(), "jdbc:hive2:///"},
-          {"localhost", "10009", null, "default", new ImmutableMap.Builder<String, String>().build(), "jdbc:kyuubi://"},
-          {"localhost", "10009", null, "default", new ImmutableMap.Builder<String, String>().build(), "jdbc:hive2://"},
-          {"hostname", "10018", null, "db", new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
-            "jdbc:hive2://hostname:10018/db;k1=v1?k2=v2#k3=v3"},
+          {
+            "localhost",
+            "10009",
+            null,
+            "db",
+            new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
+            "jdbc:hive2:///db;k1=v1?k2=v2#k3=v3"
+          },
+          {
+            "localhost",
+            "10009",
+            null,
+            "default",
+            new ImmutableMap.Builder<String, String>().build(),
+            "jdbc:hive2:///"
+          },
+          {
+            "localhost",
+            "10009",
+            null,
+            "default",
+            new ImmutableMap.Builder<String, String>().build(),
+            "jdbc:kyuubi://"
+          },
+          {
+            "localhost",
+            "10009",
+            null,
+            "default",
+            new ImmutableMap.Builder<String, String>().build(),
+            "jdbc:hive2://"
+          },
+          {
+            "hostname",
+            "10018",
+            null,
+            "db",
+            new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
+            "jdbc:hive2://hostname:10018/db;k1=v1?k2=v2#k3=v3"
+          },
           {
             "hostname",
             "10018",
             "catalog",
             "db",
-             new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
+            new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
             "jdbc:hive2://hostname:10018/catalog/db;k1=v1?k2=v2#k3=v3"
           },
           {
@@ -68,12 +100,13 @@ public class UtilsTest {
             "catalog",
             "db",
             new ImmutableMap.Builder<String, String>()
-             .put("k2", "v2")
-             .put("k3", "-Xmx2g -XX:+PrintGCDetails -XX:HeapDumpPath=/heap.hprof")
-             .build(),
-             "jdbc:hive2://hostname:10018/catalog/db;k1=v1?" +
-                 UrlUtil.encode("k2=v2;k3=-Xmx2g -XX:+PrintGCDetails -XX:HeapDumpPath=/heap.hprof", "UTF-8") +
-                 "#k4=v4"
+                .put("k2", "v2")
+                .put("k3", "-Xmx2g -XX:+PrintGCDetails -XX:HeapDumpPath=/heap.hprof")
+                .build(),
+            "jdbc:hive2://hostname:10018/catalog/db;k1=v1?"
+                + URLEncoder.encode(
+                    "k2=v2;k3=-Xmx2g -XX:+PrintGCDetails -XX:HeapDumpPath=/heap.hprof", "UTF-8")
+                + "#k4=v4"
           }
         });
   }
@@ -83,7 +116,7 @@ public class UtilsTest {
       String expectedPort,
       String expectedCatalog,
       String expectedDb,
-      Map<String,String> expectedHiveConf,
+      Map<String, String> expectedHiveConf,
       String uri) {
     this.expectedHost = expectedHost;
     this.expectedPort = expectedPort;
