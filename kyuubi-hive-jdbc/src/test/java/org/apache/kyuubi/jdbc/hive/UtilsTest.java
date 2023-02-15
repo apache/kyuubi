@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import com.google.common.collect.ImmutableMap;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -105,7 +106,9 @@ public class UtilsTest {
                 .build(),
             "jdbc:hive2://hostname:10018/catalog/db;k1=v1?"
                 + URLEncoder.encode(
-                    "k2=v2;k3=-Xmx2g -XX:+PrintGCDetails -XX:HeapDumpPath=/heap.hprof", "UTF-8")
+                        "k2=v2;k3=-Xmx2g -XX:+PrintGCDetails -XX:HeapDumpPath=/heap.hprof",
+                        StandardCharsets.UTF_8.toString())
+                    .replaceAll("\\+", "%20")
                 + "#k4=v4"
           }
         });
