@@ -85,7 +85,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       statement.executeQuery(s"set ${KyuubiConf.ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING.key}=false")
       checkArrowBasedRowSetTimestampAsString(statement, "false")
       setTimeZone("UTC")
-      check("2022-12-08 01:15:35.0")
+      check("2022-12-07 17:15:35.0")
       setTimeZone("GMT+8")
       check("2022-12-08 01:15:35.0")
     }

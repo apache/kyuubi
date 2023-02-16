@@ -19,6 +19,11 @@ package org.apache.kyuubi.jdbc.hive.arrow;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+import org.apache.arrow.vector.util.DateUtility;
 import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.common.DateUtils;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalDayTime;
@@ -104,7 +109,7 @@ public class ArrowColumnarBatchRow {
     throw new UnsupportedOperationException();
   }
 
-  public Object get(int ordinal, TTypeId dataType, boolean timestampAsString) {
+  public Object get(int ordinal, TTypeId dataType, String timeZone, boolean timestampAsString) {
     long seconds;
     long milliseconds;
     long microseconds;
@@ -134,12 +139,14 @@ public class ArrowColumnarBatchRow {
         if (timestampAsString) {
           return Timestamp.valueOf(getString(ordinal));
         } else {
-          microseconds = getLong(ordinal);
-          System.out.println("microseconds: " + microseconds);
-          nanos = (int) (microseconds % 1_000_000) * 1000;
-          Timestamp timestamp = new Timestamp(microseconds / 1_000);
-          timestamp.setNanos(nanos);
-          return timestamp;
+          LocalDateTime localDateTime =
+              DateUtility.getLocalDateTimeFromEpochMicro(getLong(ordinal), timeZone);
+          long millis = TimeUnit.MICROSECONDS.toMillis(getLong(ordinal));
+          TimeZone zone = TimeZone.getTimeZone(timeZone);
+          localDateTime =
+              localDateTime.minus(
+                  zone.getOffset(millis) - zone.getOffset(millis), ChronoUnit.MILLIS);
+          return Timestamp.valueOf(localDateTime);
         }
       case DATE_TYPE:
         return DateUtils.internalToDate(getInt(ordinal));

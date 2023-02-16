@@ -312,8 +312,14 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
       wasNull = row.isNullAt(columnIndex - 1);
       if (wasNull) {
         return null;
+      } else if (columnType == TTypeId.TIMESTAMP_TYPE) {
+        return row.get(
+            columnIndex - 1,
+            columnType,
+            columnAttributes.get(columnIndex - 1).timeZone,
+            timestampAsString);
       } else {
-        return row.get(columnIndex - 1, columnType, timestampAsString);
+        return row.get(columnIndex - 1, columnType, null, timestampAsString);
       }
     } catch (Exception e) {
       e.printStackTrace();
