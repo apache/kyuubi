@@ -36,6 +36,7 @@
                 <groupId>com.googlecode.maven-download-plugin</groupId>
                 <artifactId>download-maven-plugin</artifactId>
                 <configuration>
+                    <cacheDirectory>${maven.plugin.download.cache.path}</cacheDirectory>
                     <outputDirectory>${project.build.directory}</outputDirectory>
                     <readTimeOut>60000</readTimeOut>
                     <retries>3</retries>

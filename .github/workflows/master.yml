@@ -32,7 +32,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded
+  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded -Dmaven.plugin.download.cache.path=/tmp/engine-archives
   KUBERNETES_VERSION: v1.26.1
   MINIKUBE_VERSION: v1.29.0
 
@@ -56,11 +56,13 @@ jobs:
         include:
           - java: 8
             spark: '3.3'
+            spark-archive-version: '3.1.3'
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.3 -Dspark.archive.name=spark-3.1.3-bin-hadoop3.2.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
             comment: 'verify-on-spark-3.1-binary'
           - java: 8
             spark: '3.3'
+            spark-archive-version: '3.2.3'
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.3 -Dspark.archive.name=spark-3.2.3-bin-hadoop3.2.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
             comment: 'verify-on-spark-3.2-binary'
@@ -77,6 +79,9 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
+        if: matrix.spark-archive != ''
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -161,10 +166,12 @@ jobs:
         include:
           - java: 8
             flink: '1.16'
+            flink-archive-version: '1.14.6'
             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.14.6 -Dflink.archive.name=flink-1.14.6-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.14-binary'
           - java: 8
             flink: '1.16'
+            flink-archive-version: '1.15.3'
             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.3 -Dflink.archive.name=flink-1.15.3-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.15-binary'
     steps:
@@ -178,6 +185,9 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
+        if: matrix.flink-archive != ''
       - name: Build Flink with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
@@ -222,6 +232,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Build and test Hive with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-hive-sql-engine,integration-tests/kyuubi-hive-it"
