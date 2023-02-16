@@ -41,7 +41,6 @@ class WrapResponse(response: HttpServletResponse) extends HttpServletResponseWra
       override def setWriteListener(writeListener: WriteListener): Unit = {}
 
       override def write(b: Int): Unit = {
-        logger.info("buffer in response", b)
         buffer.write(b)
       }
     }
