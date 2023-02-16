@@ -31,10 +31,6 @@ public class Ok {
 
     public Ok() {}
 
-    // Follow Trino way that explicitly specifies the json property since we disable the jackson
-    // auto detect feature.
-    // see [[org.apache.kyuubi.server.trino.api.TrinoScalaObjectMapper]]
-
     /**
      * Follow Trino way that explicitly specifies the json property since we disable the jackson
      * auto detect feature. See {@link org.apache.kyuubi.server.trino.api.TrinoScalaObjectMapper}
