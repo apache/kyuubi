@@ -41,7 +41,7 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
       catalogName: String,
       schemaPattern: String): Seq[Row] = {
     (spark.sessionState.catalog.listDatabases(schemaPattern) ++
-      getGlobalTempViewManager(spark, schemaPattern)).map(Row(_, ""))
+      getGlobalTempViewManager(spark, schemaPattern)).map(Row(_, SparkCatalogShim.SESSION_CATALOG))
   }
 
   def setCurrentDatabase(spark: SparkSession, databaseName: String): Unit = {
