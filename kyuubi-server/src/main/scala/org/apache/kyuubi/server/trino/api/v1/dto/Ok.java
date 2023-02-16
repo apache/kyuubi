@@ -20,6 +20,9 @@ package org.apache.kyuubi.server.trino.api.v1.dto;
 
 
 import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -28,10 +31,16 @@ public class Ok {
 
     public Ok() {}
 
-    public Ok(String content) {
+    /**
+     * Follow Trino way that explicitly specifies the json property since we disable the jackson
+     * auto detect feature. See {@link org.apache.kyuubi.server.trino.api.TrinoScalaObjectMapper}
+     */
+    @JsonCreator
+    public Ok(@JsonProperty("content") String content) {
         this.content = content;
     }
 
+    @JsonProperty
     public String getContent() {
         return content;
     }
