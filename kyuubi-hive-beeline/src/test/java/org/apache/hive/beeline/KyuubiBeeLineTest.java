@@ -33,11 +33,13 @@ public class KyuubiBeeLineTest {
   @Test
   public void testKyuubiBeelineComment() {
     KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
-    int result = kyuubiBeeLine.initArgsFromCliVars(new String[] { "-e", "--comment show database;" });
+    int result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment show database;"});
     assertEquals(0, result);
-    result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment\n show database;" });
+    result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment\n show database;"});
     assertEquals(1, result);
-    result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment line 1 \n    --comment line 2 \n show database;"});
+    result =
+        kyuubiBeeLine.initArgsFromCliVars(
+            new String[] {"-e", "--comment line 1 \n    --comment line 2 \n show database;"});
     assertEquals(1, result);
   }
 }
