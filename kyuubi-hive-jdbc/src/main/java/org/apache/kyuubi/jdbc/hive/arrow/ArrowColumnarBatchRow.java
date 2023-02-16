@@ -135,8 +135,9 @@ public class ArrowColumnarBatchRow {
           return Timestamp.valueOf(getString(ordinal));
         } else {
           microseconds = getLong(ordinal);
-          nanos = (int) (microseconds % 1000000) * 1000;
-          Timestamp timestamp = new Timestamp(microseconds / 1000);
+          System.out.println("microseconds: " + microseconds);
+          nanos = (int) (microseconds % 1_000_000) * 1000;
+          Timestamp timestamp = new Timestamp(microseconds / 1_000);
           timestamp.setNanos(nanos);
           return timestamp;
         }
@@ -144,8 +145,8 @@ public class ArrowColumnarBatchRow {
         return DateUtils.internalToDate(getInt(ordinal));
       case INTERVAL_DAY_TIME_TYPE:
         microseconds = getLong(ordinal);
-        seconds = microseconds / 1000000;
-        nanos = (int) (microseconds % 1000000) * 1000;
+        seconds = microseconds / 1_000_000;
+        nanos = (int) (microseconds % 1_000_000) * 1_000;
         return new HiveIntervalDayTime(seconds, nanos);
       case INTERVAL_YEAR_MONTH_TYPE:
         return new HiveIntervalYearMonth(getInt(ordinal));

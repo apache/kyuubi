@@ -86,6 +86,7 @@ public class ArrowUtils {
         return new ArrowType.Date(DateUnit.DAY);
       case TIMESTAMP_TYPE:
         if (jdbcColumnAttributes != null) {
+          System.out.println("session timeZone: " + jdbcColumnAttributes.timeZone);
           return new ArrowType.Timestamp(TimeUnit.MICROSECOND, jdbcColumnAttributes.timeZone);
         } else {
           throw new IllegalStateException("Missing timezoneId where it is mandatory.");

@@ -35,6 +35,13 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
 
   override def resultFormat: String = "arrow"
 
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    withJdbcStatement() { statement =>
+      checkResultSetFormat(statement, "arrow")
+    }
+  }
+
   test("detect resultSet format") {
     withJdbcStatement() { statement =>
       checkResultSetFormat(statement, "arrow")
