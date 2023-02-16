@@ -112,7 +112,9 @@ case class HiveWrite(
       ifPartitionNotExists,
       hadoopConf,
       new FileBatchWrite(job, description, committer),
-      externalCatalog)
+      externalCatalog,
+      description,
+      committer)
   }
 
   private def createWriteJobDescription(
