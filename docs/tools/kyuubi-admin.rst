@@ -69,6 +69,8 @@ Usage: ``bin/kyuubi-admin refresh config [options] [<configType>]``
      - Description
    * - hadoopConf
      - The hadoop conf used for proxy user verification.
+   * - userDefaultsConf
+     - Refresh the [user defaults configs](../../deployment/settings.html#user-defaults) with key in format in the form of `___{username}___.{config key}` from default property file.
 
 .. _list_engine:
 
