@@ -24,12 +24,14 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 public class ExecPoolStatistic {
   private int execPoolSize;
   private int execPoolActiveCount;
+  private int execPoolWaitCount;
 
   public ExecPoolStatistic() {}
 
-  public ExecPoolStatistic(int execPoolSize, int execPoolActiveCount) {
+  public ExecPoolStatistic(int execPoolSize, int execPoolActiveCount, int execPoolWaitCount) {
     this.execPoolSize = execPoolSize;
     this.execPoolActiveCount = execPoolActiveCount;
+    this.execPoolWaitCount = execPoolWaitCount;
   }
 
   public int getExecPoolSize() {
