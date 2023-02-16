@@ -172,7 +172,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     execPool.getActiveCount
   }
 
-  def getWaitCount: Int = {
+  def getWorkQueueSize: Int = {
     assert(execPool != null)
     execPool.getQueue.size()
   }

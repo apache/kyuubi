@@ -29,7 +29,7 @@ object MetricsConstants {
 
   final val EXEC_POOL_ALIVE: String = KYUUBI + "exec.pool.threads.alive"
   final val EXEC_POOL_ACTIVE: String = KYUUBI + "exec.pool.threads.active"
-  final val EXEC_POOL_WAIT: String = KYUUBI + "exec.pool.queue.size"
+  final val EXEC_POOL_WORK_QUEUE_SIZE: String = KYUUBI + "exec.pool.work_queue.size"
 
   final private val CONN = KYUUBI + "connection."
   final private val THRIFT_HTTP_CONN = KYUUBI + "thrift.http.connection."

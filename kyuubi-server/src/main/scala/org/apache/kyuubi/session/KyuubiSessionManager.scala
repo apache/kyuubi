@@ -239,7 +239,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ms.registerGauge(CONN_OPEN, getOpenSessionCount, 0)
       ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
-      ms.registerGauge(EXEC_POOL_WAIT, getWaitCount, 0)
+      ms.registerGauge(EXEC_POOL_WORK_QUEUE_SIZE, getWorkQueueSize, 0)
     }
     super.start()
   }

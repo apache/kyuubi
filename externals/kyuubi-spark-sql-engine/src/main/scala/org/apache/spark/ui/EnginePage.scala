@@ -85,8 +85,8 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
           {engine.backendService.sessionManager.getActiveCount}
         </li>
           <li>
-            <strong>Background execution pool queue size: </strong>
-            {engine.backendService.sessionManager.getWaitCount}
+            <strong>Background execution pool work queue size: </strong>
+            {engine.backendService.sessionManager.getWorkQueueSize}
           </li>
       }.getOrElse(Seq.empty)
     }
