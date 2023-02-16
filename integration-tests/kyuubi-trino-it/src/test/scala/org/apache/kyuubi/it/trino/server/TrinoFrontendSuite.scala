@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.it.trino.server
 
+import scala.util.control.NonFatal
+
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.SparkMetadataTests
@@ -42,4 +44,18 @@ class TrinoFrontendSuite extends WithKyuubiServer with SparkMetadataTests {
 
   // trino jdbc driver requires enable SSL if specify password
   override protected val password: String = ""
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+
+    // eagerly start spark engine before running test, it's a workaround for trino jdbc driver
+    // since it does not support changing http connect timeout
+    try {
+      withJdbcStatement() { statement =>
+        statement.execute("SELECT 1")
+      }
+    } catch {
+      case NonFatal(e) =>
+    }
+  }
 }
