@@ -80,9 +80,8 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       case e: Exception =>
         val errorMsg =
           s"Error submitting sql"
-        e.printStackTrace()
         error(errorMsg, e)
-        throw badRequest(BAD_REQUEST, errorMsg)
+        throw badRequest(BAD_REQUEST, errorMsg + "\n" + e.getMessage)
     }
   }
 
