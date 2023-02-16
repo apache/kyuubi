@@ -19,4 +19,5 @@ Connectors for Hive SQL Query Engine
 .. toctree::
     :maxdepth: 2
 
+    flink_table_store
     iceberg
