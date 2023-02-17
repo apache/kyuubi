@@ -31,8 +31,6 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
-
-
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
 
   private val settings = new ConcurrentHashMap[String, String]()

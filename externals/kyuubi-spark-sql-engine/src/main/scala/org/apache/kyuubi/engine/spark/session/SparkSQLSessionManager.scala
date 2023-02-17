@@ -31,9 +31,6 @@ import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
 import org.apache.kyuubi.util.ThreadUtils
 
-
-
-
 /**
  * A [[SessionManager]] constructed with [[SparkSession]] which give it the ability to talk with
  * Spark and let Spark do all the rest heavy work :)
@@ -42,7 +39,7 @@ import org.apache.kyuubi.util.ThreadUtils
  * @param spark A [[SparkSession]] instance that this [[SessionManager]] holds to create individual
  *              [[SparkSession]] for [[org.apache.kyuubi.session.Session]]s.
  */
-class SparkSQLSessionManager private(name: String, spark: SparkSession)
+class SparkSQLSessionManager private (name: String, spark: SparkSession)
   extends SessionManager(name) {
 
   def this(spark: SparkSession) = this(classOf[SparkSQLSessionManager].getSimpleName, spark)
@@ -128,18 +125,18 @@ class SparkSQLSessionManager private(name: String, spark: SparkSession)
 
   private def newSparkSession(rootSparkSession: SparkSession): SparkSession = {
     val newSparkSession = rootSparkSession.newSession()
-    val sqls: Seq[String] = KyuubiSparkUtil.getInitializeSql(newSparkSession,
-      conf.get(ENGINE_SESSION_INITIALIZE_SQL))
+    val sqls: Seq[String] =
+      KyuubiSparkUtil.getInitializeSql(newSparkSession, conf.get(ENGINE_SESSION_INITIALIZE_SQL))
     KyuubiSparkUtil.initializeSparkSession(newSparkSession, sqls)
     newSparkSession
   }
 
   override protected def createSession(
-                                        protocol: TProtocolVersion,
-                                        user: String,
-                                        password: String,
-                                        ipAddress: String,
-                                        conf: Map[String, String]): Session = {
+      protocol: TProtocolVersion,
+      user: String,
+      password: String,
+      ipAddress: String,
+      conf: Map[String, String]): Session = {
     val sparkSession =
       try {
         getOrNewSparkSession(user)

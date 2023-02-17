@@ -42,7 +42,6 @@ import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
 
-
 case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
 
   override val backendService = new SparkSQLBackendService(spark)
@@ -203,10 +202,11 @@ object SparkSQLEngine extends Logging {
       SparkTBinaryFrontendService.renewDelegationToken(session.sparkContext, credentials)
     }
 
-    val initSql = KyuubiSparkUtil.getInitializeSql(session,
-      kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL)) ++
-      KyuubiSparkUtil.getInitializeSql(session,
-        kyuubiConf.get(KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL))
+    val initSql =
+      KyuubiSparkUtil.getInitializeSql(session, kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL)) ++
+        KyuubiSparkUtil.getInitializeSql(
+          session,
+          kyuubiConf.get(KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL))
     KyuubiSparkUtil.initializeSparkSession(session, initSql)
     session
   }
@@ -280,14 +280,14 @@ object SparkSQLEngine extends Logging {
           countDownLatch.await()
         } catch {
           case e: KyuubiException => currentEngine match {
-            case Some(engine) =>
-              engine.stop()
-              val event = EngineEvent(engine)
-                .copy(endTime = System.currentTimeMillis(), diagnostic = e.getMessage)
-              EventBus.post(event)
-              error(event, e)
-            case _ => error("Current SparkSQLEngine is not created.")
-          }
+              case Some(engine) =>
+                engine.stop()
+                val event = EngineEvent(engine)
+                  .copy(endTime = System.currentTimeMillis(), diagnostic = e.getMessage)
+                EventBus.post(event)
+                error(event, e)
+              case _ => error("Current SparkSQLEngine is not created.")
+            }
 
         }
       } catch {

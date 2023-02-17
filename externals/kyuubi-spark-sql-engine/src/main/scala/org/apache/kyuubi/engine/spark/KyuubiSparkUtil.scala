@@ -34,10 +34,9 @@ import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INITIALIZE_SQL_TYPE, InitSqlT
 import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.kyuubiConf
 
-
 object KyuubiSparkUtil extends Logging {
 
-  type KVIndexParam = KVIndex@getter
+  type KVIndexParam = KVIndex @getter
 
   final val SPARK_SCHEDULER_POOL_KEY = "spark.scheduler.pool"
   final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
@@ -60,8 +59,7 @@ object KyuubiSparkUtil extends Logging {
     }
   }
 
-  def getInitializeSql(sparkSession: SparkSession,
-                       config: Seq[String]): Seq[String] = {
+  def getInitializeSql(sparkSession: SparkSession, config: Seq[String]): Seq[String] = {
 
     def getSqlTextFromFile(path: Option[String]): Seq[String] = {
       path.map(filePath => {
