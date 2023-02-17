@@ -131,6 +131,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Build and test Kyuubi AuthZ with supported Spark versions
         run: |
           TEST_MODULES="extensions/spark/kyuubi-spark-authz"
@@ -263,6 +265,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Build and test JDBC with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
@@ -298,6 +302,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Build and test Trino with maven w/o linters
         run: |
           TEST_MODULES="kyuubi-server,externals/kyuubi-trino-engine,externals/kyuubi-spark-sql-engine,externals/kyuubi-download,integration-tests/kyuubi-trino-it"
@@ -328,6 +334,8 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Run TPC-DS Tests
         run: |
           TEST_MODULES="kyuubi-server,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch"
@@ -356,6 +364,8 @@ jobs:
           file: build/Dockerfile
           load: true
           tags: apache/kyuubi:latest
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Setup Minikube
         run: |
           # https://minikube.sigs.k8s.io/docs/start/
@@ -405,6 +415,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Setup Minikube
         run: |
           # https://minikube.sigs.k8s.io/docs/start/
@@ -460,6 +472,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: zookeeper integration tests
         run: |
           export KYUUBI_IT_ZOOKEEPER_VERSION=${{ matrix.zookeeper }}
