@@ -27,9 +27,9 @@ import org.apache.kyuubi.config.KyuubiConf
 private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with Logging {
   var ipAddress: String = _
   var port: Int = _
-  val ATTR_TARGET_IP = classOf[ProxyServlet].getSimpleName + ".ipAddress"
-  val ATTR_TARGET_PORT = classOf[ProxyServlet].getSimpleName + ".port"
-
+  // val ATTR_TARGET_IP = classOf[ProxyServlet].getSimpleName + ".ipAddress"
+  // val ATTR_TARGET_PORT = classOf[ProxyServlet].getSimpleName + ".port"
+  val CONTEXT_HEADER = "X-Forwarded-Context"
   override def rewriteTarget(request: HttpServletRequest): String = {
     var targetUrl = "/no-ui-error"
     val requestUrl = request.getRequestURI
@@ -39,14 +39,18 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     if (url != null && url.length > 0) {
       ipAddress = url(2).split(":")(0)
       port = url(2).split(":")(1).toInt
-      val path = requestUrl.substring(("/" + url(1) + "/" + url(2) + "/").length)
+      var path = "jobs/"
+      if (requestUrl.substring(("/" + url(1) + "/" + url(2) + "/").length).nonEmpty) {
+        path = requestUrl.substring(("/" + url(1) + "/" + url(2) + "/").length)
+      }
       targetUrl = String.format(
-        "http://%s:%s/%s/",
+        "http://%s:%s/%s",
         ipAddress,
         port.toString,
         path)
-      request.setAttribute(ATTR_TARGET_IP, ipAddress)
-      request.setAttribute(ATTR_TARGET_PORT, port)
+      // request.setAttribute(ATTR_TARGET_IP, ipAddress)
+      // request.setAttribute(ATTR_TARGET_PORT, port)
+      request.setAttribute(CONTEXT_HEADER, s"/proxy/$ipAddress:$port")
       logger.info("ui -> {}", targetUrl)
     }
     targetUrl
