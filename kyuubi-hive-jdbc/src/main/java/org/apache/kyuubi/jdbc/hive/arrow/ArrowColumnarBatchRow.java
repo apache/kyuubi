@@ -141,11 +141,6 @@ public class ArrowColumnarBatchRow {
         } else {
           LocalDateTime localDateTime =
               DateUtility.getLocalDateTimeFromEpochMicro(getLong(ordinal), timeZone);
-          long millis = TimeUnit.MICROSECONDS.toMillis(getLong(ordinal));
-          TimeZone zone = TimeZone.getTimeZone(timeZone);
-          localDateTime =
-              localDateTime.minus(
-                  zone.getOffset(millis) - zone.getOffset(millis), ChronoUnit.MILLIS);
           return Timestamp.valueOf(localDateTime);
         }
       case DATE_TYPE:
