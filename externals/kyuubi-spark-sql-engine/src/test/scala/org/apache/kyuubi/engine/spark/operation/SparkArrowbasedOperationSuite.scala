@@ -73,21 +73,15 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         assert(rs.next())
       }
 
-      // timestampAsString = true
-      statement.executeQuery(s"set ${KyuubiConf.ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING.key}=true")
-      checkArrowBasedRowSetTimestampAsString(statement, "true")
-      setTimeZone("UTC")
-      check("2022-12-07 17:15:35.0")
-      setTimeZone("GMT+8")
-      check("2022-12-08 01:15:35.0")
-
-      // timestampAsString = false
-      statement.executeQuery(s"set ${KyuubiConf.ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING.key}=false")
-      checkArrowBasedRowSetTimestampAsString(statement, "false")
-      setTimeZone("UTC")
-      check("2022-12-07 17:15:35.0")
-      setTimeZone("GMT+8")
-      check("2022-12-08 01:15:35.0")
+      Seq("true", "false").foreach { timestampAsString =>
+        statement.executeQuery(
+          s"set ${KyuubiConf.ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING.key}=$timestampAsString")
+        checkArrowBasedRowSetTimestampAsString(statement, timestampAsString)
+        setTimeZone("UTC")
+        check("2022-12-07 17:15:35.0")
+        setTimeZone("GMT+8")
+        check("2022-12-08 01:15:35.0")
+      }
     }
   }
 

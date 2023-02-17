@@ -37,7 +37,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiStatement.class.getName());
   public static final int DEFAULT_FETCH_SIZE = 1000;
   public static final String DEFAULT_RESULT_FORMAT = "thrift";
-  public static final String DEFAULT_ARROW_TIMESTAMP_AS_STRING = "true";
+  public static final String DEFAULT_ARROW_TIMESTAMP_AS_STRING = "false";
   private final KyuubiConnection connection;
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle = null;

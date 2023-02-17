@@ -280,7 +280,7 @@ abstract class SparkOperation(session: Session)
   }
 
   protected def timestampAsString: Boolean = {
-    spark.conf.get("kyuubi.operation.result.arrow.timestampAsString", "true").toBoolean
+    spark.conf.get("kyuubi.operation.result.arrow.timestampAsString", "false").toBoolean
   }
 
   protected def setSessionUserSign(): Unit = {
