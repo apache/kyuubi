@@ -76,12 +76,7 @@ class RuleApplyDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
         val are = AccessResource(COLUMN, table.database.orNull, table.table, e.name)
         val art = AccessRequest(are, ugi, opType, SELECT)
         val maskExprStr = SparkRangerAdminPlugin.getMaskingExpr(art)
-        if (maskExprStr.isEmpty) {
-          e
-        } else {
-          val maskExpr = parse(maskExprStr.get)
-          Alias(maskExpr, e.name)()
-        }
+        maskExprStr.map(parse).map(Alias(_, e.name)()).getOrElse(e)
     }
     if (newPlan == plan) {
       plan
