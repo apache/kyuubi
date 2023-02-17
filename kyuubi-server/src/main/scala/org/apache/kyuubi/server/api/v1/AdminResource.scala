@@ -85,6 +85,25 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "refresh the unlimited users")
+  @POST
+  @Path("refresh/unlimited_users")
+  def refreshUnlimitedUser(): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Receive refresh unlimited users request from $userName/$ipAddress")
+    if (!userName.equals(administrator)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to refresh the unlimited users")
+    }
+    info(s"Reloading unlimited users")
+    KyuubiServer.refreshUnlimitedUsers()
+    Response.ok(s"Refresh the unlimited users successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "delete kyuubi engine")
   @DELETE
   @Path("engine")
