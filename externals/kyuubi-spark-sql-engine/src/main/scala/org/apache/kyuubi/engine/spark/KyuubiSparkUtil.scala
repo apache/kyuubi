@@ -17,20 +17,27 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.io.{BufferedReader, InputStreamReader}
 import java.time.{Instant, LocalDateTime, ZoneId}
 
 import scala.annotation.meta.getter
+import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
 
+import org.apache.hadoop.fs.{FileSystem, FSDataInputStream, Path}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.kvstore.KVIndex
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INITIALIZE_SQL_TYPE, InitSqlType}
 import org.apache.kyuubi.engine.SemanticVersion
+import org.apache.kyuubi.engine.spark.SparkSQLEngine.kyuubiConf
+
 
 object KyuubiSparkUtil extends Logging {
 
-  type KVIndexParam = KVIndex @getter
+  type KVIndexParam = KVIndex@getter
 
   final val SPARK_SCHEDULER_POOL_KEY = "spark.scheduler.pool"
   final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
@@ -44,6 +51,7 @@ object KyuubiSparkUtil extends Logging {
         sql,
         interruptOnCancel = true)
       debug(s"Execute initialization sql: $sql")
+
       try {
         spark.sql(sql).isEmpty
       } finally {
@@ -52,7 +60,50 @@ object KyuubiSparkUtil extends Logging {
     }
   }
 
+  def getInitializeSql(sparkSession: SparkSession,
+                       config: Seq[String]): Seq[String] = {
+
+    def getSqlTextFromFile(path: Option[String]): Seq[String] = {
+      path.map(filePath => {
+        var reader: BufferedReader = null
+        try {
+          info(s"========>load init sql from file: ${filePath}")
+          val engineInitSqlFilePath = new Path(filePath)
+          val hadoopConf = sparkSession.sparkContext.hadoopConfiguration
+          val fs: FileSystem = engineInitSqlFilePath.getFileSystem(hadoopConf)
+          if (fs.exists(engineInitSqlFilePath)) {
+            val sqlInputStream: FSDataInputStream = fs.open(engineInitSqlFilePath)
+            reader = new BufferedReader(new InputStreamReader(sqlInputStream))
+            // Filter out the sql using '--' comment
+            val sqlText = ListBuffer[String]()
+            Stream.continually(reader.readLine())
+              .takeWhile(null != _).filter(item => !item.startsWith("--") && item.length > 0)
+              .map(item => item.replace(";", "")).foreach(item => sqlText.append(item))
+            sqlText.toSeq
+          } else {
+            Nil
+          }
+        } catch {
+          case NonFatal(e) =>
+            warn(s"Failed to initialize engine initialize sql file: ${e.getMessage}")
+            Nil
+        } finally {
+          if (null != reader) {
+            reader.close()
+          }
+        }
+      }).getOrElse(Nil)
+    }
+
+    if (kyuubiConf.get(ENGINE_INITIALIZE_SQL_TYPE) == InitSqlType.SQL.toString) {
+      config
+    } else {
+      getSqlTextFromFile(config.headOption)
+    }
+  }
+
   def engineId: String = globalSparkContext.applicationId
+
   def deployMode: String = {
     if (globalSparkContext.getConf.getBoolean("spark.kubernetes.submitInDriver", false)) {
       "cluster"

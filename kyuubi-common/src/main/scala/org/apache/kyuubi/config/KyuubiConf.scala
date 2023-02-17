@@ -31,10 +31,13 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
+
+
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
 
   private val settings = new ConcurrentHashMap[String, String]()
   private lazy val reader: ConfigProvider = new ConfigProvider(settings)
+
   private def loadFromMap(props: Map[String, String]): Unit = {
     settings.putAll(props.asJava)
   }
@@ -122,7 +125,8 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   /**
    * Retrieve key-value pairs from [[KyuubiConf]] starting with `dropped.remainder`, and put them to
    * the result map with the `dropped` of key being dropped.
-   * @param dropped first part of prefix which will dropped for the new key
+   *
+   * @param dropped   first part of prefix which will dropped for the new key
    * @param remainder second part of the prefix which will be remained in the key
    */
   def getAllWithPrefix(dropped: String, remainder: String): Map[String, String] = {
@@ -1391,6 +1395,30 @@ object KyuubiConf {
       .toSequence(";")
       .createWithDefault(Nil)
 
+  val ENGINE_INITIALIZE_SQL_TYPE: ConfigEntry[String] =
+    buildConf("kyuubi.engine.initialize.sql.type")
+      .doc(s"When set kyuubi.engine.initialize.sql.type=${InitSqlType.PATH}" +
+        s",you can use the hdfs path  set ${ENGINE_SESSION_INITIALIZE_SQL} " +
+        s"and ${ENGINE_INITIALIZE_SQL}")
+      .version("1.6.2")
+      .stringConf
+      .createWithDefaultString(InitSqlType.SQL.toString)
+
+  object InitSqlType extends Enumeration with Logging {
+    type InitSqlType = Value
+    val SQL, PATH, UNKNOWN = Value
+
+    def apply(sqlType: String): InitSqlType = {
+      sqlType.toUpperCase(Locale.ROOT) match {
+        case "SQL" => SQL
+        case "PATH" => PATH
+        case other =>
+          warn(s"Unsupported type: $sqlType, using UNKNOWN instead")
+          UNKNOWN
+      }
+    }
+  }
+
   val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.deregister.exception.classes")
       .doc("A comma separated list of exception classes. If there is any exception thrown," +
@@ -1945,7 +1973,7 @@ object KyuubiConf {
   /**
    * Holds information about keys that have been deprecated.
    *
-   * @param key The deprecated key.
+   * @param key     The deprecated key.
    * @param version Version of Kyuubi where key was deprecated.
    * @param comment Additional info regarding to the removed config. For example,
    *                reasons of config deprecation, what users should use instead of it.
