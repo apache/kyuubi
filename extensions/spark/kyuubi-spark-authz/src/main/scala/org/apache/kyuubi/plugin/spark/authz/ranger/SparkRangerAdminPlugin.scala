@@ -28,9 +28,9 @@ import org.apache.spark.sql.connector.catalog.Table
 import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.ObjectType.COLUMN
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider
-import org.apache.kyuubi.plugin.spark.authz.ObjectType.COLUMN
 
 object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
   with RangerConfigProvider {
