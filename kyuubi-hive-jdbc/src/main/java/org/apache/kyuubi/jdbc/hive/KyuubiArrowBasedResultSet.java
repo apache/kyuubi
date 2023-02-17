@@ -312,18 +312,19 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
       wasNull = row.isNullAt(columnIndex - 1);
       if (wasNull) {
         return null;
-      } else if (columnType == TTypeId.TIMESTAMP_TYPE) {
+      } else {
+        JdbcColumnAttributes attributes = columnAttributes.get(columnIndex - 1);
         return row.get(
             columnIndex - 1,
             columnType,
-            columnAttributes.get(columnIndex - 1).timeZone,
+            attributes == null ? null : attributes.timeZone,
             timestampAsString);
-      } else {
-        return row.get(columnIndex - 1, columnType, null, timestampAsString);
       }
     } catch (Exception e) {
-      e.printStackTrace();
-      throw new KyuubiSQLException("Unrecognized column type:", e);
+      throw new KyuubiSQLException(
+          String.format(
+              "Error getting row of type %s at column index %d", columnType, columnIndex - 1),
+          e);
     }
   }
 
