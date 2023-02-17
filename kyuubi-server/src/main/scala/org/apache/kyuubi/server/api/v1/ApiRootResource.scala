@@ -107,10 +107,6 @@ private[server] object ApiRootResource {
     val contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
     contextHandler.setContextPath("/proxy");
     contextHandler.addServlet(holder, "/*")
-    //  contextHandler.addFilter(
-    //     new FilterHolder(new ResponseFilter()),
-    //    "/*",
-    //    EnumSet.allOf(classOf[DispatcherType]))
     contextHandlerCollection.addHandler(contextHandler)
   }
 }
