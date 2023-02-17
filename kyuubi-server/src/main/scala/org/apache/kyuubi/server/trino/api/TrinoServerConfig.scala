@@ -21,6 +21,6 @@ import org.glassfish.jersey.server.ResourceConfig
 
 class TrinoServerConfig extends ResourceConfig {
   packages("org.apache.kyuubi.server.trino.api.v1")
-  register(classOf[KyuubiScalaObjectMapper])
+  register(classOf[TrinoScalaObjectMapper])
   register(classOf[RestExceptionMapper])
 }
