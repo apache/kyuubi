@@ -33,6 +33,7 @@ import org.apache.kyuubi.ha.client.{AuthTypes, ServiceDiscovery}
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf
 import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable, ServiceState}
+import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
@@ -127,6 +128,16 @@ object KyuubiServer extends Logging {
     }
     info(s"Refreshed user defaults configs with changes of " +
       s"unset: $unsetCount, updated: $updatedCount, added: $addedCount")
+  }
+
+  private[kyuubi] def refreshUnlimitedUsers(): Unit = synchronized {
+    val existingUnlimitedUsers =
+      kyuubiServer.conf.get(KyuubiConf.SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).toSet
+    val refreshedUnlimitedUsers = KyuubiConf().loadFileDefaults().get(
+      KyuubiConf.SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).toSet
+    kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+      .refreshUnlimitedUsers(refreshedUnlimitedUsers)
+    info(s"Refreshed unlimited users from $existingUnlimitedUsers to $refreshedUnlimitedUsers")
   }
 }
 
