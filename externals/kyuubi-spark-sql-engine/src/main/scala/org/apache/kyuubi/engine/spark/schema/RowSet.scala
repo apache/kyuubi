@@ -31,11 +31,10 @@ import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
 
-  def toHiveString(
-      valueAndType: (Any, DataType),
-      nested: Boolean = false): String = {
+  def toHiveString(valueAndType: (Any, DataType), nested: Boolean = false): String = {
     // compatible w/ Spark 3.1 and above
-    HiveResult.toHiveString(valueAndType, nested, HiveResult.getTimeFormatters)
+    val timeFormatters = HiveResult.getTimeFormatters
+    HiveResult.toHiveString(valueAndType, nested, timeFormatters)
   }
 
   def toTRowSet(
