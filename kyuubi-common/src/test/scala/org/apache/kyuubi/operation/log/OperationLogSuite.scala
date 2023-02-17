@@ -61,10 +61,10 @@ class OperationLogSuite extends KyuubiFunSuite {
     assert(!Files.exists(logFile))
 
     OperationLog.setCurrentOperationLog(operationLog)
-    assert(OperationLog.getCurrentOperationLog === operationLog)
+    assert(OperationLog.getCurrentOperationLog === Some(operationLog))
 
     OperationLog.removeCurrentOperationLog()
-    assert(OperationLog.getCurrentOperationLog === null)
+    assert(OperationLog.getCurrentOperationLog.isEmpty)
 
     operationLog.write(msg1 + "\n")
     assert(Files.exists(logFile))

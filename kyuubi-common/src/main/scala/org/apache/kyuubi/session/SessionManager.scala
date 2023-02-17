@@ -172,6 +172,11 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     execPool.getActiveCount
   }
 
+  def getWorkQueueSize: Int = {
+    assert(execPool != null)
+    execPool.getQueue.size()
+  }
+
   private var _confRestrictList: Set[String] = _
   private var _confIgnoreList: Set[String] = _
   private var _batchConfIgnoreList: Set[String] = _
