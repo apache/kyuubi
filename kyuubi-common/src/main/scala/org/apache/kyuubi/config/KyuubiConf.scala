@@ -2333,7 +2333,7 @@ object KyuubiConf {
 
   val SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.server.limit.connections.user.unlimited.list")
-      .doc("The maximin connections of the user in the white list will not be limited.")
+      .doc("The maximum connections of the user in the white list will not be limited.")
       .version("1.7.0")
       .serverOnly
       .stringConf

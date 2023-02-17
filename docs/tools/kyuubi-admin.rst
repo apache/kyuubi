@@ -72,7 +72,7 @@ Usage: ``bin/kyuubi-admin refresh config [options] [<configType>]``
    * - userDefaultsConf
      - The user defaults configs with key in format in the form of `___{username}___.{config key}` from default property file.
    * - unlimitedUsers
-     - The users without maximin connections limitation.
+     - The users without maximum connections limitation.
 
 .. _list_engine:
 

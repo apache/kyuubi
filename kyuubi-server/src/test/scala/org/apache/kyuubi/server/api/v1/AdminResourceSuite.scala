@@ -84,7 +84,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response.getStatus)
   }
 
-  test("refresh unlimited users the kyuubi server") {
+  test("refresh unlimited users of the kyuubi server") {
     var response = webTarget.path("api/v1/admin/refresh/unlimited_users")
       .request()
       .post(null)

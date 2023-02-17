@@ -119,7 +119,7 @@ class SessionLimiterWithUnlimitedUsersImpl(
     }
   }
 
-  def setUnlimitedUsers(unlimitedUsers: Set[String]): Unit = {
+  private[kyuubi] def setUnlimitedUsers(unlimitedUsers: Set[String]): Unit = {
     this.unlimitedUsers = unlimitedUsers
   }
 }
