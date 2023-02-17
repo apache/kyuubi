@@ -79,7 +79,6 @@ jobs:
           check-latest: false
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
-        if: matrix.spark-archive != ''
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -183,7 +182,6 @@ jobs:
           check-latest: false
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
-        if: matrix.flink-archive != ''
       - name: Build Flink with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
