@@ -299,6 +299,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       userUnlimitedList)
   }
 
+  private[kyuubi] def refreshUnlimitedUsers(userUnlimitedList: Set[String]): Unit = {
+    limiter.foreach(SessionLimiter.resetUnlimitedUsers(_, userUnlimitedList))
+    batchLimiter.foreach(SessionLimiter.resetUnlimitedUsers(_, userUnlimitedList))
+  }
+
   private def applySessionLimiter(
       userLimit: Int,
       ipAddressLimit: Int,

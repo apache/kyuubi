@@ -84,6 +84,24 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response.getStatus)
   }
 
+  test("refresh unlimited users of the kyuubi server") {
+    var response = webTarget.path("api/v1/admin/refresh/unlimited_users")
+      .request()
+      .post(null)
+    assert(405 == response.getStatus)
+
+    val adminUser = Utils.currentUser
+    val encodeAuthorization = new String(
+      Base64.getEncoder.encode(
+        s"$adminUser:".getBytes()),
+      "UTF-8")
+    response = webTarget.path("api/v1/admin/refresh/unlimited_users")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .post(null)
+    assert(200 == response.getStatus)
+  }
+
   test("delete engine - user share level") {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
