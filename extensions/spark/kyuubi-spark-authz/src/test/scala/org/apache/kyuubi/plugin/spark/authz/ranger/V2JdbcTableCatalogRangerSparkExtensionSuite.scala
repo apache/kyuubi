@@ -20,7 +20,6 @@ import java.sql.DriverManager
 
 import scala.util.Try
 
-import org.apache.commons.codec.digest.DigestUtils
 import org.apache.spark.sql.Row
 
 // scalastyle:off
@@ -107,7 +106,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     val e1 = intercept[AccessControlException](
       doAs("someone", sql(s"select city, id from $catalogV2.$namespace1.$table1").explain()))
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/id]"))
+      s" on [$namespace1/$table1/city]"))
   }
 
   test("[KYUUBI #4255] DESCRIBE TABLE") {
@@ -373,7 +372,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
       doAs(
         "bob", {
           assert(sql(s"SELECT value2 FROM $catalogV2.$namespace1.$table2").collect() ===
-            Seq(Row(DigestUtils.md5Hex("1"))))
+            Seq(Row("n")))
         })
     }
   }

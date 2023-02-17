@@ -18,16 +18,17 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.Alias
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
 
 import org.apache.kyuubi.plugin.spark.authz.ObjectType
 import org.apache.kyuubi.plugin.spark.authz.serde._
-import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilterAndDataMaskingMarker}
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getAuthzUgi
+import org.apache.kyuubi.plugin.spark.authz.util.RowFilterMarker
 
-class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
+class RuleApplyRowFilter(spark: SparkSession) extends Rule[LogicalPlan] {
+  private val parse = spark.sessionState.sqlParser.parseExpression _
+
   private def mapChildren(plan: LogicalPlan)(f: LogicalPlan => LogicalPlan): LogicalPlan = {
     val newChildren = plan match {
       case cmd if isKnownTableCommand(cmd) =>
@@ -45,46 +46,21 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
     mapChildren(plan) {
-      case p: RowFilterAndDataMaskingMarker => p
+      case p: RowFilterMarker => p
       case scan if isKnownScan(scan) && scan.resolved =>
         val tables = getScanSpec(scan).tables(scan, spark)
-        tables.headOption.map(applyFilterAndMasking(scan, _)).getOrElse(scan)
+        tables.headOption.map(applyFilter(scan, _)).getOrElse(scan)
       case other => apply(other)
     }
   }
-
-  private def applyFilterAndMasking(
+  private def applyFilter(
       plan: LogicalPlan,
       table: Table): LogicalPlan = {
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = operationType(plan)
-    val parse = spark.sessionState.sqlParser.parseExpression _
     val are = AccessResource(ObjectType.TABLE, table.database.orNull, table.table, null)
     val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
-    val filterExprStr = SparkRangerAdminPlugin.getFilterExpr(art)
-    val newOutput = plan.output.map { attr =>
-      val are =
-        AccessResource(ObjectType.COLUMN, table.database.orNull, table.table, attr.name)
-      val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
-      val maskExprStr = SparkRangerAdminPlugin.getMaskingExpr(art)
-      if (maskExprStr.isEmpty) {
-        attr
-      } else {
-        val maskExpr = parse(maskExprStr.get)
-        plan match {
-          case _: PermanentViewMarker =>
-            Alias(maskExpr, attr.name)(exprId = attr.exprId)
-          case _ =>
-            Alias(maskExpr, attr.name)()
-        }
-      }
-    }
-
-    if (filterExprStr.isEmpty) {
-      Project(newOutput, RowFilterAndDataMaskingMarker(plan))
-    } else {
-      val filterExpr = parse(filterExprStr.get)
-      Project(newOutput, Filter(filterExpr, RowFilterAndDataMaskingMarker(plan)))
-    }
+    val filterExpr = SparkRangerAdminPlugin.getFilterExpr(art).map(parse)
+    filterExpr.foldLeft(plan)((p, e) => Filter(e, RowFilterMarker(p)))
   }
 }

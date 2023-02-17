@@ -19,10 +19,9 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 // scalastyle:off
 import scala.util.Try
 
-import org.apache.commons.codec.digest.DigestUtils
-import org.apache.kyuubi.Utils
 import org.apache.spark.sql.Row
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 
 /**
@@ -252,7 +251,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       doAs(
         "bob", {
           assert(sql(s"SELECT value2 FROM $catalogV2.$namespace1.$table2").collect() ===
-            Seq(Row(DigestUtils.md5Hex("1"))))
+            Seq(Row("n")))
         })
     }
   }
