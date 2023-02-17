@@ -131,7 +131,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def execPoolStatistic(): ExecPoolStatistic = {
     new ExecPoolStatistic(
       sessionManager.getExecPoolSize,
-      sessionManager.getActiveCount)
+      sessionManager.getActiveCount,
+      sessionManager.getWorkQueueSize)
   }
 
   @ApiResponse(
