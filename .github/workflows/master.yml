@@ -56,13 +56,11 @@ jobs:
         include:
           - java: 8
             spark: '3.3'
-            spark-archive-version: '3.1.3'
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.3 -Dspark.archive.name=spark-3.1.3-bin-hadoop3.2.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
             comment: 'verify-on-spark-3.1-binary'
           - java: 8
             spark: '3.3'
-            spark-archive-version: '3.2.3'
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.3 -Dspark.archive.name=spark-3.2.3-bin-hadoop3.2.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
             comment: 'verify-on-spark-3.2-binary'
@@ -166,12 +164,10 @@ jobs:
         include:
           - java: 8
             flink: '1.16'
-            flink-archive-version: '1.14.6'
             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.14.6 -Dflink.archive.name=flink-1.14.6-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.14-binary'
           - java: 8
             flink: '1.16'
-            flink-archive-version: '1.15.3'
             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.3 -Dflink.archive.name=flink-1.15.3-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.15-binary'
     steps:
