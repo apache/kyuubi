@@ -138,10 +138,14 @@ object SessionLimiter {
       unlimitedUsers)
   }
 
-  def resetUnlimitedUsers(limiter: SessionLimiter, unlimitedUsers: Set[String]): Unit = {
+  def resetUnlimitedUsers(limiter: SessionLimiter, unlimitedUsers: Set[String]): Unit =
     limiter match {
       case l: SessionLimiterWithUnlimitedUsersImpl => l.setUnlimitedUsers(unlimitedUsers)
       case _ =>
     }
+
+  def getUnlimitedUsers(limiter: SessionLimiter): Set[String] = limiter match {
+    case l: SessionLimiterWithUnlimitedUsersImpl => l.unlimitedUsers
+    case _ => Set.empty
   }
 }
