@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server.api
 
-import java.net.URLEncoder
+import java.net.URLDecoder
 import javax.servlet.http.HttpServletRequest
 
 import org.eclipse.jetty.client.api.Request
@@ -29,8 +29,6 @@ import org.apache.kyuubi.config.KyuubiConf
 private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with Logging {
   var ipAddress: String = _
   var port: Int = _
-  // val ATTR_TARGET_IP = classOf[ProxyServlet].getSimpleName + ".ipAddress"
-  // val ATTR_TARGET_PORT = classOf[ProxyServlet].getSimpleName + ".port"
   val CONTEXT_HEADER_KEY = "X-Forwarded-Context"
   var CONTEXT_HEADER_VALUE = ""
 
@@ -52,8 +50,6 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
         ipAddress,
         port.toString,
         path) + getQueryString(request)
-      // request.setAttribute(ATTR_TARGET_IP, ipAddress)
-      // request.setAttribute(ATTR_TARGET_PORT, port)
       CONTEXT_HEADER_VALUE = s"/proxy/$ipAddress:$port"
       logger.info("ui -> {}", targetUrl)
     }
@@ -81,11 +77,11 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     }
     if (queryString != null && queryString.length() > 0) {
       result.append('?')
-      result.append(URLEncoder.encode(queryString, "UTF-8"))
+      result.append(URLDecoder.decode(queryString, "UTF-8"))
     }
     if (fragment != null && fragment.length() > 0) {
       result.append('#')
-      result.append(URLEncoder.encode(fragment, "UTF-8"))
+      result.append(URLDecoder.decode(fragment, "UTF-8"))
     }
     result.toString()
   }
