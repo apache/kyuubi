@@ -65,23 +65,10 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
 
   def getQueryString(servletRequest: HttpServletRequest): String = {
     val result = new StringBuilder()
-    // name=value&foo=bar#fragment
-    var queryString = servletRequest.getQueryString()
-    var fragment = ""
-    if (queryString != null) {
-      val fragIdx = queryString.indexOf('#')
-      if (fragIdx >= 0) {
-        fragment = queryString.substring(fragIdx + 1)
-        queryString = queryString.substring(0, fragIdx)
-      }
-    }
+    val queryString = servletRequest.getQueryString()
     if (queryString != null && queryString.length() > 0) {
       result.append('?')
       result.append(URLDecoder.decode(queryString, "UTF-8"))
-    }
-    if (fragment != null && fragment.length() > 0) {
-      result.append('#')
-      result.append(URLDecoder.decode(fragment, "UTF-8"))
     }
     result.toString()
   }
