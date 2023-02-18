@@ -17,8 +17,10 @@
 
 package org.apache.kyuubi.server.api
 
+import java.net.URLEncoder
 import javax.servlet.http.HttpServletRequest
 
+import org.eclipse.jetty.client.api.Request
 import org.eclipse.jetty.proxy.ProxyServlet
 
 import org.apache.kyuubi.Logging
@@ -29,7 +31,9 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
   var port: Int = _
   // val ATTR_TARGET_IP = classOf[ProxyServlet].getSimpleName + ".ipAddress"
   // val ATTR_TARGET_PORT = classOf[ProxyServlet].getSimpleName + ".port"
-  val CONTEXT_HEADER = "X-Forwarded-Context"
+  val CONTEXT_HEADER_KEY = "X-Forwarded-Context"
+  var CONTEXT_HEADER_VALUE = ""
+
   override def rewriteTarget(request: HttpServletRequest): String = {
     var targetUrl = "/no-ui-error"
     val requestUrl = request.getRequestURI
@@ -47,13 +51,43 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
         "http://%s:%s/%s",
         ipAddress,
         port.toString,
-        path)
+        path) + getQueryString(request)
       // request.setAttribute(ATTR_TARGET_IP, ipAddress)
       // request.setAttribute(ATTR_TARGET_PORT, port)
-      request.setAttribute(CONTEXT_HEADER, s"/proxy/$ipAddress:$port")
+      CONTEXT_HEADER_VALUE = s"/proxy/$ipAddress:$port"
       logger.info("ui -> {}", targetUrl)
     }
     targetUrl
+  }
+
+  override def addXForwardedHeaders(
+      clientRequest: HttpServletRequest,
+      proxyRequest: Request): Unit = {
+    proxyRequest.header(CONTEXT_HEADER_KEY, CONTEXT_HEADER_VALUE)
+    super.addXForwardedHeaders(clientRequest, proxyRequest)
+  }
+
+  def getQueryString(servletRequest: HttpServletRequest): String = {
+    val result = new StringBuilder()
+    // name=value&foo=bar#fragment
+    var queryString = servletRequest.getQueryString()
+    var fragment = ""
+    if (queryString != null) {
+      val fragIdx = queryString.indexOf('#')
+      if (fragIdx >= 0) {
+        fragment = queryString.substring(fragIdx + 1)
+        queryString = queryString.substring(0, fragIdx)
+      }
+    }
+    if (queryString != null && queryString.length() > 0) {
+      result.append('?')
+      result.append(URLEncoder.encode(queryString, "UTF-8"))
+    }
+    if (fragment != null && fragment.length() > 0) {
+      result.append('#')
+      result.append(URLEncoder.encode(fragment, "UTF-8"))
+    }
+    result.toString()
   }
 
 }
