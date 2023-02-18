@@ -29,10 +29,7 @@ import org.apache.spark.sql.execution.datasources.{DynamicPartitionDataSingleWri
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.sparkHadoopWriterUtils
 
 /**
- * TODO:
- * 1. This class is rewrite because SPARK-42478.
- * 2. If a later version of spark 3.3.x is released and SPARK-42478 is fixed,
- *    we can remove this class
+ * This class is rewritten because of SPARK-42478, which affects Spark 3.3.2
  */
 case class FileWriterFactory(
     description: WriteJobDescription,
