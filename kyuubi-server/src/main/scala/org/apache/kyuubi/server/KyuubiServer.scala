@@ -133,8 +133,7 @@ object KyuubiServer extends Logging {
   private[kyuubi] def refreshUnlimitedUsers(): Unit = synchronized {
     val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
     val existingUnlimitedUsers = sessionMgr.getUnlimitedUsers()
-    sessionMgr.refreshUnlimitedUsers(KyuubiConf().loadFileDefaults().get(
-      KyuubiConf.SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).toSet)
+    sessionMgr.refreshUnlimitedUsers(KyuubiConf().loadFileDefaults())
     val refreshedUnlimitedUsers = sessionMgr.getUnlimitedUsers()
     info(s"Refreshed unlimited users from $existingUnlimitedUsers to $refreshedUnlimitedUsers")
   }
