@@ -58,11 +58,13 @@ abstract class KyuubiSession(
     ms.incCount(CONN_TOTAL)
     ms.incCount(MetricRegistry.name(CONN_TOTAL, sessionType.toString))
     ms.incCount(MetricRegistry.name(CONN_OPEN, user))
+    ms.incCount(MetricRegistry.name(CONN_OPEN, user, sessionType.toString))
     ms.incCount(MetricRegistry.name(CONN_OPEN, sessionType.toString))
   }
 
   protected def traceMetricsOnClose(): Unit = MetricsSystem.tracing { ms =>
     ms.decCount(MetricRegistry.name(CONN_OPEN, user))
+    ms.decCount(MetricRegistry.name(CONN_OPEN, user, sessionType.toString))
     ms.decCount(MetricRegistry.name(CONN_OPEN, sessionType.toString))
   }
 }
