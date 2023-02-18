@@ -20,6 +20,7 @@ package org.apache.spark.sql.hive.kyuubi.connector
 import scala.collection.mutable
 
 import org.apache.spark.SparkContext
+import org.apache.spark.internal.io.SparkHadoopWriterUtils
 import org.apache.spark.rdd.InputFileBlockHolder
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, ExternalCatalogEvent}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Literal}
@@ -43,6 +44,7 @@ object HiveBridgeHelper {
   val hive = org.apache.spark.sql.hive.client.hive
   val logicalExpressions: LogicalExpressions.type = LogicalExpressions
   val hiveClientImpl: HiveClientImpl.type = HiveClientImpl
+  val sparkHadoopWriterUtils: SparkHadoopWriterUtils.type = SparkHadoopWriterUtils
   val catalogV2Util: CatalogV2Util.type = CatalogV2Util
   val hiveTableUtil: HiveTableUtil.type = HiveTableUtil
   val hiveShim: HiveShim.type = HiveShim
