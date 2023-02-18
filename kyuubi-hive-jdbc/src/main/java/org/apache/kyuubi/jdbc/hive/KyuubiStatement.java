@@ -37,6 +37,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiStatement.class.getName());
   public static final int DEFAULT_FETCH_SIZE = 1000;
   public static final String DEFAULT_RESULT_FORMAT = "thrift";
+  public static final String DEFAULT_ARROW_TIMESTAMP_AS_STRING = "false";
   private final KyuubiConnection connection;
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle = null;
@@ -45,7 +46,8 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private int fetchSize = DEFAULT_FETCH_SIZE;
   private boolean isScrollableResultset = false;
   private boolean isOperationComplete = false;
-  private Map<String, String> properties = new HashMap<>();
+
+  private Map<String, String> properties = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
   /**
    * We need to keep a reference to the result set to support the following: <code>
    * statement.execute(String sql);
@@ -213,6 +215,11 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     LOG.info("kyuubi.operation.result.format: " + resultFormat);
     switch (resultFormat) {
       case "arrow":
+        boolean timestampAsString =
+            Boolean.parseBoolean(
+                properties.getOrDefault(
+                    "__kyuubi_operation_result_arrow_timestampAsString__",
+                    DEFAULT_ARROW_TIMESTAMP_AS_STRING));
         resultSet =
             new KyuubiArrowQueryResultSet.Builder(this)
                 .setClient(client)
@@ -222,6 +229,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 .setFetchSize(fetchSize)
                 .setScrollable(isScrollableResultset)
                 .setSchema(columnNames, columnTypes, columnAttributes)
+                .setTimestampAsString(timestampAsString)
                 .build();
         break;
       default:
@@ -270,6 +278,11 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     LOG.info("kyuubi.operation.result.format: " + resultFormat);
     switch (resultFormat) {
       case "arrow":
+        boolean timestampAsString =
+            Boolean.parseBoolean(
+                properties.getOrDefault(
+                    "__kyuubi_operation_result_arrow_timestampAsString__",
+                    DEFAULT_ARROW_TIMESTAMP_AS_STRING));
         resultSet =
             new KyuubiArrowQueryResultSet.Builder(this)
                 .setClient(client)
@@ -279,6 +292,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 .setFetchSize(fetchSize)
                 .setScrollable(isScrollableResultset)
                 .setSchema(columnNames, columnTypes, columnAttributes)
+                .setTimestampAsString(timestampAsString)
                 .build();
         break;
       default:

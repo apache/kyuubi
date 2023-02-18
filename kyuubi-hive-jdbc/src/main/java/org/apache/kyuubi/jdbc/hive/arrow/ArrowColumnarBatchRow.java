@@ -19,6 +19,8 @@ package org.apache.kyuubi.jdbc.hive.arrow;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import org.apache.arrow.vector.util.DateUtility;
 import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.common.DateUtils;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalDayTime;
@@ -104,7 +106,7 @@ public class ArrowColumnarBatchRow {
     throw new UnsupportedOperationException();
   }
 
-  public Object get(int ordinal, TTypeId dataType) {
+  public Object get(int ordinal, TTypeId dataType, String timeZone, boolean timestampAsString) {
     long seconds;
     long milliseconds;
     long microseconds;
@@ -131,17 +133,19 @@ public class ArrowColumnarBatchRow {
       case STRING_TYPE:
         return getString(ordinal);
       case TIMESTAMP_TYPE:
-        microseconds = getLong(ordinal);
-        nanos = (int) (microseconds % 1000000) * 1000;
-        Timestamp timestamp = new Timestamp(microseconds / 1000);
-        timestamp.setNanos(nanos);
-        return timestamp;
+        if (timestampAsString) {
+          return Timestamp.valueOf(getString(ordinal));
+        } else {
+          LocalDateTime localDateTime =
+              DateUtility.getLocalDateTimeFromEpochMicro(getLong(ordinal), timeZone);
+          return Timestamp.valueOf(localDateTime);
+        }
       case DATE_TYPE:
         return DateUtils.internalToDate(getInt(ordinal));
       case INTERVAL_DAY_TIME_TYPE:
         microseconds = getLong(ordinal);
-        seconds = microseconds / 1000000;
-        nanos = (int) (microseconds % 1000000) * 1000;
+        seconds = microseconds / 1_000_000;
+        nanos = (int) (microseconds % 1_000_000) * 1_000;
         return new HiveIntervalDayTime(seconds, nanos);
       case INTERVAL_YEAR_MONTH_TYPE:
         return new HiveIntervalYearMonth(getInt(ordinal));
