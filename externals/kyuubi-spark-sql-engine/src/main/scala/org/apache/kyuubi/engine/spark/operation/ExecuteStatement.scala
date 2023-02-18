@@ -162,17 +162,12 @@ class ExecuteStatement(
     }
   }
 
-  // TODO:(fchen) make this configurable
-  val kyuubiBeelineConvertToString = true
-
   def convertComplexType(df: DataFrame): DataFrame = {
-    if (kyuubiBeelineConvertToString) {
-      SparkDatasetHelper.convertTopLevelComplexTypeToHiveString(df)
-    } else {
-      df
-    }
+    SparkDatasetHelper.convertTopLevelComplexTypeToHiveString(df, timestampAsString)
   }
 
   override def getResultSetMetadataHints(): Seq[String] =
-    Seq(s"__kyuubi_operation_result_format__=$resultFormat")
+    Seq(
+      s"__kyuubi_operation_result_format__=$resultFormat",
+      s"__kyuubi_operation_result_arrow_timestampAsString__=$timestampAsString")
 }
