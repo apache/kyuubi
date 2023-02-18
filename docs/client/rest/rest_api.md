@@ -493,6 +493,7 @@ The [Engine](#engine) List.
 | user           | The user created the batch                                        | String |
 | batchType      | The batch type                                                    | String |
 | name           | The batch name                                                    | String |
+| appStartTime   | The batch application start time                                  | Long   |
 | appId          | The batch application Id                                          | String |
 | appUrl         | The batch application tracking url                                | String |
 | appState       | The batch application state                                       | String |
