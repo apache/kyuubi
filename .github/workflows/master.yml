@@ -434,7 +434,6 @@ jobs:
         run: >-
           ./build/mvn ${MVN_OPT} clean install
           -Pflink-provided,hive-provided
-          -Pspark-3.2
           -Pkubernetes-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.spark
       - name: Print Driver Pod logs
