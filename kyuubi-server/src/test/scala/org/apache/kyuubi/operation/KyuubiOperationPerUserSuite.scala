@@ -24,7 +24,7 @@ import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetInfoReq, TG
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer, WithSimpleDFSService}
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
 import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
@@ -363,5 +363,13 @@ class KyuubiOperationPerUserSuite
       s"${MetricsConstants.OPERATION_EXEC_TIME}.${classOf[ExecuteStatement].getSimpleName}"
     val snapshot = MetricsSystem.histogramSnapshot(metric).get
     assert(snapshot.getMax > 0 && snapshot.getMedian > 0)
+  }
+
+  test("support to transfer client version when opening jdbc connection") {
+    withJdbcStatement() { stmt =>
+      val rs = stmt.executeQuery(s"set spark.${KyuubiReservedKeys.KYUUBI_CLIENT_VERSION_KEY}")
+      assert(rs.next())
+      assert(rs.getString(2) == KYUUBI_VERSION)
+    }
   }
 }
