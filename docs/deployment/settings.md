@@ -447,6 +447,12 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 | kyuubi.operation.spark.listener.enabled         | true                                                                            | When set to true, Spark engine registers an SQLOperationListener before executing the statement, logging a few summary statistics when each stage completes.                                                                                                                                                                                                                                                                                                                                             | boolean  | 1.6.0 |
 | kyuubi.operation.status.polling.timeout         | PT5S                                                                            | Timeout(ms) for long polling asynchronous running sql query's status                                                                                                                                                                                                                                                                                                                                                                                                                                     | duration | 1.0.0 |
 
+### PeriodicGC
+
+|            Key             | Default |                  Meaning                   |   Type   | Since |
+|----------------------------|---------|--------------------------------------------|----------|-------|
+| kyuubi.periodicGC.interval | PT30M   | How often to trigger a garbage collection. | duration | 1.7.0 |
+
 ### Server
 
 |                           Key                            |      Default      |                                                                                                                    Meaning                                                                                                                     |  Type  | Since |
