@@ -44,13 +44,13 @@ class RuleApplyDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
         val queries = tableCommandSpec.queries(cmd)
         cmd.mapChildren {
           case marker: DataMaskingMarker => marker
-          case c if queries.contains(c) && c.resolved =>
-            applyDataMasking(c, ugi, opType)
+          case query if queries.contains(query) && query.resolved =>
+            applyDataMasking(query, ugi, opType)
           case o => o
         }
       case cmd: Command => cmd
       case other if other.resolved => applyDataMasking(other, ugi, opType)
-      case other => other.mapChildren(apply)
+      case other => other
     }
   }
 
@@ -81,8 +81,9 @@ class RuleApplyDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
     if (newPlan == plan) {
       plan
     } else {
-      val childrenRestored = restoreChildren(newPlan)
-      DataMaskingMarker(childrenRestored, plan)
+      val restoredOrigin = restoreChildren(plan)
+      val restoredNew = restoreChildren(newPlan)
+      DataMaskingMarker(restoredNew, restoredOrigin)
     }
   }
 
