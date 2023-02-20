@@ -126,6 +126,30 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(logRowSet.getRowCount == 1)
   }
 
+  test("test get result row set with null value") {
+    val opHandleStr = getOpHandleStr(
+      s"""
+         |select
+         |cast(null as string) as c1,
+         |cast(null as boolean) as c2,
+         |cast(null as byte) as c3,
+         |cast(null as double) as c4,
+         |cast(null as short) as c5,
+         |cast(null as int) as c6,
+         |cast(null as bigint) as c7
+         |""".stripMargin)
+    checkOpState(opHandleStr, FINISHED)
+    val response = webTarget.path(
+      s"api/v1/operations/$opHandleStr/rowset")
+      .queryParam("maxrows", "2")
+      .queryParam("fetchorientation", "FETCH_NEXT")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response.getStatus)
+    val logRowSet = response.readEntity(classOf[ResultRowSet])
+    assert(logRowSet.getRows.asScala.head.getFields.asScala.forall(_.getValue == null))
+    assert(logRowSet.getRowCount == 1)
+  }
+
   def getOpHandleStr(statement: String = "show tables"): String = {
     val sessionHandle = fe.be.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
