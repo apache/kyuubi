@@ -19,7 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Alias, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, NamedExpression, SubqueryExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
 
@@ -48,6 +48,8 @@ class RuleApplyDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
             applyDataMasking(query, ugi, opType)
           case o => o
         }
+      case cmd: Command if cmd.childrenResolved =>
+        cmd.mapChildren(applyDataMasking(_, ugi, opType))
       case cmd: Command => cmd
       case other if other.resolved => applyDataMasking(other, ugi, opType)
       case other => other
@@ -92,8 +94,14 @@ class RuleApplyDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
    * @param plan the original logical plan
    */
   private def restoreChildren(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUpWithSubqueries {
-      case marker: DataMaskingMarker => marker.restored
+    plan.transformUp { case p =>
+      p.transformExpressionsUp {
+        case p: SubqueryExpression =>
+          p.withNewPlan(restoreChildren(p.plan))
+      } match {
+        case marker: DataMaskingMarker => marker.restored
+        case other => other
+      }
     }
   }
 }
