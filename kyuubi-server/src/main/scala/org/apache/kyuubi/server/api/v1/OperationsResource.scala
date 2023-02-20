@@ -183,19 +183,47 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
             i.getSetField.name(),
             i.getSetField match {
               case TColumnValue._Fields.STRING_VAL =>
-                i.getStringVal.getFieldValue(TStringValue._Fields.VALUE)
+                if (i.isSetStringVal) {
+                  i.getStringVal.getFieldValue(TStringValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.BOOL_VAL =>
-                i.getBoolVal.getFieldValue(TBoolValue._Fields.VALUE)
+                if (i.isSetBoolVal) {
+                  i.getBoolVal.getFieldValue(TBoolValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.BYTE_VAL =>
-                i.getByteVal.getFieldValue(TByteValue._Fields.VALUE)
+                if (i.isSetByteVal) {
+                  i.getByteVal.getFieldValue(TByteValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.DOUBLE_VAL =>
-                i.getDoubleVal.getFieldValue(TDoubleValue._Fields.VALUE)
+                if (i.isSetDoubleVal) {
+                  i.getDoubleVal.getFieldValue(TDoubleValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.I16_VAL =>
-                i.getI16Val.getFieldValue(TI16Value._Fields.VALUE)
+                if (i.isSetI16Val) {
+                  i.getI16Val.getFieldValue(TI16Value._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.I32_VAL =>
-                i.getI32Val.getFieldValue(TI32Value._Fields.VALUE)
+                if (i.isSetI32Val) {
+                  i.getI32Val.getFieldValue(TI32Value._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.I64_VAL =>
-                i.getI64Val.getFieldValue(TI64Value._Fields.VALUE)
+                if (i.isSetI64Val) {
+                  i.getI64Val.getFieldValue(TI64Value._Fields.VALUE)
+                } else {
+                  null;
+                }
             })
         }).asJava)
       })
