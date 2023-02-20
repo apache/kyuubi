@@ -169,6 +169,9 @@ class KyuubiServer(name: String) extends Serverable(name) {
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
 
+    val periodicGCService = new PeriodicGCService
+    addService(periodicGCService)
+
     if (conf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)
     }

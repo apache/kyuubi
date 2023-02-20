@@ -2639,4 +2639,11 @@ object KyuubiConf {
       .version("1.7.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(60).toMillis)
+
+  val PERIODIC_GC_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.periodicGC.interval")
+    .doc("How often to trigger a garbage collection.")
+    .version("1.7.0")
+    .serverOnly
+    .timeConf
+    .createWithDefaultString("PT30M")
 }
