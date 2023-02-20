@@ -183,43 +183,43 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
             i.getSetField.name(),
             i.getSetField match {
               case TColumnValue._Fields.STRING_VAL =>
-                if (i.isSetStringVal) {
+                if (i.getStringVal.isSetValue) {
                   i.getStringVal.getFieldValue(TStringValue._Fields.VALUE)
                 } else {
                   null
                 }
               case TColumnValue._Fields.BOOL_VAL =>
-                if (i.isSetBoolVal) {
+                if (i.getBoolVal.isSetValue) {
                   i.getBoolVal.getFieldValue(TBoolValue._Fields.VALUE)
                 } else {
                   null
                 }
               case TColumnValue._Fields.BYTE_VAL =>
-                if (i.isSetByteVal) {
+                if (i.getByteVal.isSetValue) {
                   i.getByteVal.getFieldValue(TByteValue._Fields.VALUE)
                 } else {
                   null
                 }
               case TColumnValue._Fields.DOUBLE_VAL =>
-                if (i.isSetDoubleVal) {
+                if (i.getDoubleVal.isSetValue) {
                   i.getDoubleVal.getFieldValue(TDoubleValue._Fields.VALUE)
                 } else {
                   null
                 }
               case TColumnValue._Fields.I16_VAL =>
-                if (i.isSetI16Val) {
+                if (i.getI16Val.isSetValue) {
                   i.getI16Val.getFieldValue(TI16Value._Fields.VALUE)
                 } else {
                   null
                 }
               case TColumnValue._Fields.I32_VAL =>
-                if (i.isSetI32Val) {
+                if (i.getI32Val.isSetValue) {
                   i.getI32Val.getFieldValue(TI32Value._Fields.VALUE)
                 } else {
                   null
                 }
               case TColumnValue._Fields.I64_VAL =>
-                if (i.isSetI64Val) {
+                if (i.getI64Val.isSetValue) {
                   i.getI64Val.getFieldValue(TI64Value._Fields.VALUE)
                 } else {
                   null;
