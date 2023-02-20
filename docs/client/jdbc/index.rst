@@ -22,4 +22,5 @@ JDBC Drivers
     kyuubi_jdbc
     hive_jdbc
     mysql_jdbc
+    trino_jdbc
 
