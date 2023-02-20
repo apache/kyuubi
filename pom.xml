@@ -2074,6 +2074,9 @@
                                 <include>*/README.md</include>
                                 <include>docker/playground/README.md</include>
                             </includes>
+                            <excludes>
+                                <exclude>docs/kyuubi/**/*.md</exclude>
+                            </excludes>
                             <flexmark>
                                 <version>${flexmark.version}</version>
                             </flexmark>
