@@ -26,8 +26,8 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift._
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.WithKyuubiServer
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.{KYUUBI_VERSION, WithKyuubiServer}
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
 import org.apache.kyuubi.engine.ApplicationState
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
@@ -270,6 +270,14 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       assert(MetricsSystem.counterValue(connTotalMetric).getOrElse(0L) - connTotalCount > 1)
       assert(MetricsSystem.counterValue(connOpenMetric).getOrElse(0L) === 0)
       assert(MetricsSystem.counterValue(connFailedMetric).getOrElse(0L) > connFailedCount)
+    }
+  }
+
+  test("support to transfer client version when opening jdbc connection") {
+    withJdbcStatement() { stmt =>
+      val rs = stmt.executeQuery(s"set spark.${KyuubiReservedKeys.KYUUBI_CLIENT_VERSION_KEY}")
+      assert(rs.next())
+      assert(rs.getString(2) === KYUUBI_VERSION)
     }
   }
 }
