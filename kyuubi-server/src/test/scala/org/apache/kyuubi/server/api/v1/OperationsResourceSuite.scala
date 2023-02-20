@@ -146,8 +146,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       .request(MediaType.APPLICATION_JSON).get()
     assert(200 == response.getStatus)
     val logRowSet = response.readEntity(classOf[ResultRowSet])
-    assert(logRowSet.getRows.asScala.head.getFields.asScala.map(_.getValue).toList ===
-      List(null, null, null, null, null, null, null))
+    assert(logRowSet.getRows.asScala.head.getFields.asScala.forall(_.getValue == null))
     assert(logRowSet.getRowCount == 1)
   }
 

@@ -222,7 +222,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
                 if (i.getI64Val.isSetValue) {
                   i.getI64Val.getFieldValue(TI64Value._Fields.VALUE)
                 } else {
-                  null;
+                  null
                 }
             })
         }).asJava)
