@@ -2391,6 +2391,14 @@ object KyuubiConf {
       .regexConf
       .createOptional
 
+  val SERVER_PERIODIC_GC_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.server.periodicGC.interval")
+      .doc("How often to trigger a garbage collection.")
+      .version("1.7.0")
+      .serverOnly
+      .timeConf
+      .createWithDefaultString("PT30M")
+
   val OPERATION_SPARK_LISTENER_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.spark.listener.enabled")
       .doc("When set to true, Spark engine registers an SQLOperationListener before executing " +
@@ -2639,11 +2647,4 @@ object KyuubiConf {
       .version("1.7.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(60).toMillis)
-
-  val PERIODIC_GC_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.periodicGC.interval")
-    .doc("How often to trigger a garbage collection.")
-    .version("1.7.0")
-    .serverOnly
-    .timeConf
-    .createWithDefaultString("PT30M")
 }

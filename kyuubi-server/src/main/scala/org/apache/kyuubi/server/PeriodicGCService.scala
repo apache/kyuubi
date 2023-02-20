@@ -39,7 +39,7 @@ class PeriodicGCService(name: String) extends AbstractService(name) {
   }
 
   private def startGcTrigger(): Unit = {
-    val interval = conf.get(KyuubiConf.PERIODIC_GC_INTERVAL)
+    val interval = conf.get(KyuubiConf.SERVER_PERIODIC_GC_INTERVAL)
     gcTrigger.scheduleWithFixedDelay(() => System.gc(), interval, interval, TimeUnit.MILLISECONDS)
   }
 }
