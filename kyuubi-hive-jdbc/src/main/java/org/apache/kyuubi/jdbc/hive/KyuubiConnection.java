@@ -738,6 +738,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     } catch (UnknownHostException e) {
       LOG.debug("Error getting Kyuubi session local client ip address", e);
     }
+    openConf.put(Utils.KYUUBI_CLIENT_VERSION_KEY, Utils.getVersion());
     openReq.setConfiguration(openConf);
 
     // Store the user name in the open request in case no non-sasl authentication

@@ -486,4 +486,21 @@ public class Utils {
   public static boolean isKyuubiOperationHint(String hint) {
     return KYUUBI_OPERATION_HINT_PATTERN.matcher(hint).matches();
   }
+
+  public static final String KYUUBI_CLIENT_VERSION_KEY = "kyuubi.client.version";
+  private static String KYUUBI_CLIENT_VERSION;
+
+  public static synchronized String getVersion() {
+    if (KYUUBI_CLIENT_VERSION == null) {
+      try {
+        Properties prop = new Properties();
+        prop.load(Utils.class.getClassLoader().getResourceAsStream("version.properties"));
+        KYUUBI_CLIENT_VERSION = prop.getProperty(KYUUBI_CLIENT_VERSION_KEY, "unknown");
+      } catch (Exception e) {
+        LOG.error("Error getting kyuubi client version", e);
+        KYUUBI_CLIENT_VERSION = "unknown";
+      }
+    }
+    return KYUUBI_CLIENT_VERSION;
+  }
 }

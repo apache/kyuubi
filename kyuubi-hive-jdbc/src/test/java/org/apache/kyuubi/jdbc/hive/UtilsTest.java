@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -137,5 +138,11 @@ public class UtilsTest {
     assertEquals(expectedCatalog, jdbcConnectionParams1.getCatalogName());
     assertEquals(expectedDb, jdbcConnectionParams1.getDbName());
     assertEquals(expectedHiveConf, jdbcConnectionParams1.getHiveConfs());
+  }
+
+  @Test
+  public void testGetVersion() {
+    Pattern pattern = Pattern.compile("^\\d+\\.\\d+\\.\\d+.*");
+    assert pattern.matcher(Utils.getVersion()).matches();
   }
 }
