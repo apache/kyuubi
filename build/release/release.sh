@@ -85,7 +85,7 @@ upload_svn_staging() {
 
   svn add "${SVN_STAGING_DIR}/${RELEASE_TAG}"
 
-  echo "Uploading release tarballs to ${SVN_STAGING_DIR}/${RELEASE_TAG}"
+  echo "Uploading release tarballs to ${SVN_STAGING_REPO}/${RELEASE_TAG}"
   (
     cd "${SVN_STAGING_DIR}" && \
     svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Apache Kyuubi ${RELEASE_TAG}"
