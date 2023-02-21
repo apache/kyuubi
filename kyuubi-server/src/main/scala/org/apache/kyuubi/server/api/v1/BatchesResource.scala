@@ -217,7 +217,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         KYUUBI_CLIENT_IP_KEY -> ipAddress,
         KYUUBI_SERVER_IP_KEY -> fe.host,
         KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
-        KYUUBI_SESSION_BATCH_RESOURCE_UPLOADED_KEY -> isResourceFromUpload.toString,
+        KYUUBI_BATCH_RESOURCE_UPLOADED_KEY -> isResourceFromUpload.toString,
         KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
     val sessionHandle = sessionManager.openBatchSession(
       userName,
