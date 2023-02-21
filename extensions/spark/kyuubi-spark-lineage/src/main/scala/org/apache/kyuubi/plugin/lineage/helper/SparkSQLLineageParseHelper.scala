@@ -149,6 +149,9 @@ trait LineageParser {
             attr.withQualifier(attr.qualifier.init)
           case attr if attr.name.equalsIgnoreCase(AGGREGATE_COUNT_COLUMN_IDENTIFIER) =>
             attr.withQualifier(qualifier)
+          case attr if isNameWithQualifier(attr, qualifier) =>
+            val newName = attr.name.split('.').last.stripPrefix("`").stripSuffix("`")
+            attr.withName(newName).withQualifier(qualifier)
         })
       }
     } else {
@@ -158,6 +161,12 @@ trait LineageParser {
           AttributeSet(attr.withQualifier(qualifier)))
       }: _*)
     }
+  }
+
+  private def isNameWithQualifier(attr: Attribute, qualifier: Seq[String]): Boolean = {
+    val nameTokens = attr.name.split('.')
+    val namespace = nameTokens.init.mkString(".")
+    nameTokens.length > 1 && namespace.endsWith(qualifier.mkString("."))
   }
 
   private def mergeRelationColumnLineage(
@@ -325,6 +334,19 @@ trait LineageParser {
       case p: Aggregate =>
         val nextColumnsLineage =
           joinColumnsLineage(parentColumnsLineage, getSelectColumnLineage(p.aggregateExpressions))
+        p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
+
+      case p: Expand =>
+        val childColumnsLineage = ListMap(p.output.collect {
+          case attr
+              if p.references.find(
+                _.name == attr.name.split('.').last.stripPrefix("`").stripSuffix("`")).nonEmpty =>
+            val ref = p.references
+              .find(_.name == attr.name.split('.').last.stripPrefix("`").stripSuffix("`")).get
+            (attr, ref.references)
+        }: _*)
+        val nextColumnsLineage =
+          joinColumnsLineage(parentColumnsLineage, childColumnsLineage)
         p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
 
       case p: Join =>

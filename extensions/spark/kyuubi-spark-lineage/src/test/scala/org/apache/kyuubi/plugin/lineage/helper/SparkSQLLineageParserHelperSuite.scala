@@ -1094,6 +1094,60 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     }
   }
 
+  test("test group by") {
+    withTable("t1", "t2", "v2_catalog.db.t1", "v2_catalog.db.t2") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string, c string) USING hive")
+      spark.sql("CREATE TABLE t2 (a string, b string, c string) USING hive")
+      spark.sql("CREATE TABLE v2_catalog.db.t1 (a string, b string, c string)")
+      spark.sql("CREATE TABLE v2_catalog.db.t2 (a string, b string, c string)")
+      val ret0 =
+        exectractLineage(
+          s"insert into table t1 select a," +
+            s"concat_ws('/', collect_set(b))," +
+            s"count(distinct(b)) * count(distinct(c))" +
+            s"from t2 group by a")
+      assert(ret0 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.b")),
+          ("default.t1.c", Set("default.t2.b", "default.t2.c")))))
+
+      val ret1 =
+        exectractLineage(
+          s"insert into table v2_catalog.db.t1 select a," +
+            s"concat_ws('/', collect_set(b))," +
+            s"count(distinct(b)) * count(distinct(c))" +
+            s"from v2_catalog.db.t2 group by a")
+      assert(ret1 == Lineage(
+        List("v2_catalog.db.t2"),
+        List("v2_catalog.db.t1"),
+        List(
+          ("v2_catalog.db.t1.a", Set("v2_catalog.db.t2.a")),
+          ("v2_catalog.db.t1.b", Set("v2_catalog.db.t2.b")),
+          ("v2_catalog.db.t1.c", Set("v2_catalog.db.t2.b", "v2_catalog.db.t2.c")))))
+    }
+  }
+
+  test("test grouping sets") {
+    withTable("t1", "t2") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string, c string) USING hive")
+      spark.sql("CREATE TABLE t2 (a string, b string, c string, d string) USING hive")
+      val ret0 =
+        exectractLineage(
+          s"insert into table t1 select a,b,GROUPING__ID " +
+            s"from t2 group by a,b,c,d grouping sets ((a,b,c), (a,b,d))")
+      assert(ret0 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.b")),
+          ("default.t1.c", Set()))))
+    }
+  }
+
   private def exectractLineageWithoutExecuting(sql: String): Lineage = {
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val analyzed = spark.sessionState.analyzer.execute(parsed)
