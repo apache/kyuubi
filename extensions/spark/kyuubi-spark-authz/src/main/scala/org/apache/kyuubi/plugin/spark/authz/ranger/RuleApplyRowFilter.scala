@@ -61,6 +61,6 @@ class RuleApplyRowFilter(spark: SparkSession) extends Rule[LogicalPlan] {
     val are = AccessResource(ObjectType.TABLE, table.database.orNull, table.table, null)
     val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
     val filterExpr = SparkRangerAdminPlugin.getFilterExpr(art).map(parse)
-    filterExpr.foldLeft(plan)((p, e) => Filter(e, RowFilterMarker(p)))
+    filterExpr.foldLeft(plan)((p, expr) => Filter(expr, RowFilterMarker(p)))
   }
 }
