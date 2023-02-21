@@ -1396,9 +1396,9 @@ object KyuubiConf {
   val ENGINE_INITIALIZE_SQL_TYPE: ConfigEntry[String] =
     buildConf("kyuubi.engine.initialize.sql.type")
       .doc(s"When set kyuubi.engine.initialize.sql.type=${InitSqlType.PATH}" +
-        s",you can use the hdfs path  set ${ENGINE_SESSION_INITIALIZE_SQL} " +
+        s",you can use the hdfs file path  set ${ENGINE_SESSION_INITIALIZE_SQL} " +
         s"and ${ENGINE_INITIALIZE_SQL}")
-      .version("1.6.2")
+      .version("1.8.0")
       .stringConf
       .createWithDefaultString(InitSqlType.SQL.toString)
 

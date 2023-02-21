@@ -65,7 +65,7 @@ object KyuubiSparkUtil extends Logging {
       path.map(filePath => {
         var reader: BufferedReader = null
         try {
-          info(s"========>load init sql from file: ${filePath}")
+          info(s"load init sql from file: ${filePath}")
           val engineInitSqlFilePath = new Path(filePath)
           val hadoopConf = sparkSession.sparkContext.hadoopConfiguration
           val fs: FileSystem = engineInitSqlFilePath.getFileSystem(hadoopConf)
@@ -76,7 +76,13 @@ object KyuubiSparkUtil extends Logging {
             val sqlText = ListBuffer[String]()
             Stream.continually(reader.readLine())
               .takeWhile(null != _).filter(item => !item.startsWith("--") && item.length > 0)
-              .map(item => item.replace(";", "")).foreach(item => sqlText.append(item))
+              .map(item => {
+                if (item.endsWith(";")) {
+                  item.substring(0, item.length - 1)
+                } else {
+                  item
+                }
+              }).foreach(item => sqlText.append(item))
             sqlText.toSeq
           } else {
             Nil
