@@ -18,11 +18,11 @@
 import request from '@/utils/request'
 import { ISessionSearch, IOperationSearch } from './types'
 
-export function getAllSessions(data: ISessionSearch) {
+export function getAllSessions(params: ISessionSearch) {
   return request({
     url: 'api/v1/sessions/listSessionInfo',
-    method: 'post',
-    data
+    method: 'get',
+    params
   })
 }
 
@@ -43,15 +43,15 @@ export function deleteSession(sessionId: string) {
 export function getSqlDetails(sessionId: string) {
   return request({
     url: `api/v1/sessions/${sessionId}/sqlDetails`,
-    method: 'post'
+    method: 'get'
   })
 }
 
-export function getAllOperations(data: IOperationSearch) {
+export function getAllOperations(params: IOperationSearch) {
   return request({
     url: 'api/v1/operations/listOperation',
-    method: 'post',
-    data
+    method: 'get',
+    params
   })
 }
 

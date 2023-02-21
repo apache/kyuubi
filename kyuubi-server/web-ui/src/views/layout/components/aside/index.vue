@@ -52,35 +52,35 @@
         router: '/overview'
       },
       {
-        label: 'Session Management',
+        label: t('session_management'),
         icon: 'List',
         children: [
           {
-            label: 'Session Statistics',
+            label: t('session_statistics'),
             router: '/session/session-statistics'
           },
           {
-            label: 'Operation',
+            label: t('operation'),
             router: '/session/operation'
           }
         ]
       },
       {
-        label: 'Server Management',
+        label: t('server_management'),
         icon: 'Coin',
         children: [
           {
-            label: 'Kyuubi Server Management',
+            label: t('kyuubi_server_management'),
             router: '/server/kyuubi-service'
           },
           {
-            label: 'Engine Management',
+            label: t('engine_management'),
             router: '/server/engine'
           }
         ]
       },
       {
-        label: 'Run Sql',
+        label: t('run_sql'),
         icon: 'VideoPlay',
         router: '/run-sql'
       }

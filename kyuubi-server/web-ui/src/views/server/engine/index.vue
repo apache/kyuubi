@@ -23,10 +23,18 @@
         <el-select
           v-model="searchParam.enginetype"
           :placeholder="$t('engine_type')"
+          clearable
+          style="width: 210px"
           @change="getList"
         >
           <el-option
-            v-for="item in ['FLINK_SQL', 'TRINO', 'HIVE_SQL', 'JDBC']"
+            v-for="item in [
+              'SPARK_SQL',
+              'FLINK_SQL',
+              'TRINO',
+              'HIVE_SQL',
+              'JDBC'
+            ]"
             :key="item"
             :label="item"
             :value="item"
@@ -35,6 +43,8 @@
         <el-select
           v-model="searchParam.sharelevel"
           :placeholder="$t('share_level')"
+          clearable
+          style="width: 210px"
           @change="getList"
         >
           <el-option
@@ -44,11 +54,6 @@
             :value="item"
           />
         </el-select>
-        <el-input
-          v-model="searchParam.subdomain"
-          :placeholder="$t('subdomain')"
-          @keyup.enter="getList"
-        />
         <el-button type="primary" icon="Search" @click="getList" />
       </el-space>
     </header>
@@ -68,11 +73,19 @@
       />
       <el-table-column
         prop="memoryTotal"
-        :label="$t('memory')"
+        :label="$t('engine_id')"
         min-width="20%"
-      />
+      >
+        <template #default="scope">
+          <span>{{
+            scope.row.attributes && scope.row.attributes['kyuubi.engine.id']
+              ? scope.row.attributes['kyuubi.engine.id']
+              : '-'
+          }}</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="user" :label="$t('user')" min-width="20%" />
-      <el-table-column :label="$t('start_time')" min-width="20%">
+      <el-table-column :label="$t('start_time')" min-width="30%">
         <template #default="scope">
           {{
             scope.row.createTime != null && Number(scope.row.createTime) > 0
@@ -88,7 +101,31 @@
         min-width="20%"
       />
       <el-table-column prop="status" :label="$t('status')" min-width="20%" />
+      <el-table-column fixed="right" :label="$t('operation')" width="120">
+        <template #default="scope">
+          <el-tooltip effect="dark" :content="$t('engine_ui')" placement="top">
+            <el-button
+              type="primary"
+              icon="Link"
+              circle
+              @click="openEngineUi(scope.row.url)"
+            />
+          </el-tooltip>
+        </template>
+      </el-table-column>
     </el-table>
+    <div class="pagination-container">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 30, 50]"
+        background
+        layout="prev, pager, next, sizes, jumper"
+        :total="totalPage"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
   </el-card>
 </template>
 
@@ -101,11 +138,24 @@
 
   const searchParam: IEngineSearch = reactive({
     enginetype: null,
-    sharelevel: null,
-    subdomain: null
+    sharelevel: null
   })
 
-  const { tableData, loading, getList: _getList } = useTable()
+  const {
+    tableData,
+    currentPage,
+    pageSize,
+    totalPage,
+    loading,
+    handleSizeChange,
+    handleCurrentChange,
+    getList: _getList
+  } = useTable()
+
+  const openEngineUi = (url: string) => {
+    url = (url || '').replaceAll(/http:|https:/gi, '')
+    window.open(`${import.meta.env.VITE_APP_DEV_WEB_URL}proxy/${url}/`)
+  }
 
   const getList = () => {
     _getList(getAllEngines, searchParam)

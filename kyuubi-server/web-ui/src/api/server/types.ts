@@ -22,7 +22,6 @@ interface IServerSearch {
 interface IEngineSearch {
   enginetype: null | string
   sharelevel: null | string
-  subdomain: null | string
 }
 
 export { IServerSearch, IEngineSearch }

@@ -19,10 +19,10 @@
   <el-card :body-style="{ padding: '10px 14px' }">
     <header>
       <el-breadcrumb separator="/">
-        <el-breadcrumb-item :to="{ path: '/session/session-statistics' }"
-          >Session Statistics</el-breadcrumb-item
-        >
-        <el-breadcrumb-item>Sql Statistics</el-breadcrumb-item>
+        <el-breadcrumb-item :to="{ path: '/session/session-statistics' }">{{
+          $t('session_statistics')
+        }}</el-breadcrumb-item>
+        <el-breadcrumb-item>{{ $t('sql_statistics') }}</el-breadcrumb-item>
       </el-breadcrumb>
     </header>
   </el-card>
@@ -32,7 +32,7 @@
   >
     <template #header>
       <div class="card-header">
-        <span>Session Properties</span>
+        <span>{{ $t('session_properties') }}</span>
       </div>
     </template>
     <div class="main">
@@ -47,14 +47,10 @@
   <el-card class="table-container">
     <template #header>
       <div class="card-header">
-        <span>Sql Details</span>
+        <span>{{ $t('sql_details') }}</span>
       </div>
     </template>
-    <el-table
-      v-loading="sqlDetailsLoading"
-      :data="sqlDetails"
-      style="width: 100%"
-    >
+    <el-table v-loading="loading" :data="tableData" style="width: 100%">
       <el-table-column prop="sessionUser" :label="$t('user')" width="160" />
       <el-table-column
         prop="statementId"
@@ -121,6 +117,18 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="pagination-container">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 30, 50]"
+        background
+        layout="prev, pager, next, sizes, jumper"
+        :total="totalPage"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
   </el-card>
 </template>
 
@@ -130,13 +138,22 @@
   import { useRoute, useRouter, Router } from 'vue-router'
   import { format } from 'date-fns'
   import { secondTransfer } from '@/utils'
+  import { useTable } from '@/views/common/use-table'
 
   const route = useRoute()
   const router: Router = useRouter()
   const sessionProperties: Ref<any> = ref({})
   const sessionPropertiesLoading = ref(false)
-  const sqlDetails = ref([])
-  const sqlDetailsLoading = ref(false)
+  const {
+    tableData,
+    currentPage,
+    pageSize,
+    totalPage,
+    loading,
+    handleSizeChange,
+    handleCurrentChange,
+    getList: _getList
+  } = useTable()
 
   const openOperationPage = (sessionId: string) => {
     router.push({
@@ -161,22 +178,15 @@
     }
   }
 
-  const getSqlDetailsById = () => {
+  const getList = () => {
     const sessionId = route.query.sessionId
     if (sessionId) {
-      sqlDetailsLoading.value = true
-      getSqlDetails(sessionId as string)
-        .then((res: any) => {
-          sqlDetails.value = res || []
-        })
-        .finally(() => {
-          sqlDetailsLoading.value = false
-        })
+      _getList(getSqlDetails, sessionId)
     }
   }
 
   getSessionById()
-  getSqlDetailsById()
+  getList()
 </script>
 <style lang="scss" scoped>
   header {

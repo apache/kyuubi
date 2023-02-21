@@ -75,6 +75,13 @@ button:focus-visible {
 
 .table-container {
   margin-top: 8px;
+
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 14px;
+    text-align: center;
+  }
 }
 
 #app {
