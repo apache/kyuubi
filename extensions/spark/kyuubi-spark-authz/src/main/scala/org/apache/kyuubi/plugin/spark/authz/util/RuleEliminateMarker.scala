@@ -23,8 +23,8 @@ import org.apache.spark.sql.catalyst.rules.Rule
 class RuleEliminateMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan.transformUp {
-      case rf: DataMaskingMarker => rf.child
-      case rf: RowFilterMarker => rf.child
+      case d: DataMaskingMarker => d.child
+      case r: RowFilterMarker => r.child
     }
   }
 }
