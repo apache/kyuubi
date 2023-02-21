@@ -19,7 +19,6 @@ package org.apache.spark.sql.kyuubi
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
-//import org.apache.spark.sql.execution.SQLExecution
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
@@ -27,10 +26,7 @@ import org.apache.kyuubi.engine.spark.schema.RowSet
 
 object SparkDatasetHelper {
   def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
-//    SQLExecution.withNewExecutionId(ds.queryExecution, Some("collectArrow")) {
-//      val rows = ds.queryExecution.executedPlan.execute()
     ds.toArrowBatchRdd
-//    }
   }
 
   def convertTopLevelComplexTypeToHiveString(
