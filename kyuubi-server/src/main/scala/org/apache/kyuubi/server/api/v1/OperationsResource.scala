@@ -28,9 +28,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.ApiRequestContext
@@ -171,6 +171,10 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       @QueryParam("maxrows") @DefaultValue("100") maxRows: Int,
       @QueryParam("fetchorientation") @DefaultValue("FETCH_NEXT")
       fetchOrientation: String): ResultRowSet = {
+    val maxRowsLimit = fe.getConf.get(KyuubiConf.OPERATION_REST_FETCH_MAX_ROWS)
+    if (maxRows > maxRowsLimit) {
+      throw new BadRequestException(s"Max rows should not exceed the limit: $maxRowsLimit")
+    }
     try {
       val rowSet = fe.be.fetchResults(
         OperationHandle(operationHandleStr),

@@ -1713,6 +1713,15 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("server_operation_logs")
 
+  val OPERATION_REST_FETCH_MAX_ROWS: ConfigEntry[Int] =
+    buildConf("kyuubi.operation.rest.fetch.max.rows")
+      .doc("Max rows limit for getting result row set api. If the max rows specified " +
+        "by client-side is larger than the limit, request will fail directly.")
+      .version("1.7.0")
+      .intConf
+      .checkValue(p => p > 0, "Max rows should be greater than 0.")
+      .createWithDefault(5000)
+
   @deprecated("using kyuubi.engine.share.level instead", "1.2.0")
   val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] =
     buildConf("kyuubi.session.engine.share.level")

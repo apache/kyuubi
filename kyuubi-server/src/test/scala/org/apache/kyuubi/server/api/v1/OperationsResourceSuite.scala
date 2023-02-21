@@ -126,6 +126,16 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(logRowSet.getRowCount == 1)
   }
 
+  test("test invalid max rows") {
+    val opHandleStr = getOpHandleStr("select \"test\", 1, 0.32d, true")
+    checkOpState(opHandleStr, FINISHED)
+    val response = webTarget.path(
+      s"api/v1/operations/$opHandleStr/rowset")
+      .queryParam("maxrows", "10000")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(400 == response.getStatus)
+  }
+
   test("test get result row set with null value") {
     val opHandleStr = getOpHandleStr(
       s"""
