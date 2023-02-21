@@ -245,7 +245,7 @@ abstract class SparkOperation(session: Session)
           case FETCH_FIRST => iter.fetchAbsolute(0);
         }
         resultRowSet =
-          if (arrowEnabled) {
+          if (isArrowBasedOperation) {
             if (iter.hasNext) {
               val taken = iter.next().asInstanceOf[Array[Byte]]
               RowSet.toTRowSet(taken, getProtocolVersion)
@@ -257,8 +257,7 @@ abstract class SparkOperation(session: Session)
             RowSet.toTRowSet(
               taken.toSeq.asInstanceOf[Seq[Row]],
               resultSchema,
-              getProtocolVersion,
-              timeZone)
+              getProtocolVersion)
           }
         resultRowSet.setStartRowOffset(iter.getPosition)
       } catch onError(cancel = true)
@@ -268,16 +267,9 @@ abstract class SparkOperation(session: Session)
 
   override def shouldRunAsync: Boolean = false
 
-  protected def arrowEnabled: Boolean = {
-    resultFormat.equalsIgnoreCase("arrow") &&
-    // TODO: (fchen) make all operation support arrow
-    getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
-  }
+  protected def isArrowBasedOperation: Boolean = false
 
-  protected def resultFormat: String = {
-    // TODO: respect the config of the operation ExecuteStatement, if it was set.
-    spark.conf.get("kyuubi.operation.result.format", "thrift")
-  }
+  protected def resultFormat: String = "thrift"
 
   protected def timestampAsString: Boolean = {
     spark.conf.get("kyuubi.operation.result.arrow.timestampAsString", "false").toBoolean

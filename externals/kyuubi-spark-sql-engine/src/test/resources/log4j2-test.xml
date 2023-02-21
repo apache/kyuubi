@@ -23,7 +23,6 @@
         <Console name="stdout" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} %p %c: %m%n"/>
             <Filters>
-                <ThresholdFilter level="FATAL"/>
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
         </Console>
