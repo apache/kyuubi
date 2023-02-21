@@ -152,8 +152,8 @@
     getList: _getList
   } = useTable()
 
-  const openEngineUi = (ui: string) => {
-    window.open(`${import.meta.env.VITE_APP_DEV_WEB_URL}proxy/ui?url=${ui}`)
+  const openEngineUi = (url: string) => {
+    window.open(`${import.meta.env.VITE_APP_DEV_WEB_URL}proxy/${url}/`)
   }
 
   const getList = () => {
