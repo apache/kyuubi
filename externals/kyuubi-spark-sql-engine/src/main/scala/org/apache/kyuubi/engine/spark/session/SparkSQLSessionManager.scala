@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.session
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
-import org.apache.spark.sql.{SparkSession, SparkSessionHelper}
+import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
