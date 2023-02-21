@@ -26,7 +26,7 @@ import org.eclipse.jetty.proxy.ProxyServlet
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 
-private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with Logging {
+private[api] class WebUIProxyServlet(conf: KyuubiConf) extends ProxyServlet with Logging {
   var ipAddress: String = _
   var port: Int = _
   val CONTEXT_HEADER_KEY = "X-Forwarded-Context"
@@ -41,15 +41,20 @@ private[api] class WebProxyServlet(conf: KyuubiConf) extends ProxyServlet with L
     if (url != null && url.length > 0) {
       ipAddress = url(2).split(":")(0)
       port = url(2).split(":")(1).toInt
-      var path = "jobs/"
-      if (requestUrl.substring(("/" + url(1) + "/" + url(2) + "/").length).nonEmpty) {
-        path = requestUrl.substring(("/" + url(1) + "/" + url(2) + "/").length)
+      var targetPath = "jobs/"
+      val subPath = String.format(
+        "/%s/%s/",
+        url(1),
+        url(2))
+      if (requestUrl.substring(subPath.length).nonEmpty) {
+        targetPath = requestUrl.substring(subPath.length)
       }
       targetUrl = String.format(
-        "http://%s:%s/%s",
+        "http://%s:%s/%s%s",
         ipAddress,
         port.toString,
-        path) + getQueryString(request)
+        targetPath,
+        getQueryString(request))
       CONTEXT_HEADER_VALUE = s"/proxy/$ipAddress:$port"
       logger.info("ui -> {}", targetUrl)
     }
