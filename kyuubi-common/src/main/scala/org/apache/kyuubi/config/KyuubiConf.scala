@@ -2388,7 +2388,7 @@ object KyuubiConf {
       .createOptional
 
   val SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER_IPADDRESS: OptionalConfigEntry[Int] =
-    buildConf("kyuubi.server.batch.limit.connections.per.user.ipaddress")
+    buildConf("kyuubi.server.limit.batch.connections.per.user.ipaddress")
       .doc("Maximum kyuubi server batch connections per user:ipaddress combination." +
         " Any user-ipaddress exceeding this limit will not be allowed to connect.")
       .version("1.7.0")
