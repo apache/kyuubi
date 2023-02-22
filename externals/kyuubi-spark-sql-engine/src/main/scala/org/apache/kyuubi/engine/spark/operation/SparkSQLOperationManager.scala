@@ -82,7 +82,24 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
             case NoneMode =>
               val incrementalCollect = spark.conf.getOption(OPERATION_INCREMENTAL_COLLECT.key)
                 .map(_.toBoolean).getOrElse(operationIncrementalCollectDefault)
-              new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
+              // TODO: respect the config of the operation ExecuteStatement, if it was set.
+              val resultFormat = spark.conf.get("kyuubi.operation.result.format", "thrift")
+              resultFormat.toLowerCase match {
+                case "arrow" =>
+                  new ArrowBasedExecuteStatement(
+                    session,
+                    statement,
+                    runAsync,
+                    queryTimeout,
+                    incrementalCollect)
+                case _ =>
+                  new ExecuteStatement(
+                    session,
+                    statement,
+                    runAsync,
+                    queryTimeout,
+                    incrementalCollect)
+              }
             case mode =>
               new PlanOnlyStatement(session, statement, mode)
           }
