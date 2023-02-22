@@ -25,7 +25,8 @@ import org.apache.spark.sql.execution.QueryExecution
 import org.apache.spark.sql.util.QueryExecutionListener
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.engine.spark.{SparkSQLEngine, WithSparkSQLEngine}
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.SparkDataTypeTests
 
 class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTypeTests {
@@ -90,7 +91,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     }
   }
 
-  ignore("assign a new execution id for arrow-based result") {
+  test("assign a new execution id for arrow-based result") {
     var plan: LogicalPlan = null
 
     val listener = new QueryExecutionListener {
@@ -99,11 +100,18 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       }
       override def onFailure(funcName: String, qe: QueryExecution, exception: Exception): Unit = {}
     }
-    spark.listenerManager.register(listener)
     withJdbcStatement() { statement =>
+      // since all the new sessions have their owner listener bus, we should register the listener
+      // in the current session.
+      SparkSQLEngine.currentEngine.get
+        .backendService
+        .sessionManager
+        .allSessions()
+        .foreach(_.asInstanceOf[SparkSessionImpl].spark.listenerManager.register(listener))
+
       val result = statement.executeQuery("select 1 as c1")
       assert(result.next())
-      result.getInt("c1")
+      assert(result.getInt("c1") == 1)
     }
 
     KyuubiSparkContextHelper.waitListenerBus(spark)

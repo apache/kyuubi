@@ -200,6 +200,7 @@ class ArrowBasedExecuteStatement(
    */
   override protected def collectAsIterator(resultDF: DataFrame): FetchIterator[_] = {
     SQLExecution.withNewExecutionId(resultDF.queryExecution, Some("collectAsArrow")) {
+      resultDF.queryExecution.executedPlan.resetMetrics()
       super.collectAsIterator(resultDF)
     }
   }
