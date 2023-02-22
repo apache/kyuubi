@@ -199,7 +199,7 @@ class ArrowBasedExecuteStatement(
    * assign a new execution id for arrow-based operation.
    */
   override protected def collectResult(): Unit = {
-    SQLExecution.withNewExecutionId(result.queryExecution, Some("toArrow")) {
+    SQLExecution.withNewExecutionId(result.queryExecution, Some("collectAsArrow")) {
       super.collectResult()
     }
   }
