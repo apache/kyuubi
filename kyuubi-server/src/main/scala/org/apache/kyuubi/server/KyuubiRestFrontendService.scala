@@ -105,7 +105,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     // HTML5 Web History Mode requires redirect any url path under Web UI Servlet to the main page.
     // See more details at https://router.vuejs.org/guide/essentials/history-mode.html#html5-mode
     val rewriteHandler = new RewriteHandler()
-    rewriteHandler.addRule(new RedirectRegexRule("\\/.+", "/ui"))
+    rewriteHandler.addRule(new RedirectRegexRule("^/.+", "/ui"))
     servletHandler.insertHandler(rewriteHandler)
     server.addHandler(servletHandler)
   }
