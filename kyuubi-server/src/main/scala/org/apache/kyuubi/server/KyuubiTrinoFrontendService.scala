@@ -64,15 +64,6 @@ class KyuubiTrinoFrontendService(override val serverable: Serverable)
   private def startInternal(): Unit = {
     val contextHandler = ApiRootResource.getServletHandler(this)
     server.addHandler(contextHandler)
-
-    server.addStaticHandler("org/apache/kyuubi/ui/static", "/static/")
-    server.addRedirectHandler("/", "/static/")
-    server.addRedirectHandler("/static", "/static/")
-    server.addStaticHandler("META-INF/resources/webjars/swagger-ui/4.9.1/", "/swagger-static/")
-    server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger/")
-    server.addRedirectHandler("/docs", "/swagger/")
-    server.addRedirectHandler("/docs/", "/swagger/")
-    server.addRedirectHandler("/swagger", "/swagger/")
   }
 
   override def start(): Unit = synchronized {
