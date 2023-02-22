@@ -1127,6 +1127,20 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           ("v2_catalog.db.t1.a", Set("v2_catalog.db.t2.a")),
           ("v2_catalog.db.t1.b", Set("v2_catalog.db.t2.b")),
           ("v2_catalog.db.t1.c", Set("v2_catalog.db.t2.b", "v2_catalog.db.t2.c")))))
+
+      val ret2 =
+        exectractLineage(
+          s"insert into table v2_catalog.db.t1 select a," +
+            s"count(distinct(b+c))," +
+            s"count(distinct(b)) * count(distinct(c))" +
+            s"from v2_catalog.db.t2 group by a")
+      assert(ret2 == Lineage(
+        List("v2_catalog.db.t2"),
+        List("v2_catalog.db.t1"),
+        List(
+          ("v2_catalog.db.t1.a", Set("v2_catalog.db.t2.a")),
+          ("v2_catalog.db.t1.b", Set("v2_catalog.db.t2.b", "v2_catalog.db.t2.c")),
+          ("v2_catalog.db.t1.c", Set("v2_catalog.db.t2.b", "v2_catalog.db.t2.c")))))
     }
   }
 
@@ -1145,6 +1159,57 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           ("default.t1.a", Set("default.t2.a")),
           ("default.t1.b", Set("default.t2.b")),
           ("default.t1.c", Set()))))
+    }
+  }
+
+  test("test catch table with window function") {
+    withTable("t1", "t2") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string) USING hive")
+      spark.sql("CREATE TABLE t2 (a string, b string) USING hive")
+
+      spark.sql(
+        s"cache table c1 select * from (" +
+          s"select a, b, row_number() over (partition by a order by b asc ) rank from t2)" +
+          s" where rank=1")
+      val ret0 = exectractLineage("insert overwrite table t1 select a, b from c1")
+      assert(ret0 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.b")))))
+
+      val ret1 = exectractLineage("insert overwrite table t1 select a, rank from c1")
+      assert(ret1 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.a", "default.t2.b")))))
+
+      spark.sql(
+        s"cache table c2 select * from (" +
+          s"select b, a, row_number() over (partition by a order by b asc ) rank from t2)" +
+          s" where rank=1")
+      val ret2 = exectractLineage("insert overwrite table t1 select a, b from c2")
+      assert(ret2 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.b")))))
+
+      spark.sql(
+        s"cache table c3 select * from (" +
+          s"select a as aa, b as bb, row_number() over (partition by a order by b asc ) rank" +
+          s" from t2) where rank=1")
+      val ret3 = exectractLineage("insert overwrite table t1 select aa, bb from c3")
+      assert(ret3 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.b")))))
     }
   }
 

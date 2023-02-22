@@ -25,8 +25,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, HiveTableRelation}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression}
-import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression, ScalarSubquery}
 import org.apache.spark.sql.catalyst.expressions.aggregate.Count
 import org.apache.spark.sql.catalyst.plans.{LeftAnti, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -128,7 +127,7 @@ trait LineageParser {
           exp.toAttribute,
           if (!containsCountAll(exp.child)) references
           else references + exp.toAttribute.withName(AGGREGATE_COUNT_COLUMN_IDENTIFIER))
-      case a: Attribute => a -> a.references
+      case a: Attribute => a -> AttributeSet(a)
     }
     ListMap(exps: _*)
   }
@@ -337,18 +336,30 @@ trait LineageParser {
         p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
 
       case p: Expand =>
-        val childColumnsLineage = ListMap(p.output.collect {
-          case attr
-              if p.references.find(
-                _.name == attr.name.split('.').last.stripPrefix("`").stripSuffix("`")).nonEmpty =>
-            val ref = p.references
-              .find(_.name == attr.name.split('.').last.stripPrefix("`").stripSuffix("`")).get
-            (attr, ref.references)
-        }: _*)
+        val references =
+          p.projections.transpose.map(_.flatMap(x => x.references)).map(AttributeSet(_))
+
+        val childColumnsLineage = ListMap(p.output.zip(references): _*)
         val nextColumnsLineage =
           joinColumnsLineage(parentColumnsLineage, childColumnsLineage)
         p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
 
+      case p: Window =>
+        val windowColumnsLineage =
+          ListMap(p.windowExpressions.map(exp => (exp.toAttribute, exp.references)): _*)
+
+        val nextColumnsLineage = if (parentColumnsLineage.isEmpty) {
+          ListMap(p.child.output.map(attr => (attr, attr.references)): _*) ++ windowColumnsLineage
+        } else {
+          parentColumnsLineage.map {
+            case (k, _) if windowColumnsLineage.contains(k) =>
+              k -> windowColumnsLineage(k)
+            case (k, attrs) =>
+              k -> AttributeSet(attrs.flatten(attr =>
+                windowColumnsLineage.getOrElse(attr, AttributeSet(attr))))
+          }
+        }
+        p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
       case p: Join =>
         p.joinType match {
           case LeftSemi | LeftAnti =>
