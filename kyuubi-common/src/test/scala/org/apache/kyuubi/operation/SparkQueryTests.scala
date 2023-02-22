@@ -433,13 +433,13 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
         expectedFormat = "thrift")
       checkStatusAndResultSetFormatHint(
         sql = "set kyuubi.operation.result.format=arrow",
-        expectedFormat = "arrow")
+        expectedFormat = "thrift")
       checkStatusAndResultSetFormatHint(
         sql = "SELECT 1",
         expectedFormat = "arrow")
       checkStatusAndResultSetFormatHint(
         sql = "set kyuubi.operation.result.format=thrift",
-        expectedFormat = "thrift")
+        expectedFormat = "arrow")
       checkStatusAndResultSetFormatHint(
         sql = "set kyuubi.operation.result.format",
         expectedFormat = "thrift")
