@@ -26,8 +26,7 @@ import javax.ws.rs.core.Response.Status
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.conf.Configuration
-import org.eclipse.jetty.rewrite.handler.{RedirectRegexRule, RewriteHandler}
-import org.eclipse.jetty.servlet.FilterHolder
+import org.eclipse.jetty.servlet.{ErrorPageErrorHandler, FilterHolder}
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -104,9 +103,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val servletHandler = JettyUtils.createStaticHandler("dist", "/ui")
     // HTML5 Web History Mode requires redirect any url path under Web UI Servlet to the main page.
     // See more details at https://router.vuejs.org/guide/essentials/history-mode.html#html5-mode
-    val rewriteHandler = new RewriteHandler()
-    rewriteHandler.addRule(new RedirectRegexRule("^/.+", "/ui"))
-    servletHandler.insertHandler(rewriteHandler)
+    val errorHandler = new ErrorPageErrorHandler
+    errorHandler.addErrorPage(404, "/")
+    servletHandler.setErrorHandler(errorHandler)
     server.addHandler(servletHandler)
   }
 
