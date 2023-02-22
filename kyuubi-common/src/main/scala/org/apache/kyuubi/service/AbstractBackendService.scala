@@ -201,7 +201,7 @@ abstract class AbstractBackendService(name: String)
       orientation: FetchOrientation,
       maxRows: Int,
       fetchLog: Boolean): TRowSet = {
-    val maxRowsLimit = conf.get(KyuubiConf.OPERATION_CLIENT_FETCH_MAX_ROWS)
+    val maxRowsLimit = conf.get(KyuubiConf.SERVER_LIMIT_CLIENT_FETCH_MAX_ROWS)
     if (maxRows > maxRowsLimit) {
       throw new IllegalArgumentException(s"Max rows for fetching results " +
         s"operation should not exceed the limit: $maxRowsLimit")

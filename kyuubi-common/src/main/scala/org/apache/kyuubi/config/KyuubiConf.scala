@@ -1713,15 +1713,6 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("server_operation_logs")
 
-  val OPERATION_CLIENT_FETCH_MAX_ROWS: ConfigEntry[Int] =
-    buildConf("kyuubi.operation.client.fetch.max.rows")
-      .doc("Max rows limit for getting result row set operation. If the max rows specified " +
-        "by client-side is larger than the limit, request will fail directly.")
-      .version("1.7.0")
-      .intConf
-      .checkValue(p => p > 0, "Max rows should be greater than 0.")
-      .createWithDefault(5000)
-
   @deprecated("using kyuubi.engine.share.level instead", "1.2.0")
   val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] =
     buildConf("kyuubi.session.engine.share.level")
@@ -2404,6 +2395,16 @@ object KyuubiConf {
       .serverOnly
       .intConf
       .createOptional
+
+  val SERVER_LIMIT_CLIENT_FETCH_MAX_ROWS: ConfigEntry[Int] =
+    buildConf("kyuubi.server.limit.client.fetch.max.rows")
+      .doc("Max rows limit for getting result row set operation. If the max rows specified " +
+        "by client-side is larger than the limit, request will fail directly.")
+      .version("1.7.0")
+      .serverOnly
+      .intConf
+      .checkValue(p => p > 0, "Max rows should be greater than 0.")
+      .createWithDefault(5000)
 
   val SESSION_PROGRESS_ENABLE: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.progress.enabled")
