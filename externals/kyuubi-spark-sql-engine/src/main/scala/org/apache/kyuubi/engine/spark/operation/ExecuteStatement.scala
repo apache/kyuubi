@@ -29,7 +29,7 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -63,36 +63,36 @@ class ExecuteStatement(
     OperationLog.removeCurrentOperationLog()
   }
 
-  protected def incrementalCollectResult(): Iterator[Any] = {
-    result.toLocalIterator().asScala
+  protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
+    resultDF.toLocalIterator().asScala
   }
 
-  protected def fullCollectResult(): Array[_] = {
-    result.collect()
+  protected def fullCollectResult(resultDF: DataFrame): Array[_] = {
+    resultDF.collect()
   }
 
-  protected def takeResult(maxRows: Int): Array[_] = {
-    result.take(maxRows)
+  protected def takeResult(resultDF: DataFrame, maxRows: Int): Array[_] = {
+    resultDF.take(maxRows)
   }
 
-  protected def collectResult(): Unit = {
+  protected def collectAsIterator(resultDF: DataFrame): FetchIterator[_] = {
     val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
       .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
-    iter = if (incrementalCollect) {
+    if (incrementalCollect) {
       if (resultMaxRows > 0) {
         warn(s"Ignore ${OPERATION_RESULT_MAX_ROWS.key} on incremental collect mode.")
       }
       info("Execute in incremental collect mode")
       new IterableFetchIterator[Any](new Iterable[Any] {
-        override def iterator: Iterator[Any] = incrementalCollectResult()
+        override def iterator: Iterator[Any] = incrementalCollectResult(resultDF)
       })
     } else {
       val internalArray = if (resultMaxRows <= 0) {
         info("Execute in full collect mode")
-        fullCollectResult()
+        fullCollectResult(resultDF)
       } else {
         info(s"Execute with max result rows[$resultMaxRows]")
-        takeResult(resultMaxRows)
+        takeResult(resultDF, resultMaxRows)
       }
       new ArrayFetchIterator(internalArray)
     }
@@ -105,7 +105,7 @@ class ExecuteStatement(
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       addOperationListener()
       result = spark.sql(statement)
-      collectResult()
+      iter = collectAsIterator(result)
       setCompiledStateIfNeeded()
       setState(OperationState.FINISHED)
     } catch {
@@ -181,26 +181,26 @@ class ArrowBasedExecuteStatement(
     incrementalCollect: Boolean)
   extends ExecuteStatement(session, statement, shouldRunAsync, queryTimeout, incrementalCollect) {
 
-  override protected def incrementalCollectResult(): Iterator[Any] = {
-    SparkDatasetHelper.toArrowBatchRdd(convertComplexType(result)).toLocalIterator
+  override protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
+    SparkDatasetHelper.toArrowBatchRdd(convertComplexType(resultDF)).toLocalIterator
   }
 
-  override protected def fullCollectResult(): Array[_] = {
-    SparkDatasetHelper.toArrowBatchRdd(convertComplexType(result)).collect()
+  override protected def fullCollectResult(resultDF: DataFrame): Array[_] = {
+    SparkDatasetHelper.toArrowBatchRdd(convertComplexType(resultDF)).collect()
   }
 
-  override protected def takeResult(maxRows: Int): Array[_] = {
+  override protected def takeResult(resultDF: DataFrame, maxRows: Int): Array[_] = {
     // this will introduce shuffle and hurt performance
-    val limitedResult = result.limit(maxRows)
+    val limitedResult = resultDF.limit(maxRows)
     SparkDatasetHelper.toArrowBatchRdd(convertComplexType(limitedResult)).collect()
   }
 
   /**
    * assign a new execution id for arrow-based operation.
    */
-  override protected def collectResult(): Unit = {
-    SQLExecution.withNewExecutionId(result.queryExecution, Some("collectAsArrow")) {
-      super.collectResult()
+  override protected def collectAsIterator(resultDF: DataFrame): FetchIterator[_] = {
+    SQLExecution.withNewExecutionId(resultDF.queryExecution, Some("collectAsArrow")) {
+      super.collectAsIterator(resultDF)
     }
   }
 
