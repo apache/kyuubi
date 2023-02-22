@@ -2400,7 +2400,7 @@ object KyuubiConf {
     buildConf("kyuubi.server.limit.client.fetch.max.rows")
       .doc("Max rows limit for getting result row set operation. If the max rows specified " +
         "by client-side is larger than the limit, request will fail directly.")
-      .version("1.7.0")
+      .version("1.8.0")
       .serverOnly
       .intConf
       .checkValue(p => p > 0, "Max rows should be greater than 0.")
