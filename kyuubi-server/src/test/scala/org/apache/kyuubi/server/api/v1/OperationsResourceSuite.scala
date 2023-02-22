@@ -29,11 +29,15 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{ExecuteStatement, OperationState}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
+
+  override protected lazy val conf: KyuubiConf = KyuubiConf()
+    .set(KyuubiConf.SERVER_LIMIT_CLIENT_FETCH_MAX_ROWS, 5000)
 
   test("get an operation event") {
     val catalogsHandleStr = getOpHandleStr("")

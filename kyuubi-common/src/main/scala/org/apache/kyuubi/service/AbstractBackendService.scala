@@ -202,10 +202,12 @@ abstract class AbstractBackendService(name: String)
       orientation: FetchOrientation,
       maxRows: Int,
       fetchLog: Boolean): TRowSet = {
-    if (maxRows > maxRowsLimit) {
-      throw new IllegalArgumentException(s"Max rows for fetching results " +
-        s"operation should not exceed the limit: $maxRowsLimit")
-    }
+    maxRowsLimit.foreach(limit =>
+      if (maxRows > limit) {
+        throw new IllegalArgumentException(s"Max rows for fetching results " +
+          s"operation should not exceed the limit: $limit")
+      })
+
     sessionManager.operationManager
       .getOperation(operationHandle)
       .getSession

@@ -2396,15 +2396,14 @@ object KyuubiConf {
       .intConf
       .createOptional
 
-  val SERVER_LIMIT_CLIENT_FETCH_MAX_ROWS: ConfigEntry[Int] =
+  val SERVER_LIMIT_CLIENT_FETCH_MAX_ROWS: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.client.fetch.max.rows")
       .doc("Max rows limit for getting result row set operation. If the max rows specified " +
         "by client-side is larger than the limit, request will fail directly.")
       .version("1.8.0")
       .serverOnly
       .intConf
-      .checkValue(p => p > 0, "Max rows should be greater than 0.")
-      .createWithDefault(5000)
+      .createOptional
 
   val SESSION_PROGRESS_ENABLE: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.progress.enabled")
