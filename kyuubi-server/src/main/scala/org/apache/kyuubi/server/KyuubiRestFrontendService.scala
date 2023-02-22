@@ -26,14 +26,15 @@ import javax.ws.rs.core.Response.Status
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.conf.Configuration
+import org.eclipse.jetty.rewrite.handler.{RedirectPatternRule, RewriteHandler, TerminatingPatternRule}
 import org.eclipse.jetty.servlet.FilterHolder
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT, FRONTEND_REST_MAX_WORKER_THREADS, METADATA_RECOVERY_THREADS}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
-import org.apache.kyuubi.server.ui.JettyServer
+import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
@@ -95,6 +96,19 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     server.addRedirectHandler("/docs", "/swagger/")
     server.addRedirectHandler("/docs/", "/swagger/")
     server.addRedirectHandler("/swagger", "/swagger/")
+
+    installWebUI()
+  }
+
+  private def installWebUI(): Unit = {
+    val servletHandler = JettyUtils.createStaticHandler("dist", "/ui")
+    // HTML5 Web History Mode requires redirect any url path under Web UI Servlet to the main page.
+    // See more details at https://router.vuejs.org/guide/essentials/history-mode.html#html5-mode
+    val rewriteHandler = new RewriteHandler()
+    rewriteHandler.addRule(new TerminatingPatternRule(""))
+    rewriteHandler.addRule(new RedirectPatternRule("/*", "/ui"))
+    servletHandler.insertHandler(rewriteHandler)
+    server.addHandler(servletHandler)
   }
 
   private def startBatchChecker(): Unit = {

@@ -97,6 +97,7 @@ jetcd-core/0.7.3//jetcd-core-0.7.3.jar
 jetcd-grpc/0.7.3//jetcd-grpc-0.7.3.jar
 jetty-http/9.4.50.v20221201//jetty-http-9.4.50.v20221201.jar
 jetty-io/9.4.50.v20221201//jetty-io-9.4.50.v20221201.jar
+jetty-rewrite/9.4.50.v20221201//jetty-rewrite-9.4.50.v20221201.jar
 jetty-security/9.4.50.v20221201//jetty-security-9.4.50.v20221201.jar
 jetty-server/9.4.50.v20221201//jetty-server-9.4.50.v20221201.jar
 jetty-servlet/9.4.50.v20221201//jetty-servlet-9.4.50.v20221201.jar

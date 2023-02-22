@@ -20,6 +20,7 @@ import Vue from '@vitejs/plugin-vue'
 import path from 'path'
 
 export default defineConfig({
+  base: '/ui/',
   plugins: [Vue()],
   resolve: {
     alias: [
