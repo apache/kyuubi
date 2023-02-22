@@ -21,7 +21,7 @@ import java.util.concurrent.{ExecutionException, TimeoutException, TimeUnit}
 
 import scala.concurrent.CancellationException
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TGetResultSetMetadataResp, TProtocolVersion, TRowSet}
+import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
@@ -201,6 +201,11 @@ abstract class AbstractBackendService(name: String)
       orientation: FetchOrientation,
       maxRows: Int,
       fetchLog: Boolean): TRowSet = {
+    val maxRowsLimit = conf.get(KyuubiConf.OPERATION_CLIENT_FETCH_MAX_ROWS)
+    if (maxRows > maxRowsLimit) {
+      throw new IllegalArgumentException(s"Max rows for fetching results " +
+        s"operation should not exceed the limit: $maxRowsLimit")
+    }
     sessionManager.operationManager
       .getOperation(operationHandle)
       .getSession

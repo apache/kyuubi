@@ -1713,9 +1713,9 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("server_operation_logs")
 
-  val OPERATION_REST_FETCH_MAX_ROWS: ConfigEntry[Int] =
-    buildConf("kyuubi.operation.rest.fetch.max.rows")
-      .doc("Max rows limit for getting result row set api. If the max rows specified " +
+  val OPERATION_CLIENT_FETCH_MAX_ROWS: ConfigEntry[Int] =
+    buildConf("kyuubi.operation.client.fetch.max.rows")
+      .doc("Max rows limit for getting result row set operation. If the max rows specified " +
         "by client-side is larger than the limit, request will fail directly.")
       .version("1.7.0")
       .intConf
