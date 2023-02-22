@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.schema
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.{Date, Timestamp}
-import java.time.{Instant, LocalDate, ZoneId}
+import java.time.{Instant, LocalDate}
 
 import scala.collection.JavaConverters._
 
@@ -96,10 +96,9 @@ class RowSetSuite extends KyuubiFunSuite {
     .add("q", "timestamp")
 
   private val rows: Seq[Row] = (0 to 10).map(genRow) ++ Seq(Row.fromSeq(Seq.fill(17)(null)))
-  private val zoneId: ZoneId = ZoneId.systemDefault()
 
   test("column based set") {
-    val tRowSet = RowSet.toColumnBasedSet(rows, schema, zoneId)
+    val tRowSet = RowSet.toColumnBasedSet(rows, schema)
     assert(tRowSet.getColumns.size() === schema.size)
     assert(tRowSet.getRowsSize === 0)
 
@@ -204,7 +203,7 @@ class RowSetSuite extends KyuubiFunSuite {
   }
 
   test("row based set") {
-    val tRowSet = RowSet.toRowBasedSet(rows, schema, zoneId)
+    val tRowSet = RowSet.toRowBasedSet(rows, schema)
     assert(tRowSet.getColumnCount === 0)
     assert(tRowSet.getRowsSize === rows.size)
     val iter = tRowSet.getRowsIterator
@@ -250,7 +249,7 @@ class RowSetSuite extends KyuubiFunSuite {
 
   test("to row set") {
     TProtocolVersion.values().foreach { proto =>
-      val set = RowSet.toTRowSet(rows, schema, proto, zoneId)
+      val set = RowSet.toTRowSet(rows, schema, proto)
       if (proto.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
         assert(!set.isSetColumns, proto.toString)
         assert(set.isSetRows, proto.toString)

@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.spark.schema
 
 import java.nio.ByteBuffer
-import java.time.ZoneId
 
 import scala.collection.JavaConverters._
 
@@ -61,16 +60,15 @@ object RowSet {
   def toTRowSet(
       rows: Seq[Row],
       schema: StructType,
-      protocolVersion: TProtocolVersion,
-      timeZone: ZoneId): TRowSet = {
+      protocolVersion: TProtocolVersion): TRowSet = {
     if (protocolVersion.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
-      toRowBasedSet(rows, schema, timeZone)
+      toRowBasedSet(rows, schema)
     } else {
-      toColumnBasedSet(rows, schema, timeZone)
+      toColumnBasedSet(rows, schema)
     }
   }
 
-  def toRowBasedSet(rows: Seq[Row], schema: StructType, timeZone: ZoneId): TRowSet = {
+  def toRowBasedSet(rows: Seq[Row], schema: StructType): TRowSet = {
     val rowSize = rows.length
     val tRows = new java.util.ArrayList[TRow](rowSize)
     var i = 0
@@ -80,7 +78,7 @@ object RowSet {
       var j = 0
       val columnSize = row.length
       while (j < columnSize) {
-        val columnValue = toTColumnValue(j, row, schema, timeZone)
+        val columnValue = toTColumnValue(j, row, schema)
         tRow.addToColVals(columnValue)
         j += 1
       }
@@ -90,21 +88,21 @@ object RowSet {
     new TRowSet(0, tRows)
   }
 
-  def toColumnBasedSet(rows: Seq[Row], schema: StructType, timeZone: ZoneId): TRowSet = {
+  def toColumnBasedSet(rows: Seq[Row], schema: StructType): TRowSet = {
     val rowSize = rows.length
     val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](rowSize))
     var i = 0
     val columnSize = schema.length
     while (i < columnSize) {
       val field = schema(i)
-      val tColumn = toTColumn(rows, i, field.dataType, timeZone)
+      val tColumn = toTColumn(rows, i, field.dataType)
       tRowSet.addToColumns(tColumn)
       i += 1
     }
     tRowSet
   }
 
-  private def toTColumn(rows: Seq[Row], ordinal: Int, typ: DataType, timeZone: ZoneId): TColumn = {
+  private def toTColumn(rows: Seq[Row], ordinal: Int, typ: DataType): TColumn = {
     val nulls = new java.util.BitSet()
     typ match {
       case BooleanType =>
@@ -186,8 +184,7 @@ object RowSet {
   private def toTColumnValue(
       ordinal: Int,
       row: Row,
-      types: StructType,
-      timeZone: ZoneId): TColumnValue = {
+      types: StructType): TColumnValue = {
     types(ordinal).dataType match {
       case BooleanType =>
         val boolValue = new TBoolValue
