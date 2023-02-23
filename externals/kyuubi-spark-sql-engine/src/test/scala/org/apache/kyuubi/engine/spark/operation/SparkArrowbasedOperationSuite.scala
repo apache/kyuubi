@@ -103,20 +103,39 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     withJdbcStatement() { statement =>
       // since all the new sessions have their owner listener bus, we should register the listener
       // in the current session.
-      SparkSQLEngine.currentEngine.get
-        .backendService
-        .sessionManager
-        .allSessions()
-        .foreach(_.asInstanceOf[SparkSessionImpl].spark.listenerManager.register(listener))
+      registerListener(listener)
 
+      val result = statement.executeQuery("select 1 as c1")
+      assert(result.next())
+      assert(result.getInt("c1") == 1)
+    }
+    KyuubiSparkContextHelper.waitListenerBus(spark)
+    unregisterListener(listener)
+    assert(plan.isInstanceOf[Project])
+  }
+
+  test("arrow-based query metrics") {
+    var queryExecution: QueryExecution = null
+
+    val listener = new QueryExecutionListener {
+      override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
+        queryExecution = qe
+      }
+      override def onFailure(funcName: String, qe: QueryExecution, exception: Exception): Unit = {}
+    }
+    withJdbcStatement() { statement =>
+      registerListener(listener)
       val result = statement.executeQuery("select 1 as c1")
       assert(result.next())
       assert(result.getInt("c1") == 1)
     }
 
     KyuubiSparkContextHelper.waitListenerBus(spark)
-    spark.listenerManager.unregister(listener)
-    assert(plan.isInstanceOf[Project])
+    unregisterListener(listener)
+
+    val metrics = queryExecution.executedPlan.collectLeaves().head.metrics
+    assert(metrics.contains("numOutputRows"))
+    assert(metrics("numOutputRows").value === 1)
   }
 
   private def checkResultSetFormat(statement: Statement, expectFormat: String): Unit = {
@@ -139,5 +158,23 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     val resultSet = statement.executeQuery(query)
     assert(resultSet.next())
     assert(resultSet.getString("col") === expect)
+  }
+
+  private def registerListener(listener: QueryExecutionListener): Unit = {
+    // since all the new sessions have their owner listener bus, we should register the listener
+    // in the current session.
+    SparkSQLEngine.currentEngine.get
+      .backendService
+      .sessionManager
+      .allSessions()
+      .foreach(_.asInstanceOf[SparkSessionImpl].spark.listenerManager.register(listener))
+  }
+
+  private def unregisterListener(listener: QueryExecutionListener): Unit = {
+    SparkSQLEngine.currentEngine.get
+      .backendService
+      .sessionManager
+      .allSessions()
+      .foreach(_.asInstanceOf[SparkSessionImpl].spark.listenerManager.unregister(listener))
   }
 }
