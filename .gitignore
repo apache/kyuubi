@@ -56,6 +56,7 @@ hs_err_pid*
 spark-warehouse/
 metastore_db
 derby.log
+rest-audit.log
 **/dependency-reduced-pom.xml
 metrics/report.json
 metrics/.report.json.crc
