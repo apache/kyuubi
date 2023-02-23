@@ -2159,7 +2159,6 @@
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>${maven.plugin.frontend.version}</version>
                     <configuration>
-                        <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
                         <nodeVersion>${node.version}</nodeVersion>
                         <pnpmVersion>${pnpm.version}</pnpmVersion>
                     </configuration>
@@ -2248,9 +2247,11 @@
     <profiles>
         <profile>
             <id>mirror-cdn</id>
-            <!-- this profile works only for latest apache releases -->
             <properties>
+                <!-- the apache cdn mirror works only for latest apache releases -->
                 <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
+                <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
+                <pnpmDownloadRoot>https://registry.npmmirror.com/pnpm/-/</pnpmDownloadRoot>
             </properties>
         </profile>
 
