@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import java.security.PrivilegedExceptionAction
 import java.sql.Timestamp
 
 import scala.util.Try
@@ -43,13 +42,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   // scalastyle:on
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
-  protected def doAs[T](user: String, f: => T): T = {
-    UserGroupInformation.createRemoteUser(user).doAs[T](
-      new PrivilegedExceptionAction[T] {
-        override def run(): T = f
-      })
-  }
-
   override def afterAll(): Unit = {
     spark.stop()
     super.afterAll()
@@ -60,24 +52,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       resource: String = "default/src",
       user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
     s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
-  }
-
-  protected def withCleanTmpResources[T](res: Seq[(String, String)])(f: => T): T = {
-    try {
-      f
-    } finally {
-      res.foreach {
-        case (t, "table") => doAs("admin", sql(s"DROP TABLE IF EXISTS $t"))
-        case (db, "database") => doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
-        case (fn, "function") => doAs("admin", sql(s"DROP FUNCTION IF EXISTS $fn"))
-        case (view, "view") => doAs("admin", sql(s"DROP VIEW IF EXISTS $view"))
-        case (cacheTable, "cache") => if (isSparkV32OrGreater) {
-            doAs("admin", sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
-          }
-        case (_, e) =>
-          throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
-      }
-    }
   }
 
   /**
@@ -335,7 +309,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
     withCleanTmpResources(Seq(
       (s"$db.${table}2", "table"),
-      (s"$db.$table", "table"))) {
+      (s"$db.$table", "table"),
+      (s"$db.unmasked", "table"))) {
       doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs(
         "admin",
@@ -352,6 +327,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         sql(
           s"INSERT INTO $db.$table SELECT 30, 3, 'spark', 'a'," +
             s" timestamp'2018-11-17 12:34:56', 'world'"))
+
+      doAs("admin", sql(s"CREATE TABLE $db.unmasked USING $format AS SELECT * FROM $db.$table"))
 
       doAs(
         "kent",
@@ -382,6 +359,14 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
               }
             })
         }
+
+      doAs(
+        "bob", {
+          assert(sql(
+            s"SELECT a.value1, b.value1 FROM $db.$table a join $db.unmasked b on a.value1=b.value1")
+            .isEmpty)
+        })
+
       doAs(
         "bob", {
           sql(s"CREATE TABLE $db.src2 using $format AS SELECT value1 FROM $db.$table")

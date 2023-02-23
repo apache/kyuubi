@@ -15,52 +15,35 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.ranger
+package org.apache.kyuubi.plugin.spark.authz.ranger.rowfilter
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan}
-import org.apache.spark.sql.catalyst.rules.Rule
 
 import org.apache.kyuubi.plugin.spark.authz.ObjectType
+import org.apache.kyuubi.plugin.spark.authz.OperationType.QUERY
+import org.apache.kyuubi.plugin.spark.authz.ranger._
 import org.apache.kyuubi.plugin.spark.authz.serde._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getAuthzUgi
-import org.apache.kyuubi.plugin.spark.authz.util.RowFilterMarker
 
-class RuleApplyRowFilter(spark: SparkSession) extends Rule[LogicalPlan] {
-  private val parse = spark.sessionState.sqlParser.parseExpression _
-
-  private def mapChildren(plan: LogicalPlan)(f: LogicalPlan => LogicalPlan): LogicalPlan = {
-    val newChildren = plan match {
-      case cmd if isKnownTableCommand(cmd) =>
-        val tableCommandSpec = getTableCommandSpec(cmd)
-        val queries = tableCommandSpec.queries(cmd)
-        cmd.children.map {
-          case c if queries.contains(c) => f(c)
-          case other => other
-        }
-      case _ =>
-        plan.children.map(f)
-    }
-    plan.withNewChildren(newChildren)
-  }
+case class RuleApplyRowFilter(spark: SparkSession) extends RuleHelper {
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    mapChildren(plan) {
+    val newPlan = mapChildren(plan) {
       case p: RowFilterMarker => p
       case scan if isKnownScan(scan) && scan.resolved =>
         val tables = getScanSpec(scan).tables(scan, spark)
         tables.headOption.map(applyFilter(scan, _)).getOrElse(scan)
       case other => apply(other)
     }
+    newPlan
   }
   private def applyFilter(
       plan: LogicalPlan,
       table: Table): LogicalPlan = {
-    val ugi = getAuthzUgi(spark.sparkContext)
-    val opType = operationType(plan)
     val are = AccessResource(ObjectType.TABLE, table.database.orNull, table.table, null)
-    val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
+    val art = AccessRequest(are, ugi, QUERY, AccessType.SELECT)
     val filterExpr = SparkRangerAdminPlugin.getFilterExpr(art).map(parse)
-    filterExpr.foldLeft(plan)((p, expr) => Filter(expr, RowFilterMarker(p)))
+    val filtered = filterExpr.foldLeft(plan)((p, expr) => Filter(expr, RowFilterMarker(p)))
+    filtered
   }
 }
