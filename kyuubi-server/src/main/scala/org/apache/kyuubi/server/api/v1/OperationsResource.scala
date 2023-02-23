@@ -28,8 +28,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle}
@@ -229,6 +228,9 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       })
       new ResultRowSet(rows.asJava, rows.size)
     } catch {
+      case e: IllegalArgumentException =>
+        error(e.getMessage, e)
+        throw new BadRequestException(e.getMessage)
       case NonFatal(e) =>
         val errorMsg = s"Error getting result row set for operation handle $operationHandleStr"
         error(errorMsg, e)
