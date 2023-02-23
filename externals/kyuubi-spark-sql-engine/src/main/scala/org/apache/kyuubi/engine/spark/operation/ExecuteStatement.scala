@@ -179,27 +179,33 @@ class ArrowBasedExecuteStatement(
   extends ExecuteStatement(session, statement, shouldRunAsync, queryTimeout, incrementalCollect) {
 
   override protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
-    collectAsArrow(convertComplexType(resultDF)).toLocalIterator
+    collectAsArrow(convertComplexType(resultDF)) { rdd =>
+      rdd.toLocalIterator
+    }
   }
 
   override protected def fullCollectResult(resultDF: DataFrame): Array[_] = {
-    collectAsArrow(convertComplexType(resultDF)).collect()
+    collectAsArrow(convertComplexType(resultDF)) { rdd =>
+      rdd.collect()
+    }
   }
 
   override protected def takeResult(resultDF: DataFrame, maxRows: Int): Array[_] = {
     // this will introduce shuffle and hurt performance
     val limitedResult = resultDF.limit(maxRows)
-    collectAsArrow(convertComplexType(limitedResult)).collect()
+    collectAsArrow(convertComplexType(limitedResult)) { rdd =>
+      rdd.collect()
+    }
   }
 
   /**
    * refer to org.apache.spark.sql.Dataset#withAction(), assign a new execution id for arrow-based
    * operation, so that we can track the arrow-based queries on the UI tab.
    */
-  private def collectAsArrow(df: DataFrame): RDD[Array[Byte]] = {
+  private def collectAsArrow[T](df: DataFrame)(action: RDD[Array[Byte]] => T): T = {
     SQLExecution.withNewExecutionId(df.queryExecution, Some("collectAsArrow")) {
       df.queryExecution.executedPlan.resetMetrics()
-      SparkDatasetHelper.toArrowBatchRdd(df)
+      action(SparkDatasetHelper.toArrowBatchRdd(df))
     }
   }
 
