@@ -22,7 +22,6 @@ import org.apache.logging.log4j.core.{Logger => Log4jLogger, LoggerContext}
 import org.apache.logging.log4j.core.config.DefaultConfiguration
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.bridge.SLF4JBridgeHandler
-import org.slf4j.impl.StaticLoggerBinder
 
 import org.apache.kyuubi.util.ClassUtils
 
