@@ -24,17 +24,19 @@ import java.util.Properties
 
 import scala.sys.process._
 
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
 import org.apache.kyuubi.jdbc.hive.{KyuubiSQLException, KyuubiStatement}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.tags.PySparkTest
 
 @PySparkTest
-class PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
+class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = getJdbcUrl
-  override def withKyuubiConf: Map[String, String] = Map.empty
+
+  override protected val conf: KyuubiConf = new KyuubiConf
 
   test("pyspark support") {
     val code = "print(1)"
