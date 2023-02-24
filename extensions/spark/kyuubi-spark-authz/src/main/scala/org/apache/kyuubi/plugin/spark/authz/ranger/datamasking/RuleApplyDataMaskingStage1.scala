@@ -18,12 +18,18 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{NamedExpression, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.NamedExpression
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleHelper
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
+/**
+ * See [[RuleApplyDataMaskingStage0]] also.
+ *
+ * This is the second step for data masking. It will fulfill the missing attributes that
+ * has a related masker expression buffered by DataMaskingStage0Marker.
+ */
 case class RuleApplyDataMaskingStage1(spark: SparkSession) extends RuleHelper {
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
@@ -50,39 +56,30 @@ case class RuleApplyDataMaskingStage1(spark: SparkSession) extends RuleHelper {
   }
 
   private def applyDataMasking(plan: LogicalPlan): LogicalPlan = {
-
-    assert(plan.resolved)
-
-    val idToAttributes = plan.collect {
-      case marker: DataMaskingStage0Marker if marker.resolved => marker.exprToMaskers()
-    }.flatten.toMap
-
-    val newPlan = plan.transformExpressionsUp {
-      case e: NamedExpression => idToAttributes.getOrElse(e.exprId, e)
+    assert(plan.resolved, "the current masking approach relies on a resolved plan")
+    def replaceOriginExprWithMasker(plan: LogicalPlan): LogicalPlan = plan match {
+      case m: DataMaskingStage0Marker => m
+      case m: DataMaskingStage1Marker => m
+      case p =>
+        val maskerExprs = p.collect {
+          case marker: DataMaskingStage0Marker if marker.resolved => marker.exprToMaskers()
+        }.flatten.toMap
+        if (maskerExprs.isEmpty) {
+          p
+        } else {
+          //
+          val t = p.transformExpressionsUp {
+            case e: NamedExpression => maskerExprs.getOrElse(e.exprId, e)
+          }
+          t.withNewChildren(t.children.map(replaceOriginExprWithMasker))
+        }
     }
+    val newPlan = replaceOriginExprWithMasker(plan)
 
     if (newPlan == plan) {
       plan
     } else {
-      val restoredOrigin = restoreChildren(plan)
-      val restoredNew = restoreChildren(newPlan)
-      DataMaskingStage1Marker(restoredNew, restoredOrigin)
-    }
-  }
-
-  /**
-   * Try to restore the unmasked plan and keep the top one later
-   * @param plan the original logical plan
-   */
-  private def restoreChildren(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUp { case p =>
-      p.transformExpressionsUp {
-        case p: SubqueryExpression =>
-          p.withNewPlan(restoreChildren(p.plan))
-      } match {
-        case marker: DataMaskingStage1Marker => marker.restored
-        case other => other
-      }
+      DataMaskingStage1Marker(newPlan)
     }
   }
 }

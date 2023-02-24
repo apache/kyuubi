@@ -16,16 +16,33 @@
  */
 
 package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
+import java.sql.DriverManager
 
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
+import scala.util.Try
 
-import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
+import org.apache.spark.SparkConf
 
-case class DataMaskingStage1Marker(child: LogicalPlan) extends UnaryNode with WithInternalChild {
+class DataMaskingForJDBCV2Suite extends DataMaskingTestBase {
+  override protected val extraSparkConf: SparkConf = new SparkConf()
+    .set("spark.sql.defaultCatalog", "testcat")
+    .set(
+      "spark.sql.catalog.testcat",
+      "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog")
+    .set(s"spark.sql.catalog.testcat.url", "jdbc:derby:memory:testcat;create=true")
+    .set(
+      s"spark.sql.catalog.testcat.driver",
+      "org.apache.derby.jdbc.AutoloadedDriver")
 
-  override def output: Seq[Attribute] = child.output
+  override protected val catalogImpl: String = "in-memory"
 
-  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = copy(child = newChild)
+  override protected def format: String = ""
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    // cleanup db
+    Try {
+      DriverManager.getConnection(s"jdbc:derby:memory:testcat;shutdown=true")
+    }
+  }
 
 }

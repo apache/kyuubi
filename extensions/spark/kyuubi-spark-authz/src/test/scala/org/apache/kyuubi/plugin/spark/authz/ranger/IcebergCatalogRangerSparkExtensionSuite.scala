@@ -19,9 +19,8 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 // scalastyle:off
 import scala.util.Try
 
-import org.apache.spark.sql.Row
-
 import org.apache.kyuubi.Utils
+
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 
 /**
@@ -231,29 +230,6 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       doAs("someone", sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain()))
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
       s" on [$namespace1/$table1]"))
-  }
-
-  test("data masking for iceberg") {
-    assume(isSparkV32OrGreater)
-    val table2 = "src"
-    doAs(
-      "admin",
-      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2" +
-        " (value2 string) USING iceberg"))
-
-    doAs(
-      "admin",
-      sql(s"INSERT INTO $catalogV2.$namespace1.$table2" +
-        " (value2) VALUES ('1')"))
-
-    withCleanTmpResources(Seq(
-      (s"$catalogV2.$namespace1.$table2", "table"))) {
-      doAs(
-        "bob", {
-          assert(sql(s"SELECT value2 FROM $catalogV2.$namespace1.$table2").collect() ===
-            Seq(Row("n")))
-        })
-    }
   }
 
 }

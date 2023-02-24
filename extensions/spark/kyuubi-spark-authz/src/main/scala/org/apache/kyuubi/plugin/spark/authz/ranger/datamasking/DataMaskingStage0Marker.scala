@@ -25,7 +25,9 @@ case class DataMaskingStage0Marker(child: LogicalPlan, scan: LogicalPlan)
   extends UnaryNode with WithInternalChild {
 
   def exprToMaskers(): Map[ExprId, Attribute] = {
-    scan.output.map(_.exprId).zip(child.output).toMap
+    scan.output.map(_.exprId).zip(child.output).flatMap { case (id, expr) =>
+      if (id == expr.exprId) None else Some(id -> expr)
+    }.toMap
   }
 
   override def output: Seq[Attribute] = child.output
