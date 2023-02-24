@@ -23,7 +23,6 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
-import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.Utils;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
@@ -500,7 +499,7 @@ public class KyuubiCommands extends Commands {
 
   @Override
   public String handleMultiLineCmd(String line) throws IOException {
-    line = HiveStringUtils.removeComments(line);
+    int[] startQuote = {-1};
     Character mask =
         (System.getProperty("jline.terminal", "").equals("jline.UnsupportedTerminal"))
             ? null
@@ -531,8 +530,7 @@ public class KyuubiCommands extends Commands {
       if (extra == null) { // it happens when using -f and the line of cmds does not end with ;
         break;
       }
-      extra = HiveStringUtils.removeComments(extra);
-      if (extra != null && !extra.isEmpty()) {
+      if (!extra.isEmpty()) {
         line += "\n" + extra;
       }
     }
