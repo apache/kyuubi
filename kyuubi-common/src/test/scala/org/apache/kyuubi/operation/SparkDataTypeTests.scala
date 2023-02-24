@@ -19,7 +19,6 @@ package org.apache.kyuubi.operation
 
 import java.sql.{Date, Timestamp}
 
-import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.util.SparkVersionUtil
 
 trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
