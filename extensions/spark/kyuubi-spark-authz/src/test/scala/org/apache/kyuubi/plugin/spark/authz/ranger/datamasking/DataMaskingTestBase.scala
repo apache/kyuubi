@@ -31,7 +31,6 @@ import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
 /**
  * Base trait for data masking tests, derivative classes shall name themselves following:
  *  DataMaskingFor CatalogImpl?  FileFormat? Additions? Suite
- *
  */
 trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with BeforeAndAfterAll {
 // scalastyle:on
@@ -178,7 +177,7 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     // so the bellow test failed in derivative classes that us v2 data source, e.g., DataMaskingForIcebergSuite
     // For the issue itself, we might need check the spark logic first
     // DataMaskingStage1Marker Project [value1#178, value1#183]
-    //+- Project [value1#178, value1#183]
+    // +- Project [value1#178, value1#183]
     //   +- Filter ((cast(value1#178 as int) = cast(c4ca4238a0b923820dcc509a6f75849b as int)) AND (cast(value1#183 as int) = cast(c4ca4238a0b923820dcc509a6f75849b as int)))
     //      +- Join Inner, (value1#178 = value1#183)
     //         :- SubqueryAlias a
@@ -197,8 +196,8 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     //                           +- RelationV2[key#172, value1#173, value2#174, value3#175, value4#176, value5#177] default.src
     //
     //
-    //Project [value1#143, value1#148]
-    //+- Filter ((value1#143 = c4ca4238a0b923820dcc509a6f75849b) AND (value1#148 = c4ca4238a0b923820dcc509a6f75849b))
+    // Project [value1#143, value1#148]
+    // +- Filter ((value1#143 = c4ca4238a0b923820dcc509a6f75849b) AND (value1#148 = c4ca4238a0b923820dcc509a6f75849b))
     //   +- Join Inner, (value1#143 = value1#148)
     //      :- SubqueryAlias a
     //      :  +- SubqueryAlias spark_catalog.default.src
@@ -218,7 +217,6 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     //
     //
     // scalastyle:on
-
 
     // So here we use value2 to avoid type casting
     val s2 = "SELECT a.value1, b.value1 FROM default.src a" +

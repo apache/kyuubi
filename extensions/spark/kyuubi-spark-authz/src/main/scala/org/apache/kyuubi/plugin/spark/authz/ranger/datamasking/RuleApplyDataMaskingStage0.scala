@@ -40,7 +40,6 @@ import org.apache.kyuubi.plugin.spark.authz.serde._
  * Step2: Spark native rules will resolved our newly added maskers
  *
  * Step3: [[RuleApplyDataMaskingStage1]]
- *
  */
 case class RuleApplyDataMaskingStage0(spark: SparkSession) extends RuleHelper {
 

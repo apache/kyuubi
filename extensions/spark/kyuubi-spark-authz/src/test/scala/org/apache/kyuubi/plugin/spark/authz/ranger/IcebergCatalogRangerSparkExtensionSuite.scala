@@ -20,7 +20,6 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.util.Try
 
 import org.apache.kyuubi.Utils
-
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 
 /**
