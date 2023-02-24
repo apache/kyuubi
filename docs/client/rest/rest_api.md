@@ -99,9 +99,10 @@ Create a session
 
 #### Response Body
 
-| Name       | Description                   | Type   |
-|:-----------|:------------------------------|:-------|
-| identifier | The session handle identifier | String |
+| Name           | Description                                                                                        | Type   |
+|:---------------|:---------------------------------------------------------------------------------------------------|:-------|
+| identifier     | The session handle identifier                                                                      | String |
+| kyuubiInstance | The Kyuubi instance that holds the session and to call for the following operations in the session | String |
 
 ### DELETE /sessions/${sessionHandle}
 
