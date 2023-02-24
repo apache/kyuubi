@@ -2070,6 +2070,9 @@
                             <includes>
                                 <include>docs/**/*.md</include>
                             </includes>
+                            <excludes>
+                                <exclude>docs/*/lib/python*/**/*.md</exclude>
+                            </excludes>
                             <flexmark>
                                 <version>${flexmark.version}</version>
                             </flexmark>
