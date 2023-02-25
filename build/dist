@@ -247,14 +247,15 @@ echo -e "\$ ${BUILD_COMMAND[@]}\n"
 rm -rf "$DISTDIR"
 mkdir -p "$DISTDIR/pid"
 mkdir -p "$DISTDIR/logs"
-mkdir -p "$DISTDIR/jars"
 mkdir -p "$DISTDIR/work"
+mkdir -p "$DISTDIR/jars"
+mkdir -p "$DISTDIR/beeline-jars"
+mkdir -p "$DISTDIR/web-ui"
 mkdir -p "$DISTDIR/externals/engines/flink"
 mkdir -p "$DISTDIR/externals/engines/spark"
 mkdir -p "$DISTDIR/externals/engines/trino"
 mkdir -p "$DISTDIR/externals/engines/hive"
 mkdir -p "$DISTDIR/externals/engines/jdbc"
-mkdir -p "$DISTDIR/beeline-jars"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Scala $SCALA_VERSION" >> "$DISTDIR/RELEASE"
@@ -332,7 +333,6 @@ done
 
 if [[ "$ENABLE_WEBUI" == "true" ]]; then
   # Copy web ui dist
-  mkdir -p "$DISTDIR/web-ui"
   cp -r "$KYUUBI_HOME/kyuubi-server/web-ui/dist" "$DISTDIR/web-ui/"
 fi
 
