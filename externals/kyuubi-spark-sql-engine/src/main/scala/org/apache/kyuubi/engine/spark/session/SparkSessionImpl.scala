@@ -21,7 +21,7 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtoco
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiReservedKeys
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.spark.events.SessionEvent
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
@@ -40,9 +40,7 @@ class SparkSessionImpl(
     val spark: SparkSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  override val handle: SessionHandle =
-    conf.get(KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(
-      SessionHandle())
+  override val handle: SessionHandle = SessionHandle.fromUUID(conf(KYUUBI_SESSION_HANDLE_KEY))
 
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {
