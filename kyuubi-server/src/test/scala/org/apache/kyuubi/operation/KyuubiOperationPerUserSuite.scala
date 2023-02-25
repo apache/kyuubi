@@ -371,8 +371,9 @@ class KyuubiOperationPerUserSuite
       withJdbcStatement() { _ =>
         val session =
           server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
-        val engineSessionHandle = SessionHandle.apply(session.client.remoteSessionHandle)
-        assert(session.handle === engineSessionHandle)
+        eventually(timeout(10.seconds)) {
+          assert(session.handle === SessionHandle.apply(session.client.remoteSessionHandle))
+        }
       }
     }
   }
