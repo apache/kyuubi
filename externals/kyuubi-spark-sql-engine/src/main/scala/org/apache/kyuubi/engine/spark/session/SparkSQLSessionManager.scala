@@ -24,6 +24,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel._
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
@@ -135,21 +136,23 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    val sparkSession =
-      try {
-        getOrNewSparkSession(user)
-      } catch {
-        case e: Exception => throw KyuubiSQLException(e)
-      }
+    getSessionOption(SessionHandle.fromUUID(conf(KYUUBI_SESSION_HANDLE_KEY))).getOrElse {
+      val sparkSession =
+        try {
+          getOrNewSparkSession(user)
+        } catch {
+          case e: Exception => throw KyuubiSQLException(e)
+        }
 
-    new SparkSessionImpl(
-      protocol,
-      user,
-      password,
-      ipAddress,
-      conf,
-      this,
-      sparkSession)
+      new SparkSessionImpl(
+        protocol,
+        user,
+        password,
+        ipAddress,
+        conf,
+        this,
+        sparkSession)
+    }
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

@@ -53,6 +53,9 @@ class KyuubiSyncThriftClient private (
 
   private val lock = new ReentrantLock()
 
+  // Visible for testing.
+  private[kyuubi] def remoteSessionHandle: TSessionHandle = _remoteSessionHandle
+
   @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
   @volatile private var remoteEngineBroken: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
