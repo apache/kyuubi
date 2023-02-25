@@ -364,4 +364,13 @@ class KyuubiOperationPerUserSuite
     val snapshot = MetricsSystem.histogramSnapshot(metric).get
     assert(snapshot.getMax > 0 && snapshot.getMedian > 0)
   }
+
+  test("align the server session handle and engine session handle for Spark engine") {
+    withJdbcStatement() { _ =>
+      val session =
+        server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
+      val engineSessionHandle = SessionHandle.apply(session.client.remoteSessionHandle)
+      assert(session.handle === engineSessionHandle)
+    }
+  }
 }
