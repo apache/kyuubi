@@ -366,11 +366,15 @@ class KyuubiOperationPerUserSuite
   }
 
   test("align the server session handle and engine session handle for Spark engine") {
-    withJdbcStatement() { _ =>
-      val session =
-        server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
-      val engineSessionHandle = SessionHandle.apply(session.client.remoteSessionHandle)
-      assert(session.handle === engineSessionHandle)
+    withSessionConf(Map(
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"))(Map.empty)(Map.empty) {
+      withJdbcStatement() { _ =>
+        val session =
+          server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
+        eventually(timeout(10.seconds)) {
+          assert(session.handle === SessionHandle.apply(session.client.remoteSessionHandle))
+        }
+      }
     }
   }
 }

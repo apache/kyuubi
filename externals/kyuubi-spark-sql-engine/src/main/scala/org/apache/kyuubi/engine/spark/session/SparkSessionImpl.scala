@@ -40,7 +40,8 @@ class SparkSessionImpl(
     val spark: SparkSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  override val handle: SessionHandle = SessionHandle.fromUUID(conf(KYUUBI_SESSION_HANDLE_KEY))
+  override val handle: SessionHandle =
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {
