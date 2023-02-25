@@ -39,6 +39,9 @@ trait Session {
   def lastIdleTime: Long
   def getNoOperationTime: Long
   def sessionIdleTimeoutThreshold: Long
+  def getConnectionBrokenTime: Long
+  def setConnectionBrokenTime(brokenTime: Long): Unit
+  def sessionReconnectTimeoutThreshold: Long
 
   def sessionManager: SessionManager
 

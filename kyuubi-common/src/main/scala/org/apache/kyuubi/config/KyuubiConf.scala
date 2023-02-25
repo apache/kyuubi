@@ -2227,6 +2227,20 @@ object KyuubiConf {
       }
       .createWithDefault("hadoop")
 
+  val SESSION_RECONNECT_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.reconnect.enabled")
+      .doc("Whether to enable to reconnect the session on the transport protocol broken.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val SESSION_RECONNECT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.session.reconnect.timeout")
+      .doc("The maximum timeout to wait the client side reconnect the session.")
+      .version("1.8.0")
+      .timeConf
+      .createWithDefaultString("PT5M")
+
   val SERVER_NAME: OptionalConfigEntry[String] =
     buildConf("kyuubi.server.name")
       .doc("The name of Kyuubi Server.")

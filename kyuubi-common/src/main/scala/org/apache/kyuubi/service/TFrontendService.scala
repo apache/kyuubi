@@ -18,6 +18,8 @@
 package org.apache.kyuubi.service
 
 import java.net.{InetAddress, ServerSocket}
+import java.nio.ByteBuffer
+import java.util.Base64
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
@@ -31,7 +33,8 @@ import org.apache.thrift.transport.TTransport
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
-import org.apache.kyuubi.config.KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, SESSION_RECONNECT_ENABLED}
+import org.apache.kyuubi.config.KyuubiReservedKeys
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -173,13 +176,31 @@ abstract class TFrontendService(name: String)
         Map(
           KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl,
           KYUUBI_SESSION_REAL_USER_KEY -> realUser)
-    val sessionHandle = be.openSession(
-      protocol,
-      sessionUser,
-      req.getPassword,
-      ipAddress,
-      configuration)
-    sessionHandle
+
+    val sessionHandleGuid =
+      configuration.get(KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_GUID)
+    val sessionHandleSecret =
+      configuration.get(KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_SECRET)
+
+    if (sessionHandleGuid.isDefined && sessionHandleSecret.isDefined) {
+      val guidBytes = Base64.getMimeDecoder.decode(sessionHandleGuid.get)
+      val secretBytes = Base64.getMimeDecoder.decode(sessionHandleSecret.get)
+      val tHandleIdentifier =
+        new THandleIdentifier(ByteBuffer.wrap(guidBytes), ByteBuffer.wrap(secretBytes))
+      val sessionHandle = SessionHandle(new TSessionHandle(tHandleIdentifier))
+      val session = be.sessionManager.getSession(sessionHandle)
+      require(session.user == sessionUser, s"The session does not belong to $sessionUser")
+      info(s"Reconnect to session $sessionHandle.")
+      session.setConnectionBrokenTime(0)
+      sessionHandle
+    } else {
+      be.openSession(
+        protocol,
+        sessionUser,
+        req.getPassword,
+        ipAddress,
+        configuration)
+    }
   }
 
   override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {
@@ -608,7 +629,18 @@ abstract class TFrontendService(name: String)
       if (handle != null) {
         info(s"Session [$handle] disconnected without closing properly, close it now")
         try {
-          be.closeSession(handle)
+          val session = be.sessionManager.getSession(handle)
+          val reconnectEnabled = session.conf.get(
+            SESSION_RECONNECT_ENABLED.key).map(_.toBoolean)
+            .getOrElse(conf.get(SESSION_RECONNECT_ENABLED))
+          if (reconnectEnabled) {
+            info(s"The connection to $handle is broken.")
+            val brokenTime = System.currentTimeMillis()
+            session.setConnectionBrokenTime(brokenTime)
+          } else {
+            info(s"Session [$handle] disconnected without closing properly, close it now")
+            be.closeSession(handle)
+          }
         } catch {
           case e: KyuubiSQLException =>
             error("Failed closing session", e)
