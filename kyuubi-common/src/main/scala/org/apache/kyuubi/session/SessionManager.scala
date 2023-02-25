@@ -307,7 +307,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
           for (session <- handleToSession.values().asScala) {
             if ((session.lastAccessTime + session.sessionIdleTimeoutThreshold <= current &&
                 session.getNoOperationTime > session.sessionIdleTimeoutThreshold) ||
-              (session.getConnectionBrokenTime > 0 && session.getConnectionBrokenTime + session.sessionReconnectTimeoutThreshold <= current)) {
+              (session.getSessionBrokenTime > 0 &&
+                session.getSessionBrokenTime + session.reconnectTimeoutThreshold <= current)) {
               try {
                 closeSession(session.handle)
               } catch {

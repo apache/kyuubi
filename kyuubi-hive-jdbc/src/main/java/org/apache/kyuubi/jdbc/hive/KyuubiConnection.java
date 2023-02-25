@@ -128,12 +128,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
-    this(uri, info, null);
-  }
-
-  public KyuubiConnection(String uri, Properties info, KyuubiSessionRecovery kyuubiSessionRecovery)
-      throws SQLException {
-    this.kyuubiSessionRecovery = kyuubiSessionRecovery;
     isBeeLineMode = Boolean.parseBoolean(info.getProperty(BEELINE_MODE_PROPERTY));
     try {
       connParams = Utils.parseURL(uri, info);
@@ -1455,10 +1449,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   public String getEngineUrl() {
     return engineUrl;
-  }
-
-  private KyuubiSessionRecovery getKyuubiSessionRecovery() {
-    return kyuubiSessionRecovery;
   }
 
   static class KyuubiSessionRecovery {

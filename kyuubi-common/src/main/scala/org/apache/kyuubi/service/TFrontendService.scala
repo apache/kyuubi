@@ -191,7 +191,7 @@ abstract class TFrontendService(name: String)
       val session = be.sessionManager.getSession(sessionHandle)
       require(session.user == sessionUser, s"The session does not belong to $sessionUser")
       info(s"Reconnect to session $sessionHandle.")
-      session.setConnectionBrokenTime(0)
+      session.setSessionBrokenTime(0)
       sessionHandle
     } else {
       be.openSession(
@@ -635,8 +635,8 @@ abstract class TFrontendService(name: String)
             .getOrElse(conf.get(SESSION_RECONNECT_ENABLED))
           if (reconnectEnabled) {
             info(s"The connection to $handle is broken," +
-              s" wait it to be reconnected in ${session.sessionReconnectTimeoutThreshold}ms")
-            session.setConnectionBrokenTime(System.currentTimeMillis())
+              s" wait it to be reconnected in ${session.reconnectTimeoutThreshold}ms")
+            session.setSessionBrokenTime(System.currentTimeMillis())
           } else {
             info(s"Session [$handle] disconnected without closing properly, close it now")
             be.closeSession(handle)
