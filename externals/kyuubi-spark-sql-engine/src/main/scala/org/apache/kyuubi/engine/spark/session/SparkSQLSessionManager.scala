@@ -136,7 +136,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    getSessionOption(SessionHandle.fromUUID(conf(KYUUBI_SESSION_HANDLE_KEY))).getOrElse {
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
+      getSessionOption).getOrElse {
       val sparkSession =
         try {
           getOrNewSparkSession(user)
