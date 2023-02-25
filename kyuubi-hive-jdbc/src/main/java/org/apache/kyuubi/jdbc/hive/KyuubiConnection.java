@@ -86,6 +86,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private String jdbcUriString;
   private String host;
   private int port;
+  private int maxRetries = 1;
   private final Map<String, String> sessConfMap;
   private JdbcConnectionParams connParams;
   private TTransport transport;
@@ -181,7 +182,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     // add supported protocols
     Collections.addAll(supportedProtocols, TProtocolVersion.values());
 
-    int maxRetries = 1;
     try {
       String strRetries = sessConfMap.get(RETRIES);
       if (StringUtils.isNotBlank(strRetries)) {
@@ -197,7 +197,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         // set up the client
         TCLIService.Iface _client = new TCLIService.Client(new TBinaryProtocol(transport));
         // Wrap the client with a thread-safe proxy to serialize the RPC calls
-        client = newSynchronizedClient(_client);
+        client = newSynchronizedClient(_client, this);
         // open client session
         openSession();
         if (!isBeeLineMode) {
@@ -708,6 +708,47 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       return new SSLConnectionSocketFactory(context);
     } catch (Exception e) {
       throw new KyuubiSQLException("Error while initializing 2 way ssl socket factory ", e);
+    }
+  }
+
+  private void reconnectSessionIfNeeded() throws SQLException {
+    if (kyuubiSessionRecovery != null && !isClosed && !transport.isOpen()) {
+      host = kyuubiSessionRecovery.serverHost;
+      port = kyuubiSessionRecovery.serverPort;
+
+      for (int numRetries = 0; ; ) {
+        try {
+          // open the client transport
+          openTransport();
+          // set up the client
+          TCLIService.Iface _client = new TCLIService.Client(new TBinaryProtocol(transport));
+          // Wrap the client with a thread-safe proxy to serialize the RPC calls
+          client = newSynchronizedClient(_client, this);
+          // open client session
+          openSession();
+          break;
+        } catch (Exception e) {
+          LOG.warn("Failed to reconnect to " + host + ":" + port);
+          try {
+            close();
+          } catch (Exception ex) {
+            // Swallow the exception
+            LOG.debug("Error while closing the connection", ex);
+          }
+          ++numRetries;
+          if (numRetries >= maxRetries) {
+            throw new KyuubiSQLException(
+                "Could not reconnect the session: " + e.getMessage(), "08S01", e);
+          } else {
+            LOG.warn(
+                e.getMessage()
+                    + " Retrying reconnect the session "
+                    + numRetries
+                    + " of "
+                    + maxRetries);
+          }
+        }
+      }
     }
   }
 
@@ -1282,20 +1323,23 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   @SuppressWarnings("rawtypes")
-  public static TCLIService.Iface newSynchronizedClient(TCLIService.Iface client) {
+  public static TCLIService.Iface newSynchronizedClient(
+      TCLIService.Iface client, KyuubiConnection connection) {
     return (TCLIService.Iface)
         Proxy.newProxyInstance(
             KyuubiConnection.class.getClassLoader(),
             new Class[] {TCLIService.Iface.class},
-            new SynchronizedHandler(client));
+            new SynchronizedHandler(client, connection));
   }
 
   private static class SynchronizedHandler implements InvocationHandler {
     private final TCLIService.Iface client;
+    private final KyuubiConnection connection;
     private final ReentrantLock lock = new ReentrantLock(true);
 
-    SynchronizedHandler(TCLIService.Iface client) {
+    SynchronizedHandler(TCLIService.Iface client, KyuubiConnection connection) {
       this.client = client;
+      this.connection = connection;
     }
 
     @Override
@@ -1306,6 +1350,11 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       } catch (InvocationTargetException e) {
         // all IFace APIs throw TException
         if (e.getTargetException() instanceof TException) {
+          try {
+            connection.reconnectSessionIfNeeded();
+          } catch (Exception reconnectException) {
+            LOG.error("Error reconnecting the session", reconnectException);
+          }
           throw e.getTargetException();
         } else {
           // should not happen
@@ -1408,7 +1457,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return engineUrl;
   }
 
-  public KyuubiSessionRecovery getKyuubiSessionRecovery() {
+  private KyuubiSessionRecovery getKyuubiSessionRecovery() {
     return kyuubiSessionRecovery;
   }
 
