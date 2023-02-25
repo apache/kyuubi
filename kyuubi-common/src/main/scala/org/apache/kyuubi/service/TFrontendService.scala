@@ -634,9 +634,9 @@ abstract class TFrontendService(name: String)
             SESSION_RECONNECT_ENABLED.key).map(_.toBoolean)
             .getOrElse(conf.get(SESSION_RECONNECT_ENABLED))
           if (reconnectEnabled) {
-            info(s"The connection to $handle is broken.")
-            val brokenTime = System.currentTimeMillis()
-            session.setConnectionBrokenTime(brokenTime)
+            info(s"The connection to $handle is broken," +
+              s" wait it to be reconnected in ${session.sessionReconnectTimeoutThreshold}ms")
+            session.setConnectionBrokenTime(System.currentTimeMillis())
           } else {
             info(s"Session [$handle] disconnected without closing properly, close it now")
             be.closeSession(handle)

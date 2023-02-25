@@ -91,6 +91,8 @@ final class KyuubiTBinaryFrontendService(
       respConfiguration.put(
         KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_SECRET,
         Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getSecret))
+      respConfiguration.put(KYUUBI_SESSION_SERVER_HOST, serverAddr.getHostName)
+      respConfiguration.put(KYUUBI_SESSION_SERVER_PORT, serverSocket.getLocalPort.toString)
 
       resp.setSessionHandle(sessionHandle.toTSessionHandle)
       resp.setConfiguration(respConfiguration)
