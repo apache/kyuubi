@@ -123,7 +123,7 @@ abstract class SparkOperation(session: Session)
 
   protected def eventEnabled: Boolean = true
 
-  if (eventEnabled) EventBus.post(SparkOperationEvent(this))
+  if (handle != null && eventEnabled) EventBus.post(SparkOperationEvent(this))
 
   override protected def setState(newState: OperationState): Unit = {
     super.setState(newState)
