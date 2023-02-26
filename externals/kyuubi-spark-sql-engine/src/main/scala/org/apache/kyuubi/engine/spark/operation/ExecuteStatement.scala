@@ -40,7 +40,7 @@ class ExecuteStatement(
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean,
-    override val handle: OperationHandle)
+    override protected val handle: OperationHandle)
   extends SparkOperation(session) with Logging {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
@@ -177,7 +177,7 @@ class ArrowBasedExecuteStatement(
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean,
-    handle: OperationHandle)
+    override protected val handle: OperationHandle)
   extends ExecuteStatement(
     session,
     statement,
