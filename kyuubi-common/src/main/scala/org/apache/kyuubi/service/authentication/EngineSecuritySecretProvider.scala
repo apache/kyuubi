@@ -37,14 +37,8 @@ class SimpleEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvide
 
   private var _conf: KyuubiConf = _
 
-  /**
-   * Initialize with kyuubi conf.
-   */
   override def initialize(conf: KyuubiConf): Unit = _conf = conf
 
-  /**
-   * Get the secret to encrypt and decrypt the secure access token.
-   */
   override def getSecret(): String = {
     _conf.get(SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET).getOrElse {
       throw new IllegalArgumentException(
