@@ -37,6 +37,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   private val engineMgr = new KyuubiApplicationManager()
 
+  override protected lazy val conf: KyuubiConf = KyuubiConf()
+    .set(KyuubiConf.SERVER_ADMINISTRATORS, Seq("admin001"))
+
   override def beforeAll(): Unit = {
     super.beforeAll()
     engineMgr.initialize(KyuubiConf())
@@ -64,6 +67,24 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .post(null)
     assert(200 == response.getStatus)
+
+    val admin001AuthHeader = new String(
+      Base64.getEncoder.encode("admin001".getBytes()),
+      "UTF-8")
+    response = webTarget.path("api/v1/admin/refresh/hadoop_conf")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $admin001AuthHeader")
+      .post(null)
+    assert(200 == response.getStatus)
+
+    val admin002AuthHeader = new String(
+      Base64.getEncoder.encode("admin002".getBytes()),
+      "UTF-8")
+    response = webTarget.path("api/v1/admin/refresh/hadoop_conf")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $admin002AuthHeader")
+      .post(null)
+    assert(405 == response.getStatus)
   }
 
   test("refresh user defaults config of the kyuubi server") {

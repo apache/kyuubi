@@ -2429,6 +2429,16 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT30M")
 
+  val SERVER_ADMINISTRATORS: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.server.administrators")
+      .doc("Comma-separated list of Kyuubi service administrators. " +
+        "We use this config to grant admin permission to any service accounts.")
+      .version("1.8.0")
+      .serverOnly
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
   val OPERATION_SPARK_LISTENER_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.spark.listener.enabled")
       .doc("When set to true, Spark engine registers an SQLOperationListener before executing " +
