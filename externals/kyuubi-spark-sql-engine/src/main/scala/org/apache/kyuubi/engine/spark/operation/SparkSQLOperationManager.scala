@@ -71,7 +71,8 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     val lang = OperationLanguages(confOverlay.getOrElse(
       OPERATION_LANGUAGE.key,
       spark.conf.get(OPERATION_LANGUAGE.key, operationLanguageDefault)))
-    val opHandleOption = confOverlay.get(KYUUBI_OPERATION_HANDLE_KEY).map(OperationHandle.apply)
+    val opHandle = confOverlay.get(KYUUBI_OPERATION_HANDLE_KEY).map(
+      OperationHandle.apply).getOrElse(OperationHandle())
     val operation =
       lang match {
         case OperationLanguages.SQL =>
@@ -94,7 +95,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
                     runAsync,
                     queryTimeout,
                     incrementalCollect,
-                    opHandleOption)
+                    opHandle)
                 case _ =>
                   new ExecuteStatement(
                     session,
@@ -102,7 +103,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
                     runAsync,
                     queryTimeout,
                     incrementalCollect,
-                    opHandleOption)
+                    opHandle)
               }
             case mode =>
               new PlanOnlyStatement(session, statement, mode)

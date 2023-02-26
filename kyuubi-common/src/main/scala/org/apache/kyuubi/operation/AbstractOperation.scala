@@ -41,7 +41,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
   }
 
-  private[kyuubi] lazy val statementId = handle.identifier.toString
+  final private[kyuubi] val statementId = handle.identifier.toString
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 

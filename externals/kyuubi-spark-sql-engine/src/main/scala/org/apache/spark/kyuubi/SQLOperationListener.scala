@@ -43,7 +43,7 @@ class SQLOperationListener(
     operation: Operation,
     spark: SparkSession) extends StatsReportListener with Logging {
 
-  private lazy val operationId: String = operation.getHandle.identifier.toString
+  private val operationId: String = operation.getHandle.identifier.toString
   private lazy val activeJobs = new java.util.HashSet[Int]()
   private lazy val activeStages = new ConcurrentHashMap[StageAttempt, StageInfo]()
   private var executionId: Option[Long] = None
