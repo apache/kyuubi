@@ -36,7 +36,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   final protected val opType: String = getClass.getSimpleName
   final protected val createTime = System.currentTimeMillis()
-  final private val handle = OperationHandle()
+  protected val handle = OperationHandle()
   final private val operationTimeout: Long = {
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
   }

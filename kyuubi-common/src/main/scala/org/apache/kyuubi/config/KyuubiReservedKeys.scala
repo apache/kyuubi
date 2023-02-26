@@ -42,4 +42,5 @@ object KyuubiReservedKeys {
   final val KYUUBI_OPERATION_GET_CURRENT_CATALOG = "kyuubi.operation.get.current.catalog"
   final val KYUUBI_OPERATION_SET_CURRENT_DATABASE = "kyuubi.operation.set.current.database"
   final val KYUUBI_OPERATION_GET_CURRENT_DATABASE = "kyuubi.operation.get.current.database"
+  final val KYUUBI_OPERATION_HANDLE_KEY = "kyuubi.operation.handle"
 }

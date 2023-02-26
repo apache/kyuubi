@@ -23,10 +23,11 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_OPERATION_HANDLE_KEY
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{NoneMode, Operation, OperationManager, PlanOnlyMode}
+import org.apache.kyuubi.operation.{NoneMode, Operation, OperationHandle, OperationManager, PlanOnlyMode}
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
 class SparkSQLOperationManager private (name: String) extends OperationManager(name) {
@@ -70,6 +71,8 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     val lang = OperationLanguages(confOverlay.getOrElse(
       OPERATION_LANGUAGE.key,
       spark.conf.get(OPERATION_LANGUAGE.key, operationLanguageDefault)))
+    val opHandle = confOverlay.get(KYUUBI_OPERATION_HANDLE_KEY).map(
+      OperationHandle.apply).getOrElse(OperationHandle())
     val operation =
       lang match {
         case OperationLanguages.SQL =>
@@ -91,14 +94,16 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
                     statement,
                     runAsync,
                     queryTimeout,
-                    incrementalCollect)
+                    incrementalCollect,
+                    opHandle)
                 case _ =>
                   new ExecuteStatement(
                     session,
                     statement,
                     runAsync,
                     queryTimeout,
-                    incrementalCollect)
+                    incrementalCollect,
+                    opHandle)
               }
             case mode =>
               new PlanOnlyStatement(session, statement, mode)
