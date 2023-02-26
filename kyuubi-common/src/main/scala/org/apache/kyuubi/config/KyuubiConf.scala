@@ -2068,8 +2068,23 @@ object KyuubiConf {
         "subclass of `EngineSecuritySecretProvider`.")
       .version("1.5.0")
       .stringConf
-      .createWithDefault(
-        "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecuritySecretProviderImpl")
+      .transform {
+        case "simple" =>
+          "org.apache.kyuubi.service.authentication.SimpleEngineSecuritySecretProviderImpl"
+        case "zookeeper" =>
+          "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecuritySecretProviderImpl"
+        case other => other
+      }
+      .createWithDefault("simple")
+
+  val SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.security.secret.provider.simple.secret")
+      .internal
+      .doc("The secret key used for internal security access. Only take affects when " +
+        s"${ENGINE_SECURITY_SECRET_PROVIDER.key} is 'simple'")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
 
   val ENGINE_SECURITY_CRYPTO_KEY_LENGTH: ConfigEntry[Int] =
     buildConf("kyuubi.engine.security.crypto.keyLength")
