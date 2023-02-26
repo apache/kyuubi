@@ -38,7 +38,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   private val engineMgr = new KyuubiApplicationManager()
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
-    .set(KyuubiConf.SERVER_ADMIN_USERS, Seq("admin001"))
+    .set(KyuubiConf.SERVER_ADMINISTRATORS, Seq("admin001"))
 
   override def beforeAll(): Unit = {
     super.beforeAll()
