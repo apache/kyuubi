@@ -20,7 +20,7 @@ package org.apache.kyuubi.parser.trino
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetColumns, GetPrimaryKeys, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetColumns, GetPrepareParameters, GetPrimaryKeys, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
 
 class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
   val parser = new KyuubiTrinoFeParser()
@@ -368,5 +368,14 @@ class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
         |""".stripMargin)
 
     assert(kyuubiTreeNode.isInstanceOf[GetPrimaryKeys])
+  }
+
+  test("dddde") {
+    val kyuubiTreeNode = parse(
+      """
+        | EXECUTE statement1 USING INTEGER '1'
+        |""".stripMargin)
+
+    assert(kyuubiTreeNode.isInstanceOf[GetPrepareParameters])
   }
 }

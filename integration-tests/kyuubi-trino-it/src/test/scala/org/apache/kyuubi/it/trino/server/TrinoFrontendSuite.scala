@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.it.trino.server
 
-import scala.util.control.NonFatal
+import java.sql.{DriverManager, PreparedStatement}
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
@@ -26,18 +26,40 @@ import org.apache.kyuubi.operation.SparkMetadataTests
 /**
  * This test is for Trino jdbc driver with Kyuubi Server and Spark engine:
  *
- *  -------------------------------------------------------------
- *  |                JDBC                                       |
- *  |  Trino-driver  ---->  Kyuubi Server  -->  Spark Engine    |
- *  |                                                           |
- *  -------------------------------------------------------------
+ * -------------------------------------------------------------
+ * |                JDBC                                       |
+ * |  Trino-driver  ---->  Kyuubi Server  -->  Spark Engine    |
+ * |                                                           |
+ * -------------------------------------------------------------
  */
 class TrinoFrontendSuite extends WithKyuubiServer with SparkMetadataTests {
-  // TODO: Add more test cases
+
+  test("execute statement - select 11 where 1=1") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT 11  where 1<1")
+      while (resultSet.next()) {
+        assert(resultSet.getInt(1) === 11)
+      }
+    }
+  }
+
+  test("execute prepareStatement - select 11 where 1 = 1") {
+
+    val connection = DriverManager.getConnection(jdbcUrl, "test_user", "")
+    val statement: PreparedStatement =
+      connection.prepareStatement("select 11 where 1 = ?  ")
+    statement.setInt(1, 1)
+    val rs = statement.executeQuery()
+    while (rs.next()) {
+      // scalastyle:off println
+      assert(rs.getInt(1) == 11)
+    }
+  }
 
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.FRONTEND_PROTOCOLS, Seq("TRINO"))
   }
+
   override protected def jdbcUrl: String = {
     s"jdbc:trino://${server.frontendServices.head.connectionUrl}/;"
   }
@@ -50,12 +72,12 @@ class TrinoFrontendSuite extends WithKyuubiServer with SparkMetadataTests {
 
     // eagerly start spark engine before running test, it's a workaround for trino jdbc driver
     // since it does not support changing http connect timeout
-    try {
-      withJdbcStatement() { statement =>
-        statement.execute("SELECT 1")
-      }
-    } catch {
-      case NonFatal(e) =>
-    }
+    //    try {
+    //      withJdbcStatement() { statement =>
+    //        statement.execute("SELECT 1")
+    //      }
+    //    } catch {
+    //      case NonFatal(e) =>
+    //    }
   }
 }

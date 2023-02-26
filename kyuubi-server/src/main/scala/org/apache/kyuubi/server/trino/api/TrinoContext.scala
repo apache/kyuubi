@@ -187,13 +187,20 @@ object TrinoContext {
       queryHtmlUri: URI,
       queryStatus: OperationStatus,
       columns: Option[TGetResultSetMetadataResp] = None,
-      data: Option[TRowSet] = None): QueryResults = {
+      data: Option[TRowSet] = None,
+      updateType: String = null): QueryResults = {
 
     val columnList = columns match {
       case Some(value) => convertTColumn(value)
       case None => null
     }
     val rowList = data match {
+      case Some(value) if "PREPARE".equals(updateType) =>
+        val list1 = new util.LinkedList[util.List[Object]]
+        val list2 = new util.LinkedList[Object]()
+        list2.add(true.asInstanceOf[Object])
+        list1.add(list2)
+        list1
       case Some(value) => convertTRowSet(value)
       case None => null
     }
@@ -214,7 +221,7 @@ object TrinoContext {
         .setElapsedTimeMillis(0).setQueuedTimeMillis(0).build(),
       toQueryError(queryStatus),
       defaultWarning,
-      null,
+      updateType,
       0L)
   }
 

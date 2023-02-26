@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.trino.api
 
 import java.net.URI
+import java.sql.{DriverManager, ResultSet}
 import java.time.ZoneId
 import java.util.{Collections, Locale, Optional}
 import java.util.concurrent.TimeUnit
@@ -41,6 +42,27 @@ class TrinoClientApiSuite extends KyuubiFunSuite with TrinoRestFrontendTestHelpe
       .build()
   private lazy val clientSession =
     new AtomicReference[ClientSession](createTestClientSession(baseUri))
+
+  test("submit query with trino jdbc") {
+    // 根据组件名称使用正确的JDBC URL
+    Class.forName("io.trino.jdbc.TrinoDriver")
+    val url = s"jdbc:trino://${fe.connectionUrl}/";
+    // 创建连接对象。
+    val connection = DriverManager.getConnection(url, "test_user", "");
+    // 创建Statement对象。
+    val statement = connection.createStatement();
+    statement.setQueryTimeout(20)
+    // 执行查询。
+    val rs: ResultSet = statement.executeQuery("select 2 where 1=1");
+    // 获取结果。
+    val columnNum = rs.getMetaData().getColumnCount();
+    while (rs.next()) {
+      // scalastyle:off println
+      val result = rs.getInt(1)
+      assert(result == 2)
+    }
+
+  }
 
   test("submit query with trino client api") {
     val trino = getTrinoStatementClient("select 1")
@@ -114,6 +136,7 @@ class TrinoClientApiSuite extends KyuubiFunSuite with TrinoRestFrontendTestHelpe
         (false, List[List[Any]]())
       }
     }
+
     Iterator.continually(getData(trino)).takeWhile(_._1).flatMap(_._2).toList
   }
 

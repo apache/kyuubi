@@ -83,6 +83,7 @@ class ExecuteStatement(
       info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       addOperationListener()
+      info(statement)
       result = spark.sql(statement)
       iter = collectAsIterator(result)
       setCompiledStateIfNeeded()
