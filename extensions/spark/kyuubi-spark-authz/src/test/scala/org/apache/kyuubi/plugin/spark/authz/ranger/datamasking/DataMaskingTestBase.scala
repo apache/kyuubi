@@ -228,10 +228,16 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   }
 
   test("union an unmasked table") {
-    val s = "SELECT a.value1 FROM default.src a union" +
-      " (SELECT b.value1 FROM default.unmasked b)"
-    checkAnswer("bob", s, Seq(Row(md5Hex("1")), Row("3"), Row("1"), Row("2")))
+    val s = """
+      SELECT value1 from (
+           SELECT a.value1 FROM default.src a
+           union
+          (SELECT b.value1 FROM default.unmasked b)
+      ) c order by value1
+      """
+    checkAnswer("bob", s, Seq(Row("1"), Row("2"), Row("3"), Row(md5Hex("1"))))
   }
+
   test("union a masked table") {
     val s = "SELECT a.value1 FROM default.src a union" +
       " (SELECT b.value1 FROM default.src b)"
