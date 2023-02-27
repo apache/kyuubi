@@ -110,15 +110,12 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     assume(isSparkV32OrGreater)
 
     // UpdateTable
+    val update = s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' WHERE id=1"
     runSqlAsWithAccessException()(
-      s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
-        " WHERE id=1",
+      update,
       contains = s"does not have [update] privilege on [$namespace1/$table1]")
 
-    doAs(
-      "admin",
-      sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
-        " WHERE id=1"))
+    doAs("admin", sql(update))
   }
 
   test("[KYUUBI #3515] DELETE FROM TABLE") {
