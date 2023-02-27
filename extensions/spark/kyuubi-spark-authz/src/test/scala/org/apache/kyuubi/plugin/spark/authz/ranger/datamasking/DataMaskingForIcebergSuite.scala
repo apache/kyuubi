@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
 
 import org.apache.spark.SparkConf
+import org.scalatest.Outcome
 
 import org.apache.kyuubi.Utils
 
@@ -36,4 +37,9 @@ class DataMaskingForIcebergSuite extends DataMaskingTestBase {
   override protected val catalogImpl: String = "in-memory"
 
   override protected def format: String = "USING iceberg"
+
+  override def withFixture(test: NoArgTest): Outcome = {
+    assume(isSparkV31OrGreater)
+    test()
+  }
 }
