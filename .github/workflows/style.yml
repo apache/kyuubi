@@ -54,7 +54,7 @@ jobs:
           cache: 'pip'
       - name: Check kyuubi modules available
         id: modules-check
-        run: build/mvnd dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true ${{ matrix.profiles }}
+        run: build/mvnd dependency:resolve -T2C -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true ${{ matrix.profiles }}
         continue-on-error: true
 
       - name: Install
