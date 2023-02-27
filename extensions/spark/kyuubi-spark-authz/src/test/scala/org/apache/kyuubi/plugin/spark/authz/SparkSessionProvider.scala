@@ -22,6 +22,7 @@ import java.security.PrivilegedExceptionAction
 
 import scala.util.Try
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
@@ -102,15 +103,15 @@ trait SparkSessionProvider {
   }
 
   protected def runSqlAsWithAccessException(user: String = "someone")(
-      sqlStr: String,
+      sqlText: String,
       isCollect: Boolean = false,
       isExplain: Boolean = false,
-      contains: String = null): Unit = {
-    withClue(sqlStr) {
+      contains: String = ""): Unit = {
+    withClue(sqlText) {
       val e = intercept[AccessControlException](
         doAs(
           user, {
-            val df = sql(sqlStr)
+            val df = sql(sqlText)
             if (isExplain) {
               df.explain()
             }
@@ -118,7 +119,7 @@ trait SparkSessionProvider {
               df.collect()
             }
           }))
-      if (contains != null) {
+      if (StringUtils.isNotBlank(contains)) {
         assert(e.getMessage.contains(contains))
       }
     }
