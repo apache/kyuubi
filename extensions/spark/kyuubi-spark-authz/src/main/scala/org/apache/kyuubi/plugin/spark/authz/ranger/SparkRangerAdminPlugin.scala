@@ -18,8 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.LinkedHashMap
+import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
 
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest

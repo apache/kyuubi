@@ -346,6 +346,13 @@ object TableCommands {
     TableCommandSpec(cmd, Nil, CREATEVIEW)
   }
 
+  val CreateTable = {
+    val cmd = "org.apache.spark.sql.execution.datasources.CreateTable"
+    val tableDesc = TableDesc("tableDesc", classOf[CatalogTableTableExtractor])
+    val queryDesc = QueryDesc("query", "LogicalPlanOptionQueryExtractor")
+    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE, queryDescs = Seq(queryDesc))
+  }
+
   val CreateDataSourceTable = {
     val cmd = "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand"
     val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
@@ -607,6 +614,7 @@ object TableCommands {
     CreateHiveTableAsSelect,
     CreateHiveTableAsSelect.copy(classname =
       "org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand"),
+    CreateTable,
     CreateTableLike,
     CreateTableV2,
     CreateTableV2.copy(classname =

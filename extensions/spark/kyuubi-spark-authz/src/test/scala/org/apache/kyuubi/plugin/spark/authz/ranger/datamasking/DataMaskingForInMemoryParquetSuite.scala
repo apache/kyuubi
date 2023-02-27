@@ -15,17 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.util
+package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
 
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
+class DataMaskingForInMemoryParquetSuite extends DataMaskingTestBase {
 
-case class RowFilterAndDataMaskingMarker(child: LogicalPlan) extends UnaryNode
-  with WithInternalChild {
-
-  override def output: Seq[Attribute] = child.output
-
-  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
-    copy(child = newChild)
-
+  override protected val catalogImpl: String = "in-memory"
+  override protected def format: String = "USING parquet"
 }
