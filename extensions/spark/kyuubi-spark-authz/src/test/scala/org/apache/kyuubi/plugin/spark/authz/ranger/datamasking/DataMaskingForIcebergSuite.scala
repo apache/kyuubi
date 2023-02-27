@@ -36,13 +36,4 @@ class DataMaskingForIcebergSuite extends DataMaskingTestBase {
   override protected val catalogImpl: String = "in-memory"
 
   override protected def format: String = "USING iceberg"
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-  }
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-  }
-
 }

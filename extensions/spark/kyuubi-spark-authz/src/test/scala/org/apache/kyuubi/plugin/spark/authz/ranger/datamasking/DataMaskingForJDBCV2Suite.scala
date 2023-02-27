@@ -21,6 +21,7 @@ import java.sql.DriverManager
 import scala.util.Try
 
 import org.apache.spark.SparkConf
+import org.scalatest.Outcome
 
 class DataMaskingForJDBCV2Suite extends DataMaskingTestBase {
   override protected val extraSparkConf: SparkConf = new SparkConf()
@@ -45,4 +46,8 @@ class DataMaskingForJDBCV2Suite extends DataMaskingTestBase {
     }
   }
 
+  override def withFixture(test: NoArgTest): Outcome = {
+    assume(isSparkV31OrGreater)
+    test()
+  }
 }
