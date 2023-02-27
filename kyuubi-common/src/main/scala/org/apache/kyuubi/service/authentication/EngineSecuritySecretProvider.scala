@@ -18,7 +18,7 @@
 package org.apache.kyuubi.service.authentication
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER
+import org.apache.kyuubi.config.KyuubiConf._
 
 trait EngineSecuritySecretProvider {
 
@@ -31,6 +31,21 @@ trait EngineSecuritySecretProvider {
    * Get the secret to encrypt and decrypt the secure access token.
    */
   def getSecret(): String
+}
+
+class SimpleEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvider {
+
+  private var _conf: KyuubiConf = _
+
+  override def initialize(conf: KyuubiConf): Unit = _conf = conf
+
+  override def getSecret(): String = {
+    _conf.get(SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET).getOrElse {
+      throw new IllegalArgumentException(
+        s"${SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET.key} must be configured " +
+          s"when ${ENGINE_SECURITY_SECRET_PROVIDER.key} is `simple`.")
+    }
+  }
 }
 
 object EngineSecuritySecretProvider {
