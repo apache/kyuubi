@@ -34,11 +34,10 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
-import org.apache.kyuubi.events.KyuubiEvent
-import org.apache.kyuubi.operation.OperationHandle
+import org.apache.kyuubi.events.{KyuubiEvent, KyuubiOperationEvent, KyuubiSessionEvent}
+import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.session.KyuubiSession
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -90,7 +89,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[KyuubiEvent]))),
+      schema = new Schema(implementation = classOf[KyuubiSessionEvent]))),
     description = "get session info")
   @GET
   @Path("listSessionInfo")

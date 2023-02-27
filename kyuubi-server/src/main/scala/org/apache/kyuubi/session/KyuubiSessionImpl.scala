@@ -211,9 +211,9 @@ class KyuubiSessionImpl(
     }
 
     sessionEvent.runningOperations += 1
-    super.runOperation(operation)
+    val operationHandle = super.runOperation(operation)
     sessionEvent.runningOperations -= 1
-    sessionEvent.finishedOperations += 1
+    operationHandle
   }
 
   @volatile private var engineLaunched: Boolean = false

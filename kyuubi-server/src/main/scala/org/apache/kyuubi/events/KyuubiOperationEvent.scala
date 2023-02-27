@@ -18,6 +18,7 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_TYPE}
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionImpl}
 
@@ -42,6 +43,9 @@ import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionImpl}
  * @param sessionId the identifier of the parent session
  * @param sessionUser the authenticated client user
  * @param sessionType the type of the parent session
+ * @param engineId the id of engine
+ * @param engineType the type of engine
+ * @param engineShareLevel the share level of engine
  */
 case class KyuubiOperationEvent private (
     statementId: String,
@@ -91,7 +95,6 @@ object KyuubiOperationEvent {
       session.handle.identifier.toString,
       session.user,
       session.sessionType.toString,
-      session.user,
       session.asInstanceOf[KyuubiSessionImpl].client.engineId.orNull,
       Option(session.sessionManager.getConf).map(_.get(ENGINE_TYPE)).orNull,
       Option(session.sessionManager.getConf).map(_.get(ENGINE_SHARE_LEVEL)).orNull)

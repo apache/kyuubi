@@ -23,16 +23,18 @@ import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
 
-import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
-import org.apache.kyuubi.client.api.v1.dto.Engine
+import org.apache.kyuubi.client.api.v1.dto.{Engine, HadoopConfData, Server}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
@@ -243,28 +245,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[ServerLog]))),
-    description =
-      "get server log")
-  @GET
-  @Path("server/log")
-  def getServerLog(
-      @QueryParam("maxrows") maxRows: Int): ServerLog = {
-    try {
-      val rowSet = getServerLogRowSet(maxRows)
-      new ServerLog(rowSet, rowSet.size)
-    } catch {
-      case NonFatal(e) =>
-        val errorMsg = s"Error getting server log"
-        error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
-    }
-  }
-
-  @ApiResponse(
-    responseCode = "200",
     content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "get the Kyuubi server hadoop conf")
   @GET
@@ -273,8 +253,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive get Kyuubi server hadoop conf request from $userName/$ipAddress")
-    info(s"the admin is $administrator")
-    if (!userName.equals(administrator)) {
+    if (!isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to get the Kyuubi server hadoop conf")
     }
@@ -282,7 +261,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val hadoopConf = ListBuffer[HadoopConfData]()
     val iterator = KyuubiServer.getHadoopConf().iterator()
     while (iterator.hasNext()) {
-      val element = iterator.next();
+      val element = iterator.next()
       hadoopConf += new HadoopConfData(element.getKey, element.getValue)
     }
     hadoopConf
@@ -333,6 +312,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   }
 
   private def isAdministrator(userName: String): Boolean = {
-    administrators.contains(userName);
+    administrators.contains(userName)
   }
 }
