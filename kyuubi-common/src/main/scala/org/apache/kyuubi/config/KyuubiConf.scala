@@ -2075,7 +2075,7 @@ object KyuubiConf {
           "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecuritySecretProviderImpl"
         case other => other
       }
-      .createWithDefault("simple")
+      .createWithDefault("zookeeper")
 
   val SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.security.secret.provider.simple.secret")
