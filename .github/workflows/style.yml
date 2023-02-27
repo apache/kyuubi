@@ -54,7 +54,7 @@ jobs:
           cache: 'pip'
       - name: Check kyuubi modules available
         id: modules-check
-        run: build/mvnd dependency:resolve -T2C -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true ${{ matrix.profiles }}
+        run: build/mvnd dependency:resolve -T1C -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true ${{ matrix.profiles }}
         continue-on-error: true
 
       - name: Install
@@ -83,7 +83,7 @@ jobs:
         run: |
           SPOTLESS_BLACK_VERSION=$(build/mvn help:evaluate -Dexpression=spotless.python.black.version -q -DforceStdout)
           pip install black==$SPOTLESS_BLACK_VERSION
-          build/mvnd spotless:check ${{ matrix.profiles }} -Pspotless-python
+          build/mvnd spotless:check -T1C ${{ matrix.profiles }} -Pspotless-python
       - name: setup npm
         uses: actions/setup-node@v3
         with:
