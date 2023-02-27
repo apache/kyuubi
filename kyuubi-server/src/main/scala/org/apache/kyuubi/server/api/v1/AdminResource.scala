@@ -37,6 +37,7 @@ import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.zookeeper.KeeperException
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -160,9 +161,14 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         }
       case None =>
         withDiscoveryClient(fe.getConf) { discoveryClient =>
-          discoveryClient.getChildren(engineSpace).map { child =>
-            info(s"Listing engine nodes for $engineSpace/$child")
-            engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+          try {
+            discoveryClient.getChildren(engineSpace).map { child =>
+              info(s"Listing engine nodes for $engineSpace/$child")
+              engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+            }
+          } catch {
+            case _: KeeperException =>
+              warn(s"Fail to find $engineSpace Node, return empty engine list")
           }
         }
     }
