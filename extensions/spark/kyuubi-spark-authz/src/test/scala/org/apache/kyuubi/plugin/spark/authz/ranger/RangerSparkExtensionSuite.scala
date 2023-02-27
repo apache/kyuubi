@@ -17,12 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import java.security.PrivilegedExceptionAction
-import java.sql.Timestamp
-
 import scala.util.Try
 
-import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
@@ -43,13 +39,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   // scalastyle:on
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
-  protected def doAs[T](user: String, f: => T): T = {
-    UserGroupInformation.createRemoteUser(user).doAs[T](
-      new PrivilegedExceptionAction[T] {
-        override def run(): T = f
-      })
-  }
-
   override def afterAll(): Unit = {
     spark.stop()
     super.afterAll()
@@ -60,24 +49,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       resource: String = "default/src",
       user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
     s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
-  }
-
-  protected def withCleanTmpResources[T](res: Seq[(String, String)])(f: => T): T = {
-    try {
-      f
-    } finally {
-      res.foreach {
-        case (t, "table") => doAs("admin", sql(s"DROP TABLE IF EXISTS $t"))
-        case (db, "database") => doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
-        case (fn, "function") => doAs("admin", sql(s"DROP FUNCTION IF EXISTS $fn"))
-        case (view, "view") => doAs("admin", sql(s"DROP VIEW IF EXISTS $view"))
-        case (cacheTable, "cache") => if (isSparkV32OrGreater) {
-            doAs("admin", sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
-          }
-        case (_, e) =>
-          throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
-      }
-    }
   }
 
   /**
@@ -324,135 +295,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
   }
 
-  test("data masking") {
-    val db = "default"
-    val table = "src"
-    val col = "key"
-    val create =
-      s"CREATE TABLE IF NOT EXISTS $db.$table" +
-        s" ($col int, value1 int, value2 string, value3 string, value4 timestamp, value5 string)" +
-        s" USING $format"
-
-    withCleanTmpResources(Seq(
-      (s"$db.${table}2", "table"),
-      (s"$db.$table", "table"))) {
-      doAs("admin", assert(Try { sql(create) }.isSuccess))
-      doAs(
-        "admin",
-        sql(
-          s"INSERT INTO $db.$table SELECT 1, 1, 'hello', 'world', " +
-            s"timestamp'2018-11-17 12:34:56', 'World'"))
-      doAs(
-        "admin",
-        sql(
-          s"INSERT INTO $db.$table SELECT 20, 2, 'kyuubi', 'y', " +
-            s"timestamp'2018-11-17 12:34:56', 'world'"))
-      doAs(
-        "admin",
-        sql(
-          s"INSERT INTO $db.$table SELECT 30, 3, 'spark', 'a'," +
-            s" timestamp'2018-11-17 12:34:56', 'world'"))
-
-      doAs(
-        "kent",
-        assert(sql(s"SELECT key FROM $db.$table order by key").collect() ===
-          Seq(Row(1), Row(20), Row(30))))
-
-      Seq(
-        s"SELECT value1, value2, value3, value4, value5 FROM $db.$table",
-        s"SELECT value1 as key, value2, value3, value4, value5 FROM $db.$table",
-        s"SELECT max(value1), max(value2), max(value3), max(value4), max(value5) FROM $db.$table",
-        s"SELECT coalesce(max(value1), 1), coalesce(max(value2), 1), coalesce(max(value3), 1), " +
-          s"coalesce(max(value4), timestamp '2018-01-01 22:33:44'), coalesce(max(value5), 1) " +
-          s"FROM $db.$table",
-        s"SELECT value1, value2, value3, value4, value5 FROM $db.$table WHERE value2 in" +
-          s" (SELECT value2 as key FROM $db.$table)")
-        .foreach { q =>
-          doAs(
-            "bob", {
-              withClue(q) {
-                assert(sql(q).collect() ===
-                  Seq(
-                    Row(
-                      DigestUtils.md5Hex("1"),
-                      "xxxxx",
-                      "worlx",
-                      Timestamp.valueOf("2018-01-01 00:00:00"),
-                      "Xorld")))
-              }
-            })
-        }
-      doAs(
-        "bob", {
-          sql(s"CREATE TABLE $db.src2 using $format AS SELECT value1 FROM $db.$table")
-          assert(sql(s"SELECT value1 FROM $db.${table}2").collect() ===
-            Seq(Row(DigestUtils.md5Hex("1"))))
-        })
-    }
-  }
-
-  test("[KYUUBI #3581]: data masking on permanent view") {
-    assume(isSparkV31OrGreater)
-
-    val db = "default"
-    val table = "src"
-    val permView = "perm_view"
-    val col = "key"
-    val create =
-      s"CREATE TABLE IF NOT EXISTS $db.$table" +
-        s" ($col int, value1 int, value2 string)" +
-        s" USING $format"
-
-    val createView =
-      s"CREATE OR REPLACE VIEW $db.$permView" +
-        s" AS SELECT * FROM $db.$table"
-
-    withCleanTmpResources(Seq(
-      (s"$db.$table", "table"),
-      (s"$db.$permView", "view"))) {
-      doAs("admin", assert(Try { sql(create) }.isSuccess))
-      doAs("admin", assert(Try { sql(createView) }.isSuccess))
-      doAs(
-        "admin",
-        sql(
-          s"INSERT INTO $db.$table SELECT 1, 1, 'hello'"))
-
-      Seq(
-        s"SELECT value1, value2 FROM $db.$permView")
-        .foreach { q =>
-          doAs(
-            "perm_view_user", {
-              withClue(q) {
-                assert(sql(q).collect() ===
-                  Seq(
-                    Row(
-                      DigestUtils.md5Hex("1"),
-                      "hello")))
-              }
-            })
-        }
-    }
-  }
-
-  test("KYUUBI #2390: RuleEliminateMarker stays in analyze phase for data masking") {
-    val db = "default"
-    val table = "src"
-    val create =
-      s"CREATE TABLE IF NOT EXISTS $db.$table (key int, value1 int) USING $format"
-
-    withCleanTmpResources(Seq((s"$db.$table", "table"))) {
-      doAs("admin", sql(create))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
-      // scalastyle: off
-      doAs(
-        "bob", {
-          assert(sql(s"select * from $db.$table").collect() ===
-            Seq(Row(1, DigestUtils.md5Hex("1"))))
-          assert(Try(sql(s"select * from $db.$table").show(1)).isSuccess)
-        })
-    }
-  }
-
   test("show tables") {
     val db = "default2"
     val table = "src"
@@ -680,7 +522,6 @@ class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite
 
 class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
-
   test("table stats must be specified") {
     val table = "hive_src"
     withCleanTmpResources(Seq((table, "table"))) {
