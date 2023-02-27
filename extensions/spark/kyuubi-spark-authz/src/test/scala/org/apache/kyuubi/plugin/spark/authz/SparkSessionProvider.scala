@@ -87,10 +87,6 @@ trait SparkSessionProvider {
     }
   }
 
-  protected def runSqlAs(user: String, sqlStr: String): DataFrame = {
-    doAs[DataFrame](user, sql(sqlStr))
-  }
-
   protected def runSqlAsInSuccess(
       user: String,
       sqlStr: String,
