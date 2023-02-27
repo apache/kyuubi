@@ -80,9 +80,13 @@ trait SparkSessionProvider {
   }
 
   protected def doAs[T](user: String, clue: String = "")(f: => T): T = {
-    withClue(clue) {
-      doAs(user, f)
+    withClue[T](clue) {
+      doAs[T](user, f)
     }
+  }
+
+  protected def runSqlAs(user: String, sqlStr: String): DataFrame = {
+    doAs[DataFrame](user, sql(sqlStr))
   }
 
   protected def withCleanTmpResources[T](res: Seq[(String, String)])(f: => T): T = {
