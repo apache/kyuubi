@@ -47,11 +47,6 @@ class DataMaskingForIcebergSuite extends DataMaskingTestBase {
 
   override def afterAll(): Unit = {
     super.afterAll()
-
-    // cleanup db
-    Try {
-      DriverManager.getConnection(s"jdbc:derby:memory:testcat;shutdown=true")
-    }
   }
 
 }
