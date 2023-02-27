@@ -37,6 +37,7 @@ case class RuleApplyRowFilter(spark: SparkSession) extends RuleHelper {
     }
     newPlan
   }
+
   private def applyFilter(
       plan: LogicalPlan,
       table: Table): LogicalPlan = {

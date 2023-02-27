@@ -67,7 +67,6 @@ case class RuleApplyDataMaskingStage1(spark: SparkSession) extends RuleHelper {
         if (maskerExprs.isEmpty) {
           p
         } else {
-          //
           val t = p.transformExpressionsUp {
             case e: NamedExpression => maskerExprs.getOrElse(e.exprId, e)
           }
