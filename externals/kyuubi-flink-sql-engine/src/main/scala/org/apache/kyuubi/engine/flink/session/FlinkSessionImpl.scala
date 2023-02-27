@@ -26,8 +26,9 @@ import org.apache.flink.table.client.gateway.local.LocalExecutor
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils
-import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
 class FlinkSessionImpl(
     protocol: TProtocolVersion,
@@ -38,6 +39,9 @@ class FlinkSessionImpl(
     sessionManager: SessionManager,
     val executor: LocalExecutor)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  override val handle: SessionHandle =
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
   lazy val sessionContext: SessionContext = {
     FlinkEngineUtils.getSessionContext(executor, handle.identifier.toString)
