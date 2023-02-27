@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
 
-import java.sql.DriverManager
-
-import scala.util.Try
-
 import org.apache.spark.SparkConf
 
 import org.apache.kyuubi.Utils
