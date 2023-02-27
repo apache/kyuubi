@@ -20,6 +20,8 @@ package org.apache.kyuubi.plugin.spark.authz
 import java.nio.file.Files
 import java.security.PrivilegedExceptionAction
 
+import scala.util.Try
+
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
@@ -87,6 +89,21 @@ trait SparkSessionProvider {
 
   protected def runSqlAs(user: String, sqlStr: String): DataFrame = {
     doAs[DataFrame](user, sql(sqlStr))
+  }
+
+  protected def runSqlAsInSuccess(
+      user: String,
+      sqlStr: String,
+      isCollect: Boolean = false): Unit = {
+    doAs(
+      user,
+      assert(
+        Try {
+          val df = sql(sqlStr)
+          if (isCollect) {
+            df.collect()
+          }
+        }.isSuccess))
   }
 
   protected def withCleanTmpResources[T](res: Seq[(String, String)])(f: => T): T = {
