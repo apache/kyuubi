@@ -22,122 +22,12 @@ Kyuubi provides several ways to configure the system and corresponding engines.
 
 ## Environments
 
-You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`, e.g, `JAVA_HOME`, then this java runtime will be used both for Kyuubi server instance and the applications it launches. You can also change the variable in the subprocess's env configuration file, e.g.`$SPARK_HOME/conf/spark-env.sh` to use more specific ENV for SQL engine applications.
-
-```bash
-#!/usr/bin/env bash
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-#
-# - JAVA_HOME               Java runtime to use. By default use "java" from PATH.
-#
-#
-# - KYUUBI_CONF_DIR         Directory containing the Kyuubi configurations to use.
-#                           (Default: $KYUUBI_HOME/conf)
-# - KYUUBI_LOG_DIR          Directory for Kyuubi server-side logs.
-#                           (Default: $KYUUBI_HOME/logs)
-# - KYUUBI_PID_DIR          Directory stores the Kyuubi instance pid file.
-#                           (Default: $KYUUBI_HOME/pid)
-# - KYUUBI_MAX_LOG_FILES    Maximum number of Kyuubi server logs can rotate to.
-#                           (Default: 5)
-# - KYUUBI_JAVA_OPTS        JVM options for the Kyuubi server itself in the form "-Dx=y".
-#                           (Default: none).
-# - KYUUBI_CTL_JAVA_OPTS    JVM options for the Kyuubi ctl itself in the form "-Dx=y".
-#                           (Default: none).
-# - KYUUBI_BEELINE_OPTS     JVM options for the Kyuubi BeeLine in the form "-Dx=Y".
-#                           (Default: none)
-# - KYUUBI_NICENESS         The scheduling priority for Kyuubi server.
-#                           (Default: 0)
-# - KYUUBI_WORK_DIR_ROOT    Root directory for launching sql engine applications.
-#                           (Default: $KYUUBI_HOME/work)
-# - HADOOP_CONF_DIR         Directory containing the Hadoop / YARN configuration to use.
-# - YARN_CONF_DIR           Directory containing the YARN configuration to use.
-#
-# - SPARK_HOME              Spark distribution which you would like to use in Kyuubi.
-# - SPARK_CONF_DIR          Optional directory where the Spark configuration lives.
-#                           (Default: $SPARK_HOME/conf)
-# - FLINK_HOME              Flink distribution which you would like to use in Kyuubi.
-# - FLINK_CONF_DIR          Optional directory where the Flink configuration lives.
-#                           (Default: $FLINK_HOME/conf)
-# - FLINK_HADOOP_CLASSPATH  Required Hadoop jars when you use the Kyuubi Flink engine.
-# - HIVE_HOME               Hive distribution which you would like to use in Kyuubi.
-# - HIVE_CONF_DIR           Optional directory where the Hive configuration lives.
-#                           (Default: $HIVE_HOME/conf)
-# - HIVE_HADOOP_CLASSPATH   Required Hadoop jars when you use the Kyuubi Hive engine.
-#
-
-
-## Examples ##
-
-# export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
-# export SPARK_HOME=/opt/spark
-# export FLINK_HOME=/opt/flink
-# export HIVE_HOME=/opt/hive
-# export FLINK_HADOOP_CLASSPATH=/path/to/hadoop-client-runtime-3.3.2.jar:/path/to/hadoop-client-api-3.3.2.jar
-# export HIVE_HADOOP_CLASSPATH=${HADOOP_HOME}/share/hadoop/common/lib/commons-collections-3.2.2.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-runtime-3.1.0.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-api-3.1.0.jar:${HADOOP_HOME}/share/hadoop/common/lib/htrace-core4-4.1.0-incubating.jar
-# export HADOOP_CONF_DIR=/usr/ndp/current/mapreduce_client/conf
-# export YARN_CONF_DIR=/usr/ndp/current/yarn/conf
-# export KYUUBI_JAVA_OPTS="-Xmx10g -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark -XX:MaxDirectMemorySize=1024m  -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Xloggc:./logs/kyuubi-server-gc-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=5M -XX:NewRatio=3 -XX:MetaspaceSize=512m"
-# export KYUUBI_BEELINE_OPTS="-Xmx2g -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark"
-```
-
+You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`, e.g, `JAVA_HOME`, then this java runtime will be used both for Kyuubi server instance and the applications it launches. You can also change the variable in the subprocess's env configuration file, e.g.`$SPARK_HOME/conf/spark-env.sh` to use more specific ENV for SQL engine applications. see `$KYUUBI_HOME/conf/kyuubi-env.sh.template` as an example.
 For the environment variables that only needed to be transferred into engine side, you can set it with a Kyuubi configuration item formatted `kyuubi.engineEnv.VAR_NAME`. For example, with `kyuubi.engineEnv.SPARK_DRIVER_MEMORY=4g`, the environment variable `SPARK_DRIVER_MEMORY` with value `4g` would be transferred into engine side. With `kyuubi.engineEnv.SPARK_CONF_DIR=/apache/confs/spark/conf`, the value of `SPARK_CONF_DIR` on the engine side is set to `/apache/confs/spark/conf`.
 
 ## Kyuubi Configurations
 
-You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.conf`. For example:
-
-```bash
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
-## Kyuubi Configurations
-
-#
-# kyuubi.authentication                    NONE
-#
-# kyuubi.frontend.bind.host                10.0.0.1
-# kyuubi.frontend.protocols                THRIFT_BINARY
-# kyuubi.frontend.thrift.binary.bind.port  10009
-#
-# kyuubi.engine.type                       SPARK_SQL
-# kyuubi.engine.share.level                USER
-# kyuubi.session.engine.initialize.timeout PT3M
-#
-# kyuubi.ha.addresses                      zk1:2181,zk2:2181,zk3:2181
-# kyuubi.ha.namespace                      kyuubi
-#
-
-# Details in https://kyuubi.readthedocs.io/en/master/deployment/settings.html
-```
+You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.conf`, see `$KYUUBI_HOME/conf/kyuubi-defaults.conf.template` as an example.
 
 ### Authentication
 
@@ -592,72 +482,7 @@ Please refer to the Flink official online documentation for [SET Statements](htt
 
 ## Logging
 
-Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can configure it using `$KYUUBI_HOME/conf/log4j2.xml`.
-
-```bash
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ~ Licensed to the Apache Software Foundation (ASF) under one or more
-  ~ contributor license agreements.  See the NOTICE file distributed with
-  ~ this work for additional information regarding copyright ownership.
-  ~ The ASF licenses this file to You under the Apache License, Version 2.0
-  ~ (the "License"); you may not use this file except in compliance with
-  ~ the License.  You may obtain a copy of the License at
-  ~
-  ~     http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
-
-<!-- Provide log4j2.xml.template to fix `ERROR Filters contains invalid attributes "onMatch", "onMismatch"`, see KYUUBI-2247 -->
-<!-- Extra logging related to initialization of Log4j.
- Set to debug or trace if log4j initialization is failing. -->
-<Configuration status="INFO">
-    <Properties>
-        <Property name="restAuditLogPath">rest-audit.log</Property>
-        <Property name="restAuditLogFilePattern">rest-audit-%d{yyyy-MM-dd}-%i.log</Property>
-    </Properties>
-    <Appenders>
-        <Console name="stdout" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c: %m%n"/>
-            <Filters>
-                <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
-            </Filters>
-        </Console>
-        <RollingFile name="restAudit" fileName="${sys:restAuditLogPath}"
-                     filePattern="${sys:restAuditLogFilePattern}">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n"/>
-            <Policies>
-                <SizeBasedTriggeringPolicy size="51200KB" />
-            </Policies>
-            <DefaultRolloverStrategy max="10"/>
-        </RollingFile>
-    </Appenders>
-    <Loggers>
-        <Root level="INFO">
-            <AppenderRef ref="stdout"/>
-        </Root>
-        <Logger name="org.apache.kyuubi.ctl.ServiceControlCli" level="error" additivity="false">
-            <AppenderRef ref="stdout"/>
-        </Logger>
-        <!--
-        <Logger name="org.apache.kyuubi.server.mysql.codec" level="trace" additivity="false">
-            <AppenderRef ref="stdout"/>
-        </Logger>
-        -->
-        <Logger name="org.apache.hive.beeline.KyuubiBeeLine" level="error" additivity="false">
-            <AppenderRef ref="stdout"/>
-        </Logger>
-        <Logger name="org.apache.kyuubi.server.http.authentication.AuthenticationAuditLogger" additivity="false">
-            <AppenderRef ref="restAudit" />
-        </Logger>
-    </Loggers>
-</Configuration>
-```
+Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can configure it using `$KYUUBI_HOME/conf/log4j2.xml`, see `$KYUUBI_HOME/conf/log4j2.xml.template` as an example.
 
 ## Other Configurations
 
