@@ -31,13 +31,13 @@ import org.apache.kyuubi.plugin.spark.authz.serde._
  *
  * Step1: RuleApplyDataMaskingStage0
  *   - lookup the full plan for supported scans
- *   - once found, get masker configuration for external column by column
- *   - use spark sql parser to generate a unresolved expression for each masker
+ *   - once found, get masker configuration from external column by column
+ *   - use spark sql parser to generate an unresolved expression for each masker
  *   - add a projection with new output on the right top of the original scan if the output has
  *     changed
  *   - Add DataMaskingStage0Marker to track the original expression and its masker expression.
  *
- * Step2: Spark native rules will resolved our newly added maskers
+ * Step2: Spark native rules will resolve our newly added maskers
  *
  * Step3: [[RuleApplyDataMaskingStage1]]
  */

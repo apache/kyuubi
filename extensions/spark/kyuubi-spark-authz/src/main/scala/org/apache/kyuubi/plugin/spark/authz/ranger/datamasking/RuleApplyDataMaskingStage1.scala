@@ -28,7 +28,7 @@ import org.apache.kyuubi.plugin.spark.authz.serde._
  * See [[RuleApplyDataMaskingStage0]] also.
  *
  * This is the second step for data masking. It will fulfill the missing attributes that
- * has a related masker expression buffered by DataMaskingStage0Marker.
+ * have a related masker expression buffered by DataMaskingStage0Marker.
  */
 case class RuleApplyDataMaskingStage1(spark: SparkSession) extends RuleHelper {
 
