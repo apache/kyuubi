@@ -195,13 +195,12 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         s"SELECT coalesce(max(value), 1) FROM $db.$table",
         s"SELECT key FROM $db.$table WHERE value in (SELECT value as key FROM $db.$table)")
         .foreach { q =>
-          doAs(
-            "kent", {
-              withClue(q) {
-                val e = intercept[AccessControlException](sql(q).collect())
-                assert(e.getMessage === errorMessage("select", "default/src/value", "kent"))
-              }
-            })
+          doAs("kent") {
+            withClue(q) {
+              val e = intercept[AccessControlException](sql(q).collect())
+              assert(e.getMessage === errorMessage("select", "default/src/value", "kent"))
+            }
+          }
         }
     }
   }
@@ -210,11 +209,10 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val db = "default"
     val func = "func"
     val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
-    doAs(
-      "kent", {
-        val e = intercept[AccessControlException](sql(create0))
-        assert(e.getMessage === errorMessage("create", "default/func"))
-      })
+    doAs("kent") {
+      val e = intercept[AccessControlException](sql(create0))
+      assert(e.getMessage === errorMessage("create", "default/func"))
+    }
     doAs("admin", assert(Try(sql(create0)).isSuccess))
   }
 
@@ -242,12 +240,11 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         s"SELECT coalesce(max(value), 1) FROM $db.$table",
         s"SELECT value FROM $db.$table WHERE value in (SELECT value as key FROM $db.$table)")
         .foreach { q =>
-          doAs(
-            "bob", {
-              withClue(q) {
-                assert(sql(q).collect() === Seq(Row(1)))
-              }
-            })
+          doAs("bob") {
+            withClue(q) {
+              assert(sql(q).collect() === Seq(Row(1)))
+            }
+          }
         }
       doAs(
         "bob", {
@@ -285,12 +282,11 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         s"SELECT coalesce(max(value), 1) FROM $db.$permView",
         s"SELECT value FROM $db.$permView WHERE value in (SELECT value as key FROM $db.$permView)")
         .foreach { q =>
-          doAs(
-            "perm_view_user", {
-              withClue(q) {
-                assert(sql(q).collect() === Seq(Row(1)))
-              }
-            })
+          doAs("perm_view_user") {
+            withClue(q) {
+              assert(sql(q).collect() === Seq(Row(1)))
+            }
+          }
         }
     }
   }
@@ -526,12 +522,11 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val table = "hive_src"
     withCleanTmpResources(Seq((table, "table"))) {
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
-      doAs(
-        "admin", {
-          val hiveTableRelation = sql(s"SELECT * FROM $table")
-            .queryExecution.optimizedPlan.collectLeaves().head.asInstanceOf[HiveTableRelation]
-          assert(getFieldVal[Option[Statistics]](hiveTableRelation, "tableStats").nonEmpty)
-        })
+      doAs("admin") {
+        val hiveTableRelation = sql(s"SELECT * FROM $table")
+          .queryExecution.optimizedPlan.collectLeaves().head.asInstanceOf[HiveTableRelation]
+        assert(getFieldVal[Option[Statistics]](hiveTableRelation, "tableStats").nonEmpty)
+      }
     }
   }
 
@@ -539,12 +534,11 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val table = "hive_src"
     withCleanTmpResources(Seq((table, "table"))) {
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int) STORED AS PARQUET"))
-      doAs(
-        "admin", {
-          val relation = sql(s"SELECT * FROM $table")
-            .queryExecution.optimizedPlan.collectLeaves().head
-          assert(relation.isInstanceOf[LogicalRelation])
-        })
+      doAs("admin") {
+        val relation = sql(s"SELECT * FROM $table")
+          .queryExecution.optimizedPlan.collectLeaves().head
+        assert(relation.isInstanceOf[LogicalRelation])
+      }
     }
   }
 
@@ -557,16 +551,15 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       (s"$db.$table2", "table"),
       (s"$db.$table1", "table"),
       (s"$db", "database"))) {
-      doAs(
-        "admin", {
-          sql(s"CREATE DATABASE IF NOT EXISTS $db")
-          sql(s"CREATE TABLE IF NOT EXISTS $db.$table1(id int) STORED AS PARQUET")
-          sql(s"INSERT INTO $db.$table1 SELECT 1")
-          sql(s"CREATE TABLE IF NOT EXISTS $db.$table2(id int, name string) STORED AS PARQUET")
-          sql(s"INSERT INTO $db.$table2 SELECT 1, 'a'")
-          val join = s"SELECT a.id, b.name FROM $db.$table1 a JOIN $db.$table2 b ON a.id=b.id"
-          assert(sql(join).collect().length == 1)
-        })
+      doAs("admin") {
+        sql(s"CREATE DATABASE IF NOT EXISTS $db")
+        sql(s"CREATE TABLE IF NOT EXISTS $db.$table1(id int) STORED AS PARQUET")
+        sql(s"INSERT INTO $db.$table1 SELECT 1")
+        sql(s"CREATE TABLE IF NOT EXISTS $db.$table2(id int, name string) STORED AS PARQUET")
+        sql(s"INSERT INTO $db.$table2 SELECT 1, 'a'")
+        val join = s"SELECT a.id, b.name FROM $db.$table1 a JOIN $db.$table2 b ON a.id=b.id"
+        assert(sql(join).collect().length == 1)
+      }
     }
   }
 
@@ -727,11 +720,10 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           sql(select).collect()
         }.isSuccess))
 
-      doAs(
-        "create_only_user", {
-          val e = intercept[AccessControlException](sql(select).collect())
-          assert(e.getMessage === errorMessage("select", s"$db/$table/key"))
-        })
+      doAs("create_only_user") {
+        val e = intercept[AccessControlException](sql(select).collect())
+        assert(e.getMessage === errorMessage("select", s"$db/$table/key"))
+      }
     }
   }
 

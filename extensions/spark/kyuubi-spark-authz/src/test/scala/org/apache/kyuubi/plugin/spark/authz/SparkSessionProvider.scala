@@ -23,6 +23,7 @@ import java.security.PrivilegedExceptionAction
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
+import org.scalatest.Assertions.withClue
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -77,6 +78,13 @@ trait SparkSessionProvider {
         override def run(): T = f
       })
   }
+
+  protected def doAs[T](user: String, clue: String = "")(f: => T): T = {
+    withClue(clue) {
+      doAs(user, f)
+    }
+  }
+
   protected def withCleanTmpResources[T](res: Seq[(String, String)])(f: => T): T = {
     try {
       f

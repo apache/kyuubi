@@ -197,10 +197,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
       """.stripMargin
 
     // MergeIntoTable:  Using a MERGE INTO Statement
-    val e1 = intercept[AccessControlException](
-      doAs(
-        "someone",
-        sql(mergeIntoSql)))
+    val e1 = intercept[AccessControlException](doAs("someone", sql(mergeIntoSql)))
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
       s" on [$namespace1/$table1/id]"))
 
@@ -208,10 +205,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
       SparkRangerAdminPlugin.getRangerConf.setBoolean(
         s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
         true)
-      val e2 = intercept[AccessControlException](
-        doAs(
-          "someone",
-          sql(mergeIntoSql)))
+      val e2 = intercept[AccessControlException](doAs("someone", sql(mergeIntoSql)))
       assert(e2.getMessage.contains(s"does not have" +
         s" [select] privilege" +
         s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
