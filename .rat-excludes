@@ -53,4 +53,6 @@ build/scala-*/**
 **/web/**
 **/node/**
 **/web-ui/**
+**/sql/derby/**
+**/sql/mysql/**
 
