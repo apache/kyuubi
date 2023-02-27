@@ -20,6 +20,8 @@ package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
 // scalastyle:off
 import java.sql.Timestamp
 
+import scala.util.Try
+
 import org.apache.commons.codec.digest.DigestUtils.md5Hex
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.scalatest.{Assertion, BeforeAndAfterAll}
@@ -242,5 +244,24 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     val s = "SELECT a.value1 FROM default.src a union" +
       " (SELECT b.value1 FROM default.src b)"
     checkAnswer("bob", s, Seq(Row(md5Hex("1"))))
+  }
+
+  test("KYUUBI #3581: permanent view should lookup rule on itself not the   ") {
+    assume(isSparkV31OrGreater)
+    val supported = doAs(
+      "perm_view_user",
+      Try(sql("CREATE OR REPLACE VIEW default.perm_view AS SELECT * FROM default.src")).isSuccess)
+    assume(supported, s"view support for '$format' has not been implemented yet")
+
+    withCleanTmpResources(Seq(("default.perm_view", "view"))) {
+      checkAnswer(
+        "perm_view_user",
+        "SELECT value1, value2 FROM default.src where key < 20",
+        Seq(Row(1, "hello")))
+      checkAnswer(
+        "perm_view_user",
+        "SELECT value1, value2 FROM default.perm_view where key < 20",
+        Seq(Row(md5Hex("1"), "hello")))
+    }
   }
 }

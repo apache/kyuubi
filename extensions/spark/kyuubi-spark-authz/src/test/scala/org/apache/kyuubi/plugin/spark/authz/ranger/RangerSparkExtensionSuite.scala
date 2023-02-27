@@ -19,7 +19,6 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.util.Try
 
-import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
@@ -290,49 +289,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
             "perm_view_user", {
               withClue(q) {
                 assert(sql(q).collect() === Seq(Row(1)))
-              }
-            })
-        }
-    }
-  }
-
-  test("[KYUUBI #3581]: data masking on permanent view") {
-    assume(isSparkV31OrGreater)
-
-    val db = "default"
-    val table = "src"
-    val permView = "perm_view"
-    val col = "key"
-    val create =
-      s"CREATE TABLE IF NOT EXISTS $db.$table" +
-        s" ($col int, value1 int, value2 string)" +
-        s" USING $format"
-
-    val createView =
-      s"CREATE OR REPLACE VIEW $db.$permView" +
-        s" AS SELECT * FROM $db.$table"
-
-    withCleanTmpResources(Seq(
-      (s"$db.$table", "table"),
-      (s"$db.$permView", "view"))) {
-      doAs("admin", assert(Try { sql(create) }.isSuccess))
-      doAs("admin", assert(Try { sql(createView) }.isSuccess))
-      doAs(
-        "admin",
-        sql(
-          s"INSERT INTO $db.$table SELECT 1, 1, 'hello'"))
-
-      Seq(
-        s"SELECT value1, value2 FROM $db.$permView")
-        .foreach { q =>
-          doAs(
-            "perm_view_user", {
-              withClue(q) {
-                assert(sql(q).collect() ===
-                  Seq(
-                    Row(
-                      DigestUtils.md5Hex("1"),
-                      "hello")))
               }
             })
         }
