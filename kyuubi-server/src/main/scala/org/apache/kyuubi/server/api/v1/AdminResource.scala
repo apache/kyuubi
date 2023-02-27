@@ -27,6 +27,7 @@ import scala.collection.mutable.ListBuffer
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.zookeeper.KeeperException.NoNodeException
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto.Engine
@@ -37,7 +38,6 @@ import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.zookeeper.KeeperException
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -167,7 +167,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
               engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
             }
           } catch {
-            case _: KeeperException =>
+            case _: NoNodeException =>
               warn(s"Fail to find $engineSpace Node, return empty engine list")
           }
         }
