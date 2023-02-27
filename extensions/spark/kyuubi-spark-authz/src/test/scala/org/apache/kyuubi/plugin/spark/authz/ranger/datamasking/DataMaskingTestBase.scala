@@ -64,11 +64,11 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   }
 
   override def beforeAll(): Unit = {
-    doAs("admin", setup())
+    doAs("admin")(setup())
     super.beforeAll()
   }
   override def afterAll(): Unit = {
-    doAs("admin", cleanup())
+    doAs("admin")(cleanup())
     spark.stop
     super.afterAll()
   }

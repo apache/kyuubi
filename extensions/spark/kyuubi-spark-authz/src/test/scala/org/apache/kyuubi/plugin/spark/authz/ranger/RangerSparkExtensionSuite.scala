@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import scala.util.Try
-
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
@@ -156,7 +154,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       runSqlAsInSuccess("admin")(alter)
       runSqlAsWithAccessException()(alter, contains = errorMessage("alter", "mydb"))
       runSqlAsWithAccessException()(drop, contains = errorMessage("drop", "mydb"))
-      doAs("kent", Try(sql("SHOW DATABASES")).isSuccess)
+      runSqlAsInSuccess("kent")("SHOW DATABASES")
     }
   }
 
@@ -201,7 +199,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val func = "func"
     val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
     runSqlAsWithAccessException("kent")(create0, contains = errorMessage("create", "default/func"))
-    doAs("admin", assert(Try(sql(create0)).isSuccess))
+    runSqlAsInSuccess("admin")(create0)
   }
 
   test("row level filter") {
@@ -474,29 +472,19 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val globalTempView = "global_temp_view"
 
     withTempView(tempView) {
-      doAs(
-        "denyuser",
-        assert(Try(sql(s"CREATE TEMPORARY VIEW $tempView AS select * from values(1)")).isSuccess))
-
-      doAs(
-        "denyuser",
-        Try(sql(s"CREATE OR REPLACE TEMPORARY VIEW $tempView" +
-          s" AS select * from values(1)")).isSuccess)
+      runSqlAsInSuccess("denyuser")(s"CREATE TEMPORARY VIEW $tempView AS select * from values(1)")
+      runSqlAsInSuccess("denyuser")(
+        s"CREATE OR REPLACE TEMPORARY VIEW $tempView AS select * from values(1)")
     }
 
     withGlobalTempView(globalTempView) {
-      doAs(
-        "denyuser",
-        Try(
-          sql(
-            s"CREATE GLOBAL TEMPORARY VIEW $globalTempView AS SELECT * FROM values(1)")).isSuccess)
-
-      doAs(
-        "denyuser",
-        Try(sql(s"CREATE OR REPLACE GLOBAL TEMPORARY VIEW $globalTempView" +
-          s" AS select * from values(1)")).isSuccess)
+      runSqlAsInSuccess("denyuser")(
+        s"CREATE GLOBAL TEMPORARY VIEW $globalTempView AS SELECT * FROM values(1)")
+      runSqlAsInSuccess("denyuser")(
+        s"CREATE OR REPLACE GLOBAL TEMPORARY VIEW $globalTempView AS select * from values(1)")
     }
-    doAs("admin", assert(sql("show tables from global_temp").collect().length == 0))
+
+    doAs("admin")(assert(sql("show tables from global_temp").collect().length == 0))
   }
 }
 
