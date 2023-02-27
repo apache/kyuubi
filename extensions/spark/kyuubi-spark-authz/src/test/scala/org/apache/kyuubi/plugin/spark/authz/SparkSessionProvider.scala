@@ -25,7 +25,7 @@ import scala.util.Try
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
-import org.scalatest.Assertions.withClue
+import org.scalatest.Assertions.{intercept, withClue}
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -104,6 +104,29 @@ trait SparkSessionProvider {
             df.collect()
           }
         }.isSuccess))
+  }
+
+  protected def runSqlAsWithAccessException(user: String = "someone")(
+      sqlStr: String,
+      isCollect: Boolean = false,
+      isExplain: Boolean = false,
+      contains: String = null): Unit = {
+    withClue(sqlStr) {
+      val e = intercept[AccessControlException](
+        doAs(
+          user, {
+            val df = sql(sqlStr)
+            if (isExplain) {
+              df.explain()
+            }
+            if (isCollect) {
+              df.collect()
+            }
+          }))
+      if (contains != null) {
+        assert(e.getMessage.contains(contains))
+      }
+    }
   }
 
   protected def withCleanTmpResources[T](res: Seq[(String, String)])(f: => T): T = {

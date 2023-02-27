@@ -19,7 +19,6 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.util.Try
 
-import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
@@ -30,7 +29,7 @@ import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
+import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
 
@@ -46,9 +45,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
   protected def errorMessage(
       privilege: String,
-      resource: String = "default/src",
-      user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
-    s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
+      resource: String = "default/src"): String = {
+    s"does not have [$privilege] privilege on [$resource]"
   }
 
   /**
@@ -152,15 +150,12 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val alter = s"ALTER DATABASE $testDb SET DBPROPERTIES (abc = '123')"
     val drop = s"DROP DATABASE IF EXISTS $testDb"
 
-    val e = intercept[AccessControlException](sql(create))
-    assert(e.getMessage === errorMessage("create", "mydb"))
+    runSqlAsWithAccessException()(create, contains = errorMessage("create", "mydb"))
     withCleanTmpResources(Seq((testDb, "database"))) {
       runSqlAsInSuccess("admin", create)
       runSqlAsInSuccess("admin", alter)
-      val e1 = intercept[AccessControlException](sql(alter))
-      assert(e1.getMessage === errorMessage("alter", "mydb"))
-      val e2 = intercept[AccessControlException](sql(drop))
-      assert(e2.getMessage === errorMessage("drop", "mydb"))
+      runSqlAsWithAccessException()(alter, contains = errorMessage("alter", "mydb"))
+      runSqlAsWithAccessException()(drop, contains = errorMessage("drop", "mydb"))
       doAs("kent", Try(sql("SHOW DATABASES")).isSuccess)
     }
   }
@@ -174,15 +169,13 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val alter0 = s"ALTER TABLE $db.$table SET TBLPROPERTIES(key='ak')"
     val drop0 = s"DROP TABLE IF EXISTS $db.$table"
     val select = s"SELECT * FROM $db.$table"
-    val e = intercept[AccessControlException](sql(create0))
-    assert(e.getMessage === errorMessage("create"))
+    runSqlAsWithAccessException()(create0, contains = errorMessage("create"))
 
     withCleanTmpResources(Seq((s"$db.$table", "table"))) {
       runSqlAsInSuccess("bob", create0)
       runSqlAsInSuccess("bob", alter0)
 
-      val e1 = intercept[AccessControlException](sql(drop0))
-      assert(e1.getMessage === errorMessage("drop"))
+      runSqlAsWithAccessException()(drop0, contains = errorMessage("drop"))
       runSqlAsInSuccess("bob", alter0)
       runSqlAsInSuccess("bob", select, true)
       runSqlAsInSuccess("kent", s"SELECT key FROM $db.$table", true)
@@ -195,12 +188,10 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         s"SELECT coalesce(max(value), 1) FROM $db.$table",
         s"SELECT key FROM $db.$table WHERE value in (SELECT value as key FROM $db.$table)")
         .foreach { q =>
-          doAs("kent") {
-            withClue(q) {
-              val e = intercept[AccessControlException](sql(q).collect())
-              assert(e.getMessage === errorMessage("select", "default/src/value", "kent"))
-            }
-          }
+          runSqlAsWithAccessException("kent")(
+            q,
+            isCollect = true,
+            contains = errorMessage("select", "default/src/value"))
         }
     }
   }
@@ -209,10 +200,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val db = "default"
     val func = "func"
     val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
-    doAs("kent") {
-      val e = intercept[AccessControlException](sql(create0))
-      assert(e.getMessage === errorMessage("create", "default/func"))
-    }
+    runSqlAsWithAccessException("kent")(create0, contains = errorMessage("create", "default/func"))
     doAs("admin", assert(Try(sql(create0)).isSuccess))
   }
 
@@ -576,17 +564,18 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
       doAs("admin", sql(s"CREATE VIEW ${adminPermView} AS SELECT * FROM $table"))
 
-      val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"CREATE VIEW $permView AS SELECT 1 as a")))
-      assert(e1.getMessage.contains(s"does not have [create] privilege on [default/$permView]"))
+      runSqlAsWithAccessException()(
+        s"CREATE VIEW $permView AS SELECT 1 as a",
+        contains = s"does not have [create] privilege on [default/$permView]")
 
-      val e2 = intercept[AccessControlException](
-        doAs("someone", sql(s"CREATE VIEW $permView AS SELECT * FROM $table")))
-      if (isSparkV32OrGreater) {
-        assert(e2.getMessage.contains(s"does not have [select] privilege on [default/$table/id]"))
+      val errorMsg = if (isSparkV32OrGreater) {
+        s"does not have [select] privilege on [default/$table/id]"
       } else {
-        assert(e2.getMessage.contains(s"does not have [select] privilege on [$table]"))
+        s"does not have [select] privilege on [$table]"
       }
+      runSqlAsWithAccessException()(
+        s"CREATE VIEW $permView AS SELECT * FROM $table",
+        contains = errorMsg)
     }
   }
 
@@ -605,13 +594,15 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db2"))
       doAs("admin", sql(s"CREATE VIEW $db2.$permView AS SELECT * FROM $table"))
 
-      val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"select * from $db2.$permView")).show(0))
-      if (isSparkV31OrGreater) {
-        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db2/$permView/id]"))
+      val errorMsg = if (isSparkV31OrGreater) {
+        s"does not have [select] privilege on [$db2/$permView/id]"
       } else {
-        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+        s"does not have [select] privilege on [$db1/$table/id]"
       }
+      runSqlAsWithAccessException()(
+        s"select * from $db2.$permView",
+        isCollect = true,
+        contains = errorMsg)
     }
   }
 
@@ -645,20 +636,22 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s" FROM $db1.$srcTable1 as tb1" +
         s" JOIN $db1.$srcTable2 as tb2" +
         s" on tb1.id = tb2.id"
-      val e1 = intercept[AccessControlException](doAs("someone", sql(insertSql1)))
-      assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
+      runSqlAsWithAccessException()(
+        insertSql1,
+        contains = s"does not have [select] privilege on [$db1/$srcTable1/id]")
 
       try {
         SparkRangerAdminPlugin.getRangerConf.setBoolean(
           s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
           true)
-        val e2 = intercept[AccessControlException](doAs("someone", sql(insertSql1)))
-        assert(e2.getMessage.contains(s"does not have" +
-          s" [select] privilege on" +
-          s" [$db1/$srcTable1/id,$db1/$srcTable1/name,$db1/$srcTable1/city," +
-          s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
-          s" [update] privilege on [$db1/$sinkTable1/id,$db1/$sinkTable1/age," +
-          s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]"))
+        runSqlAsWithAccessException()(
+          insertSql1,
+          contains = s"does not have" +
+            s" [select] privilege on" +
+            s" [$db1/$srcTable1/id,$db1/$srcTable1/name,$db1/$srcTable1/city," +
+            s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
+            s" [update] privilege on [$db1/$sinkTable1/id,$db1/$sinkTable1/age," +
+            s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]")
       } finally {
         // revert to default value
         SparkRangerAdminPlugin.getRangerConf.setBoolean(
@@ -690,10 +683,9 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           sql(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable1" +
             s" (id int, name string, city string)"))
 
-        val e1 = intercept[AccessControlException](
-          doAs("someone", sql(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1")))
-        assert(
-          e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
+        runSqlAsWithAccessException()(
+          s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1",
+          contains = s"does not have [select] privilege on [$db1/$srcTable1/id]")
 
         doAs("admin", sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
         doAs("someone", sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
@@ -714,10 +706,10 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
       runSqlAsInSuccess(defaultTableOwner, select, true)
 
-      doAs("create_only_user") {
-        val e = intercept[AccessControlException](sql(select).collect())
-        assert(e.getMessage === errorMessage("select", s"$db/$table/key"))
-      }
+      runSqlAsWithAccessException("create_only_user")(
+        select,
+        isCollect = true,
+        contains = errorMessage("select", s"$db/$table/key"))
     }
   }
 

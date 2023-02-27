@@ -17,10 +17,8 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 // scalastyle:off
-import scala.util.Try
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 
 /**
  * Tests for RangerSparkExtensionSuite
@@ -86,25 +84,19 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       """.stripMargin
 
     // MergeIntoTable:  Using a MERGE INTO Statement
-    val e1 = intercept[AccessControlException](
-      doAs(
-        "someone",
-        sql(mergeIntoSql)))
-    assert(e1.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/id]"))
+    runSqlAsWithAccessException()(
+      mergeIntoSql,
+      contains = s"does not have [select] privilege on [$namespace1/$table1/id]")
 
     try {
       SparkRangerAdminPlugin.getRangerConf.setBoolean(
         s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
         true)
-      val e2 = intercept[AccessControlException](
-        doAs(
-          "someone",
-          sql(mergeIntoSql)))
-      assert(e2.getMessage.contains(s"does not have" +
-        s" [select] privilege" +
-        s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
-        s" [update] privilege on [$namespace1/$outputTable1]"))
+      runSqlAsWithAccessException()(
+        mergeIntoSql,
+        contains = s"does not have [select] privilege" +
+          s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
+          s" [update] privilege on [$namespace1/$outputTable1]")
     } finally {
       SparkRangerAdminPlugin.getRangerConf.setBoolean(
         s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
@@ -118,13 +110,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     assume(isSparkV32OrGreater)
 
     // UpdateTable
-    val e1 = intercept[AccessControlException](
-      doAs(
-        "someone",
-        sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
-          " WHERE id=1")))
-    assert(e1.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$namespace1/$table1]"))
+    runSqlAsWithAccessException()(
+      s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
+        " WHERE id=1",
+      contains = s"does not have [update] privilege on [$namespace1/$table1]")
 
     doAs(
       "admin",
@@ -136,10 +125,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     assume(isSparkV32OrGreater)
 
     // DeleteFromTable
-    val e6 = intercept[AccessControlException](
-      doAs("someone", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2")))
-    assert(e6.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$namespace1/$table1]"))
+    runSqlAsWithAccessException()(
+      s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2",
+      contains = s"does not have [update] privilege on [$namespace1/$table1]")
 
     doAs("admin", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
   }
@@ -157,11 +145,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
       runSqlAsInSuccess(defaultTableOwner, select, true)
 
-      doAs(
-        "create_only_user", {
-          val e = intercept[AccessControlException](sql(select).collect())
-          assert(e.getMessage === errorMessage("select", s"$namespace1/$table/key"))
-        })
+      runSqlAsWithAccessException("create_only_user")(
+        select,
+        isCollect = true,
+        contains = errorMessage("select", s"$namespace1/$table/key"))
     }
   }
 
@@ -219,10 +206,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("[KYUUBI #4255] DESCRIBE TABLE") {
     assume(isSparkV32OrGreater)
-    val e1 = intercept[AccessControlException](
-      doAs("someone", sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain()))
-    assert(e1.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1]"))
+    runSqlAsWithAccessException()(
+      s"DESCRIBE TABLE $catalogV2.$namespace1.$table1",
+      isExplain = true,
+      contains = s"does not have [select] privilege on [$namespace1/$table1]")
   }
 
 }
