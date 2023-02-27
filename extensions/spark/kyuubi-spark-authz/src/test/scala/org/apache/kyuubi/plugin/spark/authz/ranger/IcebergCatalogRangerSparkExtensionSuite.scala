@@ -136,11 +136,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     val select = s"SELECT key FROM $catalogV2.$namespace1.$table"
 
     withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table", "table"))) {
-      runSqlAsInSuccess(
-        defaultTableOwner,
+      runSqlAsInSuccess(defaultTableOwner)(
         s"CREATE TABLE $catalogV2.$namespace1.$table (key int, value int) USING iceberg")
 
-      runSqlAsInSuccess(defaultTableOwner, select, true)
+      runSqlAsInSuccess(defaultTableOwner)(select, isCollect = true)
 
       runSqlAsWithAccessException("create_only_user")(
         select,

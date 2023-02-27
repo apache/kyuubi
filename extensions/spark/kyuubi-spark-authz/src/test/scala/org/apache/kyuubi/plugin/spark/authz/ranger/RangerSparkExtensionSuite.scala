@@ -152,8 +152,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
     runSqlAsWithAccessException()(create, contains = errorMessage("create", "mydb"))
     withCleanTmpResources(Seq((testDb, "database"))) {
-      runSqlAsInSuccess("admin", create)
-      runSqlAsInSuccess("admin", alter)
+      runSqlAsInSuccess("admin")(create)
+      runSqlAsInSuccess("admin")(alter)
       runSqlAsWithAccessException()(alter, contains = errorMessage("alter", "mydb"))
       runSqlAsWithAccessException()(drop, contains = errorMessage("drop", "mydb"))
       doAs("kent", Try(sql("SHOW DATABASES")).isSuccess)
@@ -172,13 +172,13 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     runSqlAsWithAccessException()(create0, contains = errorMessage("create"))
 
     withCleanTmpResources(Seq((s"$db.$table", "table"))) {
-      runSqlAsInSuccess("bob", create0)
-      runSqlAsInSuccess("bob", alter0)
+      runSqlAsInSuccess("bob")(create0)
+      runSqlAsInSuccess("bob")(alter0)
 
       runSqlAsWithAccessException()(drop0, contains = errorMessage("drop"))
-      runSqlAsInSuccess("bob", alter0)
-      runSqlAsInSuccess("bob", select, true)
-      runSqlAsInSuccess("kent", s"SELECT key FROM $db.$table", true)
+      runSqlAsInSuccess("bob")(alter0)
+      runSqlAsInSuccess("bob")(select, isCollect = true)
+      runSqlAsInSuccess("kent")(s"SELECT key FROM $db.$table", isCollect = true)
 
       Seq(
         select,
@@ -211,7 +211,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
 
     withCleanTmpResources(Seq((s"$db.${table}2", "table"), (s"$db.$table", "table"))) {
-      runSqlAsInSuccess("admin", create)
+      runSqlAsInSuccess("admin")(create)
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
@@ -257,8 +257,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     withCleanTmpResources(Seq(
       (s"$db.$table", "table"),
       (s"$db.$permView", "view"))) {
-      runSqlAsInSuccess("admin", create)
-      runSqlAsInSuccess("admin", createView)
+      runSqlAsInSuccess("admin")(create)
+      runSqlAsInSuccess("admin")(createView)
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
@@ -700,11 +700,10 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val select = s"SELECT key FROM $db.$table"
 
     withCleanTmpResources(Seq((s"$db.$table", "table"))) {
-      runSqlAsInSuccess(
-        defaultTableOwner,
+      runSqlAsInSuccess(defaultTableOwner)(
         s"CREATE TABLE $db.$table (key int, value int) USING $format")
 
-      runSqlAsInSuccess(defaultTableOwner, select, true)
+      runSqlAsInSuccess(defaultTableOwner)(select, isCollect = true)
 
       runSqlAsWithAccessException("create_only_user")(
         select,

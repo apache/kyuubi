@@ -87,8 +87,7 @@ trait SparkSessionProvider {
     }
   }
 
-  protected def runSqlAsInSuccess(
-      user: String,
+  protected def runSqlAsInSuccess(user: String)(
       sqlStr: String,
       isCollect: Boolean = false): Unit = {
     doAs(
