@@ -18,13 +18,17 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.util.{Base64, UUID}
+import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{GenericType, MediaType}
+
+import scala.collection.JavaConverters._
 
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, RestFrontendTestHelper, Utils}
-import org.apache.kyuubi.client.api.v1.dto.Engine
+import org.apache.kyuubi.client.api.v1.dto.{Engine, SessionData, SessionHandle, SessionOpenRequest}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
 import org.apache.kyuubi.engine.{ApplicationState, EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, USER}
@@ -121,6 +125,46 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .post(null)
     assert(200 == response.getStatus)
+  }
+
+  test("list/close sessions") {
+    val requestObj = new SessionOpenRequest(
+      1,
+      Map("testConfig" -> "testValue").asJava)
+
+    var response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+
+    val adminUser = Utils.currentUser
+    val encodeAuthorization = new String(
+      Base64.getEncoder.encode(
+        s"$adminUser:".getBytes()),
+      "UTF-8")
+
+    // get session list
+    var response2 = webTarget.path("api/v1/admin/sessions").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    assert(200 == response2.getStatus)
+    val sessions1 = response2.readEntity(new GenericType[Seq[SessionData]]() {})
+    assert(sessions1.nonEmpty)
+    assert(sessions1.head.getConf.get(KYUUBI_SESSION_CONNECTION_URL_KEY) === fe.connectionUrl)
+
+    // close an opened session
+    val sessionHandle = response.readEntity(classOf[SessionHandle]).getIdentifier
+    response = webTarget.path(s"api/v1/admin/sessions/$sessionHandle").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .delete()
+    assert(200 == response.getStatus)
+
+    // get session list again
+    response2 = webTarget.path("api/v1/admin/sessions").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    assert(200 == response2.getStatus)
+    val sessions2 = response2.readEntity(classOf[Seq[SessionData]])
+    assert(sessions2.isEmpty)
   }
 
   test("delete engine - user share level") {
