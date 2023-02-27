@@ -24,25 +24,37 @@ import org.apache.spark.SparkConf
 import org.scalatest.Outcome
 
 class DataMaskingForJDBCV2Suite extends DataMaskingTestBase {
-  override protected val extraSparkConf: SparkConf = new SparkConf()
-    .set("spark.sql.defaultCatalog", "testcat")
-    .set(
-      "spark.sql.catalog.testcat",
-      "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog")
-    .set(s"spark.sql.catalog.testcat.url", "jdbc:derby:memory:testcat;create=true")
-    .set(
-      s"spark.sql.catalog.testcat.driver",
-      "org.apache.derby.jdbc.AutoloadedDriver")
+  override protected val extraSparkConf: SparkConf = {
+    val conf = new SparkConf()
+    if (isSparkV31OrGreater) {
+      conf
+        .set("spark.sql.defaultCatalog", "testcat")
+        .set(
+          "spark.sql.catalog.testcat",
+          "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog")
+        .set(s"spark.sql.catalog.testcat.url", "jdbc:derby:memory:testcat;create=true")
+        .set(
+          s"spark.sql.catalog.testcat.driver",
+          "org.apache.derby.jdbc.AutoloadedDriver")
+    }
+    conf
+  }
 
   override protected val catalogImpl: String = "in-memory"
 
   override protected def format: String = ""
 
+  override def beforeAll(): Unit = {
+    if (isSparkV31OrGreater) super.beforeAll()
+  }
+
   override def afterAll(): Unit = {
-    super.afterAll()
-    // cleanup db
-    Try {
-      DriverManager.getConnection(s"jdbc:derby:memory:testcat;shutdown=true")
+    if (isSparkV31OrGreater) {
+      super.afterAll()
+      // cleanup db
+      Try {
+        DriverManager.getConnection(s"jdbc:derby:memory:testcat;shutdown=true")
+      }
     }
   }
 
