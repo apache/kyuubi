@@ -30,5 +30,7 @@ runs:
         key: setup-mvnd-${{ runner.os }}
     - name: Check Maven
       run: build/mvn -v
+      shell: bash
     - name: Check Mvnd
       run: build/mvnd -v
+      shell: bash
