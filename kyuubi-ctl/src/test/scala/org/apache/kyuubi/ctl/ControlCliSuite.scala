@@ -136,7 +136,14 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   test("test render zookeeper service node info") {
     val title = "test render"
     val nodes = Seq(
-      ServiceNodeInfo("/kyuubi", "serviceNode", "localhost", 10000, Some("version"), None))
+      ServiceNodeInfo(
+        "/kyuubi",
+        "serviceNode",
+        "localhost",
+        10000,
+        Some("version"),
+        None,
+        Map.empty))
     val renderedInfo = Render.renderServiceNodesInfo(title, nodes)
     // scalastyle:off
     val expected = {
@@ -179,8 +186,22 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         newNamespace)
 
       val expectedCreatedNodes = Seq(
-        ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
-        ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
+        ServiceNodeInfo(
+          s"/$newNamespace",
+          "",
+          "localhost",
+          10000,
+          Some(KYUUBI_VERSION),
+          None,
+          Map.empty),
+        ServiceNodeInfo(
+          s"/$newNamespace",
+          "",
+          "localhost",
+          10001,
+          Some(KYUUBI_VERSION),
+          None,
+          Map.empty))
 
       testPrematureExitForControlCli(
         args,
@@ -248,8 +269,22 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         uniqueNamespace)
 
       val expectedNodes = Seq(
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
+        ServiceNodeInfo(
+          s"/$uniqueNamespace",
+          "",
+          "localhost",
+          10000,
+          Some(KYUUBI_VERSION),
+          None,
+          Map.empty),
+        ServiceNodeInfo(
+          s"/$uniqueNamespace",
+          "",
+          "localhost",
+          10001,
+          Some(KYUUBI_VERSION),
+          None,
+          Map.empty))
 
       testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes))
     }
@@ -281,7 +316,14 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         "10000")
 
       val expectedNodes = Seq(
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None))
+        ServiceNodeInfo(
+          s"/$uniqueNamespace",
+          "",
+          "localhost",
+          10000,
+          Some(KYUUBI_VERSION),
+          None,
+          Map.empty))
 
       testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes))
     }
@@ -315,7 +357,14 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         "10000")
 
       val expectedDeletedNodes = Seq(
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None))
+        ServiceNodeInfo(
+          s"/$uniqueNamespace",
+          "",
+          "localhost",
+          10000,
+          Some(KYUUBI_VERSION),
+          None,
+          Map.empty))
 
       testPrematureExitForControlCli(
         args,
@@ -346,8 +395,22 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         "--verbose")
 
       val expectedNodes = Seq(
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
+        ServiceNodeInfo(
+          s"/$uniqueNamespace",
+          "",
+          "localhost",
+          10000,
+          Some(KYUUBI_VERSION),
+          None,
+          Map.empty),
+        ServiceNodeInfo(
+          s"/$uniqueNamespace",
+          "",
+          "localhost",
+          10001,
+          Some(KYUUBI_VERSION),
+          None,
+          Map.empty))
 
       testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes))
     }

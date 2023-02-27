@@ -15,17 +15,13 @@
  * limitations under the License.
  */
 
-const routes = [
-  {
-    path: '/operation/runningJobs',
-    name: 'operation-runningJobs',
-    component: () => import('@/views/operation/runningJobs/index.vue')
-  },
-  {
-    path: '/operation/completedJobs',
-    name: 'operation-completedJobs',
-    component: () => import('@/views/operation/completedJobs/index.vue')
-  }
-]
+interface IServerSearch {
+  host: string | null
+}
 
-export default routes
+interface IEngineSearch {
+  enginetype: null | string
+  sharelevel: null | string
+}
+
+export { IServerSearch, IEngineSearch }

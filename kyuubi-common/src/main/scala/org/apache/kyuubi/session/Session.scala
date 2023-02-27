@@ -39,6 +39,8 @@ trait Session {
   def lastIdleTime: Long
   def getNoOperationTime: Long
   def sessionIdleTimeoutThreshold: Long
+  def allOperations(): Iterable[OperationHandle]
+  def getOperationCount(): Long
 
   def sessionManager: SessionManager
 

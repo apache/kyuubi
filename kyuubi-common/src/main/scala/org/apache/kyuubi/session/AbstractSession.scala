@@ -61,6 +61,10 @@ abstract class AbstractSession(
 
   final private val opHandleSet = new java.util.HashSet[OperationHandle]
 
+  override def allOperations(): Iterable[OperationHandle] = opHandleSet.asScala
+
+  override def getOperationCount: Long = opHandleSet.size()
+
   private def acquire(userAccess: Boolean): Unit = synchronized {
     if (userAccess) {
       _lastAccessTime = System.currentTimeMillis

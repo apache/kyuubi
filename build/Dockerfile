@@ -76,7 +76,7 @@ RUN set -ex && \
     ln -snf /bin/bash /bin/sh && \
     useradd -u ${kyuubi_uid} -g root kyuubi && \
     mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
-    chmod ug+rw -R ${KYUUBI_HOME} && \
+    chmod ug+rwx -R ${KYUUBI_HOME} && \
     chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
 

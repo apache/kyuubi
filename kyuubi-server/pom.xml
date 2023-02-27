@@ -35,7 +35,11 @@
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-proxy</artifactId>
+            <version>${jetty.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-events_${scala.binary.version}</artifactId>
@@ -510,6 +514,12 @@
             <groupId>com.vladsch.flexmark</groupId>
             <artifactId>flexmark-all</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.oshi</groupId>
+            <artifactId>oshi-core</artifactId>
+            <version>6.3.2</version>
         </dependency>
     </dependencies>
 

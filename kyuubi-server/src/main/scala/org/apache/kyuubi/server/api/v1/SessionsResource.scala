@@ -21,6 +21,7 @@ import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
@@ -82,6 +83,34 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       case NonFatal(e) =>
         error(s"Invalid $sessionHandleStr", e)
         throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[KyuubiEvent]))),
+    description = "get session info")
+  @GET
+  @Path("listSessionInfo")
+  def listSessionInfo(
+      @QueryParam("user") @DefaultValue("") user: String,
+      @QueryParam("serverIP") @DefaultValue("") serverIP: String): Seq[KyuubiSessionEvent] = {
+    try {
+      val kyuubiSessionEvents = ListBuffer[KyuubiSessionEvent]()
+      sessionManager.allSessions().map { session =>
+        kyuubiSessionEvents += sessionManager.getSession(session.handle.identifier.toString)
+          .asInstanceOf[KyuubiSession].getSessionEvent.get
+      }
+      (kyuubiSessionEvents
+        .filter(serverIP.equalsIgnoreCase("") || _.serverIP.equalsIgnoreCase(serverIP))
+        .filter(user.equalsIgnoreCase("") || _.user.equalsIgnoreCase(user)))
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting all session info"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -404,4 +433,87 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         throw new NotFoundException(errorMsg)
     }
   }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[SQLDetail]))),
+    description =
+      "get sql detail list hosted a specific session binding via an identifier")
+  @GET
+  @Path("{sessionHandle}/sqlDetails")
+  def getOperations(
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[SQLDetail] = {
+    try {
+      sessionManager.getSession(sessionHandleStr)
+        .allOperations().map { operationHandle =>
+          val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
+          val kyuubiSessionEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+          new SQLDetail(
+            sessionHandleStr,
+            kyuubiSessionEvent.sessionUser,
+            kyuubiSessionEvent.statementId,
+            kyuubiSessionEvent.createTime,
+            kyuubiSessionEvent.completeTime,
+            kyuubiSessionEvent.statement,
+            kyuubiSessionEvent.engineId,
+            kyuubiSessionEvent.engineType,
+            kyuubiSessionEvent.engineShareLevel,
+            kyuubiSessionEvent.exception.map(_.toString).orNull)
+        }.toSeq
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[InfoDetail]))),
+    description =
+      "get all supported info types by Kyuubi session")
+  @GET
+  @Path("{sessionHandle}/infoTypes")
+  def getSupportedInfoType(
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[InfoDetail] = {
+    try {
+      val infoTypes = TGetInfoType.values()
+      infoTypes.map(infoType => {
+        new InfoDetail(infoType.toString, infoType.getValue.toString)
+      }).toSeq
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[KyuubiOperationEvent]))),
+    description =
+      "get all the operation event hosted a specific session binding via an identifier")
+  @GET
+  @Path("{sessionHandle}/operations")
+  def getAllOperationEvent(
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[KyuubiOperationEvent] = {
+    try {
+      sessionManager.getSession(sessionHandleStr)
+        .allOperations().map { operationHandle =>
+          val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
+          KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+        }.toSeq
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+  }
+
 }

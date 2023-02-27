@@ -86,7 +86,7 @@ class SparkEngineSuites extends KyuubiFunSuite {
     val timeout = 180000
     val submitTime = System.currentTimeMillis() - timeout
     withSystemProperty(Map(
-      s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY" -> String.valueOf(submitTime),
+      s"spark.$KYUUBI_ENGINE_SUBMIT_TIME" -> String.valueOf(submitTime),
       s"spark.${ENGINE_INIT_TIMEOUT.key}" -> String.valueOf(timeout))) {
       SparkSQLEngine.setupConf()
       SparkSQLEngine.currentEngine = None
@@ -102,7 +102,7 @@ class SparkEngineSuites extends KyuubiFunSuite {
     val timeout = 3000
     val submitTime = System.currentTimeMillis()
     withSystemProperty(Map(
-      s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY" -> String.valueOf(submitTime),
+      s"spark.$KYUUBI_ENGINE_SUBMIT_TIME" -> String.valueOf(submitTime),
       s"spark.${ENGINE_INIT_TIMEOUT.key}" -> String.valueOf(timeout),
       s"spark.${ENGINE_INITIALIZE_SQL.key}" ->
         "select 1 where java_method('java.lang.Thread', 'sleep', 60000L) is null")) {

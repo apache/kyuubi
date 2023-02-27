@@ -15,12 +15,23 @@
  * limitations under the License.
  */
 
-const routes = [
-  {
-    path: '/contact',
-    name: 'contact',
-    component: () => import('@/views/contact/index.vue')
-  }
-]
+package org.apache.kyuubi.util
 
-export default routes
+import oshi.SystemInfo
+
+object OSUtils {
+  private val SI = new SystemInfo
+
+  private val hal = SI.getHardware
+
+  def memoryTotal(): Long = {
+    val memory = hal.getMemory()
+    val memoryTotal = memory.getTotal
+    memoryTotal
+  }
+
+  def cpuTotal(): Int = {
+    val processor = hal.getProcessor()
+    processor.getLogicalProcessorCount
+  }
+}

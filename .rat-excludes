@@ -32,7 +32,6 @@
 NOTICE*
 docs/**
 build/apache-maven-*/**
-build/maven-mvnd-*/**
 build/scala-*/**
 **/**/operation_logs/**/**
 **/**/server_operation_logs/**/**
@@ -49,11 +48,9 @@ build/scala-*/**
 **/org/apache/kyuubi/ui/swagger/**
 **/org.apache.spark.status.AppHistoryServerPlugin
 **/metadata-store-schema*.sql
-**/*.derby.sql
-**/*.mysql.sql
-**/node/**
-**/web-ui/dist/**
 **/pnpm-lock.yaml
 **/node_modules/**
-**/gen/*
-**/*.tokens
+**/web/**
+**/node/**
+**/web-ui/**
+

@@ -27,6 +27,7 @@ import scala.collection.mutable.ListBuffer
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto.Engine
@@ -37,6 +38,7 @@ import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.util.OSUtils
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -109,8 +111,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @DELETE
   @Path("engine")
   def deleteEngine(
-      @QueryParam("type") engineType: String,
-      @QueryParam("sharelevel") shareLevel: String,
+      @QueryParam("engineType") engineType: String,
+      @QueryParam("shareLevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
     val userName = fe.getSessionUser(hs2ProxyUser)
@@ -138,44 +140,152 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
-    description = "list kyuubi engines")
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[Engine]))),
+    description = "list alive kyuubi engines")
   @GET
   @Path("engine")
   def listEngines(
-      @QueryParam("type") engineType: String,
-      @QueryParam("sharelevel") shareLevel: String,
+      @QueryParam("engineType") engineType: String,
+      @QueryParam("shareLevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
-    val userName = fe.getSessionUser(hs2ProxyUser)
-    val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
-    val engineSpace = getEngineSpace(engine)
-
-    var engineNodes = ListBuffer[ServiceNodeInfo]()
-    Option(subdomain).filter(_.nonEmpty) match {
-      case Some(_) =>
-        withDiscoveryClient(fe.getConf) { discoveryClient =>
-          info(s"Listing engine nodes for $engineSpace")
-          engineNodes ++= discoveryClient.getServiceNodesInfo(engineSpace)
-        }
-      case None =>
-        withDiscoveryClient(fe.getConf) { discoveryClient =>
-          discoveryClient.getChildren(engineSpace).map { child =>
-            info(s"Listing engine nodes for $engineSpace/$child")
-            engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+    val engines = ListBuffer[Engine]()
+    try {
+      val userName = if (StringUtils.isEmpty(hs2ProxyUser)) "" else fe.getSessionUser(hs2ProxyUser)
+      val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
+      val engineSpace = getEngineSpace(engine)
+      val engineNodes = ListBuffer[ServiceNodeInfo]()
+      Option(subdomain).filter(_.nonEmpty) match {
+        case Some(_) =>
+          withDiscoveryClient(fe.getConf) { discoveryClient =>
+            info(s"Listing engine nodes for $engineSpace")
+            engineNodes ++= discoveryClient.getServiceNodesInfo(engineSpace)
           }
-        }
+        case None =>
+          withDiscoveryClient(fe.getConf) { discoveryClient =>
+            discoveryClient.getChildren(engineSpace).map { child =>
+              {
+                if (StringUtils.isNotEmpty(hs2ProxyUser)) {
+                  info(s"Listing engine nodes for $engineSpace/$child")
+                  engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+                } else {
+                  discoveryClient.getChildren(s"$engineSpace/$child").map(restChild => {
+                    info(s"Listing engine nodes for $engineSpace/$child/$restChild")
+                    engineNodes ++= discoveryClient
+                      .getServiceNodesInfo(s"$engineSpace/$child/$restChild")
+                  })
+                }
+              }
+            }
+          }
+      }
+      engineNodes.map(node => {
+        engines += new Engine(
+          engine.getVersion,
+          engine.getUser,
+          engine.getEngineType,
+          engine.getSharelevel,
+          node.namespace.split("/").last,
+          node.instance,
+          node.namespace,
+          node.attributes.asJava,
+          node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME).orNull,
+          node.attributes.get(KYUUBI_ENGINE_URL).orNull,
+          node.host,
+          node.port,
+          node.engineRefId.orNull,
+          "Running",
+          node.attributes.get(KYUUBI_ENGINE_MEMORY).orNull,
+          node.attributes.get(KYUUBI_ENGINE_CPU).orNull)
+      })
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = s"Error getting engines"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
-    engineNodes.map(node =>
-      new Engine(
-        engine.getVersion,
-        engine.getUser,
-        engine.getEngineType,
-        engine.getSharelevel,
-        node.namespace.split("/").last,
-        node.instance,
-        node.namespace,
-        node.attributes.asJava))
+    engines
+  }
+
+  @deprecated
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "list  all live kyuubi servers")
+  @GET
+  @Path("servers")
+  def listServers(@QueryParam("host") @DefaultValue("") host: String): Seq[Server] = {
+    val Servers = ListBuffer[Server]()
+    val serverSpace = DiscoveryPaths.makePath(null, fe.getConf.get(HA_NAMESPACE))
+    val serverNodes = ListBuffer[ServiceNodeInfo]()
+    withDiscoveryClient(fe.getConf) { discoveryClient =>
+      info(s"Listing server nodes for $serverSpace")
+      serverNodes ++= discoveryClient.getServiceNodesInfo(serverSpace)
+      serverNodes.map(node => {
+        if (host.equalsIgnoreCase("") || node.host.equalsIgnoreCase(host)) {
+          Servers += new Server(
+            node.nodeName,
+            node.namespace,
+            node.instance,
+            node.host,
+            node.port,
+            node.attributes.get(KYUUBI_SERVER_SUBMIT_TIME).orNull.toLong,
+            OSUtils.memoryTotal(),
+            OSUtils.cpuTotal(),
+            "Running")
+        }
+      })
+    }
+    Servers
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[ServerLog]))),
+    description =
+      "get server log")
+  @GET
+  @Path("server/log")
+  def getServerLog(
+      @QueryParam("maxrows") maxRows: Int): ServerLog = {
+    try {
+      val rowSet = getServerLogRowSet(maxRows)
+      new ServerLog(rowSet, rowSet.size)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = s"Error getting server log"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "get the Kyuubi server hadoop conf")
+  @GET
+  @Path("get/hadoop_conf")
+  def getFrontendHadoopConf(): Seq[HadoopConfData] = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Receive get Kyuubi server hadoop conf request from $userName/$ipAddress")
+    info(s"the admin is $administrator")
+    if (!userName.equals(administrator)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to get the Kyuubi server hadoop conf")
+    }
+    info(s"Getting the Kyuubi server hadoop conf")
+    val hadoopConf = ListBuffer[HadoopConfData]()
+    val iterator = KyuubiServer.getHadoopConf().iterator()
+    while (iterator.hasNext()) {
+      val element = iterator.next();
+      hadoopConf += new HadoopConfData(element.getKey, element.getValue)
+    }
+    hadoopConf
   }
 
   private def getEngine(
@@ -203,7 +313,15 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       engineSubdomain,
       null,
       null,
-      Collections.emptyMap())
+      Collections.emptyMap(),
+      null,
+      null,
+      null,
+      0,
+      null,
+      null,
+      null,
+      null)
   }
 
   private def getEngineSpace(engine: Engine): String = {
