@@ -121,12 +121,10 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 
 ## Kyuubi Configurations
 
-# Details in https://kyuubi.readthedocs.io/en/master/deployment/settings.html
-
 #
 # kyuubi.authentication                    NONE
 #
-# kyuubi.frontend.bind.host                <undefined>
+# kyuubi.frontend.bind.host                10.0.0.1
 # kyuubi.frontend.protocols                THRIFT_BINARY
 # kyuubi.frontend.thrift.binary.bind.port  10009
 #
@@ -134,9 +132,11 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 # kyuubi.engine.share.level                USER
 # kyuubi.session.engine.initialize.timeout PT3M
 #
-# kyuubi.ha.addresses                      <undefined>
+# kyuubi.ha.addresses                      zk1:2181,zk2:2181,zk3:2181
 # kyuubi.ha.namespace                      kyuubi
 #
+
+# Details in https://kyuubi.readthedocs.io/en/master/deployment/settings.html
 ```
 
 ### Authentication
