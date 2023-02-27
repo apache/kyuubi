@@ -43,15 +43,14 @@ import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.service.authentication.{KyuubiAuthenticationFactory, UserDefinedEngineSecuritySecretProvider}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper with BatchTestHelper {
   override protected lazy val conf: KyuubiConf = KyuubiConf()
     .set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
-    .set(
-      KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
-      classOf[UserDefinedEngineSecuritySecretProvider].getName)
+    .set(KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER, "simple")
+    .set(KyuubiConf.SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET, "ENGINE____SECRET")
     .set(
       KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST,
       Seq(Paths.get(sparkBatchTestResource.get).getParent.toString))
