@@ -334,7 +334,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM
-        uses: dorny/test-reporter@v1
+        uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v3
         with:
@@ -350,7 +350,7 @@ jobs:
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am -Pflink-provided -Phive-provided clean install -DskipTests
           ./build/mvn -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -pl ${TEST_MODULES} -am -Pflink-provided -Phive-provided test -Dtest=none -DwildcardSuites=org.apache.kyuubi.it.trino.operation.TrinoOperationSuite,org.apache.kyuubi.it.trino.server.TrinoFrontendSuite
       - name: Report
-        uses: ./.github/actions/test-reporter
+        uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Maven Tests
