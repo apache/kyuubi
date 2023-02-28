@@ -143,10 +143,10 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     info(s"Received closing a session request from $userName/$ipAddress")
     if (!isAdministrator(userName)) {
       throw new NotAllowedException(
-        s"$userName is not allowed to close the session ${sessionHandleStr}")
+        s"$userName is not allowed to close the session $sessionHandleStr")
     }
     fe.be.closeSession(SessionHandle.fromUUID(sessionHandleStr))
-    Response.ok().build()
+    Response.ok(s"Session $sessionHandleStr is closed successfully.").build()
   }
 
   @ApiResponse(
