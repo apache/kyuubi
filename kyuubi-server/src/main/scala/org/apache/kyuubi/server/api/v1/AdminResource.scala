@@ -167,8 +167,13 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
               engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
             }
           } catch {
-            case _: NoNodeException =>
-              warn(s"Fail to find $engineSpace Node, return empty engine list")
+            case nne: NoNodeException =>
+              error("Fail to get engines for user: " + userName +
+                ", engine type: " + engineType +
+                ", share level: " + shareLevel +
+                ", subdomain: " + subdomain, nne)
+              throw new NotFoundException(s"No such engine for user: $userName, " +
+                s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain")
           }
         }
     }
