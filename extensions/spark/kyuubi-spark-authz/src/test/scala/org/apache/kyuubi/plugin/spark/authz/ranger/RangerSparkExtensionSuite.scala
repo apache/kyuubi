@@ -147,12 +147,12 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val alter = s"ALTER DATABASE $testDb SET DBPROPERTIES (abc = '123')"
     val drop = s"DROP DATABASE IF EXISTS $testDb"
 
-    runSqlAsWithAccessException()(create, contains = errorMessage("create", "mydb"))
+    runSqlAsWithAccessException()(create, errorMessage("create", "mydb"))
     withCleanTmpResources(Seq((testDb, "database"))) {
       runSqlAs("admin")(create)
       runSqlAs("admin")(alter)
-      runSqlAsWithAccessException()(alter, contains = errorMessage("alter", "mydb"))
-      runSqlAsWithAccessException()(drop, contains = errorMessage("drop", "mydb"))
+      runSqlAsWithAccessException()(alter, errorMessage("alter", "mydb"))
+      runSqlAsWithAccessException()(drop, errorMessage("drop", "mydb"))
       runSqlAs("kent")("SHOW DATABASES")
     }
   }
@@ -166,13 +166,13 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val alter0 = s"ALTER TABLE $db.$table SET TBLPROPERTIES(key='ak')"
     val drop0 = s"DROP TABLE IF EXISTS $db.$table"
     val select = s"SELECT * FROM $db.$table"
-    runSqlAsWithAccessException()(create0, contains = errorMessage("create"))
+    runSqlAsWithAccessException()(create0, errorMessage("create"))
 
     withCleanTmpResources(Seq((s"$db.$table", "table"))) {
       runSqlAs("bob")(create0)
       runSqlAs("bob")(alter0)
 
-      runSqlAsWithAccessException()(drop0, contains = errorMessage("drop"))
+      runSqlAsWithAccessException()(drop0, errorMessage("drop"))
       runSqlAs("bob")(alter0)
       runSqlAs("bob")(select, isCollect = true)
       runSqlAs("kent")(s"SELECT key FROM $db.$table", isCollect = true)
@@ -185,10 +185,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         s"SELECT coalesce(max(value), 1) FROM $db.$table",
         s"SELECT key FROM $db.$table WHERE value in (SELECT value as key FROM $db.$table)")
         .foreach { q =>
-          runSqlAsWithAccessException("kent")(
-            q,
-            isCollect = true,
-            contains = errorMessage("select", "default/src/value"))
+          runSqlAsWithAccessException("kent")(q, errorMessage("select", "default/src/value"), isCollect = true)
         }
     }
   }
@@ -197,7 +194,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val db = "default"
     val func = "func"
     val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
-    runSqlAsWithAccessException("kent")(create0, contains = errorMessage("create", "default/func"))
+    runSqlAsWithAccessException("kent")(create0, errorMessage("create", "default/func"))
     runSqlAs("admin")(create0)
   }
 
@@ -524,18 +521,14 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
       runSqlAs("admin")(s"CREATE VIEW ${adminPermView} AS SELECT * FROM $table")
 
-      runSqlAsWithAccessException()(
-        s"CREATE VIEW $permView AS SELECT 1 as a",
-        contains = s"does not have [create] privilege on [default/$permView]")
+      runSqlAsWithAccessException()(s"CREATE VIEW $permView AS SELECT 1 as a", s"does not have [create] privilege on [default/$permView]")
 
       val errorMsg = if (isSparkV32OrGreater) {
         s"does not have [select] privilege on [default/$table/id]"
       } else {
         s"does not have [select] privilege on [$table]"
       }
-      runSqlAsWithAccessException()(
-        s"CREATE VIEW $permView AS SELECT * FROM $table",
-        contains = errorMsg)
+      runSqlAsWithAccessException()(s"CREATE VIEW $permView AS SELECT * FROM $table", errorMsg)
     }
   }
 
@@ -559,10 +552,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       } else {
         s"does not have [select] privilege on [$db1/$table/id]"
       }
-      runSqlAsWithAccessException()(
-        s"select * from $db2.$permView",
-        isCollect = true,
-        contains = errorMsg)
+      runSqlAsWithAccessException()(s"select * from $db2.$permView", errorMsg, isCollect = true)
     }
   }
 
@@ -590,22 +580,18 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s" FROM $db1.$srcTable1 as tb1" +
         s" JOIN $db1.$srcTable2 as tb2" +
         s" on tb1.id = tb2.id"
-      runSqlAsWithAccessException()(
-        insertSql1,
-        contains = s"does not have [select] privilege on [$db1/$srcTable1/id]")
+      runSqlAsWithAccessException()(insertSql1, s"does not have [select] privilege on [$db1/$srcTable1/id]")
 
       try {
         SparkRangerAdminPlugin.getRangerConf.setBoolean(
           s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
           true)
-        runSqlAsWithAccessException()(
-          insertSql1,
-          contains = s"does not have" +
-            s" [select] privilege on" +
-            s" [$db1/$srcTable1/id,$db1/$srcTable1/name,$db1/$srcTable1/city," +
-            s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
-            s" [update] privilege on [$db1/$sinkTable1/id,$db1/$sinkTable1/age," +
-            s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]")
+        runSqlAsWithAccessException()(insertSql1, s"does not have" +
+          s" [select] privilege on" +
+          s" [$db1/$srcTable1/id,$db1/$srcTable1/name,$db1/$srcTable1/city," +
+          s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
+          s" [update] privilege on [$db1/$sinkTable1/id,$db1/$sinkTable1/age," +
+          s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]")
       } finally {
         // revert to default value
         SparkRangerAdminPlugin.getRangerConf.setBoolean(
@@ -635,9 +621,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable1" +
           s" (id int, name string, city string)")
 
-        runSqlAsWithAccessException()(
-          s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1",
-          contains = s"does not have [select] privilege on [$db1/$srcTable1/id]")
+        runSqlAsWithAccessException()(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1", s"does not have [select] privilege on [$db1/$srcTable1/id]")
 
         runSqlAs("admin")(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b ")
         runSqlAs("someone")(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b ")
@@ -656,10 +640,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
       runSqlAs(defaultTableOwner)(select, isCollect = true)
 
-      runSqlAsWithAccessException("create_only_user")(
-        select,
-        isCollect = true,
-        contains = errorMessage("select", s"$db/$table/key"))
+      runSqlAsWithAccessException("create_only_user")(select, errorMessage("select", s"$db/$table/key"), isCollect = true)
     }
   }
 

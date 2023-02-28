@@ -105,11 +105,20 @@ trait SparkSessionProvider {
     }
   }
 
+  /**
+   * intercept [AccessControlException] when running sql
+   * and assert error message contains certain char sequence
+   * @param user user name to execute sql , default to "someone"
+   * @param sqlText parse ans run sql to dataframe
+   * @param contains assert error message containing certain char sequence
+   * @param isExplain whether execute explain for dataframe
+   * @param isCollect whether execute collect for dataframe
+   */
   protected def runSqlAsWithAccessException(user: String = "someone")(
       sqlText: String,
-      isCollect: Boolean = false,
+      contains: String,
       isExplain: Boolean = false,
-      contains: String = ""): Unit = {
+      isCollect: Boolean = false): Unit = {
     withClue(sqlText) {
       val e = intercept[AccessControlException](
         doAs(user) {
