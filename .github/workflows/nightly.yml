@@ -46,7 +46,7 @@ jobs:
       - name: Build with Maven
         run: ./build/mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
       - name: Report
-        uses: ./.github/actions/test-reporter
+        uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Maven Tests
