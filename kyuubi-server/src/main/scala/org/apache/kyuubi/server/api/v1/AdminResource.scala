@@ -24,12 +24,12 @@ import javax.ws.rs.core.{MediaType, Response}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
-import org.apache.kyuubi.client.api.v1.dto.Engine
+import org.apache.kyuubi.client.api.v1.dto.{Engine, SessionData}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
@@ -37,6 +37,7 @@ import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.session.SessionHandle
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -100,6 +101,52 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     info(s"Reloading unlimited users")
     KyuubiServer.refreshUnlimitedUsers()
     Response.ok(s"Refresh the unlimited users successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      array = new ArraySchema(schema = new Schema(implementation = classOf[SessionData])))),
+    description = "get the list of all live sessions")
+  @GET
+  @Path("sessions")
+  def sessions(): Seq[SessionData] = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received listing all live sessions request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to list all live sessions")
+    }
+    fe.be.sessionManager.allSessions().map { session =>
+      new SessionData(
+        session.handle.identifier.toString,
+        session.user,
+        session.ipAddress,
+        session.conf.asJava,
+        session.createTime,
+        session.lastAccessTime - session.createTime,
+        session.getNoOperationTime)
+    }.toSeq
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "Close a session")
+  @DELETE
+  @Path("sessions/{sessionHandle}")
+  def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received closing a session request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to close the session $sessionHandleStr")
+    }
+    fe.be.closeSession(SessionHandle.fromUUID(sessionHandleStr))
+    Response.ok(s"Session $sessionHandleStr is closed successfully.").build()
   }
 
   @ApiResponse(
