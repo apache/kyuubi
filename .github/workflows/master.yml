@@ -146,6 +146,14 @@ jobs:
           TEST_MODULES="extensions/spark/kyuubi-spark-authz"
           ./build/mvn clean test ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Dspark.version=${{ matrix.spark }}
+      - name: Report
+        uses: ./.github/actions/test-reporter
+        if: always()
+        with:
+          name: Maven Tests
+          path: "**/surefire-reports/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -207,6 +215,14 @@ jobs:
           IT_FLINK=`echo "${{ matrix.flink-archive }}" | grep -E 'flink\-([0-9]+\.[0-9]+.[0-9]+)\-bin' -o | grep -E '[0-9]+\.[0-9]+' -o`
           IT_MODULE="integration-tests/kyuubi-flink-it"
           ./build/mvn ${MVN_OPT} -pl ${IT_MODULE} -Pflink-${IT_FLINK} ${{ matrix.flink-archive }} test
+      - name: Report
+        uses: ./.github/actions/test-reporter
+        if: always()
+        with:
+          name: Maven Tests
+          path: "**/surefire-reports/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -243,6 +259,14 @@ jobs:
           TEST_MODULES="externals/kyuubi-hive-sql-engine,integration-tests/kyuubi-hive-it"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+      - name: Report
+        uses: ./.github/actions/test-reporter
+        if: always()
+        with:
+          name: Maven Tests
+          path: "**/surefire-reports/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -280,6 +304,14 @@ jobs:
           TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+      - name: Report
+        uses: ./.github/actions/test-reporter
+        if: always()
+        with:
+          name: Maven Tests
+          path: "**/surefire-reports/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -317,6 +349,14 @@ jobs:
           TEST_MODULES="kyuubi-server,externals/kyuubi-trino-engine,externals/kyuubi-spark-sql-engine,externals/kyuubi-download,integration-tests/kyuubi-trino-it"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am -Pflink-provided -Phive-provided clean install -DskipTests
           ./build/mvn -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -pl ${TEST_MODULES} -am -Pflink-provided -Phive-provided test -Dtest=none -DwildcardSuites=org.apache.kyuubi.it.trino.operation.TrinoOperationSuite,org.apache.kyuubi.it.trino.server.TrinoFrontendSuite
+      - name: Report
+        uses: ./.github/actions/test-reporter
+        if: always()
+        with:
+          name: Maven Tests
+          path: "**/surefire-reports/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -351,6 +391,14 @@ jobs:
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test \
           -Dmaven.plugin.scalatest.exclude.tags='' \
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds,org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite,org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
+      - name: Report
+        uses: ./.github/actions/test-reporter
+        if: always()
+        with:
+          name: Maven Tests
+          path: "**/surefire-reports/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
 
   kyuubi-on-k8s-it:
     name: Kyuubi Server On Kubernetes Integration Test
@@ -444,6 +492,14 @@ jobs:
           -Pflink-provided,hive-provided
           -Pkubernetes-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.spark
+      - name: Report
+        uses: ./.github/actions/test-reporter
+        if: always()
+        with:
+          name: Maven Tests
+          path: "**/surefire-reports/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
       - name: Print Driver Pod logs
         if: failure()
         run: |
@@ -487,6 +543,14 @@ jobs:
           TEST_MODULES="integration-tests/kyuubi-zookeeper-it"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+      - name: Report
+        uses: ./.github/actions/test-reporter
+        if: always()
+        with:
+          name: Maven Tests
+          path: "**/surefire-reports/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
