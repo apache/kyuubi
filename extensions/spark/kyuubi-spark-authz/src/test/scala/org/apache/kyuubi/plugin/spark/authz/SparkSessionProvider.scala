@@ -84,9 +84,9 @@ trait SparkSessionProvider {
 
   protected def runSqlAs(user: String)(
       sqlStr: String,
-      isCollect: Boolean = false,
       collectSize: Int = Int.MinValue,
-      countSize: Int = Int.MinValue): Unit = {
+      countSize: Int = Int.MinValue,
+      isCollect: Boolean = false): Unit = {
     doAs(user) {
       assert(Try {
         val df = sql(sqlStr)

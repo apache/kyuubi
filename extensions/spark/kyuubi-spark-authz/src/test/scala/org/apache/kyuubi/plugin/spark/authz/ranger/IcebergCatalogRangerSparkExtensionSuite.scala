@@ -78,15 +78,19 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       """.stripMargin
 
     // MergeIntoTable:  Using a MERGE INTO Statement
-    runSqlAsWithAccessException()(mergeIntoSql, s"does not have [select] privilege on [$namespace1/$table1/id]")
+    runSqlAsWithAccessException()(
+      mergeIntoSql,
+      s"does not have [select] privilege on [$namespace1/$table1/id]")
 
     try {
       SparkRangerAdminPlugin.getRangerConf.setBoolean(
         s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
         true)
-      runSqlAsWithAccessException()(mergeIntoSql, s"does not have [select] privilege" +
-        s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
-        s" [update] privilege on [$namespace1/$outputTable1]")
+      runSqlAsWithAccessException()(
+        mergeIntoSql,
+        s"does not have [select] privilege" +
+          s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
+          s" [update] privilege on [$namespace1/$outputTable1]")
     } finally {
       SparkRangerAdminPlugin.getRangerConf.setBoolean(
         s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
@@ -101,7 +105,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
     // UpdateTable
     val update = s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' WHERE id=1"
-    runSqlAsWithAccessException()(update, s"does not have [update] privilege on [$namespace1/$table1]")
+    runSqlAsWithAccessException()(
+      update,
+      s"does not have [update] privilege on [$namespace1/$table1]")
 
     runSqlAs("admin")(update)
   }
@@ -110,7 +116,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     assume(isSparkV32OrGreater)
 
     // DeleteFromTable
-    runSqlAsWithAccessException()(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2", s"does not have [update] privilege on [$namespace1/$table1]")
+    runSqlAsWithAccessException()(
+      s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2",
+      s"does not have [update] privilege on [$namespace1/$table1]")
 
     runSqlAs("admin")(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2")
   }
@@ -127,7 +135,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
       runSqlAs(defaultTableOwner)(select, isCollect = true)
 
-      runSqlAsWithAccessException("create_only_user")(select, errorMessage("select", s"$namespace1/$table/key"), isCollect = true)
+      runSqlAsWithAccessException("create_only_user")(
+        select,
+        errorMessage("select", s"$namespace1/$table/key"),
+        isCollect = true)
     }
   }
 
@@ -177,7 +188,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("[KYUUBI #4255] DESCRIBE TABLE") {
     assume(isSparkV32OrGreater)
-    runSqlAsWithAccessException()(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1", s"does not have [select] privilege on [$namespace1/$table1]", isExplain = true)
+    runSqlAsWithAccessException()(
+      s"DESCRIBE TABLE $catalogV2.$namespace1.$table1",
+      s"does not have [select] privilege on [$namespace1/$table1]",
+      isExplain = true)
   }
 
 }

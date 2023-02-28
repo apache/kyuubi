@@ -185,7 +185,10 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         s"SELECT coalesce(max(value), 1) FROM $db.$table",
         s"SELECT key FROM $db.$table WHERE value in (SELECT value as key FROM $db.$table)")
         .foreach { q =>
-          runSqlAsWithAccessException("kent")(q, errorMessage("select", "default/src/value"), isCollect = true)
+          runSqlAsWithAccessException("kent")(
+            q,
+            errorMessage("select", "default/src/value"),
+            isCollect = true)
         }
     }
   }
@@ -283,9 +286,9 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $db.$table (key int) USING $format")
       runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $db.${table}for_show (key int) USING $format")
 
-      runSqlAs("admin")(s"show tables from $db", collectSize = 2)
-      runSqlAs("bob")(s"show tables from $db", collectSize = 0)
-      runSqlAs("i_am_invisible")(s"show tables from $db", collectSize = 0)
+      runSqlAs("admin")(s"show tables from $db", 2)
+      runSqlAs("bob")(s"show tables from $db", 0)
+      runSqlAs("i_am_invisible")(s"show tables from $db", 0)
     }
   }
 
@@ -294,11 +297,11 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
     withCleanTmpResources(Seq((db, "database"))) {
       runSqlAs("admin")(s"CREATE DATABASE IF NOT EXISTS $db")
-      runSqlAs("admin")(s"SHOW DATABASES", collectSize = 2)
+      runSqlAs("admin")(s"SHOW DATABASES", 2)
       doAs("admin")(assert(sql(s"SHOW DATABASES").collectAsList().get(0).getString(0) == "default"))
       doAs("admin")(assert(sql(s"SHOW DATABASES").collectAsList().get(1).getString(0) == s"$db"))
 
-      runSqlAs("bob")("SHOW DATABASES", collectSize = 1)
+      runSqlAs("bob")("SHOW DATABASES", 1)
       doAs("bob")(assert(sql(s"SHOW DATABASES").collectAsList().get(0).getString(0) == "default"))
     }
   }
@@ -313,14 +316,14 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       (s"$db3.$function1", "function"),
       (db3, "database"))) {
       runSqlAs("admin")(s"CREATE FUNCTION $function1 AS 'Function1'")
-      runSqlAs("admin")(s"show user functions $default.$function1", collectSize = 1)
-      runSqlAs("bob")(s"show user functions $default.$function1", collectSize = 0)
+      runSqlAs("admin")(s"show user functions $default.$function1", 1)
+      runSqlAs("bob")(s"show user functions $default.$function1", 0)
 
       runSqlAs("admin")(s"CREATE DATABASE IF NOT EXISTS $db3")
       runSqlAs("admin")(s"CREATE FUNCTION $db3.$function1 AS 'Function1'")
 
-      runSqlAs("admin")(s"show user functions $db3.$function1", collectSize = 1)
-      runSqlAs("bob")(s"show user functions $db3.$function1", collectSize = 0)
+      runSqlAs("admin")(s"show user functions $db3.$function1", 1)
+      runSqlAs("bob")(s"show user functions $db3.$function1", 0)
 
       val showSysFunctions = s"show system functions"
       doAs("admin")(assert(sql(showSysFunctions).collect().length > 0))
@@ -341,13 +344,13 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     withCleanTmpResources(Seq((s"$db.$table", "table"))) {
       runSqlAs("admin")(create)
 
-      runSqlAs("admin")(s"SHOW COLUMNS IN $table", countSize = 2)
-      runSqlAs("admin")(s"SHOW COLUMNS IN $db.$table", countSize = 2)
-      runSqlAs("admin")(s"SHOW COLUMNS IN $table IN $db", countSize = 2)
+      runSqlAs("admin")(s"SHOW COLUMNS IN $table", 2)
+      runSqlAs("admin")(s"SHOW COLUMNS IN $db.$table", 2)
+      runSqlAs("admin")(s"SHOW COLUMNS IN $table IN $db", 2)
 
-      runSqlAs("kent")(s"SHOW COLUMNS IN $table", countSize = 1)
-      runSqlAs("kent")(s"SHOW COLUMNS IN $db.$table", countSize = 1)
-      runSqlAs("kent")(s"SHOW COLUMNS IN $table IN $db", countSize = 1)
+      runSqlAs("kent")(s"SHOW COLUMNS IN $table", 1)
+      runSqlAs("kent")(s"SHOW COLUMNS IN $db.$table", 1)
+      runSqlAs("kent")(s"SHOW COLUMNS IN $table IN $db", 1)
     }
   }
 
@@ -369,10 +372,10 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $db.${table}_select2 (key int) USING $format")
       runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $db.${table}_select3 (key int) USING $format")
 
-      runSqlAs("admin")(s"show table extended from $db like '$table*'", collectSize = 5)
-      runSqlAs("bob")(s"show tables from $db", collectSize = 5)
-      runSqlAs("bob")(s"show table extended from $db like '$table*'", collectSize = 3)
-      runSqlAs("i_am_invisible")(s"show table extended from $db like '$table*'", collectSize = 0)
+      runSqlAs("admin")(s"show table extended from $db like '$table*'", 5)
+      runSqlAs("bob")(s"show tables from $db", 5)
+      runSqlAs("bob")(s"show table extended from $db like '$table*'", 3)
+      runSqlAs("i_am_invisible")(s"show table extended from $db like '$table*'", 0)
     }
   }
 
@@ -393,7 +396,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
     runSqlAs("admin")(s"DROP VIEW IF EXISTS $tempView2")
     runSqlAs("admin")(s"DROP VIEW IF EXISTS global_temp.$globalTempView2")
-    runSqlAs("admin")("show tables from global_temp", collectSize = 0)
+    runSqlAs("admin")("show tables from global_temp", 0)
   }
 
   test("[KYUUBI #3426] Drop temp view should be skipped permission check") {
@@ -407,12 +410,12 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       s" AS select * from values(1)")
 
     // global_temp will contain the temporary view, even if it is not global
-    runSqlAs("admin")("show tables from global_temp", collectSize = 2)
+    runSqlAs("admin")("show tables from global_temp", 2)
 
     runSqlAs("denyuser2")(s"DROP VIEW IF EXISTS $tempView")
     runSqlAs("denyuser2")(s"DROP VIEW IF EXISTS global_temp.$globalTempView")
 
-    runSqlAs("admin")("show tables from global_temp", collectSize = 0)
+    runSqlAs("admin")("show tables from global_temp", 0)
   }
 
   test("[KYUUBI #3428] AlterViewAsCommand should be skipped permission check") {
@@ -433,7 +436,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
     runSqlAs("admin")(s"DROP VIEW IF EXISTS $tempView")
     runSqlAs("admin")(s"DROP VIEW IF EXISTS global_temp.$globalTempView")
-    runSqlAs("admin")("show tables from global_temp", collectSize = 0)
+    runSqlAs("admin")("show tables from global_temp", 0)
   }
 
   test("[KYUUBI #3343] pass temporary view creation") {
@@ -442,8 +445,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
     withTempView(tempView) {
       runSqlAs("denyuser")(s"CREATE TEMPORARY VIEW $tempView AS select * from values(1)")
-      runSqlAs("denyuser")(
-        s"CREATE OR REPLACE TEMPORARY VIEW $tempView AS select * from values(1)")
+      runSqlAs("denyuser")(s"CREATE OR REPLACE TEMPORARY VIEW $tempView AS select * from values(1)")
     }
 
     withGlobalTempView(globalTempView) {
@@ -453,7 +455,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         s"CREATE OR REPLACE GLOBAL TEMPORARY VIEW $globalTempView AS select * from values(1)")
     }
 
-    runSqlAs("admin")("show tables from global_temp", collectSize = 0)
+    runSqlAs("admin")("show tables from global_temp", 0)
   }
 }
 
@@ -521,7 +523,9 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
       runSqlAs("admin")(s"CREATE VIEW ${adminPermView} AS SELECT * FROM $table")
 
-      runSqlAsWithAccessException()(s"CREATE VIEW $permView AS SELECT 1 as a", s"does not have [create] privilege on [default/$permView]")
+      runSqlAsWithAccessException()(
+        s"CREATE VIEW $permView AS SELECT 1 as a",
+        s"does not have [create] privilege on [default/$permView]")
 
       val errorMsg = if (isSparkV32OrGreater) {
         s"does not have [select] privilege on [default/$table/id]"
@@ -580,18 +584,22 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s" FROM $db1.$srcTable1 as tb1" +
         s" JOIN $db1.$srcTable2 as tb2" +
         s" on tb1.id = tb2.id"
-      runSqlAsWithAccessException()(insertSql1, s"does not have [select] privilege on [$db1/$srcTable1/id]")
+      runSqlAsWithAccessException()(
+        insertSql1,
+        s"does not have [select] privilege on [$db1/$srcTable1/id]")
 
       try {
         SparkRangerAdminPlugin.getRangerConf.setBoolean(
           s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
           true)
-        runSqlAsWithAccessException()(insertSql1, s"does not have" +
-          s" [select] privilege on" +
-          s" [$db1/$srcTable1/id,$db1/$srcTable1/name,$db1/$srcTable1/city," +
-          s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
-          s" [update] privilege on [$db1/$sinkTable1/id,$db1/$sinkTable1/age," +
-          s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]")
+        runSqlAsWithAccessException()(
+          insertSql1,
+          s"does not have" +
+            s" [select] privilege on" +
+            s" [$db1/$srcTable1/id,$db1/$srcTable1/name,$db1/$srcTable1/city," +
+            s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
+            s" [update] privilege on [$db1/$sinkTable1/id,$db1/$sinkTable1/age," +
+            s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]")
       } finally {
         // revert to default value
         SparkRangerAdminPlugin.getRangerConf.setBoolean(
@@ -621,7 +629,9 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable1" +
           s" (id int, name string, city string)")
 
-        runSqlAsWithAccessException()(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1", s"does not have [select] privilege on [$db1/$srcTable1/id]")
+        runSqlAsWithAccessException()(
+          s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1",
+          s"does not have [select] privilege on [$db1/$srcTable1/id]")
 
         runSqlAs("admin")(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b ")
         runSqlAs("someone")(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b ")
@@ -640,7 +650,10 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
       runSqlAs(defaultTableOwner)(select, isCollect = true)
 
-      runSqlAsWithAccessException("create_only_user")(select, errorMessage("select", s"$db/$table/key"), isCollect = true)
+      runSqlAsWithAccessException("create_only_user")(
+        select,
+        errorMessage("select", s"$db/$table/key"),
+        isCollect = true)
     }
   }
 

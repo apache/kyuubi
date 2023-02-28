@@ -76,64 +76,90 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     assume(isSparkV31OrGreater)
 
     // create database
-    runSqlAsWithAccessException()(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace2", s"does not have [create] privilege on [$namespace2]", isExplain = true)
+    runSqlAsWithAccessException()(
+      s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace2",
+      s"does not have [create] privilege on [$namespace2]",
+      isExplain = true)
   }
 
   test("[KYUUBI #3424] DROP DATABASE") {
     assume(isSparkV31OrGreater)
 
     // create database
-    runSqlAsWithAccessException()(s"DROP DATABASE IF EXISTS $catalogV2.$namespace2", s"does not have [drop] privilege on [$namespace2]", isExplain = true)
+    runSqlAsWithAccessException()(
+      s"DROP DATABASE IF EXISTS $catalogV2.$namespace2",
+      s"does not have [drop] privilege on [$namespace2]",
+      isExplain = true)
   }
 
   test("[KYUUBI #3424] SELECT TABLE") {
     assume(isSparkV31OrGreater)
 
     // select
-    runSqlAsWithAccessException()(s"select city, id from $catalogV2.$namespace1.$table1", s"does not have [select] privilege on [$namespace1/$table1/city]", isExplain = true)
+    runSqlAsWithAccessException()(
+      s"select city, id from $catalogV2.$namespace1.$table1",
+      s"does not have [select] privilege on [$namespace1/$table1/city]",
+      isExplain = true)
   }
 
   test("[KYUUBI #4255] DESCRIBE TABLE") {
     assume(isSparkV31OrGreater)
-    runSqlAsWithAccessException()(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1", s"does not have [select] privilege on [$namespace1/$table1]", isExplain = true)
+    runSqlAsWithAccessException()(
+      s"DESCRIBE TABLE $catalogV2.$namespace1.$table1",
+      s"does not have [select] privilege on [$namespace1/$table1]",
+      isExplain = true)
   }
 
   test("[KYUUBI #3424] CREATE TABLE") {
     assume(isSparkV31OrGreater)
 
     // CreateTable
-    runSqlAsWithAccessException()(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2", s"does not have [create] privilege on [$namespace1/$table2]")
+    runSqlAsWithAccessException()(
+      s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2",
+      s"does not have [create] privilege on [$namespace1/$table2]")
 
     // CreateTableAsSelect
-    runSqlAsWithAccessException()(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2" +
-      s" AS select * from $catalogV2.$namespace1.$table1", s"does not have [select] privilege on [$namespace1/$table1/id]")
+    runSqlAsWithAccessException()(
+      s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2" +
+        s" AS select * from $catalogV2.$namespace1.$table1",
+      s"does not have [select] privilege on [$namespace1/$table1/id]")
   }
 
   test("[KYUUBI #3424] DROP TABLE") {
     assume(isSparkV31OrGreater)
 
     // DropTable
-    runSqlAsWithAccessException()(s"DROP TABLE $catalogV2.$namespace1.$table1", s"does not have [drop] privilege on [$namespace1/$table1]")
+    runSqlAsWithAccessException()(
+      s"DROP TABLE $catalogV2.$namespace1.$table1",
+      s"does not have [drop] privilege on [$namespace1/$table1]")
   }
 
   test("[KYUUBI #3424] INSERT TABLE") {
     assume(isSparkV31OrGreater)
 
     // AppendData: Insert Using a VALUES Clause
-    runSqlAsWithAccessException()(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
-      s" VALUES (1, 'bowenliang123', 'Guangzhou')", s"does not have [update] privilege on [$namespace1/$outputTable1]")
+    runSqlAsWithAccessException()(
+      s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+        s" VALUES (1, 'bowenliang123', 'Guangzhou')",
+      s"does not have [update] privilege on [$namespace1/$outputTable1]")
 
     // AppendData: Insert Using a TABLE Statement
-    runSqlAsWithAccessException()(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
-      s" TABLE $catalogV2.$namespace1.$table1", s"does not have [select] privilege on [$namespace1/$table1/id]")
+    runSqlAsWithAccessException()(
+      s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+        s" TABLE $catalogV2.$namespace1.$table1",
+      s"does not have [select] privilege on [$namespace1/$table1/id]")
 
     // AppendData: Insert Using a SELECT Statement
-    runSqlAsWithAccessException()(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
-      s" SELECT * from $catalogV2.$namespace1.$table1", s"does not have [select] privilege on [$namespace1/$table1/id]")
+    runSqlAsWithAccessException()(
+      s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+        s" SELECT * from $catalogV2.$namespace1.$table1",
+      s"does not have [select] privilege on [$namespace1/$table1/id]")
 
     // OverwriteByExpression: Insert Overwrite
-    runSqlAsWithAccessException()(s"INSERT OVERWRITE $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
-      s" VALUES (1, 'bowenliang123', 'Guangzhou')", s"does not have [update] privilege on [$namespace1/$outputTable1]")
+    runSqlAsWithAccessException()(
+      s"INSERT OVERWRITE $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+        s" VALUES (1, 'bowenliang123', 'Guangzhou')",
+      s"does not have [update] privilege on [$namespace1/$outputTable1]")
   }
 
   test("[KYUUBI #3424] MERGE INTO") {
@@ -149,16 +175,20 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
       """.stripMargin
 
     // MergeIntoTable:  Using a MERGE INTO Statement
-    runSqlAsWithAccessException()(mergeIntoSql, s"does not have [select] privilege on [$namespace1/$table1/id]")
+    runSqlAsWithAccessException()(
+      mergeIntoSql,
+      s"does not have [select] privilege on [$namespace1/$table1/id]")
 
     try {
       SparkRangerAdminPlugin.getRangerConf.setBoolean(
         s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
         true)
-      runSqlAsWithAccessException()(mergeIntoSql, s"does not have" +
-        s" [select] privilege" +
-        s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
-        s" [update] privilege on [$namespace1/$outputTable1]")
+      runSqlAsWithAccessException()(
+        mergeIntoSql,
+        s"does not have" +
+          s" [select] privilege" +
+          s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
+          s" [update] privilege on [$namespace1/$outputTable1]")
     } finally {
       SparkRangerAdminPlugin.getRangerConf.setBoolean(
         s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
@@ -170,14 +200,18 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     assume(isSparkV31OrGreater)
 
     // UpdateTable
-    runSqlAsWithAccessException()(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Hangzhou' WHERE id=1", s"does not have [update] privilege on [$namespace1/$table1]")
+    runSqlAsWithAccessException()(
+      s"UPDATE $catalogV2.$namespace1.$table1 SET city='Hangzhou' WHERE id=1",
+      s"does not have [update] privilege on [$namespace1/$table1]")
   }
 
   test("[KYUUBI #3424] DELETE FROM TABLE") {
     assume(isSparkV31OrGreater)
 
     // DeleteFromTable
-    runSqlAsWithAccessException()(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1", s"does not have [update] privilege on [$namespace1/$table1]")
+    runSqlAsWithAccessException()(
+      s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1",
+      s"does not have [update] privilege on [$namespace1/$table1]")
   }
 
   test("[KYUUBI #3424] CACHE TABLE") {
@@ -189,48 +223,74 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     } else {
       s"does not have [select] privilege on [$catalogV2.$namespace1/$table1]"
     }
-    runSqlAsWithAccessException()(s"CACHE TABLE $cacheTable1 AS select * from $catalogV2.$namespace1.$table1", errorMsg)
+    runSqlAsWithAccessException()(
+      s"CACHE TABLE $cacheTable1 AS select * from $catalogV2.$namespace1.$table1",
+      errorMsg)
   }
 
   test("[KYUUBI #3424] TRUNCATE TABLE") {
     assume(isSparkV32OrGreater)
 
-    runSqlAsWithAccessException()(s"TRUNCATE TABLE $catalogV2.$namespace1.$table1", s"does not have [update] privilege on [$namespace1/$table1]")
+    runSqlAsWithAccessException()(
+      s"TRUNCATE TABLE $catalogV2.$namespace1.$table1",
+      s"does not have [update] privilege on [$namespace1/$table1]")
   }
 
   test("[KYUUBI #3424] MSCK REPAIR TABLE") {
     assume(isSparkV32OrGreater)
 
-    runSqlAsWithAccessException()(s"MSCK REPAIR TABLE $catalogV2.$namespace1.$table1", s"does not have [alter] privilege on [$namespace1/$table1]")
+    runSqlAsWithAccessException()(
+      s"MSCK REPAIR TABLE $catalogV2.$namespace1.$table1",
+      s"does not have [alter] privilege on [$namespace1/$table1]")
   }
 
   test("[KYUUBI #3424] ALTER TABLE") {
     assume(isSparkV31OrGreater)
 
     // AddColumns
-    runSqlAsWithAccessException()(s"ALTER TABLE $catalogV2.$namespace1.$table1 ADD COLUMNS (age int)", s"does not have [alter] privilege on [$namespace1/$table1]", isExplain = true)
+    runSqlAsWithAccessException()(
+      s"ALTER TABLE $catalogV2.$namespace1.$table1 ADD COLUMNS (age int)",
+      s"does not have [alter] privilege on [$namespace1/$table1]",
+      isExplain = true)
 
     // DropColumns
-    runSqlAsWithAccessException()(s"ALTER TABLE $catalogV2.$namespace1.$table1 DROP COLUMNS city", s"does not have [alter] privilege on [$namespace1/$table1]", isExplain = true)
+    runSqlAsWithAccessException()(
+      s"ALTER TABLE $catalogV2.$namespace1.$table1 DROP COLUMNS city",
+      s"does not have [alter] privilege on [$namespace1/$table1]",
+      isExplain = true)
 
     // RenameColumn
-    runSqlAsWithAccessException()(s"ALTER TABLE $catalogV2.$namespace1.$table1 RENAME COLUMN city TO city2 ", s"does not have [alter] privilege on [$namespace1/$table1]", isExplain = true)
+    runSqlAsWithAccessException()(
+      s"ALTER TABLE $catalogV2.$namespace1.$table1 RENAME COLUMN city TO city2 ",
+      s"does not have [alter] privilege on [$namespace1/$table1]",
+      isExplain = true)
 
     // AlterColumn
-    runSqlAsWithAccessException()(s"ALTER TABLE $catalogV2.$namespace1.$table1 ALTER COLUMN city COMMENT 'city'", s"does not have [alter] privilege on [$namespace1/$table1]")
+    runSqlAsWithAccessException()(
+      s"ALTER TABLE $catalogV2.$namespace1.$table1 ALTER COLUMN city COMMENT 'city'",
+      s"does not have [alter] privilege on [$namespace1/$table1]")
   }
 
   test("[KYUUBI #3424] COMMENT ON") {
     assume(isSparkV31OrGreater)
 
     // CommentOnNamespace
-    runSqlAsWithAccessException()(s"COMMENT ON DATABASE $catalogV2.$namespace1 IS 'xYz'", s"does not have [alter] privilege on [$namespace1]", isExplain = true)
+    runSqlAsWithAccessException()(
+      s"COMMENT ON DATABASE $catalogV2.$namespace1 IS 'xYz'",
+      s"does not have [alter] privilege on [$namespace1]",
+      isExplain = true)
 
     // CommentOnNamespace
-    runSqlAsWithAccessException()(s"COMMENT ON NAMESPACE $catalogV2.$namespace1 IS 'xYz' ", s"does not have [alter] privilege on [$namespace1]", isExplain = true)
+    runSqlAsWithAccessException()(
+      s"COMMENT ON NAMESPACE $catalogV2.$namespace1 IS 'xYz' ",
+      s"does not have [alter] privilege on [$namespace1]",
+      isExplain = true)
 
     // CommentOnTable
-    runSqlAsWithAccessException()(s"COMMENT ON TABLE $catalogV2.$namespace1.$table1 IS 'xYz' ", s"does not have [alter] privilege on [$namespace1/$table1]", isExplain = true)
+    runSqlAsWithAccessException()(
+      s"COMMENT ON TABLE $catalogV2.$namespace1.$table1 IS 'xYz' ",
+      s"does not have [alter] privilege on [$namespace1/$table1]",
+      isExplain = true)
 
   }
 }
