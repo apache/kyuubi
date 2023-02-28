@@ -25,7 +25,7 @@ import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParser._
 import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParserBaseVisitor
 import org.apache.kyuubi.sql.parser.KyuubiParser.unescapeSQLString
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetColumns, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
+import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetColumns, GetPrimaryKeys, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
 
 class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef] {
 
@@ -90,6 +90,10 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
     val colNamePattern = visit(ctx.colNameFilter()).asInstanceOf[String]
 
     GetColumns(catalog, schemaPattern, tableNamePattern, colNamePattern)
+  }
+
+  override def visitGetPrimaryKeys(ctx: GetPrimaryKeysContext): KyuubiTreeNode = {
+    GetPrimaryKeys()
   }
 
   override def visitNullCatalog(ctx: NullCatalogContext): AnyRef = {

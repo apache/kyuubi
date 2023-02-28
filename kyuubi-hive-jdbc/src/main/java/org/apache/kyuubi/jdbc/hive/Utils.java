@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hive.service.rpc.thrift.TStatus;
 import org.apache.hive.service.rpc.thrift.TStatusCode;
 import org.slf4j.Logger;
@@ -193,12 +194,20 @@ public class Utils {
       }
     }
 
+    Pattern confPattern = Pattern.compile("([^;]*)([^;]*);?");
+
     // parse hive conf settings
     String confStr = jdbcURI.getQuery();
     if (confStr != null) {
-      Matcher confMatcher = pattern.matcher(confStr);
+      Matcher confMatcher = confPattern.matcher(confStr);
       while (confMatcher.find()) {
-        connParams.getHiveConfs().put(confMatcher.group(1), confMatcher.group(2));
+        String connParam = confMatcher.group(1);
+        if (StringUtils.isNotBlank(connParam) && connParam.contains("=")) {
+          int symbolIndex = connParam.indexOf('=');
+          connParams
+              .getHiveConfs()
+              .put(connParam.substring(0, symbolIndex), connParam.substring(symbolIndex + 1));
+        }
       }
     }
 
@@ -476,5 +485,22 @@ public class Utils {
 
   public static boolean isKyuubiOperationHint(String hint) {
     return KYUUBI_OPERATION_HINT_PATTERN.matcher(hint).matches();
+  }
+
+  public static final String KYUUBI_CLIENT_VERSION_KEY = "kyuubi.client.version";
+  private static String KYUUBI_CLIENT_VERSION;
+
+  public static synchronized String getVersion() {
+    if (KYUUBI_CLIENT_VERSION == null) {
+      try {
+        Properties prop = new Properties();
+        prop.load(Utils.class.getClassLoader().getResourceAsStream("version.properties"));
+        KYUUBI_CLIENT_VERSION = prop.getProperty(KYUUBI_CLIENT_VERSION_KEY, "unknown");
+      } catch (Exception e) {
+        LOG.error("Error getting kyuubi client version", e);
+        KYUUBI_CLIENT_VERSION = "unknown";
+      }
+    }
+    return KYUUBI_CLIENT_VERSION;
   }
 }

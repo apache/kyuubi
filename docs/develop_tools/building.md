@@ -19,7 +19,7 @@
 
 ## Building Kyuubi with Apache Maven
 
-**Kyuubi** is built based on [Apache Maven](http://maven.apache.org),
+**Kyuubi** is built based on [Apache Maven](https://maven.apache.org),
 
 ```bash
 ./build/mvn clean package -DskipTests

@@ -105,7 +105,7 @@ class SessionLimiterWithUnlimitedUsersImpl(
     userLimit: Int,
     ipAddressLimit: Int,
     userIpAddressLimit: Int,
-    unlimitedUsers: Set[String])
+    var unlimitedUsers: Set[String])
   extends SessionLimiterImpl(userLimit, ipAddressLimit, userIpAddressLimit) {
   override def increment(userIpAddress: UserIpAddress): Unit = {
     if (!unlimitedUsers.contains(userIpAddress.user)) {
@@ -118,6 +118,10 @@ class SessionLimiterWithUnlimitedUsersImpl(
       super.decrement(userIpAddress)
     }
   }
+
+  private[kyuubi] def setUnlimitedUsers(unlimitedUsers: Set[String]): Unit = {
+    this.unlimitedUsers = unlimitedUsers
+  }
 }
 
 object SessionLimiter {
@@ -126,12 +130,22 @@ object SessionLimiter {
       userLimit: Int,
       ipAddressLimit: Int,
       userIpAddressLimit: Int,
-      userWhiteList: Set[String] = Set.empty): SessionLimiter = {
+      unlimitedUsers: Set[String] = Set.empty): SessionLimiter = {
     new SessionLimiterWithUnlimitedUsersImpl(
       userLimit,
       ipAddressLimit,
       userIpAddressLimit,
-      userWhiteList)
+      unlimitedUsers)
   }
 
+  def resetUnlimitedUsers(limiter: SessionLimiter, unlimitedUsers: Set[String]): Unit =
+    limiter match {
+      case l: SessionLimiterWithUnlimitedUsersImpl => l.setUnlimitedUsers(unlimitedUsers)
+      case _ =>
+    }
+
+  def getUnlimitedUsers(limiter: SessionLimiter): Set[String] = limiter match {
+    case l: SessionLimiterWithUnlimitedUsersImpl => l.unlimitedUsers
+    case _ => Set.empty
+  }
 }

@@ -265,5 +265,5 @@ You will both get the final results and the corresponding operation logs telling
 - [Monitoring Kyuubi - Server Metrics](metrics.md)
 - [Trouble Shooting](trouble_shooting.md)
 - Spark Online Documentation
-  - [Monitoring and Instrumentation](http://spark.apache.org/docs/latest/monitoring.html)
+  - [Monitoring and Instrumentation](https://spark.apache.org/docs/latest/monitoring.html)
 

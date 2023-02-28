@@ -17,6 +17,10 @@
 
 package org.apache.kyuubi.service
 
+import java.io.{Closeable, IOException}
+
+import org.slf4j.Logger
+
 object ServiceUtils {
 
   /**
@@ -47,6 +51,26 @@ object ServiceUtils {
       userName
     } else {
       userName.substring(0, indexOfDomainMatch)
+    }
+  }
+
+  /**
+   * Close the Closeable objects and <b>ignore</b> any [[IOException]] or
+   * null pointers. Must only be used for cleanup in exception handlers.
+   *
+   * @param log        the log to record problems to at debug level. Can be null.
+   * @param closeables the objects to close
+   */
+  def cleanup(log: Logger, closeables: Closeable*): Unit = {
+    closeables.filter(_ != null).foreach { c =>
+      try {
+        c.close()
+      } catch {
+        case e: IOException =>
+          if (log != null && log.isDebugEnabled) {
+            log.debug(s"Exception in closing $c", e)
+          }
+      }
     }
   }
 }

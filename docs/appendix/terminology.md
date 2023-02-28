@@ -139,7 +139,7 @@ Kyuubi unifies DataLake & LakeHouse access in the simplest pure SQL way, meanwhi
 
 <p align=right>
 <em>
-<a href="http://iceberg.apache.org/">http://iceberg.apache.org/</a>
+<a href="https://iceberg.apache.org/">https://iceberg.apache.org/</a>
 </em>
 </p>
 

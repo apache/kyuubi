@@ -99,9 +99,10 @@ Create a session
 
 #### Response Body
 
-| Name       | Description                   | Type   |
-|:-----------|:------------------------------|:-------|
-| identifier | The session handle identifier | String |
+| Name           | Description                                                                                        | Type   |
+|:---------------|:---------------------------------------------------------------------------------------------------|:-------|
+| identifier     | The session handle identifier                                                                      | String |
+| kyuubiInstance | The Kyuubi instance that holds the session and to call for the following operations in the session | String |
 
 ### DELETE /sessions/${sessionHandle}
 
@@ -493,6 +494,7 @@ The [Engine](#engine) List.
 | user           | The user created the batch                                        | String |
 | batchType      | The batch type                                                    | String |
 | name           | The batch name                                                    | String |
+| appStartTime   | The batch application start time                                  | Long   |
 | appId          | The batch application Id                                          | String |
 | appUrl         | The batch application tracking url                                | String |
 | appState       | The batch application state                                       | String |

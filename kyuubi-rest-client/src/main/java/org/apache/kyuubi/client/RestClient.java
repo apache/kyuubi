@@ -163,7 +163,7 @@ public class RestClient implements IRestClient {
 
       response = httpclient.execute(httpRequest, responseHandler);
       LOG.debug("Response: {}", response);
-    } catch (ConnectException | ConnectTimeoutException e) {
+    } catch (ConnectException | ConnectTimeoutException | NoHttpResponseException e) {
       // net exception can be retried by connecting to other Kyuubi server
       throw new RetryableKyuubiRestException("Api request failed for " + uri.toString(), e);
     } catch (KyuubiRestException rethrow) {

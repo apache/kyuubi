@@ -17,8 +17,8 @@
 
 # Running Tests
 
-**Kyuubi** can be tested based on [Apache Maven](http://maven.apache.org) and the ScalaTest Maven Plugin,
-please refer to the [ScalaTest documentation](http://www.scalatest.org/user_guide/using_the_scalatest_maven_plugin),
+**Kyuubi** can be tested based on [Apache Maven](https://maven.apache.org) and the ScalaTest Maven Plugin,
+please refer to the [ScalaTest documentation](https://www.scalatest.org/user_guide/using_the_scalatest_maven_plugin),
 
 ## Running Tests Fully
 

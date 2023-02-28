@@ -31,6 +31,7 @@ set -x
 KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 DISTDIR="$KYUUBI_HOME/dist"
 MAKE_TGZ=false
+ENABLE_WEBUI=false
 FLINK_PROVIDED=false
 SPARK_PROVIDED=false
 HIVE_PROVIDED=false
@@ -42,15 +43,16 @@ function usage {
   echo "./build/dist - Tool for making binary distributions of Kyuubi"
   echo ""
   echo "Usage:"
-  echo "+------------------------------------------------------------------------------------------------------+"
-  echo "| ./build/dist [--name <custom_name>] [--tgz] [--flink-provided] [--spark-provided] [--hive-provided]  |"
-  echo "|              [--mvn <maven_executable>] <maven build options>                                        |"
-  echo "+------------------------------------------------------------------------------------------------------+"
+  echo "+----------------------------------------------------------------------------------------------+"
+  echo "| ./build/dist [--name <custom_name>] [--tgz] [--web-ui] [--flink-provided] [--hive-provided]  |"
+  echo "|              [--spark-provided] [--mvn <maven_executable>] <maven build options>             |"
+  echo "+----------------------------------------------------------------------------------------------+"
   echo "name:           -  custom binary name, using project version if undefined"
   echo "tgz:            -  whether to make a whole bundled package"
+  echo "web-ui:         -  whether to include web ui"
   echo "flink-provided: -  whether to make a package without Flink binary"
-  echo "spark-provided: -  whether to make a package without Spark binary"
   echo "hive-provided:  -  whether to make a package without Hive binary"
+  echo "spark-provided: -  whether to make a package without Spark binary"
   echo "mvn:            -  external maven executable location"
   echo ""
 }
@@ -66,6 +68,9 @@ while (( "$#" )); do
   case $1 in
     --tgz)
       MAKE_TGZ=true
+      ;;
+    --web-ui)
+      ENABLE_WEBUI=true
       ;;
     --flink-provided)
       FLINK_PROVIDED=true
@@ -212,6 +217,10 @@ fi
 
 MVN_DIST_OPT="-DskipTests"
 
+if [[ "$ENABLE_WEBUI" == "true" ]]; then
+  MVN_DIST_OPT="$MVN_DIST_OPT -Pweb-ui"
+fi
+
 if [[ "$SPARK_PROVIDED" == "true" ]]; then
   MVN_DIST_OPT="$MVN_DIST_OPT -Pspark-provided"
 fi
@@ -238,14 +247,15 @@ echo -e "\$ ${BUILD_COMMAND[@]}\n"
 rm -rf "$DISTDIR"
 mkdir -p "$DISTDIR/pid"
 mkdir -p "$DISTDIR/logs"
-mkdir -p "$DISTDIR/jars"
 mkdir -p "$DISTDIR/work"
+mkdir -p "$DISTDIR/jars"
+mkdir -p "$DISTDIR/beeline-jars"
+mkdir -p "$DISTDIR/web-ui"
 mkdir -p "$DISTDIR/externals/engines/flink"
 mkdir -p "$DISTDIR/externals/engines/spark"
 mkdir -p "$DISTDIR/externals/engines/trino"
 mkdir -p "$DISTDIR/externals/engines/hive"
 mkdir -p "$DISTDIR/externals/engines/jdbc"
-mkdir -p "$DISTDIR/beeline-jars"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Scala $SCALA_VERSION" >> "$DISTDIR/RELEASE"
@@ -320,6 +330,11 @@ for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
     cp "$KYUUBI_HOME/extensions/spark/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/extension/"
   fi
 done
+
+if [[ "$ENABLE_WEBUI" == "true" ]]; then
+  # Copy web ui dist
+  cp -r "$KYUUBI_HOME/kyuubi-server/web-ui/dist" "$DISTDIR/web-ui/"
+fi
 
 if [[ "$FLINK_PROVIDED" != "true" ]]; then
   # Copy flink binary dist

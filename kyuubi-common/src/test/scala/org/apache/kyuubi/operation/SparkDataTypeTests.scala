@@ -19,15 +19,16 @@ package org.apache.kyuubi.operation
 
 import java.sql.{Date, Timestamp}
 
-import org.apache.kyuubi.engine.SemanticVersion
+import org.apache.kyuubi.util.SparkVersionUtil
 
-trait SparkDataTypeTests extends HiveJDBCTestHelper {
-  protected lazy val SPARK_ENGINE_VERSION = sparkEngineMajorMinorVersion
+trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
 
   def resultFormat: String = "thrift"
 
   test("execute statement - select null") {
-    assume(resultFormat == "thrift" || (resultFormat == "arrow" && SPARK_ENGINE_VERSION >= "3.2"))
+    assume(
+      resultFormat == "thrift" ||
+        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.2"))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT NULL AS col")
       assert(resultSet.next())
@@ -159,9 +160,10 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
     }
   }
 
-  test("execute statement - select timestamp") {
+  test("execute statement - select timestamp - second") {
     withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT TIMESTAMP '2018-11-17 13:33:33' AS col")
+      val resultSet = statement.executeQuery(
+        "SELECT TIMESTAMP '2018-11-17 13:33:33' AS col")
       assert(resultSet.next())
       assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2018-11-17 13:33:33"))
       val metaData = resultSet.getMetaData
@@ -171,13 +173,39 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
     }
   }
 
-  test("execute statement - select timestamp_ntz") {
-    assume(SPARK_ENGINE_VERSION >= "3.4")
+  test("execute statement - select timestamp - millisecond") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
-        "SELECT make_timestamp_ntz(2022, 03, 24, 18, 08, 31.800) AS col")
+        "SELECT TIMESTAMP '2018-11-17 13:33:33.12345' AS col")
       assert(resultSet.next())
-      assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2022-03-24 18:08:31.800"))
+      assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2018-11-17 13:33:33.12345"))
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
+      assert(metaData.getPrecision(1) === 29)
+      assert(metaData.getScale(1) === 9)
+    }
+  }
+
+  test("execute statement - select timestamp - overflow") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery(
+        "SELECT TIMESTAMP '2018-11-17 13:33:33.1234567' AS col")
+      assert(resultSet.next())
+      assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2018-11-17 13:33:33.123456"))
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
+      assert(metaData.getPrecision(1) === 29)
+      assert(metaData.getScale(1) === 9)
+    }
+  }
+
+  test("execute statement - select timestamp_ntz") {
+    assume(SPARK_ENGINE_RUNTIME_VERSION >= "3.4")
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery(
+        "SELECT make_timestamp_ntz(2022, 03, 24, 18, 08, 31.8888) AS col")
+      assert(resultSet.next())
+      assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2022-03-24 18:08:31.8888"))
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
       assert(metaData.getPrecision(1) === 29)
@@ -186,7 +214,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select daytime interval") {
-    assume(resultFormat == "thrift" || (resultFormat == "arrow" && SPARK_ENGINE_VERSION >= "3.3"))
+    assume(
+      resultFormat == "thrift" ||
+        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.3"))
     withJdbcStatement() { statement =>
       Map(
         "interval 1 day 1 hour -60 minutes 30 seconds" ->
@@ -215,7 +245,7 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
           assert(resultSet.next())
           val result = resultSet.getString("col")
           val metaData = resultSet.getMetaData
-          if (SPARK_ENGINE_VERSION < "3.2") {
+          if (SPARK_ENGINE_RUNTIME_VERSION < "3.2") {
             // for spark 3.1 and backwards
             assert(result === kv._2._2)
             assert(metaData.getPrecision(1) === Int.MaxValue)
@@ -231,7 +261,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select year/month interval") {
-    assume(resultFormat == "thrift" || (resultFormat == "arrow" && SPARK_ENGINE_VERSION >= "3.3"))
+    assume(
+      resultFormat == "thrift" ||
+        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.3"))
     withJdbcStatement() { statement =>
       Map(
         "INTERVAL 2022 YEAR" -> Tuple2("2022-0", "2022 years"),
@@ -244,7 +276,7 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
         assert(resultSet.next())
         val result = resultSet.getString("col")
         val metaData = resultSet.getMetaData
-        if (SPARK_ENGINE_VERSION < "3.2") {
+        if (SPARK_ENGINE_RUNTIME_VERSION < "3.2") {
           // for spark 3.1 and backwards
           assert(result === kv._2._2)
           assert(metaData.getPrecision(1) === Int.MaxValue)
@@ -260,7 +292,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select array") {
-    assume(resultFormat == "thrift" || (resultFormat == "arrow" && SPARK_ENGINE_VERSION >= "3.2"))
+    assume(
+      resultFormat == "thrift" ||
+        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.2"))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT array() AS col1, array(1) AS col2, array(null) AS col3")
@@ -278,7 +312,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select map") {
-    assume(resultFormat == "thrift" || (resultFormat == "arrow" && SPARK_ENGINE_VERSION >= "3.2"))
+    assume(
+      resultFormat == "thrift" ||
+        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.2"))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT map() AS col1, map(1, 2, 3, 4) AS col2, map(1, null) AS col3")
@@ -296,7 +332,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select struct") {
-    assume(resultFormat == "thrift" || (resultFormat == "arrow" && SPARK_ENGINE_VERSION >= "3.2"))
+    assume(
+      resultFormat == "thrift" ||
+        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.2"))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT struct('1', '2') AS col1," +
@@ -314,16 +352,5 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
       assert(metaData.getScale(1) == 0)
       assert(metaData.getScale(2) == 0)
     }
-  }
-
-  def sparkEngineMajorMinorVersion: SemanticVersion = {
-    var sparkRuntimeVer = ""
-    withJdbcStatement() { stmt =>
-      val result = stmt.executeQuery("SELECT version()")
-      assert(result.next())
-      sparkRuntimeVer = result.getString(1)
-      assert(!result.next())
-    }
-    SemanticVersion(sparkRuntimeVer)
   }
 }

@@ -18,7 +18,8 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.io.InputStream
-import java.util.Locale
+import java.util
+import java.util.{Collections, Locale}
 import java.util.concurrent.ConcurrentHashMap
 import javax.ws.rs._
 import javax.ws.rs.core.MediaType
@@ -184,7 +185,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         " of batchRequest is application/json")
     val tempFile = Utils.writeToTempFile(
       resourceFileInputStream,
-      KyuubiApplicationManager.tempDirForUpload,
+      KyuubiApplicationManager.uploadWorkDir,
       resourceFileMetadata.getFileName)
     batchRequest.setResource(tempFile.getPath)
     openBatchSessionInternal(batchRequest, isResourceFromUpload = true)
@@ -213,10 +214,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     val ipAddress = fe.getIpAddress
     request.setConf(
       (request.getConf.asScala ++ Map(
+        KYUUBI_BATCH_RESOURCE_UPLOADED_KEY -> isResourceFromUpload.toString,
         KYUUBI_CLIENT_IP_KEY -> ipAddress,
         KYUUBI_SERVER_IP_KEY -> fe.host,
         KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
-        KYUUBI_SESSION_BATCH_RESOURCE_UPLOADED_KEY -> isResourceFromUpload.toString,
         KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
     val sessionHandle = sessionManager.openBatchSession(
       userName,
@@ -318,12 +319,16 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       try {
         val submissionOp = batchSession.batchJobSubmissionOp
-        val rowSet = submissionOp.getOperationLogRowSet(
-          FetchOrientation.FETCH_NEXT,
-          from,
-          size)
-        val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
-        new OperationLog(logRowSet.asJava, logRowSet.size)
+        val rowSet = submissionOp.getOperationLogRowSet(FetchOrientation.FETCH_NEXT, from, size)
+        val columns = rowSet.getColumns
+        val logRowSet: util.List[String] =
+          if (columns == null || columns.size == 0) {
+            Collections.emptyList()
+          } else {
+            assert(columns.size == 1)
+            columns.get(0).getStringVal.getValues
+          }
+        new OperationLog(logRowSet, logRowSet.size)
       } catch {
         case NonFatal(e) =>
           val errorMsg = s"Error getting operation log for batchId: $batchId"

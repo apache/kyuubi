@@ -17,7 +17,7 @@ Hive Beeline
 ============
 
 Kyuubi supports Apache Hive beeline that works with Kyuubi server.
-Hive beeline is a `SQLLine CLI <http://sqlline.sourceforge.net/>`_ based on the `Hive JDBC Driver <../jdbc/hive_jdbc.html>`_.
+Hive beeline is a `SQLLine CLI <https://sqlline.sourceforge.net/>`_ based on the `Hive JDBC Driver <../jdbc/hive_jdbc.html>`_.
 
 Prerequisites
 -------------

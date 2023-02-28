@@ -102,7 +102,6 @@ object TableCommands {
 
   val AlterTableRename = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableRenameCommand"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(DELETE))
 
     val oldTableTableTypeDesc =
       TableTypeDesc(
@@ -112,12 +111,9 @@ object TableCommands {
     val oldTableD = TableDesc(
       "oldName",
       tite,
-      tableTypeDesc = Some(oldTableTableTypeDesc),
-      actionTypeDesc = Some(actionTypeDesc))
+      tableTypeDesc = Some(oldTableTableTypeDesc))
 
-    val newTableD =
-      TableDesc("newName", tite, tableTypeDesc = Some(oldTableTableTypeDesc))
-    TableCommandSpec(cmd, Seq(oldTableD, newTableD), ALTERTABLE_RENAME)
+    TableCommandSpec(cmd, Seq(oldTableD), ALTERTABLE_RENAME)
   }
 
   // this is for spark 3.1 or below
@@ -350,6 +346,13 @@ object TableCommands {
     TableCommandSpec(cmd, Nil, CREATEVIEW)
   }
 
+  val CreateTable = {
+    val cmd = "org.apache.spark.sql.execution.datasources.CreateTable"
+    val tableDesc = TableDesc("tableDesc", classOf[CatalogTableTableExtractor])
+    val queryDesc = QueryDesc("query", "LogicalPlanOptionQueryExtractor")
+    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE, queryDescs = Seq(queryDesc))
+  }
+
   val CreateDataSourceTable = {
     val cmd = "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand"
     val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
@@ -405,6 +408,16 @@ object TableCommands {
       "table",
       classOf[TableIdentifierTableExtractor],
       Some(columnDesc),
+      isInput = true,
+      setCurrentDatabaseIfMissing = true)
+    TableCommandSpec(cmd, Seq(tableDesc), DESCTABLE)
+  }
+
+  val DescribeRelationTable = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.DescribeRelation"
+    val tableDesc = TableDesc(
+      "relation",
+      classOf[ResolvedTableTableExtractor],
       isInput = true,
       setCurrentDatabaseIfMissing = true)
     TableCommandSpec(cmd, Seq(tableDesc), DESCTABLE)
@@ -601,6 +614,7 @@ object TableCommands {
     CreateHiveTableAsSelect,
     CreateHiveTableAsSelect.copy(classname =
       "org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand"),
+    CreateTable,
     CreateTableLike,
     CreateTableV2,
     CreateTableV2.copy(classname =
@@ -614,6 +628,7 @@ object TableCommands {
     DeleteFromTable,
     DescribeColumn,
     DescribeTable,
+    DescribeRelationTable,
     DropTable,
     DropTableV2,
     InsertIntoDataSource,

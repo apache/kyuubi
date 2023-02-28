@@ -22,7 +22,6 @@ import org.apache.logging.log4j.core.{Logger => Log4jLogger, LoggerContext}
 import org.apache.logging.log4j.core.config.DefaultConfiguration
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.bridge.SLF4JBridgeHandler
-import org.slf4j.impl.StaticLoggerBinder
 
 import org.apache.kyuubi.util.ClassUtils
 
@@ -54,9 +53,21 @@ trait Logging {
     }
   }
 
+  def debug(message: => Any, t: Throwable): Unit = {
+    if (logger.isDebugEnabled) {
+      logger.debug(message.toString, t)
+    }
+  }
+
   def info(message: => Any): Unit = {
     if (logger.isInfoEnabled) {
       logger.info(message.toString)
+    }
+  }
+
+  def info(message: => Any, t: Throwable): Unit = {
+    if (logger.isInfoEnabled) {
+      logger.info(message.toString, t)
     }
   }
 
@@ -105,16 +116,16 @@ object Logging {
     // This distinguishes the log4j 1.2 binding, currently
     // org.slf4j.impl.Log4jLoggerFactory, from the log4j 2.0 binding, currently
     // org.apache.logging.slf4j.Log4jLoggerFactory
-    val binderClass = StaticLoggerBinder.getSingleton.getLoggerFactoryClassStr
-    "org.slf4j.impl.Log4jLoggerFactory".equals(binderClass)
+    "org.slf4j.impl.Log4jLoggerFactory"
+      .equals(LoggerFactory.getILoggerFactory.getClass.getName)
   }
 
   private[kyuubi] def isLog4j2: Boolean = {
     // This distinguishes the log4j 1.2 binding, currently
     // org.slf4j.impl.Log4jLoggerFactory, from the log4j 2.0 binding, currently
     // org.apache.logging.slf4j.Log4jLoggerFactory
-    val binderClass = StaticLoggerBinder.getSingleton.getLoggerFactoryClassStr
-    "org.apache.logging.slf4j.Log4jLoggerFactory".equals(binderClass)
+    "org.apache.logging.slf4j.Log4jLoggerFactory"
+      .equals(LoggerFactory.getILoggerFactory.getClass.getName)
   }
 
   /**

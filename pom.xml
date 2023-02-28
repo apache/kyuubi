@@ -27,7 +27,7 @@
 
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
-    <version>1.7.0-SNAPSHOT</version>
+    <version>1.8.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
@@ -108,16 +108,18 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <maven.version>3.8.6</maven.version>
+        <maven.version>3.8.7</maven.version>
+        <mvnd.version>0.9.0</mvnd.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.17</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
-        <arrow.version>10.0.1</arrow.version>
+        <arrow.version>11.0.0</arrow.version>
         <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
         <antlr4.version>4.9.3</antlr4.version>
+        <antlr.st4.version>4.3.4</antlr.st4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.2.8</codahale.metrics.version>
@@ -133,7 +135,7 @@
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
-        <flink.version>1.15.2</flink.version>
+        <flink.version>1.16.1</flink.version>
         <flink.module.scala.suffix></flink.module.scala.suffix>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
@@ -159,19 +161,19 @@
         <httpclient5.version>5.2.1</httpclient5.version>
         <hudi.version>0.12.0</hudi.version>
         <iceberg.version>1.1.0</iceberg.version>
-        <jackson.version>2.14.1</jackson.version>
+        <jackson.version>2.14.2</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
-        <jersey.version>2.38</jersey.version>
+        <jersey.version>2.39</jersey.version>
         <jetty.version>9.4.50.v20221201</jetty.version>
         <jline.version>0.9.94</jline.version>
-        <junit.version>4.13.1</junit.version>
+        <junit.version>4.13.2</junit.version>
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.19.0</log4j.version>
-        <mysql.jdbc.version>8.0.31</mysql.jdbc.version>
+        <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
         <netty.version>4.1.87.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
@@ -188,19 +190,24 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.3.1</spark.version>
+        <spark.version>3.3.2</spark.version>
         <spark.binary.version>3.3</spark.binary.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.2.1</swagger.version>
         <swagger-ui.version>4.9.1</swagger-ui.version>
-        <testcontainers-scala.version>0.40.7</testcontainers-scala.version>
+        <testcontainers-scala.version>0.40.12</testcontainers-scala.version>
         <thrift.version>0.9.3</thrift.version>
         <trino.client.version>363</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <trino.tpch.version>1.1</trino.tpch.version>
         <zookeeper.version>3.4.14</zookeeper.version>
+
+        <!-- webui -->
+        <webui.skip>true</webui.skip>
+        <node.version>v16.19.1</node.version>
+        <pnpm.version>v7.27.1</pnpm.version>
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.jline.version>2.12</hive.client.jline.version>
@@ -212,10 +219,12 @@
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
         <maven.plugin.build.helper.version>3.3.0</maven.plugin.build.helper.version>
-        <maven.plugin.download.version>1.6.6</maven.plugin.download.version>
+        <maven.plugin.download.version>1.6.8</maven.plugin.download.version>
+        <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
         <maven.plugin.enforcer.mojo.rules.version>1.6.1</maven.plugin.enforcer.mojo.rules.version>
+        <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
         <maven.plugin.scala.version>4.8.0</maven.plugin.scala.version>
-        <maven.plugin.surefire.version>3.0.0-M7</maven.plugin.surefire.version>
+        <maven.plugin.surefire.version>3.0.0-M8</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.2.0</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
@@ -253,6 +262,11 @@
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
                 <version>${antlr4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>ST4</artifactId>
+                <version>${antlr.st4.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.arrow</groupId>
@@ -770,6 +784,12 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
 
@@ -1495,13 +1515,6 @@
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-multipart</artifactId>
                 <version>${jersey.version}</version>
-                <exclusions>
-                    <!--todo: remove this exclusion when Jersey 2.39 released with scope fix for Junit dependency-->
-                    <exclusion>
-                        <groupId>org.junit.jupiter</groupId>
-                        <artifactId>junit-jupiter</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -1998,6 +2011,9 @@
                             <fileset>
                                 <directory>${project.basedir}/spark-warehouse</directory>
                             </fileset>
+                            <fileset>
+                                <directory>${project.basedir}/web-ui/dist</directory>
+                            </fileset>
                         </filesets>
                     </configuration>
                 </plugin>
@@ -2078,7 +2094,12 @@
                         <markdown>
                             <includes>
                                 <include>docs/**/*.md</include>
+                                <include>*/README.md</include>
+                                <include>docker/playground/README.md</include>
                             </includes>
+                            <excludes>
+                                <exclude>docs/*/lib/python*/**/*.md</exclude>
+                            </excludes>
                             <flexmark>
                                 <version>${flexmark.version}</version>
                             </flexmark>
@@ -2148,6 +2169,16 @@
                             <version>${maven.plugin.enforcer.mojo.rules.version}</version>
                         </dependency>
                     </dependencies>
+                </plugin>
+
+                <plugin>
+                    <groupId>com.github.eirslett</groupId>
+                    <artifactId>frontend-maven-plugin</artifactId>
+                    <version>${maven.plugin.frontend.version}</version>
+                    <configuration>
+                        <nodeVersion>${node.version}</nodeVersion>
+                        <pnpmVersion>${pnpm.version}</pnpmVersion>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -2233,9 +2264,11 @@
     <profiles>
         <profile>
             <id>mirror-cdn</id>
-            <!-- this profile works only for latest apache releases -->
             <properties>
+                <!-- the apache cdn mirror works only for latest apache releases -->
                 <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
+                <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
+                <pnpmDownloadRoot>https://registry.npmmirror.com/pnpm/-/</pnpmDownloadRoot>
             </properties>
         </profile>
 
@@ -2316,9 +2349,20 @@
         <profile>
             <id>spark-master</id>
             <properties>
-                <spark.version>3.4.0-SNAPSHOT</spark.version>
+                <spark.version>3.5.0-SNAPSHOT</spark.version>
+                <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
+                <threeten.version>1.7.0</threeten.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
             </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.threeten</groupId>
+                        <artifactId>threeten-extra</artifactId>
+                        <version>${threeten.version}</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
             <repositories>
                 <repository>
                     <releases>
@@ -2336,7 +2380,7 @@
         <profile>
             <id>flink-1.14</id>
             <properties>
-                <flink.version>1.14.5</flink.version>
+                <flink.version>1.14.6</flink.version>
                 <flink.module.scala.suffix>_${scala.binary.version}</flink.module.scala.suffix>
             </properties>
         </profile>
@@ -2344,7 +2388,7 @@
         <profile>
             <id>flink-1.15</id>
             <properties>
-                <flink.version>1.15.2</flink.version>
+                <flink.version>1.15.3</flink.version>
                 <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
         </profile>
@@ -2352,7 +2396,7 @@
         <profile>
             <id>flink-1.16</id>
             <properties>
-                <flink.version>1.16.0</flink.version>
+                <flink.version>1.16.1</flink.version>
                 <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
         </profile>
@@ -2412,6 +2456,13 @@
                 <flink.archive.download.skip>true</flink.archive.download.skip>
                 <hive.archive.download.skip>true</hive.archive.download.skip>
                 <spark.archive.download.skip>true</spark.archive.download.skip>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>web-ui</id>
+            <properties>
+                <webui.skip>false</webui.skip>
             </properties>
         </profile>
 

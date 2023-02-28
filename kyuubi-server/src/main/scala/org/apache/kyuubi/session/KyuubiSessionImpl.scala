@@ -27,7 +27,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_HANDLE_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
@@ -105,6 +105,8 @@ class KyuubiSessionImpl(
 
   private var _engineSessionHandle: SessionHandle = _
 
+  private var openSessionError: Option[Throwable] = None
+
   override def open(): Unit = handleSessionException {
     traceMetricsOnOpen()
 
@@ -119,11 +121,12 @@ class KyuubiSessionImpl(
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit =
     handleSessionException {
       withDiscoveryClient(sessionConf) { discoveryClient =>
-        var openEngineSessionConf = optimizedConf
+        var openEngineSessionConf =
+          optimizedConf ++ Map(KYUUBI_SESSION_HANDLE_KEY -> handle.identifier.toString)
         if (engineCredentials.nonEmpty) {
           sessionConf.set(KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
           openEngineSessionConf =
-            optimizedConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
+            openEngineSessionConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
         }
 
         if (sessionConf.get(SESSION_USER_SIGN_ENABLED)) {
@@ -170,6 +173,7 @@ class KyuubiSessionImpl(
                 s"Opening engine [${engine.defaultEngineName} $host:$port]" +
                   s" for $user session failed",
                 e)
+              openSessionError = Some(e)
               throw e
           } finally {
             attempt += 1
@@ -247,7 +251,7 @@ class KyuubiSessionImpl(
     try {
       if (_client != null) _client.closeSession()
     } finally {
-      if (engine != null) engine.close()
+      openSessionError.foreach { _ => if (engine != null) engine.close() }
       sessionEvent.endTime = System.currentTimeMillis()
       EventBus.post(sessionEvent)
       traceMetricsOnClose()

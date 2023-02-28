@@ -35,7 +35,7 @@ import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelpe
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.ApplicationInfo
+import org.apache.kyuubi.engine.{ApplicationInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
@@ -43,15 +43,14 @@ import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.service.authentication.{KyuubiAuthenticationFactory, UserDefinedEngineSecuritySecretProvider}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper with BatchTestHelper {
   override protected lazy val conf: KyuubiConf = KyuubiConf()
     .set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
-    .set(
-      KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
-      classOf[UserDefinedEngineSecuritySecretProvider].getName)
+    .set(KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER, "simple")
+    .set(KyuubiConf.SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET, "ENGINE____SECRET")
     .set(
       KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST,
       Seq(Paths.get(sparkBatchTestResource.get).getParent.toString))
@@ -219,6 +218,12 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     assert(batch.getName === sparkBatchTestAppName)
     assert(batch.getCreateTime > 0)
     assert(batch.getEndTime === 0)
+
+    webTarget.path(s"api/v1/batches/${batch.getId()}").request(
+      MediaType.APPLICATION_JSON_TYPE).delete()
+    eventually(timeout(3.seconds)) {
+      assert(KyuubiApplicationManager.uploadWorkDir.toFile.listFiles().isEmpty)
+    }
   }
 
   test("get batch session list") {

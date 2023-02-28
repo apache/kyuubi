@@ -79,7 +79,7 @@ class KyuubiBatchSessionImpl(
 
   // whether the resource file is from uploading
   private[kyuubi] val isResourceUploaded: Boolean = batchRequest.getConf
-    .getOrDefault(KyuubiReservedKeys.KYUUBI_SESSION_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
+    .getOrDefault(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(

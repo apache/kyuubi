@@ -17,13 +17,22 @@
 
 package org.apache.kyuubi.util
 
-import org.apache.kyuubi.SPARK_COMPILE_VERSION
 import org.apache.kyuubi.engine.SemanticVersion
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-object SparkVersionUtil {
-  lazy val sparkSemanticVersion: SemanticVersion = SemanticVersion(SPARK_COMPILE_VERSION)
+trait SparkVersionUtil {
+  this: HiveJDBCTestHelper =>
 
-  def isSparkVersionAtLeast(ver: String): Boolean = {
-    sparkSemanticVersion.isVersionAtLeast(ver)
+  protected lazy val SPARK_ENGINE_RUNTIME_VERSION = sparkEngineMajorMinorVersion
+
+  def sparkEngineMajorMinorVersion: SemanticVersion = {
+    var sparkRuntimeVer = ""
+    withJdbcStatement() { stmt =>
+      val result = stmt.executeQuery("SELECT version()")
+      assert(result.next())
+      sparkRuntimeVer = result.getString(1)
+      assert(!result.next())
+    }
+    SemanticVersion(sparkRuntimeVer)
   }
 }

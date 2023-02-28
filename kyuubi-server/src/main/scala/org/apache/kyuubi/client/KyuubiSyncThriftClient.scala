@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client
 
+import java.util.UUID
 import java.util.concurrent.{ExecutorService, ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
@@ -52,6 +53,9 @@ class KyuubiSyncThriftClient private (
   @volatile private var _engineName: Option[String] = _
 
   private val lock = new ReentrantLock()
+
+  // Visible for testing.
+  private[kyuubi] def remoteSessionHandle: TSessionHandle = _remoteSessionHandle
 
   @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
   @volatile private var remoteEngineBroken: Boolean = false
@@ -180,7 +184,9 @@ class KyuubiSyncThriftClient private (
     engineAliveProbeClient.foreach { aliveProbeClient =>
       val sessionName = SessionHandle.apply(_remoteSessionHandle).identifier + "_aliveness_probe"
       Utils.tryLogNonFatalError {
-        req.setConfiguration((configs ++ Map(KyuubiConf.SESSION_NAME.key -> sessionName)).asJava)
+        req.setConfiguration((configs ++ Map(
+          KyuubiConf.SESSION_NAME.key -> sessionName,
+          KYUUBI_SESSION_HANDLE_KEY -> UUID.randomUUID().toString)).asJava)
         val resp = aliveProbeClient.OpenSession(req)
         ThriftUtils.verifyTStatus(resp.getStatus)
         _aliveProbeSessionHandle = resp.getSessionHandle

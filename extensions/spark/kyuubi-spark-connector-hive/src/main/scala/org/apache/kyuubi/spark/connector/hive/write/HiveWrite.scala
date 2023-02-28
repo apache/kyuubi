@@ -102,7 +102,9 @@ case class HiveWrite(
     committer.setupJob(job)
 
     new HiveBatchWrite(
+      sparkSession,
       table,
+      hiveTableCatalog,
       Some(tmpLocation),
       partition,
       partitionColumnNames,
@@ -110,7 +112,9 @@ case class HiveWrite(
       ifPartitionNotExists,
       hadoopConf,
       new FileBatchWrite(job, description, committer),
-      externalCatalog)
+      externalCatalog,
+      description,
+      committer)
   }
 
   private def createWriteJobDescription(
