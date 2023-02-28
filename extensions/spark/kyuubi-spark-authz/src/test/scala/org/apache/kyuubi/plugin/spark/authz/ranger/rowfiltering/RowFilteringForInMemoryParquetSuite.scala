@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger.rowfiltering
 
-
 class RowFilteringForInMemoryParquetSuite extends RowFilteringTestBase {
 
   override protected val catalogImpl: String = "in-memory"

@@ -59,7 +59,8 @@ trait RowFilteringTestBase extends AnyFunSuite with SparkSessionProvider with Be
   test("user without row filtering rule") {
     checkAnswer(
       "kent",
-      "SELECT key FROM default.src order order by key", Seq(Row(1), Row(20), Row(30)))
+      "SELECT key FROM default.src order order by key",
+      Seq(Row(1), Row(20), Row(30)))
   }
 
   test("simple query projecting filtering column") {
@@ -79,7 +80,8 @@ trait RowFilteringTestBase extends AnyFunSuite with SparkSessionProvider with Be
   }
 
   test("in subquery") {
-    checkAnswer("bob",
+    checkAnswer(
+      "bob",
       "SELECT value FROM default.src WHERE value in (SELECT value as key FROM default.src)",
       Seq(Row(1)))
   }
@@ -100,16 +102,17 @@ trait RowFilteringTestBase extends AnyFunSuite with SparkSessionProvider with Be
       Try(sql("CREATE OR REPLACE VIEW default.perm_view AS SELECT * FROM default.src")).isSuccess)
     assume(supported, s"view support for '$format' has not been implemented yet")
 
-
     withCleanTmpResources(Seq((s"default.perm_view", "view"))) {
       checkAnswer(
         "kent",
-        "SELECT key FROM default.perm_view order order by key", Seq(Row(1), Row(20), Row(30)))
+        "SELECT key FROM default.perm_view order order by key",
+        Seq(Row(1), Row(20), Row(30)))
       checkAnswer("bob", "SELECT key FROM default.perm_view", Seq(Row(1)))
       checkAnswer("bob", "SELECT value FROM default.perm_view", Seq(Row(1)))
       checkAnswer("bob", "SELECT max(value) FROM default.perm_view", Seq(Row(1)))
       checkAnswer("bob", "SELECT coalesce(max(value), 1) FROM default.perm_view", Seq(Row(1)))
-      checkAnswer("bob",
+      checkAnswer(
+        "bob",
         "SELECT value FROM default.perm_view WHERE value in " +
           "(SELECT value as key FROM default.perm_view)",
         Seq(Row(1)))
