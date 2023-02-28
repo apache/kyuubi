@@ -402,6 +402,18 @@ trait LineageParser {
       case p: LocalRelation =>
         joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(LOCAL_TABLE_IDENTIFIER))
 
+      case _: OneRowRelation =>
+        parentColumnsLineage.map {
+          case (k, attrs) =>
+            k -> AttributeSet(attrs.map {
+              case attr
+                  if attr.qualifier.nonEmpty && attr.qualifier.last.equalsIgnoreCase(
+                    SUBQUERY_COLUMN_IDENTIFIER) =>
+                attr.withQualifier(attr.qualifier.init)
+              case attr => attr
+            })
+        }
+
       case p: InMemoryRelation =>
         // get logical plan from cachedPlan
         val cachedTableLogical = findSparkPlanLogicalLink(Seq(p.cacheBuilder.cachedPlan))
