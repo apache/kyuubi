@@ -106,7 +106,7 @@ trait SparkSessionProvider {
   }
 
   /**
-   * intercept [AccessControlException] when running sql
+   * intercept [[AccessControlException]] when running sql
    * and assert error message contains certain char sequence
    * @param user user name to execute sql , default to "someone"
    * @param sqlText parse ans run sql to dataframe
