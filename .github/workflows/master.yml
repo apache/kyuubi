@@ -97,7 +97,7 @@ jobs:
         with:
           verbose: true
       - name: Report
-        uses: ./.github/actions/test-reporter
+        uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Maven Tests
@@ -147,7 +147,7 @@ jobs:
           ./build/mvn clean test ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Dspark.version=${{ matrix.spark }}
       - name: Report
-        uses: ./.github/actions/test-reporter
+        uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Maven Tests
@@ -216,7 +216,7 @@ jobs:
           IT_MODULE="integration-tests/kyuubi-flink-it"
           ./build/mvn ${MVN_OPT} -pl ${IT_MODULE} -Pflink-${IT_FLINK} ${{ matrix.flink-archive }} test
       - name: Report
-        uses: ./.github/actions/test-reporter
+        uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Maven Tests
@@ -260,7 +260,7 @@ jobs:
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
       - name: Report
-        uses: ./.github/actions/test-reporter
+        uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Maven Tests
@@ -305,7 +305,7 @@ jobs:
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
       - name: Report
-        uses: ./.github/actions/test-reporter
+        uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Maven Tests
@@ -334,7 +334,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM
-        uses: ./.github/actions/tune-runner-vm
+        uses: dorny/test-reporter@v1
       - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v3
         with:
@@ -392,7 +392,7 @@ jobs:
           -Dmaven.plugin.scalatest.exclude.tags='' \
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds,org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite,org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
       - name: Report
-        uses: ./.github/actions/test-reporter
+        uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Maven Tests
@@ -493,7 +493,7 @@ jobs:
           -Pkubernetes-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.spark
       - name: Report
-        uses: ./.github/actions/test-reporter
+        uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Maven Tests
@@ -544,7 +544,7 @@ jobs:
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
       - name: Report
-        uses: ./.github/actions/test-reporter
+        uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Maven Tests
