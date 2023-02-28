@@ -82,10 +82,8 @@ trait SparkSessionProvider {
       })
   }
 
-  protected def doAs[T](user: String, clue: String = "")(f: => T): T = {
-    withClue[T](clue) {
+  protected def doAs[T](user: String)(f: => T): T = {
       doAs[T](user, f)
-    }
   }
 
   protected def runSqlAsInSuccess(user: String)(
