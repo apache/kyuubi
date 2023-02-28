@@ -1568,16 +1568,6 @@ object KyuubiConf {
       .intConf
       .createWithDefault(10)
 
-  val METADATA_REQUEST_RETRY_THREADS: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.request.retry.threads")
-      .doc("Number of threads in the metadata request retry manager thread pool. The metadata" +
-        " store might be unavailable sometimes and the requests will fail, tolerant for this" +
-        " case and unblock the main thread, we support retrying the failed requests" +
-        " in an async way.")
-      .version("1.6.0")
-      .intConf
-      .createWithDefault(10)
-
   val METADATA_REQUEST_RETRY_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.metadata.request.retry.interval")
       .doc("The interval to check and trigger the metadata request retry tasks.")
@@ -1585,10 +1575,31 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
-  val METADATA_REQUEST_RETRY_QUEUE_SIZE: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.request.retry.queue.size")
+  val METADATA_REQUEST_ASYNC_RETRY_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.metadata.request.async.retry.enabled")
+      .doc("Whether to retry in async when metadata request failed. When true, return " +
+        "success response immediately even the metadata request failed, and schedule " +
+        "it in background until success, to tolerate long-time metadata store outages " +
+        "w/o blocking the submission request.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val METADATA_REQUEST_ASYNC_RETRY_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.request.async.retry.threads")
+      .withAlternative("kyuubi.metadata.request.retry.threads")
+      .doc("Number of threads in the metadata request async retry manager thread pool. Only " +
+        s"take affect when ${METADATA_REQUEST_ASYNC_RETRY_ENABLED.key} is `true`.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(10)
+
+  val METADATA_REQUEST_ASYNC_RETRY_QUEUE_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.request.async.retry.queue.size")
+      .withAlternative("kyuubi.metadata.request.retry.queue.size")
       .doc("The maximum queue size for buffering metadata requests in memory when the external" +
-        " metadata storage is down. Requests will be dropped if the queue exceeds.")
+        " metadata storage is down. Requests will be dropped if the queue exceeds. Only" +
+        s" take affect when ${METADATA_REQUEST_ASYNC_RETRY_ENABLED.key} is `true`.")
       .version("1.6.0")
       .intConf
       .createWithDefault(65536)
