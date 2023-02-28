@@ -21,7 +21,7 @@ runs:
   using: composite
   steps:
     - name: junit test report
-      uses: dorny/test-reporter@1.6.0
+      uses: dorny/test-reporter@v1
       if: always()
       with:
         name: Maven Tests
