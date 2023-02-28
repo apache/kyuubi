@@ -97,7 +97,7 @@ jobs:
         with:
           verbose: true
       - name: Report
-        uses: dorny/test-reporter@v1.6.0
+        uses: ./.github/actions/test-reporter
         if: always()
         with:
           name: Maven Tests
