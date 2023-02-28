@@ -27,6 +27,7 @@ import scala.collection.mutable.ListBuffer
 import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.zookeeper.KeeperException.NoNodeException
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto.{Engine, SessionData}
@@ -207,9 +208,19 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         }
       case None =>
         withDiscoveryClient(fe.getConf) { discoveryClient =>
-          discoveryClient.getChildren(engineSpace).map { child =>
-            info(s"Listing engine nodes for $engineSpace/$child")
-            engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+          try {
+            discoveryClient.getChildren(engineSpace).map { child =>
+              info(s"Listing engine nodes for $engineSpace/$child")
+              engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+            }
+          } catch {
+            case nne: NoNodeException =>
+              error(
+                s"No such engine for user: $userName, " +
+                  s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain",
+                nne)
+              throw new NotFoundException(s"No such engine for user: $userName, " +
+                s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain")
           }
         }
     }
