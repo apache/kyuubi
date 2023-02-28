@@ -48,20 +48,14 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
       super.beforeAll()
 
-      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
-      doAs(
-        "admin",
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
-          " (id int, name string, city string) USING iceberg"))
+      runSqlAs("admin")(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1")
+      runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
+        " (id int, name string, city string) USING iceberg")
 
-      doAs(
-        "admin",
-        sql(s"INSERT INTO $catalogV2.$namespace1.$table1" +
-          " (id , name , city ) VALUES (1, 'liangbowen','Guangzhou')"))
-      doAs(
-        "admin",
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
-          " (id int, name string, city string) USING iceberg"))
+      runSqlAs("admin")(s"INSERT INTO $catalogV2.$namespace1.$table1" +
+        " (id , name , city ) VALUES (1, 'liangbowen','Guangzhou')")
+      runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
+        " (id int, name string, city string) USING iceberg")
     }
   }
 
@@ -103,7 +97,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         false)
     }
 
-    doAs("admin", sql(mergeIntoSql))
+    runSqlAs("admin")(mergeIntoSql)
   }
 
   test("[KYUUBI #3515] UPDATE TABLE") {
@@ -115,7 +109,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       update,
       contains = s"does not have [update] privilege on [$namespace1/$table1]")
 
-    doAs("admin", sql(update))
+    runSqlAs("admin")(update)
   }
 
   test("[KYUUBI #3515] DELETE FROM TABLE") {
@@ -126,7 +120,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2",
       contains = s"does not have [update] privilege on [$namespace1/$table1]")
 
-    doAs("admin", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
+    runSqlAs("admin")(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2")
   }
 
   test("[KYUUBI #3666] Support {OWNER} variable for queries run on CatalogV2") {
@@ -136,10 +130,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     val select = s"SELECT key FROM $catalogV2.$namespace1.$table"
 
     withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table", "table"))) {
-      runSqlAsInSuccess(defaultTableOwner)(
+      runSqlAs(defaultTableOwner)(
         s"CREATE TABLE $catalogV2.$namespace1.$table (key int, value int) USING iceberg")
 
-      runSqlAsInSuccess(defaultTableOwner)(select, isCollect = true)
+      runSqlAs(defaultTableOwner)(select, isCollect = true)
 
       runSqlAsWithAccessException("create_only_user")(
         select,
@@ -155,20 +149,14 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     withCleanTmpResources(Seq(
       (s"$catalogV2.default.src", "table"),
       (s"$catalogV2.default.outputTable2", "table"))) {
-      doAs(
-        "admin",
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.default.src" +
-          " (id int, name string, key string) USING iceberg"))
-      doAs(
-        "admin",
-        sql(s"INSERT INTO $catalogV2.default.src" +
-          " (id , name , key ) VALUES " +
-          "(1, 'liangbowen1','10')" +
-          ", (2, 'liangbowen2','20')"))
-      doAs(
-        "admin",
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable2" +
-          " (id int, name string, key string) USING iceberg"))
+      runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $catalogV2.default.src" +
+        " (id int, name string, key string) USING iceberg")
+      runSqlAs("admin")(s"INSERT INTO $catalogV2.default.src" +
+        " (id , name , key ) VALUES " +
+        "(1, 'liangbowen1','10')" +
+        ", (2, 'liangbowen2','20')")
+      runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable2" +
+        " (id int, name string, key string) USING iceberg")
 
       val mergeIntoSql =
         s"""
@@ -178,25 +166,23 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
            |WHEN NOT MATCHED THEN INSERT (id, name, key) VALUES (source.id, source.name, source.key)
         """.stripMargin
 
-      doAs("admin", sql(mergeIntoSql))
-      doAs(
-        "admin", {
-          val countOutputTable =
-            sql(s"select count(1) from $catalogV2.$namespace1.$outputTable2").collect()
-          val rowCount = countOutputTable(0).get(0)
-          assert(rowCount === 2)
-        })
-      doAs("admin", sql(s"truncate table $catalogV2.$namespace1.$outputTable2"))
+      runSqlAs("admin")(mergeIntoSql)
+      doAs("admin") {
+        val countOutputTable =
+          sql(s"select count(1) from $catalogV2.$namespace1.$outputTable2").collect()
+        val rowCount = countOutputTable(0).get(0)
+        assert(rowCount === 2)
+      }
+      runSqlAs("admin")(s"truncate table $catalogV2.$namespace1.$outputTable2")
 
       // source table with row filter `key`<20
-      doAs("bob", sql(mergeIntoSql))
-      doAs(
-        "admin", {
-          val countOutputTable =
-            sql(s"select count(1) from $catalogV2.$namespace1.$outputTable2").collect()
-          val rowCount = countOutputTable(0).get(0)
-          assert(rowCount === 1)
-        })
+      runSqlAs("bob")(mergeIntoSql)
+      doAs("admin") {
+        val countOutputTable =
+          sql(s"select count(1) from $catalogV2.$namespace1.$outputTable2").collect()
+        val rowCount = countOutputTable(0).get(0)
+        assert(rowCount === 1)
+      }
     }
   }
 

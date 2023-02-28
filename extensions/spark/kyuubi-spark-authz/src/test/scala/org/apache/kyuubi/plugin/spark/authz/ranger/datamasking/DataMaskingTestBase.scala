@@ -74,7 +74,7 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   }
 
   protected def checkAnswer(user: String, query: String, result: Seq[Row]): Assertion = {
-    doAs(user, assert(sql(query).collect() === result))
+    doAs(user)(assert(sql(query).collect() === result))
   }
 
   test("simple query with a user doesn't have mask rules") {
@@ -129,20 +129,20 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
 
   test("create a unmasked table as select from a masked one") {
     withCleanTmpResources(Seq(("default.src2", "table"))) {
-      doAs("bob", sql(s"CREATE TABLE default.src2 $format AS SELECT value1 FROM default.src"))
+      runSqlAs("bob")(s"CREATE TABLE default.src2 $format AS SELECT value1 FROM default.src")
       checkAnswer("bob", "SELECT value1 FROM default.src2", Seq(Row(md5Hex("1"))))
     }
   }
 
   test("insert into a unmasked table from a masked one") {
     withCleanTmpResources(Seq(("default.src2", "table"), ("default.src3", "table"))) {
-      doAs("bob", sql(s"CREATE TABLE default.src2 (value1 string) $format"))
-      doAs("bob", sql(s"INSERT INTO default.src2 SELECT value1 from default.src"))
-      doAs("bob", sql(s"INSERT INTO default.src2 SELECT value1 as v from default.src"))
+      runSqlAs("bob")(s"CREATE TABLE default.src2 (value1 string) $format")
+      runSqlAs("bob")(s"INSERT INTO default.src2 SELECT value1 from default.src")
+      runSqlAs("bob")(s"INSERT INTO default.src2 SELECT value1 as v from default.src")
       checkAnswer("bob", "SELECT value1 FROM default.src2", Seq(Row(md5Hex("1")), Row(md5Hex("1"))))
-      doAs("bob", sql(s"CREATE TABLE default.src3 (k int, value string) $format"))
-      doAs("bob", sql(s"INSERT INTO default.src3 SELECT key, value1 from default.src"))
-      doAs("bob", sql(s"INSERT INTO default.src3 SELECT key, value1 as v from default.src"))
+      runSqlAs("bob")(s"CREATE TABLE default.src3 (k int, value string) $format")
+      runSqlAs("bob")(s"INSERT INTO default.src3 SELECT key, value1 from default.src")
+      runSqlAs("bob")(s"INSERT INTO default.src3 SELECT key, value1 as v from default.src")
       checkAnswer("bob", "SELECT value FROM default.src3", Seq(Row(md5Hex("1")), Row(md5Hex("1"))))
     }
   }
@@ -248,8 +248,7 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
 
   test("KYUUBI #3581: permanent view should lookup rule on itself not the   ") {
     assume(isSparkV31OrGreater)
-    val supported = doAs(
-      "perm_view_user",
+    val supported = doAs("perm_view_user")(
       Try(sql("CREATE OR REPLACE VIEW default.perm_view AS SELECT * FROM default.src")).isSuccess)
     assume(supported, s"view support for '$format' has not been implemented yet")
 

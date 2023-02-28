@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
-import org.scalatest.Assertions.{intercept, withClue}
+import org.scalatest.Assertions.{assertResult, intercept, withClue}
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -75,29 +75,34 @@ trait SparkSessionProvider {
 
   protected val sql: String => DataFrame = spark.sql
 
-  protected def doAs[T](user: String, f: => T): T = {
+  protected def doAs[T](user: String)(f: => T): T = {
     UserGroupInformation.createRemoteUser(user).doAs[T](
       new PrivilegedExceptionAction[T] {
         override def run(): T = f
       })
   }
 
-  protected def doAs[T](user: String)(f: => T): T = {
-    doAs[T](user, f)
-  }
-
-  protected def runSqlAsInSuccess(user: String)(
+  protected def runSqlAs(user: String)(
       sqlStr: String,
-      isCollect: Boolean = false): Unit = {
-    doAs(
-      user,
-      assert(
-        Try {
-          val df = sql(sqlStr)
-          if (isCollect) {
-            df.collect()
-          }
-        }.isSuccess))
+      isCollect: Boolean = false,
+      collectSize: Int = Int.MinValue,
+      countSize: Int = Int.MinValue): Unit = {
+    doAs(user) {
+      assert(Try {
+        val df = sql(sqlStr)
+        val collected = if (isCollect || collectSize >= 0) {
+          df.collect()
+        } else {
+          Array.emptyObjectArray
+        }
+        if (collectSize >= 0) {
+          assertResult(collectSize)(collected.length)
+        }
+        if (countSize >= 0) {
+          assertResult(countSize)(df.count)
+        }
+      }.isSuccess)
+    }
   }
 
   protected def runSqlAsWithAccessException(user: String = "someone")(
@@ -107,16 +112,15 @@ trait SparkSessionProvider {
       contains: String = ""): Unit = {
     withClue(sqlText) {
       val e = intercept[AccessControlException](
-        doAs(
-          user, {
-            val df = sql(sqlText)
-            if (isExplain) {
-              df.explain()
-            }
-            if (isCollect) {
-              df.collect()
-            }
-          }))
+        doAs(user) {
+          val df = sql(sqlText)
+          if (isExplain) {
+            df.explain()
+          }
+          if (isCollect) {
+            df.collect()
+          }
+        })
       if (StringUtils.isNotBlank(contains)) {
         assert(e.getMessage.contains(contains))
       }
@@ -128,12 +132,12 @@ trait SparkSessionProvider {
       f
     } finally {
       res.foreach {
-        case (t, "table") => doAs("admin", sql(s"DROP TABLE IF EXISTS $t"))
-        case (db, "database") => doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
-        case (fn, "function") => doAs("admin", sql(s"DROP FUNCTION IF EXISTS $fn"))
-        case (view, "view") => doAs("admin", sql(s"DROP VIEW IF EXISTS $view"))
+        case (t, "table") => runSqlAs("admin")(s"DROP TABLE IF EXISTS $t")
+        case (db, "database") => runSqlAs("admin")(s"DROP DATABASE IF EXISTS $db")
+        case (fn, "function") => runSqlAs("admin")(s"DROP FUNCTION IF EXISTS $fn")
+        case (view, "view") => runSqlAs("admin")(s"DROP VIEW IF EXISTS $view")
         case (cacheTable, "cache") => if (isSparkV32OrGreater) {
-            doAs("admin", sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
+            runSqlAs("admin")(s"UNCACHE TABLE IF EXISTS $cacheTable")
           }
         case (_, e) =>
           throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")

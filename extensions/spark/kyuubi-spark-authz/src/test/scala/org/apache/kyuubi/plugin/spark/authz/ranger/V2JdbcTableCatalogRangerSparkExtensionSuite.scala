@@ -53,15 +53,11 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
       super.beforeAll()
 
-      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
-      doAs(
-        "admin",
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
-          " (id int, name string, city string)"))
-      doAs(
-        "admin",
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
-          " (id int, name string, city string)"))
+      runSqlAs("admin")(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1")
+      runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
+        " (id int, name string, city string)")
+      runSqlAs("admin")(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
+        " (id int, name string, city string)")
     }
   }
 
