@@ -83,7 +83,7 @@ trait SparkSessionProvider {
   }
 
   protected def doAs[T](user: String)(f: => T): T = {
-      doAs[T](user, f)
+    doAs[T](user, f)
   }
 
   protected def runSqlAsInSuccess(user: String)(
