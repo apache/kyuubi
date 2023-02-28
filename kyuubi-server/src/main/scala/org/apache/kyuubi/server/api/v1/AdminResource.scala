@@ -168,10 +168,10 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
             }
           } catch {
             case nne: NoNodeException =>
-              error("Fail to get engines for user: " + userName +
-                ", engine type: " + engineType +
-                ", share level: " + shareLevel +
-                ", subdomain: " + subdomain, nne)
+              error(
+                s"No such engine for user: $userName, " +
+                  s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain",
+                nne)
               throw new NotFoundException(s"No such engine for user: $userName, " +
                 s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain")
           }
