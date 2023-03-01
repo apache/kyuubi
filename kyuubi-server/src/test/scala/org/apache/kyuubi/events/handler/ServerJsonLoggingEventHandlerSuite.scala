@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TStatusCode}
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
@@ -277,15 +278,17 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
       }
     }
 
-    val serverSessionEventPath =
-      Paths.get(serverLogRoot, "kyuubi_session", s"day=$currentDate")
-    withJdbcStatement() { statement =>
-      val res = statement.executeQuery(
-        s"SELECT * FROM `json`.`$serverSessionEventPath` " +
-          s"where sessionName = '$name' and exception is not null limit 1")
-      assert(res.next())
-      val exception = res.getObject("exception")
-      assert(exception.toString.contains("Invalid maximum heap size: -Xmxabc"))
+    eventually(timeout(2.minutes), interval(10.seconds)) {
+      val serverSessionEventPath =
+        Paths.get(serverLogRoot, "kyuubi_session", s"day=$currentDate")
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery(
+          s"SELECT * FROM `json`.`$serverSessionEventPath` " +
+            s"where sessionName = '$name' and exception is not null limit 1")
+        assert(res.next())
+        val exception = res.getObject("exception")
+        assert(exception.toString.contains("Invalid maximum heap size: -Xmxabc"))
+      }
     }
   }
 }
