@@ -184,9 +184,11 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           }
       }
       engineNodes.map(node => {
+        val engineUser =
+          Option(engine.getUser).get.orElse(node.attributes.get(KYUUBI_ENGINE_USERNAME).orNull)
         engines += new Engine(
           engine.getVersion,
-          engine.getUser,
+          engineUser.toString,
           engine.getEngineType,
           engine.getSharelevel,
           node.namespace.split("/").last,
@@ -200,7 +202,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           node.engineRefId.orNull,
           "Running",
           node.attributes.get(KYUUBI_ENGINE_MEMORY).orNull,
-          node.attributes.get(KYUUBI_ENGINE_CPU).orNull)
+          node.attributes.get(KYUUBI_ENGINE_CPU).orNull,
+          node.attributes.get(KYUUBI_SERVER_IP_KEY).orNull)
       })
     } catch {
       case NonFatal(e) =>
@@ -208,7 +211,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
-    engines
+    engines.filter(engineType == null || _.getEngineType.equalsIgnoreCase(engineType))
+      .filter(shareLevel == null || _.getSharelevel.equalsIgnoreCase(shareLevel))
+      .filter(hs2ProxyUser == null || _.getUser.equalsIgnoreCase(hs2ProxyUser))
   }
 
   @deprecated
@@ -297,6 +302,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       null,
       null,
       0,
+      null,
       null,
       null,
       null,

@@ -48,5 +48,6 @@ object KyuubiReservedKeys {
   final val KYUUBI_ENGINE_CPU = "kyuubi.engine.cpu"
   final val KYUUBI_ENGINE_DRIVER_IP = "kyuubi.engine.driver.ip"
   final val KYUUBI_ENGINE_UI_PORT = "kyuubi.engine.ui.port"
+  final val KYUUBI_ENGINE_USERNAME = "kyuubi.engine.username"
 
 }

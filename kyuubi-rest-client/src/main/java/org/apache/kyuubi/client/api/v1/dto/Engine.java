@@ -17,10 +17,11 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
-import java.util.Map;
-import java.util.Objects;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+
+import java.util.Map;
+import java.util.Objects;
 
 public class Engine {
 
@@ -45,6 +46,8 @@ public class Engine {
 
   private String cpuTotal;
 
+  private String serverIp;
+
   public Engine(
       String version,
       String user,
@@ -61,7 +64,8 @@ public class Engine {
       String id,
       String status,
       String memoryTotal,
-      String cpuTotal) {
+      String cpuTotal,
+      String serverIp) {
     this.version = version;
     this.user = user;
     this.engineType = engineType;
@@ -78,6 +82,7 @@ public class Engine {
     this.status = status;
     this.memoryTotal = memoryTotal;
     this.cpuTotal = cpuTotal;
+    this.serverIp = serverIp;
   }
 
   public String getVersion() {
@@ -208,6 +213,14 @@ public class Engine {
     this.cpuTotal = cpuTotal;
   }
 
+  public String getServerIp() {
+    return serverIp;
+  }
+
+  public void setServerIp(String serverIp) {
+    this.serverIp = serverIp;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -227,7 +240,8 @@ public class Engine {
         && Objects.equals(getPort(), that.getPort())
         && Objects.equals(getStatus(), that.getStatus())
         && Objects.equals(getCpuTotal(), that.getCpuTotal())
-        && Objects.equals(getMemoryTotal(), that.getMemoryTotal());
+        && Objects.equals(getMemoryTotal(), that.getMemoryTotal())
+        && Objects.equals(getServerIp(), that.getServerIp());
   }
 
   @Override
@@ -248,7 +262,8 @@ public class Engine {
         getId(),
         getStatus(),
         getCpuTotal(),
-        getMemoryTotal());
+        getMemoryTotal(),
+        getServerIp());
   }
 
   @Override
