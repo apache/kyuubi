@@ -90,7 +90,7 @@ trait RowFilteringTestBase extends AnyFunSuite with SparkSessionProvider with Be
     withCleanTmpResources(Seq(("default.src2", "table"))) {
       doAs("bob", sql(s"CREATE TABLE default.src2 $format AS SELECT value FROM default.src"))
       val query = "select value from default.src2"
-      checkAnswer("kent", query, Seq(Row(1)))
+      checkAnswer("admin", query, Seq(Row(1)))
       checkAnswer("bob", query, Seq(Row(1)))
     }
   }
@@ -104,7 +104,7 @@ trait RowFilteringTestBase extends AnyFunSuite with SparkSessionProvider with Be
 
     withCleanTmpResources(Seq((s"default.perm_view", "view"))) {
       checkAnswer(
-        "kent",
+        "admin",
         "SELECT key FROM default.perm_view order order by key",
         Seq(Row(1), Row(20), Row(30)))
       checkAnswer("bob", "SELECT key FROM default.perm_view", Seq(Row(1)))
