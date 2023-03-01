@@ -45,14 +45,6 @@ jobs:
           check-latest: false
       - name: Build with Maven
         run: ./build/mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
-      - name: Report
-        uses: dorny/test-reporter@v1
-        if: always()
-        with:
-          name: Maven Tests
-          path: "**/surefire-reports/TEST-*.xml"
-          reporter: java-junit
-          fail-on-error: false
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
