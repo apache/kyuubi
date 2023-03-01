@@ -123,7 +123,9 @@ jobs:
         comment: ["normal"]
     env:
       SPARK_LOCAL_IP: localhost
+
     permissions:
+      contents: read
       statuses: write
       checks: write
     steps:
