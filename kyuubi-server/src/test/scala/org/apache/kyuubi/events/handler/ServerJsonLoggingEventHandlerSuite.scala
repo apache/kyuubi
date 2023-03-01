@@ -138,7 +138,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
       Utils.currentUser,
       "kyuubi",
       "127.0.0.1",
-      Map.empty,
+      Map("kyuubi.batch.id" -> UUID.randomUUID().toString),
       batchRequest)
     withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
       withJdbcStatement() { statement =>
