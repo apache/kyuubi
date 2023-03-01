@@ -1213,6 +1213,23 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     }
   }
 
+  test("test count()") {
+    withTable("t1", "t2") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string, c string) USING hive")
+      spark.sql("CREATE TABLE t2 (a string, b string, c string) USING hive")
+      val ret0 = exectractLineage("insert into t1 select 1,2,(select count(distinct" +
+        " ifnull(get_json_object(a, '$.b.imei'), get_json_object(a, '$.b.android_id'))) from t2)")
+
+      assert(ret0 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set()),
+          ("default.t1.b", Set()),
+          ("default.t1.c", Set("default.t2.a")))))
+    }
+  }
+
   private def exectractLineageWithoutExecuting(sql: String): Lineage = {
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val analyzed = spark.sessionState.analyzer.execute(parsed)
