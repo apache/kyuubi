@@ -29,8 +29,8 @@ public class BatchRequest {
   private String resource;
   private String className;
   private String name;
-  private Map<String, String> conf;
-  private List<String> args;
+  private Map<String, String> conf = Collections.emptyMap();
+  private List<String> args = Collections.emptyList();
 
   public BatchRequest() {}
 
@@ -54,8 +54,6 @@ public class BatchRequest {
     this.resource = resource;
     this.className = className;
     this.name = name;
-    this.conf = Collections.emptyMap();
-    this.args = Collections.emptyList();
   }
 
   public String getBatchType() {
