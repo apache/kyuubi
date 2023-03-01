@@ -19,6 +19,7 @@ package org.apache.kyuubi.spark.connector.hive.write
 
 import java.util.Date
 
+import org.apache.hadoop.mapred.JobID
 import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.internal.io.FileCommitProtocol
@@ -34,7 +35,12 @@ case class FileWriterFactory(
     description: WriteJobDescription,
     committer: FileCommitProtocol) extends DataWriterFactory {
 
-  @transient private lazy val jobId = sparkHadoopWriterUtils.createJobID(new Date, 0)
+  // SPARK-42478: jobId across tasks should be consistent to meet the contract
+  // expected by Hadoop committers, but `JobId` cannot be serialized.
+  // thus, persist the serializable jobTrackerID in the class and make jobId a
+  // transient lazy val which recreates it each time to ensure jobId is unique.
+  private[this] val jobTrackerID = sparkHadoopWriterUtils.createJobTrackerID(new Date)
+  @transient private lazy val jobId = createJobID(jobTrackerID, 0)
 
   override def createWriter(partitionId: Int, realTaskId: Long): DataWriter[InternalRow] = {
     val taskAttemptContext = createTaskAttemptContext(partitionId)
@@ -58,5 +64,19 @@ case class FileWriterFactory(
     hadoopConf.setInt("mapreduce.task.partition", 0)
 
     new TaskAttemptContextImpl(hadoopConf, taskAttemptId)
+  }
+
+  /**
+   * Create a job ID.
+   *
+   * @param jobTrackerID unique job track id
+   * @param id job number
+   * @return a job ID
+   */
+  def createJobID(jobTrackerID: String, id: Int): JobID = {
+    if (id < 0) {
+      throw new IllegalArgumentException("Job number is negative")
+    }
+    new JobID(jobTrackerID, id)
   }
 }
