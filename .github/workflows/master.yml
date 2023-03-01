@@ -66,6 +66,9 @@ jobs:
             comment: 'verify-on-spark-3.2-binary'
     env:
       SPARK_LOCAL_IP: localhost
+    permissions:
+      statuses: write
+      checks: write
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM
@@ -120,6 +123,9 @@ jobs:
         comment: ["normal"]
     env:
       SPARK_LOCAL_IP: localhost
+    permissions:
+      statuses: write
+      checks: write
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM
