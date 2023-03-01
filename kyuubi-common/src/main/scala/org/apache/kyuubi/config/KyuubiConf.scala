@@ -1439,7 +1439,11 @@ object KyuubiConf {
       .createWithDefault(true)
 
   val SESSION_LOCAL_DIR_ALLOW_LIST: ConfigEntry[Seq[String]] =
+
+
     buildConf("kyuubi.session.local.dir.allow.list")
+
+
       .doc("The local dir list that are allowed to access by the kyuubi session application. " +
         " End-users might set some parameters such as `spark.files` and it will " +
         " upload some local files when launching the kyuubi engine," +
@@ -1448,6 +1452,8 @@ object KyuubiConf {
         " is no limitation for that. And please use absolute paths.")
       .version("1.6.0")
       .serverOnly
+
+
       .stringConf
       .checkValue(dir => dir.startsWith(File.separator), "the dir should be absolute path")
       .transform(dir => dir.stripSuffix(File.separator) + File.separator)

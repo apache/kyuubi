@@ -16,7 +16,7 @@
 #
 
 HikariCP/4.0.3//HikariCP-4.0.3.jar
-ST4/4.3.4//ST4-4.3.4.jar
+ST4/4.3.4//ST4-4.3.4.jar.123
 animal-sniffer-annotations/1.21//animal-sniffer-annotations-1.21.jar
 annotations/4.1.1.4//annotations-4.1.1.4.jar
 antlr-runtime/3.5.3//antlr-runtime-3.5.3.jar
@@ -185,5 +185,5 @@ trino-client/363//trino-client-363.jar
 units/1.6//units-1.6.jar
 vertx-core/4.3.2//vertx-core-4.3.2.jar
 vertx-grpc/4.3.2//vertx-grpc-4.3.2.jar
-zjsonpatch/0.3.0//zjsonpatch-0.3.0.jar
+zjsonpatch/0.3.0//zjsonpatch-0.3.0.jar.456
 zookeeper/3.4.14//zookeeper-3.4.14.jar
