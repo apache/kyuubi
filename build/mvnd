@@ -25,7 +25,7 @@ _CALLING_DIR="$(pwd)"
 _COMPILE_JVM_OPTS="-Xms2g -Xmx2g -XX:ReservedCodeCacheSize=1g -Xss128m"
 
 if [ "$CI" ]; then
-  export MAVEN_CLI_OPTS="-T2C --no-transfer-progress --errors --fail-fast --quiet"
+  export MAVEN_CLI_OPTS="-T2C --no-transfer-progress --errors --fail-fast -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN"
 fi
 
 # Installs any application tarball given a URL, the expected tarball name,
