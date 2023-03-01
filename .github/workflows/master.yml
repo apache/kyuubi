@@ -138,6 +138,14 @@ jobs:
           TEST_MODULES="extensions/spark/kyuubi-spark-authz"
           ./build/mvn clean test ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Dspark.version=${{ matrix.spark }}
+      - uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Maven Tests
+          path: "**/surefire-reports/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
