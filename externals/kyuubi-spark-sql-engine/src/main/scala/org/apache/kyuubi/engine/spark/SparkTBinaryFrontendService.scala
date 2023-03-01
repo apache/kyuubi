@@ -95,15 +95,15 @@ class SparkTBinaryFrontendService(
     }
   }
 
-  def parseMemory2GB(size: String): String = {
+  def parseMemory2GB(size: String, instance: Int): String = {
     val memory = size.dropRight(1).toDouble
     val unit = size.last.toLower
     val dec = new DecimalFormat("0.00")
     val formattedMemory = unit match {
-      case 'k' => dec.format(memory / 1024.0 / 1024.0)
-      case 'm' => dec.format(memory / 1024.0)
-      case 'g' => dec.format(memory)
-      case 't' => dec.format(memory * 1024.0)
+      case 'k' => dec.format(memory / 1024.0 / 1024.0 * instance)
+      case 'm' => dec.format(memory / 1024.0 * instance)
+      case 'g' => dec.format(memory * instance)
+      case 't' => dec.format(memory * 1024.0 * instance)
     }
     formattedMemory
   }
@@ -112,14 +112,12 @@ class SparkTBinaryFrontendService(
 
     val settings = sc.getConf.getAll.toMap
     val executorInstances = sc.getExecutorMemoryStatus.size - 1
-    val executorMemory = executorInstances.toLong *
-      settings.get(SPARK_ENGINE_EXECUTOR_MEMORY).getOrElse("1g")
-    val executorCores = executorInstances.toInt *
-      settings.get(SPARK_ENGINE_EXECUTOR_CORES).getOrElse("1").asInstanceOf[Int]
+    val executorMemory = settings.get(SPARK_ENGINE_EXECUTOR_MEMORY).getOrElse("1g")
+    val executorCores = settings.get(SPARK_ENGINE_EXECUTOR_CORES).getOrElse("1").asInstanceOf[Int]
     val driverMemory = settings.get(SPARK_ENGINE_DRIVER_MEMORY).getOrElse("1g")
     val driverCores = settings.get(SPARK_ENGINE_DRIVER_CORES).getOrElse("1").asInstanceOf[Int]
-    val memory = parseMemory2GB(executorMemory) + parseMemory2GB(driverMemory)
-    val cores = executorCores + driverCores
+    val memory = parseMemory2GB(executorMemory, executorInstances) + parseMemory2GB(driverMemory, 1)
+    val cores = executorInstances * executorCores + driverCores
     val address = java.net.InetAddress.getLocalHost.getHostAddress
     Map(
       KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
