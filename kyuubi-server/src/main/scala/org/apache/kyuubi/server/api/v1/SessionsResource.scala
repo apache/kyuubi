@@ -444,12 +444,13 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/sqlDetails")
   def getOperations(
       @PathParam("sessionHandle") sessionHandleStr: String): Seq[SQLDetail] = {
+    val sqlDetails = ListBuffer[SQLDetail]()
     try {
       sessionManager.getSession(sessionHandleStr)
         .allOperations().map { operationHandle =>
           val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
           val kyuubiSessionEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
-          new SQLDetail(
+          sqlDetails += new SQLDetail(
             sessionHandleStr,
             kyuubiSessionEvent.sessionUser,
             kyuubiSessionEvent.statementId,
@@ -460,7 +461,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
             kyuubiSessionEvent.engineType,
             kyuubiSessionEvent.engineShareLevel,
             kyuubiSessionEvent.exception.map(_.toString).orNull)
-        }.toSeq
+        }
+      sqlDetails
     } catch {
       case NonFatal(e) =>
         error(s"Invalid $sessionHandleStr", e)

@@ -185,10 +185,10 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       }
       engineNodes.map(node => {
         val engineUser = if (StringUtils.isNotEmpty(engine.getUser)) engine.getUser
-        else node.attributes.get(KYUUBI_ENGINE_USERNAME)
+        else node.attributes.get(KYUUBI_ENGINE_USERNAME).orNull
         engines += new Engine(
           engine.getVersion,
-          engineUser.toString,
+          engineUser,
           engine.getEngineType,
           engine.getSharelevel,
           node.namespace.split("/").last,
@@ -202,8 +202,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           node.engineRefId.orNull,
           "Running",
           node.attributes.get(KYUUBI_ENGINE_MEMORY).orNull,
-          node.attributes.get(KYUUBI_ENGINE_CPU).orNull,
-          node.attributes.get(KYUUBI_SERVER_IP_KEY).orNull)
+          node.attributes.get(KYUUBI_ENGINE_CPU).orNull)
       })
     } catch {
       case NonFatal(e) =>

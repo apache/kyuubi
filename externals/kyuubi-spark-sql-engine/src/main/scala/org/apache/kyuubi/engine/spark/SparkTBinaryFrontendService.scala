@@ -128,8 +128,7 @@ class SparkTBinaryFrontendService(
       KYUUBI_ENGINE_CPU -> cores.toString,
       KYUUBI_ENGINE_DRIVER_IP -> address,
       KYUUBI_ENGINE_UI_PORT -> sc.getConf.get("spark.ui.port"),
-      KYUUBI_ENGINE_USERNAME -> sc.sparkUser,
-      KYUUBI_SERVER_IP_KEY -> getIpAddress)
+      KYUUBI_ENGINE_USERNAME -> sc.sparkUser)
   }
 }
 
