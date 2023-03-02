@@ -33,9 +33,10 @@ import org.glassfish.jersey.media.multipart.file.FileDataBodyPart
 
 import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.client.util.BatchUtils
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.engine.{ApplicationInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
@@ -248,7 +249,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     assert(batch2.getId === batchId)
 
     assert(batch1.getCreateTime === batch2.getCreateTime)
-    assert(batch2.getBatchInfo.get(KYUUBI_BATCH_DUPLICATED_KEY) === "true")
+    assert(BatchUtils.isDuplicatedSubmission(batch2))
   }
 
   test("get batch session list") {

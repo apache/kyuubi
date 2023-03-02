@@ -26,6 +26,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.net.NetUtils
 
 import org.apache.kyuubi._
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationOperation, KubernetesApplicationOperation}
@@ -137,7 +138,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
 
   test("Spark Client Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
     val batchRequest = newSparkBatchRequest(conf.getAll ++ Map(
-      "kyuubi.batch.id" -> UUID.randomUUID().toString))
+      KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
 
     val sessionHandle = sessionManager.openBatchSession(
       "kyuubi",
@@ -197,7 +198,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       driverPodNamePrefix + "-" + System.currentTimeMillis())
 
     val batchRequest = newSparkBatchRequest(conf.getAll ++ Map(
-      "kyuubi.batch.id" -> UUID.randomUUID().toString))
+      KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
 
     val sessionHandle = sessionManager.openBatchSession(
       "runner",

@@ -31,6 +31,7 @@ import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TStatusCode}
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi._
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
@@ -139,7 +140,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
       Utils.currentUser,
       "kyuubi",
       "127.0.0.1",
-      Map("kyuubi.batch.id" -> UUID.randomUUID().toString),
+      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       batchRequest)
     withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
       withJdbcStatement() { statement =>
