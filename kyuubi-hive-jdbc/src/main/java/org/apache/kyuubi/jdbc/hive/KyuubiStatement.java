@@ -212,7 +212,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
 
     String resultFormat =
         properties.getOrDefault("__kyuubi_operation_result_format__", DEFAULT_RESULT_FORMAT);
-    LOG.info("kyuubi.operation.result.format: " + resultFormat);
+    LOG.debug("kyuubi.operation.result.format: {}", resultFormat);
     switch (resultFormat) {
       case "arrow":
         boolean timestampAsString =
@@ -275,7 +275,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
 
     String resultFormat =
         properties.getOrDefault("__kyuubi_operation_result_format__", DEFAULT_RESULT_FORMAT);
-    LOG.info("kyuubi.operation.result.format: " + resultFormat);
+    LOG.debug("kyuubi.operation.result.format: {}", resultFormat);
     switch (resultFormat) {
       case "arrow":
         boolean timestampAsString =
