@@ -32,7 +32,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded -Dmaven.plugin.download.cache.path=/tmp/engine-archives
+  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded
   KUBERNETES_VERSION: v1.26.1
   MINIKUBE_VERSION: v1.29.0
 
@@ -81,6 +81,8 @@ jobs:
         uses: ./.github/actions/setup-mvnd
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
+      - name: Setup Mvnd
+        uses: ./.github/actions/setup-mvnd
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -88,7 +90,9 @@ jobs:
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
-          ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
+          ./build/mvnd clean install ${MVN_OPT} -pl ${TEST_MODULES} -am -DskipTests \
+          -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
+          ./build/mvnd test ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
@@ -137,6 +141,8 @@ jobs:
         uses: ./.github/actions/setup-mvnd
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
+      - name: Setup Mvnd
+        uses: ./.github/actions/setup-mvnd
       - name: Build and test Kyuubi AuthZ with supported Spark versions
         run: |
           TEST_MODULES="extensions/spark/kyuubi-spark-authz"
@@ -484,12 +490,14 @@ jobs:
         uses: ./.github/actions/setup-mvnd
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
+      - name: Setup Mvnd
+        uses: ./.github/actions/setup-mvnd
       - name: zookeeper integration tests
         run: |
           export KYUUBI_IT_ZOOKEEPER_VERSION=${{ matrix.zookeeper }}
           TEST_MODULES="integration-tests/kyuubi-zookeeper-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+          ./build/mvnd ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
+          ./build/mvnd ${MVN_OPT} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
