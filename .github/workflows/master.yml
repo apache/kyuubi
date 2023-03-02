@@ -95,7 +95,7 @@ jobs:
       - name: Test Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
-          ./build/mvnd test -pl ${TEST_MODULES} -am \
+          ./build/mvn test -pl ${TEST_MODULES} -am \
           -Dmvnd.serial ${MVN_OPT} \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }} test
       - name: Code coverage
@@ -282,6 +282,8 @@ jobs:
         uses: ./.github/actions/setup-mvnd
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
+      - name: Setup Mvnd
+        uses: ./.github/actions/setup-mvnd
       - name: Build and test JDBC with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
