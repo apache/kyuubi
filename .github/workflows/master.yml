@@ -95,7 +95,8 @@ jobs:
       - name: Test Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} \
+          ./build/mvnd -pl ${TEST_MODULES} \
+          -Dmvnd.serial ${MVN_OPT} \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }} test
       - name: Code coverage
         if: |
@@ -202,7 +203,7 @@ jobs:
         if: matrix.flink-archive == ''
         run: |
           TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
-          ./build/mvnd ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
+          ./build/mvnd ${MVN_OPT} -Dmvnd.serial -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
       - name: Cross-version test Flink
         if: matrix.flink-archive != ''
         run: |
@@ -245,8 +246,8 @@ jobs:
       - name: Build and test Hive with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-hive-sql-engine,integration-tests/kyuubi-hive-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+          ./build/mvnd ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
+          ./build/mvnd ${MVN_OPT} -Dmvnd.serial -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -284,8 +285,8 @@ jobs:
       - name: Build and test JDBC with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+          ./build/mvnd ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
+          ./build/mvnd ${MVN_OPT} -pl ${TEST_MODULES} -Dmvnd.serial test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -324,7 +325,9 @@ jobs:
         run: |
           TEST_MODULES="kyuubi-server,externals/kyuubi-trino-engine,externals/kyuubi-spark-sql-engine,externals/kyuubi-download,integration-tests/kyuubi-trino-it"
           ./build/mvnd ${MVN_OPT} -pl ${TEST_MODULES} -am -Pflink-provided -Phive-provided clean install -DskipTests
-          ./build/mvnd -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -pl ${TEST_MODULES} -am -Pflink-provided -Phive-provided test -Dtest=none -DwildcardSuites=org.apache.kyuubi.it.trino.operation.TrinoOperationSuite,org.apache.kyuubi.it.trino.server.TrinoFrontendSuite
+          ./build/mvnd -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -pl ${TEST_MODULES} -am \
+          -Dmvnd.serial \
+          -Pflink-provided -Phive-provided test -Dtest=none -DwildcardSuites=org.apache.kyuubi.it.trino.operation.TrinoOperationSuite,org.apache.kyuubi.it.trino.server.TrinoFrontendSuite
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
