@@ -149,7 +149,7 @@ jobs:
       - name: Build and test Kyuubi AuthZ with supported Spark versions
         run: |
           TEST_MODULES="extensions/spark/kyuubi-spark-authz"
-          ./build/mvn clean test ${MVN_OPT} -pl ${TEST_MODULES} -am \
+          ./build/mvnd clean test ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Dspark.version=${{ matrix.spark }}
       - name: Upload test logs
         if: failure()
