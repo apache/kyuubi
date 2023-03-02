@@ -33,6 +33,8 @@ import org.glassfish.jersey.media.multipart.file.FileDataBodyPart
 
 import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.client.util.BatchUtils
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{ApplicationInfo, KyuubiApplicationManager}
@@ -226,6 +228,30 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     }
   }
 
+  test("open batch session w/ batch id") {
+    val batchId = UUID.randomUUID().toString
+    val reqObj = newSparkBatchRequest(Map(
+      "spark.master" -> "local",
+      KYUUBI_BATCH_ID_KEY -> batchId))
+
+    val resp1 = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(reqObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == resp1.getStatus)
+    val batch1 = resp1.readEntity(classOf[Batch])
+    assert(batch1.getId === batchId)
+
+    val resp2 = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(reqObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == resp2.getStatus)
+    val batch2 = resp2.readEntity(classOf[Batch])
+    assert(batch2.getId === batchId)
+
+    assert(batch1.getCreateTime === batch2.getCreateTime)
+    assert(BatchUtils.isDuplicatedSubmission(batch2))
+  }
+
   test("get batch session list") {
     val sessionManager = server.frontendServices.head
       .be.sessionManager.asInstanceOf[KyuubiSessionManager]
@@ -250,7 +276,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map.empty,
+      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
         sparkBatchTestResource.get,
@@ -272,7 +298,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map.empty,
+      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
         sparkBatchTestResource.get,
@@ -282,7 +308,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map.empty,
+      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
         sparkBatchTestResource.get,
@@ -672,7 +698,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
         "kyuubi",
         "kyuubi",
         InetAddress.getLocalHost.getCanonicalHostName,
-        Map.empty,
+        Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
         newSparkBatchRequest(Map("spark.jars" -> "disAllowPath")))
     }
     val sessionHandleRegex = "\\[[\\S]*\\]".r

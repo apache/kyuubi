@@ -17,13 +17,16 @@
 
 package org.apache.kyuubi.kubernetes.test.spark
 
+import java.util.UUID
+
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.net.NetUtils
 
-import org.apache.kyuubi.{BatchTestHelper, KyuubiException, Logging, Utils, WithKyuubiServer, WithSimpleDFSService}
+import org.apache.kyuubi._
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationOperation, KubernetesApplicationOperation}
@@ -134,7 +137,8 @@ class KyuubiOperationKubernetesClusterClientModeSuite
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   test("Spark Client Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
-    val batchRequest = newSparkBatchRequest(conf.getAll)
+    val batchRequest = newSparkBatchRequest(conf.getAll ++ Map(
+      KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
 
     val sessionHandle = sessionManager.openBatchSession(
       "kyuubi",
@@ -193,7 +197,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       "spark.kubernetes.driver.pod.name",
       driverPodNamePrefix + "-" + System.currentTimeMillis())
 
-    val batchRequest = newSparkBatchRequest(conf.getAll)
+    val batchRequest = newSparkBatchRequest(conf.getAll ++ Map(
+      KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
 
     val sessionHandle = sessionManager.openBatchSession(
       "runner",

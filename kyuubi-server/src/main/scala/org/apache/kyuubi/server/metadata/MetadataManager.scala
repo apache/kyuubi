@@ -20,6 +20,8 @@ package org.apache.kyuubi.server.metadata
 import java.util.concurrent.{ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.collection.JavaConverters._
+
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
@@ -29,7 +31,7 @@ import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.SessionType
-import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
+import org.apache.kyuubi.util.{ClassUtils, JdbcUtils, ThreadUtils}
 
 class MetadataManager extends AbstractService("MetadataManager") {
   import MetadataManager._
@@ -105,11 +107,8 @@ class MetadataManager extends AbstractService("MetadataManager") {
   }
 
   protected def unrecoverableDBErr(cause: Throwable): Boolean = {
-    val unrecoverableKeywords = Seq(
-      "duplicate key value in a unique or primary key constraint or unique index", // Derby
-      "Duplicate entry" // MySQL
-    )
-    unrecoverableKeywords.exists(cause.getMessage.contains)
+    // cover other cases in the future
+    JdbcUtils.isDuplicatedKeyDBErr(cause)
   }
 
   def insertMetadata(metadata: Metadata, asyncRetryOnError: Boolean = true): Unit = {
@@ -334,6 +333,7 @@ object MetadataManager extends Logging {
       batchMetadata.kyuubiInstance,
       batchState,
       batchMetadata.createTime,
-      batchMetadata.endTime)
+      batchMetadata.endTime,
+      Map.empty[String, String].asJava)
   }
 }
