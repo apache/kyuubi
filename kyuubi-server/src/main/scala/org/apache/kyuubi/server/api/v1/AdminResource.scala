@@ -184,8 +184,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           }
       }
       engineNodes.map(node => {
-        val engineUser =
-          Option(engine.getUser).get.orElse(node.attributes.get(KYUUBI_ENGINE_USERNAME).orNull)
+        val engineUser = if (StringUtils.isNotEmpty(engine.getUser)) engine.getUser
+        else node.attributes.get(KYUUBI_ENGINE_USERNAME)
         engines += new Engine(
           engine.getVersion,
           engineUser.toString,

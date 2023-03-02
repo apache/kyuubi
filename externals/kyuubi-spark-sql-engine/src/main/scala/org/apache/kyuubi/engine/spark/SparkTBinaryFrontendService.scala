@@ -95,15 +95,14 @@ class SparkTBinaryFrontendService(
     }
   }
 
-  def parseMemory2GB(size: String, instance: Int): String = {
+  def parseMemory2GB(size: String, instance: Int): Double = {
     val memory = size.dropRight(1).toDouble
     val unit = size.last.toLower
-    val dec = new DecimalFormat("0.00")
     val formattedMemory = unit match {
-      case 'k' => dec.format(memory / 1024.0 / 1024.0 * instance)
-      case 'm' => dec.format(memory / 1024.0 * instance)
-      case 'g' => dec.format(memory * instance)
-      case 't' => dec.format(memory * 1024.0 * instance)
+      case 'k' => memory / 1024.0 / 1024.0 * instance
+      case 'm' => memory / 1024.0 * instance
+      case 'g' => memory * instance
+      case 't' => memory * 1024.0 * instance
     }
     formattedMemory
   }
@@ -113,10 +112,12 @@ class SparkTBinaryFrontendService(
     val settings = sc.getConf.getAll.toMap
     val executorInstances = sc.getExecutorMemoryStatus.size - 1
     val executorMemory = settings.get(SPARK_ENGINE_EXECUTOR_MEMORY).getOrElse("1g")
-    val executorCores = settings.get(SPARK_ENGINE_EXECUTOR_CORES).getOrElse("1").asInstanceOf[Int]
+    val executorCores = Integer.parseInt(settings.get(SPARK_ENGINE_EXECUTOR_CORES).getOrElse("1"))
     val driverMemory = settings.get(SPARK_ENGINE_DRIVER_MEMORY).getOrElse("1g")
-    val driverCores = settings.get(SPARK_ENGINE_DRIVER_CORES).getOrElse("1").asInstanceOf[Int]
-    val memory = parseMemory2GB(executorMemory, executorInstances) + parseMemory2GB(driverMemory, 1)
+    val driverCores = Integer.parseInt(settings.get(SPARK_ENGINE_DRIVER_CORES).getOrElse("1"))
+    val dec = new DecimalFormat("0.00")
+    val memory = dec.format(parseMemory2GB(executorMemory, executorInstances) +
+      parseMemory2GB(driverMemory, 1))
     val cores = executorInstances * executorCores + driverCores
     val address = java.net.InetAddress.getLocalHost.getHostAddress
     Map(
@@ -128,7 +129,7 @@ class SparkTBinaryFrontendService(
       KYUUBI_ENGINE_DRIVER_IP -> address,
       KYUUBI_ENGINE_UI_PORT -> sc.getConf.get("spark.ui.port"),
       KYUUBI_ENGINE_USERNAME -> sc.sparkUser,
-      KYUUBI_SERVER_IP_KEY -> sc.getConf.get(KYUUBI_SERVER_IP_KEY))
+      KYUUBI_SERVER_IP_KEY -> getIpAddress)
   }
 }
 
