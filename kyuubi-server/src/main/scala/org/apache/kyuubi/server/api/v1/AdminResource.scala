@@ -304,7 +304,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       null,
       null,
       null,
-      null,
       null)
   }
 
