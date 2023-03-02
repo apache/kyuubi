@@ -25,7 +25,7 @@ _CALLING_DIR="$(pwd)"
 _COMPILE_JVM_OPTS="-Xms2g -Xmx2g -XX:ReservedCodeCacheSize=1g -Xss128m"
 
 if [ "$CI" ]; then
-  export MAVEN_CLI_OPTS="--no-transfer-progress --errors --fail-fast"
+  export MAVEN_CLI_OPTS="-Dmvnd.minThreads=8 --no-transfer-progress --errors --fail-fast -Dstyle.color=always"
 fi
 
 # Installs any application tarball given a URL, the expected tarball name,
@@ -131,4 +131,9 @@ cd "${_CALLING_DIR}"
 export MAVEN_OPTS=${MAVEN_OPTS:-"$_COMPILE_JVM_OPTS"}
 
 echo "Using \`mvnd\` from path: $MVND_BIN" 1>&2
+
+if [ "$MAVEN_CLI_OPTS" != "" ]; then
+  echo "MAVEN_CLI_OPTS=$MAVEN_CLI_OPTS"
+fi
+
 ${MVND_BIN} $MAVEN_CLI_OPTS "$@"

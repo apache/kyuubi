@@ -17,6 +17,7 @@
 
 name: 'setup-mvnd'
 description: 'Setup the maven daemon'
+continue-on-error: true
 runs:
   using: composite
   steps:
@@ -26,7 +27,10 @@ runs:
         path: |
           build/maven-mvnd-*
           build/apache-maven-*
-        key: setup-mvnd-${{ runner.os }}-mvnd
+        key: setup-mvnd-${{ runner.os }}
+    - name: Check Maven
+      run: build/mvn -v
+      shell: bash
     - name: Check Mvnd
       run: build/mvnd -v
       shell: bash

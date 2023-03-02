@@ -50,7 +50,7 @@ jobs:
       - name: Check kyuubi modules available
         id: modules-check
         run: >-
-          build/mvnd dependency:resolve validate
+          build/mvnd dependency:resolve validate -q
           -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile"
           -Pfast -Denforcer.skip=false
           -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
