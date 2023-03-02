@@ -87,12 +87,15 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - name: Build and test Kyuubi and Spark with maven w/o linters
+      - name: Build Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
           ./build/mvnd clean install ${MVN_OPT} -pl ${TEST_MODULES} -am -DskipTests \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
-          ./build/mvnd test ${MVN_OPT} -pl ${TEST_MODULES} -am \
+      - name: Test Kyuubi and Spark with maven w/o linters
+        run: |
+          TEST_MODULES="dev/kyuubi-codecov"
+          ./build/mvn test ${MVN_OPT} -pl ${TEST_MODULES} \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
