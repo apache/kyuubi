@@ -90,13 +90,13 @@ jobs:
       - name: Build Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
-          ./build/mvnd clean install ${MVN_OPT} -pl ${TEST_MODULES} -am -DskipTests \
-          -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
+          ./build/mvnd ${MVN_OPT} -pl ${TEST_MODULES} -am -DskipTests \
+          -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }} clean install
       - name: Test Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
-          ./build/mvn test ${MVN_OPT} -pl ${TEST_MODULES} \
-          -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} \
+          -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }} test
       - name: Code coverage
         if: |
           matrix.java == 8 &&
@@ -197,12 +197,12 @@ jobs:
       - name: Build Flink with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} -am clean install -DskipTests
+          ./build/mvnd ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} -am clean install -DskipTests
       - name: Test Flink
         if: matrix.flink-archive == ''
         run: |
           TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
+          ./build/mvnd ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
       - name: Cross-version test Flink
         if: matrix.flink-archive != ''
         run: |
