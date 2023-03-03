@@ -60,17 +60,17 @@
       <el-table-column
         prop="runningOperations"
         :label="$t('running_operations')"
-        width="120"
+        width="160"
       />
       <el-table-column
         prop="errorOperations"
         :label="$t('error_operations')"
-        width="120"
+        width="140"
       />
       <el-table-column
-        prop="finishedOperations"
-        :label="$t('finish_operations')"
-        width="120"
+        prop="totalOperations"
+        :label="$t('total_operations')"
+        width="140"
       />
       <el-table-column :label="$t('start_time')" width="200">
         <template #default="scope">

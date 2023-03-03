@@ -44,6 +44,24 @@ export function getAllEngines(params: IEngineSearch) {
   return request({
     url: 'api/v1/admin/engine',
     method: 'get',
-    params
+    params,
+    headers: {
+      Authorization: params['hive.server2.proxy.user']
+        ? 'BASIC ' + window.btoa(params['hive.server2.proxy.user'])
+        : ''
+    }
+  })
+}
+
+export function deleteEngine(params: IEngineSearch) {
+  return request({
+    url: 'api/v1/admin/engine',
+    method: 'delete',
+    params,
+    headers: {
+      Authorization: params['hive.server2.proxy.user']
+        ? 'BASIC ' + window.btoa(params['hive.server2.proxy.user'])
+        : ''
+    }
   })
 }

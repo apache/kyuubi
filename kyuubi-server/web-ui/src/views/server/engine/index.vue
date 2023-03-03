@@ -21,7 +21,7 @@
     <header>
       <el-space class="search-box">
         <el-select
-          v-model="searchParam.enginetype"
+          v-model="searchParam.engineType"
           :placeholder="$t('engine_type')"
           clearable
           style="width: 210px"
@@ -54,6 +54,12 @@
             :value="item"
           />
         </el-select>
+        <el-input
+          v-model="searchParam['hive.server2.proxy.user']"
+          :placeholder="$t('user')"
+          style="width: 210px"
+          @keyup.enter="getList"
+        />
         <el-button type="primary" icon="Search" @click="getList" />
       </el-space>
     </header>
@@ -103,14 +109,38 @@
       <el-table-column prop="status" :label="$t('status')" min-width="20%" />
       <el-table-column fixed="right" :label="$t('operation')" width="120">
         <template #default="scope">
-          <el-tooltip effect="dark" :content="$t('engine_ui')" placement="top">
-            <el-button
-              type="primary"
-              icon="Link"
-              circle
-              @click="openEngineUi(scope.row.url)"
-            />
-          </el-tooltip>
+          <el-space wrap>
+            <el-tooltip
+              effect="dark"
+              :content="$t('engine_ui')"
+              placement="top"
+            >
+              <el-button
+                type="primary"
+                icon="Link"
+                circle
+                @click="openEngineUi(scope.row.url)"
+              />
+            </el-tooltip>
+            <el-popconfirm
+              :title="$t('delete_confirm')"
+              @confirm="handleDeleteEngine(scope.row)"
+            >
+              <template #reference>
+                <span>
+                  <el-tooltip
+                    effect="dark"
+                    :content="$t('delete')"
+                    placement="top"
+                  >
+                    <template #default>
+                      <el-button type="danger" icon="Delete" circle />
+                    </template>
+                  </el-tooltip>
+                </span>
+              </template>
+            </el-popconfirm>
+          </el-space>
         </template>
       </el-table-column>
     </el-table>
@@ -132,13 +162,17 @@
 <script lang="ts" setup>
   import { reactive } from 'vue'
   import { format } from 'date-fns'
-  import { getAllEngines } from '@/api/server'
+  import { getAllEngines, deleteEngine } from '@/api/server'
   import { IEngineSearch } from '@/api/server/types'
   import { useTable } from '@/views/common/use-table'
+  import { ElMessage } from 'element-plus'
+  import { useI18n } from 'vue-i18n'
 
+  const { t } = useI18n()
   const searchParam: IEngineSearch = reactive({
-    enginetype: null,
-    sharelevel: null
+    engineType: null,
+    sharelevel: null,
+    'hive.server2.proxy.user': null
   })
 
   const {
@@ -154,7 +188,23 @@
 
   const openEngineUi = (url: string) => {
     url = (url || '').replaceAll(/http:|https:/gi, '')
-    window.open(`${import.meta.env.VITE_APP_DEV_WEB_URL}proxy/${url}/`)
+    window.open(`${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${url}/`)
+  }
+
+  const handleDeleteEngine = (row: any) => {
+    deleteEngine({
+      engineType: row?.engineType,
+      sharelevel: row?.sharelevel,
+      'hive.server2.proxy.user': row?.user,
+      subdomain: row?.subdomain
+    }).then(() => {
+      // need add delete success or failed logic after api support
+      getList()
+      ElMessage({
+        message: t('delete_success'),
+        type: 'success'
+      })
+    })
   }
 
   const getList = () => {
