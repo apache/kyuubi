@@ -188,9 +188,7 @@
 
   const openEngineUi = (url: string) => {
     url = (url || '').replaceAll(/http:|https:/gi, '')
-    window.open(
-      `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui-proxy/${url}/`
-    )
+    window.open(`${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${url}/`)
   }
 
   const handleDeleteEngine = (row: any) => {
