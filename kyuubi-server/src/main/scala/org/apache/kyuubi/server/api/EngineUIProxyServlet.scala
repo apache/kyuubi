@@ -55,7 +55,7 @@ private[api] class EngineUIProxyServlet(conf: KyuubiConf) extends ProxyServlet w
         port.toString,
         targetPath,
         getQueryString(request))
-      CONTEXT_HEADER_VALUE = s"/engine-ui-proxy/$ipAddress:$port"
+      CONTEXT_HEADER_VALUE = s"/engine-ui/$ipAddress:$port"
       logger.info("ui -> {}", targetUrl)
     }
     targetUrl

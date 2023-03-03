@@ -104,7 +104,7 @@ private[server] object ApiRootResource {
     val proxyServlet = new EngineUIProxyServlet(conf)
     val holder = new ServletHolder(proxyServlet)
     val contextHandler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
-    contextHandler.setContextPath("/engine-ui-proxy");
+    contextHandler.setContextPath("/engine-ui");
     contextHandler.addServlet(holder, "/*")
     contextHandlerCollection.addHandler(contextHandler)
   }
