@@ -4,15 +4,15 @@ function secondTransfer(val: number) {
   const sec = Math.round(val - 3600 * h - 60 * min)
   return h === 0
     ? min == 0
-      ? `${sec}sec`
+      ? `${sec} sec`
       : sec === 0
-      ? `${min}min`
-      : `${min}min${sec}sec`
+      ? `${min} min`
+      : `${min} min ${sec} sec`
     : sec === 0
     ? min !== 0
-      ? `${h}hour${min}min`
-      : `${h}hour`
-    : `${h}hour${min}min${sec}sec`
+      ? `${h} hour ${min} min`
+      : `${h} hour`
+    : `${h} hour ${min} min ${sec} sec`
 }
 
 function unitTransfer(diShu: number, unitArr: any[], mi: number, left: number) {
