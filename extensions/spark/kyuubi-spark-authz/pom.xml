@@ -32,7 +32,9 @@
     <url>https://kyuubi.apache.org/</url>
 
     <properties>
+        <!-- the following components' version may need to tune to align w/ the ranger.version-->
         <gethostname4j.version>1.0.0</gethostname4j.version>
+        <jersey.client.version>1.19.4</jersey.client.version>
         <jna.version>5.7.0</jna.version>
     </properties>
 
@@ -42,6 +44,10 @@
             <artifactId>ranger-plugins-common</artifactId>
             <version>${ranger.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-bundle</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.apache.ranger</groupId>
                     <artifactId>ranger-plugin-classloader</artifactId>
@@ -97,6 +103,18 @@
                 <exclusion>
                     <groupId>net.java.dev.jna</groupId>
                     <artifactId>jna-platform</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>${jersey.client.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>jsr311-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
