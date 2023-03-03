@@ -20,8 +20,10 @@ interface IServerSearch {
 }
 
 interface IEngineSearch {
-  enginetype: null | string
+  engineType: null | string
   sharelevel: null | string
+  'hive.server2.proxy.user': null | string
+  subdomain?: null | string
 }
 
 export { IServerSearch, IEngineSearch }

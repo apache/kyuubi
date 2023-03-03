@@ -1,24 +1,18 @@
 function secondTransfer(val: number) {
-  let theTime = val
-  let middle = 0
-  let hour = 0
-
-  if (theTime >= 60) {
-    middle = Math.floor(theTime / 60)
-    theTime = Math.floor(theTime % 60)
-    if (middle >= 60) {
-      hour = Math.floor(middle / 60)
-      middle = Math.floor(middle % 60)
-    }
-  }
-  let result = String(Math.floor(theTime))
-  if (middle > 0) {
-    result = Math.floor(middle) + ':' + result
-  }
-  if (hour > 0) {
-    result = Math.floor(hour) + ':' + result
-  }
-  return result
+  const h = Math.floor(val / 3600)
+  const min = Math.floor((val - 3600 * h) / 60)
+  const sec = Math.round(val - 3600 * h - 60 * min)
+  return h === 0
+    ? min == 0
+      ? `${sec}sec`
+      : sec === 0
+      ? `${min}min`
+      : `${min}min${sec}sec`
+    : sec === 0
+    ? min !== 0
+      ? `${h}hour${min}min`
+      : `${h}hour`
+    : `${h}hour${min}min${sec}sec`
 }
 
 function unitTransfer(diShu: number, unitArr: any[], mi: number, left: number) {
