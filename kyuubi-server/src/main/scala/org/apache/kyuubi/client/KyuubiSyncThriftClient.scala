@@ -186,7 +186,8 @@ class KyuubiSyncThriftClient private (
       Utils.tryLogNonFatalError {
         req.setConfiguration((configs ++ Map(
           KyuubiConf.SESSION_NAME.key -> sessionName,
-          KYUUBI_SESSION_HANDLE_KEY -> UUID.randomUUID().toString)).asJava)
+          KYUUBI_SESSION_HANDLE_KEY -> UUID.randomUUID().toString,
+          KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL.key -> "")).asJava)
         val resp = aliveProbeClient.OpenSession(req)
         ThriftUtils.verifyTStatus(resp.getStatus)
         _aliveProbeSessionHandle = resp.getSessionHandle
