@@ -322,11 +322,12 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       @QueryParam("sessionHandle") @DefaultValue("") sessionHandleStr: String,
       @QueryParam("operationType") @DefaultValue("") operationType: String,
       @QueryParam("state") @DefaultValue("") stateStr: String): Seq[KyuubiOperationEvent] = {
+    val KyuubiOperationEvents = ListBuffer[KyuubiOperationEvent]()
     try {
-      val KyuubiOperationEvents = ListBuffer[KyuubiOperationEvent]()
       fe.be.sessionManager.allSessions()
         .map { session =>
           session.allOperations().map { operationHandle =>
+            info(s"get $operationHandle")
             val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
             val kyuubiOperationEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
             KyuubiOperationEvents += kyuubiOperationEvent
@@ -346,5 +347,6 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
+    KyuubiOperationEvents
   }
 }

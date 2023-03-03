@@ -508,7 +508,6 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     try {
       sessionManager.getSession(sessionHandleStr)
         .allOperations().map { operationHandle =>
-          info(s"get $operationHandle")
           val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
           KyuubiOperationEvents += KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
         }
