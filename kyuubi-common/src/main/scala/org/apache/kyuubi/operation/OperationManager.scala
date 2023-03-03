@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import scala.collection.JavaConverters._
+
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -40,6 +42,8 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   protected def skipOperationLog: Boolean = false
 
   def getOperationCount: Int = handleToOperation.size()
+
+  def allOperations(): Iterable[Operation] = handleToOperation.values().asScala
 
   override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize(skipOperationLog)
