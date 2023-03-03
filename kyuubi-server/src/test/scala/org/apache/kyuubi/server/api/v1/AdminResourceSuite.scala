@@ -23,6 +23,7 @@ import javax.ws.rs.core.{GenericType, MediaType}
 
 import scala.collection.JavaConverters._
 
+import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, RestFrontendTestHelper, Utils}
@@ -32,6 +33,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL
 import org.apache.kyuubi.engine.{ApplicationState, EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, USER}
+import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryPaths
@@ -165,6 +167,44 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response2.getStatus)
     val sessions2 = response2.readEntity(classOf[Seq[SessionData]])
     assert(sessions2.isEmpty)
+  }
+
+  test("list/close operations") {
+    val sessionHandle = fe.be.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+    val operation = fe.be.getCatalogs(sessionHandle)
+
+    val adminUser = Utils.currentUser
+    val encodeAuthorization = new String(
+      Base64.getEncoder.encode(
+        s"$adminUser:".getBytes()),
+      "UTF-8")
+
+    // list operations
+    var response = webTarget.path("api/v1/admin/operations").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    assert(200 == response.getStatus)
+    var operations = response.readEntity(new GenericType[Seq[KyuubiOperationEvent]]() {})
+    assert(operations.nonEmpty)
+    assert(operations.map(op => op.statementId).contains(operation.identifier.toString))
+
+    // close operation
+    response = webTarget.path(s"api/v1/admin/operations/${operation.identifier}").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .delete()
+    assert(200 == response.getStatus)
+
+    // list again
+    response = webTarget.path("api/v1/admin/operations").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    operations = response.readEntity(new GenericType[Seq[KyuubiOperationEvent]]() {})
+    assert(!operations.map(op => op.statementId).contains(operation.identifier.toString))
   }
 
   test("delete engine - user share level") {

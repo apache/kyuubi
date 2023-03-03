@@ -33,9 +33,11 @@ import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto.{Engine, SessionData}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
+import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.SessionHandle
@@ -148,6 +150,47 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     }
     fe.be.closeSession(SessionHandle.fromUUID(sessionHandleStr))
     Response.ok(s"Session $sessionHandleStr is closed successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      array = new ArraySchema(schema = new Schema(implementation =
+        classOf[KyuubiOperationEvent])))),
+    description =
+      "get the list of all active operation events")
+  @GET
+  @Path("operations")
+  def listOperations(): Seq[KyuubiOperationEvent] = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received listing all of the active operations request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to list all the operations")
+    }
+    fe.be.sessionManager.operationManager.allOperations()
+      .map(operation => KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])).toSeq
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "close an operation")
+  @DELETE
+  @Path("operations/{operationHandle}")
+  def closeOperation(@PathParam("operationHandle") operationHandleStr: String): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received close an operation request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to close the operation $operationHandleStr")
+    }
+    val operationHandle = OperationHandle(operationHandleStr)
+    fe.be.closeOperation(operationHandle)
+    Response.ok(s"Operation $operationHandleStr is closed successfully.").build()
   }
 
   @ApiResponse(
