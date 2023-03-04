@@ -2713,4 +2713,11 @@ object KyuubiConf {
       .version("1.7.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(60).toMillis)
+
+  val ENGINE_SPARK_LIST_TABLES: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.spark.list.tables")
+      .doc("Only query table identifiers when set to true. Work on Spark 3.x only.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
 }
