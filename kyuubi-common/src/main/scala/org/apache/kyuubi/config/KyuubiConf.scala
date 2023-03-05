@@ -2714,9 +2714,9 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(60).toMillis)
 
-  val ENGINE_SPARK_LIST_TABLES: ConfigEntry[Boolean] =
-    buildConf("kyuubi.engine.spark.list.tables")
-      .doc("Only query table identifiers when set to true. Work on Spark 3.x only.")
+  val OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.getTables.ignoreTableProperties")
+      .doc("Speed up the `GetTables` operation by returning table identities only.")
       .version("1.8.0")
       .booleanConf
       .createWithDefault(false)

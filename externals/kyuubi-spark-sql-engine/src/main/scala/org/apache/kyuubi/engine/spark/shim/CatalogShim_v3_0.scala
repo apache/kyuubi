@@ -22,7 +22,6 @@ import java.util.regex.Pattern
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, SupportsNamespaces, TableCatalog}
 
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim.SESSION_CATALOG
 
 class CatalogShim_v3_0 extends CatalogShim_v2_4 {
@@ -151,7 +150,8 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
       catalogName: String,
       schemaPattern: String,
       tablePattern: String,
-      tableTypes: Set[String]): Seq[Row] = {
+      tableTypes: Set[String],
+      ignoreTableProperties: Boolean = false): Seq[Row] = {
     val catalog = getCatalog(spark, catalogName)
     val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
     catalog match {
@@ -161,17 +161,16 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
           SESSION_CATALOG,
           schemaPattern,
           tablePattern,
-          tableTypes)
+          tableTypes,
+          ignoreTableProperties)
       case tc: TableCatalog =>
         val tp = tablePattern.r.pattern
         val identifiers = namespaces.flatMap { ns =>
           tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
         }
-        val listTablesOnly = spark.conf.getOption(KyuubiConf.ENGINE_SPARK_LIST_TABLES.key)
-          .map(_.toBoolean).getOrElse(KyuubiConf.ENGINE_SPARK_LIST_TABLES.defaultVal.get)
         identifiers.map { ident =>
           // TODO: restore view type for session catalog
-          val comment = if (listTablesOnly) ""
+          val comment = if (ignoreTableProperties) ""
           else tc.loadTable(ident).properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
           val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
           val tableName = quoteIfNeeded(ident.name())
