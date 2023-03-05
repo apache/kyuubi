@@ -28,6 +28,7 @@ import scala.util.control.NonFatal
 import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Logging
@@ -446,10 +447,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       @PathParam("sessionHandle") sessionHandleStr: String): Seq[SQLDetail] = {
     val sqlDetails = ListBuffer[SQLDetail]()
     try {
-      sessionManager.getSession(sessionHandleStr)
-        .allOperations().map { operationHandle =>
-          val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
-          val kyuubiSessionEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+      sessionManager.operationManager.allOperations().map { operation =>
+        val kyuubiSessionEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+        if (StringUtils.isNotEmpty(sessionHandleStr) &&
+          sessionHandleStr.equalsIgnoreCase(operation.getSession.handle.identifier.toString)) {
           sqlDetails += new SQLDetail(
             sessionHandleStr,
             kyuubiSessionEvent.sessionUser,
@@ -462,6 +463,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
             kyuubiSessionEvent.engineShareLevel,
             kyuubiSessionEvent.exception.map(_.toString).orNull)
         }
+      }
     } catch {
       case NonFatal(e) =>
         error(s"Invalid $sessionHandleStr", e)
@@ -506,18 +508,19 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       @PathParam("sessionHandle") sessionHandleStr: String): Seq[KyuubiOperationEvent] = {
     val KyuubiOperationEvents = ListBuffer[KyuubiOperationEvent]()
     try {
-      sessionManager.getSession(sessionHandleStr)
-        .allOperations().map { operationHandle =>
-          val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
-          KyuubiOperationEvents += KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+      sessionManager.operationManager.allOperations().map { operation =>
+        {
+          if (StringUtils.isNotEmpty(sessionHandleStr) &&
+            sessionHandleStr.equalsIgnoreCase(operation.getSession.handle.identifier.toString)) {
+            KyuubiOperationEvents += KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+          }
         }
+      }
     } catch {
       case NonFatal(e) =>
         error(s"Invalid $sessionHandleStr", e)
         throw new NotFoundException(s"Invalid $sessionHandleStr")
     }
     KyuubiOperationEvents
-
   }
-
 }

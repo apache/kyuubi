@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.session
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TGetResultSetMetadataResp, TProtocolVersion, TRowSet}
+import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationHandle
@@ -39,9 +39,6 @@ trait Session {
   def lastIdleTime: Long
   def getNoOperationTime: Long
   def sessionIdleTimeoutThreshold: Long
-  def allOperations(): Iterable[OperationHandle]
-  def getOperationCount(): Long
-
   def sessionManager: SessionManager
 
   def open(): Unit

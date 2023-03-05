@@ -324,14 +324,10 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       @QueryParam("state") @DefaultValue("") stateStr: String): Seq[KyuubiOperationEvent] = {
     val KyuubiOperationEvents = ListBuffer[KyuubiOperationEvent]()
     try {
-      fe.be.sessionManager.allSessions()
-        .map { session =>
-          session.allOperations().map { operationHandle =>
-            info(s"get $operationHandle")
-            val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
-            val kyuubiOperationEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
-            KyuubiOperationEvents += kyuubiOperationEvent
-          }
+      fe.be.sessionManager.operationManager.allOperations()
+        .map { operation =>
+          val kyuubiOperationEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+          KyuubiOperationEvents += kyuubiOperationEvent
         }
       (KyuubiOperationEvents
         .filter(
@@ -340,7 +336,6 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
           operationType.equalsIgnoreCase("") || _.operationType.equalsIgnoreCase(operationType))
         .filter(
           stateStr.equalsIgnoreCase("") || _.state.equalsIgnoreCase(stateStr)))
-
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error querying operation event list"
