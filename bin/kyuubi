@@ -30,7 +30,6 @@ function usage() {
   echo "    -h | --help  - Show this help message"
 }
 
-
 if [[ "$*" = *--help ]] || [[ "$*" = *-h ]]; then
   usage
   exit 0

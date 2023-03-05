@@ -227,7 +227,6 @@ Examples:
 EOF
 }
 
-
 if [[ "$*" = *--help ]] || [[ "$*" = *-h ]]; then
   usage
   exit 0

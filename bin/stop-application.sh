@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 
-
 if [[ $# -lt 1 ]] ; then
   echo "USAGE: $0 <application_id>"
   exit 1
