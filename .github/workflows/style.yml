@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         profiles:
-          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds'
+          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds,kubernetes-it'
 
     steps:
       - uses: actions/checkout@v3
