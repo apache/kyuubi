@@ -155,14 +155,6 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
     val catalog = getCatalog(spark, catalogName)
     val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
     catalog match {
-      case builtin if builtin.name() == SESSION_CATALOG =>
-        super.getCatalogTablesOrViews(
-          spark,
-          SESSION_CATALOG,
-          schemaPattern,
-          tablePattern,
-          tableTypes,
-          ignoreTableProperties)
       case tc: TableCatalog =>
         val tp = tablePattern.r.pattern
         val identifiers = namespaces.flatMap { ns =>
@@ -176,6 +168,14 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
           val tableName = quoteIfNeeded(ident.name())
           Row(catalog.name(), schema, tableName, "TABLE", comment, null, null, null, null, null)
         }
+      case builtin if builtin.name() == SESSION_CATALOG =>
+        super.getCatalogTablesOrViews(
+          spark,
+          SESSION_CATALOG,
+          schemaPattern,
+          tablePattern,
+          tableTypes,
+          ignoreTableProperties)
       case _ => Seq.empty[Row]
     }
   }
