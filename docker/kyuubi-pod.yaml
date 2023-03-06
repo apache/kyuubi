@@ -18,11 +18,11 @@
 # Usage:
 # ConfigMap:
 #   DEMO:
-#     kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-configmap.yaml
+#     kubectl apply -f https://raw.githubusercontent.com/apache/kyuubi/master/docker/kyuubi-configmap.yaml
 #   LOCAL:
 #     kubectl create cm kyuubi-defaults --from-file=${KYUUBI_HOME}/conf/kyuubi-defaults.conf
 # Start:
-#   kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-pod.yaml
+#   kubectl apply -f https://raw.githubusercontent.com/apache/kyuubi/master/docker/kyuubi-pod.yaml
 # Expose port:
 # 1. Expose the Pod by port-forward, for temporary test
 #   kubectl port-forward kyuubi-example --address localhost 10009:10009
@@ -38,8 +38,8 @@
 # 1. edit ConfigMap
 #   kubectl edit cm kyuubi-defaults
 # 2. restart pod
-#   kubectl delete -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-pod.yaml
-#   kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-pod.yaml
+#   kubectl delete -f https://raw.githubusercontent.com/apache/kyuubi/master/docker/kyuubi-pod.yaml
+#   kubectl apply -f https://raw.githubusercontent.com/apache/kyuubi/master/docker/kyuubi-pod.yaml
 
 apiVersion: v1
 kind: Pod
@@ -48,6 +48,7 @@ metadata:
   labels:
     app: kyuubi-server
 spec:
+  serviceAccountName: default
   containers:
     - name: kyuubi-server
       # TODO: replace this with the stable tag

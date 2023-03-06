@@ -17,11 +17,14 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import scala.util.Try
+
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.execution.QueryExecution
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
+import org.apache.kyuubi.plugin.spark.authz.serde.{Database, DB_COMMAND_SPECS}
 
 abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
@@ -38,6 +41,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   val catalogPartTable = s"$catalogV2.$namespace.catalog_part_table"
   val catalogPartTableShort = catalogPartTable.split("\\.").last
   val defaultV2TableOwner = UserGroupInformation.getCurrentUser.getShortUserName
+  final val sparkSessionCatalogName: String = "spark_catalog"
 
   protected def withV2Table(table: String)(f: String => Unit): Unit = {
     val tableId = s"$catalogV2.$namespace.$table"
@@ -88,16 +92,14 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     withV2Table(table) { tableId =>
       val plan = executePlan(
         s"CREATE TABLE IF NOT EXISTS $tableId (i int)").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
       assert(operationType === CREATETABLE)
-
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
       assert(inputs.isEmpty)
       assert(outputs.size === 1)
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -113,15 +115,13 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val plan = executePlan(
         s"CREATE TABLE IF NOT EXISTS $tableId AS " +
           s"SELECT * FROM $reusedTable").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
-      assert(operationType === CREATETABLE)
-
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === CREATETABLE_AS_SELECT)
       assert(inputs.size === 1)
       val po0 = inputs.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
       assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.catalog === None)
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedTableShort)
       assert(po0.columns.take(2) === Seq("key", "value"))
@@ -131,6 +131,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -145,16 +146,15 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE IF NOT EXISTS $tableId (i int)")
       val plan = executePlan(s"REPLACE TABLE $tableId (j int)").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
-      assert(operationType === CREATETABLE)
 
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === CREATETABLE)
       assert(inputs.size === 0)
       assert(outputs.size === 1)
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -170,15 +170,13 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       sql(s"CREATE TABLE IF NOT EXISTS $tableId (i int)")
       val plan =
         executePlan(s"REPLACE TABLE $tableId AS SELECT * FROM $reusedTable").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
-      assert(operationType === CREATETABLE)
-
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === CREATETABLE_AS_SELECT)
       assert(inputs.size === 1)
       val po0 = inputs.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
       assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.catalog === None)
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedTableShort)
       assert(po0.columns.take(2) === Seq("key", "value"))
@@ -188,6 +186,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -201,16 +200,14 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
   test("AppendData") {
     val plan = executePlan(s"INSERT INTO $catalogTable VALUES (0, 'a')").analyzed
-    assert(v2Commands.accept(plan.nodeName))
-    val operationType = OperationType(plan.nodeName)
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
-
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
     assert(inputs.size === 0)
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.INSERT)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
@@ -224,16 +221,15 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assume(supportsUpdateTable)
 
     val plan = executePlan(s"UPDATE $catalogTable SET value = 'a' WHERE key = 0").analyzed
-    assert(v2Commands.accept(plan.nodeName))
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === QUERY)
 
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === QUERY)
     assert(inputs.size === 0)
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.UPDATE)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
@@ -246,16 +242,14 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assume(supportsDelete)
 
     val plan = executePlan(s"DELETE FROM $catalogTable WHERE key = 0").analyzed
-    assert(v2Commands.accept(plan.nodeName))
-    val operationType = OperationType(plan.nodeName)
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
-
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
     assert(inputs.size === 0)
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.UPDATE)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
@@ -266,16 +260,14 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
   test("OverwriteByExpression") {
     val plan = executePlan(s"INSERT OVERWRITE TABLE $catalogTable VALUES (0, 1)").analyzed
-    assert(v2Commands.accept(plan.nodeName))
-    val operationType = OperationType(plan.nodeName)
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
-
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
     assert(inputs.size === 0)
     assert(outputs.size === 1)
     val po = outputs.head
-    assert(po.actionType === PrivilegeObjectActionType.UPDATE)
+    assert(po.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
@@ -291,16 +283,14 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       sql("SET spark.sql.sources.partitionOverwriteMode=dynamic")
       val plan = executePlan(s"INSERT OVERWRITE TABLE $catalogPartTable PARTITION (dt)" +
         s"VALUES (0, 1, '2022-01-01')").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
       assert(operationType === QUERY)
-
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
       assert(inputs.size === 0)
       assert(outputs.size === 1)
       val po = outputs.head
-      assert(po.actionType === PrivilegeObjectActionType.UPDATE)
+      assert(po.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === catalogPartTableShort)
       assert(po.columns.isEmpty)
@@ -318,16 +308,14 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
     val plan = executePlan(s"ALTER TABLE $catalogPartTable " +
       s"ADD PARTITION (dt='2022-01-01')").analyzed
-    assert(v2Commands.accept(plan.nodeName))
-    val operationType = OperationType(plan.nodeName)
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === ALTERTABLE_ADDPARTS)
-
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
     assert(inputs.size === 0)
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogPartTableShort)
     assert(po.columns.isEmpty)
@@ -342,16 +330,14 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
     val plan = executePlan(s"ALTER TABLE $catalogPartTable " +
       s"DROP PARTITION (dt='2022-01-01')").analyzed
-    assert(v2Commands.accept(plan.nodeName))
-    val operationType = OperationType(plan.nodeName)
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === ALTERTABLE_DROPPARTS)
-
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
     assert(inputs.size === 0)
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogPartTableShort)
     assert(po.columns.isEmpty)
@@ -366,16 +352,14 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
     val plan = executePlan(s"ALTER TABLE $catalogPartTable " +
       s"PARTITION (dt='2022-01-01') RENAME TO PARTITION (dt='2022-01-02')").analyzed
-    assert(v2Commands.accept(plan.nodeName))
-    val operationType = OperationType(plan.nodeName)
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === ALTERTABLE_ADDPARTS)
-
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
     assert(inputs.size === 0)
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogPartTableShort)
     assert(po.columns.isEmpty)
@@ -390,16 +374,15 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
     val plan = executePlan(s"ALTER TABLE $catalogPartTable " +
       s"PARTITION (dt='2022-01-01') RENAME TO PARTITION (dt='2022-01-02')").analyzed
-    assert(v2Commands.accept(plan.nodeName))
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === ALTERTABLE_DROPPARTS)
 
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === ALTERTABLE_DROPPARTS)
     assert(inputs.size === 0)
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogPartTableShort)
     assert(po.columns.isEmpty)
@@ -412,16 +395,15 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
   test("CommentOnTable") {
     val plan = executePlan(s"COMMENT ON TABLE $catalogTable IS 'text'").analyzed
-    assert(v2Commands.accept(plan.nodeName))
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === ALTERTABLE_PROPERTIES)
 
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === ALTERTABLE_PROPERTIES)
     assert(inputs.isEmpty)
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
@@ -435,16 +417,15 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE $tableId (i int)")
       val plan = executePlan(s"DROP TABLE $tableId").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
-      assert(operationType === DROPTABLE)
 
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === DROPTABLE)
       assert(inputs.isEmpty)
       assert(outputs.size === 1)
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -465,15 +446,13 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
         s"ON t.key = s.key " +
         s"WHEN MATCHED THEN UPDATE SET t.value = s.value " +
         s"WHEN NOT MATCHED THEN INSERT *").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
       assert(operationType === QUERY)
-
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
       assert(inputs.size == 1)
       val po0 = inputs.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
       assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.catalog === Some(catalogV2))
       assert(po0.dbname === namespace)
       assert(po0.objectName === catalogTableShort)
       assert(po0.columns === Seq("key", "value"))
@@ -483,6 +462,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.UPDATE)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -497,16 +477,15 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assume(isSparkV32OrGreater)
 
     val plan = executePlan(s"MSCK REPAIR TABLE $catalogPartTable").analyzed
-    assert(v2Commands.accept(plan.nodeName))
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === ALTERTABLE_ADDPARTS)
 
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === MSCK)
     assert(inputs.isEmpty)
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogPartTableShort)
     assert(po.columns.isEmpty)
@@ -519,22 +498,39 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assume(isSparkV32OrGreater)
 
     val plan = executePlan(s"TRUNCATE TABLE $catalogTable").analyzed
-    assert(v2Commands.accept(plan.nodeName))
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === QUERY)
 
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === TRUNCATETABLE)
     assert(inputs.isEmpty)
     assert(outputs.size === 1)
     val po = outputs.head
-    assert(po.actionType === PrivilegeObjectActionType.UPDATE)
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.UPDATE)
+  }
+
+  test("DescribeTable") {
+    val plan = executePlan(s"DESCRIBE TABLE $catalogTable").analyzed
+    val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === DESCTABLE)
+    assert(inputs.size === 1)
+    val po = inputs.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
+    assert(po.dbname === namespace)
+    assert(po.objectName === catalogTableShort)
+    assert(po.columns.isEmpty)
+    checkV2TableOwner(po)
+    val accessType = AccessType(po, operationType, isInput = true)
+    assert(accessType === AccessType.SELECT)
+    assert(outputs.size === 0)
   }
 
   // with V2AlterTableCommand
@@ -546,16 +542,15 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE $tableId (i int)")
       val plan = executePlan(s"ALTER TABLE $tableId ADD COLUMNS (j int)").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
-      assert(operationType === ALTERTABLE_ADDCOLS)
 
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === ALTERTABLE_ADDCOLS)
       assert(inputs.isEmpty)
       assert(outputs.size === 1)
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -572,16 +567,15 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE $tableId (i int)")
       val plan = executePlan(s"ALTER TABLE $tableId ALTER COLUMN i TYPE int").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
-      assert(operationType === ALTERTABLE_ADDCOLS)
 
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === ALTERTABLE_ADDCOLS)
       assert(inputs.isEmpty)
       assert(outputs.size === 1)
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -598,16 +592,15 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE $tableId (i int, j int)")
       val plan = executePlan(s"ALTER TABLE $tableId DROP COLUMN i").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
-      assert(operationType === ALTERTABLE_ADDCOLS)
 
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === ALTERTABLE_ADDCOLS)
       assert(inputs.isEmpty)
       assert(outputs.size === 1)
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -624,16 +617,15 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE $tableId (i int, j int)")
       val plan = executePlan(s"ALTER TABLE $tableId REPLACE COLUMNS (i String)").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
-      assert(operationType === ALTERTABLE_REPLACECOLS)
 
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === ALTERTABLE_REPLACECOLS)
       assert(inputs.isEmpty)
       assert(outputs.size === 1)
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -650,22 +642,144 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE $tableId (i int, j int)")
       val plan = executePlan(s"ALTER TABLE $tableId RENAME COLUMN i TO k").analyzed
-      assert(v2Commands.accept(plan.nodeName))
-      val operationType = OperationType(plan.nodeName)
-      assert(operationType === ALTERTABLE_RENAMECOL)
 
-      val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === ALTERTABLE_RENAMECOL)
       assert(inputs.isEmpty)
       assert(outputs.size === 1)
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.ALTER)
+    }
+  }
+
+  test("SetNamespaceCommand") {
+    val ns1 = "testns1"
+    val sql1 = s"USE NAMESPACE $ns1"
+    val plan1 = executePlan(sql1).analyzed
+    val spec = DB_COMMAND_SPECS(plan1.getClass.getName)
+    var db: Database = null
+    spec.databaseDescs.find { d =>
+      Try(db = d.extract(plan1)).isSuccess
+    }
+    withClue(sql1) {
+      assert(db.catalog === None)
+      assert(db.database === ns1)
+    }
+  }
+
+  test("SetNamespaceProperties") {
+    assume(isSparkV33OrGreater)
+    val plan = sql("ALTER DATABASE default SET DBPROPERTIES (abc = '123')").queryExecution.analyzed
+    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+    assertResult(plan.getClass.getName)(
+      "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties")
+    assert(operationType === ALTERDATABASE)
+    assert(in.isEmpty)
+    assert(out.size === 1)
+    val po = out.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
+    assert(po.catalog.get === sparkSessionCatalogName)
+    assert(po.dbname === "default")
+    assert(po.objectName === "default")
+    assert(po.columns.isEmpty)
+  }
+
+  test("CreateNamespace") {
+    assume(isSparkV33OrGreater)
+    withDatabase("CreateNamespace") { db =>
+      val plan = sql(s"CREATE DATABASE $db").queryExecution.analyzed
+      val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+      assertResult(plan.getClass.getName)(
+        "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace")
+      assert(operationType === CREATEDATABASE)
+      assert(in.isEmpty)
+      assert(out.size === 1)
+      val po = out.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
+      assert(po.catalog.get === sparkSessionCatalogName)
+      assert(po.dbname === "CreateNamespace")
+      assert(po.objectName === "CreateNamespace")
+      assert(po.columns.isEmpty)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.CREATE)
+    }
+  }
+
+  test("SetNamespaceLocation") {
+    assume(isSparkV33OrGreater)
+    // hive does not support altering database location
+    assume(catalogImpl !== "hive")
+    val newLoc = spark.conf.get("spark.sql.warehouse.dir") + "/new_db_location"
+    val plan = sql(s"ALTER DATABASE default SET LOCATION '$newLoc'")
+      .queryExecution.analyzed
+    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+    assertResult(plan.getClass.getName)(
+      "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation")
+    assert(operationType === ALTERDATABASE_LOCATION)
+    assert(in.isEmpty)
+    assert(out.size === 1)
+    val po = out.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
+    assert(po.catalog.get === sparkSessionCatalogName)
+    assert(po.dbname === "default")
+    assert(po.objectName === "default")
+    assert(po.columns.isEmpty)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
+  }
+
+  test("DescribeNamespace") {
+    assume(isSparkV33OrGreater)
+    val plan = sql(s"DESC DATABASE $reusedDb").queryExecution.analyzed
+    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+    assertResult(plan.getClass.getName)(
+      "org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace")
+    assert(operationType === DESCDATABASE)
+    assert(in.size === 1)
+    val po = in.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
+    assert(po.catalog.get === sparkSessionCatalogName)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName equalsIgnoreCase reusedDb)
+    assert(po.columns.isEmpty)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.USE)
+
+    assert(out.size === 0)
+  }
+
+  test("DropNamespace") {
+    assume(isSparkV33OrGreater)
+    withDatabase("DropNameSpace") { db =>
+      sql(s"CREATE DATABASE $db")
+      val plan = sql(s"DROP DATABASE DropNameSpace").queryExecution.analyzed
+      val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+      assertResult(plan.getClass.getName)(
+        "org.apache.spark.sql.catalyst.plans.logical.DropNamespace")
+      assert(operationType === DROPDATABASE)
+      assert(in.isEmpty)
+      assert(out.size === 1)
+      val po = out.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
+      assert(po.catalog.get === sparkSessionCatalogName)
+      assert(po.dbname === "DropNameSpace")
+      assert(po.objectName === "DropNameSpace")
+      assert(po.columns.isEmpty)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.DROP)
     }
   }
 }

@@ -17,34 +17,35 @@
 
 package org.apache.kyuubi.kubernetes.test
 
+import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 
 import org.apache.kyuubi.KyuubiFunSuite
 
 trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
   protected def connectionConf: Map[String, String] = Map.empty
-  private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
-  protected def getJdbcUrl: String = {
-    val kyuubiServers =
-      miniKubernetesClient.pods().list().getItems
-    assert(kyuubiServers.size() == 1)
-    val kyuubiServer = kyuubiServers.get(0)
+  lazy val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
+  lazy val kyuubiPod: Pod = miniKubernetesClient.pods().withName("kyuubi-test").get()
+  lazy val kyuubiServerIp: String = kyuubiPod.getStatus.getPodIP
+  lazy val miniKubeIp: String = MiniKube.getIp
+  lazy val miniKubeApiMaster: String = miniKubernetesClient.getMasterUrl.toString
+
+  protected def getJdbcUrl(connectionConf: Map[String, String]): String = {
     // Kyuubi server state should be running since mvn compile is quite slowly..
-    if (!"running".equalsIgnoreCase(kyuubiServer.getStatus.getPhase)) {
+    if (!"running".equalsIgnoreCase(kyuubiPod.getStatus.getPhase)) {
       val log =
         miniKubernetesClient
           .pods()
-          .withName(kyuubiServer.getMetadata.getName)
+          .withName(kyuubiPod.getMetadata.getName)
           .getLog
       throw new IllegalStateException(
-        s"Kyuubi server pod state error: ${kyuubiServer.getStatus.getPhase}, log:\n$log")
+        s"Kyuubi server pod state error: ${kyuubiPod.getStatus.getPhase}, log:\n$log")
     }
-    val kyuubiServerIp = MiniKube.getIp
+    val kyuubiServerIp = miniKubeIp
     val kyuubiServerPort =
-      kyuubiServer.getSpec.getContainers.get(0).getPorts.get(0).getHostPort
-    s"jdbc:hive2://$kyuubiServerIp:$kyuubiServerPort/;"
+      kyuubiPod.getSpec.getContainers.get(0).getPorts.get(0).getHostPort
+    val connectStr = connectionConf.map(kv => kv._1 + "=" + kv._2).mkString("#", ";", "")
+    s"jdbc:hive2://$kyuubiServerIp:$kyuubiServerPort/;$connectStr"
   }
-
-  def getMiniKubeApiMaster: String = miniKubernetesClient.getMasterUrl.toString
 }

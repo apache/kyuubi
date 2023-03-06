@@ -25,7 +25,8 @@ import org.apache.kyuubi.plugin.spark.authz.{ObjectType, PrivilegeObject}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
-class AccessResource private (val objectType: ObjectType) extends RangerAccessResourceImpl {
+class AccessResource private (val objectType: ObjectType, val catalog: Option[String])
+  extends RangerAccessResourceImpl {
   implicit def asString(obj: Object): String = if (obj != null) obj.asInstanceOf[String] else null
   def getDatabase: String = getValue("database")
   def getTable: String = getValue("table")
@@ -43,8 +44,9 @@ object AccessResource {
       firstLevelResource: String,
       secondLevelResource: String,
       thirdLevelResource: String,
-      owner: Option[String] = None): AccessResource = {
-    val resource = new AccessResource(objectType)
+      owner: Option[String] = None,
+      catalog: Option[String] = None): AccessResource = {
+    val resource = new AccessResource(objectType, catalog)
 
     resource.objectType match {
       case DATABASE => resource.setValue("database", firstLevelResource)
@@ -64,11 +66,22 @@ object AccessResource {
     resource
   }
 
-  def apply(objectType: ObjectType, firstLevelResource: String): AccessResource = {
-    apply(objectType, firstLevelResource, null, null)
+  def apply(
+      objectType: ObjectType,
+      firstLevelResource: String,
+      catalog: Option[String]): AccessResource = {
+    apply(objectType, firstLevelResource, null, null, catalog = catalog)
   }
 
-  def apply(obj: PrivilegeObject, opType: OperationType): AccessResource = {
-    apply(ObjectType(obj, opType), obj.dbname, obj.objectName, obj.columns.mkString(","), obj.owner)
+  def apply(
+      obj: PrivilegeObject,
+      opType: OperationType): AccessResource = {
+    apply(
+      ObjectType(obj, opType),
+      obj.dbname,
+      obj.objectName,
+      obj.columns.mkString(","),
+      obj.owner,
+      obj.catalog)
   }
 }

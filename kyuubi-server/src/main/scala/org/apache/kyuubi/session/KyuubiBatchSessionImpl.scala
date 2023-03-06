@@ -17,20 +17,16 @@
 
 package org.apache.kyuubi.session
 
-import java.util.UUID
-
 import scala.collection.JavaConverters._
 
-import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.client.util.BatchUtils._
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
-import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
-import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.SessionType.SessionType
@@ -53,11 +49,24 @@ class KyuubiBatchSessionImpl(
     sessionManager) {
   override val sessionType: SessionType = SessionType.BATCH
 
-  override val handle: SessionHandle = recoveryMetadata.map { metadata =>
-    SessionHandle(UUID.fromString(metadata.identifier))
-  }.getOrElse(SessionHandle())
+  override val handle: SessionHandle = {
+    val batchId = recoveryMetadata.map(_.identifier).getOrElse(conf(KYUUBI_BATCH_ID_KEY))
+    SessionHandle.fromUUID(batchId)
+  }
 
   override def createTime: Long = recoveryMetadata.map(_.createTime).getOrElse(super.createTime)
+
+  override def getNoOperationTime: Long = {
+    if (batchJobSubmissionOp != null && !OperationState.isTerminal(
+        batchJobSubmissionOp.getStatus.state)) {
+      0L
+    } else {
+      super.getNoOperationTime
+    }
+  }
+
+  override val sessionIdleTimeoutThreshold: Long =
+    sessionManager.getConf.get(KyuubiConf.BATCH_SESSION_IDLE_TIMEOUT)
 
   // TODO: Support batch conf advisor
   override val normalizedConf: Map[String, String] = {
@@ -65,11 +74,18 @@ class KyuubiBatchSessionImpl(
       sessionManager.validateBatchConf(batchRequest.getConf.asScala.toMap)
   }
 
+  override lazy val name: Option[String] = Option(batchRequest.getName).orElse(
+    normalizedConf.get(KyuubiConf.SESSION_NAME.key))
+
+  // whether the resource file is from uploading
+  private[kyuubi] val isResourceUploaded: Boolean = batchRequest.getConf
+    .getOrDefault(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
+
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
       this,
       batchRequest.getBatchType,
-      batchRequest.getName,
+      name.orNull,
       batchRequest.getResource,
       batchRequest.getClassName,
       normalizedConf,
@@ -89,6 +105,7 @@ class KyuubiBatchSessionImpl(
   }
 
   private val sessionEvent = KyuubiSessionEvent(this)
+  recoveryMetadata.foreach(metadata => sessionEvent.engineId = metadata.engineId)
   EventBus.post(sessionEvent)
 
   override def getSessionEvent: Option[KyuubiSessionEvent] = {
@@ -100,18 +117,16 @@ class KyuubiBatchSessionImpl(
       batchRequest.getBatchType,
       normalizedConf,
       sessionManager.getConf)
-    if (batchRequest.getResource != SparkProcessBuilder.INTERNAL_RESOURCE) {
+    if (batchRequest.getResource != SparkProcessBuilder.INTERNAL_RESOURCE
+      && !isResourceUploaded) {
       KyuubiApplicationManager.checkApplicationAccessPath(
         batchRequest.getResource,
         sessionManager.getConf)
     }
   }
 
-  override def open(): Unit = {
-    MetricsSystem.tracing { ms =>
-      ms.incCount(CONN_TOTAL)
-      ms.incCount(MetricRegistry.name(CONN_OPEN, user))
-    }
+  override def open(): Unit = handleSessionException {
+    traceMetricsOnOpen()
 
     if (recoveryMetadata.isEmpty) {
       val metaData = Metadata(
@@ -124,29 +139,39 @@ class KyuubiBatchSessionImpl(
         state = OperationState.PENDING.toString,
         resource = batchRequest.getResource,
         className = batchRequest.getClassName,
-        requestName = batchRequest.getName,
+        requestName = name.orNull,
         requestConf = normalizedConf,
         requestArgs = batchRequest.getArgs.asScala,
         createTime = createTime,
         engineType = batchRequest.getBatchType,
         clusterManager = batchJobSubmissionOp.builder.clusterManager())
 
+      // there is a chance that operation failed w/ duplicated key error
       sessionManager.insertMetadata(metaData)
     }
 
     checkSessionAccessPathURIs()
 
-    // we should call super.open before running batch job submission operation
+    // create the operation root directory before running batch job submission operation
     super.open()
 
     runOperation(batchJobSubmissionOp)
+    sessionEvent.totalOperations += 1
+  }
+
+  private[kyuubi] def onEngineOpened(): Unit = {
+    if (sessionEvent.openedTime <= 0) {
+      sessionEvent.openedTime = batchJobSubmissionOp.appStartTime
+      EventBus.post(sessionEvent)
+    }
   }
 
   override def close(): Unit = {
     super.close()
+    batchJobSubmissionOp.close()
     waitMetadataRequestsRetryCompletion()
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)
-    MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
+    traceMetricsOnClose()
   }
 }

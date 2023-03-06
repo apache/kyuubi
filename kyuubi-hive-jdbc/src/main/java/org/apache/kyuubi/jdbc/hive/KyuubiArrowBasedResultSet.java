@@ -34,6 +34,7 @@ import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatchRow;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowUtils;
 
 /** Data independent base class which implements the common part of all Kyuubi result sets. */
+@SuppressWarnings("deprecation")
 public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
 
   protected Statement statement = null;
@@ -49,6 +50,7 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
   protected Schema arrowSchema;
   protected VectorSchemaRoot root;
   protected ArrowColumnarBatchRow row;
+  protected boolean timestampAsString = true;
 
   protected BufferAllocator allocator;
 
@@ -311,11 +313,18 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
       if (wasNull) {
         return null;
       } else {
-        return row.get(columnIndex - 1, columnType);
+        JdbcColumnAttributes attributes = columnAttributes.get(columnIndex - 1);
+        return row.get(
+            columnIndex - 1,
+            columnType,
+            attributes == null ? null : attributes.timeZone,
+            timestampAsString);
       }
     } catch (Exception e) {
-      e.printStackTrace();
-      throw new KyuubiSQLException("Unrecognized column type:", e);
+      throw new KyuubiSQLException(
+          String.format(
+              "Error getting row of type %s at column index %d", columnType, columnIndex - 1),
+          e);
     }
   }
 

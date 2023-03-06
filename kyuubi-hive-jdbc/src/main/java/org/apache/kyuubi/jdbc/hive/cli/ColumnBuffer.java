@@ -89,6 +89,7 @@ public class ColumnBuffer extends AbstractList<Object> {
     }
   }
 
+  @SuppressWarnings("unchecked")
   public ColumnBuffer(TTypeId type, BitSet nulls, Object values) {
     this.type = type;
     this.nulls = nulls;

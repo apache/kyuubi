@@ -21,6 +21,7 @@ import java.nio.file.Files
 import java.security.PrivilegedExceptionAction
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
 
 import org.apache.kyuubi.Utils
@@ -38,6 +39,7 @@ trait SparkSessionProvider {
   protected val sqlExtensions: String = ""
 
   protected val defaultTableOwner = "default_table_owner"
+  protected val extraSparkConf: SparkConf = new SparkConf()
 
   protected lazy val spark: SparkSession = {
     val metastore = {
@@ -55,6 +57,7 @@ trait SparkSessionProvider {
         Utils.createTempDir("spark-warehouse").toString)
       .config("spark.sql.extensions", sqlExtensions)
       .withExtensions(extension)
+      .config(extraSparkConf)
       .getOrCreate()
     if (catalogImpl == "hive") {
       // Ensure HiveExternalCatalog.client.userName is defaultTableOwner
@@ -67,5 +70,29 @@ trait SparkSessionProvider {
   }
 
   protected val sql: String => DataFrame = spark.sql
+
+  protected def doAs[T](user: String, f: => T): T = {
+    UserGroupInformation.createRemoteUser(user).doAs[T](
+      new PrivilegedExceptionAction[T] {
+        override def run(): T = f
+      })
+  }
+  protected def withCleanTmpResources[T](res: Seq[(String, String)])(f: => T): T = {
+    try {
+      f
+    } finally {
+      res.foreach {
+        case (t, "table") => doAs("admin", sql(s"DROP TABLE IF EXISTS $t"))
+        case (db, "database") => doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
+        case (fn, "function") => doAs("admin", sql(s"DROP FUNCTION IF EXISTS $fn"))
+        case (view, "view") => doAs("admin", sql(s"DROP VIEW IF EXISTS $view"))
+        case (cacheTable, "cache") => if (isSparkV32OrGreater) {
+            doAs("admin", sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
+          }
+        case (_, e) =>
+          throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
+      }
+    }
+  }
 
 }

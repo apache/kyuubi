@@ -19,28 +19,41 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.io.{BufferedReader, File, FilenameFilter, FileOutputStream, InputStreamReader, PrintWriter}
 import java.lang.ProcessBuilder.Redirect
+import java.net.URI
 import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReentrantLock
+import javax.ws.rs.core.UriBuilder
 
 import scala.collection.JavaConverters._
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.lang3.StringUtils
+import org.apache.spark.SparkFiles
 import org.apache.spark.api.python.KyuubiPythonGatewayServer
-import org.apache.spark.sql.{Row, RuntimeConfig}
+import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
-import org.apache.kyuubi.operation.ArrayFetchIterator
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
+import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 class ExecutePython(
     session: Session,
     override val statement: String,
+    override val shouldRunAsync: Boolean,
+    queryTimeout: Long,
     worker: SessionPythonWorker) extends SparkOperation(session) {
+
+  private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
+  override protected def supportProgress: Boolean = true
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -54,38 +67,106 @@ class ExecutePython(
     }
   }
 
-  override protected def runInternal(): Unit = withLocalProperties {
-    val response = worker.runCode(statement)
-    val output = response.map(_.content.getOutput()).getOrElse("")
-    val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
-    val ename = response.map(_.content.getEname()).getOrElse("")
-    val evalue = response.map(_.content.getEvalue()).getOrElse("")
-    val traceback = response.map(_.content.getTraceback()).getOrElse(Array.empty)
-    iter =
-      new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
+  override protected def beforeRun(): Unit = {
+    OperationLog.setCurrentOperationLog(operationLog)
+    setState(OperationState.PENDING)
+    setHasResultSet(true)
   }
 
-  override protected def withLocalProperties[T](f: => T): T = {
-    val setSparkLocalProperties = (key: String, value: String) => {
-      worker.runCode(s"spark.sparkContext.setLocalProperty('$key', '$value')")
-    }
+  override protected def afterRun(): Unit = {
+    OperationLog.removeCurrentOperationLog()
+  }
+
+  private def executePython(): Unit = withLocalProperties {
     try {
-      worker.runCode("spark.sparkContext.setJobGroup" +
-        s"($statementId, $redactedStatement, $forceCancel)")
-      setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, session.user)
-      setSparkLocalProperties(KYUUBI_STATEMENT_ID_KEY, statementId)
+      setState(OperationState.RUNNING)
+      info(diagnostics)
+      addOperationListener()
+      val response = worker.runCode(statement)
+      val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
+      if (PythonResponse.OK_STATUS.equalsIgnoreCase(status)) {
+        val output = response.map(_.content.getOutput()).getOrElse("")
+        val ename = response.map(_.content.getEname()).getOrElse("")
+        val evalue = response.map(_.content.getEvalue()).getOrElse("")
+        val traceback = response.map(_.content.getTraceback()).getOrElse(Seq.empty)
+        iter =
+          new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, traceback)))
+        setState(OperationState.FINISHED)
+      } else {
+        throw KyuubiSQLException(s"Interpret error:\n$statement\n $response")
+      }
+    } catch {
+      onError(cancel = true)
+    } finally {
+      shutdownTimeoutMonitor()
+    }
+  }
+
+  override protected def runInternal(): Unit = {
+    addTimeoutMonitor(queryTimeout)
+    if (shouldRunAsync) {
+      val asyncOperation = new Runnable {
+        override def run(): Unit = {
+          OperationLog.setCurrentOperationLog(operationLog)
+          executePython()
+        }
+      }
+
+      try {
+        val sparkSQLSessionManager = session.sessionManager
+        val backgroundHandle = sparkSQLSessionManager.submitBackgroundOperation(asyncOperation)
+        setBackgroundHandle(backgroundHandle)
+      } catch {
+        case rejected: RejectedExecutionException =>
+          setState(OperationState.ERROR)
+          val ke =
+            KyuubiSQLException("Error submitting python in background", rejected)
+          setOperationException(ke)
+          throw ke
+      }
+    } else {
+      executePython()
+    }
+  }
+
+  override def setSparkLocalProperty: (String, String) => Unit =
+    (key: String, value: String) => {
+      val valueStr = if (value == null) "None" else s"'$value'"
+      worker.runCode(s"spark.sparkContext.setLocalProperty('$key', $valueStr)", internal = true)
+      ()
+    }
+
+  override protected def withLocalProperties[T](f: => T): T = {
+    try {
+      // to prevent the transferred set job group python code broken
+      val jobDesc = s"Python statement: $statementId"
+      // for python, the boolean value is capitalized
+      val pythonForceCancel = if (forceCancel) "True" else "False"
+      worker.runCode(
+        "spark.sparkContext.setJobGroup" +
+          s"('$statementId', '$jobDesc', $pythonForceCancel)",
+        internal = true)
+      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
+      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
       schedulerPool match {
         case Some(pool) =>
-          setSparkLocalProperties(SPARK_SCHEDULER_POOL_KEY, pool)
+          setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
         case None =>
+      }
+      if (isSessionUserSignEnabled) {
+        setSessionUserSign()
       }
 
       f
     } finally {
-      setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, "")
-      setSparkLocalProperties(KYUUBI_STATEMENT_ID_KEY, "")
-      setSparkLocalProperties(SPARK_SCHEDULER_POOL_KEY, "")
-      worker.runCode("spark.sparkContext.clearJobGroup()")
+      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, "")
+      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, "")
+      setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, "")
+      // using cancelJobGroup for pyspark, see details in pyspark/context.py
+      worker.runCode(s"spark.sparkContext.cancelJobGroup('$statementId')", internal = true)
+      if (isSessionUserSignEnabled) {
+        clearSessionUserSign()
+      }
     }
   }
 }
@@ -97,15 +178,42 @@ case class SessionPythonWorker(
   private val stdin: PrintWriter = new PrintWriter(workerProcess.getOutputStream)
   private val stdout: BufferedReader =
     new BufferedReader(new InputStreamReader(workerProcess.getInputStream), 1)
+  private val lock = new ReentrantLock()
 
-  def runCode(code: String): Option[PythonResponse] = {
+  private def withLockRequired[T](block: => T): T = {
+    try {
+      lock.lock()
+      block
+    } finally lock.unlock()
+  }
+
+  /**
+   * Run the python code and return the response. This method maybe invoked internally,
+   * such as setJobGroup and cancelJobGroup, if the internal python code is not formatted correctly,
+   * it might impact the correctness and even cause result out of sequence. To prevent that,
+   * please make sure the internal python code simple and set internal flag, to be aware of the
+   * internal python code failure.
+   *
+   * @param code the python code
+   * @param internal whether is internal python code
+   * @return the python response
+   */
+  def runCode(code: String, internal: Boolean = false): Option[PythonResponse] = withLockRequired {
+    if (!workerProcess.isAlive) {
+      throw KyuubiSQLException("Python worker process has been exited, please check the error log" +
+        " and re-create the session to run python code.")
+    }
     val input = ExecutePython.toJson(Map("code" -> code, "cmd" -> "run_code"))
     // scalastyle:off println
     stdin.println(input)
     // scalastyle:on
     stdin.flush()
-    Option(stdout.readLine())
-      .map(ExecutePython.fromJson[PythonResponse](_))
+    val pythonResponse = Option(stdout.readLine()).map(ExecutePython.fromJson[PythonResponse](_))
+    // throw exception if internal python code fail
+    if (internal && !pythonResponse.map(_.content.status).contains(PythonResponse.OK_STATUS)) {
+      throw KyuubiSQLException(s"Internal python code $code failure: $pythonResponse")
+    }
+    pythonResponse
   }
 
   def close(): Unit = {
@@ -123,9 +231,14 @@ case class SessionPythonWorker(
 }
 
 object ExecutePython extends Logging {
+  final val DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT = "__kyuubi_spark_python_home__"
+  final val DEFAULT_SPARK_PYTHON_ENV_ARCHIVE_FRAGMENT = "__kyuubi_spark_python_env__"
+  final val PY4J_REGEX = "py4j-[\\S]*.zip$".r
+  final val PY4J_PATH = "PY4J_PATH"
+  final val IS_PYTHON_APP_KEY = "spark.yarn.isPython"
 
   private val isPythonGatewayStart = new AtomicBoolean(false)
-  private val kyuubiPythonPath = Files.createTempDirectory("")
+  private val kyuubiPythonPath = Utils.createTempDir()
   def init(): Unit = {
     if (!isPythonGatewayStart.get()) {
       synchronized {
@@ -139,13 +252,14 @@ object ExecutePython extends Logging {
     }
   }
 
-  def createSessionPythonWorker(conf: RuntimeConfig): SessionPythonWorker = {
+  def createSessionPythonWorker(spark: SparkSession, session: Session): SessionPythonWorker = {
+    val sessionId = session.handle.identifier.toString
     val pythonExec = StringUtils.firstNonBlank(
-      conf.getOption("spark.pyspark.driver.python").orNull,
-      conf.getOption("spark.pyspark.python").orNull,
+      spark.conf.getOption("spark.pyspark.driver.python").orNull,
+      spark.conf.getOption("spark.pyspark.python").orNull,
       System.getenv("PYSPARK_DRIVER_PYTHON"),
       System.getenv("PYSPARK_PYTHON"),
-      "python3")
+      getSparkPythonExecFromArchive(spark, session).getOrElse("python3"))
 
     val builder = new ProcessBuilder(Seq(
       pythonExec,
@@ -155,7 +269,19 @@ object ExecutePython extends Logging {
       .split(File.pathSeparator)
       .++(ExecutePython.kyuubiPythonPath.toString)
     env.put("PYTHONPATH", pythonPath.mkString(File.pathSeparator))
-    env.put("SPARK_HOME", sys.env.getOrElse("SPARK_HOME", defaultSparkHome()))
+    // try to find py4j lib from `PYTHONPATH` and set env `PY4J_PATH` into process if found
+    pythonPath.mkString(File.pathSeparator)
+      .split(File.pathSeparator)
+      .find(PY4J_REGEX.findFirstMatchIn(_).nonEmpty)
+      .foreach(env.put(PY4J_PATH, _))
+    if (!spark.sparkContext.getConf.getBoolean(IS_PYTHON_APP_KEY, false)) {
+      env.put(
+        "SPARK_HOME",
+        sys.env.getOrElse(
+          "SPARK_HOME",
+          getSparkPythonHomeFromArchive(spark, session).getOrElse(defaultSparkHome)))
+    }
+    env.put("KYUUBI_SPARK_SESSION_UUID", sessionId)
     env.put("PYTHON_GATEWAY_CONNECTION_INFO", KyuubiPythonGatewayServer.CONNECTION_FILE_PATH)
     logger.info(
       s"""
@@ -165,11 +291,44 @@ object ExecutePython extends Logging {
          |""".stripMargin)
     builder.redirectError(Redirect.PIPE)
     val process = builder.start()
-    SessionPythonWorker(startStderrSteamReader(process), startWatcher(process), process)
+    SessionPythonWorker(
+      startStderrSteamReader(process, sessionId),
+      startWatcher(process, sessionId),
+      process)
+  }
+
+  def getSparkPythonExecFromArchive(spark: SparkSession, session: Session): Option[String] = {
+    val pythonEnvArchive = spark.conf.getOption(ENGINE_SPARK_PYTHON_ENV_ARCHIVE.key)
+      .orElse(session.sessionManager.getConf.get(ENGINE_SPARK_PYTHON_ENV_ARCHIVE))
+    val pythonEnvExecPath = spark.conf.getOption(ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH.key)
+      .getOrElse(session.sessionManager.getConf.get(ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH))
+    pythonEnvArchive.map {
+      archive =>
+        var uri = new URI(archive)
+        if (uri.getFragment == null) {
+          uri = UriBuilder.fromUri(uri).fragment(DEFAULT_SPARK_PYTHON_ENV_ARCHIVE_FRAGMENT).build()
+        }
+        spark.sparkContext.addArchive(uri.toString)
+        Paths.get(SparkFiles.get(uri.getFragment), pythonEnvExecPath)
+    }.find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
+  }
+
+  def getSparkPythonHomeFromArchive(spark: SparkSession, session: Session): Option[String] = {
+    val pythonHomeArchive = spark.conf.getOption(ENGINE_SPARK_PYTHON_HOME_ARCHIVE.key)
+      .orElse(session.sessionManager.getConf.get(ENGINE_SPARK_PYTHON_HOME_ARCHIVE))
+    pythonHomeArchive.map {
+      archive =>
+        var uri = new URI(archive)
+        if (uri.getFragment == null) {
+          uri = UriBuilder.fromUri(uri).fragment(DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT).build()
+        }
+        spark.sparkContext.addArchive(uri.toString)
+        Paths.get(SparkFiles.get(uri.getFragment))
+    }.find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
   }
 
   // for test
-  def defaultSparkHome(): String = {
+  def defaultSparkHome: String = {
     val homeDirFilter: FilenameFilter = (dir: File, name: String) =>
       dir.isDirectory && name.contains("spark-") && !name.contains("-engine")
     // get from kyuubi-server/../externals/kyuubi-download/target
@@ -184,11 +343,11 @@ object ExecutePython extends Logging {
       }
   }
 
-  private def startStderrSteamReader(process: Process): Thread = {
-    val stderrThread = new Thread("process stderr thread") {
+  private def startStderrSteamReader(process: Process, sessionId: String): Thread = {
+    val stderrThread = new Thread(s"session[$sessionId] process stderr thread") {
       override def run(): Unit = {
         val lines = scala.io.Source.fromInputStream(process.getErrorStream).getLines()
-        lines.foreach(logger.error)
+        lines.filter(_.trim.nonEmpty).foreach(logger.error)
       }
     }
     stderrThread.setDaemon(true)
@@ -196,12 +355,16 @@ object ExecutePython extends Logging {
     stderrThread
   }
 
-  def startWatcher(process: Process): Thread = {
-    val processWatcherThread = new Thread("process watcher thread") {
+  def startWatcher(process: Process, sessionId: String): Thread = {
+    val processWatcherThread = new Thread(s"session[$sessionId] process watcher thread") {
       override def run(): Unit = {
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-          logger.error(f"Process has died with $exitCode")
+        try {
+          val exitCode = process.waitFor()
+          if (exitCode != 0) {
+            logger.error(f"Process has died with $exitCode")
+          }
+        } catch {
+          case _: InterruptedException => logger.warn("Process has been interrupted")
         }
       }
     }
@@ -247,11 +410,15 @@ case class PythonResponse(
     msg_type: String,
     content: PythonResponseContent)
 
+object PythonResponse {
+  final val OK_STATUS = "ok"
+}
+
 case class PythonResponseContent(
     data: Map[String, String],
     ename: String,
     evalue: String,
-    traceback: Array[String],
+    traceback: Seq[String],
     status: String) {
   def getOutput(): String = {
     Option(data)
@@ -264,7 +431,7 @@ case class PythonResponseContent(
   def getEvalue(): String = {
     Option(evalue).getOrElse("")
   }
-  def getTraceback(): Array[String] = {
-    Option(traceback).getOrElse(Array.empty)
+  def getTraceback(): Seq[String] = {
+    Option(traceback).getOrElse(Seq.empty)
   }
 }

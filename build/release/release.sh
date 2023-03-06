@@ -23,7 +23,7 @@ set -x
 
 ASF_USERNAME=${ASF_USERNAME:?"ASF_USERNAME is required"}
 ASF_PASSWORD=${ASF_PASSWORD:?"ASF_PASSWORD is required"}
-RELEASE_VERSION=${RELEASE_VERSION:?"RELEASE_VERSION is required, e.g. 1.4.0-incubating"}
+RELEASE_VERSION=${RELEASE_VERSION:?"RELEASE_VERSION is required, e.g. 1.7.0"}
 RELEASE_RC_NO=${RELEASE_RC_NO:?"RELEASE_RC_NO is required, e.g. 0"}
 
 exit_with_usage() {
@@ -37,7 +37,7 @@ Top level targets are:
 
 All other inputs are environment variables
 
-RELEASE_VERSION - Release version, must match pom.xml and not be SNAPSHOT (e.g. 1.3.0-incubating)
+RELEASE_VERSION - Release version, must match pom.xml and not be SNAPSHOT (e.g. 1.7.0)
 RELEASE_RC_NO   - Release RC number, (e.g. 0)
 
 ASF_USERNAME - Username of ASF committer account
@@ -54,8 +54,8 @@ fi
 
 RELEASE_TAG="v${RELEASE_VERSION}-rc${RELEASE_RC_NO}"
 
-SVN_STAGING_REPO="https://dist.apache.org/repos/dist/dev/incubator/kyuubi"
-SVN_RELEASE_REPO="https://dist.apache.org/repos/dist/release/incubator/kyuubi"
+SVN_STAGING_REPO="https://dist.apache.org/repos/dist/dev/kyuubi"
+SVN_RELEASE_REPO="https://dist.apache.org/repos/dist/release/kyuubi"
 
 KYUUBI_DIR="$(cd "$(dirname "$0")"/../..; pwd)"
 RELEASE_DIR="${KYUUBI_DIR}/work/release"
@@ -85,7 +85,7 @@ upload_svn_staging() {
 
   svn add "${SVN_STAGING_DIR}/${RELEASE_TAG}"
 
-  echo "Uploading release tarballs to ${SVN_STAGING_DIR}/${RELEASE_TAG}"
+  echo "Uploading release tarballs to ${SVN_STAGING_REPO}/${RELEASE_TAG}"
   (
     cd "${SVN_STAGING_DIR}" && \
     svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Apache Kyuubi ${RELEASE_TAG}"
@@ -94,8 +94,6 @@ upload_svn_staging() {
 }
 
 upload_nexus_staging() {
-  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided \
-    -s "${KYUUBI_DIR}/build/release/asf-settings.xml"
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.1 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
     -pl extensions/spark/kyuubi-extension-spark-3-1 -am
@@ -103,8 +101,7 @@ upload_nexus_staging() {
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
     -pl extensions/spark/kyuubi-extension-spark-3-2 -am
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.3 \
-    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
-    -pl extensions/spark/kyuubi-extension-spark-3-3 -am
+    -s "${KYUUBI_DIR}/build/release/asf-settings.xml"
 }
 
 finalize_svn() {

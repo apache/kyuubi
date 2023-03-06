@@ -38,6 +38,9 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
   override protected def kerberosTgtJdbcUrl: String =
     jdbcUrl.stripSuffix(";") + s";principal=$testSpnegoPrincipal"
 
+  override protected def kerberosTgtJdbcUrlUsingAlias: String =
+    jdbcUrl.stripSuffix(";") + s";kyuubiServerPrincipal=$testSpnegoPrincipal"
+
   override protected lazy val conf: KyuubiConf = {
     val config = new Configuration()
     val authType = "hadoop.security.authentication"
@@ -50,7 +53,7 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
       .set(KyuubiConf.SERVER_KEYTAB, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
       .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
-      .set(KyuubiConf.AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_BASE_DN, ldapBaseDn.head)
       .set(
         KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)

@@ -1,20 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Kyuubi Architecture
 
@@ -108,7 +107,7 @@ and these applications can be placed in different shared domains for other conne
 Kyuubi does not occupy any resources from the Cluster Manager(e.g. Yarn) during startup and will give all resources back if there
 is not any active session interacting with a `SparkContext`.
 
-Spark also provides [Dynamic Resource Allocation](http://spark.apache.org/docs/latest/job-scheduling.html#dynamic-resource-allocation) to dynamically adjust the resources your application occupies based on the workload. It means
+Spark also provides [Dynamic Resource Allocation](https://spark.apache.org/docs/latest/job-scheduling.html#dynamic-resource-allocation) to dynamically adjust the resources your application occupies based on the workload. It means
 that your application may give resources back to the cluster if they are no longer used and request them again later when
 there is demand. This feature is handy if multiple applications share resources in your Spark cluster.
 
@@ -132,7 +131,6 @@ If the user named `tom` opens a connection like above, Kyuubi will try to create
 On the one hand, because tom enables Spark's dynamic resource request feature,
 Spark will efficiently request and recycle executors within the program based on the SQL operations scale and the available resources in the queue.
 On the other hand, when Kyuubi finds that the application has been idle for too long, it will also recycle its application.
-
 
 ## High Availability & Load Balance
 
@@ -174,5 +172,5 @@ We also create a [Submarine: Spark Security](https://mvnrepository.com/artifact/
 
 ## Conclusions
 
-Kyuubi is a unified multi-tenant JDBC interface for large-scale data processing and analytics, built on top of [Apache Spark™](http://spark.apache.org/).
+Kyuubi is a unified multi-tenant JDBC interface for large-scale data processing and analytics, built on top of [Apache Spark™](https://spark.apache.org/).
 It extends the Spark Thrift Server's scenarios in enterprise applications, the most important of which is multi-tenancy support.

@@ -24,11 +24,10 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetResultSetMetadataReq, TOpenSessionReq, TStatusCode}
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.util.SparkVersionUtil.isSparkVersionAtLeast
 
 trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
 
@@ -52,7 +51,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
   test("execute statement - select with variable substitution") {
     assume(!httpMode)
 
-    withThriftClient { client =>
+    withThriftClientAndConnectionConf { (client, connectionConf) =>
       val req = new TOpenSessionReq()
       req.setUsername("chengpan")
       req.setPassword("123")
@@ -62,7 +61,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
         "set:hivevar:b" -> "y",
         "set:metaconf:c" -> "z",
         "set:system:s" -> "s")
-      req.setConfiguration(conf.asJava)
+      req.setConfiguration((conf ++ connectionConf).asJava)
       val tOpenSessionResp = client.OpenSession(req)
       val status = tOpenSessionResp.getStatus
       assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
@@ -187,7 +186,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
     withJdbcStatement("t") { statement =>
       try {
         val assertTableOrViewNotfound: (Exception, String) => Unit = (e, tableName) => {
-          if (isSparkVersionAtLeast("3.4")) {
+          if (SPARK_ENGINE_RUNTIME_VERSION >= "3.4") {
             assert(e.getMessage.contains("[TABLE_OR_VIEW_NOT_FOUND]"))
             assert(e.getMessage.contains(s"The table or view `$tableName` cannot be found."))
           } else {
@@ -407,6 +406,42 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
         assert(result.next())
         assert(result.getInt(1) === 1)
       }
+    }
+  }
+
+  test("operation metadata hint - __kyuubi_operation_result_format__") {
+    assume(!httpMode)
+    withSessionHandle { (client, handle) =>
+      def checkStatusAndResultSetFormatHint(
+          sql: String,
+          expectedFormat: String): Unit = {
+        val stmtReq = new TExecuteStatementReq()
+        stmtReq.setSessionHandle(handle)
+        stmtReq.setStatement(sql)
+        val tExecuteStatementResp = client.ExecuteStatement(stmtReq)
+        val opHandle = tExecuteStatementResp.getOperationHandle
+        waitForOperationToComplete(client, opHandle)
+        val metaReq = new TGetResultSetMetadataReq(opHandle)
+        val resp = client.GetResultSetMetadata(metaReq)
+        assert(resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
+        val expectedResultSetForamtHint = s"__kyuubi_operation_result_format__=$expectedFormat"
+        assert(resp.getStatus.getInfoMessages.contains(expectedResultSetForamtHint))
+      }
+      checkStatusAndResultSetFormatHint(
+        sql = "SELECT 1",
+        expectedFormat = "thrift")
+      checkStatusAndResultSetFormatHint(
+        sql = "set kyuubi.operation.result.format=arrow",
+        expectedFormat = "thrift")
+      checkStatusAndResultSetFormatHint(
+        sql = "SELECT 1",
+        expectedFormat = "arrow")
+      checkStatusAndResultSetFormatHint(
+        sql = "set kyuubi.operation.result.format=thrift",
+        expectedFormat = "arrow")
+      checkStatusAndResultSetFormatHint(
+        sql = "set kyuubi.operation.result.format",
+        expectedFormat = "thrift")
     }
   }
 }

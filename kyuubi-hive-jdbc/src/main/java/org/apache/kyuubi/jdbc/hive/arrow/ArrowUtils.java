@@ -79,6 +79,8 @@ public class ArrowUtils {
         if (jdbcColumnAttributes != null) {
           return ArrowType.Decimal.createDecimal(
               jdbcColumnAttributes.precision, jdbcColumnAttributes.scale, null);
+        } else {
+          throw new IllegalStateException("Missing precision and scale where it is mandatory.");
         }
       case DATE_TYPE:
         return new ArrowType.Date(DateUnit.DAY);

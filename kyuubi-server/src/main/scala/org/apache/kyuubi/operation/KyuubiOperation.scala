@@ -26,6 +26,8 @@ import org.apache.thrift.TException
 import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_OPERATION_HANDLE_KEY
+import org.apache.kyuubi.events.{EventBus, KyuubiOperationEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_STATE, OPERATION_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -45,6 +47,8 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   protected[operation] lazy val client = session.asInstanceOf[KyuubiSessionImpl].client
 
+  protected val operationHandleConf = Map(KYUUBI_OPERATION_HANDLE_KEY -> handle.identifier.toString)
+
   @volatile protected var _remoteOpHandle: TOperationHandle = _
 
   def remoteOpHandle(): TOperationHandle = _remoteOpHandle
@@ -57,7 +61,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     case e: Throwable =>
       state.synchronized {
         if (isTerminalState(state)) {
-          warn(s"Ignore exception in terminal state with $statementId: $e")
+          warn(s"Ignore exception in terminal state with $statementId", e)
         } else {
           val errorType = e.getClass.getSimpleName
           MetricsSystem.tracing(_.incCount(
@@ -141,7 +145,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     }
   }
 
-  override def getResultSetSchema: TTableSchema = {
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
     if (_remoteOpHandle == null) {
       val tColumnDesc = new TColumnDesc()
       tColumnDesc.setColumnName("Result")
@@ -151,7 +155,10 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
       tColumnDesc.setPosition(0)
       val schema = new TTableSchema()
       schema.addToColumns(tColumnDesc)
-      schema
+      val resp = new TGetResultSetMetadataResp
+      resp.setSchema(schema)
+      resp.setStatus(OK_STATUS)
+      resp
     } else {
       client.getResultSetMetadata(_remoteOpHandle)
     }
@@ -166,12 +173,19 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   override def shouldRunAsync: Boolean = false
 
+  protected def eventEnabled: Boolean = false
+
+  if (eventEnabled) EventBus.post(KyuubiOperationEvent(this))
+
   override def setState(newState: OperationState): Unit = {
     MetricsSystem.tracing { ms =>
-      ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase), -1)
+      if (!OperationState.isTerminal(state)) {
+        ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase), -1)
+      }
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, newState.toString.toLowerCase))
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, newState.toString.toLowerCase))
     }
     super.setState(newState)
+    if (eventEnabled) EventBus.post(KyuubiOperationEvent(this))
   }
 }

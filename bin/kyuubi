@@ -30,6 +30,7 @@ function usage() {
   echo "    -h | --help  - Show this help message"
 }
 
+# shellcheck disable=SC2199
 if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
   usage
   exit 0
@@ -48,6 +49,7 @@ function kyuubi_rotate_log() {
     num=${KYUUBI_MAX_LOG_FILES}
   else
     echo "Error: KYUUBI_MAX_LOG_FILES must be a positive number, but got ${KYUUBI_MAX_LOG_FILES}"
+    # shellcheck disable=SC2242
     exit -1
   fi
 
@@ -85,10 +87,18 @@ if [[ -z "$KYUUBI_JAR_DIR" ]]; then
   fi
 fi
 
-if [[ -z ${YARN_CONF_DIR} ]]; then
-  KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}:${HADOOP_CONF_DIR}"
-else
-  KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}:${HADOOP_CONF_DIR}:${YARN_CONF_DIR}"
+## Find the WebUI dist
+if [[ -z "$KYUUBI_WEBUI_DIR" ]]; then
+  KYUUBI_WEBUI_DIR="$KYUUBI_HOME/web-ui"
+  if [[ ! -d ${KYUUBI_WEBUI_DIR} ]]; then
+  echo -e "\nCandidate Kyuubi WebUI dist $KYUUBI_WEBUI_DIR doesn't exist, searching development environment..."
+    KYUUBI_WEBUI_DIR="$KYUUBI_HOME/kyuubi-server/web-ui"
+  fi
+fi
+
+KYUUBI_CLASSPATH="${KYUUBI_CONF_DIR}:${KYUUBI_WEBUI_DIR}:${KYUUBI_JAR_DIR}/*:${HADOOP_CONF_DIR}"
+if [[ -n ${YARN_CONF_DIR} ]]; then
+  KYUUBI_CLASSPATH="${KYUUBI_CLASSPATH}:${YARN_CONF_DIR}"
 fi
 
 cmd="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS"

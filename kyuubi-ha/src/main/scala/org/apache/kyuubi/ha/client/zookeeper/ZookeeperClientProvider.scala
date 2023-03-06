@@ -22,6 +22,7 @@ import javax.security.auth.login.Configuration
 
 import scala.util.Random
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.retry._
 import org.apache.hadoop.security.UserGroupInformation
@@ -30,8 +31,7 @@ import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManage
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.AuthTypes
-import org.apache.kyuubi.ha.client.RetryPolicies
+import org.apache.kyuubi.ha.client.{AuthTypes, RetryPolicies}
 import org.apache.kyuubi.ha.client.RetryPolicies._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
@@ -109,7 +109,7 @@ object ZookeeperClientProvider extends Logging {
       val kerberized = maybePrincipal.isDefined && keyTabFile.isDefined
       if (UserGroupInformation.isSecurityEnabled && kerberized) {
         if (!new File(keyTabFile.get).exists()) {
-          throw new IOException(s"${HA_ZK_AUTH_KEYTAB.key} does not exists")
+          throw new IOException(s"${HA_ZK_AUTH_KEYTAB.key}: $keyTabFile does not exists")
         }
         System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
         var principal = maybePrincipal.get
@@ -129,7 +129,8 @@ object ZookeeperClientProvider extends Logging {
 
   }
 
-  private def getKeyTabFile(conf: KyuubiConf): Option[String] = {
+  @VisibleForTesting
+  def getKeyTabFile(conf: KyuubiConf): Option[String] = {
     val zkAuthKeytab = conf.get(HA_ZK_AUTH_KEYTAB)
     if (zkAuthKeytab.isDefined) {
       val zkAuthKeytabPath = zkAuthKeytab.get

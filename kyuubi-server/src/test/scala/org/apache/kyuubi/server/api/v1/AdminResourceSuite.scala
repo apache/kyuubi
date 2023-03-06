@@ -18,16 +18,22 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.util.{Base64, UUID}
+import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{GenericType, MediaType}
 
+import scala.collection.JavaConverters._
+
+import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, RestFrontendTestHelper, Utils}
-import org.apache.kyuubi.client.api.v1.dto.Engine
+import org.apache.kyuubi.client.api.v1.dto.{Engine, SessionData, SessionHandle, SessionOpenRequest}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
 import org.apache.kyuubi.engine.{ApplicationState, EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, USER}
+import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryPaths
@@ -36,6 +42,9 @@ import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHOR
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   private val engineMgr = new KyuubiApplicationManager()
+
+  override protected lazy val conf: KyuubiConf = KyuubiConf()
+    .set(KyuubiConf.SERVER_ADMINISTRATORS, Seq("admin001"))
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -64,6 +73,138 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .post(null)
     assert(200 == response.getStatus)
+
+    val admin001AuthHeader = new String(
+      Base64.getEncoder.encode("admin001".getBytes()),
+      "UTF-8")
+    response = webTarget.path("api/v1/admin/refresh/hadoop_conf")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $admin001AuthHeader")
+      .post(null)
+    assert(200 == response.getStatus)
+
+    val admin002AuthHeader = new String(
+      Base64.getEncoder.encode("admin002".getBytes()),
+      "UTF-8")
+    response = webTarget.path("api/v1/admin/refresh/hadoop_conf")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $admin002AuthHeader")
+      .post(null)
+    assert(405 == response.getStatus)
+  }
+
+  test("refresh user defaults config of the kyuubi server") {
+    var response = webTarget.path("api/v1/admin/refresh/user_defaults_conf")
+      .request()
+      .post(null)
+    assert(405 == response.getStatus)
+
+    val adminUser = Utils.currentUser
+    val encodeAuthorization = new String(
+      Base64.getEncoder.encode(
+        s"$adminUser:".getBytes()),
+      "UTF-8")
+    response = webTarget.path("api/v1/admin/refresh/user_defaults_conf")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .post(null)
+    assert(200 == response.getStatus)
+  }
+
+  test("refresh unlimited users of the kyuubi server") {
+    var response = webTarget.path("api/v1/admin/refresh/unlimited_users")
+      .request()
+      .post(null)
+    assert(405 == response.getStatus)
+
+    val adminUser = Utils.currentUser
+    val encodeAuthorization = new String(
+      Base64.getEncoder.encode(
+        s"$adminUser:".getBytes()),
+      "UTF-8")
+    response = webTarget.path("api/v1/admin/refresh/unlimited_users")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .post(null)
+    assert(200 == response.getStatus)
+  }
+
+  test("list/close sessions") {
+    val requestObj = new SessionOpenRequest(
+      1,
+      Map("testConfig" -> "testValue").asJava)
+
+    var response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+
+    val adminUser = Utils.currentUser
+    val encodeAuthorization = new String(
+      Base64.getEncoder.encode(
+        s"$adminUser:".getBytes()),
+      "UTF-8")
+
+    // get session list
+    var response2 = webTarget.path("api/v1/admin/sessions").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    assert(200 == response2.getStatus)
+    val sessions1 = response2.readEntity(new GenericType[Seq[SessionData]]() {})
+    assert(sessions1.nonEmpty)
+    assert(sessions1.head.getConf.get(KYUUBI_SESSION_CONNECTION_URL_KEY) === fe.connectionUrl)
+
+    // close an opened session
+    val sessionHandle = response.readEntity(classOf[SessionHandle]).getIdentifier
+    response = webTarget.path(s"api/v1/admin/sessions/$sessionHandle").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .delete()
+    assert(200 == response.getStatus)
+
+    // get session list again
+    response2 = webTarget.path("api/v1/admin/sessions").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    assert(200 == response2.getStatus)
+    val sessions2 = response2.readEntity(classOf[Seq[SessionData]])
+    assert(sessions2.isEmpty)
+  }
+
+  test("list/close operations") {
+    val sessionHandle = fe.be.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+    val operation = fe.be.getCatalogs(sessionHandle)
+
+    val adminUser = Utils.currentUser
+    val encodeAuthorization = new String(
+      Base64.getEncoder.encode(
+        s"$adminUser:".getBytes()),
+      "UTF-8")
+
+    // list operations
+    var response = webTarget.path("api/v1/admin/operations").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    assert(200 == response.getStatus)
+    var operations = response.readEntity(new GenericType[Seq[KyuubiOperationEvent]]() {})
+    assert(operations.nonEmpty)
+    assert(operations.map(op => op.statementId).contains(operation.identifier.toString))
+
+    // close operation
+    response = webTarget.path(s"api/v1/admin/operations/${operation.identifier}").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .delete()
+    assert(200 == response.getStatus)
+
+    // list again
+    response = webTarget.path("api/v1/admin/operations").request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    operations = response.readEntity(new GenericType[Seq[KyuubiOperationEvent]]() {})
+    assert(!operations.map(op => op.statementId).contains(operation.identifier.toString))
   }
 
   test("delete engine - user share level") {
@@ -73,12 +214,12 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
-    val engine = new EngineRef(conf.clone, Utils.currentUser, id, null)
+    val engine = new EngineRef(conf.clone, Utils.currentUser, "grp", id, null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
       Utils.currentUser,
-      Array("default"))
+      "default")
 
     withDiscoveryClient(conf) { client =>
       engine.getOrCreate(client)
@@ -120,11 +261,11 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
 
     val id = UUID.randomUUID().toString
-    val engine = new EngineRef(conf.clone, Utils.currentUser, id, null)
+    val engine = new EngineRef(conf.clone, Utils.currentUser, "grp", id, null)
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
       Utils.currentUser,
-      Array(id))
+      id)
 
     withDiscoveryClient(conf) { client =>
       engine.getOrCreate(client)
@@ -156,12 +297,12 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
-    val engine = new EngineRef(conf.clone, Utils.currentUser, id, null)
+    val engine = new EngineRef(conf.clone, Utils.currentUser, id, "grp", null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
       Utils.currentUser,
-      Array(""))
+      "")
 
     withDiscoveryClient(conf) { client =>
       engine.getOrCreate(client)
@@ -205,21 +346,21 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
       Utils.currentUser,
-      Array(""))
+      "")
 
     val id1 = UUID.randomUUID().toString
-    val engine1 = new EngineRef(conf.clone, Utils.currentUser, id1, null)
+    val engine1 = new EngineRef(conf.clone, Utils.currentUser, "grp", id1, null)
     val engineSpace1 = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
       Utils.currentUser,
-      Array(id1))
+      id1)
 
     val id2 = UUID.randomUUID().toString
-    val engine2 = new EngineRef(conf.clone, Utils.currentUser, id2, null)
+    val engine2 = new EngineRef(conf.clone, Utils.currentUser, "grp", id2, null)
     val engineSpace2 = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
       Utils.currentUser,
-      Array(id2))
+      id2)
 
     withDiscoveryClient(conf) { client =>
       engine1.getOrCreate(client)

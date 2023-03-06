@@ -21,7 +21,7 @@ import java.util.concurrent.Future
 
 import org.apache.hive.service.cli.operation.{Operation, OperationManager}
 import org.apache.hive.service.cli.session.{HiveSession, SessionManager => HiveSessionManager}
-import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.hive.session.HiveSessionImpl
@@ -84,8 +84,12 @@ abstract class HiveOperation(session: Session) extends AbstractOperation(session
       Option(status.getOperationException).map(KyuubiSQLException(_)))
   }
 
-  override def getResultSetSchema: TTableSchema = {
-    internalHiveOperation.getResultSetSchema.toTTableSchema
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
+    val schema = internalHiveOperation.getResultSetSchema.toTTableSchema
+    val resp = new TGetResultSetMetadataResp
+    resp.setSchema(schema)
+    resp.setStatus(OK_STATUS)
+    resp
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {

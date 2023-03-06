@@ -48,6 +48,7 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NODE_TIMEOUT
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_PUBLISH_CONFIGS
@@ -57,7 +58,6 @@ import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.buildZookeeperClient
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.getGracefulStopThreadDelay
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient.connectionChecker
-import org.apache.kyuubi.util.KyuubiHadoopUtils
 import org.apache.kyuubi.util.ThreadUtils
 
 class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
@@ -66,17 +66,17 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   @volatile private var serviceNode: PersistentNode = _
   private var watcher: DeRegisterWatcher = _
 
-  def createClient(): Unit = {
+  override def createClient(): Unit = {
     zkClient.start()
   }
 
-  def closeClient(): Unit = {
+  override def closeClient(): Unit = {
     if (zkClient != null) {
       zkClient.close()
     }
   }
 
-  def create(path: String, mode: String, createParent: Boolean = true): String = {
+  override def create(path: String, mode: String, createParent: Boolean = true): String = {
     val builder =
       if (createParent) zkClient.create().creatingParentsIfNeeded() else zkClient.create()
     builder
@@ -84,27 +84,27 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       .forPath(path)
   }
 
-  def getData(path: String): Array[Byte] = {
+  override def getData(path: String): Array[Byte] = {
     zkClient.getData.forPath(path)
   }
 
-  def setData(path: String, data: Array[Byte]): Boolean = {
+  override def setData(path: String, data: Array[Byte]): Boolean = {
     zkClient.setData().forPath(path, data) != null
   }
 
-  def getChildren(path: String): List[String] = {
+  override def getChildren(path: String): List[String] = {
     zkClient.getChildren.forPath(path).asScala.toList
   }
 
-  def pathExists(path: String): Boolean = {
+  override def pathExists(path: String): Boolean = {
     zkClient.checkExists().forPath(path) != null
   }
 
-  def pathNonExists(path: String): Boolean = {
+  override def pathNonExists(path: String): Boolean = {
     zkClient.checkExists().forPath(path) == null
   }
 
-  def delete(path: String, deleteChildren: Boolean = false): Unit = {
+  override def delete(path: String, deleteChildren: Boolean = false): Unit = {
     if (deleteChildren) {
       zkClient.delete().deletingChildrenIfNeeded().forPath(path)
     } else {
@@ -112,7 +112,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def monitorState(serviceDiscovery: ServiceDiscovery): Unit = {
+  override def monitorState(serviceDiscovery: ServiceDiscovery): Unit = {
     zkClient
       .getConnectionStateListenable.addListener(new ConnectionStateListener {
         private val isConnected = new AtomicBoolean(false)
@@ -141,7 +141,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       })
   }
 
-  def tryWithLock[T](lockPath: String, timeout: Long)(f: => T): T = {
+  override def tryWithLock[T](lockPath: String, timeout: Long)(f: => T): T = {
     var lock: InterProcessSemaphoreMutex = null
     try {
       try {
@@ -189,7 +189,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def getServerHost(namespace: String): Option[(String, Int)] = {
+  override def getServerHost(namespace: String): Option[(String, Int)] = {
     // TODO: use last one because to avoid touching some maybe-crashed engines
     // We need a big improvement here.
     getServiceNodesInfo(namespace, Some(1), silent = true) match {
@@ -198,7 +198,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def getEngineByRefId(
+  override def getEngineByRefId(
       namespace: String,
       engineRefId: String): Option[(String, Int)] = {
     getServiceNodesInfo(namespace, silent = true)
@@ -206,7 +206,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       .map(data => (data.host, data.port))
   }
 
-  def getServiceNodesInfo(
+  override def getServiceNodesInfo(
       namespace: String,
       sizeOpt: Option[Int] = None,
       silent: Boolean = false): Seq[ServiceNodeInfo] = {
@@ -217,11 +217,14 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         val path = ZKPaths.makePath(namespace, p)
         val instance = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
         val (host, port) = DiscoveryClient.parseInstanceHostPort(instance)
-        val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
-        val engineRefId = p.split(";").find(_.startsWith("refId=")).map(_.stripPrefix("refId="))
         val attributes =
-          p.split(";").map(_.split("=", 2)).filter(_.size == 2).map(kv => (kv.head, kv.last)).toMap
-        info(s"Get service instance:$instance and version:$version under $namespace")
+          p.split(";").map(_.split("=", 2)).filter(_.length == 2).map(kv =>
+            (kv.head, kv.last)).toMap
+        val version = attributes.get("version")
+        val engineRefId = attributes.get("refId")
+        val engineIdStr = attributes.get(KYUUBI_ENGINE_ID).map(" engine id:" + _).getOrElse("")
+        info(s"Get service instance:$instance$engineIdStr and version:${version.getOrElse("")} " +
+          s"under $namespace")
         ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes)
       }
     } catch {
@@ -232,7 +235,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def registerService(
+  override def registerService(
       conf: KyuubiConf,
       namespace: String,
       serviceDiscovery: ServiceDiscovery,
@@ -251,7 +254,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     watchNode()
   }
 
-  def deregisterService(): Unit = {
+  override def deregisterService(): Unit = {
     // close the EPHEMERAL_SEQUENTIAL node in zk
     if (serviceNode != null) {
       try {
@@ -265,7 +268,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def postDeregisterService(namespace: String): Boolean = {
+  override def postDeregisterService(namespace: String): Boolean = {
     if (namespace != null) {
       try {
         delete(namespace, true)
@@ -280,7 +283,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def createAndGetServiceNode(
+  override def createAndGetServiceNode(
       conf: KyuubiConf,
       namespace: String,
       instance: String,
@@ -290,7 +293,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   @VisibleForTesting
-  def startSecretNode(
+  override def startSecretNode(
       createMode: String,
       basePath: String,
       initData: String,
@@ -304,11 +307,11 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     secretNode.start()
   }
 
-  def getAndIncrement(path: String): Int = {
+  override def getAndIncrement(path: String, delta: Int = 1): Int = {
     val dai = new DistributedAtomicInteger(zkClient, path, new RetryForever(1000))
     var atomicVal: AtomicValue[Integer] = null
     do {
-      atomicVal = dai.increment()
+      atomicVal = dai.add(delta)
     } while (atomicVal == null || !atomicVal.succeeded())
     atomicVal.preValue().intValue()
   }
@@ -338,8 +341,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     confsToPublish += ("hive.server2.authentication" -> authenticationMethod)
     if (authenticationMethod.equalsIgnoreCase("KERBEROS")) {
       confsToPublish += ("hive.server2.authentication.kerberos.principal" ->
-        conf.get(KyuubiConf.SERVER_PRINCIPAL).map(KyuubiHadoopUtils.getServerPrincipal)
-          .getOrElse(""))
+        conf.get(KyuubiConf.SERVER_PRINCIPAL).getOrElse(""))
     }
     confsToPublish.map { case (k, v) => k + "=" + v }.mkString(";")
   }

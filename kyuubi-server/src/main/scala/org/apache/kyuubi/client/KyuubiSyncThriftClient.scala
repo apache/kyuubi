@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client
 
+import java.util.UUID
 import java.util.concurrent.{ExecutorService, ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
@@ -52,6 +53,9 @@ class KyuubiSyncThriftClient private (
   @volatile private var _engineName: Option[String] = _
 
   private val lock = new ReentrantLock()
+
+  // Visible for testing.
+  private[kyuubi] def remoteSessionHandle: TSessionHandle = _remoteSessionHandle
 
   @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
   @volatile private var remoteEngineBroken: Boolean = false
@@ -94,11 +98,11 @@ class KyuubiSyncThriftClient private (
               remoteEngineBroken = false
             } catch {
               case e: Throwable =>
-                warn(s"The engine alive probe fails", e)
+                warn(s"The engine[$engineId] alive probe fails", e)
                 val now = System.currentTimeMillis()
                 if (now - engineLastAlive > engineAliveTimeout) {
-                  error("Mark the engine not alive with no recent alive probe success:" +
-                    s" ${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms")
+                  error(s"Mark the engine[$engineId] not alive with no recent alive probe" +
+                    s" success: ${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms")
                   remoteEngineBroken = true
                 }
             }
@@ -180,7 +184,10 @@ class KyuubiSyncThriftClient private (
     engineAliveProbeClient.foreach { aliveProbeClient =>
       val sessionName = SessionHandle.apply(_remoteSessionHandle).identifier + "_aliveness_probe"
       Utils.tryLogNonFatalError {
-        req.setConfiguration((configs ++ Map(KyuubiConf.SESSION_NAME.key -> sessionName)).asJava)
+        req.setConfiguration((configs ++ Map(
+          KyuubiConf.SESSION_NAME.key -> sessionName,
+          KYUUBI_SESSION_HANDLE_KEY -> UUID.randomUUID().toString,
+          KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL.key -> "")).asJava)
         val resp = aliveProbeClient.OpenSession(req)
         ThriftUtils.verifyTStatus(resp.getStatus)
         _aliveProbeSessionHandle = resp.getSessionHandle
@@ -384,11 +391,11 @@ class KyuubiSyncThriftClient private (
     }
   }
 
-  def getResultSetMetadata(operationHandle: TOperationHandle): TTableSchema = {
+  def getResultSetMetadata(operationHandle: TOperationHandle): TGetResultSetMetadataResp = {
     val req = new TGetResultSetMetadataReq(operationHandle)
     val resp = withLockAcquiredAsyncRequest(GetResultSetMetadata(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
-    resp.getSchema
+    resp
   }
 
   def fetchResults(
@@ -419,7 +426,10 @@ class KyuubiSyncThriftClient private (
         warn(s"$req failed on engine side", KyuubiSQLException(resp.getStatus))
       }
     } catch {
-      case e: Exception => warn(s"$req failed on engine side", e)
+      case e: Exception =>
+        warn(s"$req failed on engine side", e)
+        // catch exception in HadoopCredentialsManager.sendCredentialsIfNeeded
+        throw e
     }
   }
 }

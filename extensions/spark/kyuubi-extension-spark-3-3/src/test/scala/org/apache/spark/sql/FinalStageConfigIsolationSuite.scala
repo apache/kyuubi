@@ -20,7 +20,7 @@ package org.apache.spark.sql
 import org.apache.spark.sql.execution.adaptive.{AQEShuffleReadExec, QueryStageExec}
 import org.apache.spark.sql.internal.SQLConf
 
-import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
+import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf, MarkNumOutputColumnsRule}
 
 class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
   override protected def beforeAll(): Unit = {
@@ -31,6 +31,7 @@ class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
   test("final stage config set reset check") {
     withSQLConf(
       KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION.key -> "true",
+      KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION_WRITE_ONLY.key -> "false",
       "spark.sql.finalStage.adaptive.coalescePartitions.minPartitionNum" -> "1",
       "spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes" -> "100") {
       // use loop to double check final stage config doesn't affect the sql query each other
@@ -100,6 +101,7 @@ class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
       }
       assert(sortedShuffleReaders.last.partitionSpecs.length === finalPartitionNum)
       assert(df.rdd.partitions.length === finalPartitionNum)
+      assert(MarkNumOutputColumnsRule.numOutputColumns(spark).isEmpty)
     }
 
     withSQLConf(
@@ -107,6 +109,7 @@ class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
       SQLConf.COALESCE_PARTITIONS_MIN_PARTITION_NUM.key -> "1",
       SQLConf.SHUFFLE_PARTITIONS.key -> "3",
       KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION.key -> "true",
+      KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION_WRITE_ONLY.key -> "false",
       "spark.sql.adaptive.advisoryPartitionSizeInBytes" -> "1",
       "spark.sql.adaptive.coalescePartitions.minPartitionSize" -> "1",
       "spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes" -> "10000000") {
@@ -174,6 +177,31 @@ class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
           1,
           1)
       }
+    }
+  }
+
+  test("final stage config isolation write only") {
+    withSQLConf(
+      KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION.key -> "true",
+      KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION_WRITE_ONLY.key -> "true",
+      "spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes" -> "7") {
+      sql("set spark.sql.adaptive.advisoryPartitionSizeInBytes=5")
+      sql("SELECT * FROM t1").count()
+      assert(MarkNumOutputColumnsRule.numOutputColumns(spark).isEmpty)
+      assert(spark.conf.getOption("spark.sql.adaptive.advisoryPartitionSizeInBytes")
+        .contains("5"))
+
+      withTable("tmp") {
+        sql("CREATE TABLE t1 USING PARQUET SELECT /*+ repartition */ 1 AS c1, 'a' AS c2")
+        assert(MarkNumOutputColumnsRule.numOutputColumns(spark).contains("2"))
+        assert(spark.conf.getOption("spark.sql.adaptive.advisoryPartitionSizeInBytes")
+          .contains("7"))
+      }
+
+      sql("SELECT * FROM t1").count()
+      assert(MarkNumOutputColumnsRule.numOutputColumns(spark).isEmpty)
+      assert(spark.conf.getOption("spark.sql.adaptive.advisoryPartitionSizeInBytes")
+        .contains("5"))
     }
   }
 }

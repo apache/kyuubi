@@ -228,7 +228,7 @@ abstract class TFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        error("Error getting type info: ", e)
+        error("Error getting info: ", e)
         resp.setInfoValue(TGetInfoValue.lenValue(0))
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
@@ -507,17 +507,15 @@ abstract class TFrontendService(name: String)
 
   override def GetResultSetMetadata(req: TGetResultSetMetadataReq): TGetResultSetMetadataResp = {
     debug(req.toString)
-    val resp = new TGetResultSetMetadataResp
     try {
-      val schema = be.getResultSetMetadata(OperationHandle(req.getOperationHandle))
-      resp.setSchema(schema)
-      resp.setStatus(OK_STATUS)
+      be.getResultSetMetadata(OperationHandle(req.getOperationHandle))
     } catch {
       case e: Exception =>
         error("Error getting result set metadata: ", e)
+        val resp = new TGetResultSetMetadataResp
         resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp
     }
-    resp
   }
 
   override def FetchResults(req: TFetchResultsReq): TFetchResultsResp = {

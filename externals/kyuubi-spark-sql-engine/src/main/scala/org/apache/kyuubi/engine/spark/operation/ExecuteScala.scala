@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import java.io.File
+import java.util.concurrent.RejectedExecutionException
 
 import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 import scala.tools.nsc.interpreter.Results.{Error, Incomplete, Success}
@@ -28,8 +29,9 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
-import org.apache.kyuubi.operation.ArrayFetchIterator
+import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -47,11 +49,14 @@ import org.apache.kyuubi.session.Session
 class ExecuteScala(
     session: Session,
     repl: KyuubiSparkILoop,
-    override val statement: String)
+    override val statement: String,
+    override val shouldRunAsync: Boolean,
+    queryTimeout: Long)
   extends SparkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
+  override protected def supportProgress: Boolean = true
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -61,10 +66,22 @@ class ExecuteScala(
     }
   }
 
-  override protected def runInternal(): Unit = withLocalProperties {
+  override protected def beforeRun(): Unit = {
+    OperationLog.setCurrentOperationLog(operationLog)
+    setState(OperationState.PENDING)
+    setHasResultSet(true)
+  }
+
+  override protected def afterRun(): Unit = {
+    OperationLog.removeCurrentOperationLog()
+  }
+
+  private def executeScala(): Unit = withLocalProperties {
     try {
-      OperationLog.setCurrentOperationLog(operationLog)
+      setState(OperationState.RUNNING)
+      info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+      addOperationListener()
       val legacyOutput = repl.getOutput
       if (legacyOutput.nonEmpty) {
         warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
@@ -95,7 +112,7 @@ class ExecuteScala(
               new ArrayFetchIterator[Row](result.collect())
             } else {
               val output = repl.getOutput
-              info("scala repl output:\n" + output)
+              debug("scala repl output:\n" + output)
               new ArrayFetchIterator[Row](Array(Row(output)))
             }
           }
@@ -104,10 +121,39 @@ class ExecuteScala(
         case Incomplete =>
           throw KyuubiSQLException(s"Incomplete code:\n$statement")
       }
+      setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
     } finally {
       repl.clearResult(statementId)
+      shutdownTimeoutMonitor()
+    }
+  }
+
+  override protected def runInternal(): Unit = {
+    addTimeoutMonitor(queryTimeout)
+    if (shouldRunAsync) {
+      val asyncOperation = new Runnable {
+        override def run(): Unit = {
+          OperationLog.setCurrentOperationLog(operationLog)
+          executeScala()
+        }
+      }
+
+      try {
+        val sparkSQLSessionManager = session.sessionManager
+        val backgroundHandle = sparkSQLSessionManager.submitBackgroundOperation(asyncOperation)
+        setBackgroundHandle(backgroundHandle)
+      } catch {
+        case rejected: RejectedExecutionException =>
+          setState(OperationState.ERROR)
+          val ke =
+            KyuubiSQLException("Error submitting scala in background", rejected)
+          setOperationException(ke)
+          throw ke
+      }
+    } else {
+      executeScala()
     }
   }
 }

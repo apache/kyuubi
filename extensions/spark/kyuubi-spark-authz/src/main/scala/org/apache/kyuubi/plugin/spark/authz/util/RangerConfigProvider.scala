@@ -34,16 +34,14 @@ trait RangerConfigProvider {
    *         for Ranger 2.0 and below
    */
   def getRangerConf: Configuration = {
-    try {
+    if (isRanger21orGreater) {
       // for Ranger 2.1+
-      invoke(this, "getConfig").asInstanceOf[Configuration]
-    } catch {
-      case _: NoSuchMethodException =>
-        // for Ranger 2.0 and below
-        invokeStatic(
-          Class.forName("org.apache.ranger.authorization.hadoop.config.RangerConfiguration"),
-          "getInstance")
-          .asInstanceOf[Configuration]
+      invokeAs[Configuration](this, "getConfig")
+    } else {
+      // for Ranger 2.0 and below
+      invokeStaticAs[Configuration](
+        Class.forName("org.apache.ranger.authorization.hadoop.config.RangerConfiguration"),
+        "getInstance")
     }
   }
 }

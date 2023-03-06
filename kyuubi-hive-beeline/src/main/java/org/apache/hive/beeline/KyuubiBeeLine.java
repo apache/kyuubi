@@ -40,6 +40,7 @@ public class KyuubiBeeLine extends BeeLine {
     this(true);
   }
 
+  @SuppressWarnings("deprecation")
   public KyuubiBeeLine(boolean isBeeLine) {
     super(isBeeLine);
     try {
@@ -102,7 +103,7 @@ public class KyuubiBeeLine extends BeeLine {
         new Object[] {
           "Beeline",
           pack.getImplementationVersion() == null ? "???" : pack.getImplementationVersion(),
-          "Apache Kyuubi (Incubating)",
+          "Apache Kyuubi",
         });
   }
 

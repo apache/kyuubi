@@ -32,18 +32,20 @@ import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
-import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
+import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.sql.parser.server.KyuubiParser
+import org.apache.kyuubi.util.SignUtils
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def this() = this(classOf[KyuubiSessionManager].getSimpleName)
 
+  private val parser = new KyuubiParser()
+
   val operationManager = new KyuubiOperationManager()
   val credentialsManager = new HadoopCredentialsManager()
-  // this lazy is must be specified since the conf is null when the class initialization
-  lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
   val applicationManager = new KyuubiApplicationManager()
   private lazy val metadataManager: Option[MetadataManager] = {
     // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
@@ -56,7 +58,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
+  // lazy is required for plugins since the conf is null when this class initialization
+  lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
+  lazy val groupProvider: GroupProvider = PluginLoader.loadGroupProvider(conf)
+
   private var limiter: Option[SessionLimiter] = None
+  private var batchLimiter: Option[SessionLimiter] = None
+  lazy val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
@@ -80,7 +88,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress,
       conf,
       this,
-      this.getConf.getUserDefaults(user))
+      this.getConf.getUserDefaults(user),
+      parser)
   }
 
   override def openSession(
@@ -98,6 +107,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         MetricsSystem.tracing { ms =>
           ms.incCount(CONN_FAIL)
           ms.incCount(MetricRegistry.name(CONN_FAIL, user))
+          ms.incCount(MetricRegistry.name(CONN_FAIL, SessionType.INTERACTIVE.toString))
         }
         throw KyuubiSQLException(
           s"Error opening session for $username client ip $ipAddress, due to ${e.getMessage}",
@@ -110,7 +120,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     try {
       super.closeSession(sessionHandle)
     } finally {
-      limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+      session match {
+        case _: KyuubiBatchSessionImpl =>
+          batchLimiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+        case _ =>
+          limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+      }
     }
   }
 
@@ -136,12 +151,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSessionImpl): SessionHandle = {
     val user = batchSession.user
     val ipAddress = batchSession.ipAddress
+    batchLimiter.foreach(_.increment(UserIpAddress(user, ipAddress)))
+    val handle = batchSession.handle
     try {
-      val handle = batchSession.handle
       batchSession.open()
       setSession(handle, batchSession)
-      info(s"$user's batch session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
+      logSessionCountInfo(batchSession, "opened")
       handle
     } catch {
       case e: Exception =>
@@ -149,14 +164,16 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           batchSession.close()
         } catch {
           case t: Throwable =>
-            warn(s"Error closing batch session for $user client ip: $ipAddress", t)
+            warn(s"Error closing batch session[$handle] for $user client ip: $ipAddress", t)
         }
         MetricsSystem.tracing { ms =>
           ms.incCount(CONN_FAIL)
           ms.incCount(MetricRegistry.name(CONN_FAIL, user))
+          ms.incCount(MetricRegistry.name(CONN_FAIL, SessionType.BATCH.toString))
         }
         throw KyuubiSQLException(
-          s"Error opening batch session for $user client ip $ipAddress, due to ${e.getMessage}",
+          s"Error opening batch session[$handle] for $user client ip $ipAddress," +
+            s" due to ${e.getMessage}",
           e)
     }
   }
@@ -222,6 +239,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ms.registerGauge(CONN_OPEN, getOpenSessionCount, 0)
       ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
+      ms.registerGauge(EXEC_POOL_WORK_QUEUE_SIZE, getWorkQueueSize, 0)
     }
     super.start()
   }
@@ -268,8 +286,36 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val userLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER).getOrElse(0)
     val ipAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
     val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
-    if (userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
-      limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
-    }
+    val userUnlimitedList = conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST)
+    limiter = applySessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, userUnlimitedList)
+
+    val userBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER).getOrElse(0)
+    val ipAddressBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
+    val userIpAddressBatchLimit =
+      conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
+    batchLimiter = applySessionLimiter(
+      userBatchLimit,
+      ipAddressBatchLimit,
+      userIpAddressBatchLimit,
+      userUnlimitedList)
+  }
+
+  private[kyuubi] def getUnlimitedUsers(): Set[String] = {
+    limiter.orElse(batchLimiter).map(SessionLimiter.getUnlimitedUsers).getOrElse(Set.empty)
+  }
+
+  private[kyuubi] def refreshUnlimitedUsers(conf: KyuubiConf): Unit = {
+    val unlimitedUsers = conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).toSet
+    limiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
+    batchLimiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
+  }
+
+  private def applySessionLimiter(
+      userLimit: Int,
+      ipAddressLimit: Int,
+      userIpAddressLimit: Int,
+      userUnlimitedList: Seq[String]): Option[SessionLimiter] = {
+    Seq(userLimit, ipAddressLimit, userIpAddressLimit).find(_ > 0).map(_ =>
+      SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, userUnlimitedList.toSet))
   }
 }

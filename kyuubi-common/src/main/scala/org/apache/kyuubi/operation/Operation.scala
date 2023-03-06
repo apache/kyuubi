@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.Future
 
-import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
@@ -31,7 +31,7 @@ trait Operation {
   def cancel(): Unit
   def close(): Unit
 
-  def getResultSetSchema: TTableSchema
+  def getResultSetMetadata: TGetResultSetMetadataResp
   def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet
 
   def getSession: Session

@@ -136,6 +136,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
     jdbcUriString = connParams.getJdbcUriString();
     sessConfMap = connParams.getSessionVars();
+
+    if (!sessConfMap.containsKey(AUTH_PRINCIPAL)
+        && sessConfMap.containsKey(AUTH_KYUUBI_SERVER_PRINCIPAL)) {
+      sessConfMap.put(AUTH_PRINCIPAL, sessConfMap.get(AUTH_KYUUBI_SERVER_PRINCIPAL));
+    }
+
     // JDBC URL: jdbc:hive2://<host>:<port>/dbName;sess_var_list?hive_conf_list#hive_var_list
     // each list: <key1>=<val1>;<key2>=<val2> and so on
     // sess_var_list -> sessConfMap
@@ -147,19 +153,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       host = connParams.getHost();
     }
     port = connParams.getPort();
-
-    resultCodec =
-        connParams
-            .getSessionVars()
-            .getOrDefault(
-                "kyuubi.operation.result.codec",
-                connParams
-                    .getHiveVars()
-                    .getOrDefault(
-                        "kyuubi.operation.result.codec",
-                        connParams
-                            .getHiveConfs()
-                            .getOrDefault("kyuubi.operation.result.codec", "simple")));
 
     compressionCodec =
         connParams
@@ -760,6 +753,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     } catch (UnknownHostException e) {
       LOG.debug("Error getting Kyuubi session local client ip address", e);
     }
+    openConf.put(Utils.KYUUBI_CLIENT_VERSION_KEY, Utils.getVersion());
     openReq.setConfiguration(openConf);
 
     // Store the user name in the open request in case no non-sasl authentication
@@ -1270,6 +1264,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return protocol;
   }
 
+  @SuppressWarnings("rawtypes")
   public static TCLIService.Iface newSynchronizedClient(TCLIService.Iface client) {
     return (TCLIService.Iface)
         Proxy.newProxyInstance(
@@ -1308,6 +1303,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
   }
 
+  @SuppressWarnings("fallthrough")
   public void waitLaunchEngineToComplete() throws SQLException {
     if (launchEngineOpHandle == null) return;
 
@@ -1393,10 +1389,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   public String getEngineUrl() {
     return engineUrl;
-  }
-
-  String getResultCodec() {
-    return resultCodec;
   }
 
   public String getCompressionCodec() {

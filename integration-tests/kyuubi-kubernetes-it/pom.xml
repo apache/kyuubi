@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>integration-tests</artifactId>
-        <version>1.7.0-SNAPSHOT</version>
+        <version>1.8.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -75,6 +75,12 @@
         </dependency>
 
         <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <scope>test</scope>
@@ -89,7 +95,7 @@
         <!-- for hive driver related dependency -->
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
+            <artifactId>${hive.jdbc.artifact}</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

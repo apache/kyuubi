@@ -41,7 +41,7 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
       catalogName: String,
       schemaPattern: String): Seq[Row] = {
     (spark.sessionState.catalog.listDatabases(schemaPattern) ++
-      getGlobalTempViewManager(spark, schemaPattern)).map(Row(_, ""))
+      getGlobalTempViewManager(spark, schemaPattern)).map(Row(_, SparkCatalogShim.SESSION_CATALOG))
   }
 
   def setCurrentDatabase(spark: SparkSession, databaseName: String): Unit = {
@@ -64,7 +64,8 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
       catalogName: String,
       schemaPattern: String,
       tablePattern: String,
-      tableTypes: Set[String]): Seq[Row] = {
+      tableTypes: Set[String],
+      ignoreTableProperties: Boolean): Seq[Row] = {
     val catalog = spark.sessionState.catalog
     val databases = catalog.listDatabases(schemaPattern)
 
@@ -139,13 +140,7 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
     databases.flatMap { db =>
       val identifiers = catalog.listTables(db, tablePattern, includeLocalTempViews = true)
       catalog.getTablesByName(identifiers).flatMap { t =>
-        val tableSchema =
-          if (t.provider.getOrElse("").equalsIgnoreCase("delta")) {
-            spark.table(t.identifier.table).schema
-          } else {
-            t.schema
-          }
-        tableSchema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
+        t.schema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
           .map { case (f, i) => toColumnResult(catalogName, t.database, t.identifier.table, f, i) }
       }
     }

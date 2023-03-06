@@ -18,6 +18,8 @@
 package org.apache.kyuubi.kubernetes.test.deployment
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.hadoop.net.NetUtils
 
 import org.apache.kyuubi.{Utils, WithSimpleDFSService}
@@ -42,23 +44,23 @@ class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKuber
     super.connectionConf ++ Map("spark.master" -> "local", "spark.executor.instances" -> "1")
   }
 
-  override protected def jdbcUrl: String = getJdbcUrl
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
+
+  override protected lazy val user: String = "local"
 }
 
-class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes
-  with SparkQueryTests {
+class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes {
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++
       Map(
-        "spark.master" -> s"k8s://$getMiniKubeApiMaster",
+        "spark.master" -> s"k8s://$miniKubeApiMaster",
+        "spark.kubernetes.container.image" -> "apache/spark:v3.3.2",
         "spark.executor.memory" -> "512M",
-        "spark.driver.memory" -> "512M",
+        "spark.driver.memory" -> "1024M",
         "spark.kubernetes.driver.request.cores" -> "250m",
         "spark.kubernetes.executor.request.cores" -> "250m",
         "spark.executor.instances" -> "1")
   }
-
-  override protected def jdbcUrl: String = getJdbcUrl
 }
 
 /**
@@ -72,9 +74,24 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes
  *  ------------       -------------------------------------------------      ---------------------
  */
 class KyuubiOnKubernetesWithClientSparkTestsSuite
-  extends KyuubiOnKubernetesWithSparkTestsBase {
+  extends KyuubiOnKubernetesWithSparkTestsBase with SparkQueryTests {
   override protected def connectionConf: Map[String, String] = {
-    super.connectionConf ++ Map("spark.submit.deployMode" -> "client")
+    super.connectionConf ++ Map(
+      "spark.submit.deployMode" -> "client",
+      "kyuubi.frontend.connection.url.use.hostname" -> "false",
+      "spark.kubernetes.executor.label.kyuubi-it-test" -> "client")
+  }
+
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
+
+  override protected lazy val user: String = "kyuubi_user"
+
+  test("[KYUUBI #3385] Set executor pod name prefix if missing in spark on k8s case") {
+    miniKubernetesClient.pods().withLabel(
+      "spark.kubernetes.executor.label.kyuubi-it-test",
+      "client").list().getItems.forEach(pod => {
+      assert(pod.getMetadata.getName.contains("kyuubi-user"))
+    })
   }
 }
 
@@ -89,10 +106,21 @@ class KyuubiOnKubernetesWithClientSparkTestsSuite
  *  ----------       -----------------     -----------------------------      ---------------------
  */
 class KyuubiOnKubernetesWithClusterSparkTestsSuite
-  extends KyuubiOnKubernetesWithSparkTestsBase with WithSimpleDFSService {
+  extends KyuubiOnKubernetesWithSparkTestsBase with WithSimpleDFSService with SparkQueryTests {
   private val localhostAddress = Utils.findLocalInetAddress.getHostAddress
   private val driverTemplate =
     Thread.currentThread().getContextClassLoader.getResource("driver.yml")
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    val fs = FileSystem.get(getHadoopConf)
+    fs.mkdirs(
+      new Path("/spark"),
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    fs.setPermission(new Path("/"), new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    fs.setPermission(new Path("/spark"), new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    fs.copyFromLocalFile(new Path(driverTemplate.getPath), new Path("/spark/driver.yml"))
+  }
 
   override val hadoopConf: Configuration = {
     val hdfsConf: Configuration = new Configuration()
@@ -103,6 +131,8 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
     // spark use 185 as userid in docker
     hdfsConf.set("hadoop.proxyuser.185.groups", "*")
     hdfsConf.set("hadoop.proxyuser.185.hosts", "*")
+    hdfsConf.set("hadoop.proxyuser.kyuubi.groups", "*")
+    hdfsConf.set("hadoop.proxyuser.kyuubi.hosts", "*")
     hdfsConf
   }
 
@@ -112,9 +142,14 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
         "spark.submit.deployMode" -> "cluster",
         "spark.kubernetes.file.upload.path" -> s"hdfs://$localhostAddress:$getDFSPort/spark",
         "spark.hadoop.dfs.client.use.datanode.hostname" -> "true",
-        "spark.kubernetes.authenticate.driver.serviceAccountName" -> "spark",
-        "spark.kubernetes.driver.podTemplateFile" -> driverTemplate.getPath,
-        ZK_CLIENT_PORT_ADDRESS.key -> localhostAddress,
-        FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress)
+        "spark.kubernetes.authenticate.driver.serviceAccountName" -> "kyuubi",
+        "spark.kubernetes.driver.podTemplateFile" ->
+          s"hdfs://$localhostAddress:$getDFSPort/spark/driver.yml",
+        "spark.kyuubi.frontend.thrift.binary.bind.host" -> miniKubeIp,
+        "spark.kyuubi.ha.addresses" -> s"$kyuubiServerIp:2181",
+        ZK_CLIENT_PORT_ADDRESS.key -> kyuubiServerIp,
+        FRONTEND_THRIFT_BINARY_BIND_HOST.key -> kyuubiServerIp)
   }
+
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
 }

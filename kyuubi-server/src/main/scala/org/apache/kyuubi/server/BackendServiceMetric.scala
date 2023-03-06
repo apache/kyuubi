@@ -152,9 +152,11 @@ trait BackendServiceMetric extends BackendService {
     }
   }
 
-  abstract override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
+  abstract override def getOperationStatus(
+      operationHandle: OperationHandle,
+      maxWait: Option[Long] = None): OperationStatus = {
     MetricsSystem.timerTracing(MetricsConstants.BS_GET_OPERATION_STATUS) {
-      super.getOperationStatus(operationHandle)
+      super.getOperationStatus(operationHandle, maxWait)
     }
   }
 
@@ -170,7 +172,8 @@ trait BackendServiceMetric extends BackendService {
     }
   }
 
-  abstract override def getResultSetMetadata(operationHandle: OperationHandle): TTableSchema = {
+  abstract override def getResultSetMetadata(operationHandle: OperationHandle)
+      : TGetResultSetMetadataResp = {
     MetricsSystem.timerTracing(MetricsConstants.BS_GET_RESULT_SET_METADATA) {
       super.getResultSetMetadata(operationHandle)
     }

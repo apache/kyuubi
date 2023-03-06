@@ -99,7 +99,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 #
 html_theme = 'sphinx_book_theme'
 html_theme_options = {
-    "repository_url": "https://github.com/apache/incubator-kyuubi",
+    "repository_url": "https://github.com/apache/kyuubi",
     "use_repository_button": True,
     "use_edit_page_button": True,
     "use_download_button": True,
@@ -128,7 +128,7 @@ html_static_path = ['_static']
 html_css_files = ["css/custom.css"]
 htmlhelp_basename = 'Recommonmarkdoc'
 
-github_doc_root = 'https://github.com/apache/incubator-kyuubi/tree/master/docs/'
+github_doc_root = 'https://github.com/apache/kyuubi/tree/master/docs/'
 def setup(app):
     app.add_config_value('recommonmark_config', {
         'url_resolver': lambda url: github_doc_root + url,

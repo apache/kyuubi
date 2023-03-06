@@ -170,4 +170,65 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         })
     }
   }
+
+  test("KYUUBI #4047 MergeIntoIcebergTable with row filter") {
+    assume(isSparkV32OrGreater)
+
+    val outputTable2 = "outputTable2"
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.default.src", "table"),
+      (s"$catalogV2.default.outputTable2", "table"))) {
+      doAs(
+        "admin",
+        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.default.src" +
+          " (id int, name string, key string) USING iceberg"))
+      doAs(
+        "admin",
+        sql(s"INSERT INTO $catalogV2.default.src" +
+          " (id , name , key ) VALUES " +
+          "(1, 'liangbowen1','10')" +
+          ", (2, 'liangbowen2','20')"))
+      doAs(
+        "admin",
+        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable2" +
+          " (id int, name string, key string) USING iceberg"))
+
+      val mergeIntoSql =
+        s"""
+           |MERGE INTO $catalogV2.$namespace1.$outputTable2 AS target
+           |USING $catalogV2.default.src  AS source
+           |ON target.id = source.id
+           |WHEN NOT MATCHED THEN INSERT (id, name, key) VALUES (source.id, source.name, source.key)
+        """.stripMargin
+
+      doAs("admin", sql(mergeIntoSql))
+      doAs(
+        "admin", {
+          val countOutputTable =
+            sql(s"select count(1) from $catalogV2.$namespace1.$outputTable2").collect()
+          val rowCount = countOutputTable(0).get(0)
+          assert(rowCount === 2)
+        })
+      doAs("admin", sql(s"truncate table $catalogV2.$namespace1.$outputTable2"))
+
+      // source table with row filter `key`<20
+      doAs("bob", sql(mergeIntoSql))
+      doAs(
+        "admin", {
+          val countOutputTable =
+            sql(s"select count(1) from $catalogV2.$namespace1.$outputTable2").collect()
+          val rowCount = countOutputTable(0).get(0)
+          assert(rowCount === 1)
+        })
+    }
+  }
+
+  test("[KYUUBI #4255] DESCRIBE TABLE") {
+    assume(isSparkV32OrGreater)
+    val e1 = intercept[AccessControlException](
+      doAs("someone", sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain()))
+    assert(e1.getMessage.contains(s"does not have [select] privilege" +
+      s" on [$namespace1/$table1]"))
+  }
+
 }

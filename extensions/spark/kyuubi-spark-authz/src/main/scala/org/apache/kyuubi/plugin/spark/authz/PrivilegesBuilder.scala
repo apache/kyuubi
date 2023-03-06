@@ -20,78 +20,31 @@ package org.apache.kyuubi.plugin.spark.authz
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
-import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, PersistedView, ViewType}
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.catalyst.expressions.{Expression, ExpressionInfo, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.connector.catalog.Identifier
-import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.types.StructField
+import org.slf4j.LoggerFactory
 
+import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
-import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
+import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
-import org.apache.kyuubi.plugin.spark.authz.v2Commands.v2TablePrivileges
 
 object PrivilegesBuilder {
 
-  def databasePrivileges(db: String): PrivilegeObject = {
-    PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER, db, db)
-  }
-
-  private def tablePrivileges(
-      table: TableIdentifier,
-      columns: Seq[String] = Nil,
-      owner: Option[String] = None,
-      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns, owner)
-  }
-
-  private def functionPrivileges(
-      db: String,
-      functionName: String): PrivilegeObject = {
-    PrivilegeObject(FUNCTION, PrivilegeObjectActionType.OTHER, db, functionName)
-  }
+  final private val LOG = LoggerFactory.getLogger(getClass)
 
   private def collectLeaves(expr: Expression): Seq[NamedExpression] = {
     expr.collect { case p: NamedExpression if p.children.isEmpty => p }
   }
 
   private def setCurrentDBIfNecessary(
-      tableIdent: TableIdentifier,
-      spark: SparkSession): TableIdentifier = {
-
+      tableIdent: Table,
+      spark: SparkSession): Table = {
     if (tableIdent.database.isEmpty) {
       tableIdent.copy(database = Some(spark.catalog.currentDatabase))
     } else {
       tableIdent
     }
-  }
-
-  private def isTempView(
-      tableIdent: TableIdentifier,
-      spark: SparkSession): Boolean = {
-    val parts = tableIdent.database match {
-      case Some(db) =>
-        Seq(db, tableIdent.table)
-      case _ =>
-        Seq(tableIdent.table)
-    }
-
-    spark.sessionState.catalog.isTempView(parts)
-  }
-
-  private def isPersistentFunction(
-      functionIdent: FunctionIdentifier,
-      spark: SparkSession): Boolean = {
-    val (database, funcName) = functionIdent.database match {
-      case Some(_) => (functionIdent.database, functionIdent.funcName)
-      case _ => (Some(spark.catalog.currentDatabase), functionIdent.funcName)
-    }
-    spark.sessionState.catalog.isPersistentFunction(FunctionIdentifier(funcName, database))
   }
 
   /**
@@ -105,88 +58,55 @@ object PrivilegesBuilder {
       plan: LogicalPlan,
       privilegeObjects: ArrayBuffer[PrivilegeObject],
       projectionList: Seq[NamedExpression] = Nil,
-      conditionList: Seq[NamedExpression] = Nil): Unit = {
+      conditionList: Seq[NamedExpression] = Nil,
+      spark: SparkSession): Unit = {
 
-    def mergeProjection(table: CatalogTable, plan: LogicalPlan): Unit = {
-      val tableOwner = extractTableOwner(table)
+    def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += tablePrivileges(
-          table.identifier,
-          table.schema.fieldNames,
-          tableOwner)
+        privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += tablePrivileges(table.identifier, cols, tableOwner)
-      }
-    }
-
-    def mergeProjectionV2Table(
-        table: Identifier,
-        plan: LogicalPlan,
-        owner: Option[String] = None): Unit = {
-      if (projectionList.isEmpty) {
-        privilegeObjects += v2TablePrivileges(table, plan.output.map(_.name), owner)
-      } else {
-        val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
-          .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += v2TablePrivileges(table, cols, owner)
+        privilegeObjects += PrivilegeObject(table, cols)
       }
     }
 
     plan match {
-      case p: Project => buildQuery(p.child, privilegeObjects, p.projectList, conditionList)
+      case p: Project => buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
 
       case j: Join =>
         val cols =
           conditionList ++ j.condition.map(expr => collectLeaves(expr)).getOrElse(Nil)
-        buildQuery(j.left, privilegeObjects, projectionList, cols)
-        buildQuery(j.right, privilegeObjects, projectionList, cols)
+        buildQuery(j.left, privilegeObjects, projectionList, cols, spark)
+        buildQuery(j.right, privilegeObjects, projectionList, cols, spark)
 
       case f: Filter =>
         val cols = conditionList ++ collectLeaves(f.condition)
-        buildQuery(f.child, privilegeObjects, projectionList, cols)
+        buildQuery(f.child, privilegeObjects, projectionList, cols, spark)
 
       case w: Window =>
         val orderCols = w.orderSpec.flatMap(orderSpec => collectLeaves(orderSpec))
         val partitionCols = w.partitionSpec.flatMap(partitionSpec => collectLeaves(partitionSpec))
         val cols = conditionList ++ orderCols ++ partitionCols
-        buildQuery(w.child, privilegeObjects, projectionList, cols)
+        buildQuery(w.child, privilegeObjects, projectionList, cols, spark)
 
       case s: Sort =>
         val sortCols = s.order.flatMap(sortOrder => collectLeaves(sortOrder))
         val cols = conditionList ++ sortCols
-        buildQuery(s.child, privilegeObjects, projectionList, cols)
+        buildQuery(s.child, privilegeObjects, projectionList, cols, spark)
 
-      case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
-        mergeProjection(getHiveTable(hiveTableRelation), hiveTableRelation)
-
-      case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
-        getDatasourceTable(logicalRelation).foreach { t =>
-          mergeProjection(t, plan)
-        }
-
-      case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
-        val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
-        if (tableIdent.isDefined) {
-          mergeProjectionV2Table(
-            tableIdent.get,
-            plan,
-            getDatasourceV2TableOwner(datasourceV2Relation))
-        }
+      case scan if isKnownScan(scan) && scan.resolved =>
+        getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))
 
       case u if u.nodeName == "UnresolvedRelation" =>
-        val tableNameM = u.getClass.getMethod("tableName")
-        val parts = tableNameM.invoke(u).asInstanceOf[String].split("\\.")
+        val parts = invokeAs[String](u, "tableName").split("\\.")
         val db = quote(parts.init)
-        privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)))
-
-      case permanentViewMarker: PermanentViewMarker =>
-        mergeProjection(permanentViewMarker.catalogTable, plan)
+        val table = Table(None, Some(db), parts.last, None)
+        privilegeObjects += PrivilegeObject(table)
 
       case p =>
         for (child <- p.children) {
-          buildQuery(child, privilegeObjects, projectionList, conditionList)
+          buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
         }
     }
   }
@@ -201,415 +121,88 @@ object PrivilegesBuilder {
       plan: LogicalPlan,
       inputObjs: ArrayBuffer[PrivilegeObject],
       outputObjs: ArrayBuffer[PrivilegeObject],
-      spark: SparkSession): Unit = {
+      spark: SparkSession): OperationType = {
 
-    def getPlanField[T](field: String): T = {
-      getFieldVal[T](plan, field)
-    }
-
-    def getTableName: TableIdentifier = {
-      getPlanField[TableIdentifier]("tableName")
-    }
-
-    def getTableIdent: TableIdentifier = {
-      getPlanField[TableIdentifier]("tableIdent")
-    }
-
-    def getMultipartIdentifier: TableIdentifier = {
-      val multipartIdentifier = getPlanField[Seq[String]]("multipartIdentifier")
-      assert(multipartIdentifier.nonEmpty)
-      val table = multipartIdentifier.last
-      val db = Some(quote(multipartIdentifier.init))
-      TableIdentifier(table, db)
-    }
-
-    def getQuery: LogicalPlan = {
-      getPlanField[LogicalPlan]("query")
-    }
-
-    def tablePrivilegesWithOwner(
-        tableId: TableIdentifier,
-        columns: Seq[String] = Nil,
-        actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER)
-        : PrivilegeObject = {
-      val owner =
-        try {
-          val table = spark.sessionState.catalog.getTableMetadata(tableId)
-          extractTableOwner(table)
-        } catch {
-          case _: NoSuchTableException =>
-            None
-        }
-      tablePrivileges(tableId, columns, owner, actionType)
-    }
-
-    plan.nodeName match {
-      case v2Cmd if v2Commands.accept(v2Cmd) =>
-        v2Commands.withName(v2Cmd).buildPrivileges(plan, inputObjs, outputObjs)
-
-      case icebergCmd if IcebergCommands.accept(icebergCmd) =>
-        IcebergCommands.withName(icebergCmd).buildPrivileges(plan, inputObjs, outputObjs)
-
-      case "AlterDatabasePropertiesCommand" |
-          "AlterDatabaseSetLocationCommand" |
-          "CreateDatabaseCommand" |
-          "DropDatabaseCommand" =>
-        val database = getPlanField[String]("databaseName")
-        outputObjs += databasePrivileges(database)
-
-      case "AlterTableAddColumnsCommand" =>
-        val table = getPlanField[TableIdentifier]("table")
-        val cols = getPlanField[Seq[StructField]]("colsToAdd").map(_.name)
-        outputObjs += tablePrivilegesWithOwner(table, cols)
-
-      case "AlterTableAddPartitionCommand" =>
-        val table = getTableName
-        val cols = getPlanField[Seq[(TablePartitionSpec, Option[String])]]("partitionSpecsAndLocs")
-          .flatMap(_._1.keySet).distinct
-        outputObjs += tablePrivilegesWithOwner(table, cols)
-
-      case "AlterTableChangeColumnCommand" =>
-        val table = getTableName
-        val cols = getPlanField[String]("columnName") :: Nil
-        outputObjs += tablePrivilegesWithOwner(table, cols)
-
-      case "AlterTableDropPartitionCommand" =>
-        val table = getTableName
-        val cols = getPlanField[Seq[TablePartitionSpec]]("specs").flatMap(_.keySet).distinct
-        outputObjs += tablePrivilegesWithOwner(table, cols)
-
-      case "AlterTableRenameCommand" =>
-        val oldTable = getPlanField[TableIdentifier]("oldName")
-        val newTable = getPlanField[TableIdentifier]("newName")
-        if (!isTempView(oldTable, spark)) {
-          outputObjs += tablePrivilegesWithOwner(
-            oldTable,
-            actionType = PrivilegeObjectActionType.DELETE)
-          outputObjs += tablePrivileges(newTable)
-        }
-
-      // this is for spark 3.1 or below
-      case "AlterTableRecoverPartitionsCommand" =>
-        val table = getTableName
-        outputObjs += tablePrivilegesWithOwner(table)
-
-      case "AlterTableRenamePartitionCommand" =>
-        val table = getTableName
-        val cols = getPlanField[TablePartitionSpec]("oldPartition").keySet.toSeq
-        outputObjs += tablePrivilegesWithOwner(table, cols)
-
-      case "AlterTableSerDePropertiesCommand" =>
-        val table = getTableName
-        val cols = getPlanField[Option[TablePartitionSpec]]("partSpec")
-          .toSeq.flatMap(_.keySet)
-        outputObjs += tablePrivilegesWithOwner(table, cols)
-
-      case "AlterTableSetLocationCommand" =>
-        val table = getTableName
-        val cols = getPlanField[Option[TablePartitionSpec]]("partitionSpec")
-          .toSeq.flatMap(_.keySet)
-        outputObjs += tablePrivilegesWithOwner(table, cols)
-
-      case "AlterTableSetPropertiesCommand" |
-          "AlterTableUnsetPropertiesCommand" =>
-        val table = getTableName
-        outputObjs += tablePrivilegesWithOwner(table)
-
-      case "AlterViewAsCommand" =>
-        val view = getPlanField[TableIdentifier]("name")
-        if (!isTempView(view, spark)) {
-          outputObjs += tablePrivilegesWithOwner(view)
-        }
-        buildQuery(getQuery, inputObjs)
-
-      case "AlterViewAs" =>
-
-      case "AnalyzeColumnCommand" =>
-        val table = getTableIdent
-        val cols =
-          if (isSparkVersionAtLeast("3.0")) {
-            getPlanField[Option[Seq[String]]]("columnNames").getOrElse(Nil)
-          } else {
-            getPlanField[Seq[String]]("columnNames")
-          }
-        inputObjs += tablePrivilegesWithOwner(table, cols)
-
-      case "AnalyzePartitionCommand" =>
-        val table = getTableIdent
-        val cols = getPlanField[Map[String, Option[String]]]("partitionSpec")
-          .keySet.toSeq
-        inputObjs += tablePrivilegesWithOwner(table, cols)
-
-      case "AnalyzeTableCommand" |
-          "RefreshTableCommand" |
-          "RefreshTable" =>
-        inputObjs += tablePrivilegesWithOwner(getTableIdent)
-
-      case "AnalyzeTablesCommand" =>
-        val db = getPlanField[Option[String]]("databaseName")
-        if (db.nonEmpty) {
-          inputObjs += databasePrivileges(db.get)
-        }
-
-      case "CacheTableCommand" =>
-        getPlanField[Option[LogicalPlan]]("plan").foreach(buildQuery(_, inputObjs))
-
-      case "CreateViewCommand" =>
-        if (getPlanField[ViewType]("viewType") == PersistedView) {
-          val view = getPlanField[TableIdentifier]("name")
-          outputObjs += tablePrivileges(view)
-        }
-        val query =
-          if (isSparkVersionAtMost("3.1")) {
-            getPlanField[LogicalPlan]("child")
-          } else {
-            getPlanField[LogicalPlan]("plan")
-          }
-        buildQuery(query, inputObjs)
-
-      case "CreateView" => // revisit this after spark has view catalog
-      case "CreateDataSourceTableCommand" | "CreateTableCommand" =>
-        val table = getPlanField[CatalogTable]("table").identifier
-        // fixme: do we need to add columns to check?
-        outputObjs += tablePrivileges(table)
-
-      case "CreateDataSourceTableAsSelectCommand" =>
-        val table = getPlanField[CatalogTable]("table").identifier
-        outputObjs += tablePrivileges(table)
-        buildQuery(getQuery, inputObjs)
-
-      case "CreateHiveTableAsSelectCommand" |
-          "OptimizedCreateHiveTableAsSelectCommand" =>
-        val table = getPlanField[CatalogTable]("tableDesc").identifier
-        val cols = getPlanField[Seq[String]]("outputColumnNames")
-        outputObjs += tablePrivileges(table, cols)
-        buildQuery(getQuery, inputObjs)
-
-      case "CreateFunctionCommand" |
-          "DropFunctionCommand" =>
-        val isTemp = getPlanField[Boolean]("isTemp")
-        if (!isTemp) {
-          val db = getPlanField[Option[String]]("databaseName")
-          val functionName = getPlanField[String]("functionName")
-          outputObjs += functionPrivileges(db.orNull, functionName)
-        }
-
-      case "RefreshFunctionCommand" =>
-        val db = getPlanField[Option[String]]("databaseName")
-        val functionName = getPlanField[String]("functionName")
-        outputObjs += functionPrivileges(db.orNull, functionName)
-
-      case "CreateFunction" | "DropFunction" | "RefreshFunction" =>
-        val child = getPlanField("child")
-        val database = getFieldVal[Seq[String]](child, "nameParts")
-        inputObjs += databasePrivileges(quote(database))
-
-      case "CreateTableLikeCommand" =>
-        val target = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("targetTable"), spark)
-        val source = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("sourceTable"), spark)
-        inputObjs += tablePrivilegesWithOwner(source)
-        outputObjs += tablePrivileges(target)
-
-      case "CreateTempViewUsing" =>
-
-      case "DescribeColumnCommand" =>
-        val table = getPlanField[TableIdentifier]("table")
-        val cols = getPlanField[Seq[String]]("colNameParts").takeRight(1)
-        inputObjs += tablePrivilegesWithOwner(table, cols)
-
-      case "DescribeTableCommand" =>
-        val table = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("table"), spark)
-        inputObjs += tablePrivilegesWithOwner(table)
-
-      case "DescribeDatabaseCommand" | "SetDatabaseCommand" =>
-        val database = getPlanField[String]("databaseName")
-        inputObjs += databasePrivileges(database)
-
-      case "DescribeNamespace" =>
-        val child = getPlanField[Any]("namespace")
-        val database = getFieldVal[Seq[String]](child, "namespace")
-        inputObjs += databasePrivileges(quote(database))
-
-      case "DescribeFunctionCommand" =>
-        val (db: Option[String], funName: String) =
-          if (isSparkVersionAtLeast("3.3")) {
-            val info = getPlanField[ExpressionInfo]("info")
-            (Option(info.getDb), info.getName)
-          } else {
-            val funcIdent = getPlanField[FunctionIdentifier]("functionName")
-            (funcIdent.database, funcIdent.funcName)
-          }
-        val isPersistentFun = isPersistentFunction(FunctionIdentifier(funName, db), spark)
-        if (isPersistentFun) {
-          inputObjs += functionPrivileges(db.orNull, funName)
-        }
-
-      case "DropTableCommand" =>
-        if (!isTempView(getPlanField[TableIdentifier]("tableName"), spark)) {
-          outputObjs += tablePrivilegesWithOwner(getTableName)
-        }
-
-      case "ExplainCommand" =>
-
-      case "ExternalCommandExecutor" =>
-
-      case "InsertIntoDataSourceCommand" =>
-        val logicalRelation = getPlanField[LogicalRelation]("logicalRelation")
-        logicalRelation.catalogTable.foreach { t =>
-          val overwrite = getPlanField[Boolean]("overwrite")
-          val actionType = if (overwrite) INSERT_OVERWRITE else INSERT
-          outputObjs += tablePrivileges(
-            t.identifier,
-            owner = extractTableOwner(t),
-            actionType = actionType)
-        }
-        buildQuery(getQuery, inputObjs)
-
-      case "InsertIntoDataSourceDirCommand" |
-          "SaveIntoDataSourceCommand" |
-          "InsertIntoHadoopFsRelationCommand" |
-          "InsertIntoHiveDirCommand" =>
-        // TODO: Should get the table via datasource options?
-        buildQuery(getQuery, inputObjs)
-
-      case "InsertIntoHiveTable" =>
-        val table = getPlanField[CatalogTable]("table")
-        val overwrite = getPlanField[Boolean]("overwrite")
-        val actionType = if (overwrite) INSERT_OVERWRITE else INSERT
-        val owner = extractTableOwner(table)
-        outputObjs += tablePrivileges(table.identifier, owner = owner, actionType = actionType)
-        buildQuery(getQuery, inputObjs)
-
-      case "LoadDataCommand" =>
-        val table = getPlanField[TableIdentifier]("table")
-        val overwrite = getPlanField[Boolean]("isOverwrite")
-        val actionType = if (overwrite) INSERT_OVERWRITE else INSERT
-        val cols = getPlanField[Option[TablePartitionSpec]]("partition")
-          .map(_.keySet).getOrElse(Nil)
-        outputObjs += tablePrivilegesWithOwner(table, cols.toSeq, actionType = actionType)
-
-      case "RepairTableCommand" =>
-        val enableAddPartitions = getPlanField[Boolean]("enableAddPartitions")
-        if (enableAddPartitions) {
-          outputObjs += tablePrivilegesWithOwner(getTableName, actionType = INSERT)
-        } else if (getPlanField[Boolean]("enableDropPartitions")) {
-          outputObjs += tablePrivilegesWithOwner(getTableName, actionType = DELETE)
-        } else {
-          inputObjs += tablePrivilegesWithOwner(getTableName)
-        }
-
-      case "SetCatalogAndNamespace" =>
-        if (isSparkVersionAtLeast("3.3")) {
-          val child = getPlanField[Any]("child")
-          val nameParts = getFieldVal[Seq[String]](child, "nameParts")
-          inputObjs += databasePrivileges(quote(nameParts))
-
-        } else {
-          getPlanField[Option[String]]("catalogName").foreach { catalog =>
-            // fixme do we really need to skip spark_catalog?
-            if (catalog != "spark_catalog") {
-              inputObjs += databasePrivileges(catalog)
+    def getTablePriv(tableDesc: TableDesc): Seq[PrivilegeObject] = {
+      try {
+        val maybeTable = tableDesc.extract(plan, spark)
+        maybeTable match {
+          case Some(table) =>
+            val newTable = if (tableDesc.setCurrentDatabaseIfMissing) {
+              setCurrentDBIfNecessary(table, spark)
+            } else {
+              table
             }
-          }
-          getPlanField[Option[Seq[String]]]("namespace").foreach { nameParts =>
-            inputObjs += databasePrivileges(quote(nameParts))
+            if (tableDesc.tableTypeDesc.exists(_.skip(plan))) {
+              Nil
+            } else {
+              val actionType = tableDesc.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
+              val columnNames = tableDesc.columnDesc.map(_.extract(plan)).getOrElse(Nil)
+              Seq(PrivilegeObject(newTable, columnNames, actionType))
+            }
+          case None => Nil
+        }
+      } catch {
+        case e: Exception =>
+          LOG.debug(tableDesc.error(plan, e))
+          Nil
+      }
+    }
+
+    plan.getClass.getName match {
+      case classname if DB_COMMAND_SPECS.contains(classname) =>
+        val desc = DB_COMMAND_SPECS(classname)
+        desc.databaseDescs.foreach { databaseDesc =>
+          try {
+            val database = databaseDesc.extract(plan)
+            if (databaseDesc.isInput) {
+              inputObjs += PrivilegeObject(database)
+            } else {
+              outputObjs += PrivilegeObject(database)
+            }
+          } catch {
+            case e: Exception =>
+              LOG.debug(databaseDesc.error(plan, e))
           }
         }
+        desc.operationType
 
-      case "SetCatalogCommand" =>
-        inputObjs += databasePrivileges(getPlanField[String]("catalogName"))
+      case classname if TABLE_COMMAND_SPECS.contains(classname) =>
+        val spec = TABLE_COMMAND_SPECS(classname)
+        spec.tableDescs.foreach { td =>
+          if (td.isInput) {
+            inputObjs ++= getTablePriv(td)
+          } else {
+            outputObjs ++= getTablePriv(td)
+          }
+        }
+        spec.queries(plan).foreach(buildQuery(_, inputObjs, spark = spark))
+        spec.operationType
 
-      case "SetNamespaceCommand" =>
-        val namespace = quote(getPlanField[Seq[String]]("namespace"))
-        inputObjs += databasePrivileges(namespace)
+      case classname if FUNCTION_COMMAND_SPECS.contains(classname) =>
+        val spec = FUNCTION_COMMAND_SPECS(classname)
+        spec.functionDescs.foreach { fd =>
+          try {
+            val function = fd.extract(plan)
+            if (!fd.functionTypeDesc.exists(_.skip(plan, spark))) {
+              if (fd.isInput) {
+                inputObjs += PrivilegeObject(function)
+              } else {
+                outputObjs += PrivilegeObject(function)
+              }
+            }
+          } catch {
+            case e: Exception =>
+              LOG.debug(fd.error(plan, e))
+          }
+        }
+        spec.operationType
 
-      case "TruncateTableCommand" =>
-        val table = getTableName
-        val cols = getPlanField[Option[TablePartitionSpec]]("partitionSpec")
-          .map(_.keySet).getOrElse(Nil)
-        outputObjs += tablePrivilegesWithOwner(table, cols.toSeq)
-
-      case "ShowColumnsCommand" =>
-        inputObjs += tablePrivilegesWithOwner(getTableName)
-
-      case "ShowCreateTableCommand" |
-          "ShowCreateTableAsSerdeCommand" |
-          "ShowTablePropertiesCommand" =>
-        val table = getPlanField[TableIdentifier]("table")
-        inputObjs += tablePrivilegesWithOwner(table)
-
-      case "ShowTableProperties" =>
-        val resolvedTable = getPlanField[Any]("table")
-        val identifier = getFieldVal[AnyRef](resolvedTable, "identifier")
-        val namespace = invoke(identifier, "namespace").asInstanceOf[Array[String]]
-        val table = invoke(identifier, "name").asInstanceOf[String]
-        val owner = getTableOwnerFromV2Plan(resolvedTable, identifier.asInstanceOf[Identifier])
-        inputObjs += PrivilegeObject(
-          TABLE_OR_VIEW,
-          PrivilegeObjectActionType.OTHER,
-          quote(namespace),
-          table,
-          Nil,
-          owner)
-
-      case "ShowCreateTable" =>
-        val resolvedTable = getPlanField[Any]("child")
-        val identifier = getFieldVal[AnyRef](resolvedTable, "identifier")
-        val namespace = invoke(identifier, "namespace").asInstanceOf[Array[String]]
-        val table = invoke(identifier, "name").asInstanceOf[String]
-        val owner = getTableOwnerFromV2Plan(resolvedTable, identifier.asInstanceOf[Identifier])
-        inputObjs += PrivilegeObject(
-          TABLE_OR_VIEW,
-          PrivilegeObjectActionType.OTHER,
-          quote(namespace),
-          table,
-          Nil,
-          owner)
-
-      case "ShowFunctionsCommand" =>
-
-      case "ShowPartitionsCommand" =>
-        val cols = getPlanField[Option[TablePartitionSpec]]("spec")
-          .map(_.keySet.toSeq).getOrElse(Nil)
-        inputObjs += tablePrivilegesWithOwner(getTableName, cols)
-
-      case "SetNamespaceProperties" | "SetNamespaceLocation" =>
-        val resolvedNamespace = getPlanField[Any]("namespace")
-        val databases = getFieldVal[Seq[String]](resolvedNamespace, "namespace")
-        outputObjs += databasePrivileges(quote(databases))
-
-      case "ReplaceArcticData" =>
-        val relation = getPlanField[Any]("table")
-        val identifier = getFieldVal[Option[Identifier]](relation, "identifier")
-        val namespace = invoke(identifier.get, "namespace").asInstanceOf[Array[String]]
-        val table = invoke(identifier.get, "name").asInstanceOf[String]
-        val owner = getTableOwnerFromV2Plan(relation, identifier.get)
-        outputObjs += PrivilegeObject(
-          TABLE_OR_VIEW,
-          PrivilegeObjectActionType.UPDATE,
-          quote(namespace),
-          table,
-          Nil,
-          owner)
-
-      case _ =>
-      // AddArchivesCommand
-      // AddFileCommand
-      // AddJarCommand
-      // ClearCacheCommand
-      // DescribeQueryCommand
-      // ExplainCommand
-      // ListArchivesCommand
-      // ListFilesCommand
-      // ListJarsCommand
-      // RefreshResource
-      // ResetCommand
-      // SetCommand
-      // ShowDatabasesCommand
-      // StreamingExplainCommand
-      // UncacheTableCommand
+      case _ => OperationType.QUERY
     }
   }
+
+  type PrivilegesAndOpType = (Seq[PrivilegeObject], Seq[PrivilegeObject], OperationType)
 
   /**
    * Build input and output privilege objects from a Spark's LogicalPlan
@@ -623,15 +216,17 @@ object PrivilegesBuilder {
    */
   def build(
       plan: LogicalPlan,
-      spark: SparkSession): (Seq[PrivilegeObject], Seq[PrivilegeObject]) = {
+      spark: SparkSession): PrivilegesAndOpType = {
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
-    plan match {
+    val opType = plan match {
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries
-      case _ => buildQuery(plan, inputObjs)
+      case _ =>
+        buildQuery(plan, inputObjs, spark = spark)
+        OperationType.QUERY
     }
-    (inputObjs, outputObjs)
+    (inputObjs, outputObjs, opType)
   }
 }

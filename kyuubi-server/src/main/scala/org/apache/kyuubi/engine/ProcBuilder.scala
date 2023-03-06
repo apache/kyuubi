@@ -106,11 +106,19 @@ trait ProcBuilder {
 
   protected val extraEngineLog: Option[OperationLog]
 
+  /**
+   * Add `engine.master` if KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT
+   * are defined. So we can deploy engine on kubernetes without setting `engine.master`
+   * explicitly when kyuubi-servers are on kubernetes, which also helps in case that
+   * api-server is not exposed to us.
+   */
+  protected def completeMasterUrl(conf: KyuubiConf) = {}
+
   protected val workingDir: Path = {
     env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
       val workingRoot = Paths.get(root).toAbsolutePath
       if (!Files.exists(workingRoot)) {
-        debug(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
+        info(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
         Files.createDirectories(workingRoot)
       }
       if (Files.isDirectory(workingRoot)) {
@@ -119,7 +127,7 @@ trait ProcBuilder {
     }.map { rootAbs =>
       val working = Paths.get(rootAbs, proxyUser)
       if (!Files.exists(working)) {
-        debug(s"Creating $proxyUser's working directory at $working")
+        info(s"Creating $proxyUser's working directory at $working")
         Files.createDirectories(working)
       }
       if (Files.isDirectory(working)) {
@@ -327,7 +335,7 @@ trait ProcBuilder {
 
   protected def validateEnv(requiredEnv: String): Throwable = {
     KyuubiSQLException(s"$requiredEnv is not set! For more information on installing and " +
-      s"configuring $requiredEnv, please visit https://kyuubi.apache.org/docs/latest/" +
+      s"configuring $requiredEnv, please visit https://kyuubi.readthedocs.io/en/master/" +
       s"deployment/settings.html#environments")
   }
 

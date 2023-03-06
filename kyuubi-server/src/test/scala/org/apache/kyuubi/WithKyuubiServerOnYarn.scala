@@ -17,14 +17,17 @@
 
 package org.apache.kyuubi
 
+import java.util.UUID
+
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
+import org.apache.kyuubi.engine.{ApplicationState, YarnApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState._
-import org.apache.kyuubi.engine.YarnApplicationOperation
 import org.apache.kyuubi.operation.{FetchOrientation, HiveJDBCTestHelper, OperationState}
 import org.apache.kyuubi.operation.OperationState.ERROR
 import org.apache.kyuubi.server.MiniYarnService
@@ -104,7 +107,10 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
 
   test("open batch session") {
     val batchRequest =
-      newSparkBatchRequest(Map("spark.master" -> "local", "spark.executor.instances" -> "1"))
+      newSparkBatchRequest(Map(
+        "spark.master" -> "local",
+        "spark.executor.instances" -> "1",
+        KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
 
     val sessionHandle = sessionManager.openBatchSession(
       "kyuubi",
@@ -117,9 +123,15 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val appInfo = batchJobSubmissionOp.currentApplicationInfo
+      val appInfo = batchJobSubmissionOp.getOrFetchCurrentApplicationInfo
       assert(appInfo.nonEmpty)
       assert(appInfo.exists(_.id.startsWith("application_")))
+    }
+
+    eventually(timeout(10.seconds)) {
+      val metadata = session.sessionManager.getBatchMetadata(session.handle.identifier.toString)
+      assert(metadata.state === "RUNNING")
+      assert(metadata.engineId.startsWith("application_"))
     }
 
     val killResponse = yarnOperation.killApplicationByTag(sessionHandle.identifier.toString)
@@ -146,7 +158,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     val appUrl = rows("url")
     val appError = rows("error")
 
-    val appInfo2 = batchJobSubmissionOp.currentApplicationInfo.get
+    val appInfo2 = batchJobSubmissionOp.getOrFetchCurrentApplicationInfo.get
     assert(appId === appInfo2.id)
     assert(appName === appInfo2.name)
     assert(appState === appInfo2.state.toString)
@@ -156,7 +168,9 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
   }
 
   test("prevent dead loop if the batch job submission process it not alive") {
-    val batchRequest = newSparkBatchRequest(Map("spark.submit.deployMode" -> "invalid"))
+    val batchRequest = newSparkBatchRequest(Map(
+      "spark.submit.deployMode" -> "invalid",
+      KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
 
     val sessionHandle = sessionManager.openBatchSession(
       "kyuubi",
@@ -169,8 +183,9 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      assert(batchJobSubmissionOp.currentApplicationInfo.isDefined)
-      assert(batchJobSubmissionOp.currentApplicationInfo.get.id == null)
+      assert(batchJobSubmissionOp.getOrFetchCurrentApplicationInfo.exists(_.id == null))
+      assert(batchJobSubmissionOp.getOrFetchCurrentApplicationInfo.exists(
+        _.state == ApplicationState.NOT_FOUND))
       assert(batchJobSubmissionOp.getStatus.state === OperationState.ERROR)
     }
   }
@@ -181,7 +196,8 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       "spark.submit.deployMode" -> "cluster",
       "spark.sql.defaultCatalog=spark_catalog" -> "spark_catalog",
       "spark.sql.catalog.spark_catalog.type" -> "invalid_type",
-      "kyuubi.session.engine.initialize.timeout" -> "PT10m"))(Map.empty) {
+      "kyuubi.session.engine.initialize.timeout" -> "PT10M",
+      KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))(Map.empty) {
       val startTime = System.currentTimeMillis()
       val exception = intercept[Exception] {
         withJdbcStatement() { _ => }

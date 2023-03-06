@@ -17,14 +17,22 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
+import java.nio.charset.StandardCharsets
+import java.security.{KeyFactory, PublicKey, Signature}
+import java.security.interfaces.ECPublicKey
+import java.security.spec.X509EncodedKeySpec
+import java.util.Base64
+
 import scala.util.{Failure, Success, Try}
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.ranger.plugin.service.RangerBasePlugin
 import org.apache.spark.{SPARK_VERSION, SparkContext}
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
-import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, Table, TableCatalog}
+
+import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
 
 private[authz] object AuthZUtils {
 
@@ -50,10 +58,23 @@ private[authz] object AuthZUtils {
       obj: AnyRef,
       methodName: String,
       args: (Class[_], AnyRef)*): AnyRef = {
-    val (types, values) = args.unzip
-    val method = obj.getClass.getMethod(methodName, types: _*)
-    method.setAccessible(true)
-    method.invoke(obj, values: _*)
+    try {
+      val (types, values) = args.unzip
+      val method = obj.getClass.getMethod(methodName, types: _*)
+      method.setAccessible(true)
+      method.invoke(obj, values: _*)
+    } catch {
+      case e: NoSuchMethodException =>
+        val candidates = obj.getClass.getMethods.map(_.getName).mkString("[", ",", "]")
+        throw new RuntimeException(s"$methodName not in ${obj.getClass} $candidates", e)
+    }
+  }
+
+  def invokeAs[T](
+      obj: AnyRef,
+      methodName: String,
+      args: (Class[_], AnyRef)*): T = {
+    invoke(obj, methodName, args: _*).asInstanceOf[T]
   }
 
   def invokeStatic(
@@ -66,67 +87,32 @@ private[authz] object AuthZUtils {
     method.invoke(obj, values: _*)
   }
 
+  def invokeStaticAs[T](
+      obj: Class[_],
+      methodName: String,
+      args: (Class[_], AnyRef)*): T = {
+    invokeStatic(obj, methodName, args: _*).asInstanceOf[T]
+  }
+
   /**
    * Get the active session user
    * @param spark spark context instance
    * @return the user name
    */
   def getAuthzUgi(spark: SparkContext): UserGroupInformation = {
+    val isSessionUserVerifyEnabled =
+      spark.getConf.getBoolean(s"spark.$KYUUBI_SESSION_USER_SIGN_ENABLED", defaultValue = false)
+
     // kyuubi.session.user is only used by kyuubi
-    val user = spark.getLocalProperty("kyuubi.session.user")
+    val user = spark.getLocalProperty(KYUUBI_SESSION_USER)
+    if (isSessionUserVerifyEnabled) {
+      verifyKyuubiSessionUser(spark, user)
+    }
+
     if (user != null && user != UserGroupInformation.getCurrentUser.getShortUserName) {
       UserGroupInformation.createRemoteUser(user)
     } else {
       UserGroupInformation.getCurrentUser
-    }
-  }
-
-  def hasResolvedHiveTable(plan: LogicalPlan): Boolean = {
-    plan.nodeName == "HiveTableRelation" && plan.resolved
-  }
-
-  def getHiveTable(plan: LogicalPlan): CatalogTable = {
-    getFieldVal[CatalogTable](plan, "tableMeta")
-  }
-
-  def extractTableOwner(table: CatalogTable): Option[String] = {
-    Option(table.owner).filter(_.nonEmpty)
-  }
-
-  def hasResolvedDatasourceTable(plan: LogicalPlan): Boolean = {
-    plan.nodeName == "LogicalRelation" && plan.resolved
-  }
-
-  def getDatasourceTable(plan: LogicalPlan): Option[CatalogTable] = {
-    getFieldVal[Option[CatalogTable]](plan, "catalogTable")
-  }
-
-  def hasResolvedDatasourceV2Table(plan: LogicalPlan): Boolean = {
-    plan.nodeName == "DataSourceV2Relation" && plan.resolved
-  }
-
-  def getDatasourceV2Identifier(plan: LogicalPlan): Option[Identifier] = {
-    getFieldVal[Option[Identifier]](plan, "identifier")
-  }
-
-  def getDatasourceV2TableOwner(plan: LogicalPlan): Option[String] = {
-    val table = getFieldVal[Table](plan, "table")
-    Option(table.properties.get("owner"))
-  }
-
-  def getTableIdentifierFromV2Identifier(id: Identifier): TableIdentifier = {
-    TableIdentifier(id.name(), Some(quote(id.namespace())))
-  }
-
-  def getTableOwnerFromV2Plan(
-      child: Any,
-      identifier: Identifier,
-      catalogField: String = "catalog"): Option[String] = {
-    getFieldVal[CatalogPlugin](child, catalogField) match {
-      case tableCatalog: TableCatalog =>
-        val table = tableCatalog.loadTable(identifier)
-        Option(table.properties().get("owner"))
-      case _ => None
     }
   }
 
@@ -135,6 +121,16 @@ private[authz] object AuthZUtils {
       case view: View if view.resolved && isSparkVersionAtLeast("3.1.0") =>
         !getFieldVal[Boolean](view, "isTempView")
       case _ =>
+        false
+    }
+  }
+
+  lazy val isRanger21orGreater: Boolean = {
+    try {
+      classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
+      true
+    } catch {
+      case _: NoSuchMethodException =>
         false
     }
   }
@@ -174,5 +170,39 @@ private[authz] object AuthZUtils {
 
   def quote(parts: Seq[String]): String = {
     parts.map(quoteIfNeeded).mkString(".")
+  }
+
+  private def verifyKyuubiSessionUser(spark: SparkContext, user: String): Unit = {
+    def illegalAccessWithUnverifiedUser = {
+      throw new AccessControlException(s"Invalid user identifier [$user]")
+    }
+
+    try {
+      val userPubKeyBase64 = spark.getLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY)
+      val userSignBase64 = spark.getLocalProperty(KYUUBI_SESSION_USER_SIGN)
+      if (StringUtils.isAnyBlank(user, userPubKeyBase64, userSignBase64)) {
+        illegalAccessWithUnverifiedUser
+      }
+      if (!verifySignWithECDSA(user, userSignBase64, userPubKeyBase64)) {
+        illegalAccessWithUnverifiedUser
+      }
+    } catch {
+      case _: Exception =>
+        illegalAccessWithUnverifiedUser
+    }
+  }
+
+  private def verifySignWithECDSA(
+      plainText: String,
+      signatureBase64: String,
+      publicKeyBase64: String): Boolean = {
+    val pubKeyBytes = Base64.getDecoder.decode(publicKeyBase64)
+    val publicKey: PublicKey = KeyFactory.getInstance("EC")
+      .generatePublic(new X509EncodedKeySpec(pubKeyBytes)).asInstanceOf[ECPublicKey]
+    val publicSignature = Signature.getInstance("SHA256withECDSA")
+    publicSignature.initVerify(publicKey)
+    publicSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
+    val signatureBytes = Base64.getDecoder.decode(signatureBase64)
+    publicSignature.verify(signatureBytes)
   }
 }

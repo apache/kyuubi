@@ -45,6 +45,7 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.DiscoveryClient
@@ -89,7 +90,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def createClient(): Unit = {
+  override def createClient(): Unit = {
     client = buildClient()
     kvClient = client.getKVClient()
     lockClient = client.getLockClient()
@@ -98,13 +99,13 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     leaseTTL = conf.get(HighAvailabilityConf.HA_ETCD_LEASE_TIMEOUT) / 1000
   }
 
-  def closeClient(): Unit = {
+  override def closeClient(): Unit = {
     if (client != null) {
       client.close()
     }
   }
 
-  def create(path: String, mode: String, createParent: Boolean = true): String = {
+  override def create(path: String, mode: String, createParent: Boolean = true): String = {
     // createParent can not effect here
     mode match {
       case "PERSISTENT" => kvClient.put(
@@ -115,7 +116,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     path
   }
 
-  def getData(path: String): Array[Byte] = {
+  override def getData(path: String): Array[Byte] = {
     val response = kvClient.get(ByteSequence.from(path.getBytes())).get()
     if (response.getKvs.isEmpty) {
       throw new KyuubiException(s"Key[$path] not exists in ETCD, please check it.")
@@ -124,12 +125,12 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def setData(path: String, data: Array[Byte]): Boolean = {
+  override def setData(path: String, data: Array[Byte]): Boolean = {
     val response = kvClient.put(ByteSequence.from(path.getBytes), ByteSequence.from(data)).get()
     response != null
   }
 
-  def getChildren(path: String): List[String] = {
+  override def getChildren(path: String): List[String] = {
     val kvs = kvClient.get(
       ByteSequence.from(path.getBytes()),
       GetOption.newBuilder().isPrefix(true).build()).get().getKvs
@@ -141,25 +142,25 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def pathExists(path: String): Boolean = {
+  override def pathExists(path: String): Boolean = {
     !pathNonExists(path)
   }
 
-  def pathNonExists(path: String): Boolean = {
+  override def pathNonExists(path: String): Boolean = {
     kvClient.get(ByteSequence.from(path.getBytes())).get().getKvs.isEmpty
   }
 
-  def delete(path: String, deleteChildren: Boolean = false): Unit = {
+  override def delete(path: String, deleteChildren: Boolean = false): Unit = {
     kvClient.delete(
       ByteSequence.from(path.getBytes()),
       DeleteOption.newBuilder().isPrefix(deleteChildren).build()).get()
   }
 
-  def monitorState(serviceDiscovery: ServiceDiscovery): Unit = {
+  override def monitorState(serviceDiscovery: ServiceDiscovery): Unit = {
     // not need with etcd
   }
 
-  def tryWithLock[T](
+  override def tryWithLock[T](
       lockPath: String,
       timeout: Long)(f: => T): T = {
     // the default unit is millis, covert to seconds.
@@ -194,7 +195,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def getServerHost(namespace: String): Option[(String, Int)] = {
+  override def getServerHost(namespace: String): Option[(String, Int)] = {
     // TODO: use last one because to avoid touching some maybe-crashed engines
     // We need a big improvement here.
     getServiceNodesInfo(namespace, Some(1), silent = true) match {
@@ -203,7 +204,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def getEngineByRefId(
+  override def getEngineByRefId(
       namespace: String,
       engineRefId: String): Option[(String, Int)] = {
     getServiceNodesInfo(namespace, silent = true)
@@ -211,7 +212,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       .map(data => (data.host, data.port))
   }
 
-  def getServiceNodesInfo(
+  override def getServiceNodesInfo(
       namespace: String,
       sizeOpt: Option[Int] = None,
       silent: Boolean = false): Seq[ServiceNodeInfo] = {
@@ -222,11 +223,14 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         val path = DiscoveryPaths.makePath(namespace, p)
         val instance = new String(getData(path), UTF_8)
         val (host, port) = DiscoveryClient.parseInstanceHostPort(instance)
-        val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
-        val engineRefId = p.split(";").find(_.startsWith("refId=")).map(_.stripPrefix("refId="))
         val attributes =
-          p.split(";").map(_.split("=", 2)).filter(_.size == 2).map(kv => (kv.head, kv.last)).toMap
-        info(s"Get service instance:$instance and version:$version under $namespace")
+          p.split(";").map(_.split("=", 2)).filter(_.length == 2).map(kv =>
+            (kv.head, kv.last)).toMap
+        val version = attributes.get("version")
+        val engineRefId = attributes.get("refId")
+        val engineIdStr = attributes.get(KYUUBI_ENGINE_ID).map(" engine id:" + _).getOrElse("")
+        info(s"Get service instance:$instance$engineIdStr and version:${version.getOrElse("")} " +
+          s"under $namespace")
         ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes)
       }
     } catch {
@@ -237,7 +241,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def registerService(
+  override def registerService(
       conf: KyuubiConf,
       namespace: String,
       serviceDiscovery: ServiceDiscovery,
@@ -263,7 +267,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def deregisterService(): Unit = {
+  override def deregisterService(): Unit = {
     // close the EPHEMERAL_SEQUENTIAL node in etcd
     if (serviceNode != null) {
       if (serviceNode.lease != LEASE_NULL_VALUE) {
@@ -274,7 +278,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def postDeregisterService(namespace: String): Boolean = {
+  override def postDeregisterService(namespace: String): Boolean = {
     if (namespace != null) {
       delete(DiscoveryPaths.makePath(null, namespace), true)
       true
@@ -283,7 +287,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
-  def createAndGetServiceNode(
+  override def createAndGetServiceNode(
       conf: KyuubiConf,
       namespace: String,
       instance: String,
@@ -293,7 +297,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   @VisibleForTesting
-  def startSecretNode(
+  override def startSecretNode(
       createMode: String,
       basePath: String,
       initData: String,
@@ -303,7 +307,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       ByteSequence.from(initData.getBytes())).get()
   }
 
-  def getAndIncrement(path: String): Int = {
+  override def getAndIncrement(path: String, delta: Int = 1): Int = {
     val lockPath = s"${path}_tmp_for_lock"
     tryWithLock(lockPath, 60 * 1000) {
       if (pathNonExists(path)) {
@@ -311,7 +315,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         setData(path, String.valueOf(0).getBytes)
       }
       val s = new String(getData(path)).toInt
-      setData(path, String.valueOf(s + 1).getBytes)
+      setData(path, String.valueOf(s + delta).getBytes)
       s
     }
   }

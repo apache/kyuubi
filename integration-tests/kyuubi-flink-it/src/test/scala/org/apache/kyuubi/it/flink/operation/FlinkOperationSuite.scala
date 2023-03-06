@@ -86,7 +86,7 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
         val req = new TGetInfoReq()
         req.setSessionHandle(handle)
         req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
-        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi")
       }
     }
   }

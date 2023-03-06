@@ -24,11 +24,13 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class SessionHandle {
   private UUID identifier;
+  private String kyuubiInstance;
 
   public SessionHandle() {}
 
-  public SessionHandle(UUID identifier) {
+  public SessionHandle(UUID identifier, String kyuubiInstance) {
     this.identifier = identifier;
+    this.kyuubiInstance = kyuubiInstance;
   }
 
   public UUID getIdentifier() {
@@ -37,6 +39,14 @@ public class SessionHandle {
 
   public void setIdentifier(UUID identifier) {
     this.identifier = identifier;
+  }
+
+  public String getKyuubiInstance() {
+    return kyuubiInstance;
+  }
+
+  public void setKyuubiInstance(String kyuubiInstance) {
+    this.kyuubiInstance = kyuubiInstance;
   }
 
   @Override

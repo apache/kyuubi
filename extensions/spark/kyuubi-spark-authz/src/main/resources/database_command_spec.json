@@ -1,0 +1,152 @@
+[ {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.CommentOnNamespace",
+  "databaseDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : false
+  } ],
+  "opType" : "ALTERDATABASE"
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
+  "databaseDescs" : [ {
+    "fieldName" : "name",
+    "fieldExtractor" : "ResolvedDBObjectNameDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : false
+  }, {
+    "fieldName" : "namespace",
+    "fieldExtractor" : "StringSeqDatabaseExtractor",
+    "catalogDesc" : {
+      "fieldName" : "catalog",
+      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+    },
+    "isInput" : false
+  } ],
+  "opType" : "CREATEDATABASE"
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace",
+  "databaseDescs" : [ {
+    "fieldName" : "namespace",
+    "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : true
+  } ],
+  "opType" : "DESCDATABASE"
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropNamespace",
+  "databaseDescs" : [ {
+    "fieldName" : "namespace",
+    "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : false
+  } ],
+  "opType" : "DROPDATABASE"
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace",
+  "databaseDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedDBObjectNameDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : true
+  }, {
+    "fieldName" : "namespace",
+    "fieldExtractor" : "StringSeqOptionDatabaseExtractor",
+    "catalogDesc" : {
+      "fieldName" : "catalogName",
+      "fieldExtractor" : "StringOptionCatalogExtractor"
+    },
+    "isInput" : true
+  } ],
+  "opType" : "SWITCHDATABASE"
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation",
+  "databaseDescs" : [ {
+    "fieldName" : "namespace",
+    "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : false
+  } ],
+  "opType" : "ALTERDATABASE_LOCATION"
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties",
+  "databaseDescs" : [ {
+    "fieldName" : "namespace",
+    "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : false
+  } ],
+  "opType" : "ALTERDATABASE"
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand",
+  "databaseDescs" : [ {
+    "fieldName" : "databaseName",
+    "fieldExtractor" : "StringDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : false
+  } ],
+  "opType" : "ALTERDATABASE"
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",
+  "databaseDescs" : [ {
+    "fieldName" : "databaseName",
+    "fieldExtractor" : "StringDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : false
+  } ],
+  "opType" : "ALTERDATABASE_LOCATION"
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
+  "databaseDescs" : [ {
+    "fieldName" : "databaseName",
+    "fieldExtractor" : "StringOptionDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : true
+  } ],
+  "opType" : "ANALYZE_TABLE"
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
+  "databaseDescs" : [ {
+    "fieldName" : "databaseName",
+    "fieldExtractor" : "StringDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : false
+  } ],
+  "opType" : "CREATEDATABASE"
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.DescribeDatabaseCommand",
+  "databaseDescs" : [ {
+    "fieldName" : "databaseName",
+    "fieldExtractor" : "StringDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : true
+  } ],
+  "opType" : "DESCDATABASE"
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.DropDatabaseCommand",
+  "databaseDescs" : [ {
+    "fieldName" : "databaseName",
+    "fieldExtractor" : "StringDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : false
+  } ],
+  "opType" : "DROPDATABASE"
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.SetDatabaseCommand",
+  "databaseDescs" : [ {
+    "fieldName" : "databaseName",
+    "fieldExtractor" : "StringDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : true
+  } ],
+  "opType" : "SWITCHDATABASE"
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.SetNamespaceCommand",
+  "databaseDescs" : [ {
+    "fieldName" : "namespace",
+    "fieldExtractor" : "StringSeqDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : true
+  } ],
+  "opType" : "SWITCHDATABASE"
+} ]

@@ -17,13 +17,16 @@
 
 package org.apache.kyuubi.kubernetes.test.spark
 
+import java.util.UUID
+
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.net.NetUtils
 
-import org.apache.kyuubi.{BatchTestHelper, KyuubiException, Logging, Utils, WithKyuubiServer, WithSimpleDFSService}
+import org.apache.kyuubi._
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationOperation, KubernetesApplicationOperation}
@@ -45,7 +48,7 @@ abstract class SparkOnKubernetesSuiteBase
     // TODO Support more Spark version
     // Spark official docker image: https://hub.docker.com/r/apache/spark/tags
     KyuubiConf().set("spark.master", s"k8s://$apiServerAddress")
-      .set("spark.kubernetes.container.image", "apache/spark:v3.2.1")
+      .set("spark.kubernetes.container.image", "apache/spark:v3.3.2")
       .set("spark.kubernetes.container.image.pullPolicy", "IfNotPresent")
       .set("spark.executor.instances", "1")
       .set("spark.executor.memory", "512M")
@@ -134,7 +137,8 @@ class KyuubiOperationKubernetesClusterClientModeSuite
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   test("Spark Client Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
-    val batchRequest = newSparkBatchRequest(conf.getAll)
+    val batchRequest = newSparkBatchRequest(conf.getAll ++ Map(
+      KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
 
     val sessionHandle = sessionManager.openBatchSession(
       "kyuubi",
@@ -183,6 +187,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
         s" invalid. must conform https://kubernetes.io/docs/concepts/overview/" +
         "working-with-objects/names/#dns-subdomain-names and the value length <= 237")
     }
+    // clean test conf
+    conf.unset(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)
   }
 
   test("Spark Cluster Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
@@ -191,7 +197,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       "spark.kubernetes.driver.pod.name",
       driverPodNamePrefix + "-" + System.currentTimeMillis())
 
-    val batchRequest = newSparkBatchRequest(conf.getAll)
+    val batchRequest = newSparkBatchRequest(conf.getAll ++ Map(
+      KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
 
     val sessionHandle = sessionManager.openBatchSession(
       "runner",
@@ -204,7 +211,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val appInfo = batchJobSubmissionOp.currentApplicationInfo
+      val appInfo = batchJobSubmissionOp.getOrFetchCurrentApplicationInfo
       assert(appInfo.nonEmpty)
       assert(appInfo.exists(_.state == RUNNING))
       assert(appInfo.exists(_.name.startsWith(driverPodNamePrefix)))
@@ -223,6 +230,5 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
-    assert(failKillResponse._2 === ApplicationOperation.NOT_FOUND)
   }
 }

@@ -41,6 +41,7 @@ import org.apache.kyuubi.session.SessionHandle
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
+@Consumes(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext with Logging {
   implicit def toSessionHandle(str: String): SessionHandle = SessionHandle.fromUUID(str)
   private def sessionManager = fe.be.sessionManager
@@ -130,36 +131,34 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def execPoolStatistic(): ExecPoolStatistic = {
     new ExecPoolStatistic(
       sessionManager.getExecPoolSize,
-      sessionManager.getActiveCount)
+      sessionManager.getActiveCount,
+      sessionManager.getWorkQueueSize)
   }
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "Open(create) a session")
   @POST
-  @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): dto.SessionHandle = {
     val userName = fe.getSessionUser(request.getConfigs.asScala.toMap)
     val ipAddress = fe.getIpAddress
     val handle = fe.be.openSession(
       TProtocolVersion.findByValue(request.getProtocolVersion),
       userName,
-      request.getPassword,
+      "",
       ipAddress,
       (request.getConfigs.asScala ++ Map(
         KYUUBI_CLIENT_IP_KEY -> ipAddress,
         KYUUBI_SERVER_IP_KEY -> fe.host,
         KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
         KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).toMap)
-    new dto.SessionHandle(handle.identifier)
+    new dto.SessionHandle(handle.identifier, fe.connectionUrl)
   }
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "Close a session")
   @DELETE
   @Path("{sessionHandle}")

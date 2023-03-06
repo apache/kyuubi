@@ -20,6 +20,7 @@ package org.apache.kyuubi.ctl.opt
 import scopt.{OParser, OParserBuilder}
 
 import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.ctl.cmd.refresh.RefreshConfigCommandConfigType._
 
 object AdminCommandLine extends CommonCommandLine {
 
@@ -100,6 +101,7 @@ object AdminCommandLine extends CommonCommandLine {
         arg[String]("<configType>")
           .optional()
           .action((v, c) => c.copy(adminConfigOpts = c.adminConfigOpts.copy(configType = v)))
-          .text("The valid config type can be one of the following: hadoopConf."))
+          .text("The valid config type can be one of the following: " +
+            s"$HADOOP_CONF, $USER_DEFAULTS_CONF, $UNLIMITED_USERS."))
   }
 }

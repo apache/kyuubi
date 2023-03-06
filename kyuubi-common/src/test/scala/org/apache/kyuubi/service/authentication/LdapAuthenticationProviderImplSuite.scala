@@ -17,63 +17,357 @@
 
 package org.apache.kyuubi.service.authentication
 
-import javax.naming.CommunicationException
+import javax.naming.NamingException
 import javax.security.sasl.AuthenticationException
+
+import org.mockito.ArgumentMatchers.{any, anyString, eq => mockEq, isA}
+import org.mockito.Mockito._
+import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.service.authentication.ldap.{DirSearch, DirSearchFactory, LdapSearchFactory}
 
 class LdapAuthenticationProviderImplSuite extends WithLdapServer {
-  override protected val ldapUser: String = "kentyao"
-  override protected val ldapUserPasswd: String = "kentyao"
 
-  private val conf = new KyuubiConf()
+  private var conf: KyuubiConf = _
+  private var factory: DirSearchFactory = _
+  private var search: DirSearch = _
+  private var auth: LdapAuthenticationProviderImpl = _
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    conf = new KyuubiConf()
     conf.set(AUTHENTICATION_LDAP_URL, ldapUrl)
+    factory = mock[DirSearchFactory]
+    search = mock[DirSearch]
+    when(factory.getInstance(any(classOf[KyuubiConf]), anyString, anyString))
+      .thenReturn(search)
   }
 
-  override def afterAll(): Unit = {
-    super.afterAll()
+  test("authenticateGivenBlankOrNullPassword") {
+    Seq("", "\0", null).foreach { pwd =>
+      auth = new LdapAuthenticationProviderImpl(conf, new LdapSearchFactory)
+      val thrown = intercept[AuthenticationException] {
+        auth.authenticate("user", pwd)
+      }
+      assert(thrown.getMessage.contains("is null or contains blank space"))
+    }
   }
 
-  test("ldap server is started") {
-    assert(ldapServer.getListenPort > 0)
+  test("AuthenticateNoUserOrGroupFilter") {
+    conf.set(
+      AUTHENTICATION_LDAP_USER_DN_PATTERN,
+      "cn=%s,ou=Users,dc=mycorp,dc=com:cn=%s,ou=PowerUsers,dc=mycorp,dc=com")
+    val factory = mock[DirSearchFactory]
+    lenient
+      .when(search.findUserDn("user1"))
+      .thenReturn("cn=user1,ou=PowerUsers,dc=mycorp,dc=com")
+    when(factory.getInstance(conf, "cn=user1,ou=PowerUsers,dc=mycorp,dc=com", "Blah"))
+      .thenReturn(search)
+    when(factory.getInstance(conf, "cn=user1,ou=Users,dc=mycorp,dc=com", "Blah"))
+      .thenThrow(classOf[AuthenticationException])
+
+    auth = new LdapAuthenticationProviderImpl(conf, factory)
+    auth.authenticate("user1", "Blah")
+
+    verify(factory, times(2)).getInstance(isA(classOf[KyuubiConf]), anyString, mockEq("Blah"))
+    verify(search, atLeastOnce).close()
   }
 
-  test("authenticate tests") {
-    val providerImpl = new LdapAuthenticationProviderImpl(conf)
-    val e1 = intercept[AuthenticationException](providerImpl.authenticate("", ""))
-    assert(e1.getMessage.contains("user is null"))
-    val e2 = intercept[AuthenticationException](providerImpl.authenticate("kyuubi", ""))
-    assert(e2.getMessage.contains("password is null"))
+  test("AuthenticateWhenUserFilterPasses") {
+    conf.set(AUTHENTICATION_LDAP_USER_FILTER.key, "user1,user2")
 
-    val user = "uid=kentyao,ou=users"
-    providerImpl.authenticate(user, "kentyao")
-    val e3 = intercept[AuthenticationException](
-      providerImpl.authenticate(user, "kent"))
-    assert(e3.getMessage.contains(user))
-    assert(e3.getCause.isInstanceOf[javax.naming.AuthenticationException])
+    when(search.findUserDn("user1")).thenReturn("cn=user1,ou=PowerUsers,dc=mycorp,dc=com")
+    when(search.findUserDn("user2")).thenReturn("cn=user2,ou=PowerUsers,dc=mycorp,dc=com")
 
-    conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
-    val providerImpl2 = new LdapAuthenticationProviderImpl(conf)
-    providerImpl2.authenticate("kentyao", "kentyao")
+    authenticateUserAndCheckSearchIsClosed("user1")
+    authenticateUserAndCheckSearchIsClosed("user2")
+  }
 
-    val e4 = intercept[AuthenticationException](
-      providerImpl.authenticate("kentyao", "kent"))
-    assert(e4.getMessage.contains(user))
+  test("AuthenticateWhenLoginWithDomainAndUserFilterPasses") {
+    conf.set(AUTHENTICATION_LDAP_USER_FILTER.key, "user1")
 
-    conf.unset(AUTHENTICATION_LDAP_URL)
-    val providerImpl3 = new LdapAuthenticationProviderImpl(conf)
-    val e5 = intercept[AuthenticationException](
-      providerImpl3.authenticate("kentyao", "kentyao"))
+    when(search.findUserDn("user1")).thenReturn("cn=user1,ou=PowerUsers,dc=mycorp,dc=com")
 
-    assert(e5.getMessage.contains(user))
-    assert(e5.getCause.isInstanceOf[CommunicationException])
+    authenticateUserAndCheckSearchIsClosed("user1@mydomain.com")
+  }
 
-    conf.set(AUTHENTICATION_LDAP_DOMAIN, "kyuubi.com")
-    val providerImpl4 = new LdapAuthenticationProviderImpl(conf)
-    intercept[AuthenticationException](providerImpl4.authenticate("kentyao", "kentyao"))
+  test("AuthenticateWhenLoginWithDnAndUserFilterPasses") {
+    conf.set(AUTHENTICATION_LDAP_USER_FILTER.key, "user1")
+
+    when(search.findUserDn("cn=user1,ou=PowerUsers,dc=mycorp,dc=com"))
+      .thenReturn("cn=user1,ou=PowerUsers,dc=mycorp,dc=com")
+
+    authenticateUserAndCheckSearchIsClosed("cn=user1,ou=PowerUsers,dc=mycorp,dc=com")
+  }
+
+  test("AuthenticateWhenUserSearchFails") {
+    conf.set(AUTHENTICATION_LDAP_USER_FILTER.key, "user1,user2")
+    intercept[AuthenticationException] {
+      when(search.findUserDn("user1")).thenReturn(null)
+      authenticateUserAndCheckSearchIsClosed("user1")
+    }
+  }
+
+  test("AuthenticateWhenUserFilterFails") {
+    conf.set(AUTHENTICATION_LDAP_USER_FILTER.key, "user1,user2")
+    intercept[AuthenticationException] {
+      when(search.findUserDn("user3")).thenReturn("cn=user3,ou=PowerUsers,dc=mycorp,dc=com")
+      authenticateUserAndCheckSearchIsClosed("user3")
+    }
+  }
+
+  test("AuthenticateWhenGroupMembershipKeyFilterPasses") {
+    conf.set(AUTHENTICATION_LDAP_GROUP_FILTER.key, "group1,group2")
+
+    when(search.findUserDn("user1")).thenReturn("cn=user1,ou=PowerUsers,dc=mycorp,dc=com")
+    when(search.findUserDn("user2")).thenReturn("cn=user2,ou=PowerUsers,dc=mycorp,dc=com")
+
+    when(search.findGroupsForUser("cn=user1,ou=PowerUsers,dc=mycorp,dc=com"))
+      .thenReturn(Array(
+        "cn=testGroup,ou=Groups,dc=mycorp,dc=com",
+        "cn=group1,ou=Groups,dc=mycorp,dc=com"))
+    when(search.findGroupsForUser("cn=user2,ou=PowerUsers,dc=mycorp,dc=com"))
+      .thenReturn(Array(
+        "cn=testGroup,ou=Groups,dc=mycorp,dc=com",
+        "cn=group2,ou=Groups,dc=mycorp,dc=com"))
+
+    authenticateUserAndCheckSearchIsClosed("user1")
+    authenticateUserAndCheckSearchIsClosed("user2")
+  }
+
+  test("AuthenticateWhenUserAndGroupMembershipKeyFiltersPass") {
+    conf.set(AUTHENTICATION_LDAP_GROUP_FILTER.key, "group1,group2")
+    conf.set(AUTHENTICATION_LDAP_USER_FILTER.key, "user1,user2")
+
+    when(search.findUserDn("user1")).thenReturn("cn=user1,ou=PowerUsers,dc=mycorp,dc=com")
+    when(search.findUserDn("user2")).thenReturn("cn=user2,ou=PowerUsers,dc=mycorp,dc=com")
+
+    when(search.findGroupsForUser("cn=user1,ou=PowerUsers,dc=mycorp,dc=com"))
+      .thenReturn(Array(
+        "cn=testGroup,ou=Groups,dc=mycorp,dc=com",
+        "cn=group1,ou=Groups,dc=mycorp,dc=com"))
+    when(search.findGroupsForUser("cn=user2,ou=PowerUsers,dc=mycorp,dc=com"))
+      .thenReturn(Array(
+        "cn=testGroup,ou=Groups,dc=mycorp,dc=com",
+        "cn=group2,ou=Groups,dc=mycorp,dc=com"))
+
+    authenticateUserAndCheckSearchIsClosed("user1")
+    authenticateUserAndCheckSearchIsClosed("user2")
+  }
+
+  test("AuthenticateWhenUserFilterPassesAndGroupMembershipKeyFilterFails") {
+    conf.set(AUTHENTICATION_LDAP_GROUP_FILTER.key, "group1,group2")
+    conf.set(AUTHENTICATION_LDAP_USER_FILTER.key, "user1,user2")
+    intercept[AuthenticationException] {
+      when(search.findUserDn("user1")).thenReturn("cn=user1,ou=PowerUsers,dc=mycorp,dc=com")
+      when(search.findGroupsForUser("cn=user1,ou=PowerUsers,dc=mycorp,dc=com"))
+        .thenReturn(Array(
+          "cn=testGroup,ou=Groups,dc=mycorp,dc=com",
+          "cn=OtherGroup,ou=Groups,dc=mycorp,dc=com"))
+      authenticateUserAndCheckSearchIsClosed("user1")
+    }
+  }
+
+  test("AuthenticateWhenUserFilterFailsAndGroupMembershipKeyFilterPasses") {
+    conf.set(AUTHENTICATION_LDAP_GROUP_FILTER.key, "group3")
+    conf.set(AUTHENTICATION_LDAP_USER_FILTER.key, "user1,user2")
+    intercept[AuthenticationException] {
+      when(search.findUserDn("user3")).thenReturn("cn=user3,ou=PowerUsers,dc=mycorp,dc=com")
+      lenient.when(search.findGroupsForUser("cn=user3,ou=PowerUsers,dc=mycorp,dc=com"))
+        .thenReturn(Array(
+          "cn=testGroup,ou=Groups,dc=mycorp,dc=com",
+          "cn=group3,ou=Groups,dc=mycorp,dc=com"))
+      authenticateUserAndCheckSearchIsClosed("user3")
+    }
+  }
+
+  test("AuthenticateWhenCustomQueryFilterPasses") {
+    conf.set(AUTHENTICATION_LDAP_BASE_DN, "dc=mycorp,dc=com")
+    conf.set(
+      AUTHENTICATION_LDAP_CUSTOM_LDAP_QUERY,
+      "(&(objectClass=person)(|(memberOf=CN=Domain Admins,CN=Users,DC=apache,DC=org)" +
+        "(memberOf=CN=Administrators,CN=Builtin,DC=apache,DC=org)))")
+
+    when(search.executeCustomQuery(anyString))
+      .thenReturn(Array(
+        "cn=user1,ou=PowerUsers,dc=mycorp,dc=com",
+        "cn=user2,ou=PowerUsers,dc=mycorp,dc=com"))
+
+    authenticateUserAndCheckSearchIsClosed("user1")
+  }
+
+  test("AuthenticateWhenCustomQueryFilterFailsAndUserFilterPasses") {
+    conf.set(AUTHENTICATION_LDAP_BASE_DN, "dc=mycorp,dc=com")
+    conf.set(
+      AUTHENTICATION_LDAP_CUSTOM_LDAP_QUERY,
+      "(&(objectClass=person)(|(memberOf=CN=Domain Admins,CN=Users,DC=apache,DC=org)" +
+        "(memberOf=CN=Administrators,CN=Builtin,DC=apache,DC=org)))")
+    conf.set(AUTHENTICATION_LDAP_USER_FILTER.key, "user3")
+    intercept[AuthenticationException] {
+      lenient.when(search.findUserDn("user3")).thenReturn("cn=user3,ou=PowerUsers,dc=mycorp,dc=com")
+      when(search.executeCustomQuery(anyString))
+        .thenReturn(Array(
+          "cn=user1,ou=PowerUsers,dc=mycorp,dc=com",
+          "cn=user2,ou=PowerUsers,dc=mycorp,dc=com"))
+      authenticateUserAndCheckSearchIsClosed("user3")
+    }
+  }
+
+  test("AuthenticateWhenUserMembershipKeyFilterPasses") {
+    conf.set(AUTHENTICATION_LDAP_BASE_DN, "dc=mycorp,dc=com")
+    conf.set(AUTHENTICATION_LDAP_GROUP_FILTER.key, "HIVE-USERS")
+    conf.set(AUTHENTICATION_LDAP_USER_MEMBERSHIP_KEY, "memberOf")
+
+    when(search.findUserDn("user1")).thenReturn("cn=user1,ou=PowerUsers,dc=mycorp,dc=com")
+
+    val groupDn = "cn=HIVE-USERS,ou=Groups,dc=mycorp,dc=com"
+    when(search.findGroupDn("HIVE-USERS")).thenReturn(groupDn)
+    when(search.isUserMemberOfGroup("user1", groupDn)).thenReturn(true)
+
+    auth = new LdapAuthenticationProviderImpl(conf, factory)
+    auth.authenticate("user1", "Blah")
+
+    verify(factory, times(1)).getInstance(isA(classOf[KyuubiConf]), anyString, mockEq("Blah"))
+    verify(search, times(1)).findGroupDn(anyString)
+    verify(search, times(1)).isUserMemberOfGroup(anyString, anyString)
+    verify(search, atLeastOnce).close()
+  }
+
+  test("AuthenticateWhenUserMembershipKeyFilterFails") {
+    conf.set(AUTHENTICATION_LDAP_BASE_DN, "dc=mycorp,dc=com")
+    conf.set(AUTHENTICATION_LDAP_GROUP_FILTER.key, "HIVE-USERS")
+    conf.set(AUTHENTICATION_LDAP_USER_MEMBERSHIP_KEY, "memberOf")
+    intercept[AuthenticationException] {
+      when(search.findUserDn("user1")).thenReturn("cn=user1,ou=PowerUsers,dc=mycorp,dc=com")
+
+      val groupDn = "cn=HIVE-USERS,ou=Groups,dc=mycorp,dc=com"
+      when(search.findGroupDn("HIVE-USERS")).thenReturn(groupDn)
+      when(search.isUserMemberOfGroup("user1", groupDn)).thenReturn(false)
+
+      auth = new LdapAuthenticationProviderImpl(conf, factory)
+      auth.authenticate("user1", "Blah")
+    }
+  }
+
+  test("AuthenticateWhenUserMembershipKeyFilter2x2PatternsPasses") {
+    conf.set(AUTHENTICATION_LDAP_GROUP_FILTER.key, "HIVE-USERS1,HIVE-USERS2")
+    conf.set(AUTHENTICATION_LDAP_GROUP_DN_PATTERN, "cn=%s,ou=Groups,ou=branch1,dc=mycorp,dc=com")
+    conf.set(AUTHENTICATION_LDAP_USER_DN_PATTERN, "cn=%s,ou=Userss,ou=branch1,dc=mycorp,dc=com")
+    conf.set(AUTHENTICATION_LDAP_USER_MEMBERSHIP_KEY, "memberOf")
+
+    when(search.findUserDn("user1")).thenReturn("cn=user1,ou=PowerUsers,dc=mycorp,dc=com")
+
+    when(search.findGroupDn("HIVE-USERS1"))
+      .thenReturn("cn=HIVE-USERS1,ou=Groups,ou=branch1,dc=mycorp,dc=com")
+    when(search.findGroupDn("HIVE-USERS2"))
+      .thenReturn("cn=HIVE-USERS2,ou=Groups,ou=branch1,dc=mycorp,dc=com")
+
+    when(search.isUserMemberOfGroup(
+      "user1",
+      "cn=HIVE-USERS1,ou=Groups,ou=branch1,dc=mycorp,dc=com"))
+      .thenThrow(classOf[NamingException])
+    when(search.isUserMemberOfGroup(
+      "user1",
+      "cn=HIVE-USERS2,ou=Groups,ou=branch1,dc=mycorp,dc=com"))
+      .thenReturn(true)
+
+    auth = new LdapAuthenticationProviderImpl(conf, factory)
+    auth.authenticate("user1", "Blah")
+
+    verify(factory, times(1)).getInstance(isA(classOf[KyuubiConf]), anyString, mockEq("Blah"))
+    verify(search, times(2)).findGroupDn(anyString)
+    verify(search, times(2)).isUserMemberOfGroup(anyString, anyString)
+    verify(search, atLeastOnce).close()
+  }
+
+  // Kyuubi does not implement it
+  // test("AuthenticateWithBindInCredentialFilePasses")
+  // test("testAuthenticateWithBindInMissingCredentialFilePasses")
+
+  test("AuthenticateWithBindUserPasses") {
+    val bindUser = "cn=BindUser,ou=Users,ou=branch1,dc=mycorp,dc=com"
+    val bindPass = "Blah"
+    val authFullUser = "cn=user1,ou=Users,ou=branch1,dc=mycorp,dc=com"
+    val authUser = "user1"
+    val authPass = "Blah2"
+    conf.set(AUTHENTICATION_LDAP_BIND_USER, bindUser)
+    conf.set(AUTHENTICATION_LDAP_BIND_PASSWORD, bindPass)
+
+    when(search.findUserDn(mockEq(authUser))).thenReturn(authFullUser)
+
+    auth = new LdapAuthenticationProviderImpl(conf, factory)
+    auth.authenticate(authUser, authPass)
+
+    verify(factory, times(1)).getInstance(
+      isA(classOf[KyuubiConf]),
+      mockEq(bindUser),
+      mockEq(bindPass))
+    verify(factory, times(1)).getInstance(
+      isA(classOf[KyuubiConf]),
+      mockEq(authFullUser),
+      mockEq(authPass))
+    verify(search, times(1)).findUserDn(mockEq(authUser))
+  }
+
+  test("AuthenticateWithBindUserFailsOnAuthentication") {
+    val bindUser = "cn=BindUser,ou=Users,ou=branch1,dc=mycorp,dc=com"
+    val bindPass = "Blah"
+    val authFullUser = "cn=user1,ou=Users,ou=branch1,dc=mycorp,dc=com"
+    val authUser = "user1"
+    val authPass = "Blah2"
+    conf.set(AUTHENTICATION_LDAP_BIND_USER, bindUser)
+    conf.set(AUTHENTICATION_LDAP_BIND_PASSWORD, bindPass)
+
+    intercept[AuthenticationException] {
+      when(
+        factory.getInstance(
+          any(classOf[KyuubiConf]),
+          mockEq(authFullUser),
+          mockEq(authPass))).thenThrow(classOf[AuthenticationException])
+      when(search.findUserDn(mockEq(authUser))).thenReturn(authFullUser)
+
+      auth = new LdapAuthenticationProviderImpl(conf, factory)
+      auth.authenticate(authUser, authPass)
+    }
+  }
+
+  test("AuthenticateWithBindUserFailsOnGettingDn") {
+    val bindUser = "cn=BindUser,ou=Users,ou=branch1,dc=mycorp,dc=com"
+    val bindPass = "Blah"
+    val authUser = "user1"
+    val authPass = "Blah2"
+    conf.set(AUTHENTICATION_LDAP_BIND_USER, bindUser)
+    conf.set(AUTHENTICATION_LDAP_BIND_PASSWORD, bindPass)
+
+    intercept[AuthenticationException] {
+      when(search.findUserDn(mockEq(authUser))).thenThrow(classOf[NamingException])
+      auth = new LdapAuthenticationProviderImpl(conf, factory)
+      auth.authenticate(authUser, authPass)
+    }
+  }
+
+  test("AuthenticateWithBindUserFailsOnBinding") {
+    val bindUser = "cn=BindUser,ou=Users,ou=branch1,dc=mycorp,dc=com"
+    val bindPass = "Blah"
+    val authUser = "user1"
+    val authPass = "Blah2"
+    conf.set(AUTHENTICATION_LDAP_BIND_USER, bindUser)
+    conf.set(AUTHENTICATION_LDAP_BIND_PASSWORD, bindPass)
+
+    intercept[AuthenticationException] {
+      when(factory.getInstance(any(classOf[KyuubiConf]), mockEq(bindUser), mockEq(bindPass)))
+        .thenThrow(classOf[AuthenticationException])
+
+      auth = new LdapAuthenticationProviderImpl(conf, factory)
+      auth.authenticate(authUser, authPass)
+    }
+  }
+
+  private def authenticateUserAndCheckSearchIsClosed(user: String): Unit = {
+    auth = new LdapAuthenticationProviderImpl(conf, factory)
+    try auth.authenticate(user, "password doesn't matter")
+    finally verify(search, atLeastOnce).close()
   }
 }

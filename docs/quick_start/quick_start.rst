@@ -86,7 +86,6 @@ To install Kyuubi, you need to unpack the tarball. For example,
 .. code-block::
    :class: toggle
 
-   ├── DISCLAIMER
    ├── LICENSE
    ├── NOTICE
    ├── RELEASE
@@ -113,7 +112,6 @@ To install Kyuubi, you need to unpack the tarball. For example,
 
 From top to bottom are:
 
-- DISCLAIMER: the disclaimer made by Apache Kyuubi Community as a project still in ASF Incubator.
 - LICENSE: the APACHE `LICENSE`_, VERSION 2.0 we claim to obey.
 - RELEASE: the build information of this package.
 - NOTICE: the notice made by Apache Kyuubi Community about its project and dependencies.
@@ -145,7 +143,7 @@ To install Spark, you need to unpack the tarball. For example,
 
 .. code-block::
 
-   $ tar zxf spark-3.3.1-bin-hadoop3.tgz
+   $ tar zxf spark-3.3.2-bin-hadoop3.tgz
 
 Configuration
 ~~~~~~~~~~~~~

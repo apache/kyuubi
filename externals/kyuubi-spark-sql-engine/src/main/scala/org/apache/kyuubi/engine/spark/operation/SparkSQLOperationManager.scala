@@ -23,10 +23,11 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_OPERATION_HANDLE_KEY
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{NoneMode, Operation, OperationManager, PlanOnlyMode}
+import org.apache.kyuubi.operation.{NoneMode, Operation, OperationHandle, OperationManager, PlanOnlyMode}
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
 class SparkSQLOperationManager private (name: String) extends OperationManager(name) {
@@ -70,6 +71,8 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     val lang = OperationLanguages(confOverlay.getOrElse(
       OPERATION_LANGUAGE.key,
       spark.conf.get(OPERATION_LANGUAGE.key, operationLanguageDefault)))
+    val opHandle = confOverlay.get(KYUUBI_OPERATION_HANDLE_KEY).map(
+      OperationHandle.apply).getOrElse(OperationHandle())
     val operation =
       lang match {
         case OperationLanguages.SQL =>
@@ -82,19 +85,46 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
             case NoneMode =>
               val incrementalCollect = spark.conf.getOption(OPERATION_INCREMENTAL_COLLECT.key)
                 .map(_.toBoolean).getOrElse(operationIncrementalCollectDefault)
-              new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
+              // TODO: respect the config of the operation ExecuteStatement, if it was set.
+              val resultFormat = spark.conf.get("kyuubi.operation.result.format", "thrift")
+              resultFormat.toLowerCase match {
+                case "arrow" =>
+                  new ArrowBasedExecuteStatement(
+                    session,
+                    statement,
+                    runAsync,
+                    queryTimeout,
+                    incrementalCollect,
+                    opHandle)
+                case _ =>
+                  new ExecuteStatement(
+                    session,
+                    statement,
+                    runAsync,
+                    queryTimeout,
+                    incrementalCollect,
+                    opHandle)
+              }
             case mode =>
               new PlanOnlyStatement(session, statement, mode)
           }
         case OperationLanguages.SCALA =>
           val repl = sessionToRepl.getOrElseUpdate(session.handle, KyuubiSparkILoop(spark))
-          new ExecuteScala(session, repl, statement)
+          new ExecuteScala(session, repl, statement, runAsync, queryTimeout)
         case OperationLanguages.PYTHON =>
-          ExecutePython.init()
-          val worker = sessionToPythonProcess.getOrElseUpdate(
-            session.handle,
-            ExecutePython.createSessionPythonWorker(spark.conf))
-          new ExecutePython(session, statement, worker)
+          try {
+            ExecutePython.init()
+            val worker = sessionToPythonProcess.getOrElseUpdate(
+              session.handle,
+              ExecutePython.createSessionPythonWorker(spark, session))
+            new ExecutePython(session, statement, runAsync, queryTimeout, worker)
+          } catch {
+            case e: Throwable =>
+              spark.conf.set(OPERATION_LANGUAGE.key, OperationLanguages.SQL.toString)
+              throw KyuubiSQLException(
+                s"Failed to init python environment, fall back to SQL mode: ${e.getMessage}",
+                e)
+          }
         case OperationLanguages.UNKNOWN =>
           spark.conf.unset(OPERATION_LANGUAGE.key)
           throw KyuubiSQLException(s"The operation language $lang" +

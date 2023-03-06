@@ -53,6 +53,8 @@ abstract class AbstractSession(
     if (lastIdleTime > 0) System.currentTimeMillis() - _lastIdleTime else 0
   }
 
+  override val sessionIdleTimeoutThreshold: Long = sessionManager.getConf.get(SESSION_IDLE_TIMEOUT)
+
   val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
 
   override lazy val name: Option[String] = normalizedConf.get(SESSION_NAME.key)
@@ -109,7 +111,7 @@ abstract class AbstractSession(
   override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
     infoType match {
       case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
-        TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
+        TGetInfoValue.stringValue("Apache Kyuubi")
       case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(org.apache.kyuubi.KYUUBI_VERSION)
       case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
       case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
@@ -223,7 +225,7 @@ abstract class AbstractSession(
   }
 
   override def getResultSetMetadata(
-      operationHandle: OperationHandle): TTableSchema = withAcquireRelease() {
+      operationHandle: OperationHandle): TGetResultSetMetadataResp = withAcquireRelease() {
     sessionManager.operationManager.getOperationResultSetSchema(operationHandle)
   }
 

@@ -1,0 +1,146 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Default values for kyuubi.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Kyuubi server numbers
+replicaCount: 2
+
+image:
+  repository: apache/kyuubi
+  pullPolicy: Always
+  tag: ~
+
+imagePullSecrets: []
+
+# ServiceAccount used for Kyuubi create/list/delete pod in kubernetes
+serviceAccount:
+  create: true
+  name: ~
+
+rbac:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: ["pods"]
+      verbs: ["create", "list", "delete"]
+
+probe:
+  liveness:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 10
+    successThreshold: 1
+  readiness:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 10
+    successThreshold: 1
+
+server:
+  # Thrift Binary protocol (HiveServer2 compatible)
+  thriftBinary:
+    enabled: true
+    port: 10009
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.thriftBinary.port }}"
+      nodePort: ~
+      annotations: {}
+
+  # Thrift HTTP protocol (HiveServer2 compatible)
+  thriftHttp:
+    enabled: false
+    port: 10010
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.thriftHttp.port }}"
+      nodePort: ~
+      annotations: {}
+
+  # REST API protocol (experimental)
+  rest:
+    enabled: false
+    port: 10099
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.rest.port }}"
+      nodePort: ~
+      annotations: {}
+
+  # MySQL compatible text protocol (experimental)
+  mysql:
+    enabled: false
+    port: 3309
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.mysql.port }}"
+      nodePort: ~
+      annotations: {}
+
+kyuubiConfDir: /opt/kyuubi/conf
+kyuubiConf:
+  # The value (templated string) is used for kyuubi-env.sh file
+  # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments for more details
+  kyuubiEnv: ~
+
+  # The value (templated string) is used for kyuubi-defaults.conf file
+  # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#kyuubi-configurations for more details
+  kyuubiDefaults: ~
+
+  # The value (templated string) is used for log4j2.xml file
+  # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#logging for more details
+  log4j2: ~
+
+# Environment variables (templated)
+env: []
+envFrom: []
+
+# Additional volumes for Kyuubi pod (templated)
+volumes: []
+# Additional volumeMounts for Kyuubi container (templated)
+volumeMounts: []
+
+# Additional init containers for Kyuubi pod (templated)
+initContainers: []
+# Additional containers for Kyuubi pod (templated)
+containers: []
+
+resources: {}
+  # Used to specify resource, default unlimited.
+  # If you do want to specify resources:
+  #   1. remove the curly braces after 'resources:'
+  #   2. uncomment the following lines
+  # limits:
+  #   cpu: 4
+  #   memory: 10Gi
+  # requests:
+  #   cpu: 2
+  #   memory: 4Gi
+
+# Constrain Kyuubi server pods to specific nodes
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+securityContext: {}

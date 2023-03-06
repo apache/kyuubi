@@ -17,13 +17,16 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.net.InetAddress
 import java.time.Instant
+import java.util.{Locale, UUID}
 import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
@@ -36,10 +39,12 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
+import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
 
 case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
@@ -163,6 +168,22 @@ object SparkSQLEngine extends Logging {
   SignalRegister.registerLogger(logger)
   setupConf()
 
+  /**
+   * get the SparkSession by the session identifier, it was used for the initial PySpark session
+   * now, see
+   * externals/kyuubi-spark-sql-engine/src/main/resources/python/kyuubi_util.py::get_spark_session
+   * for details
+   */
+  def getSparkSession(uuid: String): SparkSession = {
+    assert(currentEngine.isDefined)
+    currentEngine.get
+      .backendService
+      .sessionManager
+      .getSession(SessionHandle.fromUUID(uuid))
+      .asInstanceOf[SparkSessionImpl]
+      .spark
+  }
+
   def setupConf(): Unit = {
     _sparkConf = new SparkConf()
     _kyuubiConf = KyuubiConf()
@@ -192,6 +213,18 @@ object SparkSQLEngine extends Logging {
 
     if (Utils.isOnK8s) {
       kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
+
+      // https://github.com/apache/kyuubi/issues/3385
+      // Set unset executor pod prefix to prevent kubernetes pod length limit error
+      // due to the long app name
+      _sparkConf.setIfMissing(
+        "spark.kubernetes.executor.podNamePrefix",
+        generateExecutorPodNamePrefixForK8s(user))
+
+      if (!isOnK8sClusterMode) {
+        // set driver host to ip instead of kyuubi pod name
+        _sparkConf.set("spark.driver.host", InetAddress.getLocalHost.getHostAddress)
+      }
     }
 
     // Set web ui port 0 to avoid port conflicts during non-k8s cluster mode
@@ -215,7 +248,7 @@ object SparkSQLEngine extends Logging {
   def createSpark(): SparkSession = {
     val engineCredentials = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
     kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
-    _sparkConf.remove(s"spark.${KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY}")
+    _sparkConf.set(s"spark.${KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY}", "")
 
     val session = SparkSession.builder.config(_sparkConf).getOrCreate
 
@@ -342,4 +375,23 @@ object SparkSQLEngine extends Logging {
     // only spark driver pod will build with `SPARK_APPLICATION_ID` env.
     Utils.isOnK8s && sys.env.contains("SPARK_APPLICATION_ID")
   }
+
+  @VisibleForTesting
+  def generateExecutorPodNamePrefixForK8s(userName: String): String = {
+    val resolvedUserName =
+      userName.trim.toLowerCase(Locale.ROOT)
+        .replaceAll("[^a-z0-9\\-]", "-")
+        .replaceAll("-+", "-")
+        .replaceAll("^-", "")
+    val podNamePrefixWithUser = s"kyuubi-$resolvedUserName-${Instant.now().toEpochMilli}"
+    if (podNamePrefixWithUser.length <= EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
+      podNamePrefixWithUser
+    } else {
+      s"kyuubi-${UUID.randomUUID()}"
+    }
+  }
+
+  // Kubernetes pod name max length - '-exec-' - Int.MAX_VALUE.length
+  // 253 - 10 - 6
+  val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
 }

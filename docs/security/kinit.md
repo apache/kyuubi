@@ -1,23 +1,23 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Kinit Auxiliary Service
 
-Kinit auxiliary service is a critical service both for authentication between Kyuubi client/server 
+Kinit auxiliary service is a critical service both for authentication between Kyuubi client/server
 and for authentication between Kyuubi server/Hadoop cluster in a Kerberos environment.
 It will get a Kerberos Ticket Cache from KDC and periodically re-kinit to keep the Ticket Cache fresh.
 
@@ -69,17 +69,16 @@ They are valid for relatively short period. So, we always need to refresh it for
 
 ## Configurations
 
-Key | Default | Meaning | Since
---- | --- | --- | ---
-<code>kyuubi.kinit.principal</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Name of the Kerberos principal.</div>|<div style='width: 20pt'>1.0.0</div>
-<code>kyuubi.kinit.keytab</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Location of Kyuubi server's keytab.</div>|<div style='width: 20pt'>1.0.0</div>
-<code>kyuubi.kinit.interval</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How often will Kyuubi server run `kinit -kt [keytab] [principal]` to renew the local Kerberos credentials cache</div>|<div style='width: 20pt'>1.0.0</div>
-<code>kyuubi.kinit.max.attempts</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>10</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How many times will `kinit` process retry</div>|<div style='width: 20pt'>1.0.0</div>
+|                  Key                   |                                          Default                                           |                                                                                          Meaning                                                                                          |                Since                 |
+|----------------------------------------|--------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|
+| <code>kyuubi.kinit.principal</code>    | <div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div> | <div style='width: 200pt;word-wrap: break-word;white-space: normal'>Name of the Kerberos principal.</div>                                                                                 | <div style='width: 20pt'>1.0.0</div> |
+| <code>kyuubi.kinit.keytab</code>       | <div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div> | <div style='width: 200pt;word-wrap: break-word;white-space: normal'>Location of Kyuubi server's keytab.</div>                                                                             | <div style='width: 20pt'>1.0.0</div> |
+| <code>kyuubi.kinit.interval</code>     | <div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1H</div>              | <div style='width: 200pt;word-wrap: break-word;white-space: normal'>How often will Kyuubi server run `kinit -kt [keytab] [principal]` to renew the local Kerberos credentials cache</div> | <div style='width: 20pt'>1.0.0</div> |
+| <code>kyuubi.kinit.max.attempts</code> | <div style='width: 80pt;word-wrap: break-word;white-space: normal'>10</div>                | <div style='width: 200pt;word-wrap: break-word;white-space: normal'>How many times will `kinit` process retry</div>                                                                       | <div style='width: 20pt'>1.0.0</div> |
 
-When working with a Kerberos-enabled Hadoop cluster, we should ensure that `hadoop.security.authentication` 
-is set to `KERBEROS` in `$HADOOP_CONF_DIR/core-site.xml` or `$KYUUBI_HOME/conf/kyuubi-defaults.conf`. 
-Then we need to specify `kyuubi.kinit.principal` and `kyuubi.kinit.keytab` for authentication. 
-
+When working with a Kerberos-enabled Hadoop cluster, we should ensure that `hadoop.security.authentication`
+is set to `KERBEROS` in `$HADOOP_CONF_DIR/core-site.xml` or `$KYUUBI_HOME/conf/kyuubi-defaults.conf`.
+Then we need to specify `kyuubi.kinit.principal` and `kyuubi.kinit.keytab` for authentication.
 
 For example,
 
@@ -89,7 +88,7 @@ kyuubi.kinit.keytab=/path/to/kyuuib.keytab
 ```
 
 **Note**:  
-`kyuubi.kinit.principal` must be in the format: `<user>/<host>@<realm>`, and `<host>` must 
+`kyuubi.kinit.principal` must be in the format: `<user>/<host>@<realm>`, and `<host>` must
 be a FQDN of the host Kyuubi is running.
 
 Kyuubi will use this `principal` to impersonate client users,
@@ -101,7 +100,9 @@ For example,
 hadoop.proxyuser.<user name in principal>.groups *
 hadoop.proxyuser.<user name in principal>.hosts *
 ```
+
 ## Further Readings
 
 - [Hadoop in Secure Mode](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/SecureMode.html)
-- [Use Kerberos for authentication in Spark](http://spark.apache.org/docs/latest/security.html#kerberos)
+- [Use Kerberos for authentication in Spark](https://spark.apache.org/docs/latest/security.html#kerberos)
+

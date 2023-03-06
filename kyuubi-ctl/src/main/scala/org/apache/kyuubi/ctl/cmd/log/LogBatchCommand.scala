@@ -48,7 +48,6 @@ class LogBatchCommand(
       var from = math.max(normalizedCliConfig.batchOpts.from, 0)
       val size = normalizedCliConfig.batchOpts.size
 
-      var log: OperationLog = null
       var done = false
       var batch = this.batch.getOrElse(batchRestApi.getBatchById(batchId))
       val kyuubiInstance = batch.getKyuubiInstance
@@ -64,6 +63,7 @@ class LogBatchCommand(
         }
 
         while (!done) {
+          var log: OperationLog = null
           try {
             log = retrieveOperationLog()
             val (latestBatch, shouldFinishLog) =
@@ -81,6 +81,12 @@ class LogBatchCommand(
           }
 
           if (!done) {
+            if (!Option(log).exists(_.getRowCount > 0)) {
+              Option(batch).foreach { batch =>
+                info(s"Application report for ${batch.getAppId} (state: ${batch.getAppState})," +
+                  s" batch id: $batchId (state: ${batch.getState})")
+              }
+            }
             Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL))
           }
         }
@@ -97,7 +103,9 @@ class LogBatchCommand(
                 hasRemainingLogs = false
               }
             } catch {
-              case e: Exception => error(s"Error fetching batch logs: ${e.getMessage}")
+              case e: Exception =>
+                error(s"Error fetching batch logs: ${e.getMessage}")
+                hasRemainingLogs = false
             }
           }
           if (hasRemainingLogs) {

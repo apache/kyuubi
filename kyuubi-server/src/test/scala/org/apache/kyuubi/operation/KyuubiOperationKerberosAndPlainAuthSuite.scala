@@ -35,7 +35,11 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
 
   override protected def jdbcUrl: String = getJdbcUrl
   protected def kerberosTgtJdbcUrl: String = jdbcUrl.stripSuffix(";") + s";principal=$testPrincipal"
+  protected def kerberosTgtJdbcUrlUsingAlias: String =
+    jdbcUrl.stripSuffix(";") + s";kyuubiServerPrincipal=$testPrincipal"
   protected def kerberosKeytabJdbcUrl: String = kerberosTgtJdbcUrl.stripSuffix(";") +
+    s";kyuubiClientPrincipal=$testPrincipal;kyuubiClientKeytab=$testKeytab"
+  protected def kerberosKeytabJdbcUrlUsingAlias: String = kerberosTgtJdbcUrlUsingAlias +
     s";kyuubiClientPrincipal=$testPrincipal;kyuubiClientKeytab=$testKeytab"
   private val currentUser = UserGroupInformation.getCurrentUser
 
@@ -59,11 +63,12 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
     UserGroupInformation.setConfiguration(config)
     assert(UserGroupInformation.isSecurityEnabled)
 
-    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "LDAP", "CUSTOM"))
+    KyuubiConf()
+      .set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "LDAP", "CUSTOM"))
       .set(KyuubiConf.SERVER_KEYTAB, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
       .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
-      .set(KyuubiConf.AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_BASE_DN, ldapBaseDn.head)
       .set(
         KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
@@ -78,29 +83,34 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
     val ret = kinitProc.start().waitFor()
     assert(ret === 0, "kinit failed")
 
-    val conn = DriverManager.getConnection(jdbcUrlWithConf(kerberosTgtJdbcUrl), user, "")
-    try {
-      val statement = conn.createStatement()
-      val resultSet = statement.executeQuery("select engine_name()")
-      assert(resultSet.next())
-      assert(resultSet.getString(1).nonEmpty)
-    } finally {
-      conn.close()
-      "kdestroy".!
-    }
+    Seq(kerberosTgtJdbcUrl, kerberosTgtJdbcUrlUsingAlias).foreach(tgtJdbcUrl => {
+      val conn = DriverManager.getConnection(jdbcUrlWithConf(tgtJdbcUrl), user, "")
+      try {
+        val statement = conn.createStatement()
+        val resultSet = statement.executeQuery("select engine_name()")
+        assert(resultSet.next())
+        assert(resultSet.getString(1).nonEmpty)
+      } finally {
+        conn.close()
+        "kdestroy".!
+      }
+    })
+
   }
 
   test("test with KERBEROS keytab authentication") {
-    val jdbcUrl = jdbcUrlWithConf(kerberosKeytabJdbcUrl)
-    val conn = DriverManager.getConnection(jdbcUrl, user, "")
-    try {
-      val statement = conn.createStatement()
-      val resultSet = statement.executeQuery("select engine_name()")
-      assert(resultSet.next())
-      assert(resultSet.getString(1).nonEmpty)
-    } finally {
-      conn.close()
-    }
+    Seq(kerberosKeytabJdbcUrl, kerberosKeytabJdbcUrlUsingAlias).foreach(keytabJdbcUrl => {
+      val jdbcUrl = jdbcUrlWithConf(keytabJdbcUrl)
+      val conn = DriverManager.getConnection(jdbcUrl, user, "")
+      try {
+        val statement = conn.createStatement()
+        val resultSet = statement.executeQuery("select engine_name()")
+        assert(resultSet.next())
+        assert(resultSet.getString(1).nonEmpty)
+      } finally {
+        conn.close()
+      }
+    })
   }
 
   test("test with LDAP authentication") {

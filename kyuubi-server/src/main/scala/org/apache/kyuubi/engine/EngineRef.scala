@@ -23,7 +23,6 @@ import scala.util.Random
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
-import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -52,6 +51,7 @@ import org.apache.kyuubi.operation.log.OperationLog
 private[kyuubi] class EngineRef(
     conf: KyuubiConf,
     user: String,
+    primaryGroup: String,
     engineRefId: String,
     engineManager: KyuubiApplicationManager)
   extends Logging {
@@ -72,7 +72,9 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
-  private val enginePoolBalancePolicy: String = conf.get(ENGINE_POOL_BALANCE_POLICY)
+  private val enginePoolIgnoreSubdomain: Boolean = conf.get(ENGINE_POOL_IGNORE_SUBDOMAIN)
+
+  private val enginePoolSelectPolicy: String = conf.get(ENGINE_POOL_SELECT_POLICY)
 
   // In case the multi kyuubi instances have the small gap of timeout, here we add
   // a small amount of time for timeout
@@ -83,35 +85,25 @@ private[kyuubi] class EngineRef(
   // Launcher of the engine
   private[kyuubi] val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser
-    case GROUP =>
-      val clientUGI = UserGroupInformation.createRemoteUser(user)
-      // Similar to `clientUGI.getPrimaryGroupName` (avoid IOE) to get the Primary GroupName of
-      // the client user mapping to
-      clientUGI.getGroupNames.headOption match {
-        case Some(primaryGroup) => primaryGroup
-        case None =>
-          warn(s"There is no primary group for $user, use the client user name as group directly")
-          user
-      }
+    case GROUP => primaryGroup
     case _ => user
   }
 
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
-    case Some(_subdomain) => _subdomain
-    case None if clientPoolSize > 0 =>
+    case subdomain if clientPoolSize > 0 && (subdomain.isEmpty || enginePoolIgnoreSubdomain) =>
       val poolSize = math.min(clientPoolSize, poolThreshold)
       if (poolSize < clientPoolSize) {
         warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to " +
           s"system threshold $poolThreshold")
       }
-      val seqNum = enginePoolBalancePolicy match {
+      val seqNum = enginePoolSelectPolicy match {
         case "POLLING" =>
           val snPath =
             DiscoveryPaths.makePath(
-              s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType",
-              "seq_num",
-              Array(appUser, clientPoolName))
+              s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_seqNum",
+              appUser,
+              clientPoolName)
           DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
             client.getAndIncrement(snPath)
           }
@@ -119,6 +111,7 @@ private[kyuubi] class EngineRef(
           Random.nextInt(poolSize)
       }
       s"$clientPoolName-${seqNum % poolSize}"
+    case Some(_subdomain) => _subdomain
     case _ => "default" // [KYUUBI #1293]
   }
 
@@ -150,8 +143,8 @@ private[kyuubi] class EngineRef(
   private[kyuubi] lazy val engineSpace: String = {
     val commonParent = s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType"
     shareLevel match {
-      case CONNECTION => DiscoveryPaths.makePath(commonParent, appUser, Array(engineRefId))
-      case _ => DiscoveryPaths.makePath(commonParent, appUser, Array(subdomain))
+      case CONNECTION => DiscoveryPaths.makePath(commonParent, appUser, engineRefId)
+      case _ => DiscoveryPaths.makePath(commonParent, appUser, subdomain)
     }
   }
 
@@ -165,9 +158,9 @@ private[kyuubi] class EngineRef(
       case _ =>
         val lockPath =
           DiscoveryPaths.makePath(
-            s"${serverSpace}_${shareLevel}_$engineType",
-            "lock",
-            Array(appUser, subdomain))
+            s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_lock",
+            appUser,
+            subdomain)
         discoveryClient.tryWithLock(
           lockPath,
           timeout + (LOCK_TIMEOUT_SPAN_FACTOR * timeout).toLong)(f)

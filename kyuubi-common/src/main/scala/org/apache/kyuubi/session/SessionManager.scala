@@ -88,6 +88,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       ipAddress: String,
       conf: Map[String, String]): Session
 
+  protected def logSessionCountInfo(session: Session, action: String): Unit = {
+    info(s"${session.user}'s session with" +
+      s" ${session.handle}${session.name.map("/" + _).getOrElse("")} is $action," +
+      s" current opening sessions $getOpenSessionCount")
+  }
+
   def openSession(
       protocol: TProtocolVersion,
       user: String,
@@ -100,8 +106,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       val handle = session.handle
       session.open()
       setSession(handle, session)
-      info(s"$user's session with $handle${session.name.map("/" + _).getOrElse("")} is opened," +
-        s" current opening sessions $getOpenSessionCount")
+      logSessionCountInfo(session, "opened")
       handle
     } catch {
       case e: Exception =>
@@ -121,8 +126,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
-    info(s"$sessionHandle${session.name.map("/" + _).getOrElse("")} is closed," +
-      s" current opening sessions $getOpenSessionCount")
+    logSessionCountInfo(session, "closed")
     try {
       session.close()
     } finally {
@@ -166,6 +170,11 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   def getActiveCount: Int = {
     assert(execPool != null)
     execPool.getActiveCount
+  }
+
+  def getWorkQueueSize: Int = {
+    assert(execPool != null)
+    execPool.getQueue.size()
   }
 
   private var _confRestrictList: Set[String] = _
@@ -257,7 +266,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       }
 
     _confRestrictList = conf.get(SESSION_CONF_RESTRICT_LIST).toSet
-    _confIgnoreList = conf.get(SESSION_CONF_IGNORE_LIST).toSet
+    _confIgnoreList = conf.get(SESSION_CONF_IGNORE_LIST).toSet +
+      s"${SESSION_USER_SIGN_ENABLED.key}"
     _batchConfIgnoreList = conf.get(BATCH_CONF_IGNORE_LIST).toSet
 
     execPool = ThreadUtils.newDaemonQueuedThreadPool(
@@ -289,15 +299,14 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   private def startTimeoutChecker(): Unit = {
     val interval = conf.get(SESSION_CHECK_INTERVAL)
-    val timeout = conf.get(SESSION_IDLE_TIMEOUT)
 
     val checkTask = new Runnable {
       override def run(): Unit = {
         val current = System.currentTimeMillis
         if (!shutdown) {
           for (session <- handleToSession.values().asScala) {
-            if (session.lastAccessTime + timeout <= current &&
-              session.getNoOperationTime > timeout) {
+            if (session.lastAccessTime + session.sessionIdleTimeoutThreshold <= current &&
+              session.getNoOperationTime > session.sessionIdleTimeoutThreshold) {
               try {
                 closeSession(session.handle)
               } catch {

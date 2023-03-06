@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.net.InetAddress
+import java.nio.file.Paths
 import java.util.{Base64, UUID}
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -27,12 +28,16 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.DurationInt
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.glassfish.jersey.media.multipart.FormDataMultiPart
+import org.glassfish.jersey.media.multipart.file.FileDataBodyPart
 
 import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.client.util.BatchUtils
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.ApplicationInfo
+import org.apache.kyuubi.engine.{ApplicationInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
@@ -40,15 +45,17 @@ import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.service.authentication.{KyuubiAuthenticationFactory, UserDefinedEngineSecuritySecretProvider}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper with BatchTestHelper {
   override protected lazy val conf: KyuubiConf = KyuubiConf()
     .set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
+    .set(KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER, "simple")
+    .set(KyuubiConf.SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET, "ENGINE____SECRET")
     .set(
-      KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
-      classOf[UserDefinedEngineSecuritySecretProvider].getName)
+      KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST,
+      Seq(Paths.get(sparkBatchTestResource.get).getParent.toString))
 
   override def afterEach(): Unit = {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
@@ -96,6 +103,9 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     assert(batch.getName === sparkBatchTestAppName)
     assert(batch.getCreateTime > 0)
     assert(batch.getEndTime === 0)
+    if (batch.getAppId != null) {
+      assert(batch.getAppStartTime > 0)
+    }
 
     // invalid batchId
     getBatchResponse = webTarget.path(s"api/v1/batches/invalidBatchId")
@@ -192,6 +202,56 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     assert(!deleteBatchResponse.readEntity(classOf[CloseBatchResponse]).isSuccess)
   }
 
+  test("open batch session with uploading resource") {
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
+    val exampleJarFile = Paths.get(sparkBatchTestResource.get).toFile
+    val multipart = new FormDataMultiPart()
+      .field("batchRequest", requestObj, MediaType.APPLICATION_JSON_TYPE)
+      .bodyPart(new FileDataBodyPart("resourceFile", exampleJarFile))
+      .asInstanceOf[FormDataMultiPart]
+
+    val response = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON)
+      .post(Entity.entity(multipart, MediaType.MULTIPART_FORM_DATA))
+    assert(200 == response.getStatus)
+    val batch = response.readEntity(classOf[Batch])
+    assert(batch.getKyuubiInstance === fe.connectionUrl)
+    assert(batch.getBatchType === "SPARK")
+    assert(batch.getName === sparkBatchTestAppName)
+    assert(batch.getCreateTime > 0)
+    assert(batch.getEndTime === 0)
+
+    webTarget.path(s"api/v1/batches/${batch.getId()}").request(
+      MediaType.APPLICATION_JSON_TYPE).delete()
+    eventually(timeout(3.seconds)) {
+      assert(KyuubiApplicationManager.uploadWorkDir.toFile.listFiles().isEmpty)
+    }
+  }
+
+  test("open batch session w/ batch id") {
+    val batchId = UUID.randomUUID().toString
+    val reqObj = newSparkBatchRequest(Map(
+      "spark.master" -> "local",
+      KYUUBI_BATCH_ID_KEY -> batchId))
+
+    val resp1 = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(reqObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == resp1.getStatus)
+    val batch1 = resp1.readEntity(classOf[Batch])
+    assert(batch1.getId === batchId)
+
+    val resp2 = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(reqObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == resp2.getStatus)
+    val batch2 = resp2.readEntity(classOf[Batch])
+    assert(batch2.getId === batchId)
+
+    assert(batch1.getCreateTime === batch2.getCreateTime)
+    assert(BatchUtils.isDuplicatedSubmission(batch2))
+  }
+
   test("get batch session list") {
     val sessionManager = server.frontendServices.head
       .be.sessionManager.asInstanceOf[KyuubiSessionManager]
@@ -216,10 +276,10 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map.empty,
+      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
-        "",
+        sparkBatchTestResource.get,
         "",
         ""))
     sessionManager.openSession(
@@ -238,20 +298,20 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map.empty,
+      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
-        "",
+        sparkBatchTestResource.get,
         "",
         ""))
     sessionManager.openBatchSession(
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map.empty,
+      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
-        "",
+        sparkBatchTestResource.get,
         "",
         ""))
 
@@ -442,7 +502,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     assert(session1.createTime === batchMetadata.createTime)
     assert(session2.createTime === batchMetadata2.createTime)
 
-    eventually(timeout(5.seconds)) {
+    eventually(timeout(10.seconds)) {
       assert(session1.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
         session1.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
       assert(session1.batchJobSubmissionOp.builder.processLaunched)
@@ -627,5 +687,23 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     val opType = classOf[BatchJobSubmission].getSimpleName
     val counterName = s"${MetricsConstants.OPERATION_STATE}.$opType.${state.toString.toLowerCase}"
     MetricsSystem.meterValue(counterName).getOrElse(0L)
+  }
+
+  test("the batch session should be consistent on open session failure") {
+    val sessionManager = server.frontendServices.head
+      .be.sessionManager.asInstanceOf[KyuubiSessionManager]
+
+    val e = intercept[Exception] {
+      sessionManager.openBatchSession(
+        "kyuubi",
+        "kyuubi",
+        InetAddress.getLocalHost.getCanonicalHostName,
+        Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
+        newSparkBatchRequest(Map("spark.jars" -> "disAllowPath")))
+    }
+    val sessionHandleRegex = "\\[[\\S]*\\]".r
+    val batchId = sessionHandleRegex.findFirstMatchIn(e.getMessage).get.group(0)
+      .replaceAll("\\[", "").replaceAll("\\]", "")
+    assert(sessionManager.getBatchMetadata(batchId).state == "CANCELED")
   }
 }

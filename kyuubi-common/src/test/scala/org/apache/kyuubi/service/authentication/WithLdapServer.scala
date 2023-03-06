@@ -17,20 +17,36 @@
 
 package org.apache.kyuubi.service.authentication
 
+import scala.util.Random
+
 import com.unboundid.ldap.listener.{InMemoryDirectoryServer, InMemoryDirectoryServerConfig}
+import com.unboundid.ldif.LDIFReader
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 
 trait WithLdapServer extends KyuubiFunSuite {
   protected var ldapServer: InMemoryDirectoryServer = _
-  protected val ldapBaseDn = "ou=users"
-  protected val ldapUser = Utils.currentUser
-  protected val ldapUserPasswd = "ldapPassword"
+  protected val ldapBaseDn: Array[String] = Array("ou=users")
+  protected val ldapUser: String = Utils.currentUser
+  protected val ldapUserPasswd: String = Random.alphanumeric.take(16).mkString
 
   protected def ldapUrl = s"ldap://localhost:${ldapServer.getListenPort}"
 
+  /**
+   * Apply LDIF files
+   * @param resource the LDIF file under classpath
+   */
+  def applyLDIF(resource: String): Unit = {
+    ldapServer.applyChangesFromLDIF(
+      new LDIFReader(Utils.getContextOrKyuubiClassLoader.getResource(resource).openStream()))
+  }
+
   override def beforeAll(): Unit = {
-    val config = new InMemoryDirectoryServerConfig(ldapBaseDn)
+    val config = new InMemoryDirectoryServerConfig(ldapBaseDn: _*)
+    // disable the schema so that we can apply LDIF which contains Microsoft's Active Directory
+    // specific definitions.
+    // https://myshittycode.com/2017/03/28/
+    config.setSchema(null)
     config.addAdditionalBindCredentials(s"uid=$ldapUser,ou=users", ldapUserPasswd)
     ldapServer = new InMemoryDirectoryServer(config)
     ldapServer.startListening()

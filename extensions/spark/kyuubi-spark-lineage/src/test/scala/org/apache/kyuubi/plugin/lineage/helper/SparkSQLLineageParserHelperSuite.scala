@@ -93,6 +93,128 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     }
   }
 
+  test("columns lineage extract - DataSourceV2Relation") {
+    val ddls =
+      """
+        |create table v2_catalog.db.tbb(col1 string, col2 string, col3 string)
+        |""".stripMargin
+
+    ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    withView("test_view") { _ =>
+      val result = exectractLineage(
+        "create view test_view(a, b, c) as" +
+          " select col1 as a, col2 as b, col3 as c from v2_catalog.db.tbb")
+      assert(result == Lineage(
+        List("v2_catalog.db.tbb"),
+        List("default.test_view"),
+        List(
+          ("default.test_view.a", Set("v2_catalog.db.tbb.col1")),
+          ("default.test_view.b", Set("v2_catalog.db.tbb.col2")),
+          ("default.test_view.c", Set("v2_catalog.db.tbb.col3")))))
+    }
+  }
+
+  test("columns lineage extract - AppendData/OverwriteByExpression") {
+    val ddls =
+      """
+        |create table v2_catalog.db.tb0(col1 int, col2 string) partitioned by(col2)
+        |""".stripMargin
+    ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    withTable("v2_catalog.db.tb0") { _ =>
+      val ret0 =
+        exectractLineage(
+          s"insert into table v2_catalog.db.tb0 " +
+            s"select key as col1, value as col2 from test_db0.test_table0")
+      assert(ret0 == Lineage(
+        List("test_db0.test_table0"),
+        List("v2_catalog.db.tb0"),
+        List(
+          ("v2_catalog.db.tb0.col1", Set("test_db0.test_table0.key")),
+          ("v2_catalog.db.tb0.col2", Set("test_db0.test_table0.value")))))
+
+      val ret1 =
+        exectractLineage(
+          s"insert overwrite table v2_catalog.db.tb0 partition(col2) " +
+            s"select key as col1, value as col2 from test_db0.test_table0")
+      assert(ret1 == Lineage(
+        List("test_db0.test_table0"),
+        List("v2_catalog.db.tb0"),
+        List(
+          ("v2_catalog.db.tb0.col1", Set("test_db0.test_table0.key")),
+          ("v2_catalog.db.tb0.col2", Set("test_db0.test_table0.value")))))
+
+      val ret2 =
+        exectractLineage(
+          s"insert overwrite table v2_catalog.db.tb0 partition(col2 = 'bb') " +
+            s"select key as col1 from test_db0.test_table0")
+      assert(ret2 == Lineage(
+        List("test_db0.test_table0"),
+        List("v2_catalog.db.tb0"),
+        List(
+          ("v2_catalog.db.tb0.col1", Set("test_db0.test_table0.key")),
+          ("v2_catalog.db.tb0.col2", Set()))))
+    }
+  }
+
+  test("columns lineage extract - MergeIntoTable") {
+    val ddls =
+      """
+        |create table v2_catalog.db.target_t(id int, name string, price float)
+        |create table v2_catalog.db.source_t(id int, name string, price float)
+        |create table v2_catalog.db.pivot_t(id int, price float)
+        |""".stripMargin
+    ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    withTable("v2_catalog.db.target_t", "v2_catalog.db.source_t") { _ =>
+      val ret0 = exectractLineageWithoutExecuting("MERGE INTO v2_catalog.db.target_t AS target " +
+        "USING v2_catalog.db.source_t AS source " +
+        "ON target.id = source.id " +
+        "WHEN MATCHED THEN " +
+        "  UPDATE SET target.name = source.name, target.price = source.price " +
+        "WHEN NOT MATCHED THEN " +
+        "  INSERT (id, name, price) VALUES (source.id, source.name, source.price)")
+      assert(ret0 == Lineage(
+        List("v2_catalog.db.source_t"),
+        List("v2_catalog.db.target_t"),
+        List(
+          ("v2_catalog.db.target_t.id", Set("v2_catalog.db.source_t.id")),
+          ("v2_catalog.db.target_t.name", Set("v2_catalog.db.source_t.name")),
+          ("v2_catalog.db.target_t.price", Set("v2_catalog.db.source_t.price")))))
+
+      val ret1 = exectractLineageWithoutExecuting("MERGE INTO v2_catalog.db.target_t AS target " +
+        "USING v2_catalog.db.source_t AS source " +
+        "ON target.id = source.id " +
+        "WHEN MATCHED THEN " +
+        "  UPDATE SET * " +
+        "WHEN NOT MATCHED THEN " +
+        "  INSERT *")
+      assert(ret1 == Lineage(
+        List("v2_catalog.db.source_t"),
+        List("v2_catalog.db.target_t"),
+        List(
+          ("v2_catalog.db.target_t.id", Set("v2_catalog.db.source_t.id")),
+          ("v2_catalog.db.target_t.name", Set("v2_catalog.db.source_t.name")),
+          ("v2_catalog.db.target_t.price", Set("v2_catalog.db.source_t.price")))))
+
+      val ret2 = exectractLineageWithoutExecuting("MERGE INTO v2_catalog.db.target_t AS target " +
+        "USING (select a.id, a.name, b.price " +
+        "from v2_catalog.db.source_t a join v2_catalog.db.pivot_t b) AS source " +
+        "ON target.id = source.id " +
+        "WHEN MATCHED THEN " +
+        "  UPDATE SET * " +
+        "WHEN NOT MATCHED THEN " +
+        "  INSERT *")
+
+      assert(ret2 == Lineage(
+        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t"),
+        List("v2_catalog.db.target_t"),
+        List(
+          ("v2_catalog.db.target_t.id", Set("v2_catalog.db.source_t.id")),
+          ("v2_catalog.db.target_t.name", Set("v2_catalog.db.source_t.name")),
+          ("v2_catalog.db.target_t.price", Set("v2_catalog.db.pivot_t.price")))))
+    }
+
+  }
+
   test("columns lineage extract - CreateViewCommand") {
     withView("createviewcommand", "createviewcommand1", "createviewcommand2") { _ =>
       val ret0 = exectractLineage(
@@ -399,7 +521,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         List("col1" -> Set("v2_catalog.db.tb.col1"), "col2" -> Set("v2_catalog.db.tb.col1"))))
 
       val sql3 =
-        "select col1 as col2, 'col2' as col2, 'col2', col3 as col2 " +
+        "select col1 as col2, 'col2' as col2, 'col2', first(col3) as col2 " +
           "from v2_catalog.db.tb group by col1"
       val ret3 = exectractLineage(sql3)
       assert(ret3 == Lineage(
@@ -640,8 +762,10 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           |FROM test_db.test_order_item
           |WHERE 1 = 1 AND is_valid_order = 1
           |GROUP BY
-          |channel_id, sub_channel_id, country_name
+          |stat_date, channel_id, sub_channel_id, user_type, country_name
           |) a
+          |GROUP BY
+          |stat_date, channel_id, sub_channel_id, user_type, country_name
           |""".stripMargin
       val ret0 = exectractLineage(sql0)
       assert(ret0 == Lineage(
@@ -725,7 +849,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         ("a", Set("test_db0.test_table0.__count__")),
         ("b", Set()))))
 
-    val sql2 = """select every(count(key) == 1) as a, 1 as b from test_db0.test_table0"""
+    val sql2 = """select every(key == 1) as a, 1 as b from test_db0.test_table0"""
     val ret2 = exectractLineage(sql2)
     assert(ret2 == Lineage(
       List("test_db0.test_table0"),
@@ -734,7 +858,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         ("a", Set("test_db0.test_table0.key")),
         ("b", Set()))))
 
-    val sql3 = """select every(count(*) == 1) as a, 1 as b from test_db0.test_table0"""
+    val sql3 = """select count(*) as a, 1 as b from test_db0.test_table0"""
     val ret3 = exectractLineage(sql3)
     assert(ret3 == Lineage(
       List("test_db0.test_table0"),
@@ -762,7 +886,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         ("b", Set()))))
 
     val sql6 =
-      """select every(count(value) + sum(key) == 1) as a,
+      """select count(value) + sum(key) as a,
         | 1 as b from test_db0.test_table0""".stripMargin
     val ret6 = exectractLineage(sql6)
     assert(ret6 == Lineage(
@@ -772,7 +896,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         ("a", Set("test_db0.test_table0.value", "test_db0.test_table0.key")),
         ("b", Set()))))
 
-    val sql7 = """select every(count(*) + sum(key) == 1) as a, 1 as b from test_db0.test_table0"""
+    val sql7 = """select count(*) + sum(key) as a, 1 as b from test_db0.test_table0"""
     val ret7 = exectractLineage(sql7)
     assert(ret7 == Lineage(
       List("test_db0.test_table0"),
@@ -781,6 +905,42 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         ("a", Set("test_db0.test_table0.__count__", "test_db0.test_table0.key")),
         ("b", Set()))))
 
+  }
+
+  test("colums lineage extract - catch table") {
+    val ddls =
+      """
+        |create table table0(a int, b string, c string)
+        |create table table1(a int, b string, c string)
+        |""".stripMargin
+    ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    withTable("table0", "table1") { _ =>
+      spark.sql("cache table t0_cached select a as a0, b as b0 from table0 where a = 1 ")
+      val sql0 =
+        """
+          |select b.a as aa, t0_cached.b0 as bb from t0_cached join table1 b on b.a = t0_cached.a0
+          |""".stripMargin
+      val ret0 = exectractLineage(sql0)
+      assert(ret0 == Lineage(
+        List("default.table1", "default.table0"),
+        List(),
+        List(
+          ("aa", Set("default.table1.a")),
+          ("bb", Set("default.table0.b")))))
+
+      val df0 = spark.sql("select a as a0, b as b0 from table0 where a = 2")
+      df0.cache()
+      val df1 = spark.sql("select a, b from table1")
+      val df = df0.join(df1).select(df0("a0").alias("aa"), df1("b").alias("bb"))
+      val optimized = df.queryExecution.optimizedPlan
+      val ret1 = SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
+      assert(ret1 == Lineage(
+        List("default.table0", "default.table1"),
+        List(),
+        List(
+          ("aa", Set("default.table0.a")),
+          ("bb", Set("default.table1.b")))))
+    }
   }
 
   test("columns lineage extract - subquery sql") {
@@ -934,10 +1094,154 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     }
   }
 
-  private def exectractLineage(sql: String): Lineage = {
+  test("test group by") {
+    withTable("t1", "t2", "v2_catalog.db.t1", "v2_catalog.db.t2") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string, c string) USING hive")
+      spark.sql("CREATE TABLE t2 (a string, b string, c string) USING hive")
+      spark.sql("CREATE TABLE v2_catalog.db.t1 (a string, b string, c string)")
+      spark.sql("CREATE TABLE v2_catalog.db.t2 (a string, b string, c string)")
+      val ret0 =
+        exectractLineage(
+          s"insert into table t1 select a," +
+            s"concat_ws('/', collect_set(b))," +
+            s"count(distinct(b)) * count(distinct(c))" +
+            s"from t2 group by a")
+      assert(ret0 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.b")),
+          ("default.t1.c", Set("default.t2.b", "default.t2.c")))))
+
+      val ret1 =
+        exectractLineage(
+          s"insert into table v2_catalog.db.t1 select a," +
+            s"concat_ws('/', collect_set(b))," +
+            s"count(distinct(b)) * count(distinct(c))" +
+            s"from v2_catalog.db.t2 group by a")
+      assert(ret1 == Lineage(
+        List("v2_catalog.db.t2"),
+        List("v2_catalog.db.t1"),
+        List(
+          ("v2_catalog.db.t1.a", Set("v2_catalog.db.t2.a")),
+          ("v2_catalog.db.t1.b", Set("v2_catalog.db.t2.b")),
+          ("v2_catalog.db.t1.c", Set("v2_catalog.db.t2.b", "v2_catalog.db.t2.c")))))
+
+      val ret2 =
+        exectractLineage(
+          s"insert into table v2_catalog.db.t1 select a," +
+            s"count(distinct(b+c))," +
+            s"count(distinct(b)) * count(distinct(c))" +
+            s"from v2_catalog.db.t2 group by a")
+      assert(ret2 == Lineage(
+        List("v2_catalog.db.t2"),
+        List("v2_catalog.db.t1"),
+        List(
+          ("v2_catalog.db.t1.a", Set("v2_catalog.db.t2.a")),
+          ("v2_catalog.db.t1.b", Set("v2_catalog.db.t2.b", "v2_catalog.db.t2.c")),
+          ("v2_catalog.db.t1.c", Set("v2_catalog.db.t2.b", "v2_catalog.db.t2.c")))))
+    }
+  }
+
+  test("test grouping sets") {
+    withTable("t1", "t2") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string, c string) USING hive")
+      spark.sql("CREATE TABLE t2 (a string, b string, c string, d string) USING hive")
+      val ret0 =
+        exectractLineage(
+          s"insert into table t1 select a,b,GROUPING__ID " +
+            s"from t2 group by a,b,c,d grouping sets ((a,b,c), (a,b,d))")
+      assert(ret0 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.b")),
+          ("default.t1.c", Set()))))
+    }
+  }
+
+  test("test catch table with window function") {
+    withTable("t1", "t2") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string) USING hive")
+      spark.sql("CREATE TABLE t2 (a string, b string) USING hive")
+
+      spark.sql(
+        s"cache table c1 select * from (" +
+          s"select a, b, row_number() over (partition by a order by b asc ) rank from t2)" +
+          s" where rank=1")
+      val ret0 = exectractLineage("insert overwrite table t1 select a, b from c1")
+      assert(ret0 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.b")))))
+
+      val ret1 = exectractLineage("insert overwrite table t1 select a, rank from c1")
+      assert(ret1 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.a", "default.t2.b")))))
+
+      spark.sql(
+        s"cache table c2 select * from (" +
+          s"select b, a, row_number() over (partition by a order by b asc ) rank from t2)" +
+          s" where rank=1")
+      val ret2 = exectractLineage("insert overwrite table t1 select a, b from c2")
+      assert(ret2 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.b")))))
+
+      spark.sql(
+        s"cache table c3 select * from (" +
+          s"select a as aa, b as bb, row_number() over (partition by a order by b asc ) rank" +
+          s" from t2) where rank=1")
+      val ret3 = exectractLineage("insert overwrite table t1 select aa, bb from c3")
+      assert(ret3 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set("default.t2.a")),
+          ("default.t1.b", Set("default.t2.b")))))
+    }
+  }
+
+  test("test count()") {
+    withTable("t1", "t2") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string, c string) USING hive")
+      spark.sql("CREATE TABLE t2 (a string, b string, c string) USING hive")
+      val ret0 = exectractLineage("insert into t1 select 1,2,(select count(distinct" +
+        " ifnull(get_json_object(a, '$.b.imei'), get_json_object(a, '$.b.android_id'))) from t2)")
+
+      assert(ret0 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set()),
+          ("default.t1.b", Set()),
+          ("default.t1.c", Set("default.t2.a")))))
+    }
+  }
+
+  private def exectractLineageWithoutExecuting(sql: String): Lineage = {
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val analyzed = spark.sessionState.analyzer.execute(parsed)
+    spark.sessionState.analyzer.checkAnalysis(analyzed)
     val optimized = spark.sessionState.optimizer.execute(analyzed)
+    SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
+  }
+
+  private def exectractLineage(sql: String): Lineage = {
+    val parsed = spark.sessionState.sqlParser.parsePlan(sql)
+    val qe = spark.sessionState.executePlan(parsed)
+    val optimized = qe.optimizedPlan
     SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
   }
 
