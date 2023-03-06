@@ -20,19 +20,18 @@ package org.apache.kyuubi.engine.spark
 import java.util.UUID
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_ENGINE_URL}
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider
 
-class ZookeeperSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
-  with WithEmbeddedZookeeper {
+class EtcdSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
+  with WithEtcdCluster {
 
   override def withKyuubiConf: Map[String, String] =
-    super.withKyuubiConf ++ zookeeperConf ++ Map(
+    super.withKyuubiConf ++ etcdConf ++ Map(
       "spark.ui.enabled" -> "true")
 
   override val namespace: String = s"/kyuubi/deregister_test/${UUID.randomUUID.toString}"
 
-  test("Spark Engine Register Zookeeper with spark ui info") {
-    zookeeperConf.foreach(entry => kyuubiConf.set(entry._1, entry._2))
+  test("Spark Engine Register Etcd with spark ui info") {
+    etcdConf.foreach(entry => kyuubiConf.set(entry._1, entry._2))
     withDiscoveryClient(client => {
       val info = client.getChildren(namespace).head.split(",")
       assert(info.exists(_.startsWith(KYUUBI_ENGINE_ID)))
