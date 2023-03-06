@@ -20,11 +20,11 @@ package org.apache.kyuubi.ha.client.etcd
 import java.nio.charset.StandardCharsets
 
 import scala.collection.JavaConverters._
-import scala.util.control.NonFatal
 
 import io.etcd.jetcd.launcher.{Etcd, EtcdCluster}
 import org.scalactic.source.Position
 import org.scalatest.Tag
+import org.testcontainers.DockerClientFactory
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_CLIENT_CLASS}
@@ -44,10 +44,10 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
   var conf: KyuubiConf = KyuubiConf()
     .set(HA_CLIENT_CLASS, classOf[EtcdDiscoveryClient].getName)
 
-  private var hasDockerEnv = false
+  private val hasDockerEnv = DockerClientFactory.instance().isDockerAvailable
 
   override def beforeAll(): Unit = {
-    try {
+    if (hasDockerEnv) {
       etcdCluster = new Etcd.Builder()
         .withNodes(2)
         .build()
@@ -55,17 +55,13 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
       conf = new KyuubiConf()
         .set(HA_CLIENT_CLASS, classOf[EtcdDiscoveryClient].getName)
         .set(HA_ADDRESSES, getConnectString)
-      hasDockerEnv = true
-    } catch {
-      case NonFatal(_) =>
-      // ignore if no docker environment
     }
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
-    if (etcdCluster != null && hasDockerEnv) {
+    if (hasDockerEnv && etcdCluster != null) {
       etcdCluster.close()
       etcdCluster = null
     }
