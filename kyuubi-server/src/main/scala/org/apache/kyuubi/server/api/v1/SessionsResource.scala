@@ -21,23 +21,24 @@ import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
-import org.apache.kyuubi.events.KyuubiEvent
-import org.apache.kyuubi.operation.OperationHandle
+import org.apache.kyuubi.events.{KyuubiEvent, KyuubiOperationEvent, KyuubiSessionEvent}
+import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.session.KyuubiSession
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -83,6 +84,41 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         error(s"Invalid $sessionHandleStr", e)
         throw new NotFoundException(s"Invalid $sessionHandleStr")
     }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[KyuubiSessionEvent]))),
+    description = "list alive sessions")
+  @GET
+  @Path("listSessionInfo")
+  def listSessionInfo(
+      @QueryParam("user") @DefaultValue("") user: String,
+      @QueryParam("serverIP") @DefaultValue("") serverIP: String): Seq[KyuubiSessionEvent] = {
+    val kyuubiSessionEvents = ListBuffer[KyuubiSessionEvent]()
+
+    try {
+      sessionManager.allSessions().map { session =>
+        kyuubiSessionEvents += sessionManager.getSession(session.handle.identifier.toString)
+          .asInstanceOf[KyuubiSession].getSessionEvent.get
+      }
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting all session info"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+    kyuubiSessionEvents
+      .filter(element => {
+        serverIP.equalsIgnoreCase("") ||
+        StringUtils.equalsIgnoreCase(element.serverIP, serverIP)
+      })
+      .filter(element => {
+        user.equalsIgnoreCase("") ||
+        StringUtils.equalsIgnoreCase(element.user, user)
+      })
   }
 
   @ApiResponse(
@@ -403,5 +439,97 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[SQLDetail]))),
+    description =
+      "get sql detail list hosted a specific session binding via an identifier")
+  @GET
+  @Path("{sessionHandle}/sqlDetails")
+  def getOperations(
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[SQLDetail] = {
+    val sqlDetails = ListBuffer[SQLDetail]()
+    try {
+      sessionManager.operationManager.allOperations().map { operation =>
+        val kyuubiSessionEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+        if (StringUtils.equalsIgnoreCase(
+            sessionHandleStr,
+            operation.getSession.handle.identifier.toString)) {
+          sqlDetails += new SQLDetail(
+            sessionHandleStr,
+            kyuubiSessionEvent.sessionUser,
+            kyuubiSessionEvent.statementId,
+            kyuubiSessionEvent.createTime,
+            kyuubiSessionEvent.completeTime,
+            kyuubiSessionEvent.statement,
+            kyuubiSessionEvent.engineId,
+            kyuubiSessionEvent.engineType,
+            kyuubiSessionEvent.engineShareLevel,
+            kyuubiSessionEvent.exception.map(_.toString).orNull)
+        }
+      }
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+    sqlDetails
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[InfoDetail]))),
+    description =
+      "get all supported info types by Kyuubi session")
+  @GET
+  @Path("{sessionHandle}/infoTypes")
+  def getSupportedInfoType(
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[InfoDetail] = {
+    try {
+      val infoTypes = TGetInfoType.values()
+      infoTypes.map(infoType => {
+        new InfoDetail(infoType.toString, infoType.getValue.toString)
+      }).toSeq
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[KyuubiOperationEvent]))),
+    description =
+      "get all the operation event hosted a specific session binding via an identifier")
+  @GET
+  @Path("{sessionHandle}/operations")
+  def getAllOperationEvent(
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[KyuubiOperationEvent] = {
+    val KyuubiOperationEvents = ListBuffer[KyuubiOperationEvent]()
+    try {
+      sessionManager.operationManager.allOperations().map { operation =>
+        {
+          if (StringUtils.equalsIgnoreCase(
+              sessionHandleStr,
+              operation.getSession.handle.identifier.toString)) {
+            KyuubiOperationEvents += KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+          }
+        }
+      }
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+    KyuubiOperationEvents
   }
 }

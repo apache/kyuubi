@@ -38,6 +38,8 @@ import org.apache.kyuubi.session.KyuubiSession
  * @param endTime session end time
  * @param totalOperations how many queries and meta calls
  * @param exception the session exception, such as the exception that occur when opening session
+ * @param runningOperations how many queries running
+ * @param errorOperations how many queries failed
  */
 case class KyuubiSessionEvent(
     sessionId: String,
@@ -55,7 +57,9 @@ case class KyuubiSessionEvent(
     var openedTime: Long = -1L,
     var endTime: Long = -1L,
     var totalOperations: Int = 0,
-    var exception: Option[Throwable] = None) extends KyuubiEvent {
+    var exception: Option[Throwable] = None,
+    var runningOperations: Int = 0,
+    var errorOperations: Int = 0) extends KyuubiEvent {
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 }

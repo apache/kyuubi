@@ -17,9 +17,9 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 import overviewRoutes from './overview'
-import workloadRoutes from './workload'
-import operationRoutes from './operation'
-import contactRoutes from './contact'
+import sessionRoutes from './session'
+import serverRoutes from './server'
+import runSqlRoutes from './run-sql'
 
 const routes = [
   {
@@ -36,11 +36,12 @@ const routes = [
     redirect: 'overview',
     children: [
       ...overviewRoutes,
-      ...workloadRoutes,
-      ...operationRoutes,
-      ...contactRoutes
+      ...sessionRoutes,
+      ...serverRoutes,
+      ...runSqlRoutes
     ]
-  }
+  },
+  { path: '/:catchAll(.*)', redirect: '/' }
 ]
 
 const router = createRouter({

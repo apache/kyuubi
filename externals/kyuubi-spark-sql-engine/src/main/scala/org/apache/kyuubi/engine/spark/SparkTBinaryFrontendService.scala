@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.text.DecimalFormat
+
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.io.Text
@@ -93,14 +95,54 @@ class SparkTBinaryFrontendService(
     }
   }
 
+  def parseMemory2Byte(size: String, instance: Int): Double = {
+    val memory = size.dropRight(1).toDouble
+    val unit = size.last.toLower
+    val formattedMemory = unit match {
+      case 'k' => memory * 1024.0 * instance
+      case 'm' => memory * 1024.0 * 1024.0 * instance
+      case 'g' => memory * 1024.0 * 1024.0 * 1024.0 * instance
+      case 't' => memory * 1024.0 * 1024.0 * 1024.0 * 1024.0 * instance
+    }
+    formattedMemory
+  }
+
   override def attributes: Map[String, String] = {
-    Map(KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId)
+
+    val settings = sc.getConf.getAll.toMap
+    val executorInstances = sc.getExecutorMemoryStatus.size - 1
+    val executorMemory = settings.get(SPARK_ENGINE_EXECUTOR_MEMORY).getOrElse("1g")
+    val executorCores = Integer.parseInt(settings.get(SPARK_ENGINE_EXECUTOR_CORES).getOrElse("1"))
+    val driverMemory = settings.get(SPARK_ENGINE_DRIVER_MEMORY).getOrElse("1g")
+    val driverCores = Integer.parseInt(settings.get(SPARK_ENGINE_DRIVER_CORES).getOrElse("1"))
+    val dec = new DecimalFormat("0.00")
+    val memory = dec.format(parseMemory2Byte(executorMemory, executorInstances) +
+      parseMemory2Byte(driverMemory, 1))
+    val cores = executorInstances * executorCores + driverCores
+    val address = java.net.InetAddress.getLocalHost.getHostAddress
+    Map(
+      KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
+      KYUUBI_ENGINE_URL -> sc.uiWebUrl.get.replace("//", ""),
+      KYUUBI_ENGINE_SUBMIT_TIME -> sc.startTime.toString,
+      KYUUBI_ENGINE_MEMORY -> memory,
+      KYUUBI_ENGINE_CPU -> cores.toString,
+      KYUUBI_ENGINE_DRIVER_IP -> address,
+      KYUUBI_ENGINE_UI_PORT -> sc.getConf.get("spark.ui.port"),
+      KYUUBI_ENGINE_USERNAME -> sc.sparkUser)
   }
 }
 
 object SparkTBinaryFrontendService extends Logging {
 
   val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
+  final val SPARK_ENGINE_DRIVER_MEMORY = "spark.driver.memory"
+  final val SPARK_ENGINE_EXECUTOR_MEMORY = "spark.executor.memory"
+
+  final val SPARK_ENGINE_EXECUTOR_CORES = "spark.executor.cores"
+  final val SPARK_ENGINE_DRIVER_CORES = "spark.driver.cores"
+
+  final val SPARK_ENGINE_EXECUTOR_INSTANCE = "spark.executor.instances"
+  final val SPARK_ENGINE_EXECUTOR_MAX_INSTANCE = "spark.dynamicAllocation.maxExecutors"
 
   private[spark] def renewDelegationToken(sc: SparkContext, delegationToken: String): Unit = {
     val newCreds = KyuubiHadoopUtils.decodeCredentials(delegationToken)

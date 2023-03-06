@@ -377,7 +377,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val createMode =
       if (external) CreateMode.PERSISTENT_SEQUENTIAL
       else CreateMode.EPHEMERAL_SEQUENTIAL
-    val znodeData =
+    var znodeData =
       if (conf.get(HA_ZK_PUBLISH_CONFIGS) && session.isEmpty) {
         addConfsToPublish(conf, instance)
       } else {

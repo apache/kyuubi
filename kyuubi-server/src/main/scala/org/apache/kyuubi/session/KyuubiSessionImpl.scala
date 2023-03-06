@@ -203,12 +203,17 @@ class KyuubiSessionImpl(
         waitForEngineLaunched()
       } catch {
         case t: Throwable =>
+          sessionEvent.errorOperations += 1
           operation.close()
           throw t
       }
       sessionEvent.totalOperations += 1
     }
-    super.runOperation(operation)
+
+    sessionEvent.runningOperations += 1
+    val operationHandle = super.runOperation(operation)
+    sessionEvent.runningOperations -= 1
+    operationHandle
   }
 
   @volatile private var engineLaunched: Boolean = false
@@ -251,7 +256,7 @@ class KyuubiSessionImpl(
     try {
       if (_client != null) _client.closeSession()
     } finally {
-      openSessionError.foreach { _ => if (engine != null) engine.close() }
+      if (engine != null) engine.close()
       sessionEvent.endTime = System.currentTimeMillis()
       EventBus.post(sessionEvent)
       traceMetricsOnClose()

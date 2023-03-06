@@ -39,6 +39,10 @@ final class KyuubiTBinaryFrontendService(
     override val serverable: Serverable)
   extends TBinaryFrontendService("KyuubiTBinaryFrontend") {
 
+  override def attributes: Map[String, String] = {
+    Map(KYUUBI_SERVER_SUBMIT_TIME -> System.currentTimeMillis().toString)
+  }
+
   override protected def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
 
   override lazy val discoveryService: Option[Service] = {

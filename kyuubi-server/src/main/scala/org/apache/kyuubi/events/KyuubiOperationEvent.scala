@@ -18,8 +18,9 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_TYPE}
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
-import org.apache.kyuubi.session.KyuubiSession
+import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionImpl}
 
 /**
  * A [[KyuubiOperationEvent]] used to tracker the lifecycle of an operation at server side.
@@ -42,12 +43,16 @@ import org.apache.kyuubi.session.KyuubiSession
  * @param sessionId the identifier of the parent session
  * @param sessionUser the authenticated client user
  * @param sessionType the type of the parent session
+ * @param engineId the id of engine
+ * @param engineType the type of engine
+ * @param engineShareLevel the share level of engine
  */
 case class KyuubiOperationEvent private (
     statementId: String,
     remoteId: String,
     statement: String,
     shouldRunAsync: Boolean,
+    operationType: String,
     state: String,
     eventTime: Long,
     createTime: Long,
@@ -56,7 +61,10 @@ case class KyuubiOperationEvent private (
     exception: Option[Throwable],
     sessionId: String,
     sessionUser: String,
-    sessionType: String) extends KyuubiEvent {
+    sessionType: String,
+    engineId: String,
+    engineType: String,
+    engineShareLevel: String) extends KyuubiEvent {
 
   // operation events are partitioned by the date when the corresponding operations are
   // created.
@@ -77,6 +85,7 @@ object KyuubiOperationEvent {
       Option(operation.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
       operation.statement,
       operation.shouldRunAsync,
+      Option(operation.remoteOpHandle()).map(_.getOperationType.name()).orNull,
       status.state.name(),
       status.lastModified,
       status.create,
@@ -85,6 +94,9 @@ object KyuubiOperationEvent {
       status.exception,
       session.handle.identifier.toString,
       session.user,
-      session.sessionType.toString)
+      session.sessionType.toString,
+      session.asInstanceOf[KyuubiSessionImpl].client.engineId.orNull,
+      Option(session.sessionManager.getConf).map(_.get(ENGINE_TYPE)).orNull,
+      Option(session.sessionManager.getConf).map(_.get(ENGINE_SHARE_LEVEL)).orNull)
   }
 }

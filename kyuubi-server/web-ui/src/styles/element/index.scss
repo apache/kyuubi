@@ -38,7 +38,7 @@ $--colors: (
 
 $--menus: (
   'item-height': 46px,
-  'icon-width': 24px,
+  'icon-width': 12px,
   'text-color': 'rgba(255, 255, 255, .75)',
   'hover-text-color': '#fff',
   'hover-bg-color': '#1890ff',
@@ -46,10 +46,15 @@ $--menus: (
   'active-color': '#1890ff',
 );
 
+$--card: (
+  padding: 14px
+);
+
 @forward 'element-plus/theme-chalk/src/common/var.scss' with (
     // do not use same name, it will override.
     $colors: $--colors,
-    $menu: $--menus
+    $menu: $--menus,
+    $card: $--card
   );
 
 @use "element-plus/theme-chalk/src/index.scss" as *;

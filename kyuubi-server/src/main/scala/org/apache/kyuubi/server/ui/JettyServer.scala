@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server.ui
 
-import org.eclipse.jetty.server.{Handler, HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
+import org.eclipse.jetty.server._
 import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
 import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
@@ -87,6 +87,8 @@ object JettyServer {
 
     val serverExecutor = new ScheduledExecutorScheduler(s"$name-JettyScheduler", true)
     val httpConf = new HttpConfiguration()
+    httpConf.setRequestHeaderSize(512 * 1024 * 1024)
+    httpConf.setResponseHeaderSize(512 * 1024 * 1024)
     val connector = new ServerConnector(
       server,
       null,
