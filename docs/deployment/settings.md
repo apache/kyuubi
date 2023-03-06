@@ -449,10 +449,9 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 
 ### Proxy
 
-Key | Default | Meaning | Type | Since
---- | --- | --- | --- | ---
-kyuubi.proxy.spark.ui.enabled|false|Whether to enabled kyuubi help proxy spark ui|boolean|1.7.0
-
+|              Key              | Default |                    Meaning                    |  Type   | Since |
+|-------------------------------|---------|-----------------------------------------------|---------|-------|
+| kyuubi.proxy.spark.ui.enabled | false   | Whether to enabled kyuubi help proxy spark ui | boolean | 1.7.0 |
 
 ### Server
 
