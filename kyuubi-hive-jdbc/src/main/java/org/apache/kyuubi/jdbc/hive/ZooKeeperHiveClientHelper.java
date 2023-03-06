@@ -32,12 +32,13 @@ class ZooKeeperHiveClientHelper {
   // Pattern for key1=value1;key2=value2
   private static final Pattern kvPattern = Pattern.compile("([^=;]*)=([^;]*);?");
 
-  private static String getZooKeeperNamespace(JdbcConnectionParams connParams) {
+  public static String getZooKeeperNamespace(JdbcConnectionParams connParams) {
     String zooKeeperNamespace =
         connParams.getSessionVars().get(JdbcConnectionParams.ZOOKEEPER_NAMESPACE);
     if ((zooKeeperNamespace == null) || (zooKeeperNamespace.isEmpty())) {
       zooKeeperNamespace = JdbcConnectionParams.ZOOKEEPER_DEFAULT_NAMESPACE;
     }
+    zooKeeperNamespace = zooKeeperNamespace.replaceAll("^/+", "").replaceAll("/+$", "");
     return zooKeeperNamespace;
   }
 
