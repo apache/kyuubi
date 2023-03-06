@@ -91,7 +91,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[KyuubiSessionEvent]))),
-    description = "get session info")
+    description = "list alive sessions")
   @GET
   @Path("listSessionInfo")
   def listSessionInfo(

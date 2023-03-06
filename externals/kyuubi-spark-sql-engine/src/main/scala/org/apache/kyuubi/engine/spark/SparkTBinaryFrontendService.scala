@@ -95,14 +95,14 @@ class SparkTBinaryFrontendService(
     }
   }
 
-  def parseMemory2GB(size: String, instance: Int): Double = {
+  def parseMemory2Byte(size: String, instance: Int): Double = {
     val memory = size.dropRight(1).toDouble
     val unit = size.last.toLower
     val formattedMemory = unit match {
-      case 'k' => memory / 1024.0 / 1024.0 * instance
-      case 'm' => memory / 1024.0 * instance
-      case 'g' => memory * instance
-      case 't' => memory * 1024.0 * instance
+      case 'k' => memory * 1024.0 * instance
+      case 'm' => memory * 1024.0 * 1024.0 * instance
+      case 'g' => memory * 1024.0 * 1024.0 * 1024.0 * instance
+      case 't' => memory * 1024.0 * 1024.0 * 1024.0 * 1024.0 * instance
     }
     formattedMemory
   }
@@ -116,15 +116,15 @@ class SparkTBinaryFrontendService(
     val driverMemory = settings.get(SPARK_ENGINE_DRIVER_MEMORY).getOrElse("1g")
     val driverCores = Integer.parseInt(settings.get(SPARK_ENGINE_DRIVER_CORES).getOrElse("1"))
     val dec = new DecimalFormat("0.00")
-    val memory = dec.format(parseMemory2GB(executorMemory, executorInstances) +
-      parseMemory2GB(driverMemory, 1))
+    val memory = dec.format(parseMemory2Byte(executorMemory, executorInstances) +
+      parseMemory2Byte(driverMemory, 1))
     val cores = executorInstances * executorCores + driverCores
     val address = java.net.InetAddress.getLocalHost.getHostAddress
     Map(
       KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
       KYUUBI_ENGINE_URL -> sc.uiWebUrl.get.replace("//", ""),
       KYUUBI_ENGINE_SUBMIT_TIME -> sc.startTime.toString,
-      KYUUBI_ENGINE_MEMORY -> s"$memory GB",
+      KYUUBI_ENGINE_MEMORY -> memory,
       KYUUBI_ENGINE_CPU -> cores.toString,
       KYUUBI_ENGINE_DRIVER_IP -> address,
       KYUUBI_ENGINE_UI_PORT -> sc.getConf.get("spark.ui.port"),

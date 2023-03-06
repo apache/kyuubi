@@ -105,7 +105,14 @@
         prop="memoryTotal"
         :label="$t('memory')"
         min-width="20%"
-      />
+      >
+        <template #default="scope">
+          <span>{{
+            scope.row.memoryTotal == null || scope.row.memoryTotal === ''
+              ? '-'
+              : byteTransfer(scope.row.memoryTotal)
+          }}</span>
+        </template>
       <el-table-column prop="status" :label="$t('status')" min-width="20%" />
       <el-table-column fixed="right" :label="$t('operation')" width="120">
         <template #default="scope">
@@ -167,6 +174,7 @@
   import { useTable } from '@/views/common/use-table'
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
+  import { byteTransfer } from '@/utils'
 
   const { t } = useI18n()
   const searchParam: IEngineSearch = reactive({

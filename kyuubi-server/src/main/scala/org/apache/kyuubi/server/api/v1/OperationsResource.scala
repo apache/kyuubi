@@ -315,7 +315,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[KyuubiOperationEvent]))),
     description =
-      "query operation event list")
+      "list alive operations")
   @GET
   @Path("listOperation")
   def listOperation(
