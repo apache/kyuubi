@@ -113,6 +113,7 @@
               : byteTransfer(scope.row.memoryTotal)
           }}</span>
         </template>
+        </el-table-column>
       <el-table-column prop="status" :label="$t('status')" min-width="20%" />
       <el-table-column fixed="right" :label="$t('operation')" width="120">
         <template #default="scope">
