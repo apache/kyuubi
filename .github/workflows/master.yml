@@ -95,9 +95,9 @@ jobs:
       - name: Test Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
-          ./build/mvn test -pl ${TEST_MODULES} -am \
+          ./build/mvnd test -pl ${TEST_MODULES} -am \
           -Dmvnd.serial ${MVN_OPT} \
-          -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }} test
+          -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
           matrix.java == 8 &&
