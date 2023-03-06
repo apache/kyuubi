@@ -31,7 +31,7 @@ import org.apache.kyuubi.engine.spark.schema.RowSet
 
 object SparkDatasetHelper {
   def toArrowBatchRdd[T](ds: Dataset[T], compressionCodec: String): RDD[Array[Byte]] = {
-      ds.toArrowBatchRdd.map(CompressionCodecFactory.createCodec(compressionCodec).compress)
+    ds.toArrowBatchRdd.map(CompressionCodecFactory.createCodec(compressionCodec).compress)
   }
 
   def convertTopLevelComplexTypeToHiveString(

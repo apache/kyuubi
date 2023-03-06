@@ -223,9 +223,9 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                     "__kyuubi_operation_result_arrow_timestampAsString__",
                     DEFAULT_ARROW_TIMESTAMP_AS_STRING));
 
-        String compressionCodec = properties.getOrDefault(
-            "__kyuubi_operation_result_compression_codec__",
-            DEFAULT_ARROW_COMPRESSION_CODEC);
+        String compressionCodec =
+            properties.getOrDefault(
+                "__kyuubi_operation_result_compression_codec__", DEFAULT_ARROW_COMPRESSION_CODEC);
         resultSet =
             new KyuubiArrowQueryResultSet.Builder(this)
                 .setClient(client)
@@ -291,9 +291,9 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                     "__kyuubi_operation_result_arrow_timestampAsString__",
                     DEFAULT_ARROW_TIMESTAMP_AS_STRING));
 
-        String compressionCodec = properties.getOrDefault(
-            "__kyuubi_operation_result_compression_codec__",
-            DEFAULT_ARROW_COMPRESSION_CODEC);
+        String compressionCodec =
+            properties.getOrDefault(
+                "__kyuubi_operation_result_compression_codec__", DEFAULT_ARROW_COMPRESSION_CODEC);
         resultSet =
             new KyuubiArrowQueryResultSet.Builder(this)
                 .setClient(client)
