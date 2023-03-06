@@ -33,7 +33,7 @@ class ZookeeperSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
   test("Spark Engine Register Zookeeper with spark ui info") {
     zookeeperConf.foreach(entry => kyuubiConf.set(entry._1, entry._2))
     withDiscoveryClient(client => {
-      val info = client.getChildren(namespace).head.split(",")
+      val info = client.getChildren(namespace).head.split(";")
       assert(info.exists(_.startsWith(KYUUBI_ENGINE_ID)))
       assert(info.exists(_.startsWith(KYUUBI_ENGINE_URL)))
     })

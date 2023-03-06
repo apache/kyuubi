@@ -33,7 +33,7 @@ class EtcdSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
   test("Spark Engine Register Etcd with spark ui info") {
     etcdConf.foreach(entry => kyuubiConf.set(entry._1, entry._2))
     withDiscoveryClient(client => {
-      val info = client.getChildren(namespace).head.split(",")
+      val info = client.getChildren(namespace).head.split(";")
       assert(info.exists(_.startsWith(KYUUBI_ENGINE_ID)))
       assert(info.exists(_.startsWith(KYUUBI_ENGINE_URL)))
     })
