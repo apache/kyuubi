@@ -94,8 +94,11 @@ class SparkTBinaryFrontendService(
   }
 
   override def attributes: Map[String, String] = {
+    val settings = sc.getConf.getAll.toMap
     Map(
       KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
+      KYUUBI_ENGINE_CORE -> settings.getOrElse(SPARK_DRIVER_CORE, "1"),
+      KYUUBI_ENGINE_MEMORY -> settings.getOrElse(SPARK_DRIVER_MEMORY, "1g"),
       // TODO Support Spark Web UI Enabled SSL
       KYUUBI_ENGINE_URL -> (sc.uiWebUrl match {
         case Some(url) => url.split("//").last
@@ -107,6 +110,8 @@ class SparkTBinaryFrontendService(
 object SparkTBinaryFrontendService extends Logging {
 
   val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
+  private final val SPARK_DRIVER_CORE = "spark.driver.cores"
+  private final val SPARK_DRIVER_MEMORY = "spark.driver.memory"
 
   private[spark] def renewDelegationToken(sc: SparkContext, delegationToken: String): Unit = {
     val newCreds = KyuubiHadoopUtils.decodeCredentials(delegationToken)
