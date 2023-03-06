@@ -210,9 +210,20 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
-    engines.filter(engineType == null || _.getEngineType.equalsIgnoreCase(engineType))
-      .filter(shareLevel == null || _.getSharelevel.equalsIgnoreCase(shareLevel))
-      .filter(hs2ProxyUser == null || _.getUser.equalsIgnoreCase(hs2ProxyUser))
+
+    engines
+      .filter(element => {
+        engineType == null ||
+        StringUtils.equalsIgnoreCase(element.getEngineType, engineType)
+      })
+      .filter(element => {
+        shareLevel == null ||
+        StringUtils.equalsIgnoreCase(element.getSharelevel, shareLevel)
+      })
+      .filter(element => {
+        hs2ProxyUser == null ||
+        StringUtils.equalsIgnoreCase(element.getUser, hs2ProxyUser)
+      })
   }
 
   @deprecated
@@ -230,7 +241,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       info(s"Listing server nodes for $serverSpace")
       serverNodes ++= discoveryClient.getServiceNodesInfo(serverSpace)
       serverNodes.map(node => {
-        if (host.equalsIgnoreCase("") || node.host.equalsIgnoreCase(host)) {
+        if (host.equalsIgnoreCase("") || StringUtils.equalsIgnoreCase(node.host, host)) {
           Servers += new Server(
             node.nodeName,
             node.namespace,

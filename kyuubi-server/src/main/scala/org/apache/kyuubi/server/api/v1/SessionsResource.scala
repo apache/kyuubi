@@ -97,21 +97,28 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def listSessionInfo(
       @QueryParam("user") @DefaultValue("") user: String,
       @QueryParam("serverIP") @DefaultValue("") serverIP: String): Seq[KyuubiSessionEvent] = {
+    val kyuubiSessionEvents = ListBuffer[KyuubiSessionEvent]()
+
     try {
-      val kyuubiSessionEvents = ListBuffer[KyuubiSessionEvent]()
       sessionManager.allSessions().map { session =>
         kyuubiSessionEvents += sessionManager.getSession(session.handle.identifier.toString)
           .asInstanceOf[KyuubiSession].getSessionEvent.get
       }
-      (kyuubiSessionEvents
-        .filter(serverIP.equalsIgnoreCase("") || _.serverIP.equalsIgnoreCase(serverIP))
-        .filter(user.equalsIgnoreCase("") || _.user.equalsIgnoreCase(user)))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting all session info"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
+    kyuubiSessionEvents
+      .filter(element => {
+        serverIP.equalsIgnoreCase("") ||
+        StringUtils.equalsIgnoreCase(element.serverIP, serverIP)
+      })
+      .filter(element => {
+        user.equalsIgnoreCase("") ||
+        StringUtils.equalsIgnoreCase(element.user, user)
+      })
   }
 
   @ApiResponse(
@@ -449,8 +456,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     try {
       sessionManager.operationManager.allOperations().map { operation =>
         val kyuubiSessionEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
-        if (StringUtils.isNotEmpty(sessionHandleStr) &&
-          sessionHandleStr.equalsIgnoreCase(operation.getSession.handle.identifier.toString)) {
+        if (StringUtils.equalsIgnoreCase(
+            sessionHandleStr,
+            operation.getSession.handle.identifier.toString)) {
           sqlDetails += new SQLDetail(
             sessionHandleStr,
             kyuubiSessionEvent.sessionUser,
@@ -510,8 +518,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     try {
       sessionManager.operationManager.allOperations().map { operation =>
         {
-          if (StringUtils.isNotEmpty(sessionHandleStr) &&
-            sessionHandleStr.equalsIgnoreCase(operation.getSession.handle.identifier.toString)) {
+          if (StringUtils.equalsIgnoreCase(
+              sessionHandleStr,
+              operation.getSession.handle.identifier.toString)) {
             KyuubiOperationEvents += KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
           }
         }

@@ -27,6 +27,7 @@ import scala.util.control.NonFatal
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -329,19 +330,25 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
           val kyuubiOperationEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
           KyuubiOperationEvents += kyuubiOperationEvent
         }
-      (KyuubiOperationEvents
-        .filter(
-          sessionHandleStr.equalsIgnoreCase("") || _.sessionId.equalsIgnoreCase(sessionHandleStr))
-        .filter(
-          operationType.equalsIgnoreCase("") || _.operationType.equalsIgnoreCase(operationType))
-        .filter(
-          stateStr.equalsIgnoreCase("") || _.state.equalsIgnoreCase(stateStr)))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error querying operation event list"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
+
     KyuubiOperationEvents
+      .filter(element => {
+        sessionHandleStr.equalsIgnoreCase("") ||
+        StringUtils.equalsIgnoreCase(element.sessionId, sessionHandleStr)
+      })
+      .filter(element => {
+        operationType.equalsIgnoreCase("") ||
+        StringUtils.equalsIgnoreCase(element.operationType, operationType)
+      })
+      .filter(element => {
+        stateStr.equalsIgnoreCase("") ||
+        StringUtils.equalsIgnoreCase(element.state, stateStr)
+      })
   }
 }
