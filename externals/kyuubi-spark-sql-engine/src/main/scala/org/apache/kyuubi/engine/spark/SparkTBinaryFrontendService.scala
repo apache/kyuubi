@@ -110,8 +110,8 @@ class SparkTBinaryFrontendService(
 object SparkTBinaryFrontendService extends Logging {
 
   val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
-  private final val SPARK_DRIVER_CORE = "spark.driver.cores"
-  private final val SPARK_DRIVER_MEMORY = "spark.driver.memory"
+  final private val SPARK_DRIVER_CORE = "spark.driver.cores"
+  final private val SPARK_DRIVER_MEMORY = "spark.driver.memory"
 
   private[spark] def renewDelegationToken(sc: SparkContext, delegationToken: String): Unit = {
     val newCreds = KyuubiHadoopUtils.decodeCredentials(delegationToken)
