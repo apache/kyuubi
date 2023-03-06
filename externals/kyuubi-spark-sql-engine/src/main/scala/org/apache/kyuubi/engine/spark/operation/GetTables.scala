@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.config.KyuubiConf.OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
@@ -31,6 +32,12 @@ class GetTables(
     tableName: String,
     tableTypes: Set[String])
   extends SparkOperation(session) {
+
+  protected val ignoreTableProperties =
+    spark.conf.getOption(OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES.key) match {
+      case Some(s) => s.toBoolean
+      case _ => session.sessionManager.getConf.get(OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES)
+    }
 
   override def statement: String = {
     super.statement +
@@ -68,7 +75,13 @@ class GetTables(
       val tablePattern = toJavaRegex(tableName)
       val sparkShim = SparkCatalogShim()
       val catalogTablesAndViews =
-        sparkShim.getCatalogTablesOrViews(spark, catalog, schemaPattern, tablePattern, tableTypes)
+        sparkShim.getCatalogTablesOrViews(
+          spark,
+          catalog,
+          schemaPattern,
+          tablePattern,
+          tableTypes,
+          ignoreTableProperties)
 
       val allTableAndViews =
         if (tableTypes.exists("VIEW".equalsIgnoreCase)) {

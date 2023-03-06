@@ -2713,4 +2713,11 @@ object KyuubiConf {
       .version("1.7.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(60).toMillis)
+
+  val OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.getTables.ignoreTableProperties")
+      .doc("Speed up the `GetTables` operation by returning table identities only.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
 }
