@@ -124,7 +124,7 @@
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>${hive.jdbc.artifact}</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
+            <scope>test-jar</scope>
         </dependency>
 
         <dependency>
