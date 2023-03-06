@@ -1718,14 +1718,6 @@ object KyuubiConf {
       .transform(_.toLowerCase(Locale.ROOT))
       .createWithDefault("lz4")
 
-  val OPERATION_RESULT_MAX_ROWS: ConfigEntry[Int] =
-    buildConf("kyuubi.operation.result.max.rows")
-      .doc("Max rows of Spark query results. Rows that exceeds the limit would be ignored. " +
-        "By setting this value to 0 to disable the max rows limit.")
-      .version("1.6.0")
-      .intConf
-      .createWithDefault(0)
-
   val ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.result.arrow.timestampAsString")
       .doc("When true, arrow-based rowsets will convert columns of type timestamp to strings for" +

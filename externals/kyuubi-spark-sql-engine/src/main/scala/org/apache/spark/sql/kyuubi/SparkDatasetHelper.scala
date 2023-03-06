@@ -18,7 +18,6 @@
 package org.apache.spark.sql.kyuubi
 
 import java.io.{ByteArrayOutputStream, OutputStream}
-import java.time.ZoneId
 import java.util.zip.GZIPOutputStream
 
 import com.github.luben.zstd.ZstdOutputStreamNoFinalizer
@@ -31,10 +30,8 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.engine.spark.schema.RowSet
 
 object SparkDatasetHelper {
-  def toArrowBatchRdd[T](ds: Dataset[T], compressionCodec: Option[String]): RDD[Array[Byte]] = {
-    compressionCodec.map { codec =>
-      ds.toArrowBatchRdd.map(CompressionCodecFactory.createCodec(codec).compress)
-    }.getOrElse(ds.toArrowBatchRdd)
+  def toArrowBatchRdd[T](ds: Dataset[T], compressionCodec: String): RDD[Array[Byte]] = {
+      ds.toArrowBatchRdd.map(CompressionCodecFactory.createCodec(compressionCodec).compress)
   }
 
   def convertTopLevelComplexTypeToHiveString(

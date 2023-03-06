@@ -36,13 +36,13 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   override def withKyuubiConf: Map[String, String] = Map.empty
 
   override def jdbcVars: Map[String, String] = {
-    Map(
-      KyuubiConf.OPERATION_RESULT_CODEC.key -> resultCodec,
-      Map(KyuubiConf.OPERATION_RESULT_FORMAT.key -> resultFormat,
-        KyuubiConf.OPERATION_RESULT_COMPRESSION_CODEC.key -> compressionCodec)
+    Map(KyuubiConf.OPERATION_RESULT_FORMAT.key -> resultFormat,
+            KyuubiConf.OPERATION_RESULT_COMPRESSION_CODEC.key -> compressionCodec)
   }
 
   override def resultFormat: String = "arrow"
+
+  def compressionCodec: String = "lz4"
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -59,9 +59,18 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     }
   }
 
-  def compressionCodec: String = "lz4"
+  test("compression codec") {
+    withJdbcStatement() { statement =>
+      val query =
+        s"""
+           |SELECT '$${hivevar:${KyuubiConf.OPERATION_RESULT_COMPRESSION_CODEC.key}}' AS col
+           |""".stripMargin
+      val resultSet = statement.executeQuery(query)
+      assert(resultSet.next())
+      assert(resultSet.getString("col") === compressionCodec)
+    }
+  }
 
-  test("make sure kyuubi.operation.result.codec=arrow") {
   test("Spark session timezone format") {
     withJdbcStatement() { statement =>
       def check(expect: String): Unit = {
@@ -97,29 +106,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     }
   }
 
-  test("compression codec") {
-    withJdbcStatement() { statement =>
-      val query =
-        s"""
-           |SELECT '$${hivevar:${KyuubiConf.OPERATION_RESULT_COMPRESSION_CODEC.key}}' AS col
-           |""".stripMargin
-      val resultSet = statement.executeQuery(query)
-      assert(resultSet.next())
-      assert(resultSet.getString("col") === compressionCodec)
-    }
-  }
-}
-
-class NoCompressionSuite extends SparkArrowbasedOperationSuite {
-  override def compressionCodec: String = "none"
-}
-
-class ZstdCompressionSuite extends SparkArrowbasedOperationSuite {
-  override def compressionCodec: String = "zstd"
-}
-
-class GzipCompressionSuite extends SparkArrowbasedOperationSuite {
-  override def compressionCodec: String = "gzip"
   test("assign a new execution id for arrow-based result") {
     var plan: LogicalPlan = null
 
@@ -206,4 +192,16 @@ class GzipCompressionSuite extends SparkArrowbasedOperationSuite {
       .allSessions()
       .foreach(_.asInstanceOf[SparkSessionImpl].spark.listenerManager.unregister(listener))
   }
+}
+
+class NoCompressionSuite extends SparkArrowbasedOperationSuite {
+  override def compressionCodec: String = "none"
+}
+
+class ZstdCompressionSuite extends SparkArrowbasedOperationSuite {
+  override def compressionCodec: String = "zstd"
+}
+
+class GzipCompressionSuite extends SparkArrowbasedOperationSuite {
+  override def compressionCodec: String = "gzip"
 }

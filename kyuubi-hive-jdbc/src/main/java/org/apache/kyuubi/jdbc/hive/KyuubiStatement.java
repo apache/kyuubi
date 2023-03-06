@@ -38,6 +38,8 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public static final int DEFAULT_FETCH_SIZE = 1000;
   public static final String DEFAULT_RESULT_FORMAT = "thrift";
   public static final String DEFAULT_ARROW_TIMESTAMP_AS_STRING = "false";
+
+  public static final String DEFAULT_ARROW_COMPRESSION_CODEC = "lz4";
   private final KyuubiConnection connection;
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle = null;
@@ -220,6 +222,10 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 properties.getOrDefault(
                     "__kyuubi_operation_result_arrow_timestampAsString__",
                     DEFAULT_ARROW_TIMESTAMP_AS_STRING));
+
+        String compressionCodec = properties.getOrDefault(
+            "__kyuubi_operation_result_compression_codec__",
+            DEFAULT_ARROW_COMPRESSION_CODEC);
         resultSet =
             new KyuubiArrowQueryResultSet.Builder(this)
                 .setClient(client)
@@ -228,7 +234,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 .setMaxRows(maxRows)
                 .setFetchSize(fetchSize)
                 .setScrollable(isScrollableResultset)
-                .setCompressionCodec(connection.getCompressionCodec())
+                .setCompressionCodec(compressionCodec)
                 .setSchema(columnNames, columnTypes, columnAttributes)
                 .setTimestampAsString(timestampAsString)
                 .build();
@@ -284,6 +290,10 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 properties.getOrDefault(
                     "__kyuubi_operation_result_arrow_timestampAsString__",
                     DEFAULT_ARROW_TIMESTAMP_AS_STRING));
+
+        String compressionCodec = properties.getOrDefault(
+            "__kyuubi_operation_result_compression_codec__",
+            DEFAULT_ARROW_COMPRESSION_CODEC);
         resultSet =
             new KyuubiArrowQueryResultSet.Builder(this)
                 .setClient(client)
@@ -292,7 +302,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 .setMaxRows(maxRows)
                 .setFetchSize(fetchSize)
                 .setScrollable(isScrollableResultset)
-                .setCompressionCodec(connection.getCompressionCodec())
+                .setCompressionCodec(compressionCodec)
                 .setSchema(columnNames, columnTypes, columnAttributes)
                 .setTimestampAsString(timestampAsString)
                 .build();
