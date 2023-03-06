@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark
 
 import java.util.UUID
 
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_ENGINE_URL}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CORE, KYUUBI_ENGINE_ID, KYUUBI_ENGINE_MEMORY, KYUUBI_ENGINE_URL}
 
 trait SparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine {
 
@@ -33,6 +33,9 @@ trait SparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine {
       val info = client.getChildren(namespace).head.split(";")
       assert(info.exists(_.startsWith(KYUUBI_ENGINE_ID)))
       assert(info.exists(_.startsWith(KYUUBI_ENGINE_URL)))
+      assert(info.filter(_.startsWith(KYUUBI_ENGINE_CORE)).head.equals(s"${KYUUBI_ENGINE_CORE}=1"))
+      assert(
+        info.filter(_.startsWith(KYUUBI_ENGINE_MEMORY)).head.equals(s"${KYUUBI_ENGINE_MEMORY}=1g"))
     })
   }
 }
