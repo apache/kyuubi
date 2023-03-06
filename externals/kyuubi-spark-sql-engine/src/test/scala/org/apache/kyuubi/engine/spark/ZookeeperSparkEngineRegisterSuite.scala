@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.spark
 import java.util.UUID
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_ENGINE_URL}
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider
 
 class ZookeeperSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
   with WithEmbeddedZookeeper {
