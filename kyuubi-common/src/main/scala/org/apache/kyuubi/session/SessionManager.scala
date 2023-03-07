@@ -283,9 +283,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     shutdown = true
     val shutdownTimeout: Long =
       if (isServer) {
-        conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
-      } else {
         conf.get(SERVER_EXEC_POOL_SHUTDOWN_TIMEOUT)
+      } else {
+        conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
       }
 
     ThreadUtils.shutdown(timeoutChecker, Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
