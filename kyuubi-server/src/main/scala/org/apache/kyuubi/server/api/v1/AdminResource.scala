@@ -30,17 +30,16 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.zookeeper.KeeperException.NoNodeException
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
-import org.apache.kyuubi.client.api.v1.dto.{Engine, SessionData}
+import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, SessionData}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.KyuubiServer
-import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
+import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -122,15 +121,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       throw new NotAllowedException(
         s"$userName is not allowed to list all live sessions")
     }
-    fe.be.sessionManager.allSessions().map { session =>
-      new SessionData(
-        session.handle.identifier.toString,
-        session.user,
-        session.ipAddress,
-        session.conf.asJava,
-        session.createTime,
-        session.lastAccessTime - session.createTime,
-        session.getNoOperationTime)
+    fe.be.sessionManager.allSessions().map { case session =>
+      ApiUtils.sessionData(session.asInstanceOf[KyuubiSession])
     }.toSeq
   }
 
@@ -157,12 +149,12 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       array = new ArraySchema(schema = new Schema(implementation =
-        classOf[KyuubiOperationEvent])))),
+        classOf[OperationData])))),
     description =
-      "get the list of all active operation events")
+      "get the list of all active operations")
   @GET
   @Path("operations")
-  def listOperations(): Seq[KyuubiOperationEvent] = {
+  def listOperations(): Seq[OperationData] = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Received listing all of the active operations request from $userName/$ipAddress")
@@ -171,7 +163,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         s"$userName is not allowed to list all the operations")
     }
     fe.be.sessionManager.operationManager.allOperations()
-      .map(operation => KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])).toSeq
+      .map(operation => ApiUtils.operationData(operation.asInstanceOf[KyuubiOperation])).toSeq
   }
 
   @ApiResponse(

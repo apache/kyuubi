@@ -17,41 +17,45 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-public class SessionData {
+public class OperationData {
   private String identifier;
-  private String user;
-  private String ipAddr;
-  private Map<String, String> conf;
+  private String statement;
+  private String state;
   private Long createTime;
-  private Long duration;
-  private Long idleTime;
+  private Long startTime;
+  private Long completeTime;
   private String exception;
+  private String sessionId;
+  private String sessionUser;
+  private String sessionType;
 
-  public SessionData() {}
+  public OperationData() {}
 
-  public SessionData(
+  public OperationData(
       String identifier,
-      String user,
-      String ipAddr,
-      Map<String, String> conf,
+      String statement,
+      String state,
       Long createTime,
-      Long duration,
-      Long idleTime,
-      String exception) {
+      Long startTime,
+      Long completeTime,
+      String exception,
+      String sessionId,
+      String sessionUser,
+      String sessionType) {
     this.identifier = identifier;
-    this.user = user;
-    this.ipAddr = ipAddr;
-    this.conf = conf;
+    this.statement = statement;
+    this.state = state;
     this.createTime = createTime;
-    this.duration = duration;
-    this.idleTime = idleTime;
+    this.startTime = startTime;
+    this.completeTime = completeTime;
     this.exception = exception;
+    this.sessionId = sessionId;
+    this.sessionUser = sessionUser;
+    this.sessionType = sessionType;
   }
 
   public String getIdentifier() {
@@ -62,31 +66,20 @@ public class SessionData {
     this.identifier = identifier;
   }
 
-  public String getUser() {
-    return user;
+  public String getStatement() {
+    return statement;
   }
 
-  public void setUser(String user) {
-    this.user = user;
+  public void setStatement(String statement) {
+    this.statement = statement;
   }
 
-  public String getIpAddr() {
-    return ipAddr;
+  public String getState() {
+    return state;
   }
 
-  public void setIpAddr(String ipAddr) {
-    this.ipAddr = ipAddr;
-  }
-
-  public Map<String, String> getConf() {
-    if (null == conf) {
-      return Collections.emptyMap();
-    }
-    return conf;
-  }
-
-  public void setConf(Map<String, String> conf) {
-    this.conf = conf;
+  public void setState(String state) {
+    this.state = state;
   }
 
   public Long getCreateTime() {
@@ -97,20 +90,20 @@ public class SessionData {
     this.createTime = createTime;
   }
 
-  public Long getDuration() {
-    return duration;
+  public Long getStartTime() {
+    return startTime;
   }
 
-  public void setDuration(Long duration) {
-    this.duration = duration;
+  public void setStartTime(Long startTime) {
+    this.startTime = startTime;
   }
 
-  public Long getIdleTime() {
-    return idleTime;
+  public Long getCompleteTime() {
+    return completeTime;
   }
 
-  public void setIdleTime(Long idleTime) {
-    this.idleTime = idleTime;
+  public void setCompleteTime(Long completeTime) {
+    this.completeTime = completeTime;
   }
 
   public String getException() {
@@ -119,6 +112,30 @@ public class SessionData {
 
   public void setException(String exception) {
     this.exception = exception;
+  }
+
+  public String getSessionId() {
+    return sessionId;
+  }
+
+  public void setSessionId(String sessionId) {
+    this.sessionId = sessionId;
+  }
+
+  public String getSessionUser() {
+    return sessionUser;
+  }
+
+  public void setSessionUser(String sessionUser) {
+    this.sessionUser = sessionUser;
+  }
+
+  public String getSessionType() {
+    return sessionType;
+  }
+
+  public void setSessionType(String sessionType) {
+    this.sessionType = sessionType;
   }
 
   @Override
