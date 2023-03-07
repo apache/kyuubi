@@ -17,7 +17,7 @@
 
 services:
   minio:
-    image: alekcander/bitnami-minio-multiarch:RELEASE.2022-05-26T05-48-41Z
+    image: bitnami/minio:2023-debian-11
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio_minio
