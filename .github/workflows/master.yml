@@ -98,6 +98,7 @@ jobs:
           name: kyuubi-hive-jdbc-shaded
           path: |
             ./kyuubi-hive-jdbc-shaded/target/kyuubi*.jar
+            ./kyuubi-hive-jdbc/target/kyuubi*.jar
       - name: Test Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
