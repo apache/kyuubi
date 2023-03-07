@@ -103,7 +103,7 @@ jobs:
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
           ./build/mvnd test -pl ${TEST_MODULES} -am \
-          -Dmvnd.serial ${MVN_OPT} \
+          -Dmvnd.serial ${MVN_OPT} -P!jdbc-shaded \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
