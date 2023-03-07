@@ -582,6 +582,24 @@
     "fieldName" : "query",
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ]
+},{
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceData",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "UPDATE",
+  "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.UpdateTable",
   "tableDescs" : [ {
