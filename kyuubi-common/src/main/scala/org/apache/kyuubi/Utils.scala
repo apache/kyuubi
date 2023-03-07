@@ -392,7 +392,7 @@ object Utils extends Logging {
    * Return a nice string representation of the exception. It will call "printStackTrace" to
    * recursively generate the stack trace including the exception and its causes.
    */
-  def exceptionString(e: Throwable): String = {
+  def prettyPrint(e: Throwable): String = {
     if (e == null) {
       ""
     } else {
