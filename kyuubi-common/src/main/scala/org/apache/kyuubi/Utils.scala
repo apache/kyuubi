@@ -387,4 +387,19 @@ object Utils extends Logging {
     Option(Thread.currentThread().getContextClassLoader).getOrElse(getKyuubiClassLoader)
 
   def isOnK8s: Boolean = Files.exists(Paths.get("/var/run/secrets/kubernetes.io"))
+
+  /**
+   * Return a nice string representation of the exception. It will call "printStackTrace" to
+   * recursively generate the stack trace including the exception and its causes.
+   */
+  def prettyPrint(e: Throwable): String = {
+    if (e == null) {
+      ""
+    } else {
+      // Use e.printStackTrace here because e.getStackTrace doesn't include the cause
+      val stringWriter = new StringWriter()
+      e.printStackTrace(new PrintWriter(stringWriter))
+      stringWriter.toString
+    }
+  }
 }

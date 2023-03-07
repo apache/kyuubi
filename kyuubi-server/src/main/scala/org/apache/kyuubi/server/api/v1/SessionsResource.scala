@@ -35,7 +35,7 @@ import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 import org.apache.kyuubi.session.KyuubiSession
 import org.apache.kyuubi.session.SessionHandle
 
@@ -54,15 +54,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "get the list of all live sessions")
   @GET
   def sessions(): Seq[SessionData] = {
-    sessionManager.allSessions().map { session =>
-      new SessionData(
-        session.handle.identifier.toString,
-        session.user,
-        session.ipAddress,
-        session.conf.asJava,
-        session.createTime,
-        session.lastAccessTime - session.createTime,
-        session.getNoOperationTime)
+    sessionManager.allSessions().map { case session =>
+      ApiUtils.sessionData(session.asInstanceOf[KyuubiSession])
     }.toSeq
   }
 
