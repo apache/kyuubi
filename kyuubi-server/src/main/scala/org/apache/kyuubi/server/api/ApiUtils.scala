@@ -51,6 +51,6 @@ object ApiUtils {
       opEvent.exception.map(Utils.prettyPrint).getOrElse(""),
       opEvent.sessionId,
       opEvent.sessionUser,
-      opEvent.sessionType,)
+      opEvent.sessionType)
   }
 }
