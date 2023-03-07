@@ -414,6 +414,11 @@ trait LineageParser {
             })
         }
 
+      case p: View =>
+        val viewColumnsLineage =
+          extractColumnsLineage(p.child, ListMap[Attribute, AttributeSet]())
+        mergeRelationColumnLineage(parentColumnsLineage, p.output, viewColumnsLineage)
+
       case p: InMemoryRelation =>
         // get logical plan from cachedPlan
         val cachedTableLogical = findSparkPlanLogicalLink(Seq(p.cacheBuilder.cachedPlan))
