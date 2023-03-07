@@ -93,7 +93,6 @@ jobs:
           ./build/mvnd clean install ${MVN_OPT} -pl ${TEST_MODULES} -am -DskipTests \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Upload hive jdbc shaded jar
-        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: kyuubi-hive-jdbc-shaded
