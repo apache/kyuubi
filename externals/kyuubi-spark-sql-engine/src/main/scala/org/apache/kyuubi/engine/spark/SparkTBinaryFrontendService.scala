@@ -28,6 +28,7 @@ import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiReservedKeys._
+import org.apache.kyuubi.engine.spark.Constants.{SPARK_DRIVER_CORE, SPARK_DRIVER_MEMORY}
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService._
@@ -95,23 +96,21 @@ class SparkTBinaryFrontendService(
 
   override def attributes: Map[String, String] = {
     val settings = sc.getConf.getAll.toMap
-    Map(
+    val attributes = Map(
       KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
       KYUUBI_ENGINE_CORE -> settings.getOrElse(SPARK_DRIVER_CORE, "1"),
-      KYUUBI_ENGINE_MEMORY -> settings.getOrElse(SPARK_DRIVER_MEMORY, "1g"),
-      // TODO Support Spark Web UI Enabled SSL
-      KYUUBI_ENGINE_URL -> (sc.uiWebUrl match {
-        case Some(url) => url.split("//").last
-        case None => ""
-      }))
+      KYUUBI_ENGINE_MEMORY -> settings.getOrElse(SPARK_DRIVER_MEMORY, "1g"))
+    // TODO Support Spark Web UI Enabled SSL
+    sc.uiWebUrl match {
+      case Some(url) => attributes ++ Map(KYUUBI_ENGINE_URL -> url.split("//").last)
+      case None => attributes
+    }
   }
 }
 
 object SparkTBinaryFrontendService extends Logging {
 
   val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
-  final private val SPARK_DRIVER_CORE = "spark.driver.cores"
-  final private val SPARK_DRIVER_MEMORY = "spark.driver.memory"
 
   private[spark] def renewDelegationToken(sc: SparkContext, delegationToken: String): Unit = {
     val newCreds = KyuubiHadoopUtils.decodeCredentials(delegationToken)
