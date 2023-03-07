@@ -124,7 +124,7 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
     ctx.stringLit().asScala.map(v => unescapeSQLString(v.getText)).toList
   }
 
-  override def visitGetPrepareParameters(ctx: GetPrepareParametersContext): KyuubiTreeNode = {
+  override def visitExecute(ctx: ExecuteContext): KyuubiTreeNode = {
     val parameters = Option(ctx.parameterList()) match {
       case Some(para) =>
         para.anyStr().asScala.toList.map(p => p.getText.substring(1, p.getText.length - 1))
@@ -133,7 +133,7 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
     GetPrepareParameters(ctx.IDENTIFIER().getText, parameters)
   }
 
-  override def visitGetPrepareSql(ctx: GetPrepareSqlContext): KyuubiTreeNode = {
+  override def visitPrepare(ctx: PrepareContext): KyuubiTreeNode = {
     GetPrepareSql(ctx.IDENTIFIER().getText, ctx.statement().getText)
   }
 }

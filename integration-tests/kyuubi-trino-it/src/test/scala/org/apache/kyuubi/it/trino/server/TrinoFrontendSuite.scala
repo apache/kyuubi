@@ -51,7 +51,6 @@ class TrinoFrontendSuite extends WithKyuubiServer with SparkMetadataTests {
     statement.setInt(1, 1)
     val rs = statement.executeQuery()
     while (rs.next()) {
-      // scalastyle:off println
       assert(rs.getInt(1) == 11)
     }
   }
@@ -68,16 +67,8 @@ class TrinoFrontendSuite extends WithKyuubiServer with SparkMetadataTests {
   override protected val password: String = ""
 
   override def beforeAll(): Unit = {
-    super.beforeAll()
-
     // eagerly start spark engine before running test, it's a workaround for trino jdbc driver
     // since it does not support changing http connect timeout
-    //    try {
-    //      withJdbcStatement() { statement =>
-    //        statement.execute("SELECT 1")
-    //      }
-    //    } catch {
-    //      case NonFatal(e) =>
-    //    }
+    super.beforeAll()
   }
 }

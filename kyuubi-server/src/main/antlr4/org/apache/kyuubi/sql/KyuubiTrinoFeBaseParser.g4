@@ -54,8 +54,8 @@ statement
       CAST LEFT_PAREN NULL AS SMALLINT RIGHT_PAREN KEY_SEQ COMMA
       CAST LEFT_PAREN NULL AS VARCHAR RIGHT_PAREN PK_NAME
       WHERE FALSE                                                                                       #getPrimaryKeys
-    | EXECUTE IDENTIFIER (USING parameterList)?                                                         #getPrepareParameters
-    | PREPARE IDENTIFIER FROM statement                                                                 #getPrepareSql
+    | EXECUTE IDENTIFIER (USING parameterList)?                                                         #execute
+    | PREPARE IDENTIFIER FROM statement                                                                 #prepare
     | .*?                                                                                               #passThrough
     ;
 

@@ -370,7 +370,7 @@ class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
     assert(kyuubiTreeNode.isInstanceOf[GetPrimaryKeys])
   }
 
-  test("dddde") {
+  test("Support PreparedStatement for Trino Fe") {
     val kyuubiTreeNode = parse(
       """
         | EXECUTE statement1 USING INTEGER '1'
