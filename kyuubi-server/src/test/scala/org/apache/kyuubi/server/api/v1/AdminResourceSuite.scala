@@ -27,13 +27,12 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROT
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, RestFrontendTestHelper, Utils}
-import org.apache.kyuubi.client.api.v1.dto.{Engine, SessionData, SessionHandle, SessionOpenRequest}
+import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, SessionData, SessionHandle, SessionOpenRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
 import org.apache.kyuubi.engine.{ApplicationState, EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, USER}
-import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryPaths
@@ -189,9 +188,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .get()
     assert(200 == response.getStatus)
-    var operations = response.readEntity(new GenericType[Seq[KyuubiOperationEvent]]() {})
+    var operations = response.readEntity(new GenericType[Seq[OperationData]]() {})
     assert(operations.nonEmpty)
-    assert(operations.map(op => op.statementId).contains(operation.identifier.toString))
+    assert(operations.map(op => op.getIdentifier).contains(operation.identifier.toString))
 
     // close operation
     response = webTarget.path(s"api/v1/admin/operations/${operation.identifier}").request()
@@ -203,8 +202,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     response = webTarget.path("api/v1/admin/operations").request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .get()
-    operations = response.readEntity(new GenericType[Seq[KyuubiOperationEvent]]() {})
-    assert(!operations.map(op => op.statementId).contains(operation.identifier.toString))
+    operations = response.readEntity(new GenericType[Seq[OperationData]]() {})
+    assert(!operations.map(op => op.getIdentifier).contains(operation.identifier.toString))
   }
 
   test("delete engine - user share level") {
