@@ -2541,6 +2541,13 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val ENGINE_SUBMIT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.submit.timeout")
+      .doc("The timeout for submitting engine")
+      .version("1.8.0")
+      .timeConf
+      .createWithDefaultString("PT30S")
+
   /**
    * Holds information about keys that have been deprecated.
    *

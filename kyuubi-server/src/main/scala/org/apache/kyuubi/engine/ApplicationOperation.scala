@@ -58,7 +58,7 @@ trait ApplicationOperation {
    * @param tag the unique application tag for engine instance.
    * @return [[ApplicationInfo]]
    */
-  def getApplicationInfoByTag(tag: String): ApplicationInfo
+  def getApplicationInfoByTag(tag: String, submitTime: Option[Long] = None): ApplicationInfo
 }
 
 object ApplicationState extends Enumeration {

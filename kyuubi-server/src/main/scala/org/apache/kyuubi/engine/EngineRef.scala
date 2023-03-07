@@ -216,7 +216,10 @@ private[kyuubi] class EngineRef(
         // check the engine application state from engine manager and fast fail on engine terminate
         if (exitValue == Some(0)) {
           Option(engineManager).foreach { engineMgr =>
-            engineMgr.getApplicationInfo(builder.clusterManager(), engineRefId).foreach { appInfo =>
+            engineMgr.getApplicationInfo(
+              builder.clusterManager(),
+              engineRefId,
+              Some(started)).foreach { appInfo =>
               if (ApplicationState.isTerminated(appInfo.state)) {
                 MetricsSystem.tracing { ms =>
                   ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))

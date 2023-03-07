@@ -32,16 +32,15 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   @volatile
   private var kubernetesClient: KubernetesClient = _
-  private var jpsOperation: JpsApplicationOperation = _
+
+  private var submitTimeout: Long = _
 
   override def initialize(conf: KyuubiConf): Unit = {
-    jpsOperation = new JpsApplicationOperation
-    jpsOperation.initialize(conf)
-
     info("Start initializing Kubernetes Client.")
     kubernetesClient = KubernetesUtils.buildKubernetesClient(conf) match {
       case Some(client) =>
         info(s"Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
+        submitTimeout = conf.get(KyuubiConf.ENGINE_SUBMIT_TIMEOUT)
         client
       case None =>
         warn("Fail to init Kubernetes Client for Kubernetes Application Operation")
@@ -50,6 +49,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   override def isSupported(clusterManager: Option[String]): Boolean = {
+    // TODO add deploy mode to check whether is supported
     kubernetesClient != null && clusterManager.nonEmpty &&
     clusterManager.get.toLowerCase.startsWith("k8s")
   }
@@ -73,8 +73,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
                 s"Operation of deleted appId: ${podList.get(0).getMetadata.getName} is completed")
           }
         } else {
-          // client mode
-          jpsOperation.killApplicationByTag(tag)
+          (
+            false,
+            s"Target Pod(tag: $tag) is not found, due to pod have been deleted or not created")
         }
       } catch {
         case e: Exception =>
@@ -85,7 +86,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  override def getApplicationInfoByTag(tag: String): ApplicationInfo = {
+  override def getApplicationInfoByTag(tag: String, submitTime: Option[Long]): ApplicationInfo = {
     if (kubernetesClient != null) {
       debug(s"Getting application info from Kubernetes cluster by $tag tag")
       try {
@@ -101,8 +102,23 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           debug(s"Successfully got application info by $tag: $info")
           info
         } else {
-          // client mode
-          jpsOperation.getApplicationInfoByTag(tag)
+          // Kyuubi should wait second if pod is not be created
+          submitTime match {
+            case Some(time) =>
+              val elapsedTime = System.currentTimeMillis() - time
+              if (elapsedTime > submitTimeout) {
+                error(s"Can't find target driver pod with tag: $tag, " +
+                  s"has elapsed time: ${elapsedTime}ms (limit timeout: ${submitTimeout}ms), " +
+                  s"to submit time: ${submitTimeout}ms")
+                ApplicationInfo(id = null, name = null, ApplicationState.NOT_FOUND)
+              } else {
+                warn("Wait for driver pod to be created, " +
+                  s"elapsed time: ${elapsedTime}ms, return UNKNOWN status")
+                ApplicationInfo(id = null, name = null, ApplicationState.UNKNOWN)
+              }
+            case None =>
+              ApplicationInfo(id = null, name = null, ApplicationState.NOT_FOUND)
+          }
         }
       } catch {
         case e: Exception =>
