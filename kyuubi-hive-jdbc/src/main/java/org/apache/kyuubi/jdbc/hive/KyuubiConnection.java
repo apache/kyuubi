@@ -823,19 +823,21 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
   }
 
-  private boolean isFromSubjectAuthMode() {
-    return isSaslAuthMode()
-        && hasSessionValue(AUTH_PRINCIPAL)
-        && (AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
-                sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE))
-            || isHadoopUserGroupInformationDoAs());
-  }
-
   private boolean isKeytabAuthMode() {
     return isSaslAuthMode()
         && hasSessionValue(AUTH_PRINCIPAL)
         && hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
         && hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB);
+  }
+
+  private boolean isFromSubjectAuthMode() {
+    return isSaslAuthMode()
+            && hasSessionValue(AUTH_PRINCIPAL)
+            && !hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
+            && !hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB)
+            && (AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
+            sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE))
+            || isHadoopUserGroupInformationDoAs());
   }
 
   private boolean isTgtCacheAuthMode() {
@@ -854,15 +856,15 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private Subject createSubject() {
-    if (isFromSubjectAuthMode()) {
+    if (isKeytabAuthMode()) {
+      String principal = sessConfMap.get(AUTH_KYUUBI_CLIENT_PRINCIPAL);
+      String keytab = sessConfMap.get(AUTH_KYUUBI_CLIENT_KEYTAB);
+      return KerberosAuthenticationManager.getKeytabAuthentication(principal, keytab).getSubject();
+    } else if (isFromSubjectAuthMode()) {
       AccessControlContext context = AccessController.getContext();
       return Subject.getSubject(context);
     } else if (isTgtCacheAuthMode()) {
       return KerberosAuthenticationManager.getTgtCacheAuthentication().getSubject();
-    } else if (isKeytabAuthMode()) {
-      String principal = sessConfMap.get(AUTH_KYUUBI_CLIENT_PRINCIPAL);
-      String keytab = sessConfMap.get(AUTH_KYUUBI_CLIENT_KEYTAB);
-      return KerberosAuthenticationManager.getKeytabAuthentication(principal, keytab).getSubject();
     } else {
       // This should never happen
       throw new IllegalArgumentException("Unsupported auth mode");
