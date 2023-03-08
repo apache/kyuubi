@@ -1318,6 +1318,14 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(120).toMillis)
 
+  val ENGINE_ALIVE_CLOSE_CONNETION: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.engine.alive.closeConnection")
+      .doc("Whether to kill the thrift connection to engine when engine is marked as no-alive. " +
+        "If set to true, the connection will be killed")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_OPEN_MAX_ATTEMPTS: ConfigEntry[Int] =
     buildConf("kyuubi.session.engine.open.max.attempts")
       .doc("The number of times an open engine will retry when encountering a special error.")
