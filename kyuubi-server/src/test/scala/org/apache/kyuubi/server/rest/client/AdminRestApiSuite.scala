@@ -21,7 +21,6 @@ import java.util.UUID
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 
 import org.apache.kyuubi.{KYUUBI_VERSION, RestClientTestHelper}
@@ -90,7 +89,7 @@ class AdminRestApiSuite extends RestClientTestHelper {
 
   test("list/close session") {
     fe.be.sessionManager.openSession(
-      TProtocolVersion.findByValue(1),
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
       "admin",
       "123456",
       "localhost",
