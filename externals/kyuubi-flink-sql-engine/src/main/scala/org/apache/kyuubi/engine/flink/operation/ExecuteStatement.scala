@@ -161,7 +161,6 @@ class ExecuteStatement(
       .build(executor)
     val result = executeOperation.invoke[TableResult](sessionId, operation)
     jobId = result.getJobClient.asScala.map(_.getJobID)
-    result.await()
     resultSet = ResultSet.fromTableResult(result)
   }
 
