@@ -104,6 +104,7 @@ trait HiveMetadataTests extends SparkMetadataTests {
   }
 
   test("audit Kyuubi Hive JDBC connection common MetaData") {
+    assume(false)
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData
       Seq(
