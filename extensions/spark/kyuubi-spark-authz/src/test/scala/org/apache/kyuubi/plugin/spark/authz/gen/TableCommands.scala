@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.gen
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.serde.TableType._
@@ -248,7 +249,7 @@ object TableCommands {
 
   val UpdateTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.UpdateTable"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(PrivilegeObjectActionType.UPDATE))
     val tableDesc =
       TableDesc(
         "table",
@@ -444,7 +445,7 @@ object TableCommands {
 
   val MergeIntoTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.MergeIntoTable"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(PrivilegeObjectActionType.UPDATE))
     val tableDesc = TableDesc(
       "targetTable",
       classOf[DataSourceV2RelationTableExtractor],
