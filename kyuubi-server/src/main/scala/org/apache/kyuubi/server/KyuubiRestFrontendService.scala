@@ -181,7 +181,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       }
     }
     super.start()
-    info(s"Exposing REST endpoint at: ${server.getServerUri}")
+    info(s"Exposing REST endpoint at: http://${server.getServerUri}")
   }
 
   override def stop(): Unit = synchronized {
