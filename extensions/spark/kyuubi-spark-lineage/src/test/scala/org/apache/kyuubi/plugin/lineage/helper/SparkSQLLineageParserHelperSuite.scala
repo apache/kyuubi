@@ -1230,6 +1230,25 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     }
   }
 
+  test("test create view from view") {
+    withTable("t1") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string, c string) USING hive")
+      spark.sql("CREATE VIEW t2 as select * from t1")
+      val ret0 =
+        exectractLineage(
+          s"create or replace view view_tst comment 'view'" +
+            s" as select a as k,b" +
+            s" from t2" +
+            s" where a in ('HELLO') and c = 'HELLO'")
+      assert(ret0 == Lineage(
+        List("default.t1"),
+        List("default.view_tst"),
+        List(
+          ("default.view_tst.k", Set("default.t1.a")),
+          ("default.view_tst.b", Set("default.t1.b")))))
+    }
+  }
+
   private def exectractLineageWithoutExecuting(sql: String): Lineage = {
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val analyzed = spark.sessionState.analyzer.execute(parsed)
