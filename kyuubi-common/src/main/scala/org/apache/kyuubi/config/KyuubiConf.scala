@@ -1511,6 +1511,13 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
+  val BATCH_RESOURCE_UPLOAD_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.batch.resource.upload.enabled")
+      .internal
+      .doc("Whether to enable Kyuubi batch resource upload function.")
+      .booleanConf
+      .createWithDefault(true)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
