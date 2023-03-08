@@ -16,8 +16,7 @@
 #
 
 name: 'setup-mvnd'
-description: 'Setup the maven daemon'
-continue-on-error: true
+description: 'Setup Maven and Mvnd'
 runs:
   using: composite
   steps:

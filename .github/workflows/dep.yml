@@ -45,7 +45,7 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
-      - name: Setup Mvnd
+      - name: Setup Maven and Mvnd
         uses: ./.github/actions/setup-mvnd
       - name: Check kyuubi modules available
         id: modules-check
