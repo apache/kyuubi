@@ -832,11 +832,11 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private boolean isFromSubjectAuthMode() {
     return isSaslAuthMode()
-            && hasSessionValue(AUTH_PRINCIPAL)
-            && !hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
-            && !hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB)
-            && (AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
-            sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE))
+        && hasSessionValue(AUTH_PRINCIPAL)
+        && !hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
+        && !hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB)
+        && (AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
+                sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE))
             || isHadoopUserGroupInformationDoAs());
   }
 
