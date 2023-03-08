@@ -1296,10 +1296,10 @@ object KyuubiConf {
       .createWithDefault(Duration.ofSeconds(120).toMillis)
 
   val ENGINE_ALIVE_CLOSE_CONNETION: ConfigEntry[Boolean] =
-    buildConf("kyuubi.session.engine.alive.closeConnection")
+    buildConf("kyuubi.session.engine.alive.closeConnectionOnTimeout")
       .doc("Whether to kill the thrift connection to engine when engine is marked as no-alive. " +
         "If set to true, the connection will be killed")
-      .version("1.7.0")
+      .version("1.7.1")
       .booleanConf
       .createWithDefault(false)
 
