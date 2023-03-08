@@ -184,7 +184,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @FormDataParam("batchRequest") batchRequest: BatchRequest,
       @FormDataParam("resourceFile") resourceFileInputStream: InputStream,
       @FormDataParam("resourceFile") resourceFileMetadata: FormDataContentDisposition): Batch = {
-    require(fe.getConf.get(KyuubiConf.BATCH_RESOURCE_UPLOAD_ENABLED),
+    require(
+      fe.getConf.get(KyuubiConf.BATCH_RESOURCE_UPLOAD_ENABLED),
       "Batch resource upload function is not enabled.")
     require(
       batchRequest != null,
