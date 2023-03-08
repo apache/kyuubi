@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,12 +33,14 @@ class ZooKeeperHiveClientHelper {
   // Pattern for key1=value1;key2=value2
   private static final Pattern kvPattern = Pattern.compile("([^=;]*)=([^;]*);?");
 
-  private static String getZooKeeperNamespace(JdbcConnectionParams connParams) {
+  @VisibleForTesting
+  protected static String getZooKeeperNamespace(JdbcConnectionParams connParams) {
     String zooKeeperNamespace =
         connParams.getSessionVars().get(JdbcConnectionParams.ZOOKEEPER_NAMESPACE);
     if ((zooKeeperNamespace == null) || (zooKeeperNamespace.isEmpty())) {
       zooKeeperNamespace = JdbcConnectionParams.ZOOKEEPER_DEFAULT_NAMESPACE;
     }
+    zooKeeperNamespace = zooKeeperNamespace.replaceAll("^/+", "").replaceAll("/+$", "");
     return zooKeeperNamespace;
   }
 
