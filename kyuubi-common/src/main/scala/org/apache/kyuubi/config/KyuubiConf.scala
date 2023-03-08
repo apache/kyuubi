@@ -1515,6 +1515,7 @@ object KyuubiConf {
     buildConf("kyuubi.batch.resource.upload.enabled")
       .internal
       .doc("Whether to enable Kyuubi batch resource upload function.")
+      .version("1.7.1")
       .booleanConf
       .createWithDefault(true)
 
