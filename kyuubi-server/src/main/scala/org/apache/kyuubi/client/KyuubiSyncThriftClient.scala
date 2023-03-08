@@ -27,7 +27,7 @@ import scala.concurrent.duration.Duration
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
-import org.apache.thrift.transport.TSocket
+import org.apache.thrift.transport.{TSocket, TTransportException}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -43,7 +43,8 @@ class KyuubiSyncThriftClient private (
     protocol: TProtocol,
     engineAliveProbeProtocol: Option[TProtocol],
     engineAliveProbeInterval: Long,
-    engineAliveTimeout: Long)
+    engineAliveTimeout: Long,
+    engineAliveCloseConnection: Boolean = false)
   extends TCLIService.Client(protocol) with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
@@ -105,6 +106,15 @@ class KyuubiSyncThriftClient private (
           }
         } else {
           shutdownAsyncRequestExecutor()
+          if (engineAliveCloseConnection) {
+            try {
+              warn(s"Force closing transport to interrupt the protocol thread")
+              protocol.getTransport().close()
+            } catch {
+              case e: TTransportException =>
+                warn(s"Error closing transport: ${e.getMessage}")
+            }
+          }
         }
       }
     }
@@ -453,6 +463,7 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
     val aliveProbeEnabled = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
     val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL).toInt
     val aliveTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
+    val aliveCloseConnection = conf.get(KyuubiConf.ENGINE_ALIVE_CLOSE_CONNETION)
 
     val tProtocol = createTProtocol(user, passwd, host, port, 0, loginTimeout)
 
@@ -466,6 +477,7 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       tProtocol,
       aliveProbeProtocol,
       aliveProbeInterval,
-      aliveTimeout)
+      aliveTimeout,
+      aliveCloseConnection)
   }
 }
