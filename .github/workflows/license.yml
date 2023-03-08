@@ -42,7 +42,7 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
-      - name: Setup Mvnd
+      - name: Setup Maven and Mvnd
         uses: ./.github/actions/setup-mvnd
       - run: >-
           build/mvnd org.apache.rat:apache-rat-plugin:check

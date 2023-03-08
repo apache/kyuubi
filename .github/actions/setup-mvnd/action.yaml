@@ -16,8 +16,7 @@
 #
 
 name: 'setup-mvnd'
-description: 'Setup the maven daemon'
-continue-on-error: true
+description: 'Setup Maven and Mvnd'
 runs:
   using: composite
   steps:
@@ -32,5 +31,5 @@ runs:
       run: build/mvn -v
       shell: bash
     - name: Check Mvnd
-      run: build/mvnd -v
+      run: build/mvnd -v || true
       shell: bash
