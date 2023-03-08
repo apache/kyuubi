@@ -90,7 +90,7 @@ jobs:
       - name: Build Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
-          ./build/mvnd clean install ${MVN_OPT} -P!jdbc-shaded -pl ${TEST_MODULES} -am -DskipTests \
+          ./build/mvnd clean install ${MVN_OPT} -pl ${TEST_MODULES} -am -DskipTests \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Upload hive jdbc shaded jar
         uses: actions/upload-artifact@v3
@@ -103,7 +103,7 @@ jobs:
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
           ./build/mvnd test -pl ${TEST_MODULES} -am \
-          -Dmvnd.serial ${MVN_OPT} -P!jdbc-shaded \
+          -Dmvnd.serial ${MVN_OPT} \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
