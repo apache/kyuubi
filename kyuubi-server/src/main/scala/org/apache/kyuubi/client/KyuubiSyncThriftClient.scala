@@ -45,7 +45,7 @@ class KyuubiSyncThriftClient private (
     engineAliveProbeProtocol: Option[TProtocol],
     engineAliveProbeInterval: Long,
     engineAliveTimeout: Long,
-    engineAliveCloseConnection: Boolean = false)
+    engineAliveCloseConnection: Boolean)
   extends TCLIService.Client(protocol) with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
@@ -112,7 +112,8 @@ class KyuubiSyncThriftClient private (
           shutdownAsyncRequestExecutor()
           if (engineAliveCloseConnection) {
             try {
-              warn(s"Force closing transport to interrupt the protocol thread")
+              warn(s"Force closing transport to interrupt the protocol" +
+                " thread: $_remoteSessionHandle ")
               protocol.getTransport().close()
             } catch {
               case e: TTransportException =>
