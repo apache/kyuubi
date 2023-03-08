@@ -30,10 +30,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.KeyStore;
-import java.security.SecureRandom;
+import java.security.*;
 import java.sql.*;
 import java.util.*;
 import java.util.Map.Entry;
@@ -43,6 +40,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.Subject;
 import javax.security.sasl.Sasl;
+import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.http.HttpRequestInterceptor;
@@ -813,11 +811,24 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return !AUTH_SIMPLE.equalsIgnoreCase(sessConfMap.get(AUTH_TYPE));
   }
 
+  private boolean isHadoopUserGroupInformationDoAs() {
+    try {
+      @SuppressWarnings("unchecked")
+      Class<? extends Principal> HadoopUserClz =
+          (Class<? extends Principal>) ClassUtils.getClass("org.apache.hadoop.security.User");
+      Subject subject = Subject.getSubject(AccessController.getContext());
+      return subject != null && !subject.getPrincipals(HadoopUserClz).isEmpty();
+    } catch (ClassNotFoundException e) {
+      return false;
+    }
+  }
+
   private boolean isFromSubjectAuthMode() {
     return isSaslAuthMode()
         && hasSessionValue(AUTH_PRINCIPAL)
-        && AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
-            sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE));
+        && (AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
+                sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE))
+            || isHadoopUserGroupInformationDoAs());
   }
 
   private boolean isKeytabAuthMode() {
