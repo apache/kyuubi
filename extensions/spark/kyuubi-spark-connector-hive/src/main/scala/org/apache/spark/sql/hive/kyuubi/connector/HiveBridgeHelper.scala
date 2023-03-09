@@ -42,14 +42,14 @@ object HiveBridgeHelper {
   type InsertIntoHiveTable = org.apache.spark.sql.hive.execution.InsertIntoHiveTable
 
   val hive = org.apache.spark.sql.hive.client.hive
-  val logicalExpressions: LogicalExpressions.type = LogicalExpressions
-  val hiveClientImpl: HiveClientImpl.type = HiveClientImpl
-  val sparkHadoopWriterUtils: SparkHadoopWriterUtils.type = SparkHadoopWriterUtils
-  val catalogV2Util: CatalogV2Util.type = CatalogV2Util
-  val hiveTableUtil: HiveTableUtil.type = HiveTableUtil
-  val hiveShim: HiveShim.type = HiveShim
-  val inputFileBlockHolder: InputFileBlockHolder.type = InputFileBlockHolder
-  val hadoopTableReader: HadoopTableReader.type = HadoopTableReader
+  val LogicalExpressions = org.apache.spark.sql.connector.expressions.LogicalExpressions
+  val HiveClientImpl = org.apache.spark.sql.hive.client.HiveClientImpl
+  val SparkHadoopWriterUtils = org.apache.spark.internal.io.SparkHadoopWriterUtils
+  val CatalogV2Util = org.apache.spark.sql.connector.catalog.CatalogV2Util
+  val HiveTableUtil = org.apache.spark.sql.hive.HiveTableUtil
+  val HiveShim = org.apache.spark.sql.hive.HiveShim
+  val InputFileBlockHolder = org.apache.spark.rdd.InputFileBlockHolder
+  val HadoopTableReader = org.apache.spark.sql.hive.HadoopTableReader
 
   def postExternalCatalogEvent(sc: SparkContext, event: ExternalCatalogEvent): Unit = {
     sc.listenerBus.post(event)
