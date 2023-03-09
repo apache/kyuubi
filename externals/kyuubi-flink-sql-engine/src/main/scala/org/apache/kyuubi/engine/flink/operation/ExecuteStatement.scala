@@ -161,6 +161,9 @@ class ExecuteStatement(
       .build(executor)
     val result = executeOperation.invoke[TableResult](sessionId, operation)
     jobId = result.getJobClient.asScala.map(_.getJobID)
+    // this method runs insert operations and non-job operations,
+    // of which the results are immediately available,
+    // thus there's no need to call TableResult#await()
     resultSet = ResultSet.fromTableResult(result)
   }
 
