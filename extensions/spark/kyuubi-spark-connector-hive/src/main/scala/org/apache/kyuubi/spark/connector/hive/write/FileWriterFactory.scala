@@ -26,7 +26,7 @@ import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.write.{DataWriter, DataWriterFactory}
 import org.apache.spark.sql.execution.datasources.{DynamicPartitionDataSingleWriter, SingleDirectoryDataWriter, WriteJobDescription}
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.sparkHadoopWriterUtils
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.SparkHadoopWriterUtils
 
 /**
  * This class is rewritten because of SPARK-42478, which affects Spark 3.3.2
@@ -39,7 +39,7 @@ case class FileWriterFactory(
   // expected by Hadoop committers, but `JobId` cannot be serialized.
   // thus, persist the serializable jobTrackerID in the class and make jobId a
   // transient lazy val which recreates it each time to ensure jobId is unique.
-  private[this] val jobTrackerID = sparkHadoopWriterUtils.createJobTrackerID(new Date)
+  private[this] val jobTrackerID = SparkHadoopWriterUtils.createJobTrackerID(new Date)
   @transient private lazy val jobId = createJobID(jobTrackerID, 0)
 
   override def createWriter(partitionId: Int, realTaskId: Long): DataWriter[InternalRow] = {
