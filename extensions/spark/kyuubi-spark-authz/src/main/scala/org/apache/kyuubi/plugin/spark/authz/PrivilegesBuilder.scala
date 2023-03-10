@@ -220,6 +220,8 @@ object PrivilegesBuilder {
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
     val opType = plan match {
+      case c if isKnownTableCommand(c) =>
+        buildCommand(c, inputObjs, outputObjs, spark)
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries

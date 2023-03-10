@@ -573,6 +573,17 @@ object TableCommands {
     TableCommandSpec(cmd, Seq(tableIdentDesc.copy(isInput = true)))
   }
 
+  val updateIcebergReplaceData = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.ReplaceData"
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(PrivilegeObjectActionType.UPDATE))
+    val tableDesc =
+      TableDesc(
+        "table",
+        classOf[DataSourceV2RelationTableExtractor],
+        actionTypeDesc = Some(actionTypeDesc))
+    TableCommandSpec(cmd, Seq(tableDesc), PrivilegeObjectActionType.UPDATE)
+  }
+
   val data: Array[TableCommandSpec] = Array(
     AddPartitions,
     DropPartitions,
@@ -658,5 +669,6 @@ object TableCommands {
     ShowTablePropertiesV2,
     TruncateTable,
     TruncateTableV2,
+    updateIcebergReplaceData,
     UpdateTable)
 }
