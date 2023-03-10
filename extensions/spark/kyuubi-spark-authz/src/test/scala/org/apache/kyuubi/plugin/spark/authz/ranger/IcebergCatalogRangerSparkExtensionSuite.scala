@@ -19,9 +19,9 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 // scalastyle:off
 import scala.util.Try
 
-import org.apache.kyuubi.Utils
 import org.scalatest.Outcome
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 
 /**
