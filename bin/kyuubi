@@ -155,7 +155,7 @@ function start_kyuubi() {
 
 function run_kyuubi() {
   echo "Starting $CLASS"
-  nice -n "${KYUUBI_NICENESS:-0}" ${cmd}
+  exec nice -n "${KYUUBI_NICENESS:-0}" ${cmd}
 }
 
 function stop_kyuubi() {
