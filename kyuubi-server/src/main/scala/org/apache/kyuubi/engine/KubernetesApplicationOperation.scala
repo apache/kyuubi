@@ -148,6 +148,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       }
     }
   }
+
+  override def getApplicationInfoByTag(tag: String): ApplicationInfo =
+    getApplicationInfoByTag(tag, None)
 }
 
 object KubernetesApplicationOperation extends Logging {
