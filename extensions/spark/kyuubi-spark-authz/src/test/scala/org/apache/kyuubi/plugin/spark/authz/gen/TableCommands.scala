@@ -669,6 +669,6 @@ object TableCommands {
     ShowTablePropertiesV2,
     TruncateTable,
     TruncateTableV2,
-    updateIcebergReplaceData,
+    ReplaceData,
     UpdateTable)
 }
