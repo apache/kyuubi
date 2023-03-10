@@ -573,7 +573,7 @@ object TableCommands {
     TableCommandSpec(cmd, Seq(tableIdentDesc.copy(isInput = true)))
   }
 
-  val updateIcebergReplaceData = {
+  val ReplaceData = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.ReplaceData"
     val actionTypeDesc = ActionTypeDesc(actionType = Some(PrivilegeObjectActionType.UPDATE))
     val tableDesc =
