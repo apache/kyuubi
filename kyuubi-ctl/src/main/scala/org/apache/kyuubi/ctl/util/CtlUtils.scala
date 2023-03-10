@@ -88,6 +88,50 @@ object CtlUtils {
     nodes
   }
 
+  /**
+   * List Kyuubi engine nodes info.
+   */
+  private[ctl] def listZkEngineNodes(
+      conf: KyuubiConf,
+      cliConfig: CliConfig,
+      filterHostPort: Boolean): Seq[ServiceNodeInfo] = {
+    var nodes = Seq.empty[ServiceNodeInfo]
+    withDiscoveryClient(conf) { discoveryClient =>
+      val znodeRoot = getEngineZkNamespace(conf, cliConfig)
+      val children = discoveryClient.getChildren(znodeRoot)
+      val hostPortOpt =
+        if (filterHostPort) {
+          Some((cliConfig.zkOpts.host, cliConfig.zkOpts.port.toInt))
+        } else None
+      children.map((engineId: String) => {
+        val enginePath = znodeRoot + "/" + engineId
+        nodes = getServiceNodes(discoveryClient, enginePath, hostPortOpt).++:(nodes)
+      })
+    }
+    nodes
+  }
+
+  private[ctl] def getEngineZkNamespace(conf: KyuubiConf, cliConfig: CliConfig): String = {
+    val engineType = Some(cliConfig.engineOpts.engineType)
+      .filter(_ != null).filter(_.nonEmpty)
+      .getOrElse(conf.get(ENGINE_TYPE))
+    val engineSubdomain = Some(cliConfig.engineOpts.engineSubdomain)
+      .filter(_ != null).filter(_.nonEmpty)
+      .getOrElse(conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse(""))
+    val engineShareLevel = Some(cliConfig.engineOpts.engineShareLevel)
+      .filter(_ != null).filter(_.nonEmpty)
+      .getOrElse(conf.get(ENGINE_SHARE_LEVEL))
+    // The path of the engine defined in zookeeper comes from
+    // org.apache.kyuubi.engine.EngineRef#engineSpace
+    DiscoveryPaths.makePath(
+      s"${cliConfig.zkOpts.namespace}_" +
+        s"${cliConfig.zkOpts.version}_" +
+        s"${engineShareLevel}_${engineType}",
+      cliConfig.engineOpts.user,
+      engineSubdomain)
+
+  }
+
   private[ctl] def loadYamlAsMap(cliConfig: CliConfig): JMap[String, Object] = {
     val filename = cliConfig.createOpts.filename
 
