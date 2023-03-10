@@ -28,7 +28,7 @@ import scala.concurrent.duration.Duration
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
-import org.apache.thrift.transport.{TSocket, TTransportException}
+import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -44,8 +44,7 @@ class KyuubiSyncThriftClient private (
     protocol: TProtocol,
     engineAliveProbeProtocol: Option[TProtocol],
     engineAliveProbeInterval: Long,
-    engineAliveTimeout: Long,
-    engineAliveCloseConnection: Boolean)
+    engineAliveTimeout: Long)
   extends TCLIService.Client(protocol) with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
@@ -60,6 +59,7 @@ class KyuubiSyncThriftClient private (
 
   @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
   @volatile private var remoteEngineBroken: Boolean = false
+  @volatile private var clientClosedOnEngineBroken: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
   private var engineAliveThreadPool: ScheduledExecutorService = _
   @volatile private var engineLastAlive: Long = _
@@ -110,15 +110,17 @@ class KyuubiSyncThriftClient private (
           }
         } else {
           shutdownAsyncRequestExecutor()
-          if (engineAliveCloseConnection) {
-            try {
-              warn(s"Force closing transport to interrupt the protocol" +
-                " thread: $_remoteSessionHandle ")
-              protocol.getTransport().close()
-            } catch {
-              case e: TTransportException =>
-                warn(s"Error closing transport: ${e.getMessage}")
+          Utils.tryLogNonFatalError {
+            Option(engineAliveThreadPool).foreach { pool =>
+              ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
             }
+            warn(s"Removing Clients for ${_remoteSessionHandle}")
+            Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
+              if (tProtocol.getTransport.isOpen) {
+                tProtocol.getTransport.close()
+              }
+            }
+            clientClosedOnEngineBroken = true
           }
         }
       }
@@ -210,6 +212,7 @@ class KyuubiSyncThriftClient private (
   }
 
   def closeSession(): Unit = {
+    if (clientClosedOnEngineBroken) return
     try {
       if (_remoteSessionHandle != null) {
         val req = new TCloseSessionReq(_remoteSessionHandle)
@@ -471,7 +474,6 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
     val aliveProbeEnabled = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
     val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL).toInt
     val aliveTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
-    val aliveCloseConnection = conf.get(KyuubiConf.ENGINE_ALIVE_CLOSE_CONNETION)
 
     val tProtocol = createTProtocol(user, passwd, host, port, 0, loginTimeout)
 
@@ -485,7 +487,6 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       tProtocol,
       aliveProbeProtocol,
       aliveProbeInterval,
-      aliveTimeout,
-      aliveCloseConnection)
+      aliveTimeout)
   }
 }
