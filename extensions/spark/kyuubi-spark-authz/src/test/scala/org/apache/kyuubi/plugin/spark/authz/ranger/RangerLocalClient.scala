@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.text.SimpleDateFormat
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.json.JsonMapper
 import org.apache.ranger.admin.client.RangerAdminRESTClient
 import org.apache.ranger.plugin.util.ServicePolicies
@@ -27,6 +28,7 @@ class RangerLocalClient extends RangerAdminRESTClient with RangerClientHelper {
 
   private val mapper = new JsonMapper()
     .setDateFormat(new SimpleDateFormat("yyyyMMdd-HH:mm:ss.SSS-Z"))
+    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
   private val policies: ServicePolicies = {
     val loader = Thread.currentThread().getContextClassLoader

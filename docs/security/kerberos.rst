@@ -115,4 +115,5 @@ Refresh all the kyuubi server instances
 Restart all the kyuubi server instances or `Refresh Configurations`_ to activate the settings.
 
 .. _Hadoop Impersonation: https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/Superusers.html
-.. _Refresh Configurations: ..tools/kyuubi-admin.html#refresh-config
+.. _configurations: ../client/advanced/kerberos.html
+.. _Refresh Configurations: ../tools/kyuubi-admin.html#refresh-config

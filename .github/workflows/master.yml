@@ -32,7 +32,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded
+  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded -Dmaven.plugin.download.cache.path=/tmp/engine-archives
   KUBERNETES_VERSION: v1.26.1
   MINIKUBE_VERSION: v1.29.0
 
@@ -77,6 +77,10 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven and Mvnd
+        uses: ./.github/actions/setup-mvnd
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -102,6 +106,7 @@ jobs:
           path: |
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
+            **/kyuubi-spark-batch-submit.log*
 
   authz:
     name: Kyuubi-AuthZ and Spark Test
@@ -128,6 +133,10 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven and Mvnd
+        uses: ./.github/actions/setup-mvnd
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Build and test Kyuubi AuthZ with supported Spark versions
         run: |
           TEST_MODULES="extensions/spark/kyuubi-spark-authz"
@@ -177,6 +186,10 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven and Mvnd
+        uses: ./.github/actions/setup-mvnd
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Build Flink with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
@@ -221,6 +234,10 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven and Mvnd
+        uses: ./.github/actions/setup-mvnd
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Build and test Hive with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-hive-sql-engine,integration-tests/kyuubi-hive-it"
@@ -256,6 +273,10 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven and Mvnd
+        uses: ./.github/actions/setup-mvnd
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Build and test JDBC with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
@@ -291,11 +312,15 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven and Mvnd
+        uses: ./.github/actions/setup-mvnd
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Build and test Trino with maven w/o linters
         run: |
-          TEST_MODULES="externals/kyuubi-trino-engine,integration-tests/kyuubi-trino-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+          TEST_MODULES="kyuubi-server,externals/kyuubi-trino-engine,externals/kyuubi-spark-sql-engine,externals/kyuubi-download,integration-tests/kyuubi-trino-it"
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am -Pflink-provided -Phive-provided clean install -DskipTests
+          ./build/mvn -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -pl ${TEST_MODULES} -am -Pflink-provided -Phive-provided test -Dtest=none -DwildcardSuites=org.apache.kyuubi.it.trino.operation.TrinoOperationSuite,org.apache.kyuubi.it.trino.server.TrinoFrontendSuite
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -321,6 +346,10 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven and Mvnd
+        uses: ./.github/actions/setup-mvnd
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Run TPC-DS Tests
         run: |
           TEST_MODULES="kyuubi-server,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch"
@@ -349,6 +378,8 @@ jobs:
           file: build/Dockerfile
           load: true
           tags: apache/kyuubi:latest
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Setup Minikube
         run: |
           # https://minikube.sigs.k8s.io/docs/start/
@@ -398,6 +429,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Setup Minikube
         run: |
           # https://minikube.sigs.k8s.io/docs/start/
@@ -415,7 +448,6 @@ jobs:
         run: >-
           ./build/mvn ${MVN_OPT} clean install
           -Pflink-provided,hive-provided
-          -Pspark-3.2
           -Pkubernetes-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.spark
       - name: Print Driver Pod logs
@@ -453,6 +485,10 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven and Mvnd
+        uses: ./.github/actions/setup-mvnd
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: zookeeper integration tests
         run: |
           export KYUUBI_IT_ZOOKEEPER_VERSION=${{ matrix.zookeeper }}

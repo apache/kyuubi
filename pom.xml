@@ -27,7 +27,7 @@
 
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
-    <version>1.7.0-SNAPSHOT</version>
+    <version>1.8.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
@@ -109,6 +109,7 @@
     <properties>
         <java.version>1.8</java.version>
         <maven.version>3.8.7</maven.version>
+        <mvnd.version>0.9.0</mvnd.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.17</scala.version>
@@ -162,16 +163,16 @@
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
-        <jersey.version>2.38</jersey.version>
+        <jersey.version>2.39</jersey.version>
         <jetty.version>9.4.50.v20221201</jetty.version>
         <jline.version>0.9.94</jline.version>
-        <junit.version>4.13.1</junit.version>
-        <kubernetes-client.version>5.12.1</kubernetes-client.version>
+        <junit.version>4.13.2</junit.version>
+        <kubernetes-client.version>6.4.1</kubernetes-client.version>
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
-        <log4j.version>2.19.0</log4j.version>
-        <mysql.jdbc.version>8.0.31</mysql.jdbc.version>
-        <netty.version>4.1.87.Final</netty.version>
+        <log4j.version>2.20.0</log4j.version>
+        <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
+        <netty.version>4.1.89.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -187,7 +188,7 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.3.1</spark.version>
+        <spark.version>3.3.2</spark.version>
         <spark.binary.version>3.3</spark.binary.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
@@ -201,6 +202,11 @@
         <trino.tpch.version>1.1</trino.tpch.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
+        <!-- webui -->
+        <webui.skip>true</webui.skip>
+        <node.version>v16.19.1</node.version>
+        <pnpm.version>v7.27.1</pnpm.version>
+
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.jline.version>2.12</hive.client.jline.version>
         <hive.client.supercsv.version>2.2.0</hive.client.supercsv.version>
@@ -211,8 +217,10 @@
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
         <maven.plugin.build.helper.version>3.3.0</maven.plugin.build.helper.version>
-        <maven.plugin.download.version>1.6.6</maven.plugin.download.version>
+        <maven.plugin.download.version>1.6.8</maven.plugin.download.version>
+        <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
         <maven.plugin.enforcer.mojo.rules.version>1.6.1</maven.plugin.enforcer.mojo.rules.version>
+        <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
         <maven.plugin.scala.version>4.8.0</maven.plugin.scala.version>
         <maven.plugin.surefire.version>3.0.0-M8</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.2.0</maven.plugin.scalatest.version>
@@ -587,6 +595,16 @@
                 <artifactId>kubernetes-client</artifactId>
                 <version>${kubernetes-client.version}</version>
             </dependency>
+            <!--
+                according to kubernetes-client MIGRATION-v6.md, we should include this dependency
+                for doing any customization to OkHttp clients.
+                https://github.com/fabric8io/kubernetes-client/blob/master/doc/MIGRATION-v6.md#okhttp-httpclient
+            -->
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-httpclient-okhttp</artifactId>
+                <version>${kubernetes-client.version}</version>
+            </dependency>
 
             <!--
               because of THRIFT-4805, we don't upgrade to libthrift:0.12.0,
@@ -774,6 +792,12 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
 
@@ -1487,13 +1511,6 @@
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-multipart</artifactId>
                 <version>${jersey.version}</version>
-                <exclusions>
-                    <!--todo: remove this exclusion when Jersey 2.39 released with scope fix for Junit dependency-->
-                    <exclusion>
-                        <groupId>org.junit.jupiter</groupId>
-                        <artifactId>junit-jupiter</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -1990,6 +2007,9 @@
                             <fileset>
                                 <directory>${project.basedir}/spark-warehouse</directory>
                             </fileset>
+                            <fileset>
+                                <directory>${project.basedir}/web-ui/dist</directory>
+                            </fileset>
                         </filesets>
                     </configuration>
                 </plugin>
@@ -2070,7 +2090,12 @@
                         <markdown>
                             <includes>
                                 <include>docs/**/*.md</include>
+                                <include>*/README.md</include>
+                                <include>docker/playground/README.md</include>
                             </includes>
+                            <excludes>
+                                <exclude>docs/*/lib/python*/**/*.md</exclude>
+                            </excludes>
                             <flexmark>
                                 <version>${flexmark.version}</version>
                             </flexmark>
@@ -2140,6 +2165,16 @@
                             <version>${maven.plugin.enforcer.mojo.rules.version}</version>
                         </dependency>
                     </dependencies>
+                </plugin>
+
+                <plugin>
+                    <groupId>com.github.eirslett</groupId>
+                    <artifactId>frontend-maven-plugin</artifactId>
+                    <version>${maven.plugin.frontend.version}</version>
+                    <configuration>
+                        <nodeVersion>${node.version}</nodeVersion>
+                        <pnpmVersion>${pnpm.version}</pnpmVersion>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -2225,9 +2260,11 @@
     <profiles>
         <profile>
             <id>mirror-cdn</id>
-            <!-- this profile works only for latest apache releases -->
             <properties>
+                <!-- the apache cdn mirror works only for latest apache releases -->
                 <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
+                <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
+                <pnpmDownloadRoot>https://registry.npmmirror.com/pnpm/-/</pnpmDownloadRoot>
             </properties>
         </profile>
 
@@ -2308,7 +2345,7 @@
         <profile>
             <id>spark-master</id>
             <properties>
-                <spark.version>3.4.0-SNAPSHOT</spark.version>
+                <spark.version>3.5.0-SNAPSHOT</spark.version>
                 <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
                 <threeten.version>1.7.0</threeten.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
@@ -2415,6 +2452,13 @@
                 <flink.archive.download.skip>true</flink.archive.download.skip>
                 <hive.archive.download.skip>true</hive.archive.download.skip>
                 <spark.archive.download.skip>true</spark.archive.download.skip>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>web-ui</id>
+            <properties>
+                <webui.skip>false</webui.skip>
             </properties>
         </profile>
 

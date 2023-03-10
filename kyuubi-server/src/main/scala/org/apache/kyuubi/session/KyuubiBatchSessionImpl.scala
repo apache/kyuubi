@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.session
 
-import java.util.UUID
-
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
@@ -50,9 +49,10 @@ class KyuubiBatchSessionImpl(
     sessionManager) {
   override val sessionType: SessionType = SessionType.BATCH
 
-  override val handle: SessionHandle = recoveryMetadata.map { metadata =>
-    SessionHandle(UUID.fromString(metadata.identifier))
-  }.getOrElse(SessionHandle())
+  override val handle: SessionHandle = {
+    val batchId = recoveryMetadata.map(_.identifier).getOrElse(conf(KYUUBI_BATCH_ID_KEY))
+    SessionHandle.fromUUID(batchId)
+  }
 
   override def createTime: Long = recoveryMetadata.map(_.createTime).getOrElse(super.createTime)
 
@@ -79,7 +79,7 @@ class KyuubiBatchSessionImpl(
 
   // whether the resource file is from uploading
   private[kyuubi] val isResourceUploaded: Boolean = batchRequest.getConf
-    .getOrDefault(KyuubiReservedKeys.KYUUBI_SESSION_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
+    .getOrDefault(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
@@ -105,7 +105,7 @@ class KyuubiBatchSessionImpl(
   }
 
   private val sessionEvent = KyuubiSessionEvent(this)
-  recoveryMetadata.map(metadata => sessionEvent.engineId = metadata.engineId)
+  recoveryMetadata.foreach(metadata => sessionEvent.engineId = metadata.engineId)
   EventBus.post(sessionEvent)
 
   override def getSessionEvent: Option[KyuubiSessionEvent] = {
@@ -146,6 +146,7 @@ class KyuubiBatchSessionImpl(
         engineType = batchRequest.getBatchType,
         clusterManager = batchJobSubmissionOp.builder.clusterManager())
 
+      // there is a chance that operation failed w/ duplicated key error
       sessionManager.insertMetadata(metaData)
     }
 

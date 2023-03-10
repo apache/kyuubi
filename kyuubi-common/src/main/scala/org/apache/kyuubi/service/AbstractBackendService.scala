@@ -21,7 +21,7 @@ import java.util.concurrent.{ExecutionException, TimeoutException, TimeUnit}
 
 import scala.concurrent.CancellationException
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TGetResultSetMetadataResp, TProtocolVersion, TRowSet}
+import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
@@ -35,6 +35,7 @@ abstract class AbstractBackendService(name: String)
   extends CompositeService(name) with BackendService {
 
   private lazy val timeout = conf.get(KyuubiConf.OPERATION_STATUS_POLLING_TIMEOUT)
+  private lazy val maxRowsLimit = conf.get(KyuubiConf.SERVER_LIMIT_CLIENT_FETCH_MAX_ROWS)
 
   override def openSession(
       protocol: TProtocolVersion,
@@ -156,11 +157,14 @@ abstract class AbstractBackendService(name: String)
     queryId
   }
 
-  override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
+  override def getOperationStatus(
+      operationHandle: OperationHandle,
+      maxWait: Option[Long]): OperationStatus = {
     val operation = sessionManager.operationManager.getOperation(operationHandle)
     if (operation.shouldRunAsync) {
       try {
-        operation.getBackgroundHandle.get(timeout, TimeUnit.MILLISECONDS)
+        val waitTime = maxWait.getOrElse(timeout)
+        operation.getBackgroundHandle.get(waitTime, TimeUnit.MILLISECONDS)
       } catch {
         case e: TimeoutException =>
           debug(s"$operationHandle: Long polling timed out, ${e.getMessage}")
@@ -198,6 +202,12 @@ abstract class AbstractBackendService(name: String)
       orientation: FetchOrientation,
       maxRows: Int,
       fetchLog: Boolean): TRowSet = {
+    maxRowsLimit.foreach(limit =>
+      if (maxRows > limit) {
+        throw new IllegalArgumentException(s"Max rows for fetching results " +
+          s"operation should not exceed the limit: $limit")
+      })
+
     sessionManager.operationManager
       .getOperation(operationHandle)
       .getSession

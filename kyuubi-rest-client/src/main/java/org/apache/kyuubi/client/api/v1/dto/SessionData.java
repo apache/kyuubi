@@ -31,6 +31,7 @@ public class SessionData {
   private Long createTime;
   private Long duration;
   private Long idleTime;
+  private String exception;
 
   public SessionData() {}
 
@@ -41,7 +42,8 @@ public class SessionData {
       Map<String, String> conf,
       Long createTime,
       Long duration,
-      Long idleTime) {
+      Long idleTime,
+      String exception) {
     this.identifier = identifier;
     this.user = user;
     this.ipAddr = ipAddr;
@@ -49,6 +51,7 @@ public class SessionData {
     this.createTime = createTime;
     this.duration = duration;
     this.idleTime = idleTime;
+    this.exception = exception;
   }
 
   public String getIdentifier() {
@@ -108,6 +111,14 @@ public class SessionData {
 
   public void setIdleTime(Long idleTime) {
     this.idleTime = idleTime;
+  }
+
+  public String getException() {
+    return exception;
+  }
+
+  public void setException(String exception) {
+    this.exception = exception;
   }
 
   @Override

@@ -88,9 +88,9 @@ class ExecutePython(
         val output = response.map(_.content.getOutput()).getOrElse("")
         val ename = response.map(_.content.getEname()).getOrElse("")
         val evalue = response.map(_.content.getEvalue()).getOrElse("")
-        val traceback = response.map(_.content.getTraceback()).getOrElse(Array.empty)
+        val traceback = response.map(_.content.getTraceback()).getOrElse(Seq.empty)
         iter =
-          new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
+          new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, traceback)))
         setState(OperationState.FINISHED)
       } else {
         throw KyuubiSQLException(s"Interpret error:\n$statement\n $response")
@@ -210,7 +210,7 @@ case class SessionPythonWorker(
     stdin.flush()
     val pythonResponse = Option(stdout.readLine()).map(ExecutePython.fromJson[PythonResponse](_))
     // throw exception if internal python code fail
-    if (internal && pythonResponse.map(_.content.status) != Some(PythonResponse.OK_STATUS)) {
+    if (internal && !pythonResponse.map(_.content.status).contains(PythonResponse.OK_STATUS)) {
       throw KyuubiSQLException(s"Internal python code $code failure: $pythonResponse")
     }
     pythonResponse
@@ -328,7 +328,7 @@ object ExecutePython extends Logging {
   }
 
   // for test
-  def defaultSparkHome(): String = {
+  def defaultSparkHome: String = {
     val homeDirFilter: FilenameFilter = (dir: File, name: String) =>
       dir.isDirectory && name.contains("spark-") && !name.contains("-engine")
     // get from kyuubi-server/../externals/kyuubi-download/target
@@ -418,7 +418,7 @@ case class PythonResponseContent(
     data: Map[String, String],
     ename: String,
     evalue: String,
-    traceback: Array[String],
+    traceback: Seq[String],
     status: String) {
   def getOutput(): String = {
     Option(data)
@@ -431,7 +431,7 @@ case class PythonResponseContent(
   def getEvalue(): String = {
     Option(evalue).getOrElse("")
   }
-  def getTraceback(): Array[String] = {
-    Option(traceback).getOrElse(Array.empty)
+  def getTraceback(): Seq[String] = {
+    Option(traceback).getOrElse(Seq.empty)
   }
 }

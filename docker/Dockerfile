@@ -60,6 +60,7 @@ COPY LICENSE NOTICE RELEASE ${KYUUBI_HOME}/
 COPY bin ${KYUUBI_HOME}/bin
 COPY jars ${KYUUBI_HOME}/jars
 COPY beeline-jars ${KYUUBI_HOME}/beeline-jars
+COPY web-ui ${KYUUBI_HOME}/web-ui
 COPY externals/engines/spark ${KYUUBI_HOME}/externals/engines/spark
 
 WORKDIR ${KYUUBI_HOME}

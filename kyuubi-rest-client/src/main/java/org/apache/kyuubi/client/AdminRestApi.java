@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.kyuubi.client.api.v1.dto.Engine;
+import org.apache.kyuubi.client.api.v1.dto.OperationData;
+import org.apache.kyuubi.client.api.v1.dto.SessionData;
 
 public class AdminRestApi {
   private KyuubiRestClient client;
@@ -41,6 +43,11 @@ public class AdminRestApi {
 
   public String refreshUserDefaultsConf() {
     String path = String.format("%s/%s", API_BASE_PATH, "refresh/user_defaults_conf");
+    return this.getClient().post(path, null, client.getAuthHeader());
+  }
+
+  public String refreshUnlimitedUsers() {
+    String path = String.format("%s/%s", API_BASE_PATH, "refresh/unlimited_users");
     return this.getClient().post(path, null, client.getAuthHeader());
   }
 
@@ -65,6 +72,31 @@ public class AdminRestApi {
         this.getClient()
             .get(API_BASE_PATH + "/engine", params, Engine[].class, client.getAuthHeader());
     return Arrays.asList(result);
+  }
+
+  public List<SessionData> listSessions() {
+    SessionData[] result =
+        this.getClient()
+            .get(API_BASE_PATH + "/sessions", null, SessionData[].class, client.getAuthHeader());
+    return Arrays.asList(result);
+  }
+
+  public String closeSession(String sessionHandleStr) {
+    String url = String.format("%s/sessions/%s", API_BASE_PATH, sessionHandleStr);
+    return this.getClient().delete(url, null, client.getAuthHeader());
+  }
+
+  public List<OperationData> listOperations() {
+    OperationData[] result =
+        this.getClient()
+            .get(
+                API_BASE_PATH + "/operations", null, OperationData[].class, client.getAuthHeader());
+    return Arrays.asList(result);
+  }
+
+  public String closeOperation(String operationHandleStr) {
+    String url = String.format("%s/operations/%s", API_BASE_PATH, operationHandleStr);
+    return this.getClient().delete(url, null, client.getAuthHeader());
   }
 
   private IRestClient getClient() {

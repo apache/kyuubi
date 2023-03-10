@@ -20,4 +20,5 @@ Connectors For Trino SQL Engine
     :maxdepth: 2
 
     flink_table_store
+    hudi
     iceberg

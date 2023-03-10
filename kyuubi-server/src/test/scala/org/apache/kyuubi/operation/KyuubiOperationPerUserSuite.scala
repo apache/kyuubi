@@ -364,4 +364,23 @@ class KyuubiOperationPerUserSuite
     val snapshot = MetricsSystem.histogramSnapshot(metric).get
     assert(snapshot.getMax > 0 && snapshot.getMedian > 0)
   }
+
+  test("align the server/engine session/executeStatement handle for Spark engine") {
+    withSessionConf(Map(
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"))(Map.empty)(Map.empty) {
+      withJdbcStatement() { _ =>
+        val session =
+          server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
+        eventually(timeout(10.seconds)) {
+          assert(session.handle === SessionHandle.apply(session.client.remoteSessionHandle))
+        }
+        val opHandle = session.executeStatement("SELECT engine_id()", Map.empty, true, 0L)
+        eventually(timeout(10.seconds)) {
+          val operation = session.sessionManager.operationManager.getOperation(
+            opHandle).asInstanceOf[KyuubiOperation]
+          assert(opHandle == OperationHandle.apply(operation.remoteOpHandle()))
+        }
+      }
+    }
+  }
 }

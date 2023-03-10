@@ -71,4 +71,28 @@ trait SparkSessionProvider {
 
   protected val sql: String => DataFrame = spark.sql
 
+  protected def doAs[T](user: String, f: => T): T = {
+    UserGroupInformation.createRemoteUser(user).doAs[T](
+      new PrivilegedExceptionAction[T] {
+        override def run(): T = f
+      })
+  }
+  protected def withCleanTmpResources[T](res: Seq[(String, String)])(f: => T): T = {
+    try {
+      f
+    } finally {
+      res.foreach {
+        case (t, "table") => doAs("admin", sql(s"DROP TABLE IF EXISTS $t"))
+        case (db, "database") => doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
+        case (fn, "function") => doAs("admin", sql(s"DROP FUNCTION IF EXISTS $fn"))
+        case (view, "view") => doAs("admin", sql(s"DROP VIEW IF EXISTS $view"))
+        case (cacheTable, "cache") => if (isSparkV32OrGreater) {
+            doAs("admin", sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
+          }
+        case (_, e) =>
+          throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
+      }
+    }
+  }
+
 }

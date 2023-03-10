@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -35,6 +37,7 @@ public class Batch {
   private String state;
   private long createTime;
   private long endTime;
+  private Map<String, String> batchInfo = Collections.emptyMap();
 
   public Batch() {}
 
@@ -51,7 +54,8 @@ public class Batch {
       String kyuubiInstance,
       String state,
       long createTime,
-      long endTime) {
+      long endTime,
+      Map<String, String> batchInfo) {
     this.id = id;
     this.user = user;
     this.batchType = batchType;
@@ -65,6 +69,7 @@ public class Batch {
     this.state = state;
     this.createTime = createTime;
     this.endTime = endTime;
+    this.batchInfo = batchInfo;
   }
 
   public String getId() {
@@ -169,6 +174,17 @@ public class Batch {
 
   public void setEndTime(long endTime) {
     this.endTime = endTime;
+  }
+
+  public Map<String, String> getBatchInfo() {
+    if (batchInfo == null) {
+      return Collections.emptyMap();
+    }
+    return batchInfo;
+  }
+
+  public void setBatchInfo(Map<String, String> batchInfo) {
+    this.batchInfo = batchInfo;
   }
 
   @Override

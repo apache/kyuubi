@@ -40,6 +40,7 @@
 .scala_dependencies
 .settings
 build/apache-maven*
+build/maven-mvnd*
 build/release/tmp
 build/scala*
 build/test
@@ -55,6 +56,7 @@ hs_err_pid*
 spark-warehouse/
 metastore_db
 derby.log
+rest-audit.log
 **/dependency-reduced-pom.xml
 metrics/report.json
 metrics/.report.json.crc
