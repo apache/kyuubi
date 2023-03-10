@@ -41,7 +41,7 @@ object CtlUtils {
           .getOrElse(conf.get(ENGINE_TYPE))
         val engineSubdomain = Some(cliConfig.engineOpts.engineSubdomain)
           .filter(_ != null).filter(_.nonEmpty)
-          .getOrElse(conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse("default"))
+          .getOrElse(conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse(""))
         val engineShareLevel = Some(cliConfig.engineOpts.engineShareLevel)
           .filter(_ != null).filter(_.nonEmpty)
           .getOrElse(conf.get(ENGINE_SHARE_LEVEL))
@@ -84,6 +84,29 @@ object CtlUtils {
           Some((cliConfig.zkOpts.host, cliConfig.zkOpts.port.toInt))
         } else None
       nodes = getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
+    }
+    nodes
+  }
+
+  /**
+   * List Kyuubi engine nodes info.
+   */
+  private[ctl] def listZkEngineNodes(
+                                      conf: KyuubiConf,
+                                      cliConfig: CliConfig,
+                                      filterHostPort: Boolean): Seq[ServiceNodeInfo] = {
+    var nodes = Seq.empty[ServiceNodeInfo]
+    withDiscoveryClient(conf) { discoveryClient =>
+      val znodeRoot = getZkNamespace(conf, cliConfig)
+      val children = discoveryClient.getChildren(znodeRoot)
+      val hostPortOpt =
+        if (filterHostPort) {
+          Some((cliConfig.zkOpts.host, cliConfig.zkOpts.port.toInt))
+        } else None
+      children.map((engineId: String) => {
+        val enginePath = znodeRoot + "/" + engineId
+        nodes = getServiceNodes(discoveryClient, enginePath, hostPortOpt).++:(nodes)
+      })
     }
     nodes
   }
