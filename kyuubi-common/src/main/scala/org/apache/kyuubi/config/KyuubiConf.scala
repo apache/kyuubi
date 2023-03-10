@@ -2544,7 +2544,7 @@ object KyuubiConf {
   val ENGINE_SUBMIT_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.engine.submit.timeout")
       .doc("The timeout for submitting engine")
-      .version("1.8.0")
+      .version("1.7.1")
       .timeConf
       .createWithDefaultString("PT30S")
 

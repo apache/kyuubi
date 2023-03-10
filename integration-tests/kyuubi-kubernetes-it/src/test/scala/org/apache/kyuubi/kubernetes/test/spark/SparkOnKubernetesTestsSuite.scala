@@ -147,7 +147,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
       batchRequest.getConf.asScala.toMap,
       batchRequest)
 
-    // [KYUUBI #4467] KubernetesApplicationOperator don't support client mode
+    // [KYUUBI #4467] KubernetesApplicationOperator doesn't support client mode
     eventually(timeout(1.minutes), interval(50.milliseconds)) {
       val state = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
       assert(state.id == null)

@@ -108,8 +108,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
               val elapsedTime = System.currentTimeMillis() - time
               if (elapsedTime > submitTimeout) {
                 error(s"Can't find target driver pod with tag: $tag, " +
-                  s"has elapsed time: ${elapsedTime}ms (limit timeout: ${submitTimeout}ms), " +
-                  s"to submit time: ${submitTimeout}ms")
+                  s"has elapsed time: ${elapsedTime}ms (limit timeout: ${submitTimeout}ms)")
                 ApplicationInfo(id = null, name = null, ApplicationState.NOT_FOUND)
               } else {
                 warn("Wait for driver pod to be created, " +
