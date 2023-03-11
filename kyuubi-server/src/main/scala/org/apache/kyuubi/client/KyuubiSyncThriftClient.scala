@@ -110,11 +110,11 @@ class KyuubiSyncThriftClient private (
           }
         } else {
           shutdownAsyncRequestExecutor()
+          Option(engineAliveThreadPool).foreach { pool =>
+            ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
+          }
+          warn(s"Removing Clients for ${_remoteSessionHandle}")
           Utils.tryLogNonFatalError {
-            Option(engineAliveThreadPool).foreach { pool =>
-              ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
-            }
-            warn(s"Removing Clients for ${_remoteSessionHandle}")
             Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
               if (tProtocol.getTransport.isOpen) {
                 tProtocol.getTransport.close()
