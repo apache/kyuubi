@@ -27,7 +27,7 @@ RELEASE_VERSION=${RELEASE_VERSION:?"RELEASE_VERSION is required, e.g. 1.7.0"}
 RELEASE_RC_NO=${RELEASE_RC_NO:?"RELEASE_RC_NO is required, e.g. 0"}
 
 exit_with_usage() {
-  local NAME=$(basename $0)
+  local NAME=$(basename "$0")
   cat << EOF
 Usage: $NAME <publish|finalize>
 
@@ -63,8 +63,8 @@ SVN_STAGING_DIR="${KYUUBI_DIR}/work/svn-dev"
 SVN_RELEASE_DIR="${KYUUBI_DIR}/work/svn-release"
 
 package() {
-  SKIP_GPG="false" RELEASE_VERSION="${RELEASE_VERSION}" $KYUUBI_DIR/build/release/create-package.sh source
-  SKIP_GPG="false" RELEASE_VERSION="${RELEASE_VERSION}" $KYUUBI_DIR/build/release/create-package.sh binary
+  SKIP_GPG="false" RELEASE_VERSION="${RELEASE_VERSION}" "$KYUUBI_DIR"/build/release/create-package.sh source
+  SKIP_GPG="false" RELEASE_VERSION="${RELEASE_VERSION}" "$KYUUBI_DIR"/build/release/create-package.sh binary
 }
 
 upload_svn_staging() {
@@ -94,13 +94,13 @@ upload_svn_staging() {
 }
 
 upload_nexus_staging() {
-  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.1 \
+  "${KYUUBI_DIR}"/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.1 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
     -pl extensions/spark/kyuubi-extension-spark-3-1 -am
-  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.2 \
+  "${KYUUBI_DIR}"/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.2 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
     -pl extensions/spark/kyuubi-extension-spark-3-2 -am
-  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.3 \
+  "${KYUUBI_DIR}"/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.3 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml"
 }
 

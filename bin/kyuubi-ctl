@@ -19,7 +19,7 @@
 ## Kyuubi Control Client Entrance
 CLASS="org.apache.kyuubi.ctl.cli.ControlCli"
 
-export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
+export KYUUBI_HOME="$(cd "$(dirname "$0")"/.. || exit; pwd)"
 
 . "${KYUUBI_HOME}/bin/load-kyuubi-env.sh" -s
 
@@ -45,4 +45,4 @@ else
   KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}:${HADOOP_CONF_DIR}:${YARN_CONF_DIR}"
 fi
 
-exec ${RUNNER} ${KYUUBI_CTL_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS "$@"
+exec ${RUNNER} "${KYUUBI_CTL_JAVA_OPTS}" -cp "${KYUUBI_CLASSPATH}" $CLASS "$@"

@@ -40,4 +40,4 @@ if [[ -z "$YARN_CMD" ]]; then
   exit 1
 fi
 
-$YARN_CMD application -kill $1
+$YARN_CMD application -kill "$1"

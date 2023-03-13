@@ -25,7 +25,7 @@ function error {
 }
 
 if [ -z "${KYUUBI_HOME}" ]; then
-  KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
+  KYUUBI_HOME="$(cd "$(dirname "$0")"/.. || exit; pwd)"
 fi
 KYUUBI_IMAGE_NAME="kyuubi"
 
@@ -46,7 +46,7 @@ fi
 function image_ref {
   local image="$1"
   local add_repo="${2:-1}"
-  if [ $add_repo = 1 ] && [ -n "$REPO" ]; then
+  if [ "$add_repo" = 1 ] && [ -n "$REPO" ]; then
     image="$REPO/$image"
   fi
   if [ -n "$TAG" ]; then
@@ -59,24 +59,24 @@ function image_ref {
 
 function docker_push {
   local image_name="$1"
-  if [ ! -z $(docker images -q "$(image_ref ${image_name})") ]; then
-    docker push "$(image_ref ${image_name})"
+  if [ ! -z $(docker images -q "$(image_ref "${image_name}")") ]; then
+    docker push "$(image_ref "${image_name}")"
     if [ $? -ne 0 ]; then
       error "Failed to push $image_name Docker image."
     fi
   else
-    echo "$(image_ref ${image_name}) image not found. Skipping push for this image."
+    echo "$(image_ref "${image_name}") image not found. Skipping push for this image."
   fi
 }
 
 function resolve_file {
   local FILE=$1
   if [ -n "$FILE" ]; then
-    local DIR=$(dirname $FILE)
-    DIR=$(cd $DIR && pwd)
-    FILE="${DIR}/$(basename $FILE)"
+    local DIR=$(dirname "$FILE")
+    DIR=$(cd "$DIR" && pwd)
+    FILE="${DIR}/$(basename "$FILE")"
   fi
-  echo $FILE
+  echo "$FILE"
 }
 
 function img_ctx_dir {
@@ -119,7 +119,7 @@ function build {
   fi
 
   # Verify that that Kyuubi need JARS is present
-  local TOTAL_JARS=$(ls $KYUUBI_ROOT/jars/kyuubi-* | wc -l)
+  local TOTAL_JARS=$(ls "$KYUUBI_ROOT"/jars/kyuubi-* | wc -l)
   TOTAL_JARS=$(( $TOTAL_JARS ))
   if [ "${TOTAL_JARS}" -eq 0 ]; then
     error "Cannot find Kyuubi JARs. Please check whether the binary package is complete."
@@ -139,7 +139,7 @@ function build {
     error "Failed to build Kyuubi JVM Docker image, please refer to Docker build output for details."
   fi
   if [ "${CROSS_BUILD}" != "false" ]; then
-  (cd $(img_ctx_dir base) && docker buildx build $ARCHS $NOCACHEARG "${BUILD_ARGS[@]}" --push \
+  (cd $(img_ctx_dir base) && docker buildx build "$ARCHS" $NOCACHEARG "${BUILD_ARGS[@]}" --push \
     -t $(image_ref $KYUUBI_IMAGE_NAME) \
     -f "$BASEDOCKERFILE" .)
   fi
@@ -217,7 +217,7 @@ while getopts f:r:t:Xnb:u:s:S: option
 do
  case "${option}"
  in
- f) BASEDOCKERFILE=$(resolve_file ${OPTARG});;
+ f) BASEDOCKERFILE=$(resolve_file "${OPTARG}");;
  r) REPO=${OPTARG};;
  t) TAG=${OPTARG};;
  n) NOCACHEARG="--no-cache";;

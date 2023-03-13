@@ -53,7 +53,7 @@ if [[ -z $repo_no ]]; then
 fi
 
 release_rc_tag=${release_version}-${release_rc_no}
-git_commit_hash=$(git rev-list -n 1 $release_rc_tag)
+git_commit_hash=$(git rev-list -n 1 "$release_rc_tag")
 
 echo "Release version: ${release_version}"
 echo "Release candidate number: ${release_rc_no}"
@@ -71,10 +71,10 @@ https://github.com/apache/kyuubi/compare/${prev_release_rc_tag}...${release_rc_t
 fi
 
 RELEASE_TEMP_DIR=${RELEASE_DIR}/tmp
-mkdir -p ${RELEASE_TEMP_DIR}
+mkdir -p "${RELEASE_TEMP_DIR}"
 DEV_VOTE=${RELEASE_TEMP_DIR}/${release_rc_tag}_dev_vote.temp
 
-cat >${DEV_VOTE}<<EOF
+cat >"${DEV_VOTE}"<<EOF
 Title: [VOTE] Release Apache Kyuubi ${release_version} ${release_rc_no}
 
 Content:

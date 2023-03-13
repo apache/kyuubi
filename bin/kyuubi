@@ -36,7 +36,7 @@ if [[ "$*" = *--help ]] || [[ "$*" = *-h ]]; then
 fi
 
 function kyuubi_logo() {
-  source ${KYUUBI_HOME}/bin/kyuubi-logo
+  source "${KYUUBI_HOME}"/bin/kyuubi-logo
 }
 
 function kyuubi_rotate_log() {
@@ -53,8 +53,8 @@ function kyuubi_rotate_log() {
   fi
 
   if [ -f "$log" ]; then # rotate logs
-  while [ ${num} -gt 1 ]; do
-    prev=`expr ${num} - 1`
+  while [ "${num}" -gt 1 ]; do
+    prev=$(expr "${num}" - 1)
     [ -f "$log.$prev" ] && mv "$log.$prev" "$log.$num"
     num=${prev}
   done
@@ -62,7 +62,7 @@ function kyuubi_rotate_log() {
   fi
 }
 
-export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
+export KYUUBI_HOME="$(cd "$(dirname "$0")"/.. || exit; pwd)"
 
 if [[ $1 == "start" ]] || [[ $1 == "run" ]]; then
   . "${KYUUBI_HOME}/bin/load-kyuubi-env.sh"
@@ -124,10 +124,10 @@ function start_kyuubi() {
   fi
 
   log="${KYUUBI_LOG_DIR}/kyuubi-$USER-$CLASS-$HOSTNAME.out"
-  kyuubi_rotate_log ${log}
+  kyuubi_rotate_log "${log}"
 
   echo "Starting $CLASS, logging to $log"
-  nohup nice -n "${KYUUBI_NICENESS:-0}" ${cmd} >> ${log} 2>&1 < /dev/null &
+  nohup nice -n "${KYUUBI_NICENESS:-0}" "${cmd}" >> "${log}" 2>&1 < /dev/null &
   newpid="$!"
 
   echo "$newpid" > "$pid"
@@ -155,11 +155,11 @@ function start_kyuubi() {
 
 function run_kyuubi() {
   echo "Starting $CLASS"
-  nice -n "${KYUUBI_NICENESS:-0}" ${cmd}
+  nice -n "${KYUUBI_NICENESS:-0}" "${cmd}"
 }
 
 function stop_kyuubi() {
-  if [ -f ${pid} ]; then
+  if [ -f "${pid}" ]; then
     TARGET_ID="$(cat "$pid")"
     if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
       echo "Stopping $CLASS"
@@ -173,9 +173,9 @@ function stop_kyuubi() {
         fi
       done
 
-      if [ -f ${pid} ]; then
+      if [ -f "${pid}" ]; then
         echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully"
-        kill -9 ${TARGET_ID}
+        kill -9 "${TARGET_ID}"
         for i in {1..20}
         do
           sleep 0.5
@@ -184,7 +184,7 @@ function stop_kyuubi() {
             break
           fi
         done
-        if [ -f ${pid} ]; then
+        if [ -f "${pid}" ]; then
           echo "Failed to stop kyuubi forcefully after 10 seconds"
           exit 1
         else

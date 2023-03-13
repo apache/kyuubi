@@ -19,7 +19,7 @@
 ## Kyuubi BeeLine Entrance
 CLASS="org.apache.hive.beeline.KyuubiBeeLine"
 
-export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
+export KYUUBI_HOME="$(cd "$(dirname "$0")"/.. || exit; pwd)"
 
 . "${KYUUBI_HOME}/bin/load-kyuubi-env.sh" -s
 
@@ -50,4 +50,4 @@ else
   KYUUBI_BEELINE_CLASSPATH="${KYUUBI_BEELINE_JARS}/*:${HADOOP_CONF_DIR}:${YARN_CONF_DIR}"
 fi
 
-exec ${RUNNER} ${KYUUBI_BEELINE_OPTS} -cp ${KYUUBI_BEELINE_CLASSPATH} $CLASS "$@"
+exec ${RUNNER} "${KYUUBI_BEELINE_OPTS}" -cp "${KYUUBI_BEELINE_CLASSPATH}" $CLASS "$@"

@@ -45,5 +45,5 @@ shift "$(($OPTIND -1))"
 
 PR_NUM=$1
 
-git fetch apache pull/${PR_NUM}/head:PR_${PR_NUM} ${FORCE}
-git checkout PR_${PR_NUM}
+git fetch apache pull/"${PR_NUM}"/head:PR_"${PR_NUM}" ${FORCE}
+git checkout PR_"${PR_NUM}"

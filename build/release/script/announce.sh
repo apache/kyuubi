@@ -35,10 +35,10 @@ fi
 echo "Release version: ${release_version}"
 
 RELEASE_TEMP_DIR=${RELEASE_DIR}/tmp
-mkdir -p ${RELEASE_TEMP_DIR}
+mkdir -p "${RELEASE_TEMP_DIR}"
 ANNOUNCE=${RELEASE_TEMP_DIR}/${release_version}_announce.temp
 
-cat >$ANNOUNCE<<EOF
+cat >"$ANNOUNCE"<<EOF
 Title: [ANNOUNCE] Apache Kyuubi released ${release_version}
 
 Content:

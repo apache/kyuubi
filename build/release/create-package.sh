@@ -25,7 +25,7 @@ SKIP_GPG=${SKIP_GPG:-false}
 RELEASE_VERSION=${RELEASE_VERSION:?"RELEASE_VERSION is required"}
 
 exit_with_usage() {
-  local NAME=$(basename $0)
+  local NAME=$(basename "$0")
   cat << EOF
 Usage: $NAME <source|binary>
 
@@ -75,7 +75,7 @@ package_binary() {
 
   echo "Creating binary release tarball ${BIN_TGZ_FILE}"
 
-  ${KYUUBI_DIR}/build/dist --tgz --web-ui --spark-provided --flink-provided --hive-provided
+  "${KYUUBI_DIR}"/build/dist --tgz --web-ui --spark-provided --flink-provided --hive-provided
 
   cp "${BIN_TGZ_FILE}" "${RELEASE_DIR}"
 

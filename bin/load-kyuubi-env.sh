@@ -49,12 +49,12 @@ fi
 
 export KYUUBI_LOG_DIR="${KYUUBI_LOG_DIR:-"${KYUUBI_HOME}/logs"}"
 if [[ ! -e ${KYUUBI_LOG_DIR} ]]; then
-  mkdir -p ${KYUUBI_LOG_DIR}
+  mkdir -p "${KYUUBI_LOG_DIR}"
 fi
 
 export KYUUBI_PID_DIR="${KYUUBI_PID_DIR:-"${KYUUBI_HOME}/pid"}"
 if [[ ! -e ${KYUUBI_PID_DIR} ]]; then
-  mkdir -p ${KYUUBI_PID_DIR}
+  mkdir -p "${KYUUBI_PID_DIR}"
 fi
 
 export KYUUBI_WORK_DIR_ROOT="${KYUUBI_WORK_DIR_ROOT:-"${KYUUBI_HOME}/work"}"
