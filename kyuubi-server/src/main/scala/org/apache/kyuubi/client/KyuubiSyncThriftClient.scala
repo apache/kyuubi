@@ -114,8 +114,8 @@ class KyuubiSyncThriftClient private (
             ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
           }
           warn(s"Removing Clients for ${_remoteSessionHandle}")
-          Utils.tryLogNonFatalError {
-            Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
+          Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
+            Utils.tryLogNonFatalError {
               if (tProtocol.getTransport.isOpen) {
                 tProtocol.getTransport.close()
               }
