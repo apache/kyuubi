@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2086
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -14,7 +16,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+
 # Bugzilla 37848: When no TTY is available, don't output to console
 have_tty=0
 if [[ "$(tty)" != "not a tty" ]]; then
