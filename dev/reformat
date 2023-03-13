@@ -18,7 +18,37 @@
 
 set -x
 
-KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
+KYUUBI_HOME="$(cd "$(dirname "$0")/.." || exit; pwd)"
+
+function autofix_shell_scripts(){
+    set +x
+    echo "Start to autofix Shell scripts with shellcheck."
+    script_files=(
+        "./bin/beeline"
+        "./bin/kyuubi"
+        "./bin/kyuubi-admin"
+        "./bin/kyuubi-ctl"
+        "./bin/kyuubi-logo"
+        "./bin/kyuubi-zk-cli"
+        "./dev/reformat")
+    while IFS=  read -r -d $'\0'; do
+        script_files+=("$REPLY")
+    done < <(find . -name "*.sh" -print0)
+    for script_file in ${script_files[*]}; do
+      echo "execute shellcheck on $script_file"
+      shellcheck -f diff --external-sources --shell=bash "$script_file" | patch -p1
+    done
+    echo "Shell scripts autofix finished."
+    set -x
+}
+
+# shell script style checks rely on `shellcheck` in path
+if ! command -v shellcheck &> /dev/null
+then
+    echo "Skip Shell lint since 'shellcheck' is not available."
+else
+    autofix_shell_scripts
+fi
 
 PROFILES="-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds"
 
@@ -30,4 +60,4 @@ else
     PROFILES="${PROFILES},spotless-python"
 fi
 
-${KYUUBI_HOME}/build/mvn spotless:apply $PROFILES
+"${KYUUBI_HOME}/build/mvn" spotless:apply $PROFILES
