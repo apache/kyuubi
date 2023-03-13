@@ -15,25 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi.lineage
+package org.apache.kyuubi.plugin.lineage
 
-import org.apache.spark.SparkContext
-import org.apache.spark.internal.config.ConfigEntry
-import org.apache.spark.scheduler.SparkListenerEvent
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.SparkSessionExtensions
 
-object SparkContextHelper {
+class LineageSparkExtension extends (SparkSessionExtensions => Unit) {
 
-  def globalSparkContext: SparkContext = SparkSession.active.sparkContext
-
-  def postEventToSparkListenerBus(
-      event: SparkListenerEvent,
-      sc: SparkContext = globalSparkContext) {
-    sc.listenerBus.post(event)
+  override def apply(v1: SparkSessionExtensions): Unit = {
+    v1.injectResolutionRule(_ => new LineagePermanentViewMarkerRule())
+    v1.injectPlannerStrategy(new LineagePermanentViewRemoveStrategy(_))
   }
-
-  def getConf[T](entry: ConfigEntry[T]): T = {
-    globalSparkContext.getConf.get(entry)
-  }
-
 }

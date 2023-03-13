@@ -15,25 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi.lineage
+package org.apache.kyuubi.plugin.lineage
 
-import org.apache.spark.SparkContext
-import org.apache.spark.internal.config.ConfigEntry
-import org.apache.spark.scheduler.SparkListenerEvent
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SparkSession, Strategy}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.SparkPlan
 
-object SparkContextHelper {
-
-  def globalSparkContext: SparkContext = SparkSession.active.sparkContext
-
-  def postEventToSparkListenerBus(
-      event: SparkListenerEvent,
-      sc: SparkContext = globalSparkContext) {
-    sc.listenerBus.post(event)
+class LineagePermanentViewRemoveStrategy(spark: SparkSession) extends Strategy {
+  override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
+    case p: LineagePermanentViewMarker =>
+      val optimized = spark.sessionState.optimizer.execute(p.child)
+      spark.sessionState.planner.plan(optimized).toSeq
+    case _ => Nil
   }
-
-  def getConf[T](entry: ConfigEntry[T]): T = {
-    globalSparkContext.getConf.get(entry)
-  }
-
 }

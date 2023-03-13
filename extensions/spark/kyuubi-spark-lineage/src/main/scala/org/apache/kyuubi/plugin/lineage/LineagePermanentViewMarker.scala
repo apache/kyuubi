@@ -15,25 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi.lineage
+package org.apache.kyuubi.plugin.lineage
 
-import org.apache.spark.SparkContext
-import org.apache.spark.internal.config.ConfigEntry
-import org.apache.spark.scheduler.SparkListenerEvent
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
-object SparkContextHelper {
+case class LineagePermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
+  extends UnaryNode {
 
-  def globalSparkContext: SparkContext = SparkSession.active.sparkContext
+  override def output: Seq[Attribute] = child.output
 
-  def postEventToSparkListenerBus(
-      event: SparkListenerEvent,
-      sc: SparkContext = globalSparkContext) {
-    sc.listenerBus.post(event)
-  }
-
-  def getConf[T](entry: ConfigEntry[T]): T = {
-    globalSparkContext.getConf.get(entry)
-  }
+  def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
+    copy(child = newChild)
 
 }

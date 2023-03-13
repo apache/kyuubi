@@ -35,6 +35,7 @@ import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 
+import org.apache.kyuubi.plugin.lineage.LineagePermanentViewMarker
 import org.apache.kyuubi.plugin.lineage.events.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
@@ -413,6 +414,10 @@ trait LineageParser {
               case attr => attr
             })
         }
+
+      case p: LineagePermanentViewMarker =>
+        val viewName = p.catalogTable.qualifiedName
+        joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(viewName))
 
       case p: View =>
         val viewColumnsLineage =
