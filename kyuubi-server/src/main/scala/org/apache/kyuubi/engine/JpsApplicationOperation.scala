@@ -84,7 +84,7 @@ class JpsApplicationOperation extends ApplicationOperation {
     killJpsApplicationByTag(tag, true)
   }
 
-  override def getApplicationInfoByTag(tag: String): ApplicationInfo = {
+  override def getApplicationInfoByTag(tag: String, submitTime: Option[Long]): ApplicationInfo = {
     val commandOption = getEngine(tag)
     if (commandOption.nonEmpty) {
       val idAndCmd = commandOption.get

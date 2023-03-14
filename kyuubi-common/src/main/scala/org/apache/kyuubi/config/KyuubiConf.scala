@@ -2520,6 +2520,15 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val ENGINE_SUBMIT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.submit.timeout")
+      .doc("Period to tolerant Driver Pod ephemerally invisible after submitting. " +
+        "In some Resource Managers, e.g. K8s, the Driver Pod is not invisible immediately " +
+        "after `spark-submit` is returned.")
+      .version("1.7.1")
+      .timeConf
+      .createWithDefaultString("PT30S")
+
   /**
    * Holds information about keys that have been deprecated.
    *
