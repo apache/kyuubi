@@ -22,6 +22,7 @@ import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
+import jline.console.ConsoleReader;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
 import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
@@ -522,6 +523,14 @@ public class KyuubiCommands extends Commands {
             "Console reader not initialized. This could happen when there "
                 + "is a multi-line command using -e option and which requires further reading from console");
       }
+
+      // Beeline with - i causes the referenced input stream to be FileInputStream replaced by
+      // System.in
+      if (beeLine.getOpts().getInitFiles() != null) {
+        beeLine.setConsoleReader(
+            new ConsoleReader(beeLine.getInputStream(), beeLine.getErrorStream()));
+      }
+
       if (beeLine.getOpts().isSilent() && beeLine.getOpts().getScriptFile() != null) {
         extra = beeLine.getConsoleReader().readLine(null, mask);
       } else {
