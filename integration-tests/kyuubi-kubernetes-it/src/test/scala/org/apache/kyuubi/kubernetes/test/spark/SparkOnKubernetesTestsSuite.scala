@@ -125,6 +125,7 @@ class SparkClusterModeOnKubernetesSuite
   override protected def jdbcUrl: String = getJdbcUrl
 }
 
+// [KYUUBI #4467] KubernetesApplicationOperator doesn't support client mode
 class KyuubiOperationKubernetesClusterClientModeSuite
   extends SparkClientModeOnKubernetesSuiteBase {
   private lazy val k8sOperation: KubernetesApplicationOperation = {
@@ -136,7 +137,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
   private def sessionManager: KyuubiSessionManager =
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
 
-  test("Spark Client Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
+  ignore("Spark Client Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
     val batchRequest = newSparkBatchRequest(conf.getAll ++ Map(
       KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
 
