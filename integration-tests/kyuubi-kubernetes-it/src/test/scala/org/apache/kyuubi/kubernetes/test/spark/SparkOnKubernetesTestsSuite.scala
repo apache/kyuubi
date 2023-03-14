@@ -147,13 +147,25 @@ class KyuubiOperationKubernetesClusterClientModeSuite
       batchRequest.getConf.asScala.toMap,
       batchRequest)
 
-    // [KYUUBI #4467] KubernetesApplicationOperator doesn't support client mode
     eventually(timeout(1.minutes), interval(50.milliseconds)) {
       val state = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
       assert(state.id == null)
       assert(state.name == null)
       assert(state.state == NOT_FOUND)
     }
+
+    // [KYUUBI #4467] KubernetesApplicationOperator doesn't support client mode
+    // TODO will add deploy mode client support
+    // val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    // assert(killResponse._1)
+    // assert(killResponse._2 startsWith "Succeeded to terminate:")
+
+    // val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+    // assert(appInfo == ApplicationInfo(null, null, NOT_FOUND))
+
+    // val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    // assert(!failKillResponse._1)
+    // assert(failKillResponse._2 === ApplicationOperation.NOT_FOUND)
   }
 }
 
