@@ -523,15 +523,19 @@ public class KyuubiCommands extends Commands {
             "Console reader not initialized. This could happen when there "
                 + "is a multi-line command using -e option and which requires further reading from console");
       }
+
+      if(beeLine.getOpts().getInitFiles() != null) {
+        beeLine.getConsoleReader().shutdown();
+        beeLine.setConsoleReader(new ConsoleReader(beeLine.getInputStream(), beeLine.getErrorStream()));
+      }
+
       if (beeLine.getOpts().isSilent() && beeLine.getOpts().getScriptFile() != null) {
         extra = beeLine.getConsoleReader().readLine(null, mask);
       } else {
         extra = beeLine.getConsoleReader().readLine(prompt.toString());
       }
 
-      if(beeLine.getOpts().getInitFiles() != null) {
-        beeLine.setConsoleReader(new ConsoleReader(beeLine.getInputStream(), beeLine.getErrorStream()));
-      }
+
       if (extra == null) { // it happens when using -f and the line of cmds does not end with ;
         break;
       }
