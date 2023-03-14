@@ -36,7 +36,7 @@ if [[ "$*" = *--help ]] || [[ "$*" = *-h ]]; then
 fi
 
 function kyuubi_logo() {
-  source "${KYUUBI_HOME}"/bin/kyuubi-logo
+  source "${KYUUBI_HOME}/bin/kyuubi-logo"
 }
 
 function kyuubi_rotate_log() {
