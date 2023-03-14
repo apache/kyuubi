@@ -87,45 +87,43 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   override def getApplicationInfoByTag(tag: String, submitTime: Option[Long]): ApplicationInfo = {
-    if (kubernetesClient != null) {
-      debug(s"Getting application info from Kubernetes cluster by $tag tag")
-      try {
-        val podList = findDriverPodByTag(tag)
-        if (podList.size() != 0) {
-          val pod = podList.get(0)
-          val info = ApplicationInfo(
-            // spark pods always tag label `spark-app-selector:<spark-app-id>`
-            id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
-            name = pod.getMetadata.getName,
-            state = KubernetesApplicationOperation.toApplicationState(pod.getStatus.getPhase),
-            error = Option(pod.getStatus.getReason))
-          debug(s"Successfully got application info by $tag: $info")
-          info
-        } else {
-          // Kyuubi should wait second if pod is not be created
-          submitTime match {
-            case Some(time) =>
-              val elapsedTime = System.currentTimeMillis() - time
-              if (elapsedTime > submitTimeout) {
-                error(s"Can't find target driver pod by tag: $tag, " +
-                  s"elapsed time: ${elapsedTime}ms exceeds ${submitTimeout}ms.")
-                ApplicationInfo(id = null, name = null, ApplicationState.NOT_FOUND)
-              } else {
-                warn("Wait for driver pod to be created, " +
-                  s"elapsed time: ${elapsedTime}ms, return UNKNOWN status")
-                ApplicationInfo(id = null, name = null, ApplicationState.UNKNOWN)
-              }
-            case None =>
-              ApplicationInfo(id = null, name = null, ApplicationState.NOT_FOUND)
+    if (kubernetesClient == null) {
+      throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
+    }
+    debug(s"Getting application info from Kubernetes cluster by $tag tag")
+    try {
+      val podList = findDriverPodByTag(tag)
+      if (podList.size() != 0) {
+        val pod = podList.get(0)
+        val info = ApplicationInfo(
+          // spark pods always tag label `spark-app-selector:<spark-app-id>`
+          id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
+          name = pod.getMetadata.getName,
+          state = KubernetesApplicationOperation.toApplicationState(pod.getStatus.getPhase),
+          error = Option(pod.getStatus.getReason))
+        debug(s"Successfully got application info by $tag: $info")
+        return info
+      }
+      // Kyuubi should wait second if pod is not be created
+      submitTime match {
+        case Some(time) =>
+          val elapsedTime = System.currentTimeMillis() - time
+          if (elapsedTime > submitTimeout) {
+            error(s"Can't find target driver pod by tag: $tag, " +
+              s"elapsed time: ${elapsedTime}ms exceeds ${submitTimeout}ms.")
+            ApplicationInfo(id = null, name = null, ApplicationState.NOT_FOUND)
+          } else {
+            warn("Wait for driver pod to be created, " +
+              s"elapsed time: ${elapsedTime}ms, return UNKNOWN status")
+            ApplicationInfo(id = null, name = null, ApplicationState.UNKNOWN)
           }
-        }
-      } catch {
-        case e: Exception =>
-          error(s"Failed to get application with $tag, due to ${e.getMessage}")
+        case None =>
           ApplicationInfo(id = null, name = null, ApplicationState.NOT_FOUND)
       }
-    } else {
-      throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
+    } catch {
+      case e: Exception =>
+        error(s"Failed to get application with $tag, due to ${e.getMessage}")
+        ApplicationInfo(id = null, name = null, ApplicationState.NOT_FOUND)
     }
   }
 
