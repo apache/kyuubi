@@ -36,7 +36,8 @@ object ApiUtils {
       session.createTime,
       session.lastAccessTime - session.createTime,
       session.getNoOperationTime,
-      session.getSessionEvent.flatMap(_.exception).map(Utils.prettyPrint).getOrElse(""))
+      session.getSessionEvent.flatMap(_.exception).map(Utils.prettyPrint).getOrElse(""),
+      session.sessionType.toString)
   }
 
   def operationData(operation: KyuubiOperation): OperationData = {

@@ -32,6 +32,7 @@ public class SessionData {
   private Long duration;
   private Long idleTime;
   private String exception;
+  private String sessionType;
 
   public SessionData() {}
 
@@ -43,7 +44,8 @@ public class SessionData {
       Long createTime,
       Long duration,
       Long idleTime,
-      String exception) {
+      String exception,
+      String sessionType) {
     this.identifier = identifier;
     this.user = user;
     this.ipAddr = ipAddr;
@@ -52,6 +54,7 @@ public class SessionData {
     this.duration = duration;
     this.idleTime = idleTime;
     this.exception = exception;
+    this.sessionType = sessionType;
   }
 
   public String getIdentifier() {
@@ -119,6 +122,14 @@ public class SessionData {
 
   public void setException(String exception) {
     this.exception = exception;
+  }
+
+  public String getSessionType() {
+    return sessionType;
+  }
+
+  public void setSessionType(String sessionType) {
+    this.sessionType = sessionType;
   }
 
   @Override
