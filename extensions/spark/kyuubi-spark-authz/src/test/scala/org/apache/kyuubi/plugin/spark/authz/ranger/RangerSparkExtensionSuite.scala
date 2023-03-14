@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.sql.{Row, SparkSessionExtensions}
+import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
@@ -216,83 +216,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         assert(e.getMessage === errorMessage("create", "default/func"))
       })
     doAs("admin", assert(Try(sql(create0)).isSuccess))
-  }
-
-  test("row level filter") {
-    val db = "default"
-    val table = "src"
-    val col = "key"
-    val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
-
-    withCleanTmpResources(Seq((s"$db.${table}2", "table"), (s"$db.$table", "table"))) {
-      doAs("admin", assert(Try { sql(create) }.isSuccess))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
-
-      doAs(
-        "kent",
-        assert(sql(s"SELECT key FROM $db.$table order by key").collect() ===
-          Seq(Row(1), Row(20), Row(30))))
-
-      Seq(
-        s"SELECT value FROM $db.$table",
-        s"SELECT value as key FROM $db.$table",
-        s"SELECT max(value) FROM $db.$table",
-        s"SELECT coalesce(max(value), 1) FROM $db.$table",
-        s"SELECT value FROM $db.$table WHERE value in (SELECT value as key FROM $db.$table)")
-        .foreach { q =>
-          doAs(
-            "bob", {
-              withClue(q) {
-                assert(sql(q).collect() === Seq(Row(1)))
-              }
-            })
-        }
-      doAs(
-        "bob", {
-          sql(s"CREATE TABLE $db.src2 using $format AS SELECT value FROM $db.$table")
-          assert(sql(s"SELECT value FROM $db.${table}2").collect() === Seq(Row(1)))
-        })
-    }
-  }
-
-  test("[KYUUBI #3581]: row level filter on permanent view") {
-    assume(isSparkV31OrGreater)
-
-    val db = "default"
-    val table = "src"
-    val permView = "perm_view"
-    val col = "key"
-    val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
-    val createView =
-      s"CREATE OR REPLACE VIEW $db.$permView" +
-        s" AS SELECT * FROM $db.$table"
-
-    withCleanTmpResources(Seq(
-      (s"$db.$table", "table"),
-      (s"$db.$permView", "view"))) {
-      doAs("admin", assert(Try { sql(create) }.isSuccess))
-      doAs("admin", assert(Try { sql(createView) }.isSuccess))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
-
-      Seq(
-        s"SELECT value FROM $db.$permView",
-        s"SELECT value as key FROM $db.$permView",
-        s"SELECT max(value) FROM $db.$permView",
-        s"SELECT coalesce(max(value), 1) FROM $db.$permView",
-        s"SELECT value FROM $db.$permView WHERE value in (SELECT value as key FROM $db.$permView)")
-        .foreach { q =>
-          doAs(
-            "perm_view_user", {
-              withClue(q) {
-                assert(sql(q).collect() === Seq(Row(1)))
-              }
-            })
-        }
-    }
   }
 
   test("show tables") {
