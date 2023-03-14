@@ -56,19 +56,10 @@ trait ApplicationOperation {
    * Get the engine/application status by the unique application tag
    *
    * @param tag the unique application tag for engine instance.
+   * @param submitTime engine submit to resourceManager time
    * @return [[ApplicationInfo]]
    */
-  def getApplicationInfoByTag(tag: String): ApplicationInfo
-
-  /**
-   * Get the engine/application status by the unique application tag and submit time
-   * Notice only Kubernetes Application need submit time to check whether engine submit is timeout
-   * @param tag the unique application tag for engine instance.
-   * @param submitTime engine submit time
-   * @return [[ApplicationInfo]]
-   */
-  def getApplicationInfoByTag(tag: String, submitTime: Option[Long]): ApplicationInfo =
-    getApplicationInfoByTag(tag)
+  def getApplicationInfoByTag(tag: String, submitTime: Option[Long] = None): ApplicationInfo
 }
 
 object ApplicationState extends Enumeration {
