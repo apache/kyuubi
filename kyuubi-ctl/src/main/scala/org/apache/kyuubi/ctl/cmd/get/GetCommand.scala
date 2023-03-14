@@ -30,7 +30,10 @@ class GetCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](cli
   }
 
   def doRun(): Seq[ServiceNodeInfo] = {
-    CtlUtils.listZkServerNodes(conf, normalizedCliConfig, filterHostPort = true)
+    CtlUtils.listZkServerNodes(
+      conf,
+      normalizedCliConfig,
+      Some((cliConfig.zkOpts.host, cliConfig.zkOpts.port.toInt)))
   }
 
   def render(nodes: Seq[ServiceNodeInfo]): Unit = {

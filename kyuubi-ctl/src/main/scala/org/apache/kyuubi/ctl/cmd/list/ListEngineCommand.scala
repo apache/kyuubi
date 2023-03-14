@@ -31,7 +31,6 @@ class ListEngineCommand(cliConfig: CliConfig) extends ListCommand(cliConfig) {
     }
   }
 
-  override def doRun(): Seq[ServiceNodeInfo] = {
-    CtlUtils.listZkEngineNodes(conf, normalizedCliConfig, filterHostPort = false)
-  }
+  override def doRun(): Seq[ServiceNodeInfo] =
+    CtlUtils.listZkEngineNodes(conf, normalizedCliConfig, None)
 }

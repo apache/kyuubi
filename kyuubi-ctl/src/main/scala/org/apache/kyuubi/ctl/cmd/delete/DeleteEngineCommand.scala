@@ -16,7 +16,12 @@
  */
 package org.apache.kyuubi.ctl.cmd.delete
 
+import scala.collection.mutable.ListBuffer
+
 import org.apache.kyuubi.ctl.opt.CliConfig
+import org.apache.kyuubi.ctl.util.CtlUtils
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
+import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
 class DeleteEngineCommand(cliConfig: CliConfig) extends DeleteCommand(cliConfig) {
 
@@ -26,6 +31,32 @@ class DeleteEngineCommand(cliConfig: CliConfig) extends DeleteCommand(cliConfig)
     // validate user
     if (normalizedCliConfig.engineOpts.user == null) {
       fail("Must specify user name for engine, please use -u or --user.")
+    }
+  }
+
+  def doRun(): Seq[ServiceNodeInfo] = {
+    withDiscoveryClient(conf) { discoveryClient =>
+      val (namespace, subdomainOpt) =
+        CtlUtils.getZkEngineNamespaceAndSubdomain(conf, normalizedCliConfig)
+      val hostPortOpt =
+        Some((normalizedCliConfig.zkOpts.host, normalizedCliConfig.zkOpts.port.toInt))
+      val subdomain = subdomainOpt.getOrElse("default")
+      val znodeRoot = s"$namespace/$subdomain"
+      val nodesToDelete = CtlUtils.getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
+
+      val deletedNodes = ListBuffer[ServiceNodeInfo]()
+      nodesToDelete.foreach { node =>
+        val nodePath = s"$znodeRoot/${node.nodeName}"
+        info(s"Deleting zookeeper service node:$nodePath")
+        try {
+          discoveryClient.delete(nodePath)
+          deletedNodes += node
+        } catch {
+          case e: Exception =>
+            error(s"Failed to delete zookeeper service node:$nodePath", e)
+        }
+      }
+      deletedNodes
     }
   }
 }
