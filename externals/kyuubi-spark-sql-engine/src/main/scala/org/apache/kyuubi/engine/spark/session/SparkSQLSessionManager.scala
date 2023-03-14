@@ -166,7 +166,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         }
       }
     }
-    super.closeSession(sessionHandle)
+    try {
+      super.closeSession(sessionHandle)
+    } catch {
+      case e: KyuubiSQLException =>
+        warn(s"Error closing session ${sessionHandle}", e)
+    }
     if (shareLevel == ShareLevel.CONNECTION) {
       info("Session stopped due to shared level is Connection.")
       stopSession()

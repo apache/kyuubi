@@ -161,7 +161,8 @@ class ExecuteStatement(
       .build(executor)
     val result = executeOperation.invoke[TableResult](sessionId, operation)
     jobId = result.getJobClient.asScala.map(_.getJobID)
-    result.await()
+    // after FLINK-24461, TableResult#await() would block insert statements
+    // until the job finishes, instead of returning row affected immediately
     resultSet = ResultSet.fromTableResult(result)
   }
 
