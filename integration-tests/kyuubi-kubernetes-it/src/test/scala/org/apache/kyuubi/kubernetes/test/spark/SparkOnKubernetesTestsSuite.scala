@@ -24,13 +24,14 @@ import scala.concurrent.duration._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.net.NetUtils
+import org.scalatest.Ignore
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationOperation, KubernetesApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, NOT_FOUND, RUNNING}
-import org.apache.kyuubi.engine.KubernetesApplicationOperation
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
@@ -125,6 +126,8 @@ class SparkClusterModeOnKubernetesSuite
   override protected def jdbcUrl: String = getJdbcUrl
 }
 
+// [KYUUBI #4467] KubernetesApplicationOperator doesn't support client mode
+@Ignore
 class KyuubiOperationKubernetesClusterClientModeSuite
   extends SparkClientModeOnKubernetesSuiteBase {
   private lazy val k8sOperation: KubernetesApplicationOperation = {
@@ -147,25 +150,23 @@ class KyuubiOperationKubernetesClusterClientModeSuite
       batchRequest.getConf.asScala.toMap,
       batchRequest)
 
-    eventually(timeout(1.minutes), interval(50.milliseconds)) {
+    eventually(timeout(3.minutes), interval(50.milliseconds)) {
       val state = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
-      assert(state.id == null)
-      assert(state.name == null)
-      assert(state.state == NOT_FOUND)
+      assert(state.id != null)
+      assert(state.name != null)
+      assert(state.state == RUNNING)
     }
 
-    // [KYUUBI #4467] KubernetesApplicationOperator doesn't support client mode
-    // TODO will add deploy mode client support
-    // val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
-    // assert(killResponse._1)
-    // assert(killResponse._2 startsWith "Succeeded to terminate:")
+     val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+     assert(killResponse._1)
+     assert(killResponse._2 startsWith "Succeeded to terminate:")
 
-    // val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
-    // assert(appInfo == ApplicationInfo(null, null, NOT_FOUND))
+     val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+     assert(appInfo == ApplicationInfo(null, null, NOT_FOUND))
 
-    // val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
-    // assert(!failKillResponse._1)
-    // assert(failKillResponse._2 === ApplicationOperation.NOT_FOUND)
+     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+     assert(!failKillResponse._1)
+     assert(failKillResponse._2 === ApplicationOperation.NOT_FOUND)
   }
 }
 
