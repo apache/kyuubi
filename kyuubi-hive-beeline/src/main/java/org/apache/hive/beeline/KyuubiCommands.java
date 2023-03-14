@@ -22,6 +22,8 @@ import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
+
+import jline.console.ConsoleReader;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -527,6 +529,9 @@ public class KyuubiCommands extends Commands {
         extra = beeLine.getConsoleReader().readLine(prompt.toString());
       }
 
+      if(beeLine.getOpts().getInitFiles() != null) {
+        beeLine.setConsoleReader(new ConsoleReader(beeLine.getInputStream(), beeLine.getErrorStream()));
+      }
       if (extra == null) { // it happens when using -f and the line of cmds does not end with ;
         break;
       }
