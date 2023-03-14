@@ -168,6 +168,70 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(sessions2.isEmpty)
   }
 
+  test("list sessions/operations with filter") {
+    fe.be.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+
+    fe.be.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+
+    fe.be.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "test_user_1",
+      "xxxxxx",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+
+    fe.be.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "test_user_2",
+      "xxxxxx",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+
+    val adminUser = Utils.currentUser
+    val encodeAuthorization = new String(
+      Base64.getEncoder.encode(
+        s"$adminUser:".getBytes()),
+      "UTF-8")
+
+    // list sessions
+    var response = webTarget.path("api/v1/admin/sessions")
+      .queryParam("users", "admin")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    var sessions = response.readEntity(classOf[Seq[SessionData]])
+    assert(200 == response.getStatus)
+    assert(sessions.size == 2)
+
+    response = webTarget.path("api/v1/admin/sessions")
+      .queryParam("users", "test_user_1,test_user_2")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    sessions = response.readEntity(classOf[Seq[SessionData]])
+    assert(200 == response.getStatus)
+    assert(sessions.size == 2)
+
+    // list operations
+    response = webTarget.path("api/v1/admin/operations")
+      .queryParam("users", "test_user_1,test_user_2")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    val operations = response.readEntity(classOf[Seq[OperationData]])
+    assert(operations.size == 2)
+  }
+
   test("list/close operations") {
     val sessionHandle = fe.be.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
