@@ -196,7 +196,11 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
-    val userName = fe.getSessionUser(hs2ProxyUser)
+    val userName = if (isAdministrator(fe.getRealUser())) {
+      Option(hs2ProxyUser).getOrElse(fe.getRealUser())
+    } else {
+      fe.getSessionUser(hs2ProxyUser)
+    }
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "default")
     val engineSpace = getEngineSpace(engine)
 
@@ -230,7 +234,11 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
-    val userName = fe.getSessionUser(hs2ProxyUser)
+    val userName = if (isAdministrator(fe.getRealUser())) {
+      Option(hs2ProxyUser).getOrElse(fe.getRealUser())
+    } else {
+      fe.getSessionUser(hs2ProxyUser)
+    }
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
     val engineSpace = getEngineSpace(engine)
 
