@@ -199,20 +199,23 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     }
   }
 
-  test("test get zk namespace for different service type") {
-    val arg1 = Array(
+  test("test get zk server namespace") {
+    val args = Array(
       "list",
       "server",
       "--zk-quorum",
       zkServer.getConnectString,
       "--namespace",
       namespace)
-    val scArgs1 = new ControlCliArguments(arg1)
-    assert(CtlUtils.getZkNamespace(
-      scArgs1.command.conf,
-      scArgs1.command.normalizedCliConfig) == s"/$namespace")
+    val scArgs = new ControlCliArguments(args)
+    assert(
+      CtlUtils.getZkServerNamespace(
+        scArgs.command.conf,
+        scArgs.command.normalizedCliConfig) === s"/$namespace")
+  }
 
-    val arg2 = Array(
+  test("test get zk engine namespace") {
+    val args = Array(
       "list",
       "engine",
       "--zk-quorum",
@@ -221,9 +224,11 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       namespace,
       "--user",
       user)
-    val scArgs2 = new ControlCliArguments(arg2)
-    assert(CtlUtils.getZkNamespace(scArgs2.command.conf, scArgs2.command.normalizedCliConfig) ==
-      s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
+    val scArgs = new ControlCliArguments(args)
+    val expected = (s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user", None)
+    assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
+      scArgs.command.conf,
+      scArgs.command.normalizedCliConfig) === expected)
   }
 
   test("test list zk service nodes info") {
@@ -364,8 +369,10 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--user",
       user)
     val scArgs1 = new ControlCliArguments(arg1)
-    assert(CtlUtils.getZkNamespace(scArgs1.command.conf, scArgs1.command.normalizedCliConfig) ==
-      s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
+    val expected1 = (s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user", None)
+    assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
+      scArgs1.command.conf,
+      scArgs1.command.normalizedCliConfig) === expected1)
 
     val arg2 = Array(
       "list",
@@ -379,8 +386,10 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-type",
       "FLINK_SQL")
     val scArgs2 = new ControlCliArguments(arg2)
-    assert(CtlUtils.getZkNamespace(scArgs2.command.conf, scArgs2.command.normalizedCliConfig) ==
-      s"/${namespace}_${KYUUBI_VERSION}_USER_FLINK_SQL/$user/default")
+    val expected2 = (s"/${namespace}_${KYUUBI_VERSION}_USER_FLINK_SQL/$user", None)
+    assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
+      scArgs2.command.conf,
+      scArgs2.command.normalizedCliConfig) === expected2)
 
     val arg3 = Array(
       "list",
@@ -394,8 +403,10 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-type",
       "TRINO")
     val scArgs3 = new ControlCliArguments(arg3)
-    assert(CtlUtils.getZkNamespace(scArgs3.command.conf, scArgs3.command.normalizedCliConfig) ==
-      s"/${namespace}_${KYUUBI_VERSION}_USER_TRINO/$user/default")
+    val expected3 = (s"/${namespace}_${KYUUBI_VERSION}_USER_TRINO/$user", None)
+    assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
+      scArgs3.command.conf,
+      scArgs3.command.normalizedCliConfig) === expected3)
 
     val arg4 = Array(
       "list",
@@ -411,8 +422,10 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-subdomain",
       "sub_1")
     val scArgs4 = new ControlCliArguments(arg4)
-    assert(CtlUtils.getZkNamespace(scArgs4.command.conf, scArgs4.command.normalizedCliConfig) ==
-      s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/sub_1")
+    val expected4 = (s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user", Some("sub_1"))
+    assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
+      scArgs4.command.conf,
+      scArgs4.command.normalizedCliConfig) === expected4)
 
     val arg5 = Array(
       "list",
@@ -430,8 +443,10 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-subdomain",
       "sub_1")
     val scArgs5 = new ControlCliArguments(arg5)
-    assert(CtlUtils.getZkNamespace(scArgs5.command.conf, scArgs5.command.normalizedCliConfig) ==
-      s"/${namespace}_1.5.0_USER_SPARK_SQL/$user/sub_1")
+    val expected5 = (s"/${namespace}_1.5.0_USER_SPARK_SQL/$user", Some("sub_1"))
+    assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
+      scArgs5.command.conf,
+      scArgs5.command.normalizedCliConfig) === expected5)
   }
 
   test("test get zk namespace for different share level engines") {
@@ -445,8 +460,10 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--user",
       user)
     val scArgs1 = new ControlCliArguments(arg1)
-    assert(CtlUtils.getZkNamespace(scArgs1.command.conf, scArgs1.command.normalizedCliConfig) ==
-      s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
+    val expected1 = (s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user", None)
+    assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
+      scArgs1.command.conf,
+      scArgs1.command.normalizedCliConfig) === expected1)
 
     val arg2 = Array(
       "list",
@@ -460,8 +477,10 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-share-level",
       "CONNECTION")
     val scArgs2 = new ControlCliArguments(arg2)
-    assert(CtlUtils.getZkNamespace(scArgs2.command.conf, scArgs2.command.normalizedCliConfig) ==
-      s"/${namespace}_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL/$user/default")
+    val expected2 = (s"/${namespace}_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL/$user", None)
+    assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
+      scArgs2.command.conf,
+      scArgs2.command.normalizedCliConfig) === expected2)
 
     val arg3 = Array(
       "list",
@@ -475,8 +494,10 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-share-level",
       "USER")
     val scArgs3 = new ControlCliArguments(arg3)
-    assert(CtlUtils.getZkNamespace(scArgs3.command.conf, scArgs3.command.normalizedCliConfig) ==
-      s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
+    val expected3 = (s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user", None)
+    assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
+      scArgs3.command.conf,
+      scArgs3.command.normalizedCliConfig) === expected3)
 
     val arg4 = Array(
       "list",
@@ -490,8 +511,10 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-share-level",
       "GROUP")
     val scArgs4 = new ControlCliArguments(arg4)
-    assert(CtlUtils.getZkNamespace(scArgs4.command.conf, scArgs4.command.normalizedCliConfig) ==
-      s"/${namespace}_${KYUUBI_VERSION}_GROUP_SPARK_SQL/$user/default")
+    val expected4 = (s"/${namespace}_${KYUUBI_VERSION}_GROUP_SPARK_SQL/$user", None)
+    assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
+      scArgs4.command.conf,
+      scArgs4.command.normalizedCliConfig) === expected4)
 
     val arg5 = Array(
       "list",
@@ -505,7 +528,9 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-share-level",
       "SERVER")
     val scArgs5 = new ControlCliArguments(arg5)
-    assert(CtlUtils.getZkNamespace(scArgs5.command.conf, scArgs5.command.normalizedCliConfig) ==
-      s"/${namespace}_${KYUUBI_VERSION}_SERVER_SPARK_SQL/$user/default")
+    val expected5 = (s"/${namespace}_${KYUUBI_VERSION}_SERVER_SPARK_SQL/$user", None)
+    assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
+      scArgs5.command.conf,
+      scArgs5.command.normalizedCliConfig) === expected5)
   }
 }
