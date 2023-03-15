@@ -50,8 +50,8 @@ class SparkRangerAdminPluginSuite extends AnyFunSuite {
     }
     assert(getMaskingExpr(buildAccessRequest(bob, "value1")).get === "md5(cast(value1 as string))")
     assert(getMaskingExpr(buildAccessRequest(bob, "value2")).get ===
-      "regexp_replace(regexp_replace(regexp_replace(value2, '[A-Z]', 'X'), '[a-z]', 'x')," +
-      " '[0-9]', 'n')")
+      "regexp_replace(regexp_replace(regexp_replace(regexp_replace(value2, '[A-Z]', 'X', 5), '[a-z]', 'x', 5), " +
+        "'[\\u4e00-\\u9fa5]', 'x', 5), '[0-9]', 'n', 5)")
     assert(getMaskingExpr(buildAccessRequest(bob, "value3")).get contains "regexp_replace")
     assert(getMaskingExpr(buildAccessRequest(bob, "value4")).get === "date_trunc('YEAR', value4)")
     assert(getMaskingExpr(buildAccessRequest(bob, "value5")).get contains "regexp_replace")
