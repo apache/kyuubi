@@ -129,9 +129,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("list/close sessions") {
-    val requestObj = new SessionOpenRequest(
-      1,
-      Map("testConfig" -> "testValue").asJava)
+    val requestObj = new SessionOpenRequest(Map("testConfig" -> "testValue").asJava)
 
     var response = webTarget.path("api/v1/sessions")
       .request(MediaType.APPLICATION_JSON_TYPE)

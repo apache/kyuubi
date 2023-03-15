@@ -129,11 +129,9 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
     val proxyUser = "user1"
     UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
     var token = generateToken(hostName)
-    val sessionOpenRequest = new SessionOpenRequest(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11.getValue,
-      Map(
-        KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION",
-        "hive.server2.proxy.user" -> proxyUser).asJava)
+    val sessionOpenRequest = new SessionOpenRequest(Map(
+      KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION",
+      "hive.server2.proxy.user" -> proxyUser).asJava)
 
     var response = webTarget.path("api/v1/sessions")
       .request()
