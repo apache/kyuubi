@@ -493,54 +493,52 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #3343] check persisted view creation") {
-    val table = "hive_src"
-    val adminPermView = "admin_perm_view"
-    val permView = "perm_view"
-
-    withCleanTmpResources(Seq(
-      (adminPermView, "view"),
-      (permView, "view"),
-      (table, "table"))) {
-      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
-
-      doAs("admin", sql(s"CREATE VIEW ${adminPermView} AS SELECT * FROM $table"))
-
-      val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"CREATE VIEW $permView AS SELECT 1 as a")))
-      assert(e1.getMessage.contains(s"does not have [create] privilege on [default/$permView]"))
-
-      val e2 = intercept[AccessControlException](
-        doAs("someone", sql(s"CREATE VIEW $permView AS SELECT * FROM $table")))
-      if (isSparkV32OrGreater) {
-        assert(e2.getMessage.contains(s"does not have [select] privilege on [default/$table/id]"))
-      } else {
-        assert(e2.getMessage.contains(s"does not have [select] privilege on [$table]"))
-      }
-    }
-  }
-
-  test("[KYUUBI #3326] check persisted view and skip shadowed table") {
+  test("check persisted view and skip shadowed table") {
     val table = "hive_src"
     val permView = "perm_view"
     val db1 = "default"
     val db2 = "db2"
+    val userPermViewOnly = "user_perm_view_only"
 
     withCleanTmpResources(Seq(
       (s"$db1.$table", "table"),
       (s"$db2.$permView", "view"),
       (db2, "database"))) {
-      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int)"))
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
 
       doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db2"))
-      doAs("admin", sql(s"CREATE VIEW $db2.$permView AS SELECT * FROM $table"))
+      doAs("admin", sql(s"CREATE VIEW $db2.$permView AS SELECT * FROM $db1.$table"))
 
+      // KYUUBI #3326: with no privileges to the permanent view or the source table
       val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"select * from $db2.$permView")).show(0))
+        doAs("someone", sql(s"select * from $db2.$permView").collect()))
       if (isSparkV31OrGreater) {
         assert(e1.getMessage.contains(s"does not have [select] privilege on [$db2/$permView/id]"))
       } else {
         assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+      }
+
+      // KYUUBI 4504: query the perm view
+      // with access privileges to the permanent view but no privilege to the source table
+      val sql1 = s"select * from $db2.$permView"
+      if (isSparkV31OrGreater) {
+        doAs(userPermViewOnly, sql(sql1).collect())
+      } else {
+        val e2 = intercept[AccessControlException](doAs(
+          userPermViewOnly, {
+            sql(sql1).collect()
+          }))
+        assert(e2.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+      }
+
+      // KYUUBI 4504: query the second column of permanent view with multiple columns
+      // with access privileges to the permanent view but no privilege to the source table
+      val sql2 = s"select name from $db2.$permView"
+      if (isSparkV31OrGreater) {
+        doAs(userPermViewOnly, sql(sql2).collect())
+      } else {
+        val e3 = intercept[AccessControlException](doAs(userPermViewOnly, sql(sql2).collect()))
+        assert(e3.getMessage.contains(s"does not have [select] privilege on [$db1/$table/name]"))
       }
     }
   }
