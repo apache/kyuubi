@@ -89,13 +89,12 @@ Create a session
 
 #### Request Parameters
 
-| Name            | Description                              | Type   |
-|:----------------|:-----------------------------------------|:-------|
-| protocolVersion | The protocol version of Hive CLI service | Int    |
-| user            | The user name                            | String |
-| password        | The user password                        | String |
-| ipAddr          | The user client IP address               | String |
-| configs         | The configuration of the session         | Map    |
+| Name            | Description                              | Type |
+|:----------------|:-----------------------------------------|:-----|
+| protocolVersion | The protocol version of Hive CLI service | Int  |
+| configs         | The configuration of the session         | Map  |
+
+Note that: default `protocolVersion` is fine.
 
 #### Response Body
 
