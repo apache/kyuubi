@@ -89,12 +89,9 @@ Create a session
 
 #### Request Parameters
 
-| Name            | Description                              | Type |
-|:----------------|:-----------------------------------------|:-----|
-| protocolVersion | The protocol version of Hive CLI service | Int  |
-| configs         | The configuration of the session         | Map  |
-
-Note that: default `protocolVersion` is fine.
+| Name    | Description                      | Type |
+|:--------|:---------------------------------|:-----|
+| configs | The configuration of the session | Map  |
 
 #### Response Body
 
