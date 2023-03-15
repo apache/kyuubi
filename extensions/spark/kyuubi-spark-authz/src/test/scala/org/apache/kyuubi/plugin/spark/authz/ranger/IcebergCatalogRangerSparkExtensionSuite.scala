@@ -115,7 +115,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   test("[KYUUBI #3515] UPDATE TABLE") {
-    assume(isSparkV31OrGreater || isSparkV32OrGreater)
+    assume(isSparkV32OrGreater)
 
     // UpdateTable
     val e1 = intercept[AccessControlException](
@@ -133,7 +133,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   test("[KYUUBI #3515] DELETE FROM TABLE") {
-    assume(isSparkV31OrGreater || isSparkV32OrGreater)
+    assume(isSparkV32OrGreater)
 
     // DeleteFromTable
     val e6 = intercept[AccessControlException](
