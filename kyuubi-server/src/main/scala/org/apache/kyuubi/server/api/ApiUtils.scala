@@ -37,7 +37,8 @@ object ApiUtils {
       session.lastAccessTime - session.createTime,
       session.getNoOperationTime,
       session.getSessionEvent.flatMap(_.exception).map(Utils.prettyPrint).getOrElse(""),
-      session.sessionType.toString)
+      session.sessionType.toString,
+      session.connectionUrl)
   }
 
   def operationData(operation: KyuubiOperation): OperationData = {
@@ -52,6 +53,7 @@ object ApiUtils {
       opEvent.exception.map(Utils.prettyPrint).getOrElse(""),
       opEvent.sessionId,
       opEvent.sessionUser,
-      opEvent.sessionType)
+      opEvent.sessionType,
+      operation.getSession.asInstanceOf[KyuubiSession].connectionUrl)
   }
 }
