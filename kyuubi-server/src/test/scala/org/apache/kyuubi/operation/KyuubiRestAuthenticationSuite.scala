@@ -25,7 +25,6 @@ import javax.ws.rs.core.MediaType
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.RestClientTestHelper
 import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, SessionOpenRequest}
