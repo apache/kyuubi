@@ -22,7 +22,6 @@ import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
-import jline.console.ConsoleReader;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -524,9 +523,7 @@ public class KyuubiCommands extends Commands {
       }
 
       if (beeLine.getOpts().getInitFiles() != null) {
-        beeLine.getConsoleReader().shutdown();
-        beeLine.setConsoleReader(
-            new ConsoleReader(beeLine.getInputStream(), beeLine.getErrorStream()));
+        beeLine.initializeConsoleReader(null);
       }
 
       if (beeLine.getOpts().isSilent() && beeLine.getOpts().getScriptFile() != null) {
