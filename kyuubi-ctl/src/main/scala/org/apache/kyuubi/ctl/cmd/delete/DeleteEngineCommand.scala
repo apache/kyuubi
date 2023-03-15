@@ -44,8 +44,8 @@ class DeleteEngineCommand(cliConfig: CliConfig) extends DeleteCommand(cliConfig)
       }.getOrElse(candidateNodes)
       val deletedNodes = ListBuffer[ServiceNodeInfo]()
       candidateNodes.foreach { node =>
-        val engine = discoveryClient.getChildren(node.namespace)(0)
-        val nodePath = s"${node.namespace}/$engine"
+        val engineNode = discoveryClient.getChildren(node.namespace)(0)
+        val nodePath = s"${node.namespace}/$engineNode"
         info(s"Deleting zookeeper service node:$nodePath")
         try {
           discoveryClient.delete(nodePath)
