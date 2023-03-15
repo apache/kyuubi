@@ -19,20 +19,20 @@
 package org.apache.kyuubi.engine.flink.result;
 
 import com.google.common.collect.Iterators;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import javax.annotation.Nullable;
+import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.ResultKind;
 import org.apache.flink.table.api.TableResult;
+import org.apache.flink.table.api.internal.TableResultImpl;
 import org.apache.flink.table.catalog.Column;
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils;
 import org.apache.kyuubi.operation.ArrayFetchIterator;
 import org.apache.kyuubi.operation.FetchIterator;
+
+import javax.annotation.Nullable;
+import java.util.*;
 
 /**
  * A set of one statement execution result containing result kind, columns, rows of data and change
@@ -108,12 +108,32 @@ public class ResultSet {
         + '}';
   }
 
+  /**
+   * Before version 1.15, there were concurrency issues.
+   *
+   * @return
+   */
+  public static TableResult createResultOK() {
+    TableResult result =
+        TableResultImpl.builder()
+            .resultKind(ResultKind.SUCCESS)
+            .schema(ResolvedSchema.of(Column.physical("result", DataTypes.STRING())))
+            .data(Collections.singletonList(Row.of("OK")))
+            .build();
+    return result;
+  }
+
   public static ResultSet fromTableResult(TableResult tableResult) {
+    boolean flinkVersionAtLeast = FlinkEngineUtils.isFlinkVersionAtLeast("1.15");
+    if (!flinkVersionAtLeast && tableResult == TableResultImpl.TABLE_RESULT_OK) {
+      tableResult = createResultOK();
+    }
     ResolvedSchema schema = tableResult.getResolvedSchema();
     // collect all rows from table result as list
     // this is ok as TableResult contains limited rows
     List<Row> rows = new ArrayList<>();
     tableResult.collect().forEachRemaining(rows::add);
+
     return builder()
         .resultKind(tableResult.getResultKind())
         .columns(schema.getColumns())
