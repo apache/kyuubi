@@ -34,6 +34,7 @@ public class SessionData {
   private String exception;
   private String sessionType;
   private String kyuubiInstance;
+  private String engineId;
 
   public SessionData() {}
 
@@ -47,7 +48,8 @@ public class SessionData {
       Long idleTime,
       String exception,
       String sessionType,
-      String kyuubiInstance) {
+      String kyuubiInstance,
+      String engineId) {
     this.identifier = identifier;
     this.user = user;
     this.ipAddr = ipAddr;
@@ -58,6 +60,7 @@ public class SessionData {
     this.exception = exception;
     this.sessionType = sessionType;
     this.kyuubiInstance = kyuubiInstance;
+    this.engineId = engineId;
   }
 
   public String getIdentifier() {
@@ -141,6 +144,14 @@ public class SessionData {
 
   public void setKyuubiInstance(String kyuubiInstance) {
     this.kyuubiInstance = kyuubiInstance;
+  }
+
+  public String getEngineId() {
+    return engineId;
+  }
+
+  public void setEngineId(String engineId) {
+    this.engineId = engineId;
   }
 
   @Override
