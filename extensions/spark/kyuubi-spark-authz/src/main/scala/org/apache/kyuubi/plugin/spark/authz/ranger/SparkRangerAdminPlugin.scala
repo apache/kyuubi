@@ -135,7 +135,8 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
     val pos = if (hasLen) ", 5" else ""
     val upper = s"regexp_replace($expr, '[A-Z]', 'X'$pos)"
     val lower = s"regexp_replace($upper, '[a-z]', 'x'$pos)"
-    val digits = s"regexp_replace($lower, '[0-9]', 'n'$pos)"
+    val chinese = s"regexp_replace($lower, '[\u4e00-\u9fa5]', 'x'$pos)"
+    val digits = s"regexp_replace($chinese, '[0-9]', 'n'$pos)"
     digits
   }
 
