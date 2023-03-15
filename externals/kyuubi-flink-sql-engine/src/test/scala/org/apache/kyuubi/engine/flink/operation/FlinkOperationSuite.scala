@@ -17,9 +17,17 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.sql.DatabaseMetaData
+import java.util.UUID
+
+import scala.collection.JavaConverters._
+
 import org.apache.flink.api.common.JobID
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.hive.service.rpc.thrift._
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.time.SpanSugar._
+
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
@@ -27,15 +35,9 @@ import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.operation.{HiveJDBCTestHelper, NoneMode}
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.service.ServiceState._
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.time.SpanSugar._
-
-import java.sql.DatabaseMetaData
-import java.util.UUID
-import scala.collection.JavaConverters._
 
 class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] =
@@ -878,11 +880,11 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       val createResult = {
         statement.executeQuery("create catalog cat_a with ('type'='generic_in_memory')")
       }
-        assert(createResult.next())
-        assert(createResult.getString(1) === "OK")
+      assert(createResult.next())
+      assert(createResult.getString(1) === "OK")
       val dropResult = statement.executeQuery("drop catalog cat_a")
-        assert(dropResult.next())
-        assert(dropResult.getString(1) === "OK")
+      assert(dropResult.next())
+      assert(dropResult.getString(1) === "OK")
     })
   }
 
