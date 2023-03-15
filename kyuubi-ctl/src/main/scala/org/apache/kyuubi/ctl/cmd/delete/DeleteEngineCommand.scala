@@ -36,17 +36,16 @@ class DeleteEngineCommand(cliConfig: CliConfig) extends DeleteCommand(cliConfig)
 
   def doRun(): Seq[ServiceNodeInfo] = {
     withDiscoveryClient(conf) { discoveryClient =>
-      val (namespace, subdomainOpt) =
-        CtlUtils.getZkEngineNamespaceAndSubdomain(conf, normalizedCliConfig)
       val hostPortOpt =
-        Some((normalizedCliConfig.zkOpts.host, normalizedCliConfig.zkOpts.port.toInt))
-      val subdomain = subdomainOpt.getOrElse("default")
-      val znodeRoot = s"$namespace/$subdomain"
-      val nodesToDelete = CtlUtils.getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
-
+        Some((cliConfig.zkOpts.host, cliConfig.zkOpts.port.toInt))
+      val candidateNodes = CtlUtils.listZkEngineNodes(conf, normalizedCliConfig, hostPortOpt)
+      hostPortOpt.map { case (host, port) =>
+        candidateNodes.filter { cn => cn.host == host && cn.port == port }
+      }.getOrElse(candidateNodes)
       val deletedNodes = ListBuffer[ServiceNodeInfo]()
-      nodesToDelete.foreach { node =>
-        val nodePath = s"$znodeRoot/${node.nodeName}"
+      candidateNodes.foreach { node =>
+        val engine = discoveryClient.getChildren(node.namespace)(0)
+        val nodePath = s"${node.namespace}/$engine"
         info(s"Deleting zookeeper service node:$nodePath")
         try {
           discoveryClient.delete(nodePath)
