@@ -24,7 +24,7 @@ import scala.util.Try
 
 import org.apache.commons.codec.digest.DigestUtils.md5Hex
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
-import org.scalatest.{Assertion, BeforeAndAfterAll}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
@@ -71,10 +71,6 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     doAs("admin", cleanup())
     spark.stop
     super.afterAll()
-  }
-
-  protected def checkAnswer(user: String, query: String, result: Seq[Row]): Assertion = {
-    doAs(user, assert(sql(query).collect() === result))
   }
 
   test("simple query with a user doesn't have mask rules") {
@@ -246,7 +242,7 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     checkAnswer("bob", s, Seq(Row(md5Hex("1"))))
   }
 
-  test("KYUUBI #3581: permanent view should lookup rule on itself not the   ") {
+  test("KYUUBI #3581: permanent view should lookup rule on itself not the raw table") {
     assume(isSparkV31OrGreater)
     val supported = doAs(
       "perm_view_user",

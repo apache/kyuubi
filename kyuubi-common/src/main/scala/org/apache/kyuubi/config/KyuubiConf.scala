@@ -391,7 +391,9 @@ object KyuubiConf {
       .checkValue(
         _.forall(FrontendProtocols.values.map(_.toString).contains),
         s"the frontend protocol should be one or more of ${FrontendProtocols.values.mkString(",")}")
-      .createWithDefault(Seq(FrontendProtocols.THRIFT_BINARY.toString))
+      .createWithDefault(Seq(
+        FrontendProtocols.THRIFT_BINARY.toString,
+        FrontendProtocols.REST.toString))
 
   val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("kyuubi.frontend.bind.host")
     .doc("Hostname or IP of the machine on which to run the frontend services.")
@@ -1511,6 +1513,14 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
+  val BATCH_RESOURCE_UPLOAD_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.batch.resource.upload.enabled")
+      .internal
+      .doc("Whether to enable Kyuubi batch resource upload function.")
+      .version("1.7.1")
+      .booleanConf
+      .createWithDefault(true)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
@@ -2530,6 +2540,15 @@ object KyuubiConf {
       .version("1.6.0")
       .booleanConf
       .createWithDefault(true)
+
+  val ENGINE_SUBMIT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.submit.timeout")
+      .doc("Period to tolerant Driver Pod ephemerally invisible after submitting. " +
+        "In some Resource Managers, e.g. K8s, the Driver Pod is not invisible immediately " +
+        "after `spark-submit` is returned.")
+      .version("1.7.1")
+      .timeConf
+      .createWithDefaultString("PT30S")
 
   /**
    * Holds information about keys that have been deprecated.

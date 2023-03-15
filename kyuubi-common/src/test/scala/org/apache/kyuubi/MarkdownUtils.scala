@@ -50,7 +50,7 @@ object MarkdownUtils {
         withClue(s"$markdown out of date, as line ${index + 1} is not expected." +
           " Please update doc with KYUUBI_UPDATE=1 build/mvn clean test" +
           s" -pl $module -am -Pflink-provided,spark-provided,hive-provided" +
-          s" -DwildcardSuites=$agent") {
+          s" -Dtest=none -DwildcardSuites=$agent ") {
           assertResult(str2)(str1)
         }
       }

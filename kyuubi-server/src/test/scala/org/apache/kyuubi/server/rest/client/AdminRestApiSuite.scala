@@ -21,6 +21,8 @@ import java.util.UUID
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 
+import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
+
 import org.apache.kyuubi.{KYUUBI_VERSION, RestClientTestHelper}
 import org.apache.kyuubi.client.{AdminRestApi, KyuubiRestClient}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
@@ -83,5 +85,65 @@ class AdminRestApiSuite extends RestClientTestHelper {
 
     engines = adminRestApi.listEngines("spark_sql", "user", "default", "").asScala
     assert(engines.size == 0)
+  }
+
+  test("list/close session") {
+    fe.be.sessionManager.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+
+    val spnegoKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
+        .spnegoHost("localhost")
+        .build()
+    val adminRestApi = new AdminRestApi(spnegoKyuubiRestClient)
+
+    // list sessions
+    var sessions = adminRestApi.listSessions().asScala
+    assert(sessions.nonEmpty)
+    assert(sessions.head.getUser == "admin")
+
+    // close session
+    val response = adminRestApi.closeSession(sessions.head.getIdentifier)
+    assert(response.contains("success"))
+
+    // list again
+    sessions = adminRestApi.listSessions().asScala
+    assert(sessions.isEmpty)
+  }
+
+  test("list/close operation") {
+    val sessionHandle = fe.be.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+    val operation = fe.be.getCatalogs(sessionHandle)
+
+    val spnegoKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
+        .spnegoHost("localhost")
+        .build()
+    val adminRestApi = new AdminRestApi(spnegoKyuubiRestClient)
+
+    // list operations
+    var operations = adminRestApi.listOperations().asScala
+    assert(operations.nonEmpty)
+    assert(operations.map(op => op.getIdentifier).contains(operation.identifier.toString))
+
+    // close operation
+    val response = adminRestApi.closeOperation(operation.identifier.toString)
+    assert(response.contains("success"))
+
+    // list again
+    operations = adminRestApi.listOperations().asScala
+    assert(!operations.map(op => op.getIdentifier).contains(operation.identifier.toString))
+
   }
 }

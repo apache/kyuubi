@@ -28,6 +28,7 @@ import org.apache.kyuubi.session.KyuubiSession
 object ApiUtils {
 
   def sessionData(session: KyuubiSession): SessionData = {
+    val sessionEvent = session.getSessionEvent
     new SessionData(
       session.handle.identifier.toString,
       session.user,
@@ -36,7 +37,10 @@ object ApiUtils {
       session.createTime,
       session.lastAccessTime - session.createTime,
       session.getNoOperationTime,
-      session.getSessionEvent.flatMap(_.exception).map(Utils.prettyPrint).getOrElse(""))
+      sessionEvent.flatMap(_.exception).map(Utils.prettyPrint).getOrElse(""),
+      session.sessionType.toString,
+      session.connectionUrl,
+      sessionEvent.map(_.engineId).getOrElse(""))
   }
 
   def operationData(operation: KyuubiOperation): OperationData = {
@@ -51,6 +55,7 @@ object ApiUtils {
       opEvent.exception.map(Utils.prettyPrint).getOrElse(""),
       opEvent.sessionId,
       opEvent.sessionUser,
-      opEvent.sessionType)
+      opEvent.sessionType,
+      operation.getSession.asInstanceOf[KyuubiSession].connectionUrl)
   }
 }

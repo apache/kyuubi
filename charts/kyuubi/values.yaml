@@ -80,7 +80,7 @@ server:
 
   # REST API protocol (experimental)
   rest:
-    enabled: false
+    enabled: true
     port: 10099
     service:
       type: ClusterIP
