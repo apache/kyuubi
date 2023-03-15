@@ -115,6 +115,7 @@ public class ResultSet {
 
   /**
    * Before version 1.15(FLINK-25558), there were concurrency issues.
+   * Return a new TableResultImpl OK object
    *
    * @return TableResult.
    */
