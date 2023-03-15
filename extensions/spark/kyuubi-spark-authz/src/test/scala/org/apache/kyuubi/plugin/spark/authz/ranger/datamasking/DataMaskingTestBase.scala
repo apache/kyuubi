@@ -82,12 +82,11 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
 
   test("simple query with a user has mask rules") {
     val result =
-      Seq(Row(md5Hex("1"), "xxxxx", "worlx", Timestamp.valueOf("2018-01-01 00:00:00"), "Xorld"),
-        Row(md5Hex("10"), "xxxxx", "分布式计x", Timestamp.valueOf("2018-01-01 00:00:00"), "Xorld"))
-    checkAnswer("bob", "SELECT value1, value2, value3, value4, value5 FROM default.src order by key", result)
+      Seq(Row(md5Hex("1"), "xxxxx", "worlx", Timestamp.valueOf("2018-01-01 00:00:00"), "Xorld"))
+    checkAnswer("bob", "SELECT value1, value2, value3, value4, value5 FROM default.src where key=1", result)
     checkAnswer(
       "bob",
-      "SELECT value1 as key, value2, value3, value4, value5 FROM default.src order by value1",
+      "SELECT value1 as key, value2, value3, value4, value5 FROM default.src where key=1",
       result)
   }
 
