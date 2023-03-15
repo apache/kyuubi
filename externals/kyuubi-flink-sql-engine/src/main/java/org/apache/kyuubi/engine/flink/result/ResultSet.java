@@ -113,8 +113,8 @@ public class ResultSet {
   }
 
   /**
-   * Before version 1.15(FLINK-25558), there were concurrency issues.
-   * Return a new TableResultImpl OK object
+   * Before version 1.15(FLINK-25558), there were concurrency issues. Return a new TableResultImpl
+   * OK object
    *
    * @return TableResult.
    */
@@ -129,7 +129,7 @@ public class ResultSet {
   }
 
   public static ResultSet fromTableResult(TableResult tableResult) {
-    //Before version 1.15(FLINK-25558), there were concurrency issues.
+    // Before version 1.15(FLINK-25558), there were concurrency issues.
     boolean versionAtLeast15 = FlinkEngineUtils.isFlinkVersionAtLeast("1.15");
     if (!versionAtLeast15 && tableResult == TableResultImpl.TABLE_RESULT_OK) {
       tableResult = createResultOk();
