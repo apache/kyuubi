@@ -24,8 +24,10 @@ import javax.ws.rs.core.{MediaType, Response}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType
 import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.security.{SecurityRequirement, SecurityScheme}
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.zookeeper.KeeperException.NoNodeException
 
@@ -43,6 +45,8 @@ import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
+@SecurityScheme(name = "basicAuth", `type` = SecuritySchemeType.HTTP, scheme = "basic")
+@SecurityRequirement(name = "basicAuth")
 private[v1] class AdminResource extends ApiRequestContext with Logging {
   private lazy val administrators = fe.getConf.get(KyuubiConf.SERVER_ADMINISTRATORS).toSet +
     Utils.currentUser
