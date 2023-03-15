@@ -21,6 +21,7 @@ import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.internal.Logging
+import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, PersistedView, ViewType}
@@ -35,7 +36,6 @@ import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 
-import org.apache.kyuubi.plugin.lineage.LineagePermanentViewMarker
 import org.apache.kyuubi.plugin.lineage.events.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
@@ -325,6 +325,10 @@ trait LineageParser {
         }
         ListMap(targetColumnsWithTargetTable.zip(sourceColumnsLineage.values).toSeq: _*)
 
+      case p if p.nodeName == "WithCTE" =>
+        val optimized = sparkSession.sessionState.optimizer.execute(p)
+        extractColumnsLineage(optimized, parentColumnsLineage)
+
       // For query
       case p: Project =>
         val nextColumnsLineage =
@@ -361,6 +365,7 @@ trait LineageParser {
           }
         }
         p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
+
       case p: Join =>
         p.joinType match {
           case LeftSemi | LeftAnti =>
@@ -415,14 +420,16 @@ trait LineageParser {
             })
         }
 
-      case p: LineagePermanentViewMarker =>
-        val viewName = p.catalogTable.qualifiedName
-        joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(viewName))
-
       case p: View =>
-        val viewColumnsLineage =
-          extractColumnsLineage(p.child, ListMap[Attribute, AttributeSet]())
-        mergeRelationColumnLineage(parentColumnsLineage, p.output, viewColumnsLineage)
+        if (!p.isTempView && SparkContextHelper.getConf(
+            LineageConf.SKIP_PARSING_PERMANENT_VIEW_ENABLED)) {
+          val viewName = p.desc.qualifiedName
+          joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(viewName))
+        } else {
+          val viewColumnsLineage =
+            extractColumnsLineage(p.child, ListMap[Attribute, AttributeSet]())
+          mergeRelationColumnLineage(parentColumnsLineage, p.output, viewColumnsLineage)
+        }
 
       case p: InMemoryRelation =>
         // get logical plan from cachedPlan

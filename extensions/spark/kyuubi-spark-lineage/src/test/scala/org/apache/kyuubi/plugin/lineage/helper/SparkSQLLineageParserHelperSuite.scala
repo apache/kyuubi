@@ -21,6 +21,7 @@ import scala.collection.immutable.List
 import scala.reflect.io.File
 
 import org.apache.spark.SparkConf
+import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
 import org.apache.spark.sql.{DataFrame, SparkListenerExtensionTest, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
@@ -932,8 +933,8 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       df0.cache()
       val df1 = spark.sql("select a, b from table1")
       val df = df0.join(df1).select(df0("a0").alias("aa"), df1("b").alias("bb"))
-      val optimized = df.queryExecution.optimizedPlan
-      val ret1 = SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
+      val analyzed = df.queryExecution.analyzed
+      val ret1 = SparkSQLLineageParseHelper(spark).transformToLineage(0, analyzed).get
       assert(ret1 == Lineage(
         List("default.table0", "default.table1"),
         List(),
@@ -1091,6 +1092,19 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         List(
           ("aa", Set("default.table1.a", "default.table0.a")),
           ("bb", Set("default.table1.b")))))
+
+      val sql11 =
+        """
+          |select tmp.a, b from (select * from table1) tmp;
+          |""".stripMargin
+
+      val ret11 = exectractLineage(sql11)
+      assert(ret11 == Lineage(
+        List("default.table1"),
+        List(),
+        List(
+          ("a", Set("default.table1.a")),
+          ("b", Set("default.table1.b")))))
     }
   }
 
@@ -1162,7 +1176,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     }
   }
 
-  test("test catch table with window function") {
+  test("test cache table with window function") {
     withTable("t1", "t2") { _ =>
       spark.sql("CREATE TABLE t1 (a string, b string) USING hive")
       spark.sql("CREATE TABLE t2 (a string, b string) USING hive")
@@ -1233,19 +1247,43 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   test("test create view from view") {
     withTable("t1") { _ =>
       spark.sql("CREATE TABLE t1 (a string, b string, c string) USING hive")
-      spark.sql("CREATE VIEW t2 as select * from t1")
-      val ret0 =
-        exectractLineage(
-          s"create or replace view view_tst comment 'view'" +
-            s" as select a as k,b" +
-            s" from t2" +
-            s" where a in ('HELLO') and c = 'HELLO'")
-      assert(ret0 == Lineage(
-        List("default.t1"),
-        List("default.view_tst"),
-        List(
-          ("default.view_tst.k", Set("default.t1.a")),
-          ("default.view_tst.b", Set("default.t1.b")))))
+      withView("t2") { _ =>
+        spark.sql("CREATE VIEW t2 as select * from t1")
+        val ret0 =
+          exectractLineage(
+            s"create or replace view view_tst comment 'view'" +
+              s" as select a as k,b" +
+              s" from t2" +
+              s" where a in ('HELLO') and c = 'HELLO'")
+        assert(ret0 == Lineage(
+          List("default.t1"),
+          List("default.view_tst"),
+          List(
+            ("default.view_tst.k", Set("default.t1.a")),
+            ("default.view_tst.b", Set("default.t1.b")))))
+      }
+    }
+  }
+
+  test("test for skip parsing permanent view") {
+    withTable("t1") { _ =>
+      SparkContextHelper.setConf(LineageConf.SKIP_PARSING_PERMANENT_VIEW_ENABLED, true)
+      spark.sql("CREATE TABLE t1 (a string, b string, c string) USING hive")
+      withView("t2") { _ =>
+        spark.sql("CREATE VIEW t2 as select * from t1")
+        val ret0 =
+          exectractLineage(
+            s"select a as k, b" +
+              s" from t2" +
+              s" where a in ('HELLO') and c = 'HELLO'")
+
+        assert(ret0 == Lineage(
+          List("default.t2"),
+          List(),
+          List(
+            ("k", Set("default.t2.a")),
+            ("b", Set("default.t2.b")))))
+      }
     }
   }
 
@@ -1253,15 +1291,14 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val analyzed = spark.sessionState.analyzer.execute(parsed)
     spark.sessionState.analyzer.checkAnalysis(analyzed)
-    val optimized = spark.sessionState.optimizer.execute(analyzed)
-    SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
+    SparkSQLLineageParseHelper(spark).transformToLineage(0, analyzed).get
   }
 
   private def exectractLineage(sql: String): Lineage = {
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val qe = spark.sessionState.executePlan(parsed)
-    val optimized = qe.optimizedPlan
-    SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
+    val analyzed = qe.analyzed
+    SparkSQLLineageParseHelper(spark).transformToLineage(0, analyzed).get
   }
 
 }

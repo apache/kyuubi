@@ -173,10 +173,9 @@ spark.sql.queryExecutionListeners=org.apache.kyuubi.plugin.lineage.SparkOperatio
 #### Whether to Skip Permanent View Resolution
 
 If enabled, lineage resolution will stop at permanent views and treats them as physical tables. We need
-to add two configurations.
+to add one configurations.
 
 ```properties
-spark.sql.extensions=org.apache.kyuubi.plugin.lineage.LineageSparkExtension
 spark.kyuubi.plugin.lineage.skip.parsing.permanent.view.enabled=true
 ```
 

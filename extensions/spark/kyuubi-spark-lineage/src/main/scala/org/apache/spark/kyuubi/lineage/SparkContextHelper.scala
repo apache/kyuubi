@@ -36,4 +36,7 @@ object SparkContextHelper {
     globalSparkContext.getConf.get(entry)
   }
 
+  def setConf[T](entry: ConfigEntry[T], value: T): Unit = {
+    globalSparkContext.conf.set(entry, value)
+  }
 }

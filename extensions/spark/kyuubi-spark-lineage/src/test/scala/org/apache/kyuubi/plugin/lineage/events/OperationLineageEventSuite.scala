@@ -43,7 +43,6 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
       .set(
         "spark.sql.queryExecutionListeners",
         "org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener")
-      .set("spark.sql.extensions", "org.apache.kyuubi.plugin.lineage.LineageSparkExtension")
       .set(SKIP_PARSING_PERMANENT_VIEW_ENABLED.key, "true")
   }
 
