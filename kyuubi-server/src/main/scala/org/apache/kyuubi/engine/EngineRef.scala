@@ -87,7 +87,7 @@ private[kyuubi] class EngineRef(
   // Launcher of the engine
   private[kyuubi] val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser
-    case GROUP => groupProvider.primaryGroup(user, Map.empty[String, String].asJava)
+    case GROUP => groupProvider.primaryGroup(user, conf.getAll.asJava)
     case _ => user
   }
 
