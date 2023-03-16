@@ -18,19 +18,9 @@
 import { defineConfig, loadEnv } from 'vite'
 import Vue from '@vitejs/plugin-vue'
 import path from 'path'
-import getLocalhostIP from './src/utils/getLocalhostIP'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-
-  const proxyHost = () => {
-    if (env.KYUUBI_REST_BIND_ADDRESS === '') {
-      return getLocalhostIP()
-    } else {
-      return env.KYUUBI_REST_BIND_ADDRESS
-    }
-  }
-
   return {
     base: '/ui/',
     plugins: [Vue()],
@@ -51,12 +41,7 @@ export default defineConfig(({ mode }) => {
       // proxy
       proxy: {
         '/api': {
-          target:
-            env['KYUUBI_REST_PROTOCOL'] +
-            '://' +
-            proxyHost() +
-            ':' +
-            env['KYUUBI_REST_PORT'],
+          target: env['VITE_APP_DEV_WEB_URL'],
           changeOrigin: true
         }
       }
