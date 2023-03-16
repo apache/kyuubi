@@ -15,24 +15,51 @@
  * limitations under the License.
  */
 
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import Vue from '@vitejs/plugin-vue'
 import path from 'path'
+import getNetWorkIp from './src/utils/getNetWorkIp'
 
-export default defineConfig({
-  base: '/ui/',
-  plugins: [Vue()],
-  resolve: {
-    alias: [
-      {
-        find: '@',
-        replacement: path.resolve(__dirname, 'src')
-      },
-      // resolve warning of vue-i18n
-      {
-        find: 'vue-i18n',
-        replacement: 'vue-i18n/dist/vue-i18n.cjs.js'
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  const proxyHost = () => {
+    if (env.KYUUBI_REST_BIND_ADDRESS === '') {
+      return getNetWorkIp()
+    } else {
+      return env.KYUUBI_REST_BIND_ADDRESS
+    }
+  }
+
+  return {
+    base: '/ui/',
+    plugins: [Vue()],
+    resolve: {
+      alias: [
+        {
+          find: '@',
+          replacement: path.resolve(__dirname, 'src')
+        },
+        // resolve warning of vue-i18n
+        {
+          find: 'vue-i18n',
+          replacement: 'vue-i18n/dist/vue-i18n.cjs.js'
+        }
+      ]
+    },
+    server: {
+      // proxy
+      proxy: {
+        '/api': {
+          target:
+            env['KYUUBI_REST_PROTOCOL'] +
+            '://' +
+            proxyHost() +
+            ':' +
+            env['KYUUBI_REST_PORT'],
+          changeOrigin: true
+        }
       }
-    ]
+    }
   }
 })
