@@ -2764,6 +2764,15 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("bin/python")
 
+  val ENGINE_SPARK_REGISTER_ATTRIBUTES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.spark.register.attributes")
+      .internal
+      .doc("The extra attributes to expose when registering for Spark engine.")
+      .version("1.8.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Seq("spark.driver.memory", "spark.executor.memory"))
+
   val ENGINE_HIVE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.hive.event.loggers")
       .doc("A comma-separated list of engine history loggers, where engine/session/operation etc" +
