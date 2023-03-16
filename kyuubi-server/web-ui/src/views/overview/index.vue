@@ -28,13 +28,12 @@
 
 <script lang="ts" setup>
   import { reactive } from 'vue'
-  import request from '@/utils/request'
   import cCard from '@/components/card/index.vue'
 
   const cards = reactive([
     {
       title: 'Opened Session',
-      value: ''
+      value: 1
     },
     {
       title: 'ExecPool Size',
@@ -45,17 +44,6 @@
       value: 3
     }
   ])
-
-  const test = () => {
-    request({
-      url: 'api/v1/sessions/count',
-      method: 'get'
-    }).then((res: any) => {
-      cards[0].value = res?.openSessionCount
-    })
-  }
-
-  test()
 </script>
 
 <style scoped></style>
