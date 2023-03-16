@@ -17,26 +17,15 @@
 
 package org.apache.spark.kyuubi.lineage
 
-import org.apache.spark.SparkContext
-import org.apache.spark.internal.config.ConfigEntry
-import org.apache.spark.scheduler.SparkListenerEvent
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.internal.config.ConfigBuilder
 
-object SparkContextHelper {
+object LineageConf {
 
-  def globalSparkContext: SparkContext = SparkSession.active.sparkContext
+  val SKIP_PARSING_PERMANENT_VIEW_ENABLED =
+    ConfigBuilder("spark.kyuubi.plugin.lineage.skip.parsing.permanent.view.enabled")
+      .doc("Whether to skip the lineage parsing of permanent views")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
 
-  def postEventToSparkListenerBus(
-      event: SparkListenerEvent,
-      sc: SparkContext = globalSparkContext) {
-    sc.listenerBus.post(event)
-  }
-
-  def getConf[T](entry: ConfigEntry[T]): T = {
-    globalSparkContext.getConf.get(entry)
-  }
-
-  def setConf[T](entry: ConfigEntry[T], value: T): Unit = {
-    globalSparkContext.conf.set(entry, value)
-  }
 }

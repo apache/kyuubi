@@ -168,13 +168,31 @@ Add `org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListene
 spark.sql.queryExecutionListeners=org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener
 ```
 
-### Settings for Lineage Logger and Path
+### Optional configuration
 
-#### Lineage Logger Path
+#### Whether to Skip Permanent View Resolution
 
-The location of all the engine operation lineage events go for the builtin JSON logger.
-We first need set `kyuubi.engine.event.loggers` to `JSON`.
-All operation lineage events will be written in the unified event json logger path, which be setting with
-`kyuubi.engine.event.json.log.path`. We can get the lineage logger from the `operation_lineage` dir in the
-`kyuubi.engine.event.json.log.path`.
+If enabled, lineage resolution will stop at permanent views and treats them as physical tables. We need
+to add one configurations.
+
+```properties
+spark.kyuubi.plugin.lineage.skip.parsing.permanent.view.enabled=true
+```
+
+### Get Lineage Events from SparkListener
+
+All lineage events will be sent to the `SparkListenerBus`. To handle lineage events, a new `SparkListener` needs to be added.
+Example for Adding `SparkListener`:
+
+```scala
+spark.sparkContext.addSparkListener(new SparkListener {
+      override def onOtherEvent(event: SparkListenerEvent): Unit = {
+        event match {
+          case lineageEvent: OperationLineageEvent =>
+            // Your processing logic
+          case _ =>
+        }
+      }
+    })
+```
 
