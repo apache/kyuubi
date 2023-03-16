@@ -38,7 +38,6 @@ export default defineConfig(({ mode }) => {
       ]
     },
     server: {
-      // proxy
       proxy: {
         '/api': {
           target: env['VITE_APP_DEV_WEB_URL'],

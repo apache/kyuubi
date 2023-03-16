@@ -61,12 +61,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       if (Utils.isWindows || Utils.isMac) {
         warn(s"Kyuubi Server run in Windows or Mac environment, binding $getName to 0.0.0.0")
         "0.0.0.0"
+      } else if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
+        Utils.findLocalInetAddress.getCanonicalHostName
       } else {
-        if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
-          Utils.findLocalInetAddress.getCanonicalHostName
-        } else {
-          Utils.findLocalInetAddress.getHostAddress
-        }
+        Utils.findLocalInetAddress.getHostAddress
       }
     }
 
