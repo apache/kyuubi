@@ -144,8 +144,9 @@ class ExecuteStatement(
 
   override def getResultSetMetadataHints(): Seq[String] =
     Seq(
-      s"__kyuubi_operation_result_format__=$resultFormat",
-      s"__kyuubi_operation_result_arrow_timestampAsString__=$timestampAsString")
+      s"__kyuubi_operation_result_arrow_timestampAsString__=$timestampAsString",
+      s"__kyuubi_operation_result_compression_codec__=$compressionCodec",
+      s"__kyuubi_operation_result_format__=$resultFormat")
 
   private def collectAsIterator(resultDF: DataFrame): FetchIterator[_] = {
     val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
@@ -213,7 +214,7 @@ class ArrowBasedExecuteStatement(
   private def collectAsArrow[T](df: DataFrame)(action: RDD[Array[Byte]] => T): T = {
     SQLExecution.withNewExecutionId(df.queryExecution, Some("collectAsArrow")) {
       df.queryExecution.executedPlan.resetMetrics()
-      action(SparkDatasetHelper.toArrowBatchRdd(df))
+      action(SparkDatasetHelper.toArrowBatchRdd(df, compressionCodec))
     }
   }
 

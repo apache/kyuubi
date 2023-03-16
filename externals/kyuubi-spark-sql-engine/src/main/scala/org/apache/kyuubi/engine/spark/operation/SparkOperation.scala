@@ -275,6 +275,10 @@ abstract class SparkOperation(session: Session)
     spark.conf.get("kyuubi.operation.result.arrow.timestampAsString", "false").toBoolean
   }
 
+  protected def compressionCodec: String = {
+    spark.conf.get("kyuubi.operation.result.compression.codec", "lz4")
+  }
+
   protected def setSessionUserSign(): Unit = {
     (
       session.conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY),

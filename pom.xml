@@ -171,6 +171,7 @@
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.20.0</log4j.version>
+        <lz4.version>1.8.0</lz4.version>
         <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
         <netty.version>4.1.89.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
@@ -201,6 +202,7 @@
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <trino.tpch.version>1.1</trino.tpch.version>
         <zookeeper.version>3.4.14</zookeeper.version>
+        <zstd.version>1.5.2-5</zstd.version>
 
         <!-- webui -->
         <webui.skip>true</webui.skip>
@@ -1652,10 +1654,23 @@
                 <artifactId>kudu-client</artifactId>
                 <version>${kudu.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>net.sf.py4j</groupId>
                 <artifactId>py4j</artifactId>
                 <version>${py4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${lz4.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.luben</groupId>
+                <artifactId>zstd-jni</artifactId>
+                <version>${zstd.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

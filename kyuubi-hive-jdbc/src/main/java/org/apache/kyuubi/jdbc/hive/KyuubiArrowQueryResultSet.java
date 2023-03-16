@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.sql.*;
@@ -36,6 +35,8 @@ import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnVector;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatch;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatchRow;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowUtils;
+import org.apache.kyuubi.jdbc.hive.arrow.CompressionCodec;
+import org.apache.kyuubi.jdbc.hive.arrow.CompressionCodecFactory;
 import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +58,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
   private boolean emptyResultSet = false;
   private boolean isScrollable = false;
   private boolean fetchFirst = false;
+  private CompressionCodec compressionCodec;
 
   private final TProtocolVersion protocol;
 
@@ -83,6 +85,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
     private boolean emptyResultSet = false;
     private boolean isScrollable = false;
     private ReentrantLock transportLock = null;
+    private String compressionCodec = "none";
 
     private boolean timestampAsString = true;
 
@@ -162,6 +165,11 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
       return this;
     }
 
+    public Builder setCompressionCodec(String codec) {
+      this.compressionCodec = codec;
+      return this;
+    }
+
     public KyuubiArrowQueryResultSet build() throws SQLException {
       return new KyuubiArrowQueryResultSet(this);
     }
@@ -177,6 +185,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
     this.stmtHandle = builder.stmtHandle;
     this.sessHandle = builder.sessHandle;
     this.fetchSize = builder.fetchSize;
+    this.compressionCodec = CompressionCodecFactory.createCodec(builder.compressionCodec);
     columnNames = new ArrayList<>();
     normalizedColumnNames = new ArrayList<>();
     columnTypes = new ArrayList<>();
@@ -406,9 +415,8 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
 
   private ArrowRecordBatch loadArrowBatch(byte[] batchBytes, BufferAllocator allocator)
       throws IOException {
-    ByteArrayInputStream in = new ByteArrayInputStream(batchBytes);
     return MessageSerializer.deserializeRecordBatch(
-        new ReadChannel(Channels.newChannel(in)), allocator);
+        new ReadChannel(Channels.newChannel(compressionCodec.decompress(batchBytes))), allocator);
   }
 
   @Override

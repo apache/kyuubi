@@ -1718,6 +1718,16 @@ object KyuubiConf {
       .transform(_.toLowerCase(Locale.ROOT))
       .createWithDefault("thrift")
 
+  val OPERATION_RESULT_COMPRESSION_CODEC: ConfigEntry[String] =
+    buildConf("kyuubi.operation.result.compression.codec")
+      .doc("The codec used to compress arrow-based result. By default, Kyuubi provides three " +
+        "codecs: `lz4`, `zstd`, `gzip`")
+      .version("1.7.0")
+      .stringConf
+      .checkValues(Set("none", "lz4", "zstd", "gzip"))
+      .transform(_.toLowerCase(Locale.ROOT))
+      .createWithDefault("lz4")
+
   val ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.result.arrow.timestampAsString")
       .doc("When true, arrow-based rowsets will convert columns of type timestamp to strings for" +
