@@ -15,13 +15,18 @@
  * limitations under the License.
  */
 
-// import request from '@/utils/request'
+import request from '@/utils/request'
 
-// test
-/* export function test(params: any) {
+export function getSessionsCount() {
   return request({
-    url: 'api/test',
-    method: 'get',
-    params,
+    url: 'api/v1/sessions/count',
+    method: 'get'
   })
-} */
+}
+
+export function getSessionsExecPoolData() {
+  return request({
+    url: 'api/v1/sessions/execPool/statistic',
+    method: 'get'
+  })
+}

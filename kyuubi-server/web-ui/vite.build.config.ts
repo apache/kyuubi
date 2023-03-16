@@ -16,13 +16,23 @@
  */
 
 import { defineConfig } from 'vite'
-import build from './vite.build.config'
-import dev from './vite.dev.config'
+import Vue from '@vitejs/plugin-vue'
+import path from 'path'
 
-export default defineConfig(({ command }) => {
-  if (command === 'build') {
-    return build
-  } else {
-    return dev
+export default defineConfig({
+  base: '/ui/',
+  plugins: [Vue()],
+  resolve: {
+    alias: [
+      {
+        find: '@',
+        replacement: path.resolve(__dirname, 'src')
+      },
+      // resolve warning of vue-i18n
+      {
+        find: 'vue-i18n',
+        replacement: 'vue-i18n/dist/vue-i18n.cjs.js'
+      }
+    ]
   }
 })
