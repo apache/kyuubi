@@ -105,7 +105,6 @@ jobs:
           echo "you need to manually fix it by following the information told by the command above"
           echo "---------------------------------------------------------------------------------"
 
-
   shellcheck:
     name: Super Linter and Shellcheck
     runs-on: ubuntu-22.04
