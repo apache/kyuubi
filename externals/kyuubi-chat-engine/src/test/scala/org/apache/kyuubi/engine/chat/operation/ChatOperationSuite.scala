@@ -15,13 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.chat.operation
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.chat.WithChatEngine
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-  val SPARK_SQL, FLINK_SQL, CHAT, TRINO, HIVE_SQL, JDBC = Value
+class ChatOperationSuite extends HiveJDBCTestHelper with WithChatEngine {
+
+  override def withKyuubiConf: Map[String, String] = Map(
+    ENGINE_CHAT_PROVIDER.key -> "echo")
+
+  override protected def jdbcUrl: String = jdbcConnectionUrl
+
+  test("test echo chat provider") {
+    withJdbcStatement() { stmt =>
+      val result = stmt.executeQuery("Hello, Kyuubi")
+      assert(result.next())
+      val expected = "This is ChatKyuubi, nice to meet you!"
+      assert(result.getString("reply") === expected)
+      assert(!result.next())
+    }
+  }
 }

@@ -14,14 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.chat
 
-package org.apache.kyuubi.engine
+import org.apache.kyuubi.engine.chat.session.ChatSessionManager
+import org.apache.kyuubi.service.AbstractBackendService
+import org.apache.kyuubi.session.SessionManager
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+class ChatBackendService
+  extends AbstractBackendService("ChatBackendService") {
 
-  val SPARK_SQL, FLINK_SQL, CHAT, TRINO, HIVE_SQL, JDBC = Value
+  override val sessionManager: SessionManager = new ChatSessionManager()
+
 }

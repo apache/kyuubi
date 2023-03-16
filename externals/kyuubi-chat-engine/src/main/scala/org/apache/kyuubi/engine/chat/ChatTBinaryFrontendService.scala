@@ -14,14 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.chat
 
-package org.apache.kyuubi.engine
+import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+class ChatTBinaryFrontendService(override val serverable: Serverable)
+  extends TBinaryFrontendService("ChatTBinaryFrontend") {
 
-  val SPARK_SQL, FLINK_SQL, CHAT, TRINO, HIVE_SQL, JDBC = Value
+  /**
+   * An optional `ServiceDiscovery` for [[FrontendService]] to expose itself
+   */
+  override lazy val discoveryService: Option[Service] =
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      Some(new EngineServiceDiscovery(this))
+    } else {
+      None
+    }
 }
