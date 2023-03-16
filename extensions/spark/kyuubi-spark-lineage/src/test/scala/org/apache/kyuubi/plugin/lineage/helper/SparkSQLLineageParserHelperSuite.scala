@@ -172,7 +172,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         "WHEN MATCHED THEN " +
         "  UPDATE SET target.name = source.name, target.price = source.price " +
         "WHEN NOT MATCHED THEN " +
-        "  INSERT (id, name, price) VALUES (source.id, source.name, source.price)")
+        "  INSERT (id, name, price) VALUES (cast(source.id as int), source.name, source.price)")
       assert(ret0 == Lineage(
         List("v2_catalog.db.source_t"),
         List("v2_catalog.db.target_t"),
@@ -1284,6 +1284,25 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
             ("k", Set("default.t2.a")),
             ("b", Set("default.t2.b")))))
       }
+    }
+  }
+
+  test("test the statement with FROM xxx INSERT xxx") {
+    withTable("t1", "t2", "t3") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string) USING hive")
+      spark.sql("CREATE TABLE t2 (a string, b string) USING hive")
+      spark.sql("CREATE TABLE t3 (a string, b string) USING hive")
+      val ret0 = exectractLineage("from (select a,b from t1)" +
+        " insert overwrite table t2 select a,b where a=1" +
+        " insert overwrite table t3 select a,b where b=1")
+      assert(ret0 == Lineage(
+        List("default.t1"),
+        List("default.t2", "default.t3"),
+        List(
+          ("default.t2.a", Set("default.t1.a")),
+          ("default.t2.b", Set("default.t1.b")),
+          ("default.t3.a", Set("default.t1.a")),
+          ("default.t3.b", Set("default.t1.b")))))
     }
   }
 
