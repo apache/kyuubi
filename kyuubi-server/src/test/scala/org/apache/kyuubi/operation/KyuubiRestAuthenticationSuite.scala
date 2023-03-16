@@ -25,7 +25,6 @@ import javax.ws.rs.core.MediaType
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.RestClientTestHelper
 import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, SessionOpenRequest}
@@ -129,11 +128,9 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
     val proxyUser = "user1"
     UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
     var token = generateToken(hostName)
-    val sessionOpenRequest = new SessionOpenRequest(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11.getValue,
-      Map(
-        KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION",
-        "hive.server2.proxy.user" -> proxyUser).asJava)
+    val sessionOpenRequest = new SessionOpenRequest(Map(
+      KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION",
+      "hive.server2.proxy.user" -> proxyUser).asJava)
 
     var response = webTarget.path("api/v1/sessions")
       .request()
