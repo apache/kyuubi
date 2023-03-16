@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine
 
 import java.util.concurrent.TimeUnit
 
+import scala.collection.JavaConverters._
 import scala.util.Random
 
 import com.codahale.metrics.MetricRegistry
@@ -40,6 +41,7 @@ import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, Di
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.plugin.GroupProvider
 
 /**
  * The description and functionality of an engine at server side
@@ -51,7 +53,7 @@ import org.apache.kyuubi.operation.log.OperationLog
 private[kyuubi] class EngineRef(
     conf: KyuubiConf,
     user: String,
-    primaryGroup: String,
+    groupProvider: GroupProvider,
     engineRefId: String,
     engineManager: KyuubiApplicationManager)
   extends Logging {
@@ -85,7 +87,7 @@ private[kyuubi] class EngineRef(
   // Launcher of the engine
   private[kyuubi] val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser
-    case GROUP => primaryGroup
+    case GROUP => groupProvider.primaryGroup(user, conf.getAll.asJava)
     case _ => user
   }
 
