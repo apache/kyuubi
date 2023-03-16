@@ -17,7 +17,7 @@
 
 import os from 'os'
 
-const getNetWorkIp = () => {
+const getLocalhostIP = () => {
   const localhost = 'localhost'
   try {
     const network = os.networkInterfaces()
@@ -44,4 +44,4 @@ const getNetWorkIp = () => {
   }
 }
 
-export default getNetWorkIp
+export default getLocalhostIP

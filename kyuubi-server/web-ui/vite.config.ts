@@ -18,14 +18,14 @@
 import { defineConfig, loadEnv } from 'vite'
 import Vue from '@vitejs/plugin-vue'
 import path from 'path'
-import getNetWorkIp from './src/utils/getNetWorkIp'
+import getLocalhostIP from './src/utils/getLocalhostIP'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   const proxyHost = () => {
     if (env.KYUUBI_REST_BIND_ADDRESS === '') {
-      return getNetWorkIp()
+      return getLocalhostIP()
     } else {
       return env.KYUUBI_REST_BIND_ADDRESS
     }
