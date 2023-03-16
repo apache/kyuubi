@@ -19,7 +19,7 @@
 
 ## Upgrading from Kyuubi 1.7.0 to 1.7.1
 
-* Since Kyuubi 1.7.1, the REST API of `Open(create) a session` will not contain parameters `protocolVersion`.
+* Since Kyuubi 1.7.1, `protocolVersion` is removed from the request parameters of the REST API `Open(create) a session`. All removed or unknown parameters will be silently ignored and affects nothing.
 
 ## Upgrading from Kyuubi 1.6 to 1.7
 
