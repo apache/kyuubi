@@ -35,7 +35,8 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
 
   private val gptApiKey = conf.get(KyuubiConf.ENGINE_CHAT_GPT_API_KEY).getOrElse {
     throw new IllegalArgumentException(
-      s"${KyuubiConf.ENGINE_CHAT_GPT_API_KEY.key} must be configured")
+      s"'${KyuubiConf.ENGINE_CHAT_GPT_API_KEY.key}' must be configured, " +
+        s"which could be got at https://platform.openai.com/account/api-keys")
   }
 
   private val httpClient: CloseableHttpClient = HttpClientBuilder.create().build()
