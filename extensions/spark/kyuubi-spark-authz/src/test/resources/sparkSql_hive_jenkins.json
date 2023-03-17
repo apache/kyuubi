@@ -1151,6 +1151,67 @@
       "guid": "b3f1f1e0-2bd6-4b20-8a32-a531006ae151",
       "isEnabled": true,
       "version": 1
+    },
+    {
+      "service": "hive_jenkins",
+      "name": "someone_access_perm_view",
+      "policyType": 0,
+      "policyPriority": 0,
+      "description": "",
+      "isAuditEnabled": true,
+      "resources": {
+        "database": {
+          "values": [
+            "default"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "column": {
+          "values": [
+            "*"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "perm_view"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
+      },
+      "policyItems": [
+        {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [
+            "user_perm_view_only"
+          ],
+          "groups": [],
+          "conditions": [],
+          "delegateAdmin": false
+        }
+      ],
+      "denyPolicyItems": [],
+      "allowExceptions": [],
+      "denyExceptions": [],
+      "dataMaskPolicyItems": [],
+      "rowFilterPolicyItems": [],
+      "options": {},
+      "validitySchedules": [],
+      "policyLabels": [
+        ""
+      ],
+      "id": 123,
+      "guid": "2fb6099d-e421-41df-9d24-f2f47bed618e",
+      "isEnabled": true,
+      "version": 5
     }
   ],
   "serviceDef": {
