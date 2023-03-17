@@ -32,7 +32,7 @@ import org.apache.kyuubi.engine.chat.provider.ChatProvider.mapper
 
 class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
 
-  val token = conf.get(KyuubiConf.ENGINE_CHAT_GPT_TOKEN).get
+  val token = conf.get(KyuubiConf.ENGINE_CHAT_GPT_API_KEY).get
 
   val httpClient: CloseableHttpClient = HttpClientBuilder.create().build()
 
@@ -48,7 +48,6 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
     chatHistory.getIfPresent(sessionId)
   }
 
-  // TODO
   override def ask(sessionId: String, q: String): String = {
     val messages = chatHistory.get(sessionId)
     messages.addLast(Message("user", q))

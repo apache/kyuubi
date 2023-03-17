@@ -2638,7 +2638,10 @@ object KyuubiConf {
 
   val ENGINE_CHAT_PROVIDER: ConfigEntry[String] =
     buildConf("kyuubi.engine.chat.provider")
-      .doc("The provider for the Chat engine, e.g. GPT")
+      .doc("The provider for the Chat engine. Candidates: <ul>" +
+        " <li>ECHO: simply replies a welcome message.</li>" +
+        " <li>GPT: a.k.a ChatGPT, powered by OpenAI.</li>" +
+        "</ul>")
       .version("1.8.0")
       .stringConf
       .transform {
@@ -2646,19 +2649,20 @@ object KyuubiConf {
         case "GPT" | "gpt" | "ChatGPT" => "org.apache.kyuubi.engine.chat.provider.ChatGPTProvider"
         case other => other
       }
-      .createWithDefault("gpt")
+      .createWithDefault("ECHO")
 
-  val ENGINE_CHAT_GPT_TOKEN: OptionalConfigEntry[String] =
-    buildConf("kyuubi.engine.chat.gpt.token")
-      .doc("The heap memory for the Chat engine")
+  val ENGINE_CHAT_GPT_API_KEY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.gpt.apiKey")
+      .doc("The key to access OpenAI open API, which could be got at " +
+        "https://platform.openai.com/account/api-keys")
       .version("1.8.0")
       .stringConf
       .createOptional
 
   val ENGINE_CHAT_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.chat.extra.classpath")
-      .doc("The extra classpath for the Chat engine, for configuring the location" +
-        " of the SDK and etc.")
+      .doc("The extra classpath for the Chat engine, for configuring the location " +
+        "of the SDK and etc.")
       .version("1.8.0")
       .stringConf
       .createOptional
