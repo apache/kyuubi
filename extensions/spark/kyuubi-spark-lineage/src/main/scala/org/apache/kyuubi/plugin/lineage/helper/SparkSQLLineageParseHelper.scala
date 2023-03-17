@@ -312,7 +312,7 @@ trait LineageParser {
         val nextColumnsLlineage = ListMap(allAssignments.map { assignment =>
           (
             assignment.key.asInstanceOf[Attribute],
-            AttributeSet(assignment.value.asInstanceOf[Attribute]))
+            assignment.value.references)
         }: _*)
         val targetTable = getPlanField[LogicalPlan]("targetTable", plan)
         val sourceTable = getPlanField[LogicalPlan]("sourceTable", plan)
@@ -376,14 +376,22 @@ trait LineageParser {
         }
 
       case p: Union =>
-        // merge all children in to one derivedColumns
-        val childrenUnion =
-          p.children.map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]())).map(
-            _.values).reduce {
-            (left, right) =>
-              left.zip(right).map(attr => attr._1 ++ attr._2)
+        val childrenColumnsLineage =
+          // support for the multi-insert statement
+          if (p.output.isEmpty) {
+            p.children
+              .map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]()))
+              .reduce(mergeColumnsLineage)
+          } else {
+            // merge all children in to one derivedColumns
+            val childrenUnion =
+              p.children.map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]())).map(
+                _.values).reduce {
+                (left, right) =>
+                  left.zip(right).map(attr => attr._1 ++ attr._2)
+              }
+            ListMap(p.output.zip(childrenUnion): _*)
           }
-        val childrenColumnsLineage = ListMap(p.output.zip(childrenUnion): _*)
         joinColumnsLineage(parentColumnsLineage, childrenColumnsLineage)
 
       case p: LogicalRelation if p.catalogTable.nonEmpty =>
