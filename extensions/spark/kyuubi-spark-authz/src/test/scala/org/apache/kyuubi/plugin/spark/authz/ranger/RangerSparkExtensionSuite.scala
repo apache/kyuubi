@@ -538,7 +538,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
       // KYUUBI #3326: with no privileges to the permanent view or the source table
       val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"select * from $db2.$permView").collect()))
+        doAs("someone", { sql(s"select * from $db2.$permView").collect() }))
       if (isSparkV31OrGreater) {
         assert(e1.getMessage.contains(s"does not have [select] privilege on [$db2/$permView/id]"))
       } else {
@@ -549,9 +549,9 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       // with access privileges to the permanent view but no privilege to the source table
       val sql1 = s"select * from $db2.$permView"
       if (isSparkV31OrGreater) {
-        doAs(userPermViewOnly, sql(sql1).collect())
+        doAs(userPermViewOnly, { sql(sql1).collect() })
       } else {
-        val e2 = intercept[AccessControlException](doAs(userPermViewOnly, sql(sql1).collect()))
+        val e2 = intercept[AccessControlException](doAs(userPermViewOnly, { sql(sql1).collect() }))
         assert(e2.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
       }
 
@@ -559,7 +559,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       // with access privileges to the permanent view but no privilege to the source table
       val sql2 = s"select name from $db2.$permView"
       if (isSparkV31OrGreater) {
-        doAs(userPermViewOnly, sql(sql2).collect())
+        doAs(userPermViewOnly, { sql(sql2).collect() })
       } else {
         val e3 = intercept[AccessControlException](doAs(userPermViewOnly, sql(sql2).collect()))
         assert(e3.getMessage.contains(s"does not have [select] privilege on [$db1/$table/name]"))
