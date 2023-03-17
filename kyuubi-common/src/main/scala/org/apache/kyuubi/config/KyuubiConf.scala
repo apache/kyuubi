@@ -2667,6 +2667,20 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_CHAT_PROXY_HTTP_URL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.proxy.url")
+      .doc("Whether to use a proxy to access Chat API. e.g. http://127.0.0.1:1087")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_CHAT_HTTP_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.chat.http.timeout")
+      .doc("Timeout for calling Chat API")
+      .version("1.8.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(180).toMillis)
+
   val ENGINE_JDBC_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.memory")
       .doc("The heap memory for the JDBC query engine")
