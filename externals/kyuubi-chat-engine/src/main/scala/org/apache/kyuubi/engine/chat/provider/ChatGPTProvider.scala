@@ -33,17 +33,21 @@ import org.apache.kyuubi.engine.chat.provider.ChatProvider.mapper
 
 class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
 
-  private val token = conf.get(KyuubiConf.ENGINE_CHAT_GPT_API_KEY).get
+  private val gptApiKey = conf.get(KyuubiConf.ENGINE_CHAT_GPT_API_KEY).getOrElse {
+    throw new IllegalArgumentException(
+      s"${KyuubiConf.ENGINE_CHAT_GPT_API_KEY.key} must be configured")
+  }
 
   private val httpClient: CloseableHttpClient = HttpClientBuilder.create().build()
 
   private val requestConfig = {
-    val httpTimeout = conf.get(KyuubiConf.ENGINE_CHAT_HTTP_TIMEOUT).asInstanceOf[Int]
+    val connectTimeout = conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_CONNECT_TIMEOUT).asInstanceOf[Int]
+    val socketTimeout = conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_SOCKET_TIMEOUT).asInstanceOf[Int]
     val builder: RequestConfig.Builder = RequestConfig.custom()
-      .setConnectionRequestTimeout(httpTimeout)
-      .setConnectTimeout(httpTimeout)
-      .setSocketTimeout(httpTimeout)
-    conf.get(KyuubiConf.ENGINE_CHAT_PROXY_HTTP_URL).foreach { url =>
+      .setConnectionRequestTimeout(connectTimeout)
+      .setConnectTimeout(connectTimeout)
+      .setSocketTimeout(socketTimeout)
+    conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_PROXY).foreach { url =>
       builder.setProxy(HttpHost.create(url))
     }
     builder.build()
@@ -66,7 +70,7 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
     messages.addLast(Message("user", q))
 
     val request = new HttpPost("https://api.openai.com/v1/chat/completions")
-    request.addHeader("Authorization", "Bearer " + token)
+    request.addHeader("Authorization", "Bearer " + gptApiKey)
 
     val req = Map(
       "messages" -> messages,
