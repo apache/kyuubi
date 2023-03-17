@@ -96,6 +96,7 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
   }
 
   override def close(sessionId: String): Unit = {
+    httpClient.close()
     chatHistory.invalidate(sessionId)
   }
 }
