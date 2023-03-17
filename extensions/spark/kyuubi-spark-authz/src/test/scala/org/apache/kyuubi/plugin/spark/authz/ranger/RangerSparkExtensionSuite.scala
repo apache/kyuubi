@@ -561,7 +561,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       if (isSparkV31OrGreater) {
         doAs(userPermViewOnly, { sql(sql2).collect() })
       } else {
-        val e3 = intercept[AccessControlException](doAs(userPermViewOnly, sql(sql2).collect()))
+        val e3 = intercept[AccessControlException](doAs(userPermViewOnly, { sql(sql2).collect() }))
         assert(e3.getMessage.contains(s"does not have [select] privilege on [$db1/$table/name]"))
       }
     }
