@@ -44,7 +44,6 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
     val connectTimeout = conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_CONNECT_TIMEOUT).asInstanceOf[Int]
     val socketTimeout = conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_SOCKET_TIMEOUT).asInstanceOf[Int]
     val builder: RequestConfig.Builder = RequestConfig.custom()
-      .setConnectionRequestTimeout(connectTimeout)
       .setConnectTimeout(connectTimeout)
       .setSocketTimeout(socketTimeout)
     conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_PROXY).foreach { url =>
