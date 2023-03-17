@@ -1162,7 +1162,7 @@
       "resources": {
         "database": {
           "values": [
-            "db2"
+            "default"
           ],
           "isExcludes": false,
           "isRecursive": false
