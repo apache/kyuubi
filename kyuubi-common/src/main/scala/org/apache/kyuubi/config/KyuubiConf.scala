@@ -1817,6 +1817,7 @@ object KyuubiConf {
       " all the capacity of the Hive Server2.</li>" +
       " <li>JDBC: specify this engine type will launch a JDBC engine which can provide" +
       " a MySQL protocol connector, for now we only support Doris dialect.</li>" +
+      " <li>CHAT: specify this engine type will launch a Chat engine.</li>" +
       "</ul>")
     .version("1.4.0")
     .stringConf
@@ -2620,6 +2621,51 @@ object KyuubiConf {
         "Use kyuubi.ha.zookeeper.auth.type and kyuubi.ha.zookeeper.engine.auth.type instead"))
     Map(configs.map { cfg => cfg.key -> cfg }: _*)
   }
+
+  val ENGINE_CHAT_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.memory")
+      .doc("The heap memory for the Chat engine")
+      .version("1.8.0")
+      .stringConf
+      .createWithDefault("1g")
+
+  val ENGINE_CHAT_JAVA_OPTIONS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.java.options")
+      .doc("The extra Java options for the Chat engine")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_CHAT_PROVIDER: ConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.provider")
+      .doc("The provider for the Chat engine. Candidates: <ul>" +
+        " <li>ECHO: simply replies a welcome message.</li>" +
+        " <li>GPT: a.k.a ChatGPT, powered by OpenAI.</li>" +
+        "</ul>")
+      .version("1.8.0")
+      .stringConf
+      .transform {
+        case "ECHO" | "echo" => "org.apache.kyuubi.engine.chat.provider.EchoProvider"
+        case "GPT" | "gpt" | "ChatGPT" => "org.apache.kyuubi.engine.chat.provider.ChatGPTProvider"
+        case other => other
+      }
+      .createWithDefault("ECHO")
+
+  val ENGINE_CHAT_GPT_API_KEY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.gpt.apiKey")
+      .doc("The key to access OpenAI open API, which could be got at " +
+        "https://platform.openai.com/account/api-keys")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_CHAT_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.extra.classpath")
+      .doc("The extra classpath for the Chat engine, for configuring the location " +
+        "of the SDK and etc.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
 
   val ENGINE_JDBC_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.memory")

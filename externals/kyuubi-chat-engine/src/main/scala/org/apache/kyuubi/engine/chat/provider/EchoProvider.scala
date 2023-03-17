@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.chat.provider
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+class EchoProvider extends ChatProvider {
 
-  val SPARK_SQL, FLINK_SQL, CHAT, TRINO, HIVE_SQL, JDBC = Value
+  override def open(sessionId: String): Unit = {}
+
+  override def ask(sessionId: String, q: String): String =
+    "This is ChatKyuubi, nice to meet you!"
+
+  override def close(sessionId: String): Unit = {}
 }

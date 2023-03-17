@@ -60,10 +60,11 @@
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>extensions/spark/kyuubi-spark-connector-tpch</module>
         <module>extensions/spark/kyuubi-spark-lineage</module>
+        <module>externals/kyuubi-chat-engine</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
-        <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-hive-sql-engine</module>
+        <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>externals/kyuubi-trino-engine</module>
         <module>integration-tests</module>
