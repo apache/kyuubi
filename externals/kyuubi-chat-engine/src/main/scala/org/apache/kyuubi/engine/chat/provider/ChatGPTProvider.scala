@@ -21,6 +21,7 @@ import java.util
 import java.util.concurrent.TimeUnit
 
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
+import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClientBuilder}
@@ -52,29 +53,29 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
     val messages = chatHistory.get(sessionId)
     messages.addLast(Message("user", q))
 
-    val request = new HttpPost("https://api.openai.com/v1/engines/davinci/jobs")
+    val request = new HttpPost("https://api.openai.com/v1/chat/completions")
     request.addHeader("Content-Type", "application/json")
-    request.addHeader("Authorization", token)
+    request.addHeader("Authorization", "Bearer " + token)
 
     val req = Map(
       "messages" -> messages,
       "model" -> "gpt-3.5-turbo",
-      "maxTokens" -> 200,
+      "max_tokens" -> 200,
       "temperature" -> 0.5,
-      "topP" -> 1)
+      "top_p" -> 1)
 
     request.setEntity(new StringEntity(mapper.writeValueAsString(req)))
     val responseEntity = httpClient.execute(request)
     val respJson = mapper.readTree(EntityUtils.toString(responseEntity.getEntity))
-    val replyStatus = respJson.get("status").asText
-    if (replyStatus == "000000") {
+    val statusCode = responseEntity.getStatusLine.getStatusCode
+    if (responseEntity.getStatusLine.getStatusCode == HttpStatus.SC_OK) {
       val replyMessage = mapper.treeToValue[Message](
-        respJson.get("detail").get("choices").get(0).get("message"))
+        respJson.get("choices").get(0).get("message"))
       messages.addLast(replyMessage)
       replyMessage.content
     } else {
       messages.removeLast()
-      s"Chat failed. Status: $replyStatus. ${respJson.get("desc").asText}"
+      s"Chat failed. Status: $statusCode. ${respJson.get("error").get("message").asText}"
     }
   }
 
