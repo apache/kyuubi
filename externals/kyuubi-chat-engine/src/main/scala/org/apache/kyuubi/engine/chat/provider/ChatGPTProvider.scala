@@ -21,9 +21,10 @@ import java.util
 import java.util.concurrent.TimeUnit
 
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
-import org.apache.http.HttpStatus
+import org.apache.http.{HttpHost, HttpStatus}
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpPost
-import org.apache.http.entity.StringEntity
+import org.apache.http.entity.{ContentType, StringEntity}
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClientBuilder}
 import org.apache.http.util.EntityUtils
 
@@ -32,9 +33,25 @@ import org.apache.kyuubi.engine.chat.provider.ChatProvider.mapper
 
 class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
 
-  val token = conf.get(KyuubiConf.ENGINE_CHAT_GPT_API_KEY).get
+  private val gptApiKey = conf.get(KyuubiConf.ENGINE_CHAT_GPT_API_KEY).getOrElse {
+    throw new IllegalArgumentException(
+      s"'${KyuubiConf.ENGINE_CHAT_GPT_API_KEY.key}' must be configured, " +
+        s"which could be got at https://platform.openai.com/account/api-keys")
+  }
 
-  val httpClient: CloseableHttpClient = HttpClientBuilder.create().build()
+  private val httpClient: CloseableHttpClient = HttpClientBuilder.create().build()
+
+  private val requestConfig = {
+    val connectTimeout = conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_CONNECT_TIMEOUT).asInstanceOf[Int]
+    val socketTimeout = conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_SOCKET_TIMEOUT).asInstanceOf[Int]
+    val builder: RequestConfig.Builder = RequestConfig.custom()
+      .setConnectTimeout(connectTimeout)
+      .setSocketTimeout(socketTimeout)
+    conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_PROXY).foreach { url =>
+      builder.setProxy(HttpHost.create(url))
+    }
+    builder.build()
+  }
 
   private val chatHistory: LoadingCache[String, util.ArrayDeque[Message]] =
     CacheBuilder.newBuilder()
@@ -53,8 +70,7 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
     messages.addLast(Message("user", q))
 
     val request = new HttpPost("https://api.openai.com/v1/chat/completions")
-    request.addHeader("Content-Type", "application/json")
-    request.addHeader("Authorization", "Bearer " + token)
+    request.addHeader("Authorization", "Bearer " + gptApiKey)
 
     val req = Map(
       "messages" -> messages,
@@ -62,8 +78,9 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
       "max_tokens" -> 200,
       "temperature" -> 0.5,
       "top_p" -> 1)
-
-    request.setEntity(new StringEntity(mapper.writeValueAsString(req)))
+    val entity = new StringEntity(mapper.writeValueAsString(req), ContentType.APPLICATION_JSON)
+    request.setEntity(entity)
+    request.setConfig(requestConfig)
     val responseEntity = httpClient.execute(request)
     val respJson = mapper.readTree(EntityUtils.toString(responseEntity.getEntity))
     val statusCode = responseEntity.getStatusLine.getStatusCode

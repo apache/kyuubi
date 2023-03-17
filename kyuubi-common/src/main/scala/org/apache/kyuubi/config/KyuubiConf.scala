@@ -2667,6 +2667,31 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_CHAT_GPT_HTTP_PROXY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.gpt.http.proxy")
+      .doc("HTTP proxy url for API calling in Chat GPT engine. e.g. http://127.0.0.1:1087")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_CHAT_GPT_HTTP_CONNECT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.chat.gpt.http.connect.timeout")
+      .doc("The timeout[ms] for establishing the connection with the Chat GPT server. " +
+        "A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.8.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofSeconds(120).toMillis)
+
+  val ENGINE_CHAT_GPT_HTTP_SOCKET_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.chat.gpt.http.socket.timeout")
+      .doc("The timeout[ms] for waiting for data packets after Chat GPT server " +
+        "connection is established. A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.8.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofSeconds(120).toMillis)
+
   val ENGINE_JDBC_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.memory")
       .doc("The heap memory for the JDBC query engine")
