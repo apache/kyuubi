@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 import scala.collection.JavaConverters._
 
@@ -27,7 +27,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_OPERATION_HANDLE_KEY
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{NoneMode, Operation, OperationHandle, OperationManager, PlanOnlyMode}
+import org.apache.kyuubi.operation.{NoneMode, Operation, OperationHandle, OperationManager, OperationState, PlanOnlyMode}
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
 class SparkSQLOperationManager private (name: String) extends OperationManager(name) {
@@ -43,6 +43,32 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
   private val sessionToRepl = new ConcurrentHashMap[SessionHandle, KyuubiSparkILoop]().asScala
   private val sessionToPythonProcess =
     new ConcurrentHashMap[SessionHandle, SessionPythonWorker]().asScala
+
+  def waitForOperationsToFinish(): Unit = {
+    val timeWhenStopStarted = System.nanoTime()
+    val stopTimeoutMs = conf.get(ENGINE_SPARK_SESSION_CLOSE_GRACEFULLY_TIMEOUT)
+    val pollTime = 300
+
+    // To prevent graceful stop to get stuck permanently
+    def hasTimedOut: Boolean = {
+      val diff = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - timeWhenStopStarted)
+      val timedOut = diff > stopTimeoutMs
+      if (timedOut) {
+        warn("Timed out while waiting the spark operations to finish " +
+          "(timeout = " + stopTimeoutMs + ")")
+      }
+      timedOut
+    }
+
+    info("Waiting for all the operations to finish.")
+    while (!hasTimedOut && !allOperations().filter(op =>
+        !OperationState.isTerminal(
+          op.getStatus.state))
+        .toSeq.isEmpty) {
+      Thread.sleep(pollTime)
+    }
+    info("All the operations have finished.")
+  }
 
   def closeILoop(session: SessionHandle): Unit = {
     val maybeRepl = sessionToRepl.remove(session)

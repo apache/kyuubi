@@ -157,6 +157,10 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
+    val closeGracefully = conf.get(ENGINE_SPARK_SESSION_CLOSE_GRACEFULLY)
+    if (closeGracefully) {
+      operationManager.waitForOperationsToFinish()
+    }
     if (!userIsolatedSparkSession) {
       val session = getSession(sessionHandle)
       if (session != null) {
