@@ -16,13 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.result;
+package org.apache.kyuubi.engine.flink.result
 
-/** Constant column names. */
-public class Constants {
-
-  public static final String TABLE_TYPE = "TABLE";
-  public static final String VIEW_TYPE = "VIEW";
-
-  public static final String[] SUPPORTED_TABLE_TYPES = new String[] {TABLE_TYPE, VIEW_TYPE};
+object Constants {
+  val TABLE_TYPE: String = "TABLE"
+  val VIEW_TYPE: String = "VIEW"
+  val SUPPORTED_TABLE_TYPES: Array[String] = Array[String](TABLE_TYPE, VIEW_TYPE)
 }
