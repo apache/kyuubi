@@ -30,7 +30,7 @@ import org.apache.flink.types.Row
 
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator}
-import org.apache.kyuubi.reflection.DynFields
+import org.apache.kyuubi.reflection.{DynFields, DynMethods}
 
 case class ResultSet(
     resultKind: ResultKind,
@@ -69,13 +69,20 @@ object ResultSet {
   def fromTableResult(tableResult: TableResult): ResultSet = {
     // FLINK-25558, if execute multiple SQLs that return OK, the second and latter results
     // would be empty, which affects Flink 1.14
-    val fixedTableResult =
+    val fixedTableResult: TableResult =
       if (isFlinkVersionAtMost("1.14") && tableResult == TABLE_RESULT_OK) {
-        TableResultImpl.builder
+        // FLINK-24461 executeOperation method changes the return type
+        // from TableResult to TableResultInternal
+        val builder = TableResultImpl.builder
           .resultKind(ResultKind.SUCCESS)
           .schema(ResolvedSchema.of(Column.physical("result", DataTypes.STRING)))
           .data(Collections.singletonList(Row.of("OK")))
-          .build
+        // FLINK-24461 the return type of TableResultImpl.Builder#build changed
+        // from TableResult to TableResultInternal
+        DynMethods.builder("build")
+          .impl(classOf[TableResultImpl.Builder])
+          .build(builder)
+          .invoke[TableResult]()
       } else {
         tableResult
       }
