@@ -106,7 +106,8 @@ class ChatProcessBuilder(
       super.toString()
     } else {
       Utils.redactCommandLineArgs(conf, commands).map {
-        case arg if arg.startsWith("--") => s"\\\n\t$arg"
+        case arg if arg.startsWith("-") => s"\\\n\t$arg"
+        case arg@"org.apache.kyuubi.engine.chat.ChatEngine" => s"\\\n\t$arg"
         case arg if arg.contains(ENGINE_CHAT_GPT_API_KEY.key) =>
           s"${ENGINE_CHAT_GPT_API_KEY.key}=$REDACTION_REPLACEMENT_TEXT"
         case arg => arg
