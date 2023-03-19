@@ -17,22 +17,20 @@
 
 package org.apache.kyuubi.engine.chat.provider
 
+import java.net.{InetSocketAddress, Proxy, URL}
+import java.time.Duration
 import java.util
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
-import org.apache.http.{HttpHeaders, HttpHost, HttpStatus}
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.entity.{ContentType, StringEntity}
-import org.apache.http.impl.client.{CloseableHttpClient, HttpClientBuilder}
-import org.apache.http.message.BasicHeader
-import org.apache.http.util.EntityUtils
+import com.theokanning.openai.OpenAiApi
+import com.theokanning.openai.completion.chat.{ChatCompletionRequest, ChatMessage}
+import com.theokanning.openai.service.OpenAiService
+import com.theokanning.openai.service.OpenAiService.{defaultClient, defaultObjectMapper, defaultRetrofit}
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.chat.provider.ChatProvider.mapper
 
 class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
 
@@ -42,31 +40,32 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
         s"which could be got at https://platform.openai.com/account/api-keys")
   }
 
-  private val httpClient: CloseableHttpClient = {
-    HttpClientBuilder.create()
-      .setDefaultHeaders(List(
-        new BasicHeader(HttpHeaders.AUTHORIZATION, s"Bearer $gptApiKey")).asJava)
-      .build()
-  }
+  private val openAiService: OpenAiService = {
+    val builder = defaultClient(
+      gptApiKey,
+      Duration.ofMillis(conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_SOCKET_TIMEOUT)))
+      .newBuilder
+      .connectTimeout(Duration.ofMillis(conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_CONNECT_TIMEOUT)))
 
-  private val requestConfig: RequestConfig = {
-    val connectTimeout = conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_CONNECT_TIMEOUT).intValue()
-    val socketTimeout = conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_SOCKET_TIMEOUT).intValue()
-    val builder: RequestConfig.Builder = RequestConfig.custom()
-      .setConnectTimeout(connectTimeout)
-      .setSocketTimeout(socketTimeout)
-    conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_PROXY).foreach { url =>
-      builder.setProxy(HttpHost.create(url))
+    conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_PROXY) match {
+      case Some(httpProxyUrl) =>
+        val url = new URL(httpProxyUrl)
+        val proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(url.getHost, url.getPort))
+        builder.proxy(proxy)
+      case _ =>
     }
-    builder.build()
+
+    val retrofit = defaultRetrofit(builder.build(), defaultObjectMapper)
+    val api = retrofit.create(classOf[OpenAiApi])
+    new OpenAiService(api)
   }
 
-  private val chatHistory: LoadingCache[String, util.ArrayDeque[Message]] =
+  private val chatHistory: LoadingCache[String, util.ArrayDeque[ChatMessage]] =
     CacheBuilder.newBuilder()
       .expireAfterWrite(10, TimeUnit.MINUTES)
-      .build(new CacheLoader[String, util.ArrayDeque[Message]] {
-        override def load(sessionId: String): util.ArrayDeque[Message] =
-          new util.ArrayDeque[Message]
+      .build(new CacheLoader[String, util.ArrayDeque[ChatMessage]] {
+        override def load(sessionId: String): util.ArrayDeque[ChatMessage] =
+          new util.ArrayDeque[ChatMessage]
       })
 
   override def open(sessionId: String): Unit = {
@@ -75,29 +74,19 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
 
   override def ask(sessionId: String, q: String): String = {
     val messages = chatHistory.get(sessionId)
-    messages.addLast(Message("user", q))
-
-    val request = new HttpPost("https://api.openai.com/v1/chat/completions")
-    val req = Map(
-      "messages" -> messages,
-      "model" -> "gpt-3.5-turbo",
-      "max_tokens" -> 200,
-      "temperature" -> 0.5,
-      "top_p" -> 1)
-    val entity = new StringEntity(mapper.writeValueAsString(req), ContentType.APPLICATION_JSON)
-    request.setEntity(entity)
-    request.setConfig(requestConfig)
-    val response = httpClient.execute(request)
-    val respJson = mapper.readTree(EntityUtils.toString(response.getEntity))
-    response.getStatusLine.getStatusCode match {
-      case HttpStatus.SC_OK =>
-        val replyMessage = mapper.treeToValue[Message](
-          respJson.get("choices").get(0).get("message"))
-        messages.addLast(replyMessage)
-        replyMessage.content
-      case errorStatusCode =>
+    try {
+      messages.addLast(new ChatMessage("user", q))
+      val completionRequest = ChatCompletionRequest.builder()
+        .messages(messages.asScala.toList.asJava)
+        .model("gpt-3.5-turbo")
+        .build()
+      val responseText = openAiService.createChatCompletion(completionRequest).getChoices.asScala
+        .map(c => c.getMessage.getContent).mkString
+      responseText
+    } catch {
+      case e: Throwable =>
         messages.removeLast()
-        s"Chat failed. Status: $errorStatusCode. ${respJson.get("error").get("message").asText}"
+        s"Chat failed. Error: ${e.getMessage}"
     }
   }
 
