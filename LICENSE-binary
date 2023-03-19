@@ -319,6 +319,8 @@ io.swagger.core.v3:swagger-models
 io.vertx:vertx-core
 io.vertx:vertx-grpc
 org.apache.zookeeper:zookeeper
+com.squareup.retrofit2:retrofit
+com.squareup.okhttp3:okhttp
 
 BSD
 ------------
@@ -356,6 +358,9 @@ org.codehaus.mojo:animal-sniffer-annotations
 org.slf4j:slf4j-api
 org.slf4j:jcl-over-slf4j
 org.slf4j:jul-over-slf4j
+com.theokanning.openai-gpt3-java:api
+com.theokanning.openai-gpt3-java:client
+com.theokanning.openai-gpt3-java:service
 
 kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/assets/fonts/*
 kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/icon.min.css
