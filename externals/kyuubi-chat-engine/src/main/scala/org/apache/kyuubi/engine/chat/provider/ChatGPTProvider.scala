@@ -77,8 +77,8 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
     try {
       messages.addLast(new ChatMessage("user", q))
       val completionRequest = ChatCompletionRequest.builder()
+        .model(conf.get(KyuubiConf.ENGINE_CHAT_GPT_MODEL))
         .messages(messages.asScala.toList.asJava)
-        .model("gpt-3.5-turbo")
         .build()
       val responseText = openAiService.createChatCompletion(completionRequest).getChoices.asScala
         .map(c => c.getMessage.getContent).mkString

@@ -2659,6 +2659,14 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_CHAT_GPT_MODEL: ConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.gpt.model")
+      .doc("ID of the model used in ChatGPT. Available models refer to OpenAI's " +
+        "[Model overview](https://platform.openai.com/docs/models/overview).")
+      .version("1.8.0")
+      .stringConf
+      .createWithDefault("gpt-3.5-turbo")
+
   val ENGINE_CHAT_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.chat.extra.classpath")
       .doc("The extra classpath for the Chat engine, for configuring the location " +
