@@ -60,12 +60,12 @@ case class GetPrimaryKeys() extends KyuubiTreeNode {
   override def name(): String = "Get Primary Keys"
 }
 
-case class GetPrepareParameters(statementId: String, parameters: List[String])
+case class ExecuteForPreparing(statementId: String, parameters: List[String])
   extends KyuubiTreeNode {
-  override def name(): String = "Get Prepare Parameters"
+  override def name(): String = "Execute For Preparing"
 }
 
-case class GetPrepareSql(statementId: String, sql: String)
+case class Prepare(statementId: String, sql: String)
   extends KyuubiTreeNode {
-  override def name(): String = "Get Prepare Sql"
+  override def name(): String = "Prepare Sql"
 }

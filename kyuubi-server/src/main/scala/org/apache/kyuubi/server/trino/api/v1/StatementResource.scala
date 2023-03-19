@@ -39,7 +39,7 @@ import org.apache.kyuubi.server.trino.api.Slug.Context.{EXECUTING_QUERY, QUEUED_
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
-import org.apache.kyuubi.sql.plan.trino.{GetPrepareParameters, GetPrepareSql}
+import org.apache.kyuubi.sql.plan.trino.{ExecuteForPreparing, Prepare}
 
 @Tag(name = "Statement")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -79,16 +79,15 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
 
     try {
       parser.parsePlan(statement) match {
-        case GetPrepareSql(statementId, _) =>
+        case Prepare(statementId, _) =>
           val query = Query(
             statementId,
             statement.split(s"$statementId FROM")(1),
             trinoContext,
-            fe.be,
-            "aa")
+            fe.be)
           val qr = query.getPrepareQueryResults(query.getLastToken, uriInfo)
           TrinoContext.buildTrinoResponse(qr, query.context)
-        case GetPrepareParameters(statementId, parameters) =>
+        case ExecuteForPreparing(statementId, parameters) =>
           val parametersMap = new util.HashMap[Integer, String]()
           for (i <- 0 until parameters.size) {
             parametersMap.put(i + 1, parameters(i))

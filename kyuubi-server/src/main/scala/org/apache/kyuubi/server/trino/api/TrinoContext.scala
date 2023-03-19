@@ -195,13 +195,12 @@ object TrinoContext {
       case None => null
     }
     val rowList = data match {
-      case Some(value) if "PREPARE".equals(updateType) =>
-        val list1 = new util.LinkedList[util.List[Object]]
-        val list2 = new util.LinkedList[Object]()
-        list2.add(true.asInstanceOf[Object])
-        list1.add(list2)
-        list1
-      case Some(value) => convertTRowSet(value)
+      case Some(value) =>
+        Option(updateType) match {
+          case Some("PREPARE") =>
+            ImmutableList.of(ImmutableList.of(true).asInstanceOf[util.List[Object]])
+          case _ => convertTRowSet(value)
+        }
       case None => null
     }
 

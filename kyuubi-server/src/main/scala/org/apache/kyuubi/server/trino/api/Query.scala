@@ -196,8 +196,7 @@ object Query {
       statementId: String,
       statement: String,
       context: TrinoContext,
-      backendService: BackendService,
-      aa: String): Query = {
+      backendService: BackendService): Query = {
     val sessionHandle = getOrCreateSession(context, backendService)
     val sessionWithId =
       context.session + (KYUUBI_SESSION_ID -> sessionHandle.identifier.toString)
