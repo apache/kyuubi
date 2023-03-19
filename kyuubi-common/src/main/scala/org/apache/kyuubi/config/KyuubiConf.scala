@@ -2661,8 +2661,8 @@ object KyuubiConf {
 
   val ENGINE_CHAT_GPT_MODEL: ConfigEntry[String] =
     buildConf("kyuubi.engine.chat.gpt.model")
-      .doc("ID of the model used in ChatGPT. Available models refer to OpenAI's" +
-        "[Model overview](https://platform.openai.com/docs/models/overview)")
+      .doc("ID of the model used in ChatGPT. Available models refer to OpenAI's " +
+        "[Model overview](https://platform.openai.com/docs/models/overview).")
       .version("1.8.0")
       .stringConf
       .createWithDefault("gpt-3.5-turbo")
