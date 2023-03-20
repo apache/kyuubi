@@ -484,7 +484,6 @@ public class KyuubiCommands extends Commands {
       if (!beeLine.isBeeLine()) {
         beeLine.updateOptsForCli();
       }
-
       beeLine.runInit();
       if (beeLine.getOpts().getInitFiles() != null) {
         beeLine.initializeConsoleReader(null);
