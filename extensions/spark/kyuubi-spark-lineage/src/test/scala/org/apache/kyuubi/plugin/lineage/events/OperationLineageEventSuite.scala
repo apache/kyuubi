@@ -19,7 +19,10 @@ package org.apache.kyuubi.plugin.lineage.events
 
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 
+import scala.collection.immutable.List
+
 import org.apache.spark.SparkConf
+import org.apache.spark.kyuubi.lineage.LineageConf.SKIP_PARSING_PERMANENT_VIEW_ENABLED
 import org.apache.spark.scheduler.{SparkListener, SparkListenerEvent}
 import org.apache.spark.sql.SparkListenerExtensionTest
 
@@ -40,6 +43,7 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
       .set(
         "spark.sql.queryExecutionListeners",
         "org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener")
+      .set(SKIP_PARSING_PERMANENT_VIEW_ENABLED.key, "true")
   }
 
   test("operation lineage event capture: for execute sql") {
@@ -113,6 +117,42 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
       r.collect()
       countDownLatch.await(20, TimeUnit.SECONDS)
       assert(countDownLatch.getCount == 0)
+    }
+  }
+
+  test("test for skip parsing permanent view") {
+    val countDownLatch = new CountDownLatch(1)
+    var actual: Lineage = null
+    spark.sparkContext.addSparkListener(new SparkListener {
+      override def onOtherEvent(event: SparkListenerEvent): Unit = {
+        event match {
+          case lineageEvent: OperationLineageEvent =>
+            lineageEvent.lineage.foreach {
+              case lineage if lineage.inputTables.nonEmpty && lineage.outputTables.isEmpty =>
+                actual = lineage
+                countDownLatch.countDown()
+            }
+          case _ =>
+        }
+      }
+    })
+
+    withTable("t1") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string, c string) USING hive")
+      spark.sql("CREATE VIEW t2 as select * from t1")
+      spark.sql(
+        s"select a as k, b" +
+          s" from t2" +
+          s" where a in ('HELLO') and c = 'HELLO'").collect()
+
+      val expected = Lineage(
+        List("default.t2"),
+        List(),
+        List(
+          ("k", Set("default.t2.a")),
+          ("b", Set("default.t2.b"))))
+      countDownLatch.await(20, TimeUnit.SECONDS)
+      assert(actual == expected)
     }
   }
 

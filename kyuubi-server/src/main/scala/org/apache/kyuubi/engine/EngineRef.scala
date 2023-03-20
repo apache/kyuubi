@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine
 
 import java.util.concurrent.TimeUnit
 
+import scala.collection.JavaConverters._
 import scala.util.Random
 
 import com.codahale.metrics.MetricRegistry
@@ -28,8 +29,9 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
-import org.apache.kyuubi.engine.EngineType.{EngineType, FLINK_SQL, HIVE_SQL, JDBC, SPARK_SQL, TRINO}
+import org.apache.kyuubi.engine.EngineType._
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
+import org.apache.kyuubi.engine.chat.ChatProcessBuilder
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder
 import org.apache.kyuubi.engine.jdbc.JdbcProcessBuilder
@@ -40,6 +42,7 @@ import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, Di
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.plugin.GroupProvider
 
 /**
  * The description and functionality of an engine at server side
@@ -51,7 +54,7 @@ import org.apache.kyuubi.operation.log.OperationLog
 private[kyuubi] class EngineRef(
     conf: KyuubiConf,
     user: String,
-    primaryGroup: String,
+    groupProvider: GroupProvider,
     engineRefId: String,
     engineManager: KyuubiApplicationManager)
   extends Logging {
@@ -85,7 +88,7 @@ private[kyuubi] class EngineRef(
   // Launcher of the engine
   private[kyuubi] val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser
-    case GROUP => primaryGroup
+    case GROUP => groupProvider.primaryGroup(user, conf.getAll.asJava)
     case _ => user
   }
 
@@ -190,6 +193,8 @@ private[kyuubi] class EngineRef(
         new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case JDBC =>
         new JdbcProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+      case CHAT =>
+        new ChatProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
     }
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
@@ -216,7 +221,10 @@ private[kyuubi] class EngineRef(
         // check the engine application state from engine manager and fast fail on engine terminate
         if (exitValue == Some(0)) {
           Option(engineManager).foreach { engineMgr =>
-            engineMgr.getApplicationInfo(builder.clusterManager(), engineRefId).foreach { appInfo =>
+            engineMgr.getApplicationInfo(
+              builder.clusterManager(),
+              engineRefId,
+              Some(started)).foreach { appInfo =>
               if (ApplicationState.isTerminated(appInfo.state)) {
                 MetricsSystem.tracing { ms =>
                   ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))

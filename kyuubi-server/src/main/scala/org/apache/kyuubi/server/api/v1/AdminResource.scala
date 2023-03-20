@@ -27,6 +27,7 @@ import scala.collection.mutable.ListBuffer
 import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.commons.lang3.StringUtils
 import org.apache.zookeeper.KeeperException.NoNodeException
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
@@ -113,7 +114,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     description = "get the list of all live sessions")
   @GET
   @Path("sessions")
-  def sessions(): Seq[SessionData] = {
+  def sessions(@QueryParam("users") users: String): Seq[SessionData] = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Received listing all live sessions request from $userName/$ipAddress")
@@ -121,7 +122,12 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       throw new NotAllowedException(
         s"$userName is not allowed to list all live sessions")
     }
-    fe.be.sessionManager.allSessions().map { case session =>
+    var sessions = fe.be.sessionManager.allSessions()
+    if (StringUtils.isNotBlank(users)) {
+      val usersSet = users.split(",").toSet
+      sessions = sessions.filter(session => usersSet.contains(session.user))
+    }
+    sessions.map { case session =>
       ApiUtils.sessionData(session.asInstanceOf[KyuubiSession])
     }.toSeq
   }
@@ -154,7 +160,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       "get the list of all active operations")
   @GET
   @Path("operations")
-  def listOperations(): Seq[OperationData] = {
+  def listOperations(@QueryParam("users") users: String): Seq[OperationData] = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Received listing all of the active operations request from $userName/$ipAddress")
@@ -162,7 +168,12 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       throw new NotAllowedException(
         s"$userName is not allowed to list all the operations")
     }
-    fe.be.sessionManager.operationManager.allOperations()
+    var operations = fe.be.sessionManager.operationManager.allOperations()
+    if (StringUtils.isNotBlank(users)) {
+      val usersSet = users.split(",").toSet
+      operations = operations.filter(operation => usersSet.contains(operation.getSession.user))
+    }
+    operations
       .map(operation => ApiUtils.operationData(operation.asInstanceOf[KyuubiOperation])).toSeq
   }
 
