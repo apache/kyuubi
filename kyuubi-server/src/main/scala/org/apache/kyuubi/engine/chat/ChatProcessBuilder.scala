@@ -94,7 +94,7 @@ class ChatProcessBuilder(
     buffer += "--conf"
     buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
 
-    for ((k, v) <- conf.getAll) {
+    conf.getAll.foreach { case (k, v) =>
       buffer += "--conf"
       buffer += s"$k=$v"
     }
@@ -106,10 +106,11 @@ class ChatProcessBuilder(
       super.toString()
     } else {
       Utils.redactCommandLineArgs(conf, commands).map {
+        case arg if arg.startsWith("-") || arg == mainClass => s"\\\n\t$arg"
         case arg if arg.contains(ENGINE_CHAT_GPT_API_KEY.key) =>
           s"${ENGINE_CHAT_GPT_API_KEY.key}=$REDACTION_REPLACEMENT_TEXT"
         case arg => arg
-      }.mkString("\n")
+      }.mkString(" ")
     }
   }
 }
