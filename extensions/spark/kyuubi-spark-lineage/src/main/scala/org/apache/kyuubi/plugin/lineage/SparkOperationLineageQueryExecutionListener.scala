@@ -28,7 +28,7 @@ class SparkOperationLineageQueryExecutionListener extends QueryExecutionListener
 
   override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
     val lineage =
-      SparkSQLLineageParseHelper(qe.sparkSession).transformToLineage(qe.id, qe.optimizedPlan)
+      SparkSQLLineageParseHelper(qe.sparkSession).transformToLineage(qe.id, qe.analyzed)
     val event = OperationLineageEvent(qe.id, System.currentTimeMillis(), lineage, None)
     SparkContextHelper.postEventToSparkListenerBus(event)
   }

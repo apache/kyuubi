@@ -32,6 +32,7 @@ public class OperationData {
   private String sessionId;
   private String sessionUser;
   private String sessionType;
+  private String kyuubiInstance;
 
   public OperationData() {}
 
@@ -45,7 +46,8 @@ public class OperationData {
       String exception,
       String sessionId,
       String sessionUser,
-      String sessionType) {
+      String sessionType,
+      String kyuubiInstance) {
     this.identifier = identifier;
     this.statement = statement;
     this.state = state;
@@ -56,6 +58,7 @@ public class OperationData {
     this.sessionId = sessionId;
     this.sessionUser = sessionUser;
     this.sessionType = sessionType;
+    this.kyuubiInstance = kyuubiInstance;
   }
 
   public String getIdentifier() {
@@ -136,6 +139,14 @@ public class OperationData {
 
   public void setSessionType(String sessionType) {
     this.sessionType = sessionType;
+  }
+
+  public String getKyuubiInstance() {
+    return kyuubiInstance;
+  }
+
+  public void setKyuubiInstance(String kyuubiInstance) {
+    this.kyuubiInstance = kyuubiInstance;
   }
 
   @Override

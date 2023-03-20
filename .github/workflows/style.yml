@@ -38,6 +38,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Setup JDK 8
         uses: actions/setup-java@v3
         with:
@@ -104,10 +106,32 @@ jobs:
           echo "---------------------------------------------------------------------------------"
 
   shellcheck:
-    name: Shellcheck
+    name: Super Linter and Shellcheck
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - name: Super Linter Checks
+        uses: github/super-linter/slim@v4
+        env:
+          CREATE_LOG_FILE: true
+          ERROR_ON_MISSING_EXEC_BIT: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IGNORE_GENERATED_FILES: true
+          IGNORE_GITIGNORED_FILES: true
+          LINTER_RULES_PATH: /
+          LOG_LEVEL: NOTICE
+          SUPPRESS_POSSUM: true
+          VALIDATE_BASH_EXEC: true
+          VALIDATE_ENV: true
+          VALIDATE_JSONC: true
+          VALIDATE_POWERSHELL: true
+          VALIDATE_XML: true
+      - name: Upload Super Linter logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: super-linter-log
+          path: super-linter.log
       - name: check bin directory
         uses: ludeeus/action-shellcheck@1.1.0
         with:

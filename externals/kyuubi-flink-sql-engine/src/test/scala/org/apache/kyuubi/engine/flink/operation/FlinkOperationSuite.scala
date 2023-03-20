@@ -876,20 +876,15 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("execute statement - create/drop catalog") {
-    withJdbcStatement()({ statement =>
-      val createResult = {
+    withJdbcStatement() { statement =>
+      val createResult =
         statement.executeQuery("create catalog cat_a with ('type'='generic_in_memory')")
-      }
-      if (isFlinkVersionAtLeast("1.15")) {
-        assert(createResult.next())
-        assert(createResult.getString(1) === "OK")
-      }
+      assert(createResult.next())
+      assert(createResult.getString(1) === "OK")
       val dropResult = statement.executeQuery("drop catalog cat_a")
-      if (isFlinkVersionAtLeast("1.15")) {
-        assert(dropResult.next())
-        assert(dropResult.getString(1) === "OK")
-      }
-    })
+      assert(dropResult.next())
+      assert(dropResult.getString(1) === "OK")
+    }
   }
 
   test("execute statement - set/get catalog") {

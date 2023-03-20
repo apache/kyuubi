@@ -60,10 +60,11 @@
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>extensions/spark/kyuubi-spark-connector-tpch</module>
         <module>extensions/spark/kyuubi-spark-lineage</module>
+        <module>externals/kyuubi-chat-engine</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
-        <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-hive-sql-engine</module>
+        <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>externals/kyuubi-trino-engine</module>
         <module>integration-tests</module>
@@ -173,6 +174,7 @@
         <log4j.version>2.20.0</log4j.version>
         <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
         <netty.version>4.1.89.Final</netty.version>
+        <openai.java.version>0.11.1</openai.java.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -1656,6 +1658,12 @@
                 <groupId>net.sf.py4j</groupId>
                 <artifactId>py4j</artifactId>
                 <version>${py4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.theokanning.openai-gpt3-java</groupId>
+                <artifactId>service</artifactId>
+                <version>${openai.java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
