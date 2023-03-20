@@ -143,7 +143,7 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
     spark.sparkContext.addSparkListener(new SparkListener {
       override def onOtherEvent(event: SparkListenerEvent): Unit = {
         event match {
-          case lineageEvent: OperationLineageKyuubiEvent =>
+          case lineageEvent: OperationLineageSparkEvent =>
             lineageEvent.lineage.foreach {
               case lineage if lineage.inputTables.nonEmpty && lineage.outputTables.isEmpty =>
                 actual = lineage
