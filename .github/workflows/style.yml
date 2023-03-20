@@ -114,6 +114,7 @@ jobs:
         uses: github/super-linter/slim@v4
         env:
           CREATE_LOG_FILE: true
+          DEFAULT_BRANCH: master
           ERROR_ON_MISSING_EXEC_BIT: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IGNORE_GENERATED_FILES: true
@@ -121,6 +122,7 @@ jobs:
           LINTER_RULES_PATH: /
           LOG_LEVEL: NOTICE
           SUPPRESS_POSSUM: true
+          VALIDATE_ALL_CODEBASE: false
           VALIDATE_BASH_EXEC: true
           VALIDATE_ENV: true
           VALIDATE_JSONC: true
