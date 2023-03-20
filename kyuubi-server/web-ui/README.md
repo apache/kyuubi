@@ -23,7 +23,7 @@ Kyuubi Web UI will proxy the request to kyuubi server, in default the proxy targ
 
 #### Why proxy to http://localhost:10099
 
-Currently kyuubi server will bind on `http://0.0.0.0:10099` in case your are running kyuubi server in MacOS or Windows(If in linux, you should config kyuubi server `kyuubi.frontend.rest.bind.host=0.0.0.0`).
+Currently kyuubi server will bind on `http://0.0.0.0:10099` in case your are running kyuubi server in MacOS or Windows(If in linux, you should config kyuubi server `kyuubi.frontend.rest.bind.host=0.0.0.0`, or change `VITE_APP_DEV_WEB_URL` in `.env.development`).
 
 ```shell
 npm run dev
