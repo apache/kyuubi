@@ -484,7 +484,11 @@ public class KyuubiCommands extends Commands {
       if (!beeLine.isBeeLine()) {
         beeLine.updateOptsForCli();
       }
+
       beeLine.runInit();
+      if (beeLine.getOpts().getInitFiles() != null) {
+        beeLine.initializeConsoleReader(null);
+      }
 
       beeLine.setCompletions();
       beeLine.getOpts().setLastConnectedUrl(url);
@@ -520,10 +524,6 @@ public class KyuubiCommands extends Commands {
         throw new RuntimeException(
             "Console reader not initialized. This could happen when there "
                 + "is a multi-line command using -e option and which requires further reading from console");
-      }
-
-      if (beeLine.getOpts().getInitFiles() != null) {
-        beeLine.initializeConsoleReader(null);
       }
 
       if (beeLine.getOpts().isSilent() && beeLine.getOpts().getScriptFile() != null) {
