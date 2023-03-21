@@ -18,7 +18,7 @@
 
 <template>
   <!-- TODO we need search here -->
-  <el-card class="table-container">
+  <el-card>
     <el-table
       v-loading="loading"
       :data="tableData"
@@ -49,11 +49,7 @@
           }}
         </template>
       </el-table-column>
-      <el-table-column
-        fixed="right"
-        :label="$t('operation')"
-        class="table_operation"
-      >
+      <el-table-column fixed="right" :label="$t('operation')">
         <template #default="scope">
           <el-popconfirm
             :title="$t('delete_confirm')"
@@ -110,10 +106,3 @@
   }
   getList()
 </script>
-
-<style scoped lang="scss">
-  header {
-    display: flex;
-    justify-content: flex-end;
-  }
-</style>
