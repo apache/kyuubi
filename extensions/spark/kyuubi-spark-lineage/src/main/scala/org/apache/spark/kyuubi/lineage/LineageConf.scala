@@ -31,6 +31,12 @@ object LineageConf {
       .createWithDefault(false)
 
   val DISPATCHERS = ConfigBuilder("spark.kyuubi.plugin.lineage.dispatchers")
+    .doc("The lineage dispatchers are implementations of " +
+      "`org.apache.kyuubi.plugin.lineage.LineageDispatcher` for dispatching lineage events.<ul>" +
+      "<li>SPARK_EVENT: send lineage event to spark event bus</li>" +
+      "<li>KYUUBI_EVENT: send lineage event to kyuubi event bus</li>" +
+      "</ul>")
+    .version("1.8.0")
     .stringConf
     .toSequence
     .checkValue(

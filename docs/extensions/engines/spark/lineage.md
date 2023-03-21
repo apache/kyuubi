@@ -179,9 +179,18 @@ to add one configurations.
 spark.kyuubi.plugin.lineage.skip.parsing.permanent.view.enabled=true
 ```
 
-### Get Lineage Events from SparkListener
+### Get Lineage Events
 
-All lineage events will be sent to the `SparkListenerBus`. To handle lineage events, a new `SparkListener` needs to be added.
+The lineage dispatchers are used to dispatch lineage events, configured via `spark.kyuubi.plugin.lineage.dispatchers`.
+
+<ul>
+  <li>SPARK_EVENT (by default): send lineage event to spark event bus</li>
+  <li>KYUUBI_EVENT: send lineage event to kyuubi event bus</li>
+</ul>
+
+#### Get Lineage Events from SparkListener
+
+When using the `SPARK_EVENT` dispatcher, the lineage events will be sent to the `SparkListenerBus`. To handle lineage events, a new `SparkListener` needs to be added.
 Example for Adding `SparkListener`:
 
 ```scala
@@ -196,3 +205,6 @@ spark.sparkContext.addSparkListener(new SparkListener {
     })
 ```
 
+#### Get Lineage Events from Kyuubi EventHandler
+
+When using the `KYUUBI_EVENT` dispatcher, the lineage events will be sent to the Kyuubi `EventBus`. Refer to [Kyuubi Event Handler](../../server/events) to handle kyuubi events.
