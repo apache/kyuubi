@@ -28,16 +28,16 @@ import scala.util.control.NonFatal
 
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.json.MetricsModule
-import com.fasterxml.jackson.databind.ObjectMapper
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.metrics.MetricsConf._
 import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.util.JsonUtils.newObjectMapper
 
 class JsonReporterService(registry: MetricRegistry)
   extends AbstractService("JsonReporterService") {
-  private val jsonMapper = new ObjectMapper().registerModule(
+  private val jsonMapper = newObjectMapper.registerModule(
     new MetricsModule(TimeUnit.SECONDS, TimeUnit.MILLISECONDS, false))
   private val timer = new Timer(true)
   private var reportDir: Path = _

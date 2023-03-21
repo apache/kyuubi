@@ -28,8 +28,6 @@ import javax.ws.rs.core.UriBuilder
 
 import scala.collection.JavaConverters._
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.python.KyuubiPythonGatewayServer
@@ -43,6 +41,8 @@ import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.JsonUtils
+import org.apache.kyuubi.util.JsonUtils.defaultMapper
 
 class ExecutePython(
     session: Session,
@@ -203,12 +203,12 @@ case class SessionPythonWorker(
       throw KyuubiSQLException("Python worker process has been exited, please check the error log" +
         " and re-create the session to run python code.")
     }
-    val input = ExecutePython.toJson(Map("code" -> code, "cmd" -> "run_code"))
+    val input = JsonUtils.toJson(Map("code" -> code, "cmd" -> "run_code"))
     // scalastyle:off println
     stdin.println(input)
     // scalastyle:on
     stdin.flush()
-    val pythonResponse = Option(stdout.readLine()).map(ExecutePython.fromJson[PythonResponse](_))
+    val pythonResponse = Option(stdout.readLine()).map(JsonUtils.fromJson[PythonResponse])
     // throw exception if internal python code fail
     if (internal && !pythonResponse.map(_.content.status).contains(PythonResponse.OK_STATUS)) {
       throw KyuubiSQLException(s"Internal python code $code failure: $pythonResponse")
@@ -217,7 +217,7 @@ case class SessionPythonWorker(
   }
 
   def close(): Unit = {
-    val exitCmd = ExecutePython.toJson(Map("cmd" -> "exit_worker"))
+    val exitCmd = JsonUtils.toJson(Map("cmd" -> "exit_worker"))
     // scalastyle:off println
     stdin.println(exitCmd)
     // scalastyle:on
@@ -391,19 +391,6 @@ object ExecutePython extends Logging {
     sink.close()
     file
   }
-
-  val mapper: ObjectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
-  def toJson[T](obj: T): String = {
-    mapper.writeValueAsString(obj)
-  }
-  def fromJson[T](json: String, clz: Class[T]): T = {
-    mapper.readValue(json, clz)
-  }
-
-  def fromJson[T](json: String)(implicit m: Manifest[T]): T = {
-    mapper.readValue(json, m.runtimeClass).asInstanceOf[T]
-  }
-
 }
 
 case class PythonResponse(

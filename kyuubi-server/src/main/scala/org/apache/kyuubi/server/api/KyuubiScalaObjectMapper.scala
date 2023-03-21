@@ -20,10 +20,9 @@ package org.apache.kyuubi.server.api
 import javax.ws.rs.ext.ContextResolver
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
+
+import org.apache.kyuubi.util.JsonUtils.newObjectMapper
 
 class KyuubiScalaObjectMapper extends ContextResolver[ObjectMapper] {
-  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
-
-  override def getContext(aClass: Class[_]): ObjectMapper = mapper
+  override def getContext(aClass: Class[_]): ObjectMapper = newObjectMapper
 }

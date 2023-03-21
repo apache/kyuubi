@@ -38,6 +38,7 @@ import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.service.ServiceState
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionType}
+import org.apache.kyuubi.util.JsonUtils.{defaultMapper, newObjectMapper}
 
 class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCTestHelper
   with BatchTestHelper {
@@ -233,8 +234,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
       assert(res.getString("BUILD_DATE") == BUILD_DATE)
       assert(res.getString("REPO_URL") == REPO_URL)
 
-      val objMapper = new ObjectMapper()
-      val versionInfoMap = objMapper.readTree(res.getString("VERSION_INFO"))
+      val versionInfoMap = defaultMapper.readTree(res.getString("VERSION_INFO"))
       assert(versionInfoMap.get("KYUUBI_VERSION").asText() == KYUUBI_VERSION)
       assert(versionInfoMap.get("JAVA_COMPILE_VERSION").asText() == JAVA_COMPILE_VERSION)
       assert(versionInfoMap.get("SCALA_COMPILE_VERSION").asText() == SCALA_COMPILE_VERSION)

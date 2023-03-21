@@ -39,7 +39,8 @@ import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.server.metadata.jdbc.DatabaseType._
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf._
 import org.apache.kyuubi.session.SessionType
-import org.apache.kyuubi.util.JdbcUtils
+import org.apache.kyuubi.util.{JdbcUtils, JsonUtils}
+import org.apache.kyuubi.util.JsonUtils.newObjectMapper
 
 class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   import JDBCMetadataStore._
@@ -70,7 +71,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
   @VisibleForTesting
   implicit private[kyuubi] val hikariDataSource = new HikariDataSource(hikariConfig)
-  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
+  private val mapper = newObjectMapper
 
   private val terminalStates = OperationState.terminalStates.map(x => s"'$x'").mkString(", ")
 
@@ -182,8 +183,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         metadata.resource,
         metadata.className,
         metadata.requestName,
-        valueAsString(metadata.requestConf),
-        valueAsString(metadata.requestArgs),
+        JsonUtils.toJson(metadata.requestConf),
+        JsonUtils.toJson(metadata.requestArgs),
         metadata.createTime,
         Option(metadata.engineType).map(_.toUpperCase(Locale.ROOT)).orNull,
         metadata.clusterManager.orNull)
@@ -483,10 +484,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         case _ => throw new KyuubiException(s"Unsupported param type ${param.getClass.getName}")
       }
     }
-  }
-
-  private def valueAsString(obj: Any): String = {
-    mapper.writeValueAsString(obj)
   }
 
   private def string2Map(str: String): Map[String, String] = {

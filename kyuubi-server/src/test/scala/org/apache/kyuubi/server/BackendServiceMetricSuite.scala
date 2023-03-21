@@ -26,6 +26,7 @@ import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsConstants}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.util.JsonUtils.{defaultMapper, newObjectMapper}
 
 class BackendServiceMetricSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
@@ -40,7 +41,7 @@ class BackendServiceMetricSuite extends WithKyuubiServer with HiveJDBCTestHelper
   }
 
   test("backend service metric test") {
-    val objMapper = new ObjectMapper()
+    val objMapper = defaultMapper
 
     withJdbcStatement() { statement =>
       statement.executeQuery("CREATE TABLE stu_test(id int, name string) USING parquet")
