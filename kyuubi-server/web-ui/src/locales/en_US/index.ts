@@ -25,7 +25,7 @@ export default {
   operation: 'Operation',
   delete_confirm: 'Delete Confirm',
   message: {
-    delete_succeeded: 'Delete {name} Success',
-    delete_failed: 'Delete {name} Fail'
+    delete_succeeded: 'Delete {name} Succeeded',
+    delete_failed: 'Delete {name} Failed'
   }
 }
