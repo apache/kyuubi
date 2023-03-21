@@ -25,7 +25,7 @@ export default {
   operation: '操作',
   delete_confirm: '确认删除',
   message: {
-    delete_success: '删除 {name} 成功',
-    delete_fail: '删除 {name} 失败'
+    delete_succeeded: '删除 {name} 成功',
+    delete_failed: '删除 {name} 失败'
   }
 }

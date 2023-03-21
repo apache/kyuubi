@@ -87,13 +87,13 @@
       .then(() => {
         // need add delete success or failed logic after api support
         ElMessage({
-          message: t('message.delete_success', { name: 'session' }),
+          message: t('message.delete_succeeded', { name: 'session' }),
           type: 'success'
         })
       })
       .catch(() => {
         ElMessage({
-          message: t('delete_failed', { name: 'session' }),
+          message: t('message.delete_failed', { name: 'session' }),
           type: 'error'
         })
       })
