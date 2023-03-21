@@ -17,7 +17,7 @@ npm install
 
 Notice:
 
-You should start your kyuubi server first, and then start the web ui project.
+Before you start the Web UI project, please make sure the Kyuubi server has been started.
 
 Kyuubi Web UI will proxy the request to kyuubi server, in default the proxy target is `http://localhost:10099`, you can modify `VITE_APP_DEV_WEB_URL` in `.env.development` to proxy to another url.
 
