@@ -210,10 +210,9 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     }
 
     info("Waiting for all the operations to finish.")
-    while (!hasTimedOut && !allOperations().filter(op =>
+    while (!hasTimedOut && allOperations().exists(op =>
         !OperationState.isTerminal(
-          op.getStatus.state))
-        .toSeq.isEmpty) {
+          op.getStatus.state))) {
       Thread.sleep(pollTime)
     }
     info("All the operations have finished.")
