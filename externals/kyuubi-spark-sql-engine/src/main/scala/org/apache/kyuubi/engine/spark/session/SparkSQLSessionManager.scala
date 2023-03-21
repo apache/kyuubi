@@ -157,20 +157,19 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
-    try {
-      super.closeSession(sessionHandle)
-
-      if (!userIsolatedSparkSession) {
-        val session = getSession(sessionHandle)
-        if (session != null) {
-          userIsolatedCacheLock.synchronized {
-            if (userIsolatedCacheCount.containsKey(session.user)) {
-              val (count, _) = userIsolatedCacheCount.get(session.user)
-              userIsolatedCacheCount.put(session.user, (count - 1, System.currentTimeMillis()))
-            }
+    if (!userIsolatedSparkSession) {
+      val session = getSession(sessionHandle)
+      if (session != null) {
+        userIsolatedCacheLock.synchronized {
+          if (userIsolatedCacheCount.containsKey(session.user)) {
+            val (count, _) = userIsolatedCacheCount.get(session.user)
+            userIsolatedCacheCount.put(session.user, (count - 1, System.currentTimeMillis()))
           }
         }
       }
+    }
+    try {
+      super.closeSession(sessionHandle)
     } catch {
       case e: KyuubiSQLException =>
         warn(s"Error closing session ${sessionHandle}", e)

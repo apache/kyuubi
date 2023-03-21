@@ -1358,22 +1358,13 @@ object KyuubiConf {
     .version("1.2.0")
     .fallbackConf(SESSION_TIMEOUT)
 
-  val SESSION_CLOSE_GRACEFULLY: ConfigEntry[Boolean] =
-    buildConf("kyuubi.session.close.gracefully")
-      .doc("Close gracefully when receiving the close session request. Wait " +
-        "for all the operations to finish.")
+  val SESSION_CLOSE_ON_DISCONNECT: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.close.on.disconnect")
+      .doc("Session will be closed when connection is closed. Set this to false to " +
+        "have session outlive its parent connection.")
       .version("1.8.0")
       .booleanConf
-      .createWithDefault(false)
-
-  val SESSION_CLOSE_GRACEFULLY_TIMEOUT: ConfigEntry[Long] =
-    buildConf("kyuubi.session.close.gracefully.timeout")
-      .doc("Timeout for waiting spark operations to finish. Enabled when " +
-        "kyuubi.session.close.gracefully is true. This is to prevent " +
-        "graceful close to get stuck permanently.")
-      .version("1.8.0")
-      .timeConf
-      .createWithDefault(Duration.ofMinutes(30L).toMillis)
+      .createWithDefault(true)
 
   val BATCH_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.batch.session.idle.timeout")
     .doc("Batch session idle timeout, it will be closed when it's not accessed for this duration")

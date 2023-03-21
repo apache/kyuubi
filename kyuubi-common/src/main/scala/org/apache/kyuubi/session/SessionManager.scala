@@ -121,11 +121,6 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   def closeSession(sessionHandle: SessionHandle): Unit = {
-    val closeGracefully = conf.get(SESSION_CLOSE_GRACEFULLY)
-    if (closeGracefully) {
-      operationManager.waitForOperationsToFinish()
-    }
-
     _latestLogoutTime = System.currentTimeMillis()
     val session = handleToSession.remove(sessionHandle)
     if (session == null) {
