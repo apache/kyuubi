@@ -1358,6 +1358,23 @@ object KyuubiConf {
     .version("1.2.0")
     .fallbackConf(SESSION_TIMEOUT)
 
+  val SESSION_CLOSE_GRACEFULLY: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.close.gracefully")
+      .doc("Close gracefully when receiving the close session request. Wait " +
+        "for all the operations to finish.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val SESSION_CLOSE_GRACEFULLY_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.session.close.gracefully.timeout")
+      .doc("Timeout for waiting spark operations to finish. Enabled when " +
+        "kyuubi.session.close.gracefully is true. This is to prevent " +
+        "graceful close to get stuck permanently.")
+      .version("1.8.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(30L).toMillis)
+
   val BATCH_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.batch.session.idle.timeout")
     .doc("Batch session idle timeout, it will be closed when it's not accessed for this duration")
     .version("1.6.2")
@@ -2302,23 +2319,6 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createWithDefault("yyyy-MM-dd HH:mm:ss.SSS")
-
-  val ENGINE_SPARK_SESSION_CLOSE_GRACEFULLY: ConfigEntry[Boolean] =
-    buildConf("kyuubi.session.engine.spark.close.gracefully")
-      .doc("Close gracefully when receiving the close session request for spark engine. Wait " +
-        "for all the operations to finish.")
-      .version("1.8.0")
-      .booleanConf
-      .createWithDefault(false)
-
-  val ENGINE_SPARK_SESSION_CLOSE_GRACEFULLY_TIMEOUT: ConfigEntry[Long] =
-    buildConf("kyuubi.session.engine.spark.close.gracefully.timeout")
-      .doc("Timeout for waiting spark operations to finish. Enabled when " +
-        "kyuubi.session.engine.spark.close.gracefully is true. This is to prevent " +
-        "graceful close to get stuck permanently.")
-      .version("1.8.0")
-      .timeConf
-      .createWithDefault(Duration.ofMinutes(30L).toMillis)
 
   val ENGINE_TRINO_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.trino.memory")

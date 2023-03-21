@@ -17,12 +17,15 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.concurrent.TimeUnit
+
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.SESSION_CLOSE_GRACEFULLY_TIMEOUT
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
@@ -188,5 +191,31 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     } else {
       null
     }
+  }
+
+  def waitForOperationsToFinish(): Unit = {
+    val timeWhenStopStarted = System.nanoTime()
+    val stopTimeoutMs = conf.get(SESSION_CLOSE_GRACEFULLY_TIMEOUT)
+    val pollTime = 300
+
+    // To prevent graceful stop to get stuck permanently
+    def hasTimedOut: Boolean = {
+      val diff = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - timeWhenStopStarted)
+      val timedOut = diff > stopTimeoutMs
+      if (timedOut) {
+        warn("Timed out while waiting the spark operations to finish " +
+          "(timeout = " + stopTimeoutMs + ")")
+      }
+      timedOut
+    }
+
+    info("Waiting for all the operations to finish.")
+    while (!hasTimedOut && !allOperations().filter(op =>
+        !OperationState.isTerminal(
+          op.getStatus.state))
+        .toSeq.isEmpty) {
+      Thread.sleep(pollTime)
+    }
+    info("All the operations have finished.")
   }
 }

@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_SESSION_CLOSE_GRACEFULLY
+import org.apache.kyuubi.config.KyuubiConf.SESSION_CLOSE_GRACEFULLY
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
@@ -58,7 +58,7 @@ abstract class SparkSessionFireOffSuite extends WithSparkSQLEngine with HiveJDBC
     }
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select * from kyuubi_test;")
-      val engineSessionCloseGracefully = kyuubiConf.get(ENGINE_SPARK_SESSION_CLOSE_GRACEFULLY)
+      val engineSessionCloseGracefully = kyuubiConf.get(SESSION_CLOSE_GRACEFULLY)
       if (engineSessionCloseGracefully) {
         assert(resultSet.next())
         assert(resultSet.getString("id") == "null")
