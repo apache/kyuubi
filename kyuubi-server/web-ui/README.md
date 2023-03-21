@@ -19,7 +19,7 @@ Notice:
 
 Before you start the Web UI project, please make sure the Kyuubi server has been started.
 
-Kyuubi Web UI will proxy the request to kyuubi server, in default the proxy target is `http://localhost:10099`, you can modify `VITE_APP_DEV_WEB_URL` in `.env.development` to proxy to another url.
+Kyuubi Web UI will proxy the requests to Kyuubi server,  with the default endpoint path to`http://localhost:10099`. Modify `VITE_APP_DEV_WEB_URL` in `.env.development` for customizing targeted endpoint path.
 
 #### Why proxy to http://localhost:10099
 
