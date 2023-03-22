@@ -201,7 +201,7 @@ object Query {
     val sessionWithId =
       context.session + (KYUUBI_SESSION_ID -> sessionHandle.identifier.toString)
     Query(
-      queryId = QueryId("9231360e-8673-477e-8f00-63167efe1744"),
+      queryId = QueryId(new OperationHandle(UUID.randomUUID())),
       context.copy(preparedStatement = Map(statementId -> statement), session = sessionWithId),
       backendService)
   }
