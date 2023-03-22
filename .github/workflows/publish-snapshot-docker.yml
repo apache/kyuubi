@@ -41,10 +41,11 @@ jobs:
       - name: Build and Push Kyuubi Docker Image
         uses: docker/build-push-action@v4
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          file: build/Dockerfile
+          # build cache on Github Actions, See: https://docs.docker.com/build/cache/backends/gha/#using-dockerbuild-push-action
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          context: .
+          file: build/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
           tags: apache/kyuubi:master-snapshot
