@@ -608,7 +608,8 @@ abstract class TFrontendService(name: String)
       if (handle != null) {
         info(s"Session [$handle] disconnected without closing properly, close it now")
         try {
-          val needToClose = conf.get(SESSION_CLOSE_ON_DISCONNECT)
+          val needToClose = be.sessionManager.getSession(handle).conf
+            .get(SESSION_CLOSE_ON_DISCONNECT.key).getOrElse("true").toBoolean
           if (needToClose) {
             be.closeSession(handle)
           } else {

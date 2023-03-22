@@ -1360,8 +1360,8 @@ object KyuubiConf {
 
   val SESSION_CLOSE_ON_DISCONNECT: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.close.on.disconnect")
-      .doc("Session will be closed when connection is closed. Set this to false to " +
-        "have session outlive its parent connection.")
+      .doc("Session will be closed when client disconnects from kyuubi gateway. " +
+        "Set this to false to have session outlive its parent connection.")
       .version("1.8.0")
       .booleanConf
       .createWithDefault(true)
