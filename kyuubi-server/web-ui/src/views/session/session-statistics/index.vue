@@ -23,8 +23,7 @@
       v-loading="loading"
       :data="tableData"
       max-height="500px"
-      style="width: 100%"
-    >
+      style="width: 100%">
       <el-table-column prop="user" :label="$t('user')" width="160px" />
       <!-- TODO need jump to engine page -->
       <el-table-column prop="engineId" :label="$t('engine_ip')" width="160px" />
@@ -32,14 +31,12 @@
       <el-table-column
         prop="kyuubiInstance"
         :label="$t('kyuubi_instance')"
-        width="180px"
-      />
+        width="180px" />
       <!-- TODO need jump to session page -->
       <el-table-column
         prop="identifier"
         :label="$t('session_id')"
-        width="300px"
-      />
+        width="300px" />
       <el-table-column :label="$t('create_time')" width="200">
         <template #default="scope">
           {{
@@ -53,15 +50,13 @@
         <template #default="scope">
           <el-popconfirm
             :title="$t('delete_confirm')"
-            @confirm="handleDeleteSession(scope.row.identifier)"
-          >
+            @confirm="handleDeleteSession(scope.row.identifier)">
             <template #reference>
               <span>
                 <el-tooltip
                   effect="dark"
                   :content="$t('delete')"
-                  placement="top"
-                >
+                  placement="top">
                   <template #default>
                     <el-button type="danger" icon="Delete" circle />
                   </template> </el-tooltip
