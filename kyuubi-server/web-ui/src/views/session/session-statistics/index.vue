@@ -59,8 +59,9 @@
                   placement="top">
                   <template #default>
                     <el-button type="danger" icon="Delete" circle />
-                  </template> </el-tooltip
-              ></span>
+                  </template>
+                </el-tooltip>
+              </span>
             </template>
           </el-popconfirm>
         </template>
