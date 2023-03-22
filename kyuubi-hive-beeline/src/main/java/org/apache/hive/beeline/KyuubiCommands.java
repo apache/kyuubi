@@ -93,8 +93,9 @@ public class KyuubiCommands extends Commands {
           lines += "\n" + extra;
         }
       }
-      String[] cmds = lines.split(";");
+      String[] cmds = lines.split(beeLine.getOpts().getDelimiter());
       for (String c : cmds) {
+        c = c.trim();
         if (!executeInternal(c, false)) {
           return false;
         }
