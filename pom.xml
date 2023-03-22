@@ -173,6 +173,7 @@
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.20.0</log4j.version>
         <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
+        <mockito.version>4.6.1</mockito.version>
         <netty.version>4.1.89.Final</netty.version>
         <openai.java.version>0.11.1</openai.java.version>
         <parquet.version>1.10.1</parquet.version>
@@ -1107,6 +1108,13 @@
                 <groupId>org.scalatestplus</groupId>
                 <artifactId>mockito-4-6_${scala.binary.version}</artifactId>
                 <version>${scalatestplus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
