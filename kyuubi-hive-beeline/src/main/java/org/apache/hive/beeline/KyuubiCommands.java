@@ -19,6 +19,7 @@ package org.apache.hive.beeline;
 
 import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
@@ -277,7 +278,8 @@ public class KyuubiCommands extends Commands {
    * quotations. It iterates through each character in the line and checks to see if it is a ;, ',
    * or "
    */
-  private List<String> getCmdList(String line, boolean entireLineAsCommand) {
+  @VisibleForTesting
+  public List<String> getCmdList(String line, boolean entireLineAsCommand) {
     List<String> cmdList = new ArrayList<String>();
     if (entireLineAsCommand) {
       cmdList.add(line);
