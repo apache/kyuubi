@@ -1358,6 +1358,14 @@ object KyuubiConf {
     .version("1.2.0")
     .fallbackConf(SESSION_TIMEOUT)
 
+  val SESSION_CLOSE_ON_DISCONNECT: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.close.on.disconnect")
+      .doc("Session will be closed when client disconnects from kyuubi gateway. " +
+        "Set this to false to have session outlive its parent connection.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val BATCH_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.batch.session.idle.timeout")
     .doc("Batch session idle timeout, it will be closed when it's not accessed for this duration")
     .version("1.6.2")
