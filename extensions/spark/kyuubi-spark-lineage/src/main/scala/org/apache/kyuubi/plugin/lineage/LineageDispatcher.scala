@@ -17,25 +17,27 @@
 
 package org.apache.kyuubi.plugin.lineage
 
-import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
 import org.apache.spark.sql.execution.QueryExecution
-import org.apache.spark.sql.util.QueryExecutionListener
 
-import org.apache.kyuubi.plugin.lineage.helper.SparkSQLLineageParseHelper
+import org.apache.kyuubi.plugin.lineage.dispatcher.{KyuubiEventDispatcher, SparkEventDispatcher}
 
-class SparkOperationLineageQueryExecutionListener extends QueryExecutionListener {
+trait LineageDispatcher {
 
-  private lazy val dispatchers: Seq[LineageDispatcher] = {
-    SparkContextHelper.getConf(LineageConf.DISPATCHERS).map(LineageDispatcher(_))
+  def send(qe: QueryExecution, lineage: Option[Lineage]): Unit
+
+  def onFailure(qe: QueryExecution, exception: Exception): Unit = {}
+
+}
+
+object LineageDispatcher {
+
+  def apply(dispatcherType: String): LineageDispatcher = {
+    LineageDispatcherType.withName(dispatcherType) match {
+      case LineageDispatcherType.SPARK_EVENT => new SparkEventDispatcher()
+      case LineageDispatcherType.KYUUBI_EVENT => new KyuubiEventDispatcher()
+      case _ => throw new UnsupportedOperationException(
+          s"Unsupported lineage dispatcher: $dispatcherType.")
+    }
   }
 
-  override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
-    val lineage =
-      SparkSQLLineageParseHelper(qe.sparkSession).transformToLineage(qe.id, qe.analyzed)
-    dispatchers.foreach(_.send(qe, lineage))
-  }
-
-  override def onFailure(funcName: String, qe: QueryExecution, exception: Exception): Unit = {
-    dispatchers.foreach(_.onFailure(qe, exception))
-  }
 }

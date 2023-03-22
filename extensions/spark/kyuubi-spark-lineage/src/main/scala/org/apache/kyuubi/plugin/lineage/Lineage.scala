@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.lineage.events
-
-import org.apache.spark.scheduler.SparkListenerEvent
+package org.apache.kyuubi.plugin.lineage
 
 case class ColumnLineage(column: String, originalColumns: Set[String])
 
@@ -60,9 +58,3 @@ object Lineage {
     new Lineage(inputTables, outputTables, newColumnLineage)
   }
 }
-
-case class OperationLineageEvent(
-    executionId: Long,
-    eventTime: Long,
-    lineage: Option[Lineage],
-    exception: Option[Throwable]) extends SparkListenerEvent
