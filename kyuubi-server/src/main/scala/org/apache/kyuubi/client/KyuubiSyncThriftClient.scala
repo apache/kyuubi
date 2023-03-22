@@ -110,17 +110,17 @@ class KyuubiSyncThriftClient private (
           }
         } else {
           shutdownAsyncRequestExecutor()
-          Utils.tryLogNonFatalError {
-            Option(engineAliveThreadPool).foreach { pool =>
-              ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
-            }
-            warn(s"Removing Clients for ${_remoteSessionHandle}")
-            Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
+          warn(s"Removing Clients for ${_remoteSessionHandle}")
+          Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
+            Utils.tryLogNonFatalError {
               if (tProtocol.getTransport.isOpen) {
                 tProtocol.getTransport.close()
               }
             }
             clientClosedOnEngineBroken = true
+            Option(engineAliveThreadPool).foreach { pool =>
+              ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
+            }
           }
         }
       }
