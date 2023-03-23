@@ -18,19 +18,15 @@
 package org.apache.kyuubi.engine.flink.result
 
 import java.util
-import java.util.Collections
 
 import scala.collection.JavaConverters._
 
 import com.google.common.collect.Iterators
-import org.apache.flink.table.api.{DataTypes, ResultKind, TableResult}
-import org.apache.flink.table.api.internal.TableResultImpl
-import org.apache.flink.table.catalog.{Column, ResolvedSchema}
+import org.apache.flink.table.api.{ResultKind, TableResult}
+import org.apache.flink.table.catalog.Column
 import org.apache.flink.types.Row
 
-import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator}
-import org.apache.kyuubi.reflection.{DynFields, DynMethods}
 
 case class ResultSet(
     resultKind: ResultKind,
@@ -61,36 +57,12 @@ case class ResultSet(
  */
 object ResultSet {
 
-  private lazy val TABLE_RESULT_OK = DynFields.builder()
-    .hiddenImpl(classOf[TableResultImpl], "TABLE_RESULT_OK") // for Flink 1.14
-    .buildStatic[TableResult]
-    .get
-
   def fromTableResult(tableResult: TableResult): ResultSet = {
-    // FLINK-25558, if execute multiple SQLs that return OK, the second and latter results
-    // would be empty, which affects Flink 1.14
-    val fixedTableResult: TableResult =
-      if (isFlinkVersionAtMost("1.14") && tableResult == TABLE_RESULT_OK) {
-        // FLINK-24461 executeOperation method changes the return type
-        // from TableResult to TableResultInternal
-        val builder = TableResultImpl.builder
-          .resultKind(ResultKind.SUCCESS)
-          .schema(ResolvedSchema.of(Column.physical("result", DataTypes.STRING)))
-          .data(Collections.singletonList(Row.of("OK")))
-        // FLINK-24461 the return type of TableResultImpl.Builder#build changed
-        // from TableResult to TableResultInternal
-        DynMethods.builder("build")
-          .impl(classOf[TableResultImpl.Builder])
-          .build(builder)
-          .invoke[TableResult]()
-      } else {
-        tableResult
-      }
-    val schema = fixedTableResult.getResolvedSchema
+    val schema = tableResult.getResolvedSchema
     // collect all rows from table result as list
     // this is ok as TableResult contains limited rows
-    val rows = fixedTableResult.collect.asScala.toArray
-    builder.resultKind(fixedTableResult.getResultKind)
+    val rows = tableResult.collect.asScala.toArray
+    builder.resultKind(tableResult.getResultKind)
       .columns(schema.getColumns)
       .data(rows)
       .build
