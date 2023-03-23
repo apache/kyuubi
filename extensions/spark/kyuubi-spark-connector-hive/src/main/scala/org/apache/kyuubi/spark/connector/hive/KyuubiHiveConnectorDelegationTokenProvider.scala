@@ -26,7 +26,7 @@ import scala.util.control.NonFatal
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier
 import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.hadoop.hive.metastore.{IMetaStoreClient, RetryingMetaStoreClient}
+import org.apache.hadoop.hive.metastore.{HiveMetaStoreClient, IMetaStoreClient, RetryingMetaStoreClient}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod
@@ -54,6 +54,10 @@ class KyuubiHiveConnectorDelegationTokenProvider
       val hiveConf = new HiveConf(hadoopConf, classOf[HiveConf])
       sparkConf.getAllWithPrefix(s"spark.sql.catalog.$hiveCatalogName.")
         .foreach { case (k, v) => hiveConf.set(k, v) }
+      // The `RetryingHiveMetaStoreClient` may block the subsequent token obtaining,
+      // and `obtainDelegationTokens` is scheduled frequently, it's fine to disable
+      // the Hive retry logic.
+      hiveConf.set("hive.metastore.fastpath", "false")
       Some(hiveConf)
     } catch {
       case NonFatal(e) =>
@@ -141,7 +145,7 @@ class KyuubiHiveConnectorDelegationTokenProvider
             s"$principal at $metastoreUris")
 
           doAsRealUser {
-            val hmsClient = RetryingMetaStoreClient.getProxy(remoteHmsConf, false)
+            val hmsClient = new HiveMetaStoreClient(remoteHmsConf, null, false)
             hmsClients += hmsClient
             val tokenStr = hmsClient.getDelegationToken(currentUser.getUserName, principal)
             val hive2Token = new Token[DelegationTokenIdentifier]()
