@@ -56,7 +56,7 @@ class KyuubiHiveConnectorDelegationTokenProvider
         .foreach { case (k, v) => hiveConf.set(k, v) }
       // The `RetryingHiveMetaStoreClient` may block the subsequent token obtaining,
       // and `obtainDelegationTokens` is scheduled frequently, it's fine to disable
-      // the Hive retry logic.
+      // the Hive retry mechanism.
       hiveConf.set("hive.metastore.fastpath", "false")
       Some(hiveConf)
     } catch {
