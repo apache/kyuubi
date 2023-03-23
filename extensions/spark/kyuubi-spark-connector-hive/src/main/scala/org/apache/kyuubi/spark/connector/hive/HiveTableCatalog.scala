@@ -73,9 +73,12 @@ class HiveTableCatalog(sparkSession: SparkSession)
 
   private lazy val hadoopConf: Configuration = {
     val conf = sparkSession.sessionState.newHadoopConf()
-    catalogOptions.asScala.foreach {
-      case (k, v) => conf.set(k, v)
-      case _ =>
+    catalogOptions.asScala.foreach { case (k, v) => conf.set(k, v) }
+    // fallback to `hive.metastore.uris` if token signature is absent, the logic is
+    // consistent w/ KyuubiHiveConnectorDelegationTokenProvider
+    if (!catalogOptions.containsKey("hive.metastore.token.signature")
+      && catalogOptions.containsKey("hive.metastore.uris")) {
+      conf.set("hive.metastore.token.signature", catalogOptions.get("hive.metastore.uris"))
     }
     conf
   }

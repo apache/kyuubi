@@ -134,16 +134,14 @@ class KyuubiHiveConnectorDelegationTokenProvider
             val metastoreUris = sparkConf.get(metastoreUrisKey, "")
             assert(metastoreUris.nonEmpty)
 
+            // fallback to `hive.metastore.uris` if token signature is absent
+            val tokenSignature = sparkConf.get(
+              s"spark.sql.catalog.$hiveCatalogName.hive.metastore.token.signature",
+              metastoreUris)
+
             val principalKey = "hive.metastore.kerberos.principal"
             val principal = remoteHmsConf.getTrimmed(principalKey, "")
             require(principal.nonEmpty, s"Hive principal $principalKey undefined")
-
-            val tokenSignatureKey =
-              s"spark.sql.catalog.$hiveCatalogName.hive.metastore.token.signature"
-            val tokenSignature = sparkConf.get(tokenSignatureKey, "")
-            require(
-              tokenSignature.nonEmpty,
-              s"`$tokenSignatureKey` is required and must be unique across Hive catalogs")
 
             val currentUser = UserGroupInformation.getCurrentUser
             logInfo(s"Getting Hive delegation token for ${currentUser.getUserName} against " +
