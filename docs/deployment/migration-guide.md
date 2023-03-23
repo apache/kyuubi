@@ -17,6 +17,10 @@
 
 # Kyuubi Migration Guide
 
+## Upgrading from Kyuubi 1.7.0 to 1.7.1
+
+* Since Kyuubi 1.7.1, `protocolVersion` is removed from the request parameters of the REST API `Open(create) a session`. All removed or unknown parameters will be silently ignored and affects nothing.
+
 ## Upgrading from Kyuubi 1.6 to 1.7
 
 * In Kyuubi 1.7, `kyuubi.ha.zookeeper.engine.auth.type` does not fallback to `kyuubi.ha.zookeeper.auth.type`.  
@@ -24,7 +28,7 @@
 * Since Kyuubi 1.7, Kyuubi returns engine's information for `GetInfo` request instead of server. To restore the previous behavior, set `kyuubi.server.info.provider` to `SERVER`.
 * Since Kyuubi 1.7, Kyuubi session type `SQL` is refactored to `INTERACTIVE`, because Kyuubi supports not only `SQL` session, but also `SCALA` and `PYTHON` sessions.
   User need to use `INTERACTIVE` sessionType to look up the session event.
-* Since Kyuubi 1.7, the REST API of `Open(create) a session` will not contains parameters `user` `password` and `IpAddr`. User and password should be set in `Authorization` of http request if needed.
+* Since Kyuubi 1.7, the REST API of `Open(create) a session` will not contain parameters `user` `password` and `IpAddr`. User and password should be set in `Authorization` of http request if needed.
 
 ## Upgrading from Kyuubi 1.6.0 to 1.6.1
 
