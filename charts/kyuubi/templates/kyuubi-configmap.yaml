@@ -34,7 +34,7 @@ data:
   kyuubi-defaults.conf: |
     ## Helm chart provided Kyuubi configurations
     kyuubi.kubernetes.namespace={{ .Release.Namespace }}
-    kyuubi.frontend.bind.host=localhost
+    kyuubi.frontend.connection.url.use.hostname=false
     kyuubi.frontend.thrift.binary.bind.port={{ .Values.server.thriftBinary.port }}
     kyuubi.frontend.thrift.http.bind.port={{ .Values.server.thriftHttp.port }}
     kyuubi.frontend.rest.bind.port={{ .Values.server.rest.port }}
