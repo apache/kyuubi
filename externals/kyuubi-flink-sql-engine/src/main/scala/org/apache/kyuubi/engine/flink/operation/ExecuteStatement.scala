@@ -105,22 +105,31 @@ class ExecuteStatement(
     try {
       val resultDescriptor = executor.executeQuery(sessionId, operation)
       val dataTypes = resultDescriptor.getResultSchema.getColumnDataTypes.asScala.toList
-
       resultId = resultDescriptor.getResultId
 
-      val rows = new ArrayBuffer[Row]()
-      var loop = true
+      val dataIterator: Iterator[Row] = new Iterator[Row]() {
 
-      while (loop) {
-        Thread.sleep(50) // slow the processing down
+        var loop = true
+        val rows = new ArrayBuffer[Row]()
+        val pageSize = 1
+        var position = -1;
 
-        val pageSize = Math.min(500, resultMaxRows)
-        val result = executor.snapshotResult(sessionId, resultId, pageSize)
-        result.getType match {
-          case TypedResult.ResultType.PAYLOAD =>
-            (1 to result.getPayload).foreach { page =>
-              if (rows.size < resultMaxRows) {
-                // FLINK-24461 retrieveResultPage method changes the return type from Row to RowData
+        override def hasNext: Boolean = {
+          if (position + 1 >= resultMaxRows) {
+            return false;
+          }
+          if (rows.length > position + 1) {
+            position = position + 1;
+            return true;
+          }
+          Thread.sleep(50) // slow the processing down
+
+          val result = executor.snapshotResult(sessionId, resultId, pageSize)
+          result.getType match {
+            case TypedResult.ResultType.PAYLOAD =>
+              (1 to result.getPayload).foreach { page =>
+                // FLINK-24461 retrieveResultPage
+                // method changes the return type from Row to RowData
                 val retrieveResultPage = DynMethods.builder("retrieveResultPage")
                   .impl(executor.getClass, classOf[String], classOf[Int])
                   .build(executor)
@@ -132,25 +141,43 @@ class ExecuteStatement(
                   val result = retrieveResultPage.invoke[util.List[RowData]](resultId, _page)
                   rows ++= result.asScala.map(r => convertToRow(r, dataTypes))
                 }
-              } else {
-                loop = false
               }
+            case TypedResult.ResultType.EOS => loop = false
+            case TypedResult.ResultType.EMPTY => loop = false
+          }
+
+          val bool = rows.length > position + 1
+
+          if (bool) {
+            position = position + 1;
+            return true;
+          } else if (loop && rows.size < resultMaxRows) {
+            return hasNext;
+          } else {
+            if (resultId != null) {
+              cleanupQueryResult(resultId)
+
             }
-          case TypedResult.ResultType.EOS => loop = false
-          case TypedResult.ResultType.EMPTY =>
+          }
+          return false
         }
+
+        override def next: Row = {
+          rows(position)
+        }
+      }
+
+      val dataIterable = new Iterable[Row]() {
+        override def iterator: Iterator[Row] = dataIterator
       }
 
       resultSet = ResultSet.builder
         .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
         .columns(resultDescriptor.getResultSchema.getColumns)
-        .data(rows.slice(0, resultMaxRows).toArray[Row])
+        .data(dataIterable)
         .build
-    } finally {
-      if (resultId != null) {
-        cleanupQueryResult(resultId)
-      }
-    }
+
+    } finally {}
   }
 
   private def runOperation(operation: Operation): Unit = {
@@ -160,7 +187,6 @@ class ExecuteStatement(
       .impl(executor.getClass, classOf[String], classOf[Operation])
       .build(executor)
     val result = executeOperation.invoke[TableResult](sessionId, operation)
-    jobId = result.getJobClient.asScala.map(_.getJobID)
     // after FLINK-24461, TableResult#await() would block insert statements
     // until the job finishes, instead of returning row affected immediately
     resultSet = ResultSet.fromTableResult(result)
