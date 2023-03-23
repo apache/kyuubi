@@ -38,7 +38,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.engine.flink.schema.RowSet.toHiveString
-import org.apache.kyuubi.operation.OperationState
+import org.apache.kyuubi.operation.{IterableFetchIterator, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.reflection.DynMethods
 import org.apache.kyuubi.session.Session
@@ -174,7 +174,7 @@ class ExecuteStatement(
       resultSet = ResultSet.builder
         .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
         .columns(resultDescriptor.getResultSchema.getColumns)
-        .data(dataIterable)
+        .data(new IterableFetchIterator(dataIterable))
         .build
 
     } finally {}
