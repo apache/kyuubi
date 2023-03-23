@@ -71,8 +71,11 @@ class KyuubiHiveConnectorDelegationTokenProvider
     .flatMap { case (k, _) => k.stripPrefix("spark.sql.catalog.").split("\\.").headOption }
     .distinct.toSet
 
-  // the implementation has the following limitations:
-  // The v2 catalog is kind of SQL API, and we can not get SQLConf here
+  // The current implementation has the following limitations:
+  // the v2 catalog is kind of SQL API, and we can not get SQLConf here, thus only those
+  // configurations present in the Spark application bootstrap will take effect, e.g.
+  // `spark-defaults.conf` or `spark-submit --conf k=v` will take effect, but dynamically
+  // register by SET statement will not.
   override def delegationTokensRequired(
       sparkConf: SparkConf,
       hadoopConf: Configuration): Boolean = {
