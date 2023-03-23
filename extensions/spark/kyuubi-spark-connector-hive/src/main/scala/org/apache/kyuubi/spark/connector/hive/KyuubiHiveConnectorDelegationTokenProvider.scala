@@ -96,11 +96,14 @@ class KyuubiHiveConnectorDelegationTokenProvider
       sparkConf: SparkConf,
       hiveConf: HiveConf,
       hiveCatalogName: String): Boolean = {
+    val tokenRenewalEnabled = sparkConf.getBoolean(
+      s"spark.sql.catalog.$hiveCatalogName.delegation.token.renewal.enabled",
+      true)
     val metastoreUris =
       sparkConf.get(s"spark.sql.catalog.$hiveCatalogName.hive.metastore.uris", "")
     val tokenAlias = new Text(metastoreUris)
     val currentToken = UserGroupInformation.getCurrentUser.getCredentials.getToken(tokenAlias)
-    metastoreUris.nonEmpty && currentToken == null &&
+    tokenRenewalEnabled && metastoreUris.nonEmpty && currentToken == null &&
     SecurityUtil.getAuthenticationMethod(hiveConf) != AuthenticationMethod.SIMPLE &&
     hiveConf.getBoolean("hive.metastore.sasl.enabled", false) &&
     (SparkHadoopUtil.get.isProxyUser(UserGroupInformation.getCurrentUser) ||
@@ -124,44 +127,44 @@ class KyuubiHiveConnectorDelegationTokenProvider
       logDebug(s"Require token Hive catalogs: $requireTokenCatalogs")
 
       requireTokenCatalogs.foreach { hiveCatalogName =>
-        hiveConf(sparkConf, hadoopConf, hiveCatalogName).foreach { remoteHmsConf =>
-          val metastoreUrisKey = s"spark.sql.catalog.$hiveCatalogName.hive.metastore.uris"
-          val metastoreUris = sparkConf.get(metastoreUrisKey, "")
-          assert(metastoreUris.nonEmpty)
+        // one token request failure should not block the subsequent token obtaining
+        Utils.tryLogNonFatalError {
+          hiveConf(sparkConf, hadoopConf, hiveCatalogName).foreach { remoteHmsConf =>
+            val metastoreUrisKey = s"spark.sql.catalog.$hiveCatalogName.hive.metastore.uris"
+            val metastoreUris = sparkConf.get(metastoreUrisKey, "")
+            assert(metastoreUris.nonEmpty)
 
-          val principalKey = "hive.metastore.kerberos.principal"
-          val principal = remoteHmsConf.getTrimmed(principalKey, "")
-          require(principal.nonEmpty, s"Hive principal $principalKey undefined")
+            val principalKey = "hive.metastore.kerberos.principal"
+            val principal = remoteHmsConf.getTrimmed(principalKey, "")
+            require(principal.nonEmpty, s"Hive principal $principalKey undefined")
 
-          val tokenSignatureKey =
-            s"spark.sql.catalog.$hiveCatalogName.hive.metastore.token.signature"
-          val tokenSignature = sparkConf.get(tokenSignatureKey, "")
-          require(
-            tokenSignature.nonEmpty,
-            s"`$tokenSignatureKey` is required and must be unique across Hive catalogs")
+            val tokenSignatureKey =
+              s"spark.sql.catalog.$hiveCatalogName.hive.metastore.token.signature"
+            val tokenSignature = sparkConf.get(tokenSignatureKey, "")
+            require(
+              tokenSignature.nonEmpty,
+              s"`$tokenSignatureKey` is required and must be unique across Hive catalogs")
 
-          val currentUser = UserGroupInformation.getCurrentUser
-          logInfo(s"Getting Hive delegation token for ${currentUser.getUserName} against " +
-            s"$principal at $metastoreUris")
+            val currentUser = UserGroupInformation.getCurrentUser
+            logInfo(s"Getting Hive delegation token for ${currentUser.getUserName} against " +
+              s"$principal at $metastoreUris")
 
-          doAsRealUser {
-            val hmsClient = new HiveMetaStoreClient(remoteHmsConf, null, false)
-            hmsClients += hmsClient
-            val tokenStr = hmsClient.getDelegationToken(currentUser.getUserName, principal)
-            val hive2Token = new Token[DelegationTokenIdentifier]()
-            hive2Token.decodeFromUrlString(tokenStr)
-            hive2Token.setService(new Text(tokenSignature))
-            logDebug(s"Get Token from hive metastore: ${hive2Token.toString}")
-            val tokenAlias = new Text(metastoreUris)
-            creds.addToken(tokenAlias, hive2Token)
+            doAsRealUser {
+              val hmsClient = new HiveMetaStoreClient(remoteHmsConf, null, false)
+              hmsClients += hmsClient
+              val tokenStr = hmsClient.getDelegationToken(currentUser.getUserName, principal)
+              val hive2Token = new Token[DelegationTokenIdentifier]()
+              hive2Token.decodeFromUrlString(tokenStr)
+              hive2Token.setService(new Text(tokenSignature))
+              logDebug(s"Get Token from hive metastore: ${hive2Token.toString}")
+              val tokenAlias = new Text(metastoreUris)
+              creds.addToken(tokenAlias, hive2Token)
+            }
           }
         }
       }
       None
     } catch {
-      case NonFatal(e) =>
-        logWarning(Utils.createFailedToGetTokenMessage(serviceName, e))
-        None
       case _: NoClassDefFoundError =>
         logWarning(classNotFoundErrorStr)
         None
