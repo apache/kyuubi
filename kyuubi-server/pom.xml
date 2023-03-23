@@ -466,7 +466,11 @@
         <dependency>
             <groupId>io.delta</groupId>
             <artifactId>delta-core_${scala.binary.version}</artifactId>
+<<<<<<< HEAD
             <scope>test</scope>
+=======
+            <!--            <scope>test</scope>-->
+>>>>>>> 2a4e53609... arrow take
         </dependency>
 
         <dependency>

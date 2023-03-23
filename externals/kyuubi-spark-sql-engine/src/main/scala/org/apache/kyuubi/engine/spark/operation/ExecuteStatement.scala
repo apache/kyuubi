@@ -23,11 +23,12 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.execution.SQLExecution
+import org.apache.spark.sql.execution.{CollectLimitExec, SQLExecution}
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.types._
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.spark.sql.execution.arrow.ArrowCollectLimitExec
+
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
@@ -201,8 +202,23 @@ class ArrowBasedExecuteStatement(
   override protected def takeResult(resultDF: DataFrame, maxRows: Int): Array[_] = {
     // this will introduce shuffle and hurt performance
     val limitedResult = resultDF.limit(maxRows)
-    collectAsArrow(convertComplexType(limitedResult)) { rdd =>
-      rdd.collect()
+//    collectAsArrow(convertComplexType(limitedResult)) { rdd =>
+//      rdd.collect()
+//    }
+    val df = convertComplexType(limitedResult)
+    SQLExecution.withNewExecutionId(df.queryExecution, Some("collectAsArrow")) {
+      df.queryExecution.executedPlan.resetMetrics()
+      df.queryExecution.executedPlan match {
+        case collectLimit @ CollectLimitExec(limit, _) =>
+          // scalastyle:off
+          println("ddddd")
+          val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
+          ArrowCollectLimitExec.takeAsArrowBatches(collectLimit, df.schema, 1000, 1024 * 1024, timeZoneId)
+            .map(_._1)
+        case _ =>
+          println("yyyy")
+          SparkDatasetHelper.toArrowBatchRdd(df).collect()
+      }
     }
   }
 
