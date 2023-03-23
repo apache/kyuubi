@@ -300,6 +300,7 @@ class BatchJobSubmission(
         val newApplicationStatus = currentApplicationInfo
         if (newApplicationStatus.map(_.state) != _applicationInfo.map(_.state)) {
           _applicationInfo = newApplicationStatus
+          updateBatchMetadata()
           info(s"Batch report for $batchId, ${_applicationInfo}")
         }
       }

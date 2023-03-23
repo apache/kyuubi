@@ -17,6 +17,8 @@
 package org.apache.kyuubi.ctl.cmd.list
 
 import org.apache.kyuubi.ctl.opt.CliConfig
+import org.apache.kyuubi.ctl.util.CtlUtils
+import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
 class ListEngineCommand(cliConfig: CliConfig) extends ListCommand(cliConfig) {
 
@@ -28,4 +30,7 @@ class ListEngineCommand(cliConfig: CliConfig) extends ListCommand(cliConfig) {
       fail("Must specify user name for engine, please use -u or --user.")
     }
   }
+
+  override def doRun(): Seq[ServiceNodeInfo] =
+    CtlUtils.listZkEngineNodes(conf, normalizedCliConfig, None)
 }

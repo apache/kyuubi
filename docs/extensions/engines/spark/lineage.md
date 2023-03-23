@@ -168,13 +168,43 @@ Add `org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListene
 spark.sql.queryExecutionListeners=org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener
 ```
 
-### Settings for Lineage Logger and Path
+### Optional configuration
 
-#### Lineage Logger Path
+#### Whether to Skip Permanent View Resolution
 
-The location of all the engine operation lineage events go for the builtin JSON logger.
-We first need set `kyuubi.engine.event.loggers` to `JSON`.
-All operation lineage events will be written in the unified event json logger path, which be setting with
-`kyuubi.engine.event.json.log.path`. We can get the lineage logger from the `operation_lineage` dir in the
-`kyuubi.engine.event.json.log.path`.
+If enabled, lineage resolution will stop at permanent views and treats them as physical tables. We need
+to add one configurations.
 
+```properties
+spark.kyuubi.plugin.lineage.skip.parsing.permanent.view.enabled=true
+```
+
+### Get Lineage Events
+
+The lineage dispatchers are used to dispatch lineage events, configured via `spark.kyuubi.plugin.lineage.dispatchers`.
+
+<ul>
+  <li>SPARK_EVENT (by default): send lineage event to spark event bus</li>
+  <li>KYUUBI_EVENT: send lineage event to kyuubi event bus</li>
+</ul>
+
+#### Get Lineage Events from SparkListener
+
+When using the `SPARK_EVENT` dispatcher, the lineage events will be sent to the `SparkListenerBus`. To handle lineage events, a new `SparkListener` needs to be added.
+Example for Adding `SparkListener`:
+
+```scala
+spark.sparkContext.addSparkListener(new SparkListener {
+      override def onOtherEvent(event: SparkListenerEvent): Unit = {
+        event match {
+          case lineageEvent: OperationLineageEvent =>
+            // Your processing logic
+          case _ =>
+        }
+      }
+    })
+```
+
+#### Get Lineage Events from Kyuubi EventHandler
+
+When using the `KYUUBI_EVENT` dispatcher, the lineage events will be sent to the Kyuubi `EventBus`. Refer to [Kyuubi Event Handler](../../server/events) to handle kyuubi events.

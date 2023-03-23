@@ -1645,6 +1645,48 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
   }
+
+  test("KYUUBI #4532: Displays the columns involved in extracting the aggregation operator") {
+    // case1: There is no project operator involving all columns.
+    val plan1 = sql(s"SELECT COUNT(key), MAX(value) FROM $reusedPartTable GROUP BY pid")
+      .queryExecution.optimizedPlan
+    val (in1, out1, _) = PrivilegesBuilder.build(plan1, spark)
+    assert(in1.size === 1)
+    assert(out1.isEmpty)
+    val pi1 = in1.head
+    assert(pi1.columns.size === 3)
+    assert(pi1.columns === Seq("key", "value", "pid"))
+
+    // case2: Some columns are involved, and the group column is not selected.
+    val plan2 = sql(s"SELECT COUNT(key) FROM $reusedPartTable GROUP BY pid")
+      .queryExecution.optimizedPlan
+    val (in2, out2, _) = PrivilegesBuilder.build(plan2, spark)
+    assert(in2.size === 1)
+    assert(out2.isEmpty)
+    val pi2 = in2.head
+    assert(pi2.columns.size === 2)
+    assert(pi2.columns === Seq("key", "pid"))
+
+    // case3: Some columns are involved, and the group column is selected.
+    val plan3 = sql(s"SELECT COUNT(key), pid FROM $reusedPartTable GROUP BY pid")
+      .queryExecution.optimizedPlan
+    val (in3, out3, _) = PrivilegesBuilder.build(plan3, spark)
+    assert(in3.size === 1)
+    assert(out3.isEmpty)
+    val pi3 = in3.head
+    assert(pi3.columns.size === 2)
+    assert(pi3.columns === Seq("key", "pid"))
+
+    // case4: HAVING & GROUP clause
+    val plan4 = sql(s"SELECT COUNT(key) FROM $reusedPartTable GROUP BY pid HAVING MAX(key) > 1000")
+      .queryExecution.optimizedPlan
+    val (in4, out4, _) = PrivilegesBuilder.build(plan4, spark)
+    assert(in4.size === 1)
+    assert(out4.isEmpty)
+    val pi4 = in4.head
+    assert(pi4.columns.size === 2)
+    assert(pi4.columns === Seq("key", "pid"))
+  }
 }
 
 case class SimpleInsert(userSpecifiedSchema: StructType)(@transient val sparkSession: SparkSession)
