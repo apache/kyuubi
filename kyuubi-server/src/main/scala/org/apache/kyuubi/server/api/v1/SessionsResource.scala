@@ -137,7 +137,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(request.getConfigs.asScala.toMap)
     val ipAddress = fe.getIpAddress
     val handle = fe.be.openSession(
-      TProtocolVersion.findByValue(request.getProtocolVersion),
+      SessionsResource.SESSION_PROTOCOL_VERSION,
       userName,
       "",
       ipAddress,
@@ -397,4 +397,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         throw new NotFoundException(errorMsg)
     }
   }
+}
+
+object SessionsResource {
+  final val SESSION_PROTOCOL_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1
 }

@@ -107,6 +107,30 @@ class HiveQuerySuite extends KyuubiHiveTest {
     }
   }
 
+  test("[KYUUBI #4525] Partitioning predicates should take effect to filter data") {
+    withSparkSession(Map("hive.exec.dynamic.partition.mode" -> "nonstrict")) { spark =>
+      val table = "hive.default.employee"
+      withTempPartitionedTable(spark, table) {
+        spark.sql(
+          s"""
+             | INSERT OVERWRITE
+             | $table
+             | VALUES("yi", "2022", "0808"),("yi", "2023", "0316")
+             |""".stripMargin).collect()
+
+        checkQueryResult(
+          s"select * from $table where year = '2022'",
+          spark,
+          Array(Row.apply("yi", "2022", "0808")))
+
+        checkQueryResult(
+          s"select * from $table where year = '2023'",
+          spark,
+          Array(Row.apply("yi", "2023", "0316")))
+      }
+    }
+  }
+
   test("Partitioned table insert and all static insert") {
     withSparkSession() { spark =>
       val table = "hive.default.employee"

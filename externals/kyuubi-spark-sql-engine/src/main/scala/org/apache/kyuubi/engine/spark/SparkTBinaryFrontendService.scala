@@ -94,7 +94,13 @@ class SparkTBinaryFrontendService(
   }
 
   override def attributes: Map[String, String] = {
-    Map(KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId)
+    val attributes = Map(
+      KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId)
+    // TODO Support Spark Web UI Enabled SSL
+    sc.uiWebUrl match {
+      case Some(url) => attributes ++ Map(KYUUBI_ENGINE_URL -> url.split("//").last)
+      case None => attributes
+    }
   }
 }
 

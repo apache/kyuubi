@@ -22,7 +22,8 @@ import java.security.PrivilegedExceptionAction
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession, SparkSessionExtensions}
+import org.scalatest.Assertions.convertToEqualizer
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -93,6 +94,10 @@ trait SparkSessionProvider {
           throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
       }
     }
+  }
+
+  protected def checkAnswer(user: String, query: String, result: Seq[Row]): Unit = {
+    doAs(user, assert(sql(query).collect() === result))
   }
 
 }

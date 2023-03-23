@@ -296,7 +296,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
               error(s"Error redirecting get batch[$batchId] to ${metadata.kyuubiInstance}", e)
               val batchAppStatus = sessionManager.applicationManager.getApplicationInfo(
                 metadata.clusterManager,
-                batchId)
+                batchId,
+                Some(metadata.createTime))
               buildBatch(metadata, batchAppStatus)
           }
         }

@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.sql.{Row, SparkSessionExtensions}
+import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
@@ -216,83 +216,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         assert(e.getMessage === errorMessage("create", "default/func"))
       })
     doAs("admin", assert(Try(sql(create0)).isSuccess))
-  }
-
-  test("row level filter") {
-    val db = "default"
-    val table = "src"
-    val col = "key"
-    val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
-
-    withCleanTmpResources(Seq((s"$db.${table}2", "table"), (s"$db.$table", "table"))) {
-      doAs("admin", assert(Try { sql(create) }.isSuccess))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
-
-      doAs(
-        "kent",
-        assert(sql(s"SELECT key FROM $db.$table order by key").collect() ===
-          Seq(Row(1), Row(20), Row(30))))
-
-      Seq(
-        s"SELECT value FROM $db.$table",
-        s"SELECT value as key FROM $db.$table",
-        s"SELECT max(value) FROM $db.$table",
-        s"SELECT coalesce(max(value), 1) FROM $db.$table",
-        s"SELECT value FROM $db.$table WHERE value in (SELECT value as key FROM $db.$table)")
-        .foreach { q =>
-          doAs(
-            "bob", {
-              withClue(q) {
-                assert(sql(q).collect() === Seq(Row(1)))
-              }
-            })
-        }
-      doAs(
-        "bob", {
-          sql(s"CREATE TABLE $db.src2 using $format AS SELECT value FROM $db.$table")
-          assert(sql(s"SELECT value FROM $db.${table}2").collect() === Seq(Row(1)))
-        })
-    }
-  }
-
-  test("[KYUUBI #3581]: row level filter on permanent view") {
-    assume(isSparkV31OrGreater)
-
-    val db = "default"
-    val table = "src"
-    val permView = "perm_view"
-    val col = "key"
-    val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
-    val createView =
-      s"CREATE OR REPLACE VIEW $db.$permView" +
-        s" AS SELECT * FROM $db.$table"
-
-    withCleanTmpResources(Seq(
-      (s"$db.$table", "table"),
-      (s"$db.$permView", "view"))) {
-      doAs("admin", assert(Try { sql(create) }.isSuccess))
-      doAs("admin", assert(Try { sql(createView) }.isSuccess))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
-      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
-
-      Seq(
-        s"SELECT value FROM $db.$permView",
-        s"SELECT value as key FROM $db.$permView",
-        s"SELECT max(value) FROM $db.$permView",
-        s"SELECT coalesce(max(value), 1) FROM $db.$permView",
-        s"SELECT value FROM $db.$permView WHERE value in (SELECT value as key FROM $db.$permView)")
-        .foreach { q =>
-          doAs(
-            "perm_view_user", {
-              withClue(q) {
-                assert(sql(q).collect() === Seq(Row(1)))
-              }
-            })
-        }
-    }
   }
 
   test("show tables") {
@@ -598,26 +521,60 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("[KYUUBI #3326] check persisted view and skip shadowed table") {
+    val db1 = "default"
     val table = "hive_src"
     val permView = "perm_view"
-    val db1 = "default"
-    val db2 = "db2"
 
     withCleanTmpResources(Seq(
       (s"$db1.$table", "table"),
-      (s"$db2.$permView", "view"),
-      (db2, "database"))) {
-      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int)"))
+      (s"$db1.$permView", "view"))) {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
+      doAs("admin", sql(s"CREATE VIEW $db1.$permView AS SELECT * FROM $db1.$table"))
 
-      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db2"))
-      doAs("admin", sql(s"CREATE VIEW $db2.$permView AS SELECT * FROM $table"))
-
+      // KYUUBI #3326: with no privileges to the permanent view or the source table
       val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"select * from $db2.$permView")).show(0))
+        doAs(
+          "someone", {
+            sql(s"select * from $db1.$permView").collect()
+          }))
       if (isSparkV31OrGreater) {
-        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db2/$permView/id]"))
+        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$permView/id]"))
       } else {
         assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+      }
+    }
+  }
+
+  test("KYUUBI #4504: query permanent view with privilege to permanent view only") {
+    val db1 = "default"
+    val table = "hive_src"
+    val permView = "perm_view"
+    val userPermViewOnly = "user_perm_view_only"
+
+    withCleanTmpResources(Seq(
+      (s"$db1.$table", "table"),
+      (s"$db1.$permView", "view"))) {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
+      doAs("admin", sql(s"CREATE VIEW $db1.$permView AS SELECT * FROM $db1.$table"))
+
+      // query all columns of the permanent view
+      // with access privileges to the permanent view but no privilege to the source table
+      val sql1 = s"SELECT * FROM $db1.$permView"
+      if (isSparkV31OrGreater) {
+        doAs(userPermViewOnly, { sql(sql1).collect() })
+      } else {
+        val e1 = intercept[AccessControlException](doAs(userPermViewOnly, { sql(sql1).collect() }))
+        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+      }
+
+      // query the second column of permanent view with multiple columns
+      // with access privileges to the permanent view but no privilege to the source table
+      val sql2 = s"SELECT name FROM $db1.$permView"
+      if (isSparkV31OrGreater) {
+        doAs(userPermViewOnly, { sql(sql2).collect() })
+      } else {
+        val e2 = intercept[AccessControlException](doAs(userPermViewOnly, { sql(sql2).collect() }))
+        assert(e2.getMessage.contains(s"does not have [select] privilege on [$db1/$table/name]"))
       }
     }
   }

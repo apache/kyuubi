@@ -26,7 +26,6 @@ import io.trino.client.{QueryError, QueryResults}
 import io.trino.client.ProtocolHeaders.TRINO_HEADERS
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, TrinoRestFrontendTestHelper}
-import org.apache.kyuubi.operation.{OperationHandle, OperationState}
 import org.apache.kyuubi.server.trino.api.{Query, TrinoContext}
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 import org.apache.kyuubi.session.SessionHandle
@@ -72,6 +71,7 @@ class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHe
   test("query cancel") {
     val response = webTarget.path("v1/statement")
       .request().post(Entity.entity("select 1", MediaType.TEXT_PLAIN_TYPE))
+    assert(response.getStatus == 200)
     val qr = response.readEntity(classOf[QueryResults])
     val sessionManager = fe.be.sessionManager
     val sessionHandle =
@@ -84,16 +84,13 @@ class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHe
           case Array(_, value) => SessionHandle.fromUUID(TrinoContext.urlDecode(value))
         }.get
     sessionManager.getSession(sessionHandle)
-    val operationHandle = OperationHandle(qr.getId)
-    val operation = sessionManager.operationManager.getOperation(operationHandle)
-    assert(response.getStatus == 200)
+
     val path = qr.getNextUri.getPath
     val nextResponse = webTarget.path(path).request().header(
       TRINO_HEADERS.requestSession(),
       s"${Query.KYUUBI_SESSION_ID}=${TrinoContext.urlEncode(sessionHandle.identifier.toString)}")
       .delete()
     assert(nextResponse.getStatus == 204)
-    assert(operation.getStatus.state == OperationState.CLOSED)
     val exception = intercept[KyuubiSQLException](sessionManager.getSession(sessionHandle))
     assert(exception.getMessage === s"Invalid $sessionHandle")
   }

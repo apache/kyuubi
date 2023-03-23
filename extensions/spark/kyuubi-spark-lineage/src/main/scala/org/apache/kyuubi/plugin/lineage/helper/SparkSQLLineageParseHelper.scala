@@ -21,6 +21,7 @@ import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.internal.Logging
+import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, PersistedView, ViewType}
@@ -35,7 +36,7 @@ import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 
-import org.apache.kyuubi.plugin.lineage.events.Lineage
+import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
 trait LineageParser {
@@ -311,7 +312,7 @@ trait LineageParser {
         val nextColumnsLlineage = ListMap(allAssignments.map { assignment =>
           (
             assignment.key.asInstanceOf[Attribute],
-            AttributeSet(assignment.value.asInstanceOf[Attribute]))
+            assignment.value.references)
         }: _*)
         val targetTable = getPlanField[LogicalPlan]("targetTable", plan)
         val sourceTable = getPlanField[LogicalPlan]("sourceTable", plan)
@@ -323,6 +324,10 @@ trait LineageParser {
           column.withName(s"${column.qualifiedName}")
         }
         ListMap(targetColumnsWithTargetTable.zip(sourceColumnsLineage.values).toSeq: _*)
+
+      case p if p.nodeName == "WithCTE" =>
+        val optimized = sparkSession.sessionState.optimizer.execute(p)
+        extractColumnsLineage(optimized, parentColumnsLineage)
 
       // For query
       case p: Project =>
@@ -360,6 +365,7 @@ trait LineageParser {
           }
         }
         p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
+
       case p: Join =>
         p.joinType match {
           case LeftSemi | LeftAnti =>
@@ -370,14 +376,22 @@ trait LineageParser {
         }
 
       case p: Union =>
-        // merge all children in to one derivedColumns
-        val childrenUnion =
-          p.children.map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]())).map(
-            _.values).reduce {
-            (left, right) =>
-              left.zip(right).map(attr => attr._1 ++ attr._2)
+        val childrenColumnsLineage =
+          // support for the multi-insert statement
+          if (p.output.isEmpty) {
+            p.children
+              .map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]()))
+              .reduce(mergeColumnsLineage)
+          } else {
+            // merge all children in to one derivedColumns
+            val childrenUnion =
+              p.children.map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]())).map(
+                _.values).reduce {
+                (left, right) =>
+                  left.zip(right).map(attr => attr._1 ++ attr._2)
+              }
+            ListMap(p.output.zip(childrenUnion): _*)
           }
-        val childrenColumnsLineage = ListMap(p.output.zip(childrenUnion): _*)
         joinColumnsLineage(parentColumnsLineage, childrenColumnsLineage)
 
       case p: LogicalRelation if p.catalogTable.nonEmpty =>
@@ -415,9 +429,15 @@ trait LineageParser {
         }
 
       case p: View =>
-        val viewColumnsLineage =
-          extractColumnsLineage(p.child, ListMap[Attribute, AttributeSet]())
-        mergeRelationColumnLineage(parentColumnsLineage, p.output, viewColumnsLineage)
+        if (!p.isTempView && SparkContextHelper.getConf(
+            LineageConf.SKIP_PARSING_PERMANENT_VIEW_ENABLED)) {
+          val viewName = p.desc.qualifiedName
+          joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(viewName))
+        } else {
+          val viewColumnsLineage =
+            extractColumnsLineage(p.child, ListMap[Attribute, AttributeSet]())
+          mergeRelationColumnLineage(parentColumnsLineage, p.output, viewColumnsLineage)
+        }
 
       case p: InMemoryRelation =>
         // get logical plan from cachedPlan
