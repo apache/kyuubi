@@ -41,3 +41,9 @@ data:
   log4j2.xml: |
     {{- tpl . $ | nindent 4 }}
   {{- end }}
+  {{- with .Values.kyuubiConf.extraFiles }}
+  {{- range $key, $value := . }}
+  {{ $key }}: |
+    {{- tpl (printf "%v" $value) $ | nindent 4 }}
+  {{- end }}
+  {{- end }}
