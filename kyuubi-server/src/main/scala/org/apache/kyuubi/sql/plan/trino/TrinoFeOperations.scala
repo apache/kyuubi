@@ -69,3 +69,8 @@ case class Prepare(statementId: String, sql: String)
   extends KyuubiTreeNode {
   override def name(): String = "Prepare Sql"
 }
+
+case class Deallocate(statementId: String)
+  extends KyuubiTreeNode {
+  override def name(): String = "Deallocate Prepare"
+}

@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.trino.api.v1
 
 import java.util
+import java.util.UUID
 import javax.ws.rs._
 import javax.ws.rs.core.{Context, HttpHeaders, MediaType, Response, UriInfo}
 import javax.ws.rs.core.MediaType.TEXT_PLAIN_TYPE
@@ -34,12 +35,13 @@ import io.trino.client.QueryResults
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.jdbc.hive.Utils
+import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.trino.api.{ApiRequestContext, KyuubiTrinoOperationTranslator, Query, QueryId, Slug, TrinoContext}
 import org.apache.kyuubi.server.trino.api.Slug.Context.{EXECUTING_QUERY, QUEUED_QUERY}
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
-import org.apache.kyuubi.sql.plan.trino.{ExecuteForPreparing, Prepare}
+import org.apache.kyuubi.sql.plan.trino.{Deallocate, ExecuteForPreparing, Prepare}
 
 @Tag(name = "Statement")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -98,6 +100,14 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
             val qr = query.getQueryResults(query.getLastToken, uriInfo)
             TrinoContext.buildTrinoResponse(qr, query.context)
           }.get
+        case Deallocate(statementId) =>
+          info(s"DEALLOCATE PREPARE ${statementId}")
+          val query = Query(
+            QueryId(new OperationHandle(UUID.randomUUID())),
+            trinoContext,
+            fe.be)
+          val qr = query.getPrepareQueryResults(query.getLastToken, uriInfo)
+          TrinoContext.buildTrinoResponse(qr, query.context)
         case _ =>
           val query = Query(statement, trinoContext, translator, fe.be)
           val qr = query.getQueryResults(query.getLastToken, uriInfo)

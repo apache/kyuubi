@@ -56,6 +56,7 @@ statement
       WHERE FALSE                                                                                       #getPrimaryKeys
     | EXECUTE IDENTIFIER (USING parameterList)?                                                         #execute
     | PREPARE IDENTIFIER FROM statement                                                                 #prepare
+    | DEALLOCATE PREPARE IDENTIFIER                                                                     #deallocate
     | .*?                                                                                               #passThrough
     ;
 

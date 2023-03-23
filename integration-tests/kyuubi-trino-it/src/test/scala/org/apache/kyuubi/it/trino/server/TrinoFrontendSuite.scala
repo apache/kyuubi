@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.it.trino.server
 
-import java.sql.{DriverManager, PreparedStatement}
-
 import scala.util.control.NonFatal
 
 import org.apache.kyuubi.WithKyuubiServer
@@ -46,14 +44,12 @@ class TrinoFrontendSuite extends WithKyuubiServer with SparkMetadataTests {
   }
 
   test("execute preparedStatement - select 11 where 1 = 1") {
-
-    val connection = DriverManager.getConnection(jdbcUrl, "test_user", "")
-    val statement: PreparedStatement =
-      connection.prepareStatement("select 11 where 1 = ?  ")
-    statement.setInt(1, 1)
-    val rs = statement.executeQuery()
-    while (rs.next()) {
-      assert(rs.getInt(1) == 11)
+    withJdbcPrepareStatement("select 11 where 1 = ? ") { statement =>
+      statement.setInt(1, 1)
+      val rs = statement.executeQuery()
+      while (rs.next()) {
+        assert(rs.getInt(1) == 11)
+      }
     }
   }
 
