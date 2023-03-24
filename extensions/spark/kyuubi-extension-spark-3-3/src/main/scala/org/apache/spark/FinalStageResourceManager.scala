@@ -57,7 +57,7 @@ case class FinalStageResourceManager(session: SparkSession) extends Rule[SparkPl
     // Fast fail if:
     // 1. DRA off
     // 2. only work with yarn and k8s
-    // 3. maxExecutors is bigger than minExecutors * factor
+    // 3. maxExecutors is not bigger than minExecutors * factor
     if (!dra || !sc.schedulerBackend.isInstanceOf[CoarseGrainedSchedulerBackend] ||
       !hasImprovementRoom) {
       return plan
