@@ -132,7 +132,7 @@
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
         <etcd.version>0.7.3</etcd.version>
-        <delta.version>2.2.0</delta.version>
+        <delta.version>2.3.0rc1</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
@@ -1708,6 +1708,12 @@
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
+        <repositories>
+            <repository>
+                <id>staging-repo</id>
+                <url> https://oss.sonatype.org/content/repositories/iodelta-1066/</url>
+            </repository>
+        </repositories>
     </repositories>
 
     <pluginRepositories>
