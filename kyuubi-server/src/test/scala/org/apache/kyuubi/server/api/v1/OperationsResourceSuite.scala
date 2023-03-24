@@ -17,9 +17,11 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import java.util.UUID
 import javax.ws.rs.client.Entity
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{GenericType, MediaType}
 
 import scala.collection.JavaConverters._
 
@@ -33,6 +35,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{ExecuteStatement, OperationState}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
+import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -163,6 +166,38 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(logRowSet.getRows.asScala.head.getFields.asScala.forall(_.getValue == null))
     assert(logRowSet.getRowCount == 1)
   }
+
+  test("get operations belongs to specified session") {
+    val sessionOpenRequest = new SessionOpenRequest(Map("testConfig" -> "testValue").asJava)
+
+    val user = "kyuubi".getBytes()
+
+    val sessionOpenResp = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(
+        AUTHORIZATION_HEADER,
+        s"Basic ${new String(Base64.getEncoder.encode(user), StandardCharsets.UTF_8)}")
+      .post(Entity.entity(sessionOpenRequest, MediaType.APPLICATION_JSON_TYPE))
+
+    val sessionHandle = sessionOpenResp.readEntity(classOf[SessionHandle]).getIdentifier
+
+    // get operations belongs to specified session
+    var response = webTarget.path("api/v1/operations")
+      .queryParam("sessionHandle", sessionHandle)
+      .request().get()
+    assert(200 == response.getStatus)
+    var operations = response.readEntity(new GenericType[Seq[OperationData]]() {})
+    assert(operations.size == 1)
+    assert(sessionHandle.toString.equals(operations.head.getSessionId))
+
+    // get all operations
+    response = webTarget.path(s"api/v1/operations").request().get()
+    assert(200 == response.getStatus)
+    operations = response.readEntity(new GenericType[Seq[OperationData]]() {})
+    assert(operations.size == 1)
+    assert(sessionHandle.toString.equals(operations.head.getSessionId))
+  }
+
 
   def getOpHandleStr(statement: String = "show tables"): String = {
     val sessionHandle = fe.be.openSession(
