@@ -106,15 +106,8 @@ kyuubiConf:
 
   # The value (templated string) is used for kyuubi-defaults.conf file
   # See https://kyuubi.readthedocs.io/en/master/deployment/settings.html#kyuubi-configurations for more details
-  kyuubiDefaults:
-    kyuubi.kubernetes.namespace: "{{ .Release.Namespace }}"
-    kyuubi.frontend.connection.url.use.hostname: false
-    kyuubi.frontend.thrift.binary.bind.port: "{{ .Values.server.thriftBinary.port }}"
-    kyuubi.frontend.thrift.http.bind.port: "{{ .Values.server.thriftHttp.port }}"
-    kyuubi.frontend.rest.bind.port: "{{ .Values.server.rest.port }}"
-    kyuubi.frontend.mysql.bind.port: "{{ .Values.server.mysql.port }}"
-    kyuubi.frontend.protocols: "{{ include \"kyuubi.frontend.protocols\" . }}"
-    kyuubi.frontend.bind.host: "localhost"
+  kyuubiDefaults: |
+
 
   # The value (templated string) is used for log4j2.xml file
   # See https://kyuubi.readthedocs.io/en/master/deployment/settings.html#logging for more details
