@@ -24,9 +24,23 @@ export function getAllSessions() {
   })
 }
 
+export function getSession(sessionId: string) {
+  return request({
+    url: `api/v1/sessions/${sessionId}`,
+    method: 'get'
+  })
+}
+
 export function deleteSession(sessionId: string) {
   return request({
     url: `api/v1/sessions/${sessionId}`,
     method: 'delete'
+  })
+}
+
+export function getOperations(sessionId: string) {
+  return request({
+    url: `api/v1/sessions/${sessionId}/operations`,
+    method: 'get'
   })
 }

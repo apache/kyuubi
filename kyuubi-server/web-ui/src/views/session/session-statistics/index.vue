@@ -26,17 +26,20 @@
       style="width: 100%">
       <el-table-column prop="user" :label="$t('user')" width="160px" />
       <!-- TODO need jump to engine page -->
-      <el-table-column prop="engineId" :label="$t('engine_ip')" width="160px" />
+      <el-table-column prop="engineId" :label="$t('engine_id')" width="160px" />
       <el-table-column prop="ipAddr" :label="$t('client_ip')" width="160px" />
       <el-table-column
         prop="kyuubiInstance"
         :label="$t('kyuubi_instance')"
         width="180px" />
       <!-- TODO need jump to session page -->
-      <el-table-column
-        prop="identifier"
-        :label="$t('session_id')"
-        width="300px" />
+      <el-table-column :label="$t('session_id')" width="300px">
+        <template #default="scope">
+          <el-link @click="handleSessionIdJump(scope.row.identifier)">{{
+            scope.row.identifier
+          }}</el-link>
+        </template>
+      </el-table-column>
       <el-table-column :label="$t('create_time')" width="200">
         <template #default="scope">
           {{
@@ -73,12 +76,15 @@
 <script lang="ts" setup>
   import { format } from 'date-fns'
   import { getAllSessions, deleteSession } from '@/api/session'
+  import { Router, useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import { useTable } from '@/views/common/use-table'
+
+  const router: Router = useRouter()
   const { t } = useI18n()
   const { tableData, loading, getList: _getList } = useTable()
-  const handleDeleteSession = (sessionId: string) => {
+  function handleDeleteSession(sessionId: string) {
     deleteSession(sessionId)
       .then(() => {
         // need add delete success or failed logic after api support
@@ -96,6 +102,14 @@
       .finally(() => {
         getList()
       })
+  }
+  function handleSessionIdJump(sessionId: string) {
+    router.push({
+      path: '/session/session-detail',
+      query: {
+        sessionId
+      }
+    })
   }
   const getList = () => {
     _getList(getAllSessions)

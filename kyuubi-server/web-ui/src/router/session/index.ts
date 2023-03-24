@@ -20,6 +20,11 @@ const routes = [
     path: '/session/session-statistics',
     name: 'session-statistics',
     component: () => import('@/views/session/session-statistics/index.vue')
+  },
+  {
+    path: '/session/session-detail',
+    name: 'session-detail',
+    component: () => import('@/views/session/session-detail/index.vue')
   }
 ]
 
