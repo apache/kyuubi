@@ -41,8 +41,6 @@ import org.apache.kyuubi.server.api.ApiUtils
 @Consumes(Array(MediaType.APPLICATION_JSON))
 private[v1] class OperationsResource extends ApiRequestContext with Logging {
 
-  private def sessionManager = fe.be.sessionManager
-
   @GET
   def getOperations(@QueryParam("sessionHandle") sessionHandleStr: String): Seq[OperationData] = {
     if (StringUtils.isBlank(sessionHandleStr)) {
@@ -50,7 +48,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
         ApiUtils.operationData(operation.asInstanceOf[KyuubiOperation])).toSeq
     } else {
       try {
-        sessionManager.operationManager.allOperations().map { operation =>
+        fe.be.sessionManager.operationManager.allOperations().map { operation =>
           if (StringUtils.equalsIgnoreCase(
               operation.getSession.handle.identifier.toString,
               sessionHandleStr)) {
