@@ -1708,12 +1708,10 @@
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
-        <repositories>
-            <repository>
-                <id>staging-repo</id>
-                <url> https://oss.sonatype.org/content/repositories/iodelta-1066/</url>
-            </repository>
-        </repositories>
+        <repository>
+            <id>staging-repo</id>
+            <url> https://oss.sonatype.org/content/repositories/iodelta-1066/</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>
