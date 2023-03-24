@@ -275,8 +275,7 @@ Fork and clone [Apache Kyuubi website](https://github.com/apache/kyuubi-website)
 
 1. Add a new markdown file in `src/zh/news/`, `src/en/news/`
 2. Add a new markdown file in `src/zh/release/`, `src/en/release/`
-3. Follow [Build Document](../develop_tools/build_document.md) to build documents, then copy `apache/kyuubi`'s
-   folder `docs/_build/html` to `apache/kyuubi-website`'s folder `content/docs/r{RELEASE_VERSION}`
+3. Update `releases` defined in `hugo.toml`'s `[params]` part.
 
 ### Create an Announcement
 
