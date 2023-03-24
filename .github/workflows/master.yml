@@ -161,16 +161,11 @@ jobs:
           - 8
           - 11
         flink:
-          - '1.14'
           - '1.15'
           - '1.16'
         flink-archive: [ "" ]
         comment: [ "normal" ]
         include:
-          - java: 8
-            flink: '1.16'
-            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.14.6 -Dflink.archive.name=flink-1.14.6-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.14-binary'
           - java: 8
             flink: '1.16'
             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.3 -Dflink.archive.name=flink-1.15.3-bin-scala_2.12.tgz'
