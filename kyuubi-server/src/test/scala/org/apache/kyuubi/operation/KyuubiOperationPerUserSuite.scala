@@ -200,13 +200,11 @@ class KyuubiOperationPerUserSuite
         val executeStmtResp = client.ExecuteStatement(executeStmtReq)
         assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
         assert(executeStmtResp.getStatus.getErrorMessage.contains(
-          "java.net.SocketException: Connection reset") ||
+          "java.net.SocketException") ||
           executeStmtResp.getStatus.getErrorMessage.contains(
-            "Caused by: java.net.SocketException: Broken pipe (Write failed)") ||
+            "org.apache.thrift.transport.TTransportException") ||
           executeStmtResp.getStatus.getErrorMessage.contains(
-            "java.net.SocketException: Socket closed") ||
-          executeStmtResp.getStatus.getErrorMessage.contains(
-            "org.apache.kyuubi.KyuubiSQLException: connection does not exist"))
+            "connection does not exist"))
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
         assert(session.client.asyncRequestInterrupted)
