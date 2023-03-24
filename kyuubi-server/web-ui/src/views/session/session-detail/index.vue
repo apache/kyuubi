@@ -116,7 +116,8 @@
 </template>
 <script lang="ts" setup>
   import { Ref, ref } from 'vue'
-  import { getSession, getOperations } from '@/api/session'
+  import { getSession } from '@/api/session'
+  import { getOperations } from '@/api/operation'
   import { useRoute } from 'vue-router'
   import { format } from 'date-fns'
   import { secondTransfer } from '@/utils/unit'
@@ -143,7 +144,7 @@
   const getList = () => {
     const sessionId = route.query.sessionId
     if (sessionId) {
-      _getList(getOperations, sessionId)
+      _getList(getOperations, { sessionHandle: sessionId })
     }
   }
   getSessionById()

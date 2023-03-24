@@ -15,25 +15,8 @@
  * limitations under the License.
  */
 
-import request from '@/utils/request'
-
-export function getAllSessions() {
-  return request({
-    url: 'api/v1/sessions',
-    method: 'get'
-  })
+interface IOperationSearch {
+  sessionHandle: string | null
 }
 
-export function getSession(sessionId: string) {
-  return request({
-    url: `api/v1/sessions/${sessionId}`,
-    method: 'get'
-  })
-}
-
-export function deleteSession(sessionId: string) {
-  return request({
-    url: `api/v1/sessions/${sessionId}`,
-    method: 'delete'
-  })
-}
+export { IOperationSearch }

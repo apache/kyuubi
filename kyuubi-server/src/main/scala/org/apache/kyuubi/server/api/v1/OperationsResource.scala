@@ -26,6 +26,7 @@ import scala.util.control.NonFatal
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -33,11 +34,36 @@ import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.server.api.ApiUtils
 
 @Tag(name = "Operation")
 @Produces(Array(MediaType.APPLICATION_JSON))
 @Consumes(Array(MediaType.APPLICATION_JSON))
 private[v1] class OperationsResource extends ApiRequestContext with Logging {
+
+  private def sessionManager = fe.be.sessionManager
+
+  @GET
+  def getOperations(@QueryParam("sessionHandle") sessionHandleStr: String): Seq[OperationData] = {
+    if (StringUtils.isBlank(sessionHandleStr)) {
+      fe.be.sessionManager.operationManager.allOperations().map(operation =>
+        ApiUtils.operationData(operation.asInstanceOf[KyuubiOperation])).toSeq
+    } else {
+      try {
+        sessionManager.operationManager.allOperations().map { operation =>
+          if (StringUtils.equalsIgnoreCase(
+              operation.getSession.handle.identifier.toString,
+              sessionHandleStr)) {
+            ApiUtils.operationData(operation.asInstanceOf[KyuubiOperation])
+          }
+        }.toSeq.asInstanceOf[Seq[OperationData]]
+      } catch {
+        case NonFatal(e) =>
+          error(s"Invalid $sessionHandleStr", e)
+          throw new NotFoundException(s"Invalid $sessionHandleStr")
+      }
+    }
+  }
 
   @ApiResponse(
     responseCode = "200",
