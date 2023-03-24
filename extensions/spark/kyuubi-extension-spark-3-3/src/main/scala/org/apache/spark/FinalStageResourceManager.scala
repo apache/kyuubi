@@ -48,15 +48,18 @@ case class FinalStageResourceManager(session: SparkSession) extends Rule[SparkPl
     }
 
     val sc = session.sparkContext
+    val dra = sc.getConf.getBoolean("spark.dynamicAllocation.enabled", false)
     val executorCores = sc.getConf.getInt("spark.executor.cores", 1)
     val minExecutors = sc.getConf.getInt("spark.dynamicAllocation.minExecutors", 0)
     val maxExecutors = sc.getConf.getInt("spark.dynamicAllocation.maxExecutors", Int.MaxValue)
     val factor = conf.getConf(KyuubiSQLConf.FINAL_WRITE_STAGE_PARTITION_FACTOR)
     val hasImprovementRoom = maxExecutors - 1 > minExecutors * factor
     // Fast fail if:
-    // 1. only work with yarn and k8s
-    // 2. maxExecutors is bigger than minExecutors * factor
-    if (!sc.schedulerBackend.isInstanceOf[CoarseGrainedSchedulerBackend] || hasImprovementRoom) {
+    // 1. DRA off
+    // 2. only work with yarn and k8s
+    // 3. maxExecutors is bigger than minExecutors * factor
+    if (!dra || !sc.schedulerBackend.isInstanceOf[CoarseGrainedSchedulerBackend] ||
+      hasImprovementRoom) {
       return plan
     }
 
@@ -77,7 +80,8 @@ case class FinalStageResourceManager(session: SparkSession) extends Rule[SparkPl
         // - target executors > min executors
         val numActiveExecutors = sc.getExecutorIds().length
         val expectedCores = partitionSpecs.length
-        val targetExecutors = (((expectedCores / executorCores) + 1) * factor).toInt
+        val targetExecutors = (math.ceil(expectedCores.toFloat / executorCores) * factor).toInt
+          .max(1)
         val hasBenefits = targetExecutors < numActiveExecutors && targetExecutors > minExecutors
         if (hasBenefits) {
           val shuffleId = stage.plan.asInstanceOf[ShuffleExchangeExec].shuffleDependency.shuffleId
@@ -167,7 +171,8 @@ case class FinalStageResourceManager(session: SparkSession) extends Rule[SparkPl
     logInfo(s"Request to kill executors, total count ${executorsToKill.size}, " +
       s"[${executorsToKill.mkString(", ")}].")
 
-    // It is a little hack to kill executors with DRA enabled.
+    // Note, `SparkContext#killExecutors` does not allow with ARD enabled,
+    // see `https://github.com/apache/spark/pull/20604`.
     // It may cause the status in `ExecutorAllocationManager` inconsistent with
     // `CoarseGrainedSchedulerBackend` for a while. But it should be synchronous finally.
     executorAllocationClient.killExecutors(
