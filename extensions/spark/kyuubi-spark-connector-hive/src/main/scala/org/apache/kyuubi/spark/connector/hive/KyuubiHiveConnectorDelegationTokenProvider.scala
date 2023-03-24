@@ -19,7 +19,9 @@ package org.apache.kyuubi.spark.connector.hive
 
 import java.lang.reflect.UndeclaredThrowableException
 import java.security.PrivilegedExceptionAction
+import java.util
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.control.NonFatal
 
@@ -35,6 +37,8 @@ import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.security.HadoopDelegationTokenProvider
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper._
+
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
 
 class KyuubiHiveConnectorDelegationTokenProvider
   extends HadoopDelegationTokenProvider with Logging {
@@ -134,10 +138,9 @@ class KyuubiHiveConnectorDelegationTokenProvider
             val metastoreUris = sparkConf.get(metastoreUrisKey, "")
             assert(metastoreUris.nonEmpty)
 
-            // fallback to `hive.metastore.uris` if token signature is absent
-            val tokenSignature = sparkConf.get(
-              s"spark.sql.catalog.$hiveCatalogName.hive.metastore.token.signature",
-              metastoreUris)
+            val catalogOptions =
+              sparkConf.getAllWithPrefix(s"spark.sql.catalog.$hiveCatalogName.").toMap
+            val tokenSignature = metastoreTokenSignature(catalogOptions.asJava)
 
             val principalKey = "hive.metastore.kerberos.principal"
             val principal = remoteHmsConf.getTrimmed(principalKey, "")
@@ -188,5 +191,15 @@ class KyuubiHiveConnectorDelegationTokenProvider
     } catch {
       case e: UndeclaredThrowableException => throw Option(e.getCause).getOrElse(e)
     }
+  }
+}
+
+object KyuubiHiveConnectorDelegationTokenProvider {
+
+  // fallback to `hive.metastore.uris` if `hive.metastore.token.signature` is absent
+  def metastoreTokenSignature(catalogOptions: util.Map[String, String]): String = {
+    assert(catalogOptions.containsKey("hive.metastore.uris"))
+    val metastoreUris = catalogOptions.get("hive.metastore.uris")
+    catalogOptions.getOrDefault("hive.metastore.token.signature", metastoreUris)
   }
 }
