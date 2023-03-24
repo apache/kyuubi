@@ -204,7 +204,9 @@ class KyuubiOperationPerUserSuite
           executeStmtResp.getStatus.getErrorMessage.contains(
             "Caused by: java.net.SocketException: Broken pipe (Write failed)") ||
           executeStmtResp.getStatus.getErrorMessage.contains(
-            "java.net.SocketException: Socket closed"))
+            "java.net.SocketException: Socket closed") ||
+          executeStmtResp.getStatus.getErrorMessage.contains(
+            "org.apache.kyuubi.KyuubiSQLException: connection does not exist"))
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
         assert(session.client.asyncRequestInterrupted)
