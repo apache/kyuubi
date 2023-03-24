@@ -170,9 +170,4 @@
       }
     }
   }
-  :deep(.td-engine-id) {
-    .el-link__inner {
-      text-decoration: underline;
-    }
-  }
 </style>
