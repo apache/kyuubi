@@ -190,4 +190,20 @@ object KyuubiSQLConf {
       .version("1.7.0")
       .booleanConf
       .createWithDefault(true)
+
+  val FINAL_WRITE_STAGE_EAGERLY_KILL_EXECUTORS_ENABLED =
+    buildConf("spark.sql.finalWriteStage.eagerlyKillExecutors.enabled")
+      .doc("When true, eagerly kill redundant executors before running final write stage.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FINAL_WRITE_STAGE_PARTITION_FACTOR =
+    buildConf("spark.sql.finalWriteStage.retainExecutorsFactor")
+      .doc("If the target executors * factor < active executors, and " +
+        "target executors * factor > min executors, then kill redundant executors.")
+      .version("1.8.0")
+      .doubleConf
+      .checkValue(_ >= 1, "must be bigger than or equal to 1")
+      .createWithDefault(1.2)
 }
