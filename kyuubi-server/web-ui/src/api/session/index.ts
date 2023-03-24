@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 
-export default {
-  test: '测试',
-  user: '用户',
-  client_ip: '客户端地址',
-  kyuubi_instance: '服务端地址',
-  session_id: 'Session ID',
-  create_time: '创建时间',
-  operation: '操作',
-  delete_confirm: '确认删除',
-  message: {
-    delete_succeeded: '删除 {name} 成功',
-    delete_failed: '删除 {name} 失败'
-  }
+import request from '@/utils/request'
+
+export function getAllSessions() {
+  return request({
+    url: 'api/v1/sessions',
+    method: 'get'
+  })
+}
+
+export function deleteSession(sessionId: string) {
+  return request({
+    url: `api/v1/sessions/${sessionId}`,
+    method: 'delete'
+  })
 }

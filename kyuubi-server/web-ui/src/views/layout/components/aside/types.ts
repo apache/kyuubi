@@ -22,6 +22,16 @@ export const MENUS = [
     router: '/overview'
   },
   {
+    label: 'Session Management',
+    icon: 'List',
+    children: [
+      {
+        label: 'Session Statistics',
+        router: '/session/session-statistics'
+      }
+    ]
+  },
+  {
     label: 'Workload',
     icon: 'List',
     children: [

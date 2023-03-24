@@ -16,5 +16,16 @@
  */
 
 export default {
-  test: 'test'
+  test: 'test',
+  user: 'User',
+  client_ip: 'Client IP',
+  kyuubi_instance: 'Kyuubi Instance',
+  session_id: 'Session ID',
+  create_time: 'Create Time',
+  operation: 'Operation',
+  delete_confirm: 'Delete Confirm',
+  message: {
+    delete_succeeded: 'Delete {name} Succeeded',
+    delete_failed: 'Delete {name} Failed'
+  }
 }
