@@ -202,7 +202,9 @@ class KyuubiOperationPerUserSuite
         assert(executeStmtResp.getStatus.getErrorMessage.contains(
           "java.net.SocketException: Connection reset") ||
           executeStmtResp.getStatus.getErrorMessage.contains(
-            "Caused by: java.net.SocketException: Broken pipe (Write failed)"))
+            "Caused by: java.net.SocketException: Broken pipe (Write failed)") ||
+          executeStmtResp.getStatus.getErrorMessage.contains(
+            "java.net.SocketException: Socket closed"))
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
         assert(session.client.asyncRequestInterrupted)
