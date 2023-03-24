@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.arrow
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
-import org.apache.spark.sql.execution.CollectLimitExec
+import org.apache.spark.sql.execution.{CollectLimitExec, TakeOrderedAndProjectExec}
 import org.apache.spark.sql.types.StructType
 
 object ArrowCollectLimitExec extends SQLConfHelper {
@@ -124,4 +124,21 @@ object ArrowCollectLimitExec extends SQLConfHelper {
       buf.toArray
     }
   }
+
+  def taskOrdered(
+      takeOrdered: TakeOrderedAndProjectExec,
+      schema: StructType,
+      maxRecordsPerBatch: Long,
+      maxEstimatedBatchSize: Long,
+      timeZoneId: String): Array[Batch] = {
+    val batches = ArrowConvertersHelper.toBatchWithSchemaIterator(
+      takeOrdered.executeCollect().iterator,
+      schema,
+      maxEstimatedBatchSize,
+      maxEstimatedBatchSize,
+      takeOrdered.limit,
+      timeZoneId)
+    batches.map(b => b -> batches.rowCountInLastBatch).toArray
+  }
 }
+

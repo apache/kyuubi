@@ -20,14 +20,15 @@ package org.apache.kyuubi.engine.spark.operation
 import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.execution.{CollectLimitExec, SQLExecution}
+import org.apache.spark.sql.execution.{CollectLimitExec, SQLExecution, TakeOrderedAndProjectExec}
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.types._
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.spark.sql.execution.arrow.ArrowCollectLimitExec
+import org.apache.spark.sql.execution.arrow.{ArrowCollectLimitExec, KyuubiArrowUtils}
 
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
@@ -210,10 +211,35 @@ class ArrowBasedExecuteStatement(
       df.queryExecution.executedPlan.resetMetrics()
       df.queryExecution.executedPlan match {
         case collectLimit @ CollectLimitExec(limit, _) =>
-          // scalastyle:off
-          println("ddddd")
           val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
-          ArrowCollectLimitExec.takeAsArrowBatches(collectLimit, df.schema, 1000, 1024 * 1024, timeZoneId)
+          val batches = ArrowCollectLimitExec.takeAsArrowBatches(collectLimit, df.schema, 1000, 1024 * 1024, timeZoneId)
+//            .map(_._1)
+          val result = ArrayBuffer[Array[Byte]]()
+          var i = 0
+          var rest = limit
+          println(s"batch....size... ${batches.length}")
+          while (i < batches.length && rest > 0) {
+            val (batch, size) = batches(i)
+            if (size < rest) {
+              result += batch
+              // TODO: toInt
+              rest = rest - size.toInt
+            } else if (size == rest) {
+              result += batch
+              rest = 0
+            } else { // size > rest
+              println(s"size......${size}....rest......${rest}")
+//              result += KyuubiArrowUtils.slice(batch, 0, rest)
+              result += KyuubiArrowUtils.sliceV2(df.schema, timeZoneId, batch, 0, rest)
+              rest = 0
+            }
+            i += 1
+          }
+          result.toArray
+
+        case takeOrderedAndProjectExec @ TakeOrderedAndProjectExec(limit, _, _, _) =>
+          val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
+          ArrowCollectLimitExec.taskOrdered(takeOrderedAndProjectExec, df.schema, 1000, 1024 * 1024, timeZoneId)
             .map(_._1)
         case _ =>
           println("yyyy")
