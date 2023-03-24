@@ -403,7 +403,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationData]))),
+      array = new ArraySchema(schema = new Schema(implementation = classOf[OperationData])))),
     description =
       "get operations list hosted a specific session binding via an identifier")
   @GET
