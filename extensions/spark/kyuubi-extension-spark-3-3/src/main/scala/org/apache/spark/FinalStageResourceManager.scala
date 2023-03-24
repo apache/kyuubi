@@ -55,15 +55,14 @@ case class FinalStageResourceManager(session: SparkSession) extends Rule[SparkPl
     val executorCores = sc.getConf.getInt("spark.executor.cores", 1)
     val minExecutors = sc.getConf.getInt("spark.dynamicAllocation.minExecutors", 0)
     val maxExecutors = sc.getConf.getInt("spark.dynamicAllocation.maxExecutors", Int.MaxValue)
-    val hasImprovementRoom = (maxExecutors - minExecutors).toLong * executorCores < 32
+    val hasImprovementRoom = maxExecutors - minExecutors > 1
     // Fast fail if:
     // 1. resource profile is only supported when dra is enabled
     // 2. DRA only work with yarn and k8s
-    // 3. executorCores < 2
-    // 4. logically, dra should kill a lot of executors otherwise it has no benefits.
+    // 3. logically, dra should kill a lot of executors otherwise it has no benefits.
     //    32 is a value to make sure we have room for improvement.
     if (!dra || !sc.schedulerBackend.isInstanceOf[CoarseGrainedSchedulerBackend] ||
-      executorCores < 2 || hasImprovementRoom) {
+      hasImprovementRoom) {
       return plan
     }
 
