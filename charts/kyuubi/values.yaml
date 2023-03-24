@@ -101,15 +101,34 @@ server:
 kyuubiConfDir: /opt/kyuubi/conf
 kyuubiConf:
   # The value (templated string) is used for kyuubi-env.sh file
-  # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments for more details
+  # Example:
+  #
+  # kyuubiEnv: |
+  #   export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
+  #   export SPARK_HOME=/opt/spark
+  #   export FLINK_HOME=/opt/flink
+  #   export HIVE_HOME=/opt/hive
+  #
+  # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/deployment/settings.html#environments for more details
   kyuubiEnv: ~
 
   # The value (templated string) is used for kyuubi-defaults.conf file
-  # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#kyuubi-configurations for more details
+  # Example:
+  #
+  # kyuubiDefaults: |
+  #   kyuubi.authentication=NONE
+  #   kyuubi.frontend.bind.host=10.0.0.1
+  #   kyuubi.engine.type=SPARK_SQL
+  #   kyuubi.engine.share.level=USER
+  #   kyuubi.session.engine.initialize.timeout=PT3M
+  #   kyuubi.ha.addresses=zk1:2181,zk2:2181,zk3:2181
+  #   kyuubi.ha.namespace=kyuubi
+  #
+  # See https://kyuubi.readthedocs.io/en/master/deployment/settings.html#kyuubi-configurations for more details
   kyuubiDefaults: ~
 
   # The value (templated string) is used for log4j2.xml file
-  # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#logging for more details
+  # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/deployment/settings.html#logging for more details
   log4j2: ~
 
 # Environment variables (templated)
