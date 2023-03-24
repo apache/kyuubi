@@ -30,9 +30,13 @@ In order to check the release status, use:
 {{ $name | snakecase | upper }}:
 - To access {{ $.Release.Name }}-{{ $name | kebabcase }} service within the cluster, use the following URL:
     {{ $.Release.Name }}-{{ $name | kebabcase }}.{{ $.Release.Namespace }}.svc.cluster.local
+{{- if $.Values.kyuubiConf.kyuubiDefaults }}
+{{- if regexMatch "(^|\\s)kyuubi.frontend.bind.host\\s*=?\\s*(localhost|127\\.0\\.0\\.1)($|\\s)" $.Values.kyuubiConf.kyuubiDefaults }}
 - To access {{ $.Release.Name }}-{{ $name | kebabcase }} service from outside the cluster for debugging, run the following command:
     kubectl port-forward svc/{{ $.Release.Name }}-{{ $name | kebabcase }} {{ tpl $frontend.service.port $ }}:{{ tpl $frontend.service.port $ }} -n {{ $.Release.Namespace }}
   and use 127.0.0.1:{{ tpl $frontend.service.port $ }}
+{{- end }}
+{{- end }}
 {{- if eq $frontend.service.type "NodePort" }}
 - To access {{ $.Release.Name }}-{{ $name | kebabcase }} service from outside the cluster through configured NodePort, run the following commands:
     export NODE_PORT=$(kubectl get service {{ $.Release.Name }}-{{ $name | kebabcase }} -n {{ $.Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}")
