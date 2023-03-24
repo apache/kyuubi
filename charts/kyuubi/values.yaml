@@ -106,13 +106,11 @@ kyuubiConf:
 
   # The value (templated string) is used for kyuubi-defaults.conf file
   # See https://kyuubi.readthedocs.io/en/master/deployment/settings.html#kyuubi-configurations for more details
-  kyuubiDefaults: |
-
+  kyuubiDefaults: ~
 
   # The value (templated string) is used for log4j2.xml file
   # See https://kyuubi.readthedocs.io/en/master/deployment/settings.html#logging for more details
   log4j2: ~
-
 
 # Environment variables (templated)
 env: []
