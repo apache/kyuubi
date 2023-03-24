@@ -198,7 +198,6 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(sessionHandle.toString.equals(operations.head.getSessionId))
   }
 
-
   def getOpHandleStr(statement: String = "show tables"): String = {
     val sessionHandle = fe.be.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
