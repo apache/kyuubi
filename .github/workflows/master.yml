@@ -168,7 +168,7 @@ jobs:
         include:
           - java: 8
             flink: '1.16'
-            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.3 -Dflink.archive.name=flink-1.15.3-bin-scala_2.12.tgz'
+            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.4 -Dflink.archive.name=flink-1.15.4-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.15-binary'
     steps:
       - uses: actions/checkout@v3
