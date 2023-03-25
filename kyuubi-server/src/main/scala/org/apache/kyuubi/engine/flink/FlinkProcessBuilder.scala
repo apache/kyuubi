@@ -93,7 +93,7 @@ class FlinkProcessBuilder(
 
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
-        buffer += "-C"
+        buffer += "-c"
         buffer += s"$mainClass"
         buffer += s"${mainResource.get}"
         buffer.toArray
