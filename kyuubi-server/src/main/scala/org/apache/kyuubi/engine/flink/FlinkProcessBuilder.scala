@@ -88,9 +88,10 @@ class FlinkProcessBuilder(
         persistedConf.store(
           new FileOutputStream(tmpKyuubiConf),
           "persisted Kyuubi conf for Flink SQL engine")
+        tmpKyuubiConfFile.deleteOnExit()
         engineTmpDir.toFile.deleteOnExit()
-        buffer += s"-Dyarn.ship-files=$tmpKyuubiConf"
 
+        buffer += s"-Dyarn.ship-files=$tmpKyuubiConf"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
         buffer += "-c"
