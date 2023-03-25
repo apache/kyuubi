@@ -17,9 +17,8 @@
 
 package org.apache.kyuubi.engine.flink
 
-import java.io.{File, FilenameFilter, FileOutputStream}
+import java.io.{File, FilenameFilter}
 import java.nio.file.{Files, Paths}
-import java.util.Properties
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -75,24 +74,6 @@ class FlinkProcessBuilder(
         buffer += flinkExecutable
         buffer += "run-application"
 
-        // write and set kyuubi configuration
-        val persistedConf = new Properties()
-        val ioTmpDir = System.getProperty("java.io.tmpdir")
-        val engineTmpDir = Paths.get(ioTmpDir, s"kyuubi-engine-$engineRefId")
-        Files.createDirectories(engineTmpDir)
-        val tmpKyuubiConfFile =
-          Paths.get(engineTmpDir.toAbsolutePath.toString, KYUUBI_CONF_FILE_NAME).toFile
-        val tmpKyuubiConf = tmpKyuubiConfFile.getCanonicalPath
-        // Scala 2.12 have ambiguous reference for properties#putAll with Java 11
-        // see https://github.com/scala/bug/issues/10418
-        conf.getAll.asJava.forEach((k, v) => persistedConf.put(k, v))
-        persistedConf.put(KYUUBI_SESSION_USER_KEY, s"$proxyUser")
-        persistedConf.store(
-          new FileOutputStream(tmpKyuubiConf),
-          "persisted Kyuubi conf for Flink SQL engine")
-        tmpKyuubiConfFile.deleteOnExit()
-        engineTmpDir.toFile.deleteOnExit()
-
         // locate flink sql jars
         val flinkExtraJars = Paths.get(flinkHome)
           .resolve("opt")
@@ -104,13 +85,20 @@ class FlinkProcessBuilder(
             }
           }).map(f => f.getAbsolutePath).sorted
 
-        buffer += s"-Dyarn.ship-files=$tmpKyuubiConf"
         buffer += s"-Dpipeline.jars=${flinkExtraJars.mkString(",")}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
         buffer += "-c"
         buffer += s"$mainClass"
         buffer += s"${mainResource.get}"
+
+        buffer += "--conf"
+        buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
+        for ((k, v) <- conf.getAll) {
+          buffer += "--conf"
+          buffer += s"$k=$v"
+        }
+
         buffer.toArray
 
       case _ =>

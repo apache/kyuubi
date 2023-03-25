@@ -78,12 +78,12 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     val actualCommands = builder.toString
     val expectedCommands =
       escapePaths(s"${builder.flinkExecutable} run-application ") +
-        s"-Dyarn\\.ship-files=.*\\/kyuubi-defaults.conf " +
         s"-Dpipeline.jars=.*\\/flink-sql-client.*jar,.*\\/flink-sql-gateway.*jar " +
         s"-Dyarn\\.tags=KYUUBI " +
         s"-Dcontainerized\\.master\\.env\\.FLINK_CONF_DIR=\\. " +
         s"-c org\\.apache\\.kyuubi\\.engine\\.flink\\.FlinkSQLEngine " +
-        s".*kyuubi-flink-sql-engine_.*jar"
+        s".*kyuubi-flink-sql-engine_.*jar" +
+        s"(?: \\\\\\n\\t--conf \\S+=\\S+)+"
     val regex = new Regex(expectedCommands)
     val matcher = regex.pattern.matcher(actualCommands)
     assert(matcher.matches())
