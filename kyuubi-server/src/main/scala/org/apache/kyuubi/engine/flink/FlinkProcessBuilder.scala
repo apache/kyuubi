@@ -25,6 +25,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.hadoop.util.StringUtils
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
@@ -93,7 +94,19 @@ class FlinkProcessBuilder(
         tmpKyuubiConfFile.deleteOnExit()
         engineTmpDir.toFile.deleteOnExit()
 
+        // locate flink sql jars
+        val flinkExtraJars = Paths.get(flinkHome)
+          .resolve("opt")
+          .toFile
+          .listFiles(new FilenameFilter {
+            override def accept(dir: File, name: String): Boolean = {
+              name.toLowerCase.startsWith("flink-sql-client") ||
+              name.toLowerCase.startsWith("flink-sql-gateway")
+            }
+          }).map(f => f.getAbsolutePath).sorted
+
         buffer += s"-Dyarn.ship-files=$tmpKyuubiConf"
+        buffer += s"-Dpipeline.jars=${StringUtils.join(",", flinkExtraJars)}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
         buffer += "-c"

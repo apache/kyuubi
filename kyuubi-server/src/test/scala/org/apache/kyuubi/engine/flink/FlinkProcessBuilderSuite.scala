@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.File
+import java.nio.file.{Files, Paths}
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
@@ -41,9 +42,15 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     .set("flink.execution.target", "yarn-application")
     .set("kyuubi.on", "off")
 
+  private val tempFlinkHome = Files.createTempDirectory("flink-home").toFile
+  private val tempOpt =
+    Files.createDirectories(Paths.get(tempFlinkHome.toPath.toString, "opt")).toFile
+  Files.createFile(Paths.get(tempOpt.toPath.toString, "flink-sql-client-1.16.1.jar"))
+  Files.createFile(Paths.get(tempOpt.toPath.toString, "flink-sql-gateway-1.16.1.jar"))
+
   private def envDefault: ListMap[String, String] = ListMap(
     "JAVA_HOME" -> s"${File.separator}jdk",
-    "FLINK_HOME" -> s"${File.separator}flink")
+    "FLINK_HOME" -> s"${tempFlinkHome.toPath}")
   private def envWithoutHadoopCLASSPATH: ListMap[String, String] = envDefault +
     ("HADOOP_CONF_DIR" -> s"${File.separator}hadoop${File.separator}conf") +
     ("YARN_CONF_DIR" -> s"${File.separator}yarn${File.separator}conf") +
@@ -72,6 +79,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     val expectedCommands =
       escapePaths(s"${builder.flinkExecutable} run-application ") +
         s"-Dyarn\\.ship-files=.*\\/kyuubi-defaults.conf " +
+        s"-Dpipeline.jars=.*\\/flink-sql-client.*jar,.*\\/flink-sql-gateway.*jar " +
         s"-Dyarn\\.tags=KYUUBI " +
         s"-Dcontainerized\\.master\\.env\\.FLINK_CONF_DIR=\\. " +
         s"-c org\\.apache\\.kyuubi\\.engine\\.flink\\.FlinkSQLEngine " +
