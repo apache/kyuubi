@@ -98,7 +98,7 @@ class FlinkProcessBuilder(
         buffer += s"${mainResource.get}"
         buffer.toArray
 
-      case Some("yarn-session") =>
+      case _ =>
         val buffer = new ArrayBuffer[String]()
         buffer += executable
 
@@ -164,9 +164,6 @@ class FlinkProcessBuilder(
           buffer += s"$k=$v"
         }
         buffer.toArray
-
-      case unknown => throw new UnsupportedOperationException(
-          s"Flink engine doesn't support $unknown mode currently.")
     }
   }
 
