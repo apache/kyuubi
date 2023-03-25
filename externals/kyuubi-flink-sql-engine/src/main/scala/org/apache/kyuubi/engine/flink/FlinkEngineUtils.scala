@@ -19,10 +19,12 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.File
 import java.net.URL
+import java.nio.file.Paths
 
 import scala.collection.JavaConverters._
 
 import org.apache.commons.cli.{CommandLine, DefaultParser, Option, Options, ParseException}
+import org.apache.flink.configuration.{Configuration, GlobalConfiguration}
 import org.apache.flink.core.fs.Path
 import org.apache.flink.runtime.util.EnvironmentInformation
 import org.apache.flink.table.client.SqlClientException
@@ -130,5 +132,20 @@ object FlinkEngineUtils extends Logging {
         }
       }).toList
     } else null
+  }
+
+  def loadFlinkConfFromHome(): Configuration = {
+    val flinkConfDir = sys.env.getOrElse(
+      "FLINK_CONF_DIR", {
+        val flinkHome = sys.env.getOrElse(
+          "FLINK_HOME", {
+            // detect the FLINK_HOME by flink-core*.jar location if unset
+            val jarLoc =
+              classOf[GlobalConfiguration].getProtectionDomain.getCodeSource.getLocation
+            new File(jarLoc.toURI).getParentFile.getParent
+          })
+        Paths.get(flinkHome, "conf").toString
+      })
+    GlobalConfiguration.loadConfiguration(flinkConfDir)
   }
 }

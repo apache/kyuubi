@@ -942,16 +942,34 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
-  test("execute statement - insert into") {
+  test("execute statement - batch insert into") {
     withMultipleConnectionJdbcStatement() { statement =>
       statement.executeQuery("create table tbl_a (a int) with ('connector' = 'blackhole')")
       val resultSet = statement.executeQuery("insert into tbl_a select 1")
       val metadata = resultSet.getMetaData
-      assert(metadata.getColumnName(1) == "default_catalog.default_database.tbl_a")
-      assert(metadata.getColumnType(1) == java.sql.Types.BIGINT)
+      assert(metadata.getColumnName(1) === "result")
+      assert(metadata.getColumnType(1) === java.sql.Types.VARCHAR)
       assert(resultSet.next())
-      assert(resultSet.getLong(1) == -1L)
-    }
+      assert(resultSet.getString(1).length == 32)
+    };
+  }
+
+  test("execute statement - streaming insert into") {
+    withMultipleConnectionJdbcStatement()({ statement =>
+      // Flink currently doesn't support stop job statement, thus use a finite stream
+      statement.executeQuery(
+        "create table tbl_a (a int) with (" +
+          "'connector' = 'datagen', " +
+          "'rows-per-second'='10', " +
+          "'number-of-rows'='100')")
+      statement.executeQuery("create table tbl_b (a int) with ('connector' = 'blackhole')")
+      val resultSet = statement.executeQuery("insert into tbl_b select * from tbl_a")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) === "result")
+      assert(metadata.getColumnType(1) === java.sql.Types.VARCHAR)
+      assert(resultSet.next())
+      assert(resultSet.getString(1).length == 32)
+    })
   }
 
   test("execute statement - set properties") {

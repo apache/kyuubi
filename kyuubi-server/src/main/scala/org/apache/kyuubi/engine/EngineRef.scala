@@ -185,7 +185,7 @@ private[kyuubi] class EngineRef(
         conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
         new SparkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case FLINK_SQL =>
-        conf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
+        conf.setIfMissing(FlinkProcessBuilder.YARN_APP_KEY, defaultEngineName)
         new FlinkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case TRINO =>
         new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)

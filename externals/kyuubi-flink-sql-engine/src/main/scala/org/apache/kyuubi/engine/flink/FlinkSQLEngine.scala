@@ -28,6 +28,7 @@ import scala.collection.mutable.ListBuffer
 
 import org.apache.flink.client.cli.{DefaultCLI, GenericCLI}
 import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration}
+import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.client.SqlClientException
 import org.apache.flink.table.client.gateway.context.DefaultContext
 import org.apache.flink.util.JarUtils
@@ -100,6 +101,11 @@ object FlinkSQLEngine extends Logging {
             val appName = s"kyuubi_${user}_flink_${Instant.now}"
             flinkConf.setString("yarn.application.name", appName)
           }
+          if (flinkConf.containsKey("high-availability.cluster-id")) {
+            flinkConf.setString(
+              "yarn.application.id",
+              flinkConf.toMap.get("high-availability.cluster-id"))
+          }
         case "kubernetes-application" =>
           if (!flinkConf.containsKey("kubernetes.cluster-id")) {
             val appName = s"kyuubi-${user}-flink-${Instant.now}"
@@ -122,7 +128,11 @@ object FlinkSQLEngine extends Logging {
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
       startEngine(engineContext)
-      info("started engine...")
+      info("Flink engine started")
+
+      if ("yarn-application".equalsIgnoreCase(executionTarget)) {
+        bootstrapFlinkApplicationExecutor(flinkConf)
+      }
 
       // blocking main thread
       countDownLatch.await()
@@ -144,6 +154,15 @@ object FlinkSQLEngine extends Logging {
       engine.start()
       addShutdownHook(() => engine.stop(), FLINK_ENGINE_SHUTDOWN_PRIORITY + 1)
     }
+  }
+
+  private def bootstrapFlinkApplicationExecutor(flinkConf: Configuration) = {
+    // trigger an execution to initiate EmbeddedExecutor
+    info("Running initial Flink SQL in application mode.")
+    val tableEnv = TableEnvironment.create(flinkConf)
+    val res = tableEnv.executeSql("select 'kyuubi'")
+    res.await()
+    info("Initial Flink SQL finished.")
   }
 
   private def discoverDependencies(

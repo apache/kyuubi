@@ -105,10 +105,10 @@ object KyuubiApplicationManager {
     conf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY, tag)
   }
 
-  private def setupFlinkK8sTag(tag: String, conf: KyuubiConf): Unit = {
-    val originalTag = conf.getOption(FlinkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("")
+  private def setupFlinkYarnTag(tag: String, conf: KyuubiConf): Unit = {
+    val originalTag = conf.getOption(FlinkProcessBuilder.YARN_TAG_KEY).map(_ + ",").getOrElse("")
     val newTag = s"${originalTag}KYUUBI" + Some(tag).filterNot(_.isEmpty).map("," + _).getOrElse("")
-    conf.set(FlinkProcessBuilder.TAG_KEY, newTag)
+    conf.set(FlinkProcessBuilder.YARN_TAG_KEY, newTag)
   }
 
   val uploadWorkDir: Path = {
@@ -178,7 +178,7 @@ object KyuubiApplicationManager {
         setupSparkK8sTag(applicationTag, conf)
       case ("FLINK", _) =>
         // running flink on other platforms is not yet supported
-        setupFlinkK8sTag(applicationTag, conf)
+        setupFlinkYarnTag(applicationTag, conf)
       // other engine types are running locally yet
       case _ =>
     }
