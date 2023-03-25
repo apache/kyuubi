@@ -83,7 +83,9 @@ class FlinkProcessBuilder(
         val tmpKyuubiConfFile =
           Paths.get(engineTmpDir.toAbsolutePath.toString, KYUUBI_CONF_FILE_NAME).toFile
         val tmpKyuubiConf = tmpKyuubiConfFile.getCanonicalPath
-        persistedConf.putAll(conf.getAll.asJava)
+        // Scala 2.12 have ambiguous reference for properties#putAll with Java 11
+        // see https://github.com/scala/bug/issues/10418
+        conf.getAll.asJava.forEach((k, v) => persistedConf.put(k, v))
         persistedConf.put(KYUUBI_SESSION_USER_KEY, s"$proxyUser")
         persistedConf.store(
           new FileOutputStream(tmpKyuubiConf),
