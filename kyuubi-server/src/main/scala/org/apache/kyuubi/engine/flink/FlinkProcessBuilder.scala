@@ -25,7 +25,6 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
-import org.apache.hadoop.util.StringUtils
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
