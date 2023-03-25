@@ -106,7 +106,7 @@ class FlinkProcessBuilder(
           }).map(f => f.getAbsolutePath).sorted
 
         buffer += s"-Dyarn.ship-files=$tmpKyuubiConf"
-        buffer += s"-Dpipeline.jars=${StringUtils.join(",", flinkExtraJars)}"
+        buffer += s"-Dpipeline.jars=${flinkExtraJars.mkString(",")}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
         buffer += "-c"
