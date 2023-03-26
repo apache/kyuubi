@@ -67,10 +67,28 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "get a session event via session handle identifier")
   @GET
   @Path("{sessionHandle}")
-  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiEvent = {
+  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): dto.KyuubiEvent = {
     try {
       sessionManager.getSession(sessionHandleStr)
-        .asInstanceOf[KyuubiSession].getSessionEvent.get
+        .asInstanceOf[KyuubiSession].getSessionEvent.map(event =>
+          dto.KyuubiSessionEvent.builder
+            .sessionId(event.sessionId)
+            .clientVersion(event.clientVersion)
+            .sessionType(event.sessionType)
+            .sessionName(event.sessionName)
+            .user(event.user)
+            .clientIp(event.clientIP)
+            .serverIp(event.serverIP)
+            .conf(event.conf.asJava)
+            .remoteSessionId(event.remoteSessionId)
+            .engineId(event.engineId)
+            .eventTime(event.eventTime)
+            .openedTime(event.openedTime)
+            .startTime(event.startTime)
+            .endTime(event.endTime)
+            .totalOperations(event.totalOperations)
+            .exception(event.exception.getOrElse(null))
+            .build).get
     } catch {
       case NonFatal(e) =>
         error(s"Invalid $sessionHandleStr", e)
