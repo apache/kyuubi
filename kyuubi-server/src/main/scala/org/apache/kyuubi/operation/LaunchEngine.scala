@@ -68,4 +68,9 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
 
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
+
+  override protected def applicationInfoMap: Option[Map[String, String]] = {
+    super.applicationInfoMap.map { _ + ("refId" -> session.engine.getEngineRefId()) }
+  }
+
 }
