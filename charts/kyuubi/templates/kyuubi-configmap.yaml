@@ -19,12 +19,26 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
   labels:
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
+    my-custom-label: my-custom-value   # adding a custom label
+  annotations:
+    my-annotation: some-value         # adding a custom annotation
+    my-other-annotation: another-value
+  ownerReferences:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: {{ .Release.Name }}-deploy
+      uid: 12345678-90ab-cdef-0123-456789abcdef
+  finalizers:
+    - my-finalizer.example.com
+  resourceVersion: "123456"
+  selfLink: /api/v1/namespaces/{{ .Release.Namespace }}/configmaps/{{ .Release.Name }}
 data:
   {{- with .Values.kyuubiConf.kyuubiEnv }}
   kyuubi-env.sh: |
