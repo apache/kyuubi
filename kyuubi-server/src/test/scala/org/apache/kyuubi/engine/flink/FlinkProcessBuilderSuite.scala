@@ -103,7 +103,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     classpathEntries.add(s"$flinkHome$flinkConfPathSuffix")
     val envMap = builder.env
     envMap.foreach { case (k, v) =>
-      if (!k.equals("JAVA_HOME")) {
+      if (!k.equals("JAVA_HOME") && !k.equals("FLINK_HOME")) {
         classpathEntries.add(v)
       }
     }
