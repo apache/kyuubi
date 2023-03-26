@@ -24,7 +24,7 @@ replicaCount: 2
 
 image:
   repository: apache/kyuubi
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   tag: ~
 
 imagePullSecrets: []
