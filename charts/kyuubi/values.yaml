@@ -131,6 +131,11 @@ kyuubiConf:
   # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/deployment/settings.html#logging for more details
   log4j2: ~
 
+# Command to launch Kyuubi server (templated)
+command: ~
+# Arguments to launch Kyuubi server (templated)
+args: ~
+
 # Environment variables (templated)
 env: []
 envFrom: []
