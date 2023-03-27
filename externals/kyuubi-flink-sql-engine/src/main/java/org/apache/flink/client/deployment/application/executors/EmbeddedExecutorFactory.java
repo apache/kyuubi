@@ -33,7 +33,6 @@ import org.apache.flink.core.execution.PipelineExecutor;
 import org.apache.flink.core.execution.PipelineExecutorFactory;
 import org.apache.flink.runtime.dispatcher.DispatcherGateway;
 import org.apache.flink.util.concurrent.ScheduledExecutor;
-import org.apache.flink.yarn.configuration.YarnConfigOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +98,7 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
     // override Flink's implementation to allow usage in Kyuubi
     LOGGER.debug("matching execution target: {}", configuration.get(DeploymentOptions.TARGET));
     return configuration.get(DeploymentOptions.TARGET).equalsIgnoreCase("yarn-application")
-        && configuration.get(YarnConfigOptions.APPLICATION_TAGS).toLowerCase().contains("kyuubi");
+        && configuration.toMap().getOrDefault("yarn.tags", "").toLowerCase().contains("kyuubi");
   }
 
   @Override
