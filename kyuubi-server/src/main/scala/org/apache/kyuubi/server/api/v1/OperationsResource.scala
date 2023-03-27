@@ -49,7 +49,8 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
     description =
       "Get Operations for a given session handle, or get all operations.")
   @GET
-  def getOperations(@QueryParam("sessionHandle") sessionHandleStr: String): Seq[OperationData] = {
+  def getOperations(@QueryParam("sessionHandle") @DefaultValue("") sessionHandleStr: String)
+      : Seq[OperationData] = {
     if (StringUtils.isBlank(sessionHandleStr)) {
       fe.be.sessionManager.operationManager.allOperations().map(operation =>
         ApiUtils.operationData(operation.asInstanceOf[KyuubiOperation])).toSeq
