@@ -24,6 +24,7 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
+import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.Utils;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
@@ -54,12 +55,14 @@ public class KyuubiCommands extends Commands {
   }
 
   private boolean isSourceCMD(String cmd) {
+    cmd = cmd.trim();
     if (cmd == null || cmd.isEmpty()) return false;
     String[] tokens = tokenizeCmd(cmd);
     return tokens[0].equalsIgnoreCase("source");
   }
 
   private boolean sourceFile(String cmd) {
+    cmd = cmd.trim();
     String[] tokens = tokenizeCmd(cmd);
     String cmd_1 = getFirstCmd(cmd, tokens[0].length());
 
@@ -505,7 +508,7 @@ public class KyuubiCommands extends Commands {
 
   @Override
   public String handleMultiLineCmd(String line) throws IOException {
-    int[] startQuote = {-1};
+    line = HiveStringUtils.removeComments(line);
     Character mask =
         (System.getProperty("jline.terminal", "").equals("jline.UnsupportedTerminal"))
             ? null
@@ -536,7 +539,8 @@ public class KyuubiCommands extends Commands {
       if (extra == null) { // it happens when using -f and the line of cmds does not end with ;
         break;
       }
-      if (!extra.isEmpty()) {
+      extra = HiveStringUtils.removeComments(extra);
+      if (extra != null && !extra.isEmpty()) {
         line += "\n" + extra;
       }
     }
