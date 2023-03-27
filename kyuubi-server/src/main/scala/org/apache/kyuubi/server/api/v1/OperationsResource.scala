@@ -23,7 +23,7 @@ import javax.ws.rs.core.{MediaType, Response}
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
-import io.swagger.v3.oas.annotations.media.{Content, Schema}
+import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
@@ -41,6 +41,14 @@ import org.apache.kyuubi.server.api.ApiUtils
 @Consumes(Array(MediaType.APPLICATION_JSON))
 private[v1] class OperationsResource extends ApiRequestContext with Logging {
 
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      array = new ArraySchema(schema = new Schema(implementation = classOf[OperationData])))),
+    description =
+      "Get Operations for a given session handle, or get all operations.")
   @GET
   def getOperations(@QueryParam("sessionHandle") sessionHandleStr: String): Seq[OperationData] = {
     if (StringUtils.isBlank(sessionHandleStr)) {
