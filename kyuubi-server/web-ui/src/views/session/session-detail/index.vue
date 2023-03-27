@@ -26,14 +26,6 @@
       <el-breadcrumb-item>{{ $t('detail') }}</el-breadcrumb-item>
     </el-breadcrumb>
   </header>
-  <!-- <el-card
-    v-loading="sessionPropertiesLoading"
-    class="table-container session-properties-container">
-    <template #header>
-      <div class="card-header">
-        <span>{{ $t('session_properties') }}</span>
-      </div>
-    </template> -->
   <el-collapse class="session-properties-container">
     <el-collapse-item name="1">
       <template #title>
@@ -41,7 +33,7 @@
           <span>{{ $t('session_properties') }}</span>
         </div>
       </template>
-      <el-descriptions class="margin-top" :column="3" border>
+      <el-descriptions class="margin-top" :column="1" border>
         <div
           v-for="(p, key) in sessionProperties"
           :key="key"
