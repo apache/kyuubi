@@ -16,16 +16,15 @@
 `Apache Paimon (Incubating)`_
 =============================
 
-Apache Paimon(incubating) is a streaming data lake platform that supports high-speed data ingestion, change data tracking and efficient real-time analytics.
+Apache Paimon (incubating) is a streaming data lake platform that supports high-speed data ingestion, change data tracking and efficient real-time analytics.
 
 .. tip::
    This article assumes that you have mastered the basic knowledge and operation of `Apache Paimon (Incubating)`_.
-   For the knowledge about Apache Paimon (Incubating) not mentioned in this article,
+   For the knowledge not mentioned in this article,
    you can obtain it from its `Official Documentation`_.
 
 By using kyuubi, we can run SQL queries towards Apache Paimon (Incubating) which is more
-convenient, easy to understand, and easy to expand than directly using
-flink to manipulate Apache Paimon (Incubating).
+convenient, easy to understand, and easy to expand than directly using flink.
 
 Apache Paimon (Incubating) Integration
 --------------------------------------
