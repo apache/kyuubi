@@ -41,7 +41,6 @@ import org.apache.kyuubi.server.api.ApiUtils
 @Consumes(Array(MediaType.APPLICATION_JSON))
 private[v1] class OperationsResource extends ApiRequestContext with Logging {
 
-
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
