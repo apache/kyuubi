@@ -45,6 +45,8 @@ object HiveBridgeHelper {
   val HiveShim = org.apache.spark.sql.hive.HiveShim
   val InputFileBlockHolder = org.apache.spark.rdd.InputFileBlockHolder
   val HadoopTableReader = org.apache.spark.sql.hive.HadoopTableReader
+  val SparkHadoopUtil = org.apache.spark.deploy.SparkHadoopUtil
+  val Utils = org.apache.spark.util.Utils
 
   def postExternalCatalogEvent(sc: SparkContext, event: ExternalCatalogEvent): Unit = {
     sc.listenerBus.post(event)

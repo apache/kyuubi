@@ -30,7 +30,6 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
@@ -758,26 +757,18 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
 
   test("execute statement - select array") {
     withJdbcStatement() { statement =>
-      val resultSet =
-        statement.executeQuery("select array ['v1', 'v2', 'v3']")
+      val resultSet = statement.executeQuery("select array ['v1', 'v2', 'v3']")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.ARRAY)
       assert(resultSet.next())
-      if (isFlinkVersionEqualTo("1.14")) {
-        val expected = """["v1","v2","v3"]"""
-        assert(resultSet.getObject(1).toString == expected)
-      }
-      if (isFlinkVersionAtLeast("1.15")) {
-        val expected = "[v1,v2,v3]"
-        assert(resultSet.getObject(1).toString == expected)
-      }
+      val expected = "[v1,v2,v3]"
+      assert(resultSet.getObject(1).toString == expected)
     }
   }
 
   test("execute statement - select map") {
     withJdbcStatement() { statement =>
-      val resultSet =
-        statement.executeQuery("select map ['k1', 'v1', 'k2', 'v2']")
+      val resultSet = statement.executeQuery("select map ['k1', 'v1', 'k2', 'v2']")
       assert(resultSet.next())
       assert(resultSet.getString(1) == "{k1=v1, k2=v2}")
       val metaData = resultSet.getMetaData
@@ -787,17 +778,10 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
 
   test("execute statement - select row") {
     withJdbcStatement() { statement =>
-      val resultSet =
-        statement.executeQuery("select (1, '2', true)")
+      val resultSet = statement.executeQuery("select (1, '2', true)")
       assert(resultSet.next())
-      if (isFlinkVersionEqualTo("1.14")) {
-        val expected = """{INT NOT NULL:1,CHAR(1) NOT NULL:"2",BOOLEAN NOT NULL:true}"""
-        assert(resultSet.getString(1) == expected)
-      }
-      if (isFlinkVersionAtLeast("1.15")) {
-        val expected = """{INT NOT NULL:1,CHAR(1) NOT NULL:2,BOOLEAN NOT NULL:true}"""
-        assert(resultSet.getString(1) == expected)
-      }
+      val expected = """{INT NOT NULL:1,CHAR(1) NOT NULL:2,BOOLEAN NOT NULL:true}"""
+      assert(resultSet.getString(1) == expected)
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.STRUCT)
     }
@@ -807,25 +791,20 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select encode('kyuubi', 'UTF-8')")
       assert(resultSet.next())
-      if (isFlinkVersionEqualTo("1.14")) {
-        assert(resultSet.getString(1) == "kyuubi")
-      }
-      if (isFlinkVersionAtLeast("1.15")) {
-        // TODO: validate table results after FLINK-28882 is resolved
-        assert(resultSet.getString(1) == "k")
-      }
+      // TODO: validate table results after FLINK-28882 is resolved
+      assert(resultSet.getString(1) == "k")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.BINARY)
     }
   }
 
   test("execute statement - select float") {
-    withJdbcStatement()({ statement =>
+    withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT cast(0.1 as float)")
       assert(resultSet.next())
       assert(resultSet.getString(1) == "0.1")
       assert(resultSet.getFloat(1) == 0.1f)
-    })
+    }
   }
 
   test("execute statement - select count") {
@@ -905,30 +884,24 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("execute statement - create/alter/drop database") {
-    withJdbcStatement()({ statement =>
+    withJdbcStatement() { statement =>
       val createResult = statement.executeQuery("create database db_a")
-      if (isFlinkVersionAtLeast("1.15")) {
-        assert(createResult.next())
-        assert(createResult.getString(1) === "OK")
-      }
+      assert(createResult.next())
+      assert(createResult.getString(1) === "OK")
       val alterResult = statement.executeQuery("alter database db_a set ('k1' = 'v1')")
-      if (isFlinkVersionAtLeast("1.15")) {
-        assert(alterResult.next())
-        assert(alterResult.getString(1) === "OK")
-      }
+      assert(alterResult.next())
+      assert(alterResult.getString(1) === "OK")
       val dropResult = statement.executeQuery("drop database db_a")
-      if (isFlinkVersionAtLeast("1.15")) {
-        assert(dropResult.next())
-        assert(dropResult.getString(1) === "OK")
-      }
-    })
+      assert(dropResult.next())
+      assert(dropResult.getString(1) === "OK")
+    }
   }
 
   test("execute statement - set/get database") {
     withSessionConf()(
       Map(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key -> "true"))(
       Map.empty) {
-      withJdbcStatement()({ statement =>
+      withJdbcStatement() { statement =>
         statement.executeQuery("create database db_a")
         val schema = statement.getConnection.getSchema
         assert(schema == "default_database")
@@ -936,54 +909,41 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         val changedSchema = statement.getConnection.getSchema
         assert(changedSchema == "db_a")
         assert(statement.execute("drop database db_a"))
-      })
+      }
     }
   }
 
   test("execute statement - create/alter/drop table") {
-    withJdbcStatement()({ statement =>
-      val createResult = {
+    withJdbcStatement() { statement =>
+      val createResult =
         statement.executeQuery("create table tbl_a (a string) with ('connector' = 'blackhole')")
-      }
-      if (isFlinkVersionAtLeast("1.15")) {
-        assert(createResult.next())
-        assert(createResult.getString(1) === "OK")
-      }
+      assert(createResult.next())
+      assert(createResult.getString(1) === "OK")
       val alterResult = statement.executeQuery("alter table tbl_a rename to tbl_b")
-      if (isFlinkVersionAtLeast("1.15")) {
-        assert(alterResult.next())
-        assert(alterResult.getString(1) === "OK")
-      }
+      assert(alterResult.next())
+      assert(alterResult.getString(1) === "OK")
       val dropResult = statement.executeQuery("drop table tbl_b")
-      if (isFlinkVersionAtLeast("1.15")) {
-        assert(dropResult.next())
-        assert(dropResult.getString(1) === "OK")
-      }
-    })
+      assert(dropResult.next())
+      assert(dropResult.getString(1) === "OK")
+    }
   }
 
   test("execute statement - create/alter/drop view") {
-    withMultipleConnectionJdbcStatement()({ statement =>
+    withMultipleConnectionJdbcStatement() { statement =>
       val createResult = statement.executeQuery("create view view_a as select 1")
-      if (isFlinkVersionAtLeast("1.15")) {
-        assert(createResult.next())
-        assert(createResult.getString(1) === "OK")
-      }
+      assert(createResult.next())
+      assert(createResult.getString(1) === "OK")
       val alterResult = statement.executeQuery("alter view view_a rename to view_b")
-      if (isFlinkVersionAtLeast("1.15")) {
-        assert(alterResult.next())
-        assert(alterResult.getString(1) === "OK")
-      }
+      assert(alterResult.next())
+      assert(alterResult.getString(1) === "OK")
       val dropResult = statement.executeQuery("drop view view_b")
-      if (isFlinkVersionAtLeast("1.15")) {
-        assert(dropResult.next())
-        assert(dropResult.getString(1) === "OK")
-      }
-    })
+      assert(dropResult.next())
+      assert(dropResult.getString(1) === "OK")
+    }
   }
 
   test("execute statement - insert into") {
-    withMultipleConnectionJdbcStatement()({ statement =>
+    withMultipleConnectionJdbcStatement() { statement =>
       statement.executeQuery("create table tbl_a (a int) with ('connector' = 'blackhole')")
       val resultSet = statement.executeQuery("insert into tbl_a select 1")
       val metadata = resultSet.getMetaData
@@ -991,11 +951,11 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       assert(metadata.getColumnType(1) == java.sql.Types.BIGINT)
       assert(resultSet.next())
       assert(resultSet.getLong(1) == -1L)
-    })
+    }
   }
 
   test("execute statement - set properties") {
-    withMultipleConnectionJdbcStatement()({ statement =>
+    withMultipleConnectionJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("set table.dynamic-table-options.enabled = true")
       val metadata = resultSet.getMetaData
       assert(metadata.getColumnName(1) == "key")
@@ -1003,21 +963,21 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       assert(resultSet.next())
       assert(resultSet.getString(1) == "table.dynamic-table-options.enabled")
       assert(resultSet.getString(2) == "true")
-    })
+    }
   }
 
   test("execute statement - show properties") {
-    withMultipleConnectionJdbcStatement()({ statement =>
+    withMultipleConnectionJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("set")
       val metadata = resultSet.getMetaData
       assert(metadata.getColumnName(1) == "key")
       assert(metadata.getColumnName(2) == "value")
       assert(resultSet.next())
-    })
+    }
   }
 
   test("execute statement - reset property") {
-    withMultipleConnectionJdbcStatement()({ statement =>
+    withMultipleConnectionJdbcStatement() { statement =>
       statement.executeQuery("set pipeline.jars = my.jar")
       statement.executeQuery("reset pipeline.jars")
       val resultSet = statement.executeQuery("set")
@@ -1031,7 +991,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         }
       }
       assert(success)
-    })
+    }
   }
 
   test("execute statement - select udf") {

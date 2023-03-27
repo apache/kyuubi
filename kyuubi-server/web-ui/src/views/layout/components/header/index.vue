@@ -33,8 +33,7 @@
           <el-dropdown-item
             v-for="(locale, key) in locales"
             :key="key"
-            :command="locale.key"
-          >
+            :command="locale.key">
             {{ locale.label }}
           </el-dropdown-item>
         </el-dropdown-menu>

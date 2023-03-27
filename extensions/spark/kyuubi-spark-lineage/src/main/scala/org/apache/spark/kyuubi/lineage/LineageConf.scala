@@ -19,6 +19,8 @@ package org.apache.spark.kyuubi.lineage
 
 import org.apache.spark.internal.config.ConfigBuilder
 
+import org.apache.kyuubi.plugin.lineage.LineageDispatcherType
+
 object LineageConf {
 
   val SKIP_PARSING_PERMANENT_VIEW_ENABLED =
@@ -27,5 +29,19 @@ object LineageConf {
       .version("1.8.0")
       .booleanConf
       .createWithDefault(false)
+
+  val DISPATCHERS = ConfigBuilder("spark.kyuubi.plugin.lineage.dispatchers")
+    .doc("The lineage dispatchers are implementations of " +
+      "`org.apache.kyuubi.plugin.lineage.LineageDispatcher` for dispatching lineage events.<ul>" +
+      "<li>SPARK_EVENT: send lineage event to spark event bus</li>" +
+      "<li>KYUUBI_EVENT: send lineage event to kyuubi event bus</li>" +
+      "</ul>")
+    .version("1.8.0")
+    .stringConf
+    .toSequence
+    .checkValue(
+      _.toSet.subsetOf(LineageDispatcherType.values.map(_.toString)),
+      "Unsupported lineage dispatchers")
+    .createWithDefault(Seq(LineageDispatcherType.SPARK_EVENT.toString))
 
 }

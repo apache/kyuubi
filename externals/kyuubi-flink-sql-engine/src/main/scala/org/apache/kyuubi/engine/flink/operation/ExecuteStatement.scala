@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.flink.api.common.JobID
-import org.apache.flink.table.api.{ResultKind, TableResult}
+import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.client.gateway.TypedResult
 import org.apache.flink.table.data.{GenericArrayData, GenericMapData, RowData}
 import org.apache.flink.table.data.binary.{BinaryArrayData, BinaryMapData}
@@ -120,18 +120,8 @@ class ExecuteStatement(
           case TypedResult.ResultType.PAYLOAD =>
             (1 to result.getPayload).foreach { page =>
               if (rows.size < resultMaxRows) {
-                // FLINK-24461 retrieveResultPage method changes the return type from Row to RowData
-                val retrieveResultPage = DynMethods.builder("retrieveResultPage")
-                  .impl(executor.getClass, classOf[String], classOf[Int])
-                  .build(executor)
-                val _page = Integer.valueOf(page)
-                if (isFlinkVersionEqualTo("1.14")) {
-                  val result = retrieveResultPage.invoke[util.List[Row]](resultId, _page)
-                  rows ++= result.asScala
-                } else if (isFlinkVersionAtLeast("1.15")) {
-                  val result = retrieveResultPage.invoke[util.List[RowData]](resultId, _page)
-                  rows ++= result.asScala.map(r => convertToRow(r, dataTypes))
-                }
+                val result = executor.retrieveResultPage(resultId, page)
+                rows ++= result.asScala.map(r => convertToRow(r, dataTypes))
               } else {
                 loop = false
               }
@@ -154,12 +144,7 @@ class ExecuteStatement(
   }
 
   private def runOperation(operation: Operation): Unit = {
-    // FLINK-24461 executeOperation method changes the return type
-    // from TableResult to TableResultInternal
-    val executeOperation = DynMethods.builder("executeOperation")
-      .impl(executor.getClass, classOf[String], classOf[Operation])
-      .build(executor)
-    val result = executeOperation.invoke[TableResult](sessionId, operation)
+    val result = executor.executeOperation(sessionId, operation)
     jobId = result.getJobClient.asScala.map(_.getJobID)
     // after FLINK-24461, TableResult#await() would block insert statements
     // until the job finishes, instead of returning row affected immediately

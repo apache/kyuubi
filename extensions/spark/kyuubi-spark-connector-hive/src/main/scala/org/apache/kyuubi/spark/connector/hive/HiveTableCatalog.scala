@@ -44,6 +44,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
 
 /**
  * A [[TableCatalog]] that wrap HiveExternalCatalog to as V2 CatalogPlugin instance to access Hive.
@@ -73,9 +74,9 @@ class HiveTableCatalog(sparkSession: SparkSession)
 
   private lazy val hadoopConf: Configuration = {
     val conf = sparkSession.sessionState.newHadoopConf()
-    catalogOptions.asScala.foreach {
-      case (k, v) => conf.set(k, v)
-      case _ =>
+    catalogOptions.asScala.foreach { case (k, v) => conf.set(k, v) }
+    if (catalogOptions.containsKey("hive.metastore.uris")) {
+      conf.set("hive.metastore.token.signature", metastoreTokenSignature(catalogOptions))
     }
     conf
   }
