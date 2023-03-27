@@ -37,7 +37,7 @@
   <el-collapse class="session-properties-container">
     <el-collapse-item name="1">
       <template #title>
-        <div class="collapse-header">
+        <div class="title">
           <span>{{ $t('session_properties') }}</span>
         </div>
       </template>
@@ -171,13 +171,8 @@
   }
   .session-properties-container {
     margin-bottom: 20px;
-    .collapse-header {
-      margin-left: 18px;
-      display: flex;
-      font-size: 16px;
-      line-height: 24px;
-      font-weight: 400;
-      font-family: 'Myriad Pro', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    .title {
+      margin-left: 20px;
     }
   }
 </style>
