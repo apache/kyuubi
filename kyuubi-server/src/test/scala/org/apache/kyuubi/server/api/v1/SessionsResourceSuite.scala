@@ -289,5 +289,4 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(sessionEvent.contains("The last 10 line(s) of log are:"))
     }
   }
-
 }

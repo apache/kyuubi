@@ -26,23 +26,34 @@
       <el-breadcrumb-item>{{ $t('detail') }}</el-breadcrumb-item>
     </el-breadcrumb>
   </header>
-  <el-card
+  <!-- <el-card
     v-loading="sessionPropertiesLoading"
     class="table-container session-properties-container">
     <template #header>
       <div class="card-header">
         <span>{{ $t('session_properties') }}</span>
       </div>
-    </template>
-    <div class="main">
-      <div
-        v-for="(p, key) in sessionProperties"
-        :key="key"
-        class="session-property"
-        ><el-tag>{{ `${key} : ${p}` }}</el-tag></div
+    </template> -->
+  <el-collapse class="session-properties-container">
+    <el-collapse-item name="1">
+      <template #title>
+        <div class="collapse-header">
+          <span>{{ $t('session_properties') }}</span>
+        </div>
+      </template>
+      <el-descriptions class="margin-top" :column="3" border>
+        <div
+          v-for="(p, key) in sessionProperties"
+          :key="key"
+          class="session-property">
+          <el-descriptions-item :label="key">
+            {{ p }}
+          </el-descriptions-item></div
+        ></el-descriptions
       >
-    </div>
-  </el-card>
+    </el-collapse-item>
+  </el-collapse>
+  <!-- </el-card> -->
   <el-card class="table-container">
     <template #header>
       <div class="card-header">
@@ -159,16 +170,14 @@
     }
   }
   .session-properties-container {
-    max-height: 400px;
-    overflow: auto;
     margin-bottom: 20px;
-    .main {
+    .collapse-header {
+      margin-left: 18px;
       display: flex;
-      flex-wrap: wrap;
-      .session-property {
-        margin-bottom: 6px;
-        margin-right: 6px;
-      }
+      font-size: 16px;
+      line-height: 24px;
+      font-weight: 400;
+      font-family: 'Myriad Pro', 'Helvetica Neue', Arial, Helvetica, sans-serif;
     }
   }
 </style>
