@@ -85,6 +85,8 @@ private[kyuubi] class EngineRef(
 
   private var builder: ProcBuilder = _
 
+  private[kyuubi] def getEngineRefId(): String = engineRefId
+
   // Launcher of the engine
   private[kyuubi] val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser

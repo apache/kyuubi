@@ -107,6 +107,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private String engineId = "";
   private String engineName = "";
   private String engineUrl = "";
+  private String engineRefId = "";
 
   private boolean isBeeLineMode;
 
@@ -1370,6 +1371,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           engineName = value;
         } else if ("url".equals(key)) {
           engineUrl = value;
+        } else if ("refId".equals(key)) {
+          engineRefId = value;
         }
       }
     } catch (Exception e) {
@@ -1387,5 +1390,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   public String getEngineUrl() {
     return engineUrl;
+  }
+
+  public String getEngineRefId() {
+    return engineRefId;
   }
 }
