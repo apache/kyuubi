@@ -189,7 +189,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "localhost",
       Map("testConfig" -> "testValue"))
 
-    fe.be.openSession(
+    val sessionHandle = fe.be.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
       "test_user_2",
       "xxxxxx",
@@ -227,8 +227,17 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .get()
-    val operations = response.readEntity(classOf[Seq[OperationData]])
+    var operations = response.readEntity(classOf[Seq[OperationData]])
     assert(operations.size == 2)
+
+    response = webTarget.path("api/v1/admin/operations")
+      .queryParam("sessionHandle", sessionHandle.identifier)
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+    operations = response.readEntity(classOf[Seq[OperationData]])
+    assert(200 == response.getStatus)
+    assert(operations.size == 1)
   }
 
   test("list/close operations") {
@@ -479,5 +488,4 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       }
     }
   }
-
 }
