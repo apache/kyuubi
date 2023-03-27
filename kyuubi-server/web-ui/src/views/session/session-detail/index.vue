@@ -33,11 +33,8 @@
           <span>{{ $t('session_properties') }}</span>
         </div>
       </template>
-      <el-descriptions class="margin-top" :column="1" border>
-        <div
-          v-for="(p, key) in sessionProperties"
-          :key="key"
-          class="session-property">
+      <el-descriptions :column="1" border>
+        <div v-for="(p, key) in sessionProperties" :key="key">
           <el-descriptions-item :label="key">
             {{ p }}
           </el-descriptions-item></div
@@ -46,9 +43,9 @@
     </el-collapse-item>
   </el-collapse>
   <!-- </el-card> -->
-  <el-card class="table-container">
+  <el-card>
     <template #header>
-      <div class="card-header">
+      <div>
         <span>{{ $t('operation_statistics') }}</span>
       </div>
     </template>
