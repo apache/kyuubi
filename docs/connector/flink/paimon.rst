@@ -16,7 +16,7 @@
 `Apache Paimon (Incubating)`_
 =============================
 
-Apache Paimon (incubating) is a streaming data lake platform that supports high-speed data ingestion, change data tracking and efficient real-time analytics.
+Apache Paimon (Incubating) is a streaming data lake platform that supports high-speed data ingestion, change data tracking, and efficient real-time analytics.
 
 .. tip::
    This article assumes that you have mastered the basic knowledge and operation of `Apache Paimon (Incubating)`_.
