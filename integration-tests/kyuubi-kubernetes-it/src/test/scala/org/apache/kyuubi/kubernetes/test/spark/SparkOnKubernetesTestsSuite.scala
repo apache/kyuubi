@@ -209,13 +209,12 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       batchRequest)
 
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
-    val batchJobSubmissionOp = session.batchJobSubmissionOp
+//    val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val appInfo = batchJobSubmissionOp.getOrFetchCurrentApplicationInfo
-      assert(appInfo.nonEmpty)
-      assert(appInfo.exists(_.state == RUNNING))
-      assert(appInfo.exists(_.name.startsWith(driverPodNamePrefix)))
+      val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+      assert(appInfo.state == RUNNING)
+      assert(appInfo.name.startsWith(driverPodNamePrefix))
     }
 
     val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
