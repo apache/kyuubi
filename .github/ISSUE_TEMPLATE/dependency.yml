@@ -17,9 +17,8 @@
 
 # See https://gh-community.github.io/issue-template-feedback/structured/
 
-name: Dependency Management
+name: Dependency
 title: ":arrow_up: Upgrade <> from <current version> to <target version>"
-description:
 labels: [ "kind:build, priority:major, good first issue, help wanted" ]
 body:
   - type: markdown
