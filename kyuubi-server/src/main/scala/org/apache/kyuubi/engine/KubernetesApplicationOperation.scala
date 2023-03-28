@@ -190,7 +190,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           case FINISHED | FAILED | UNKNOWN =>
             markDeleted(newPod)
           case _ =>
-            // do nothing
+          // do nothing
         }
       }
     }
