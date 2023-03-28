@@ -128,7 +128,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         case NOT_FOUND =>
           ApplicationInfo(id = null, name = null, ApplicationState.NOT_FOUND)
         case _ =>
-          info(s"Successfully got application info by $tag: $info")
+          logger.info(s"Successfully got application info by $tag: $info")
           info
       }
     } catch {
