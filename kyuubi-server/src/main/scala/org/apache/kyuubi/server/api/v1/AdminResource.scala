@@ -160,7 +160,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       "get the list of all active operations")
   @GET
   @Path("operations")
-  def listOperations(@QueryParam("users") users: String): Seq[OperationData] = {
+  def listOperations(
+      @QueryParam("users") users: String,
+      @QueryParam("sessionHandle") sessionHandle: String): Seq[OperationData] = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Received listing all of the active operations request from $userName/$ipAddress")
@@ -172,6 +174,10 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     if (StringUtils.isNotBlank(users)) {
       val usersSet = users.split(",").toSet
       operations = operations.filter(operation => usersSet.contains(operation.getSession.user))
+    }
+    if (StringUtils.isNotBlank(sessionHandle)) {
+      operations = operations.filter(operation =>
+        operation.getSession.handle.equals(SessionHandle.fromUUID(sessionHandle)))
     }
     operations
       .map(operation => ApiUtils.operationData(operation.asInstanceOf[KyuubiOperation])).toSeq
