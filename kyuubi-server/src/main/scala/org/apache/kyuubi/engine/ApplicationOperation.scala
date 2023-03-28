@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine
 
-import io.fabric8.kubernetes.api.model.Pod
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
 
