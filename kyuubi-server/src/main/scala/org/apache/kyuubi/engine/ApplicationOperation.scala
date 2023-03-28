@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine
 
+import io.fabric8.kubernetes.api.model.Pod
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
 
@@ -97,6 +99,15 @@ case class ApplicationInfo(
       "state" -> state.toString,
       "url" -> url.orNull,
       "error" -> error.orNull)
+  }
+}
+
+object ApplicationInfo {
+  def notFound: ApplicationInfo = {
+    ApplicationInfo(
+      null,
+      null,
+      ApplicationState.NOT_FOUND)
   }
 }
 

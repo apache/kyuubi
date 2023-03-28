@@ -198,6 +198,8 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
  */
 object KyuubiConf {
 
+  import java.util.concurrent.TimeUnit
+
   /** a custom directory that contains the [[KYUUBI_CONF_FILE_NAME]] */
   final val KYUUBI_CONF_DIR = "KYUUBI_CONF_DIR"
 
@@ -1170,6 +1172,14 @@ object KyuubiConf {
       .version("1.7.0")
       .booleanConf
       .createWithDefault(false)
+
+  val KUBERNETES_INFORMER_PERIOD: ConfigEntry[Long] =
+    buildConf("kyuubi.kubernetes.informer.period")
+      .doc("")
+      .version("1.8.0")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(Duration.ofSeconds(10).toMillis)
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
