@@ -69,8 +69,7 @@ body:
     attributes:
       label: Artifact Name
       description: Which artifact shall be upgraded?
-      placeholder: >
-        e.g. spark-sql
+      placeholder: e.g. spark-sql
       value: https://mvnrepository.com/search?q=
     validations:
       required: true
@@ -80,9 +79,7 @@ body:
     attributes:
       label: Target Version
       description: Which version shall be upgraded?
-      placeholder: >
-        e.g. 1.2.1
-      value: https://mvnrepository.com/search?q=
+      placeholder: e.g. 1.2.1
     validations:
       required: true
 
