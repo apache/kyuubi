@@ -86,7 +86,7 @@ body:
       required: true
 
   - type: textarea
-    id: release notes
+    id: release_notes
     attributes:
       label: Release Notes
       description: Please provide the release notes if any
