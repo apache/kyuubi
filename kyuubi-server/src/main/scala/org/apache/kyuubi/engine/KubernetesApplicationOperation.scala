@@ -111,7 +111,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       val info = appInfoStore.getOrDefault(tag, ApplicationInfo.notFound)
       info.state match {
         // Kyuubi should wait second if pod is not be created
-        case NOT_FOUND & submitTime.nonEmpty =>
+        case NOT_FOUND if submitTime.nonEmpty =>
           val elapsedTime = System.currentTimeMillis() - submitTime.get
           if (elapsedTime > submitTimeout) {
             error(s"Can't find target driver pod by tag: $tag, " +
