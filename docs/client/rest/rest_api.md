@@ -397,7 +397,7 @@ curl --location --request POST 'http://localhost:10099/api/v1/batches' \
 
 The created [Batch](#batch) object.
 
-### GET /batches/{batchId}
+### GET /batches/${batchId}
 
 Returns the batch information.
 
