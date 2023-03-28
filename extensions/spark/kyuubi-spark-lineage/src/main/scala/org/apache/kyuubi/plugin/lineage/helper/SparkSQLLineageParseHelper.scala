@@ -349,6 +349,19 @@ trait LineageParser {
           joinColumnsLineage(parentColumnsLineage, childColumnsLineage)
         p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
 
+      case p: Generate =>
+        val generateColumnsLineageWithId =
+          ListMap(p.generatorOutput.map(attrRef => (attrRef.toAttribute.exprId, p.references)): _*)
+
+        val nextColumnsLineage = parentColumnsLineage.map {
+          case (key, attrRefs) =>
+            key -> AttributeSet(attrRefs.flatMap(attr =>
+              generateColumnsLineageWithId.getOrElse(
+                attr.exprId,
+                AttributeSet(attr))))
+        }
+        p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
+
       case p: Window =>
         val windowColumnsLineage =
           ListMap(p.windowExpressions.map(exp => (exp.toAttribute, exp.references)): _*)

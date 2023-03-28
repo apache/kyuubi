@@ -1276,7 +1276,6 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
             s"select a as k, b" +
               s" from t2" +
               s" where a in ('HELLO') and c = 'HELLO'")
-
         assert(ret0 == Lineage(
           List("default.t2"),
           List(),
@@ -1303,6 +1302,49 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           ("default.t2.b", Set("default.t1.b")),
           ("default.t3.a", Set("default.t1.a")),
           ("default.t3.b", Set("default.t1.b")))))
+    }
+  }
+
+  test("test lateral view explode") {
+    withTable("t1", "t2") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string, c string, d string) USING hive")
+      spark.sql("CREATE TABLE t2 (a string, b string, c string, d string) USING hive")
+
+      val ret0 = exectractLineage("insert into t1 select 1, t2.b, cc.action, t2.d " +
+        "from t2 lateral view explode(split(c,'\\},\\{')) cc as action")
+      assert(ret0 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set()),
+          ("default.t1.b", Set("default.t2.b")),
+          ("default.t1.c", Set("default.t2.c")),
+          ("default.t1.d", Set("default.t2.d")))))
+
+      val ret1 = exectractLineage("insert into t1 select 1, t2.b, cc.action0, dd.action1 " +
+        "from t2 " +
+        "lateral view explode(split(c,'\\},\\{')) cc as action0 " +
+        "lateral view explode(split(d,'\\},\\{')) dd as action1")
+      assert(ret1 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set()),
+          ("default.t1.b", Set("default.t2.b")),
+          ("default.t1.c", Set("default.t2.c")),
+          ("default.t1.d", Set("default.t2.d")))))
+
+      val ret2 = exectractLineage("insert into t1 select 1, t2.b, dd.pos, dd.action1 " +
+        "from t2 " +
+        "lateral view posexplode(split(d,'\\},\\{')) dd as pos, action1")
+      assert(ret2 == Lineage(
+        List("default.t2"),
+        List("default.t1"),
+        List(
+          ("default.t1.a", Set()),
+          ("default.t1.b", Set("default.t2.b")),
+          ("default.t1.c", Set("default.t2.d")),
+          ("default.t1.d", Set("default.t2.d")))))
     }
   }
 
