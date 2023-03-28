@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
-import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer
@@ -32,6 +31,8 @@ import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationSta
 import org.apache.kyuubi.util.KubernetesUtils
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
+
+  import io.fabric8.kubernetes.api.model.Pod
 
   @volatile
   private var kubernetesClient: KubernetesClient = _
@@ -86,6 +87,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     debug(s"Deleting application info from Kubernetes cluster by $tag tag")
     try {
       val info = appInfoStore.getOrDefault(tag, ApplicationInfo.notFound)
+      logger.info(info.toMap.toString())
       info.state match {
         case NOT_FOUND | FAILED | UNKNOWN =>
           (
@@ -187,6 +189,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         toApplicationState(newPod.getStatus.getPhase) match {
           case FINISHED | FAILED | UNKNOWN =>
             markDeleted(newPod)
+          case _ =>
+            // do nothing
         }
       }
     }
