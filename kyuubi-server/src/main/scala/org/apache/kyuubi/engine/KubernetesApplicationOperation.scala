@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.engine
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
+import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler
@@ -39,7 +40,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private val appInfoStore: ConcurrentHashMap[String, ApplicationInfo] =
     new ConcurrentHashMap[String, ApplicationInfo]
-  private val deletedQueue: ConcurrentHashMap[Long, String] = new ConcurrentHashMap[Long, String]()
+  private var deletedAppInfoCache: Cache[String, ApplicationState] = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     info("Start initializing Kubernetes Client.")
@@ -54,6 +55,17 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           informerPeriod)
         driverInformer.addEventHandler(new DriverPodEventHandler()).start()
         info("Start Kubernetes Client Informer.")
+        // Using Cache help clean delete app info
+        val cachePeriod = conf.get(KyuubiConf.KUBERNETES_INFORMER_CACHE_PERIOD)
+        deletedAppInfoCache = CacheBuilder
+          .newBuilder()
+          .expireAfterWrite(cachePeriod, TimeUnit.MILLISECONDS)
+          .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
+            debug(s"Remove cached appInfo[tag: ${notification.getKey}], " +
+              s"due to app state: ${notification.getValue}.")
+            appInfoStore.remove(notification.getKey)
+          })
+          .build()
         client
       case None =>
         warn("Fail to init Kubernetes Client for Kubernetes Application Operation")
@@ -131,6 +143,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       if (driverInformer != null) {
         driverInformer.stop()
       }
+      if (deletedAppInfoCache != null) {
+        deletedAppInfoCache.cleanUp()
+      }
     } catch {
       case e: Exception => error(e.getMessage)
     }
@@ -155,9 +170,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
 
     private def markDeleted(pod: Pod): Unit = {
-      deletedQueue.put(
-        System.currentTimeMillis(),
-        pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY))
+      deletedAppInfoCache.put(
+        pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
+        toApplicationState(pod.getStatus.getPhase))
     }
 
     override def onAdd(pod: Pod): Unit = {
@@ -169,6 +184,10 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     override def onUpdate(oldPod: Pod, newPod: Pod): Unit = {
       if (filter(newPod)) {
         updateState(newPod)
+        toApplicationState(newPod.getStatus.getPhase) match {
+          case FINISHED | FAILED | UNKNOWN =>
+            markDeleted(newPod)
+        }
       }
     }
 

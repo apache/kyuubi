@@ -198,8 +198,6 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
  */
 object KyuubiConf {
 
-  import java.util.concurrent.TimeUnit
-
   /** a custom directory that contains the [[KYUUBI_CONF_FILE_NAME]] */
   final val KYUUBI_CONF_DIR = "KYUUBI_CONF_DIR"
 
@@ -1175,11 +1173,21 @@ object KyuubiConf {
 
   val KUBERNETES_INFORMER_PERIOD: ConfigEntry[Long] =
     buildConf("kyuubi.kubernetes.informer.period")
-      .doc("")
+      .doc("Kubernetes Informer poll driver pod period." +
+        "Set too small can lead to, stress on Kubernetes Api Server; " +
+        "Set too lager can lead to, app info can't updated in time ")
       .version("1.8.0")
       .timeConf
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofSeconds(10).toMillis)
+
+  val KUBERNETES_INFORMER_CACHE_PERIOD: ConfigEntry[Long] =
+    buildConf("kyuubi.kubernetes.informer.cache.period")
+      .doc("The time kyuubi server hold app info after the app ends.")
+      .version("1.8.0")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
