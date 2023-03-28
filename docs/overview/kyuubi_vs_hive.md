@@ -33,7 +33,7 @@ have multiple reducer stages.
 ## Differences Between Kyuubi and HiveServer2
 
 
-|| Kyuubi | HiveServer2 |
+|                              |                                     Kyuubi                                      |                                                                            HiveServer2                                                                             |
 |--------------------------------|---------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 |**Language** | Spark SQL                                                                       | Hive QL                                                                                                                                                            |
 |**Optimizer** | Spark SQL Catalyst                                                              | Hive Optimizer                                                                                                                                                     |
