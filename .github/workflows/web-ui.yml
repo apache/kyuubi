@@ -28,7 +28,8 @@ jobs:
       - name: npm run coverage & build
         run: |
           cd ./kyuubi-server/web-ui
-          npm install pnpm -g
-          pnpm install
+          npm install pnpm@7.30.5 -g
+          pnpm install --no-frozen-lockfile  
+          cat pnpm-lock.yaml
           pnpm run coverage
           pnpm run build
