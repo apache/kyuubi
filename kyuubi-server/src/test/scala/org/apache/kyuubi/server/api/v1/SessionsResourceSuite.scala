@@ -28,11 +28,11 @@ import scala.collection.JavaConverters._
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
+import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
 import org.apache.kyuubi.engine.ShareLevel
-import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
@@ -121,10 +121,10 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     // get session event
     var response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().get()
     assert(200 == sessionOpenResp.getStatus)
-    val sessions = response.readEntity(classOf[KyuubiSessionEvent])
-    assert(sessions.conf("testConfig").equals("testValue"))
-    assert(sessions.sessionType.equals(SessionType.INTERACTIVE.toString))
-    assert(sessions.user.equals("kyuubi"))
+    val sessions = response.readEntity(classOf[dto.KyuubiSessionEvent])
+    assert(sessions.getConf.get("testConfig").equals("testValue"))
+    assert(sessions.getSessionType.equals(SessionType.INTERACTIVE.toString))
+    assert(sessions.getUser.equals("kyuubi"))
 
     // close an opened session
     response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
