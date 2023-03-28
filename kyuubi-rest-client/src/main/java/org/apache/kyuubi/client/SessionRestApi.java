@@ -56,7 +56,7 @@ public class SessionRestApi {
     return this.getClient().delete(path, new HashMap<>(), client.getAuthHeader());
   }
 
-  public KyuubiEvent getSessionEvent(String sessionHandleStr) {
+  public KyuubiSessionEvent getSessionEvent(String sessionHandleStr) {
     String path = String.format("%s/%s", API_BASE_PATH, sessionHandleStr);
     return this.getClient()
         .get(path, new HashMap<>(), KyuubiSessionEvent.class, client.getAuthHeader());

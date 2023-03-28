@@ -61,11 +61,11 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[dto.KyuubiEvent]))),
+      schema = new Schema(implementation = classOf[dto.KyuubiSessionEvent]))),
     description = "get a session event via session handle identifier")
   @GET
   @Path("{sessionHandle}")
-  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): dto.KyuubiEvent = {
+  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): dto.KyuubiSessionEvent = {
     try {
       sessionManager.getSession(sessionHandleStr)
         .asInstanceOf[KyuubiSession].getSessionEvent.map(event =>
