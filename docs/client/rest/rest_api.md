@@ -63,7 +63,7 @@ Returns all the batches.
 
 The created [Batch](#batch) object.
 
-### GET /batches/{batchId}
+### GET /batches/${batchId}
 
 Returns the batch information.
 
