@@ -19,6 +19,7 @@
 
 name: Dependency
 title: ":arrow_up: Upgrade <> from <current version> to <target version>"
+description: Keep upstream dependencies fresh and stable
 labels: [ "kind:build, priority:major, good first issue, help wanted" ]
 body:
   - type: markdown
@@ -92,7 +93,6 @@ body:
       description: Please provide the release notes if any
     validations:
       required: false
-
 
   - type: checkboxes
     attributes:
