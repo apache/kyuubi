@@ -165,7 +165,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         ApplicationInfo(
           id = metaData.getLabels.get(SPARK_APP_ID_LABEL),
           name = metaData.getName,
-          state = toApplicationState(pod.getStatus.getPhase),
+          state = state,
           error = Option(pod.getStatus.getReason)))
     }
 
