@@ -154,7 +154,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   private class SparkEnginePodEventHandler extends ResourceEventHandler[Pod] {
-    private def filter(pod: Pod): Boolean = {
+    private def isSparkEnginePod(pod: Pod): Boolean = {
       pod.getMetadata.getLabels.containsKey(LABEL_KYUUBI_UNIQUE_KEY)
     }
 
@@ -178,13 +178,13 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
 
     override def onAdd(pod: Pod): Unit = {
-      if (filter(pod)) {
+      if (isSparkEnginePod(pod)) {
         updateState(pod)
       }
     }
 
     override def onUpdate(oldPod: Pod, newPod: Pod): Unit = {
-      if (filter(newPod)) {
+      if (isSparkEnginePod(newPod)) {
         updateState(newPod)
         toApplicationState(newPod.getStatus.getPhase) match {
           case FINISHED | FAILED | UNKNOWN =>
@@ -196,7 +196,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
 
     override def onDelete(pod: Pod, deletedFinalStateUnknown: Boolean): Unit = {
-      if (filter(pod)) {
+      if (isSparkEnginePod(pod)) {
         updateState(pod)
         markDeleted(pod)
       }
