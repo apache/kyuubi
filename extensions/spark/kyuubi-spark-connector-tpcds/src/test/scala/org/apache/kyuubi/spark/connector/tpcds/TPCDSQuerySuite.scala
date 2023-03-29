@@ -88,4 +88,6 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
       }
     }
   }
+
+  test("aa") {}
 }

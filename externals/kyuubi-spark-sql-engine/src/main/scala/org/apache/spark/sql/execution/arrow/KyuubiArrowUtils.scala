@@ -21,9 +21,9 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.channels.Channels
 
 import org.apache.arrow.memory.RootAllocator
+import org.apache.arrow.vector.{VectorLoader, VectorSchemaRoot, VectorUnloader}
 import org.apache.arrow.vector.ipc.{ArrowStreamReader, ArrowStreamWriter, ReadChannel, WriteChannel}
 import org.apache.arrow.vector.ipc.message.MessageSerializer
-import org.apache.arrow.vector.{VectorLoader, VectorSchemaRoot, VectorUnloader}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.ArrowUtils
 
@@ -58,8 +58,12 @@ object KyuubiArrowUtils {
     }
   }
 
-  def sliceV2(schema: StructType,
-              timeZoneId: String, bytes: Array[Byte], start: Int, length: Int): Array[Byte] = {
+  def sliceV2(
+      schema: StructType,
+      timeZoneId: String,
+      bytes: Array[Byte],
+      start: Int,
+      length: Int): Array[Byte] = {
     val in = new ByteArrayInputStream(bytes)
     val out = new ByteArrayOutputStream()
 
@@ -71,16 +75,15 @@ object KyuubiArrowUtils {
 //      println("rowCount......" + reader.getVectorSchemaRoot.getRowCount)
 //      val root = reader.getVectorSchemaRoot.slice(start, length)
 
-
       val recordBatch = MessageSerializer.deserializeRecordBatch(
-        new ReadChannel(Channels.newChannel(in)), rootAllocator)
+        new ReadChannel(Channels.newChannel(in)),
+        rootAllocator)
       val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId)
 
       val root = VectorSchemaRoot.create(arrowSchema, rootAllocator)
       val vectorLoader = new VectorLoader(root)
       vectorLoader.load(recordBatch)
       recordBatch.close()
-
 
       val unloader = new VectorUnloader(root.slice(start, length))
       val writeChannel = new WriteChannel(Channels.newChannel(out))

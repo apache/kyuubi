@@ -20,8 +20,10 @@ package org.apache.kyuubi.engine.spark.operation
 import java.sql.Statement
 
 import org.apache.spark.KyuubiSparkContextHelper
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.QueryExecution
+import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.util.QueryExecutionListener
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -138,6 +140,20 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     assert(metrics("numOutputRows").value === 1)
   }
 
+  test("aa") {
+
+    withJdbcStatement() { statement =>
+      loadPartitionedTable()
+      val n = 17
+      statement.executeQuery(s"SET kyuubi.operation.result.max.rows=$n")
+      val result = statement.executeQuery("select * from t_1")
+      for (i <- 0 until n) {
+        assert(result.next())
+      }
+      assert(!result.next())
+    }
+  }
+
   private def checkResultSetFormat(statement: Statement, expectFormat: String): Unit = {
     val query =
       s"""
@@ -176,5 +192,23 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       .sessionManager
       .allSessions()
       .foreach(_.asInstanceOf[SparkSessionImpl].spark.listenerManager.unregister(listener))
+  }
+
+  private def loadPartitionedTable(): Unit = {
+    SparkSQLEngine.currentEngine.get
+      .backendService
+      .sessionManager
+      .allSessions()
+      .map(_.asInstanceOf[SparkSessionImpl].spark)
+      .foreach { spark =>
+        spark.range(1000)
+          .repartitionByRange(100, col("id"))
+          .createOrReplaceTempView("t_1")
+        spark.sql("select * from t_1")
+          .foreachPartition { p: Iterator[Row] =>
+            assert(p.length == 10)
+            ()
+          }
+      }
   }
 }

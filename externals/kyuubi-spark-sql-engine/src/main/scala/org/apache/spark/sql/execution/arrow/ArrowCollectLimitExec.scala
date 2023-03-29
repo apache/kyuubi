@@ -124,21 +124,4 @@ object ArrowCollectLimitExec extends SQLConfHelper {
       buf.toArray
     }
   }
-
-  def taskOrdered(
-      takeOrdered: TakeOrderedAndProjectExec,
-      schema: StructType,
-      maxRecordsPerBatch: Long,
-      maxEstimatedBatchSize: Long,
-      timeZoneId: String): Array[Batch] = {
-    val batches = ArrowConvertersHelper.toBatchWithSchemaIterator(
-      takeOrdered.executeCollect().iterator,
-      schema,
-      maxEstimatedBatchSize,
-      maxEstimatedBatchSize,
-      takeOrdered.limit,
-      timeZoneId)
-    batches.map(b => b -> batches.rowCountInLastBatch).toArray
-  }
 }
-

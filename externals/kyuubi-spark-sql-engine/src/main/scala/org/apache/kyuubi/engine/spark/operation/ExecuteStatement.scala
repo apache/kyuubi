@@ -22,14 +22,13 @@ import java.util.concurrent.RejectedExecutionException
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.execution.{CollectLimitExec, SQLExecution, TakeOrderedAndProjectExec}
+import org.apache.spark.sql.execution.{CollectLimitExec, SQLExecution}
+import org.apache.spark.sql.execution.arrow.{ArrowCollectLimitExec, KyuubiArrowUtils}
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.types._
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.spark.sql.execution.arrow.{ArrowCollectLimitExec, KyuubiArrowUtils}
 
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
@@ -189,73 +188,70 @@ class ArrowBasedExecuteStatement(
     handle) {
 
   override protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
-    collectAsArrow(convertComplexType(resultDF)) { rdd =>
-      rdd.toLocalIterator
+    val df = convertComplexType(resultDF)
+    withNewExecutionId(df) {
+      SparkDatasetHelper.toArrowBatchRdd(df).toLocalIterator
     }
   }
 
   override protected def fullCollectResult(resultDF: DataFrame): Array[_] = {
-    collectAsArrow(convertComplexType(resultDF)) { rdd =>
-      rdd.collect()
-    }
+    executeCollect(convertComplexType(resultDF))
   }
 
   override protected def takeResult(resultDF: DataFrame, maxRows: Int): Array[_] = {
-    // this will introduce shuffle and hurt performance
-    val limitedResult = resultDF.limit(maxRows)
-//    collectAsArrow(convertComplexType(limitedResult)) { rdd =>
-//      rdd.collect()
-//    }
-    val df = convertComplexType(limitedResult)
-    SQLExecution.withNewExecutionId(df.queryExecution, Some("collectAsArrow")) {
-      df.queryExecution.executedPlan.resetMetrics()
-      df.queryExecution.executedPlan match {
-        case collectLimit @ CollectLimitExec(limit, _) =>
-          val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
-          val batches = ArrowCollectLimitExec.takeAsArrowBatches(collectLimit, df.schema, 1000, 1024 * 1024, timeZoneId)
-//            .map(_._1)
-          val result = ArrayBuffer[Array[Byte]]()
-          var i = 0
-          var rest = limit
-          println(s"batch....size... ${batches.length}")
-          while (i < batches.length && rest > 0) {
-            val (batch, size) = batches(i)
-            if (size < rest) {
-              result += batch
-              // TODO: toInt
-              rest = rest - size.toInt
-            } else if (size == rest) {
-              result += batch
-              rest = 0
-            } else { // size > rest
-              println(s"size......${size}....rest......${rest}")
-//              result += KyuubiArrowUtils.slice(batch, 0, rest)
-              result += KyuubiArrowUtils.sliceV2(df.schema, timeZoneId, batch, 0, rest)
-              rest = 0
-            }
-            i += 1
-          }
-          result.toArray
-
-        case takeOrderedAndProjectExec @ TakeOrderedAndProjectExec(limit, _, _, _) =>
-          val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
-          ArrowCollectLimitExec.taskOrdered(takeOrderedAndProjectExec, df.schema, 1000, 1024 * 1024, timeZoneId)
-            .map(_._1)
-        case _ =>
-          println("yyyy")
-          SparkDatasetHelper.toArrowBatchRdd(df).collect()
-      }
-    }
+    executeCollect(convertComplexType(resultDF.limit(maxRows)))
   }
 
   /**
    * refer to org.apache.spark.sql.Dataset#withAction(), assign a new execution id for arrow-based
    * operation, so that we can track the arrow-based queries on the UI tab.
    */
-  private def collectAsArrow[T](df: DataFrame)(action: RDD[Array[Byte]] => T): T = {
+  private def withNewExecutionId[T](df: DataFrame)(body: => T): T = {
     SQLExecution.withNewExecutionId(df.queryExecution, Some("collectAsArrow")) {
       df.queryExecution.executedPlan.resetMetrics()
-      action(SparkDatasetHelper.toArrowBatchRdd(df))
+      body
+    }
+  }
+
+  def executeCollect(df: DataFrame): Array[Array[Byte]] = withNewExecutionId(df) {
+    executeArrowBatchCollect(df).getOrElse {
+      SparkDatasetHelper.toArrowBatchRdd(df).collect()
+    }
+  }
+
+  private def executeArrowBatchCollect(df: DataFrame): Option[Array[Array[Byte]]] = {
+    df.queryExecution.executedPlan match {
+      case collectLimit @ CollectLimitExec(limit, _) =>
+        val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
+        val maxRecordsPerBatch = spark.conf.getOption(
+          "spark.sql.execution.arrow.maxRecordsPerBatch").map(_.toInt).getOrElse(10000)
+        // val maxBatchSize =
+        // (spark.sessionState.conf.getConf(SPARK_CONNECT_GRPC_ARROW_MAX_BATCH_SIZE) * 0.7).toLong
+        val maxBatchSize = 1024 * 1024 * 4
+        val batches = ArrowCollectLimitExec.takeAsArrowBatches(
+          collectLimit,
+          df.schema,
+          maxRecordsPerBatch,
+          maxBatchSize,
+          timeZoneId)
+        val result = ArrayBuffer[Array[Byte]]()
+        var i = 0
+        var rest = limit
+        while (i < batches.length && rest > 0) {
+          val (batch, size) = batches(i)
+          if (size <= rest) {
+            result += batch
+            // returned ArrowRecordBatch has less than `limit` row count, safety to do conversion
+            rest -= size.toInt
+          } else { // size > rest
+            result += KyuubiArrowUtils.sliceV2(df.schema, timeZoneId, batch, 0, rest)
+            rest = 0
+          }
+          i += 1
+        }
+        Option(result.toArray)
+      case _ =>
+        None
     }
   }
 
