@@ -123,5 +123,5 @@
 "module:authz":
   - "extensions/spark/kyuubi-spark-authz/**/*"
 
-"module:UI":
+"module:ui":
   - "kyuubi-server/web-ui/**/*"
