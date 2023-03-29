@@ -84,10 +84,10 @@ body:
       required: true
 
   - type: textarea
-    id: release_notes
+    id: changes
     attributes:
-      label: Release Notes
-      description: Please provide the release notes if any
+      label: Notable Changes
+      description: Please provide notable changes, or release notes if any
     validations:
       required: false
 
@@ -101,3 +101,10 @@ body:
       options:
         - label: Yes. I would be willing to submit a PR with guidance from the Kyuubi community to fix.
         - label: No. I cannot submit a PR at this time.
+
+  - type: markdown
+    attributes:
+      label: Tips For PR Contributors
+      value: >
+        After changing the corresponding dependency version and before submitting your pull request,
+        it is necessary to execute `build/dependency.sh --replace` locally to update `dev/dependencyList`.
