@@ -87,8 +87,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     debug(s"Deleting application info from Kubernetes cluster by $tag tag")
     try {
       val info = appInfoStore.getOrDefault(tag, ApplicationInfo.notFound)
-      logger.info(appInfoStore.toString)
-      logger.info(info.toMap.toString())
+      debug(s"Application info[tag: ${tag}] is in ${info.state}")
       info.state match {
         case NOT_FOUND | FAILED | UNKNOWN =>
           (
@@ -128,7 +127,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         case NOT_FOUND =>
           ApplicationInfo(id = null, name = null, ApplicationState.NOT_FOUND)
         case _ =>
-          logger.info(s"Successfully got application info by $tag: $info")
+          debug(s"Successfully got application info by $tag: $info")
           info
       }
     } catch {

@@ -208,10 +208,10 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       batchRequest.getConf.asScala.toMap,
       batchRequest)
 
-    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
-//    val batchJobSubmissionOp = session.batchJobSubmissionOp
+    sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
+      // trigger k8sOperation init here
       val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
       assert(appInfo.state == RUNNING)
       assert(appInfo.name.startsWith(driverPodNamePrefix))
@@ -219,7 +219,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
 
     val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(killResponse._1)
-    assert(killResponse._2 startsWith "Operation of deleted appId:")
+    assert(killResponse._2 endsWith "is completed")
+    assert(killResponse._2 contains sessionHandle.identifier.toString)
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
       val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
