@@ -54,7 +54,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         driverInformer = client.informers().sharedIndexInformerFor(
           classOf[Pod],
           informerPeriod)
-        driverInformer.addEventHandler(new DriverPodEventHandler()).start()
+        driverInformer.addEventHandler(new EnginePodEventHandler()).start()
         info("Start Kubernetes Client Informer.")
         // Using Cache help clean delete app info
         val cachePeriod = conf.get(KyuubiConf.KUBERNETES_INFORMER_CACHE_PERIOD)
@@ -139,11 +139,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   override def stop(): Unit = {
     try {
-      if (kubernetesClient != null) {
-        kubernetesClient.close()
-      }
       if (driverInformer != null) {
         driverInformer.stop()
+      }
+      if (kubernetesClient != null) {
+        kubernetesClient.close()
       }
       if (deletedAppInfoCache != null) {
         deletedAppInfoCache.cleanUp()
@@ -153,7 +153,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  class DriverPodEventHandler extends ResourceEventHandler[Pod] {
+  private class EnginePodEventHandler extends ResourceEventHandler[Pod] {
     private def filter(pod: Pod): Boolean = {
       pod.getMetadata.getLabels.containsKey(LABEL_KYUUBI_UNIQUE_KEY)
     }
