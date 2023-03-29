@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.io.IOException
 import java.time.LocalDate
 import java.util
 
@@ -56,6 +57,8 @@ class ExecuteStatement(
     OperationLog.createOperationLog(session, getHandle)
 
   var jobId: Option[JobID] = None
+
+  var resultId: String = null
 
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
@@ -101,7 +104,9 @@ class ExecuteStatement(
   }
 
   private def runQueryOperation(operation: QueryOperation): Unit = {
-    var resultId: String = null
+    if (resultId != null) {
+      throw new RuntimeException("Must close query ruuning sql")
+    }
     try {
       val resultDescriptor = executor.executeQuery(sessionId, operation)
       val dataTypes = resultDescriptor.getResultSchema.getColumnDataTypes.asScala.toList
@@ -159,6 +164,7 @@ class ExecuteStatement(
 
             }
           }
+          cleanupQueryResult(resultId)
           return false
         }
 
@@ -291,4 +297,17 @@ class ExecuteStatement(
     arrayData.keyArray().toObjectArray(keyType) -> arrayData.valueArray().toObjectArray(valueType)
   }
 
+  override def close(): Unit = {
+    if (resultId != null) {
+      cleanupQueryResult(resultId)
+      resultId = null
+    }
+    cleanup(OperationState.CLOSED)
+    try {
+      getOperationLog.foreach(_.close())
+    } catch {
+      case e: IOException =>
+        error(e.getMessage, e)
+    }
+  }
 }
