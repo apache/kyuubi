@@ -206,4 +206,44 @@ object KyuubiSQLConf {
       .doubleConf
       .checkValue(_ >= 1, "must be bigger than or equal to 1")
       .createWithDefault(1.2)
+
+  val FINAL_WRITE_STAGE_RESOURCE_ISOLATION_ENABLED =
+    buildConf("spark.sql.finalWriteStage.resourceIsolation.enabled")
+      .doc(
+        "When true, make final write stage resource isolation using custom RDD resource profile.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FINAL_WRITE_STAGE_EXECUTOR_CORES =
+    buildConf("spark.sql.finalWriteStage.executorCores")
+      .doc("Specify the executor core request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .intConf
+      .createOptional
+
+  val FINAL_WRITE_STAGE_EXECUTOR_MEMORY =
+    buildConf("spark.sql.finalWriteStage.executorMemory")
+      .doc("Specify the executor on heap memory request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val FINAL_WRITE_STAGE_EXECUTOR_MEMORY_OVERHEAD =
+    buildConf("spark.sql.finalWriteStage.executorMemoryOverhead")
+      .doc("Specify the executor memory overhead request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val FINAL_WRITE_STAGE_EXECUTOR_OFF_HEAP_MEMORY =
+    buildConf("spark.sql.finalWriteStage.executorOffHeapMemory")
+      .doc("Specify the executor off heap memory request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
 }

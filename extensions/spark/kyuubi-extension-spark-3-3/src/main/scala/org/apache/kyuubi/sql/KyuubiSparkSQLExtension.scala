@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.sql
 
-import org.apache.spark.FinalStageResourceManager
-import org.apache.spark.sql.SparkSessionExtensions
+import org.apache.spark.sql.{FinalStageResourceManager, InjectCustomResourceProfile, SparkSessionExtensions}
 
 import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MaxPartitionStrategy}
 
@@ -42,5 +41,6 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectPlannerStrategy(MaxPartitionStrategy)
 
     extensions.injectQueryStagePrepRule(FinalStageResourceManager)
+    extensions.injectQueryStagePrepRule(InjectCustomResourceProfile)
   }
 }
