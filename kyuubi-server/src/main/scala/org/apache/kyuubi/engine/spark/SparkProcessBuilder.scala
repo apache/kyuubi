@@ -130,7 +130,7 @@ class SparkProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-sql-engine"
 
-  def setUser(buffer: ArrayBuffer[String]): Unit = {
+  protected def setupKerberos(buffer: ArrayBuffer[String]): Unit = {
     // if the keytab is specified, PROXY_USER is not supported
     tryKeytab() match {
       case None =>
