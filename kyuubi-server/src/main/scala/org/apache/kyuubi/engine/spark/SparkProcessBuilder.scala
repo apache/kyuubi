@@ -121,7 +121,7 @@ class SparkProcessBuilder(
       buffer += s"${convertConfigKey(k)}=$v"
     }
 
-    setUser(buffer)
+    setupKerberos(buffer)
 
     mainResource.foreach { r => buffer += r }
 
