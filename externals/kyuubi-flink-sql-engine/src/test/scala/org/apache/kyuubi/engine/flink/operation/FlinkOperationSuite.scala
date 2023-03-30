@@ -755,6 +755,20 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
+  test("execute statement - select time") {
+    withJdbcStatement() { statement =>
+      val resultSet =
+        statement.executeQuery(
+          "select time '00:00:03', time '00:00:05.123456789'")
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.VARCHAR)
+      assert(metaData.getColumnType(2) === java.sql.Types.VARCHAR)
+      assert(resultSet.next())
+      assert(resultSet.getString(1) == "00:00:03")
+      assert(resultSet.getString(2) == "00:00:05.123")
+    }
+  }
+
   test("execute statement - select array") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select array ['v1', 'v2', 'v3']")
