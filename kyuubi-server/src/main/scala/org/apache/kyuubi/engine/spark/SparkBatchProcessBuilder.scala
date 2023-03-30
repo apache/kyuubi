@@ -56,7 +56,7 @@ class SparkBatchProcessBuilder(
       buffer += s"${convertConfigKey(k)}=$v"
     }
 
-    setUser(buffer)
+    setupKerberos(buffer)
 
     assert(mainResource.isDefined)
     buffer += mainResource.get
