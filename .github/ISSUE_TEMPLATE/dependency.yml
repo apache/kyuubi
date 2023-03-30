@@ -104,7 +104,6 @@ body:
 
   - type: markdown
     attributes:
-      label: Tips For PR Contributors
       value: >
         After changing the corresponding dependency version and before submitting your pull request,
         it is necessary to execute `build/dependency.sh --replace` locally to update `dev/dependencyList`.
