@@ -110,11 +110,12 @@ Create an operation with EXECUTE_STATEMENT type
 
 #### Request Body
 
-| Name         | Description                                                    | Type    |
-|:-------------|:---------------------------------------------------------------|:--------|
-| statement    | The SQL statement that you execute                             | String  |
-| runAsync     | The flag indicates whether the query runs synchronously or not | Boolean |
-| queryTimeout | The interval of query time out                                 | Long    |
+| Name         | Description                                                    | Type           |
+|:-------------|:---------------------------------------------------------------|:---------------|
+| statement    | The SQL statement that you execute                             | String         |
+| runAsync     | The flag indicates whether the query runs synchronously or not | Boolean        |
+| queryTimeout | The interval of query time out                                 | Long           |
+| confOverlay  | The conf to overlay only for current operation                 | Map of key=val |
 
 #### Response Body
 
