@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.spark
+package org.apache.spark.sql
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.{ExecutorAllocationClient, MapOutputTrackerMaster, SparkContext, SparkEnv}
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{FilterExec, ProjectExec, SortExec, SparkPlan}
 import org.apache.spark.sql.execution.adaptive._
@@ -37,7 +37,8 @@ import org.apache.kyuubi.sql.{KyuubiSQLConf, MarkNumOutputColumnsRule}
  * It provide a feature:
  * 1. Kill redundant executors before running final write stage
  */
-case class FinalStageResourceManager(session: SparkSession) extends Rule[SparkPlan] {
+case class FinalStageResourceManager(session: SparkSession)
+  extends Rule[SparkPlan] with FinalRebalanceStageHelper {
   override def apply(plan: SparkPlan): SparkPlan = {
     if (!conf.getConf(KyuubiSQLConf.FINAL_WRITE_STAGE_EAGERLY_KILL_EXECUTORS_ENABLED)) {
       return plan
@@ -77,12 +78,13 @@ case class FinalStageResourceManager(session: SparkSession) extends Rule[SparkPl
       case AQEShuffleReadExec(stage: ShuffleQueryStageExec, partitionSpecs) =>
         // The condition whether inject custom resource profile:
         // - target executors < active executors
-        // - target executors > min executors
+        // - active executors - target executors > min executors
         val numActiveExecutors = sc.getExecutorIds().length
         val targetCores = partitionSpecs.length
         val targetExecutors = (math.ceil(targetCores.toFloat / coresPerExecutor) * factor).toInt
           .max(1)
-        val hasBenefits = targetExecutors < numActiveExecutors && targetExecutors > minExecutors
+        val hasBenefits = targetExecutors < numActiveExecutors &&
+          (numActiveExecutors - targetExecutors) > minExecutors
         if (hasBenefits) {
           val shuffleId = stage.plan.asInstanceOf[ShuffleExchangeExec].shuffleDependency.shuffleId
           val numReduce = stage.plan.asInstanceOf[ShuffleExchangeExec].numPartitions
@@ -171,7 +173,7 @@ case class FinalStageResourceManager(session: SparkSession) extends Rule[SparkPl
     logInfo(s"Request to kill executors, total count ${executorsToKill.size}, " +
       s"[${executorsToKill.mkString(", ")}].")
 
-    // Note, `SparkContext#killExecutors` does not allow with ARD enabled,
+    // Note, `SparkContext#killExecutors` does not allow with DRA enabled,
     // see `https://github.com/apache/spark/pull/20604`.
     // It may cause the status in `ExecutorAllocationManager` inconsistent with
     // `CoarseGrainedSchedulerBackend` for a while. But it should be synchronous finally.
@@ -182,8 +184,15 @@ case class FinalStageResourceManager(session: SparkSession) extends Rule[SparkPl
       force = false)
   }
 
+  @transient private val queryStageOptimizerRules: Seq[Rule[SparkPlan]] = Seq(
+    OptimizeSkewInRebalancePartitions,
+    CoalesceShufflePartitions(session),
+    OptimizeShuffleWithLocalRead)
+}
+
+trait FinalRebalanceStageHelper {
   @tailrec
-  private def findFinalRebalanceStage(plan: SparkPlan): Option[ShuffleQueryStageExec] = {
+  final protected def findFinalRebalanceStage(plan: SparkPlan): Option[ShuffleQueryStageExec] = {
     plan match {
       case p: ProjectExec => findFinalRebalanceStage(p.child)
       case f: FilterExec => findFinalRebalanceStage(f.child)
@@ -196,9 +205,4 @@ case class FinalStageResourceManager(session: SparkSession) extends Rule[SparkPl
       case _ => None
     }
   }
-
-  @transient private val queryStageOptimizerRules: Seq[Rule[SparkPlan]] = Seq(
-    OptimizeSkewInRebalancePartitions,
-    CoalesceShufflePartitions(session),
-    OptimizeShuffleWithLocalRead)
 }

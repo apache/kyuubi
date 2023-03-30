@@ -29,6 +29,8 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
 trait KyuubiSparkSQLExtensionTest extends QueryTest
   with SQLTestUtils
   with AdaptiveSparkPlanHelper {
+  sys.props.put("spark.testing", "1")
+
   private var _spark: Option[SparkSession] = None
   protected def spark: SparkSession = _spark.getOrElse {
     throw new RuntimeException("test spark session don't initial before using it.")
