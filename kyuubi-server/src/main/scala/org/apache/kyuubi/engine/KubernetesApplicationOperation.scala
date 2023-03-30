@@ -26,7 +26,7 @@ import io.fabric8.kubernetes.client.informers.SharedIndexInformer
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
+import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationState, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
 import org.apache.kyuubi.util.KubernetesUtils
 
@@ -36,7 +36,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   @volatile
   private var kubernetesClient: KubernetesClient = _
-  private var driverInformer: SharedIndexInformer[Pod] = _
+  private var enginePodInformer: SharedIndexInformer[Pod] = _
   private var submitTimeout: Long = _
 
   private val appInfoStore: ConcurrentHashMap[String, ApplicationInfo] =
@@ -51,10 +51,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         submitTimeout = conf.get(KyuubiConf.ENGINE_SUBMIT_TIMEOUT)
         // Using Kubernetes Informer to update application state
         val informerPeriod = conf.get(KyuubiConf.KUBERNETES_INFORMER_PERIOD)
-        driverInformer = client.informers().sharedIndexInformerFor(
-          classOf[Pod],
-          informerPeriod)
-        driverInformer.addEventHandler(new SparkEnginePodEventHandler()).start()
+        enginePodInformer =
+          client.pods().withLabel(LABEL_KYUUBI_UNIQUE_KEY).runnableInformer(informerPeriod)
+        enginePodInformer.addEventHandler(new SparkEnginePodEventHandler()).start()
         info("Start Kubernetes Client Informer.")
         // Using Cache help clean delete app info
         val cachePeriod = conf.get(KyuubiConf.KUBERNETES_INFORMER_CACHE_PERIOD)
@@ -139,8 +138,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   override def stop(): Unit = {
     try {
-      if (driverInformer != null) {
-        driverInformer.stop()
+      if (enginePodInformer != null) {
+        enginePodInformer.stop()
       }
       if (kubernetesClient != null) {
         kubernetesClient.close()
@@ -158,7 +157,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       pod.getMetadata.getLabels.containsKey(LABEL_KYUUBI_UNIQUE_KEY)
     }
 
-    private def updateState(pod: Pod): Unit = {
+    private def updateApplicationState(pod: Pod): Unit = {
       val metaData = pod.getMetadata
       val state = toApplicationState(pod.getStatus.getPhase)
       debug(s"Driver Informer change pod: ${metaData.getName} state: $state")
@@ -171,7 +170,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           error = Option(pod.getStatus.getReason)))
     }
 
-    private def markDeleted(pod: Pod): Unit = {
+    private def markTerminated(pod: Pod): Unit = {
       deletedAppInfoCache.put(
         pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
         toApplicationState(pod.getStatus.getPhase))
@@ -179,16 +178,16 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
     override def onAdd(pod: Pod): Unit = {
       if (isSparkEnginePod(pod)) {
-        updateState(pod)
+        updateApplicationState(pod)
       }
     }
 
     override def onUpdate(oldPod: Pod, newPod: Pod): Unit = {
       if (isSparkEnginePod(newPod)) {
-        updateState(newPod)
+        updateApplicationState(newPod)
         toApplicationState(newPod.getStatus.getPhase) match {
-          case FINISHED | FAILED | UNKNOWN =>
-            markDeleted(newPod)
+          case state if isTerminated(state) =>
+            markTerminated(newPod)
           case _ =>
           // do nothing
         }
@@ -197,8 +196,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
     override def onDelete(pod: Pod, deletedFinalStateUnknown: Boolean): Unit = {
       if (isSparkEnginePod(pod)) {
-        updateState(pod)
-        markDeleted(pod)
+        updateApplicationState(pod)
+        markTerminated(pod)
       }
     }
   }
