@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalTime}
 import java.util
 
 import scala.collection.JavaConverters._
@@ -190,6 +190,9 @@ class ExecuteStatement(
         case _: DateType =>
           val date = RowSetUtils.formatLocalDate(LocalDate.ofEpochDay(r.getInt(i)))
           row.setField(i, date)
+        case _: TimeType =>
+          val time = RowSetUtils.formatLocalTime(LocalTime.ofNanoOfDay(r.getLong(i) * 1000 * 1000))
+          row.setField(i, time)
         case t: TimestampType =>
           val ts = RowSetUtils
             .formatLocalDateTime(r.getTimestamp(i, t.getPrecision)

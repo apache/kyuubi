@@ -18,7 +18,7 @@
 package org.apache.kyuubi.util
 
 import java.nio.ByteBuffer
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneId}
 import java.time.chrono.IsoChronology
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
@@ -41,6 +41,12 @@ private[kyuubi] object RowSetUtils {
 
   private lazy val legacyDateFormatter = FastDateFormat.getInstance("yyyy-MM-dd", Locale.US)
 
+  private lazy val timeFormatter = createDateTimeFormatterBuilder()
+    .appendPattern("HH:mm:ss")
+    .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
+    .toFormatter(Locale.US)
+    .withChronology(IsoChronology.INSTANCE)
+
   private lazy val timestampFormatter = createDateTimeFormatterBuilder()
     .appendPattern("yyyy-MM-dd HH:mm:ss")
     .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
@@ -57,6 +63,10 @@ private[kyuubi] object RowSetUtils {
 
   def formatLocalDate(ld: LocalDate): String = {
     dateFormatter.format(ld)
+  }
+
+  def formatLocalTime(lt: LocalTime): String = {
+    timeFormatter.format(lt)
   }
 
   def formatLocalDateTime(ldt: LocalDateTime): String = {

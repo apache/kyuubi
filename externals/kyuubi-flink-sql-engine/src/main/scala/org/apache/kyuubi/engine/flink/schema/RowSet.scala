@@ -307,6 +307,7 @@ object RowSet {
     case _: MapType => TTypeId.MAP_TYPE
     case _: RowType => TTypeId.STRUCT_TYPE
     case _: BinaryType => TTypeId.BINARY_TYPE
+    case _: TimeType => TTypeId.STRING_TYPE
     case t @ (_: ZonedTimestampType | _: LocalZonedTimestampType | _: MultisetType |
         _: YearMonthIntervalType | _: DayTimeIntervalType) =>
       throw new IllegalArgumentException(
