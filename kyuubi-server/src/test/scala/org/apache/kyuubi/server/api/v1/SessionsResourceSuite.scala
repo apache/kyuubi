@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.api.v1
 
 import java.nio.charset.StandardCharsets
 import java.util
-import java.util.Base64
+import java.util.{Base64, Collections}
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{GenericType, MediaType, Response}
 
@@ -192,12 +192,24 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val pathPrefix = s"api/v1/sessions/$sessionHandle"
 
-    val statementReq = new StatementRequest("show tables", true, 3000)
+    var statementReq = new StatementRequest("show tables", true, 3000)
     response = webTarget
       .path(s"$pathPrefix/operations/statement").request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     var operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle !== null)
+
+    statementReq = new StatementRequest(
+      "spark.sql(\"show tables\")",
+      true,
+      3000,
+      Collections.singletonMap(KyuubiConf.OPERATION_LANGUAGE.key, "SCALA"))
+    response = webTarget
+      .path(s"$pathPrefix/operations/statement").request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    operationHandle = response.readEntity(classOf[OperationHandle])
     assert(operationHandle !== null)
 
     response = webTarget.path(s"$pathPrefix/operations/typeInfo").request()

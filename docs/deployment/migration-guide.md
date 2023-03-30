@@ -20,6 +20,7 @@
 ## Upgrading from Kyuubi 1.7.0 to 1.7.1
 
 * Since Kyuubi 1.7.1, `protocolVersion` is removed from the request parameters of the REST API `Open(create) a session`. All removed or unknown parameters will be silently ignored and affects nothing.
+* Since Kyuubi 1.7.1, `confOverlay` is supported in the request parameters of the REST API `Create an operation with EXECUTE_STATEMENT type`.
 
 ## Upgrading from Kyuubi 1.6 to 1.7
 
