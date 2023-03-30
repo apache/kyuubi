@@ -210,7 +210,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
 
     sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
 
-    eventually(timeout(3.minutes), interval(50.milliseconds)) {
+    // wait for driver pod start
+    eventually(timeout(3.minutes), interval(5.second)) {
       // trigger k8sOperation init here
       val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
       assert(appInfo.state == RUNNING)

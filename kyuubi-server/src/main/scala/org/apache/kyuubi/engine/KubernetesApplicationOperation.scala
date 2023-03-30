@@ -153,28 +153,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   private class SparkEnginePodEventHandler extends ResourceEventHandler[Pod] {
-    private def isSparkEnginePod(pod: Pod): Boolean = {
-      pod.getMetadata.getLabels.containsKey(LABEL_KYUUBI_UNIQUE_KEY)
-    }
-
-    private def updateApplicationState(pod: Pod): Unit = {
-      val metaData = pod.getMetadata
-      val state = toApplicationState(pod.getStatus.getPhase)
-      debug(s"Driver Informer change pod: ${metaData.getName} state: $state")
-      appInfoStore.put(
-        metaData.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
-        ApplicationInfo(
-          id = metaData.getLabels.get(SPARK_APP_ID_LABEL),
-          name = metaData.getName,
-          state = state,
-          error = Option(pod.getStatus.getReason)))
-    }
-
-    private def markTerminated(pod: Pod): Unit = {
-      deletedAppInfoCache.put(
-        pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
-        toApplicationState(pod.getStatus.getPhase))
-    }
 
     override def onAdd(pod: Pod): Unit = {
       if (isSparkEnginePod(pod)) {
@@ -200,6 +178,29 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         markTerminated(pod)
       }
     }
+  }
+
+  private def isSparkEnginePod(pod: Pod): Boolean = {
+    pod.getMetadata.getLabels.containsKey(LABEL_KYUUBI_UNIQUE_KEY)
+  }
+
+  private def updateApplicationState(pod: Pod): Unit = {
+    val metaData = pod.getMetadata
+    val state = toApplicationState(pod.getStatus.getPhase)
+    debug(s"Driver Informer change pod: ${metaData.getName} state: $state")
+    appInfoStore.put(
+      metaData.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
+      ApplicationInfo(
+        id = metaData.getLabels.get(SPARK_APP_ID_LABEL),
+        name = metaData.getName,
+        state = state,
+        error = Option(pod.getStatus.getReason)))
+  }
+
+  private def markTerminated(pod: Pod): Unit = {
+    deletedAppInfoCache.put(
+      pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
+      toApplicationState(pod.getStatus.getPhase))
   }
 }
 
