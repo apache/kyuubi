@@ -175,7 +175,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       fe.be.executeStatement(
         sessionHandleStr,
         request.getStatement,
-        Map.empty,
+        request.getConfOverlay.asScala,
         request.isRunAsync,
         request.getQueryTimeout)
     } catch {
