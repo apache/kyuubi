@@ -31,6 +31,10 @@ public class StatementRequest {
 
   public StatementRequest() {}
 
+  public StatementRequest(String statement, boolean runAsync, Long queryTimeout) {
+    this(statement, runAsync, queryTimeout, Collections.emptyMap());
+  }
+
   public StatementRequest(
       String statement, boolean runAsync, Long queryTimeout, Map<String, String> confOverlay) {
     this.statement = statement;
