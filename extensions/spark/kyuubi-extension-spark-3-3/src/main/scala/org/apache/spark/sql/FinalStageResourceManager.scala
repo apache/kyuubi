@@ -64,41 +64,45 @@ case class FinalStageResourceManager(session: SparkSession)
       return plan
     }
 
-    val stage = findFinalRebalanceStage(plan)
-    if (stage.isEmpty) {
+    val stageOpt = findFinalRebalanceStage(plan)
+    if (stageOpt.isEmpty) {
       return plan
     }
 
     // Since we are in `prepareQueryStage`, the AQE shuffle read has not been applied.
     // So we need to apply it by self.
-    val shuffleRead = queryStageOptimizerRules.foldLeft(stage.get.asInstanceOf[SparkPlan]) {
+    val shuffleRead = queryStageOptimizerRules.foldLeft(stageOpt.get.asInstanceOf[SparkPlan]) {
       case (latest, rule) => rule.apply(latest)
     }
-    shuffleRead match {
+    val (targetCores, stage) = shuffleRead match {
       case AQEShuffleReadExec(stage: ShuffleQueryStageExec, partitionSpecs) =>
-        // The condition whether inject custom resource profile:
-        // - target executors < active executors
-        // - active executors - target executors > min executors
-        val numActiveExecutors = sc.getExecutorIds().length
-        val targetCores = partitionSpecs.length
-        val targetExecutors = (math.ceil(targetCores.toFloat / coresPerExecutor) * factor).toInt
-          .max(1)
-        val hasBenefits = targetExecutors < numActiveExecutors &&
-          (numActiveExecutors - targetExecutors) > minExecutors
-        if (hasBenefits) {
-          val shuffleId = stage.plan.asInstanceOf[ShuffleExchangeExec].shuffleDependency.shuffleId
-          val numReduce = stage.plan.asInstanceOf[ShuffleExchangeExec].numPartitions
-          // Now, there is only a final rebalance stage waiting to execute and all tasks of previous
-          // stage are finished. Kill redundant existed executors eagerly so the tasks of final
-          // stage can be centralized scheduled.
-          killExecutors(sc, targetExecutors, shuffleId, numReduce)
-        } else {
-          logInfo(s"Has no benefits to kill executors or inject custom resource profile, " +
-            s"active executors: $numActiveExecutors, min executor: $minExecutors, " +
-            s"target executors: $targetExecutors.")
-        }
-
+        (partitionSpecs.length, stage)
+      case stage: ShuffleQueryStageExec =>
+        // we can still kill executors if no AQE shuffle read, e.g., `.repartition(2)`
+        (stage.shuffle.numPartitions, stage)
       case _ =>
+        // it should never happen in current Spark, but to be safe do nothing if happens
+        logWarning("BUG, Please report to Apache Kyuubi community")
+        return plan
+    }
+    // The condition whether inject custom resource profile:
+    // - target executors < active executors
+    // - active executors - target executors > min executors
+    val numActiveExecutors = sc.getExecutorIds().length
+    val targetExecutors = (math.ceil(targetCores.toFloat / coresPerExecutor) * factor).toInt
+      .max(1)
+    val hasBenefits = targetExecutors < numActiveExecutors &&
+      (numActiveExecutors - targetExecutors) > minExecutors
+    logInfo(s"The snapshot of current executors view, " +
+      s"active executors: $numActiveExecutors, min executor: $minExecutors, " +
+      s"target executors: $targetExecutors, has benefits: $hasBenefits")
+    if (hasBenefits) {
+      val shuffleId = stage.plan.asInstanceOf[ShuffleExchangeExec].shuffleDependency.shuffleId
+      val numReduce = stage.plan.asInstanceOf[ShuffleExchangeExec].numPartitions
+      // Now, there is only a final rebalance stage waiting to execute and all tasks of previous
+      // stage are finished. Kill redundant existed executors eagerly so the tasks of final
+      // stage can be centralized scheduled.
+      killExecutors(sc, targetExecutors, shuffleId, numReduce)
     }
 
     plan
@@ -144,9 +148,8 @@ case class FinalStageResourceManager(session: SparkSession)
     // shuffle status.
     // We should evict executors by their alive time first and retain all of executors which
     // have better locality for shuffle block.
-    val numExecutorToKillWithNoShuffle = expectedNumExecutorToKill - executorToBlockSize.size
     executorsWithRegistrationTs.toSeq.sortBy(_._2).foreach { case (id, _) =>
-      if (executorIdsToKill.length < numExecutorToKillWithNoShuffle &&
+      if (executorIdsToKill.length < expectedNumExecutorToKill &&
         !executorToBlockSize.contains(id)) {
         executorIdsToKill.append(id)
       }
