@@ -31,7 +31,8 @@ public class StatementRequest {
 
   public StatementRequest() {}
 
-  public StatementRequest(String statement, boolean runAsync, Long queryTimeout, Map<String, String> confOverlay) {
+  public StatementRequest(
+      String statement, boolean runAsync, Long queryTimeout, Map<String, String> confOverlay) {
     this.statement = statement;
     this.runAsync = runAsync;
     this.queryTimeout = queryTimeout;
