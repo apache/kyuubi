@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
+import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer
@@ -31,8 +32,6 @@ import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationSta
 import org.apache.kyuubi.util.KubernetesUtils
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
-
-  import io.fabric8.kubernetes.api.model.Pod
 
   @volatile
   private var kubernetesClient: KubernetesClient = _
@@ -50,9 +49,10 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         info(s"Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
         submitTimeout = conf.get(KyuubiConf.ENGINE_SUBMIT_TIMEOUT)
         // Using Kubernetes Informer to update application state
-        val informerPeriod = conf.get(KyuubiConf.KUBERNETES_INFORMER_PERIOD)
+        // Set 0 for no resync, see more details in
+        // https://github.com/fabric8io/kubernetes-client/discussions/5015
         enginePodInformer =
-          client.pods().withLabel(LABEL_KYUUBI_UNIQUE_KEY).runnableInformer(informerPeriod)
+          client.pods().withLabel(LABEL_KYUUBI_UNIQUE_KEY).runnableInformer(0)
         enginePodInformer.addEventHandler(new SparkEnginePodEventHandler()).start()
         info("Start Kubernetes Client Informer.")
         // Using Cache help clean delete app info

@@ -1171,16 +1171,6 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val KUBERNETES_INFORMER_PERIOD: ConfigEntry[Long] =
-    buildConf("kyuubi.kubernetes.informer.resyncPeriod")
-      .doc("Kubernetes Informer poll driver pod period." +
-        "Set too small can lead to, stress on Kubernetes Api Server; " +
-        "Set too lager can lead to, app info can't updated in time ")
-      .version("1.8.0")
-      .timeConf
-      .checkValue(_ >= 0, "Invalid resync period provided, It should be a non-negative value")
-      .createWithDefault(Duration.ofSeconds(10).toMillis)
-
   val KUBERNETES_INFORMER_CACHE_PERIOD: ConfigEntry[Long] =
     buildConf("kyuubi.kubernetes.informer.cache.period")
       .doc("The time kyuubi server hold app info after the app ends.")
