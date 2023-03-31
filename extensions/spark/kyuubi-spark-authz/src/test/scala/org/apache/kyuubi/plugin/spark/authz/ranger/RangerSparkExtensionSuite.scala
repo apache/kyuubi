@@ -233,6 +233,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       doAs("admin", assert(sql(s"show tables from $db").collect().length === 2))
       doAs("bob", assert(sql(s"show tables from $db").collect().length === 0))
       doAs("i_am_invisible", assert(sql(s"show tables from $db").collect().length === 0))
+      doAs("i_am_invisible", assert(sql(s"show tables from $db").limit(1).isEmpty))
     }
   }
 
@@ -247,6 +248,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
       doAs("bob", assert(sql(s"SHOW DATABASES").collect().length == 1))
       doAs("bob", assert(sql(s"SHOW DATABASES").collectAsList().get(0).getString(0) == "default"))
+      doAs("i_am_invisible", assert(sql(s"SHOW DATABASES").limit(1).isEmpty))
     }
   }
 
