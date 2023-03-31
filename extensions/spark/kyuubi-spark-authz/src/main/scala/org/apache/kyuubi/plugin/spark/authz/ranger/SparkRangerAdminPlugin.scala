@@ -133,7 +133,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
 
   private def regexp_replace(expr: String, hasLen: Boolean = false): String = {
     val pos = if (hasLen) ", 5" else ""
-    val upper = s"regexp_replace($expr, '[A-Z]', 'X'$pos)"
+    val upper = s"regexp_replace($expr, '[A-Z\u4e00-\u9fa5]', 'X'$pos)"
     val lower = s"regexp_replace($upper, '[a-z]', 'x'$pos)"
     val digits = s"regexp_replace($lower, '[0-9]', 'n'$pos)"
     digits
