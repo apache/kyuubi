@@ -52,8 +52,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           .withLabel(LABEL_KYUUBI_UNIQUE_KEY)
           .inform(new SparkEnginePodEventHandler)
         info("Start Kubernetes Client Informer.")
-        // Defer cleaning terminated application information to key expired
-        // Use Cache help clean delete app info
+        // Defer cleaning terminated application information
         val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
         deletedAppInfoCache = CacheBuilder
           .newBuilder()
