@@ -56,7 +56,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         enginePodInformer.addEventHandler(new SparkEnginePodEventHandler()).start()
         info("Start Kubernetes Client Informer.")
         // Using Cache help clean delete app info
-        val cachePeriod = conf.get(KyuubiConf.KUBERNETES_INFORMER_CACHE_PERIOD)
+        val cachePeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
         deletedAppInfoCache = CacheBuilder
           .newBuilder()
           .expireAfterWrite(cachePeriod, TimeUnit.MILLISECONDS)

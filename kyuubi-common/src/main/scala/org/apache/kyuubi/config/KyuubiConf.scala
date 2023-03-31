@@ -1171,13 +1171,14 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val KUBERNETES_INFORMER_CACHE_PERIOD: ConfigEntry[Long] =
-    buildConf("kyuubi.kubernetes.informer.cache.period")
-      .doc("The time kyuubi server hold app info after the app ends.")
+  val KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD: ConfigEntry[Long] =
+    buildConf("kyuubi.kubernetes.terminatedApplicationRetainPeriod")
+      .doc("The period for which the Kyuubi server retains application information after " +
+        "the application terminates.")
       .version("1.8.0")
       .timeConf
       .checkValue(_ > 0, "must be positive number")
-      .createWithDefault(Duration.ofSeconds(60).toMillis)
+      .createWithDefault(Duration.ofMinutes(5).toMillis)
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
