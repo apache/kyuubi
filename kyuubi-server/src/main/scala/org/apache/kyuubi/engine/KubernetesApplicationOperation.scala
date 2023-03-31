@@ -219,10 +219,10 @@ object KubernetesApplicationOperation extends Logging {
     case "Running" => RUNNING
     case "Succeeded" => FINISHED
     case "Failed" | "Error" => FAILED
-    case "Unknown" => ApplicationState.UNKNOWN
+    case "Unknown" => UNKNOWN
     case _ =>
       warn(s"The kubernetes driver pod state: $state is not supported, " +
         "mark the application state as UNKNOWN.")
-      ApplicationState.UNKNOWN
+      UNKNOWN
   }
 }
