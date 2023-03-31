@@ -208,8 +208,6 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       batchRequest.getConf.asScala.toMap,
       batchRequest)
 
-    sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
-
     // wait for driver pod start
     eventually(timeout(3.minutes), interval(5.second)) {
       // trigger k8sOperation init here
