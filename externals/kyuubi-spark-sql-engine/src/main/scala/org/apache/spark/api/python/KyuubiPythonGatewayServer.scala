@@ -32,7 +32,7 @@ object KyuubiPythonGatewayServer extends Logging {
 
   private var gatewayServer: Py4JServer = _
 
-  def start(): Unit = {
+  def start(): Unit = synchronized {
 
     val sparkConf = new SparkConf()
     gatewayServer = new Py4JServer(sparkConf)
@@ -68,7 +68,7 @@ object KyuubiPythonGatewayServer extends Logging {
     }
   }
 
-  def shutdown(): Unit = {
+  def shutdown(): Unit = synchronized {
     if (gatewayServer != null) {
       logInfo("shutting down the python gateway server.")
       gatewayServer.shutdown()
