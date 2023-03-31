@@ -24,7 +24,7 @@ import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndexInformer}
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationState, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
@@ -136,18 +136,23 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   override def stop(): Unit = {
-    try {
+    Utils.tryLogNonFatalError {
       if (enginePodInformer != null) {
         enginePodInformer.stop()
+        enginePodInformer = null
       }
+    }
+
+    Utils.tryLogNonFatalError {
       if (kubernetesClient != null) {
         kubernetesClient.close()
+        kubernetesClient = null
       }
-      if (cleanupTerminatedAppInfoTrigger != null) {
-        cleanupTerminatedAppInfoTrigger.cleanUp()
-      }
-    } catch {
-      case e: Exception => error(e.getMessage)
+    }
+
+    if (cleanupTerminatedAppInfoTrigger != null) {
+      cleanupTerminatedAppInfoTrigger.cleanUp()
+      cleanupTerminatedAppInfoTrigger = null
     }
   }
 
