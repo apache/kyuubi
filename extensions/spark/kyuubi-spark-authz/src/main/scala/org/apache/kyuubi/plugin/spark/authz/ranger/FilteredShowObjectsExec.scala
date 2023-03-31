@@ -27,12 +27,12 @@ import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 
 trait FilteredShowObjectsExec extends LeafExecNode {
-  def results: Array[InternalRow]
+  def result: Array[InternalRow]
 
   override def output: Seq[Attribute]
 
   final override def doExecute(): RDD[InternalRow] = {
-    sparkContext.parallelize(results, 1)
+    sparkContext.parallelize(result, 1)
   }
 }
 
@@ -40,13 +40,13 @@ trait FilteredShowObjectsCheck {
   def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean
 }
 
-case class FilteredShowNamespaceExec(results: Array[InternalRow], output: Seq[Attribute])
+case class FilteredShowNamespaceExec(result: Array[InternalRow], output: Seq[Attribute])
   extends FilteredShowObjectsExec {}
 object FilteredShowNamespaceExec extends FilteredShowObjectsCheck {
   def apply(delegated: SparkPlan, sc: SparkContext): FilteredShowNamespaceExec = {
-    val results = delegated.executeCollect()
+    val result = delegated.executeCollect()
       .filter(isAllowed(_, AuthZUtils.getAuthzUgi(sc)))
-    new FilteredShowNamespaceExec(results, delegated.output)
+    new FilteredShowNamespaceExec(result, delegated.output)
   }
 
   override def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean = {
@@ -58,13 +58,13 @@ object FilteredShowNamespaceExec extends FilteredShowObjectsCheck {
   }
 }
 
-case class FilteredShowTablesExec(results: Array[InternalRow], output: Seq[Attribute])
+case class FilteredShowTablesExec(result: Array[InternalRow], output: Seq[Attribute])
   extends FilteredShowObjectsExec {}
 object FilteredShowTablesExec extends FilteredShowObjectsCheck {
   def apply(delegated: SparkPlan, sc: SparkContext): FilteredShowNamespaceExec = {
-    val results = delegated.executeCollect()
+    val result = delegated.executeCollect()
       .filter(isAllowed(_, AuthZUtils.getAuthzUgi(sc)))
-    new FilteredShowNamespaceExec(results, delegated.output)
+    new FilteredShowNamespaceExec(result, delegated.output)
   }
 
   override def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean = {
