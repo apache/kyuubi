@@ -37,9 +37,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private var enginePodInformer: SharedIndexInformer[Pod] = _
   private var submitTimeout: Long = _
 
+  // key is kyuubi_unique_key
   private val appInfoStore: ConcurrentHashMap[String, ApplicationInfo] =
     new ConcurrentHashMap[String, ApplicationInfo]
-  private var deletedAppInfoCache: Cache[String, ApplicationState] = _
+  // key is kyuubi_unique_key
+  private var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     info("Start initializing Kubernetes Client.")
@@ -54,8 +56,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         info("Start Kubernetes Client Informer.")
         // Defer cleaning terminated application information
         val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
-        deletedAppInfoCache = CacheBuilder
-          .newBuilder()
+        cleanupTerminatedAppInfoTrigger = CacheBuilder.newBuilder()
           .expireAfterWrite(retainPeriod, TimeUnit.MILLISECONDS)
           .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
             Option(appInfoStore.remove(notification.getKey)).foreach { removed =>
@@ -142,8 +143,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       if (kubernetesClient != null) {
         kubernetesClient.close()
       }
-      if (deletedAppInfoCache != null) {
-        deletedAppInfoCache.cleanUp()
+      if (cleanupTerminatedAppInfoTrigger != null) {
+        cleanupTerminatedAppInfoTrigger.cleanUp()
       }
     } catch {
       case e: Exception => error(e.getMessage)
@@ -194,7 +195,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   private def markApplicationTerminated(pod: Pod): Unit = {
-    deletedAppInfoCache.put(
+    cleanupTerminatedAppInfoTrigger.put(
       pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
       toApplicationState(pod.getStatus.getPhase))
   }
