@@ -54,7 +54,7 @@ class SparkSessionImpl(
   private val sessionEvent = SessionEvent(this)
 
   override def open(): Unit = {
-    normalizedConf.foreach {
+    normalizedConf.toSeq.sortBy(!_._1.equals("use:catalog")).foreach {
       case ("use:catalog", catalog) =>
         try {
           SparkCatalogShim().setCurrentCatalog(spark, catalog)
