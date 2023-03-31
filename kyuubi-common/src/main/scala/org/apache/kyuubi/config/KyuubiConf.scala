@@ -1169,6 +1169,15 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD: ConfigEntry[Long] =
+    buildConf("kyuubi.kubernetes.terminatedApplicationRetainPeriod")
+      .doc("The period for which the Kyuubi server retains application information after " +
+        "the application terminates.")
+      .version("1.7.1")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(Duration.ofMinutes(5).toMillis)
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -2523,7 +2532,7 @@ object KyuubiConf {
   val ENGINE_SUBMIT_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.engine.submit.timeout")
       .doc("Period to tolerant Driver Pod ephemerally invisible after submitting. " +
-        "In some Resource Managers, e.g. K8s, the Driver Pod is not invisible immediately " +
+        "In some Resource Managers, e.g. K8s, the Driver Pod is not visible immediately " +
         "after `spark-submit` is returned.")
       .version("1.7.1")
       .timeConf

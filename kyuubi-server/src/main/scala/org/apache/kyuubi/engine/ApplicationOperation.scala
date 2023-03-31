@@ -100,6 +100,11 @@ case class ApplicationInfo(
   }
 }
 
+object ApplicationInfo {
+  val NOT_FOUND: ApplicationInfo = ApplicationInfo(null, null, ApplicationState.NOT_FOUND)
+  val UNKNOWN: ApplicationInfo = ApplicationInfo(null, null, ApplicationState.UNKNOWN)
+}
+
 object ApplicationOperation {
   val NOT_FOUND = "APPLICATION_NOT_FOUND"
 }
