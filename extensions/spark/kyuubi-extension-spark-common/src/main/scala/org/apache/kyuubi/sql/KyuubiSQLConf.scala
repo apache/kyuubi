@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.sql
 
+import org.apache.spark.network.util.ByteUnit
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.internal.SQLConf._
 
@@ -143,6 +144,16 @@ object KyuubiSQLConf {
         "on partitioned table, it's optional that works with defined")
       .version("1.4.0")
       .intConf
+      .createOptional
+
+  val WATCHDOG_MAX_FILE_SIZE =
+    buildConf("spark.sql.watchdog.maxFileSize")
+      .doc("Set the maximum size in bytes of files when spark scans a data source. " +
+        "Enable MaxFileSizeStrategy by specifying this configuration. " +
+        "Add maxFileSize Strategy to avoid scan excessive size of files," +
+        " it's optional that works with defined")
+      .version("1.8.0")
+      .bytesConf(ByteUnit.BYTE)
       .createOptional
 
   val WATCHDOG_FORCED_MAXOUTPUTROWS =
