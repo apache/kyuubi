@@ -70,12 +70,11 @@ object ResultSet {
   }
 
   def fromJobId(jobID: JobID): ResultSet = {
-    var data: Array[Row] = null;
-    if (jobID != null) {
-      data = Array(Row.of(jobID.toString));
+    val data: Array[Row] = if (jobID != null) {
+      Array(Row.of(jobID.toString))
     } else {
       // should not happen
-      data = Array(Row.of("(Empty Job ID)"));
+      Array(Row.of("(Empty Job ID)"))
     }
     builder
       .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
