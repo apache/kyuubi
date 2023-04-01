@@ -19,16 +19,14 @@ package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
 
 // scalastyle:off
 import java.sql.Timestamp
-
 import scala.util.Try
-
 import org.apache.commons.codec.digest.DigestUtils.md5Hex
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
-
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
-import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
+import org.apache.kyuubi.plugin.spark.authz.ranger.{RangerSparkExtension, SparkRangerAdminPlugin}
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isSparkVersionAtLeast
 
 /**
  * Base trait for data masking tests, derivative classes shall name themselves following:
@@ -50,8 +48,8 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
 
     // NOTICE: `bob` has a row filter `key < 20`
     sql("INSERT INTO default.src " +
-      "SELECT 1, 1, 'hello', '\u6d4b\u8bd5world', " +
-      "timestamp'2018-11-17 12:34:56', 'World\u6d4b\u8bd5'")
+      "SELECT 1, 1, 'hello', '\u6d4b\u8bd5world\u4e2d\u6587', " +
+      "timestamp'2018-11-17 12:34:56', '\u4e2d\u6587World\u6d4b\u8bd5'")
     sql("INSERT INTO default.src " +
       "SELECT 20, 2, 'kyuubi', 'y', timestamp'2018-11-17 12:34:56', 'world'")
     sql("INSERT INTO default.src " +
@@ -77,12 +75,11 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   test("simple query with a user doesn't have mask rules") {
     checkAnswer("kent", "SELECT key FROM default.src order by key", Seq(Row(1), Row(20), Row(30)))
   }
-  // SELECT 1, 1, 'hello', 'world', timestamp'2018-11-17 12:34:56', 'World'
+
   test("simple query with a user has mask rules") {
     val result =
-      Seq(Row(md5Hex("1"), "xxxxx", "\u6d4b\u8bd5woxxx",
-        Timestamp.valueOf("2018-01-01 00:00:00"), "Xxxld\u6d4b\u8bd5"))
-    doAs("bob", sql("SELECT value1, value2, value3, value4, value5 FROM default.src").show)
+      Seq(Row(md5Hex("1"), "xxxxx", "\u6d4b\u8bd5woxxx\u5bc6\u5bc6",
+        Timestamp.valueOf("2018-01-01 00:00:00"), "\u5bc6\u5bc6Xxxld\u6d4b\u8bd5"))
     checkAnswer("bob", "SELECT value1, value2, value3, value4, value5 FROM default.src", result)
     checkAnswer(
       "bob",
@@ -92,15 +89,15 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
 
   test("star") {
     val result =
-      Seq(Row(1, md5Hex("1"), "xxxxx", "\u6d4b\u8bd5woxxx",
-        Timestamp.valueOf("2018-01-01 00:00:00"), "Xxxld\u6d4b\u8bd5"))
+      Seq(Row(1, md5Hex("1"), "xxxxx", "\u6d4b\u8bd5woxxx\u5bc6\u5bc6",
+        Timestamp.valueOf("2018-01-01 00:00:00"), "\u5bc6\u5bc6Xxxld\u6d4b\u8bd5"))
     checkAnswer("bob", "SELECT * FROM default.src", result)
   }
 
   test("simple udf") {
     val result =
-      Seq(Row(md5Hex("1"), "xxxxx", "\u6d4b\u8bd5woxxx",
-        Timestamp.valueOf("2018-01-01 00:00:00"), "Xxxld\u6d4b\u8bd5"))
+      Seq(Row(md5Hex("1"), "xxxxx", "\u6d4b\u8bd5woxxx\u5bc6\u5bc6",
+        Timestamp.valueOf("2018-01-01 00:00:00"), "\u5bc6\u5bc6Xxxld\u6d4b\u8bd5"))
     checkAnswer(
       "bob",
       "SELECT max(value1), max(value2), max(value3), max(value4), max(value5) FROM default.src",
@@ -109,8 +106,8 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
 
   test("complex udf") {
     val result =
-      Seq(Row(md5Hex("1"), "xxxxx", "\u6d4b\u8bd5woxxx",
-        Timestamp.valueOf("2018-01-01 00:00:00"), "Xxxld\u6d4b\u8bd5"))
+      Seq(Row(md5Hex("1"), "xxxxx", "\u6d4b\u8bd5woxxx\u5bc6\u5bc6",
+        Timestamp.valueOf("2018-01-01 00:00:00"), "\u5bc6\u5bc6Xxxld\u6d4b\u8bd5"))
     checkAnswer(
       "bob",
       "SELECT coalesce(max(value1), 1), coalesce(max(value2), 1), coalesce(max(value3), 1), " +
@@ -121,8 +118,8 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
 
   test("in subquery") {
     val result =
-      Seq(Row(md5Hex("1"), "xxxxx", "\u6d4b\u8bd5woxxx",
-        Timestamp.valueOf("2018-01-01 00:00:00"), "Xxxld\u6d4b\u8bd5"))
+      Seq(Row(md5Hex("1"), "xxxxx", "\u6d4b\u8bd5woxxx\u5bc6\u5bc6",
+        Timestamp.valueOf("2018-01-01 00:00:00"), "\u5bc6\u5bc6Xxxld\u6d4b\u8bd5"))
     checkAnswer(
       "bob",
       "SELECT value1, value2, value3, value4, value5 FROM default.src WHERE value2 in " +
@@ -266,5 +263,37 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
         "SELECT value1, value2 FROM default.perm_view where key < 20",
         Seq(Row(md5Hex("1"), "hello")))
     }
+  }
+
+  test("test regexp_replace method") {
+    val exp = SparkRangerAdminPlugin.regexp_replace("'hello WORD 123\u6d4b\u8bd5\u4e2d\u6587'")
+    assert(exp ==
+      "regexp_replace(" +
+          "regexp_replace(" +
+            "regexp_replace(" +
+              "regexp_replace('hello WORD 123\u6d4b\u8bd5\u4e2d\u6587', '[A-Z]', 'X')" +
+              ", '[a-z]', 'x')" +
+            ", '[0-9]', 'n')" +
+          ", '[\u4e00-\u9fff]', '\u5bc6')")
+    val exp2 = SparkRangerAdminPlugin.regexp_replace(
+                "'hello WORD 123\u6d4b\u8bd5\u4e2d\u6587'", true)
+    assert(exp2 ==
+      "regexp_replace(" +
+        "regexp_replace(" +
+            "regexp_replace(" +
+                "regexp_replace('hello WORD 123\u6d4b\u8bd5\u4e2d\u6587', '[A-Z]', 'X', 5)" +
+                ", '[a-z]', 'x', 5)" +
+            ", '[0-9]', 'n', 5)" +
+        ", '[\u4e00-\u9fff]', '\u5bc6', 5)")
+    val s = s"SELECT $exp as value1"
+    val s2 = s"SELECT $exp2 as value1"
+    if(isSparkVersionAtLeast("3.1") == true) {
+      checkAnswer("admin", s2, Seq(Row("hellx XXXX nnn\u5bc6\u5bc6\u5bc6\u5bc6")))
+      checkAnswer("admin", s, Seq(Row("xxxxx XXXX nnn\u5bc6\u5bc6\u5bc6\u5bc6")))
+    } else {
+      checkAnswer("admin", s, Seq(Row("xxxxx XXXX nnn\u5bc6\u5bc6\u5bc6\u5bc6")))
+    }
+
+
   }
 }
