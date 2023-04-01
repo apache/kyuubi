@@ -15,27 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server
+package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FileWriter}
-import java.net.InetAddress
 
-import scala.collection.JavaConverters._
-
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.hadoop.yarn.server.MiniYARNCluster
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{KyuubiFunSuite, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
+import org.apache.kyuubi.server.{MiniDFSService, MiniYarnService}
 
-class MiniYarnService extends AbstractService("TestMiniYarnService") {
+trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite with WithKyuubiServer {
 
-  private val hadoopConfDir: File = Utils.createTempDir().toFile
-  private var yarnConf: YarnConfiguration = {
+  override protected val conf: KyuubiConf = new KyuubiConf(false)
+
+  protected var miniHdfsService: MiniDFSService = _
+
+  protected var miniYarnService: MiniYarnService = _
+
+  private val yarnConf: YarnConfiguration = {
     val yarnConfig = new YarnConfiguration()
+    yarnConfig.set("yarn.resource-types.<resource>.minimum-allocation", "256mb")
     // Disable the disk utilization check to avoid the test hanging when people's disks are
     // getting full.
     yarnConfig.set(
@@ -63,47 +64,50 @@ class MiniYarnService extends AbstractService("TestMiniYarnService") {
     // Set bind host to localhost to avoid java.net.BindException
     yarnConfig.set("yarn.resourcemanager.bind-host", "localhost")
 
-    // enable proxy
-    val currentUser = UserGroupInformation.getCurrentUser.getShortUserName
-    yarnConfig.set(s"hadoop.proxyuser.$currentUser.groups", "*")
-    yarnConfig.set(s"hadoop.proxyuser.$currentUser.hosts", "*")
     yarnConfig
   }
-  private val yarnCluster: MiniYARNCluster = new MiniYARNCluster(getName, 1, 1, 1)
 
-  def setYarnConf(yarnConf: YarnConfiguration): Unit = {
-    this.yarnConf = yarnConf
-  }
+  override def beforeAll(): Unit = {
+    miniHdfsService = new MiniDFSService()
+    miniHdfsService.initialize(conf)
+    miniHdfsService.start()
+    conf.set(s"$KYUUBI_ENGINE_ENV_PREFIX.HDFS_CONF_DIR", miniHdfsService.getHadoopConfDir)
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    yarnCluster.init(yarnConf)
-    super.initialize(conf)
-  }
+    val hdfsServiceUrl = s"hdfs://localhost:${miniHdfsService.getDFSPort}"
+    yarnConf.set("fs.defaultFS", hdfsServiceUrl)
+    yarnConf.addResource(miniHdfsService.getHadoopConf)
 
-  override def start(): Unit = {
-    yarnCluster.start()
-    saveHadoopConf()
-    super.start()
-  }
+    val cp = System.getProperty("java.class.path")
+    // exclude kyuubi flink engine jar that has SPI for EmbeddedExecutorFactory
+    // which can't be initialized on the client side
+    val hadoopJars = cp.split(":").filter(s => !s.contains("flink"))
+    val hadoopClasspath = hadoopJars.mkString(":")
+    yarnConf.set("yarn.application.classpath", hadoopClasspath)
 
-  override def stop(): Unit = {
-    if (yarnCluster != null) yarnCluster.stop()
-    super.stop()
-  }
+    miniYarnService = new MiniYarnService()
+    miniYarnService.setYarnConf(yarnConf)
+    miniYarnService.initialize(conf)
+    miniYarnService.start()
 
-  private def saveHadoopConf(): Unit = {
-    val configToWrite = new Configuration(false)
-    val hostName = InetAddress.getLocalHost.getHostName
-    yarnCluster.getConfig.iterator().asScala.foreach { kv =>
-      val key = kv.getKey
-      val value = kv.getValue.replaceAll(hostName, "localhost")
-      configToWrite.set(key, value)
-      getConf.set(key, value)
-    }
+    val hadoopConfDir = Utils.createTempDir().toFile
     val writer = new FileWriter(new File(hadoopConfDir, "yarn-site.xml"))
-    configToWrite.writeXml(writer)
+    yarnConf.writeXml(writer)
     writer.close()
+
+    conf.set(s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CLASSPATH", hadoopClasspath)
+    conf.set(s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CONF_DIR", hadoopConfDir.getAbsolutePath)
+    super.beforeAll()
   }
 
-  def getHadoopConfDir: String = hadoopConfDir.getAbsolutePath
+  override def afterAll(): Unit = {
+    super.afterAll()
+    if (miniYarnService != null) {
+      miniYarnService.stop()
+      miniYarnService = null
+    }
+    if (miniHdfsService != null) {
+      miniHdfsService.stop()
+      miniHdfsService = null
+    }
+  }
 }

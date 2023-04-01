@@ -25,34 +25,17 @@ import scala.collection.JavaConverters._
 import org.apache.flink.api.common.JobID
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.hive.service.rpc.thrift._
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
+import org.apache.kyuubi.engine.flink.WithFlinkTestResources
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
-import org.apache.kyuubi.operation.{HiveJDBCTestHelper, NoneMode}
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
-import org.apache.kyuubi.service.ServiceState._
 
-class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
-  override def withKyuubiConf: Map[String, String] =
-    Map(OPERATION_PLAN_ONLY_MODE.key -> NoneMode.name)
-
-  override protected def jdbcUrl: String =
-    s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;"
-
-  ignore("release session if shared level is CONNECTION") {
-    logger.info(s"jdbc url is $jdbcUrl")
-    assert(engine.getServiceState == STARTED)
-    withJdbcStatement() { _ => }
-    eventually(Timeout(20.seconds)) {
-      assert(engine.getServiceState == STOPPED)
-    }
-  }
+abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTestResources {
 
   test("get catalogs") {
     withJdbcStatement() { statement =>

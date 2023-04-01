@@ -59,7 +59,9 @@ class FlinkProcessBuilder(
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
   override def env: Map[String, String] = conf.getEnvs +
-    (FLINK_PROXY_USER_KEY -> proxyUser)
+    ("FLINK_CONF_DIR" -> conf.getEnvs.getOrElse(
+      "FLINK_CONF_DIR",
+      s"$flinkHome${File.separator}conf"))
 
   override def clusterManager(): Option[String] = Some("yarn")
 
@@ -86,8 +88,10 @@ class FlinkProcessBuilder(
           }).map(f => f.getAbsolutePath).sorted
 
         buffer += s"-Dpipeline.jars=${flinkExtraJars.mkString(",")}"
+        buffer += s"-Dyarn.ship-files=${flinkExtraJars.mkString(";")}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
+        buffer += "-Dexecution.target=yarn-application"
         buffer += "-c"
         buffer += s"$mainClass"
         buffer += s"${mainResource.get}"

@@ -72,6 +72,8 @@ object FlinkSQLEngine extends Logging {
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
 
+    info(s"Flink SQL engine classpath: ${System.getProperty("java.class.path")}")
+
     FlinkEngineUtils.checkFlinkVersion()
 
     try {
