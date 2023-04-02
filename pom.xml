@@ -111,7 +111,6 @@
         <java.version>1.8</java.version>
         <maven.version>3.9.1</maven.version>
         <mvnd.version>1.0-m6</mvnd.version>
-        <mvnd.maven.short.version>39</mvnd.maven.short.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.17</scala.version>
