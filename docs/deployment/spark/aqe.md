@@ -178,7 +178,7 @@ partition size > skewedPartitionFactor * the median partition size && \
 skewedPartitionThresholdInBytes
 ```
 
-As Spark splits skewed partitions targeting [spark.sql.adaptive.advisoryPartitionSizeInBytes](#how-to-set-spark-sql-adaptive-advisorypartitionsizeinbytes), ideally `skewedPartitionThresholdInBytes` should be larger than `advisoryPartitionSizeInBytes`. In this case, anytime you increase `advisoryPartitionSizeInBytes`, you should also increase `skewedPartitionThresholdInBytes` if you tend to enable the feature.
+As Spark splits skewed partitions targeting [spark.sql.adaptive.advisoryPartitionSizeInBytes](#how-to-set-spark-sql-adaptive-coalescepartitions-initialpartitionnum), ideally `skewedPartitionThresholdInBytes` should be larger than `advisoryPartitionSizeInBytes`. In this case, anytime you increase `advisoryPartitionSizeInBytes`, you should also increase `skewedPartitionThresholdInBytes` if you tend to enable the feature.
 
 ### Hidden Features
 
