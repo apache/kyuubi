@@ -123,7 +123,7 @@ accessing. The following is the format of the connection URL for the Kyuubi Hive
    - Properties are case-sensitive
    - Do not duplicate properties in the connection URL
 
-Connection URL over Http
+Connection URL over HTTP
 ************************
 
 .. versionadded:: 1.6.0
