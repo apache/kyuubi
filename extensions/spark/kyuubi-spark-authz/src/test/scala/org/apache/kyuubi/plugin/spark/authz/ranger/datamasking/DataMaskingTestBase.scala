@@ -298,7 +298,5 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
       checkAnswer("admin", s1, Seq(Row("xxxxx XXXX nnn\u5bc6\u5bc6\u5bc6\u5bc6")))
       checkAnswer("admin", s3, Seq(Row("\u5bc6\u5bc6xxxxx XXXX nnn")))
     }
-
-
   }
 }
