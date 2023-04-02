@@ -95,7 +95,7 @@ function get_os_arch() {
 # install mvnd under the build/ folder if needed.
 function install_mvnd() {
   local MVND_VERSION=$(grep "<mvnd.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
-  local MVND_MVN_SHORT_VERSION=$(grep "<mvnd.maven.short.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
+  local MVND_MVN_SHORT_VERSION=$(echo "$MVN_VERSION" | awk -F . '{print $1$2}')
   local MVN_VERSION=$(grep "<maven.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
   MVND_BIN="$(command -v mvnd)"
   if [ "$MVND_BIN" ]; then
