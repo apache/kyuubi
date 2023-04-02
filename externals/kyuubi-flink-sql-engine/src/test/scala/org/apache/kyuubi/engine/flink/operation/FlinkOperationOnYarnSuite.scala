@@ -17,12 +17,10 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import org.apache.kyuubi.engine.flink.WithFlinkSQLEngineOnYarn
+import org.apache.kyuubi.engine.flink.WithDiscoveryFlinkSQLEngine
 
 class FlinkOperationOnYarnSuite extends FlinkOperationSuite
-  with WithFlinkSQLEngineOnYarn {
+  with WithDiscoveryFlinkSQLEngine {
 
-  protected def jdbcUrl: String =
-    s"jdbc:hive2://${server.frontendServices.head.connectionUrl}?" +
-      s"kyuubi.engine.type=FLINK_SQL;flink.execution.target=yarn-application"
+  protected def jdbcUrl: String = getFlinkEngineServiceUrl
 }
