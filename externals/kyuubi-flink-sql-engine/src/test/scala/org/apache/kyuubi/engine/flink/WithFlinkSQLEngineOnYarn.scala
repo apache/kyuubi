@@ -62,7 +62,7 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite {
     // memory is overwritten in the MiniYARNCluster.
     // so we have to change the number of cores for testing.
     yarnConfig.setInt(YarnConfiguration.NM_VCORES, 666)
-    yarnConfig.setFloat(YarnConfiguration.NM_MAX_PER_DISK_UTILIZATION_PERCENTAGE, 99.0F)
+    yarnConfig.setFloat(YarnConfiguration.NM_MAX_PER_DISK_UTILIZATION_PERCENTAGE, 99.0f)
     yarnConfig.setInt(YarnConfiguration.RESOURCEMANAGER_CONNECT_RETRY_INTERVAL_MS, 1000)
     yarnConfig.setInt(YarnConfiguration.RESOURCEMANAGER_CONNECT_MAX_WAIT_MS, 5000)
 
