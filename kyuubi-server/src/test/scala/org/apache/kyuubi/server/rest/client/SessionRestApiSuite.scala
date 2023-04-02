@@ -17,21 +17,153 @@
 
 package org.apache.kyuubi.server.rest.client
 
-import scala.collection.JavaConverters.asScalaBufferConverter
+import java.util
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import scala.collection.JavaConverters._
+
+import org.apache.hive.service.rpc.thrift.TGetInfoType
 
 import org.apache.kyuubi.RestClientTestHelper
 import org.apache.kyuubi.client.{KyuubiRestClient, SessionRestApi}
+import org.apache.kyuubi.client.api.v1.dto
+import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.client.exception.KyuubiRestException
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.session.SessionType
 
 class SessionRestApiSuite extends RestClientTestHelper {
-  test("list session") {
-    fe.be.sessionManager.openSession(
-      TProtocolVersion.findByValue(1),
-      "admin",
-      "123456",
-      "localhost",
-      Map("testConfig" -> "testValue"))
+  test("get/close/list/count session") {
+    withSessionRestApi { sessionRestApi =>
+      {
+        // open session
+        val sessionOpenRequest = new SessionOpenRequest(Map("testConfig" -> "testValue").asJava)
+        sessionRestApi.openSession(sessionOpenRequest)
+
+        // list sessions
+        var sessions = sessionRestApi.listSessions().asScala
+        assert(sessions.size == 1)
+        val sessionHandle = sessions(0).getIdentifier
+
+        // get open session count
+        var sessionCount = sessionRestApi.getOpenSessionCount
+        assert(sessionCount == 1)
+
+        // close session
+        sessionRestApi.closeSession(sessionHandle)
+
+        // list sessions again
+        sessions = sessionRestApi.listSessions().asScala
+        assert(sessions.isEmpty)
+
+        // get open session count again
+        sessionCount = sessionRestApi.getOpenSessionCount
+        assert(sessionCount == 0)
+      }
+    }
+  }
+
+  test("get session event") {
+    withSessionRestApi { sessionRestApi =>
+      // open session
+      val sessionOpenRequest = new SessionOpenRequest(Map("testConfig" -> "testValue").asJava)
+      val sessionHandle = sessionRestApi.openSession(sessionOpenRequest)
+
+      // get session event
+      val kyuubiEvent = sessionRestApi.getSessionEvent(
+        sessionHandle.getIdentifier.toString).asInstanceOf[dto.KyuubiSessionEvent]
+      assert(kyuubiEvent.getConf.get("testConfig").equals("testValue"))
+      assert(kyuubiEvent.getSessionType.equals(SessionType.INTERACTIVE.toString))
+    }
+  }
+
+  test("get info type") {
+    withSessionRestApi { sessionRestApi =>
+      // open session
+      val sessionOpenRequest = new SessionOpenRequest(
+        Map("testConfig" -> "testValue", KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER").asJava)
+      val sessionHandle = sessionRestApi.openSession(sessionOpenRequest)
+
+      // get session info
+      val info = sessionRestApi.getSessionInfo(
+        sessionHandle.getIdentifier.toString,
+        TGetInfoType.CLI_SERVER_NAME.getValue)
+      assert(info.getInfoType.equals("CLI_SERVER_NAME"))
+      assert(info.getInfoValue.equals("Apache Kyuubi"))
+    }
+  }
+
+  test("submit operation") {
+    withSessionRestApi { sessionRestApi =>
+      // open session
+      val sessionOpenRequest = new SessionOpenRequest(Map("testConfig" -> "testValue").asJava)
+      val sessionHandle = sessionRestApi.openSession(sessionOpenRequest)
+      val sessionHandleStr = sessionHandle.getIdentifier.toString
+
+      // execute statement
+      val op1 = sessionRestApi.executeStatement(
+        sessionHandleStr,
+        new StatementRequest("show tables", true, 3000))
+      assert(op1.getIdentifier != null)
+
+      // get type info
+      val op2 = sessionRestApi.getTypeInfo(sessionHandleStr)
+      assert(op2.getIdentifier != null)
+
+      // get catalogs
+      val op3 = sessionRestApi.getCatalogs(sessionHandleStr)
+      assert(op3.getIdentifier != null)
+
+      // get schemas
+      val op4 = sessionRestApi.getSchemas(
+        sessionHandleStr,
+        new GetSchemasRequest("spark_catalog", "default"))
+      assert(op4.getIdentifier != null)
+
+      // get tables
+      val tableTypes = new util.ArrayList[String]()
+      val op5 = sessionRestApi.getTables(
+        sessionHandleStr,
+        new GetTablesRequest("spark_catalog", "default", "default", tableTypes))
+      assert(op5.getIdentifier != null)
+
+      // get table types
+      val op6 = sessionRestApi.getTableTypes(sessionHandleStr)
+      assert(op6.getIdentifier != null)
+
+      // get columns
+      val op7 = sessionRestApi.getColumns(
+        sessionHandleStr,
+        new GetColumnsRequest("spark_catalog", "default", "default", "default"))
+      assert(op7.getIdentifier != null)
+
+      // get function
+      val op8 = sessionRestApi.getFunctions(
+        sessionHandleStr,
+        new GetFunctionsRequest("default", "default", "default"))
+      assert(op8.getIdentifier != null)
+
+      // get primary keys
+      assertThrows[KyuubiRestException] {
+        sessionRestApi.getPrimaryKeys(
+          sessionHandleStr,
+          new GetPrimaryKeysRequest("spark_catalog", "default", "default"))
+      }
+
+      // get cross reference
+      val getCrossReferenceReq = new GetCrossReferenceRequest(
+        "spark_catalog",
+        "default",
+        "default",
+        "spark_catalog",
+        "default",
+        "default")
+      assertThrows[KyuubiRestException] {
+        sessionRestApi.getCrossReference(sessionHandleStr, getCrossReferenceReq)
+      }
+    }
+  }
+
+  def withSessionRestApi[T](f: SessionRestApi => T): T = {
     val basicKyuubiRestClient: KyuubiRestClient =
       KyuubiRestClient.builder(baseUri.toString)
         .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
@@ -39,12 +171,7 @@ class SessionRestApiSuite extends RestClientTestHelper {
         .password(ldapUserPasswd)
         .socketTimeout(30000)
         .build()
-
     val sessionRestApi = new SessionRestApi(basicKyuubiRestClient)
-    val sessions = sessionRestApi.listSessions().asScala
-    assert(sessions.size == 1)
-    assert(sessions(0).getUser == "admin")
-    assert(sessions(0).getIpAddr == "localhost")
-    assert(sessions(0).getConf.toString == "{testConfig=testValue}")
+    f(sessionRestApi)
   }
 }

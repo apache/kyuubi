@@ -21,14 +21,12 @@
     class="el-menu-container"
     :collapse="isCollapse"
     :default-active="activePath"
-    :router="true"
-  >
+    :router="true">
     <template v-for="(menu, index) in menus">
       <el-menu-item
         v-if="!menu.children || menu.children.length === 0"
         :key="index + '-1'"
-        :index="menu.router"
-      >
+        :index="menu.router">
         <el-icon>
           <component :is="menu.icon" />
         </el-icon>
@@ -44,8 +42,7 @@
         <el-menu-item
           v-for="(child, index2) in menu.children"
           :key="index2"
-          :index="child.router"
-        >
+          :index="child.router">
           <el-icon :size="16">
             <component :is="child.icon" />
           </el-icon>

@@ -26,14 +26,14 @@ import javax.ws.rs.core.Response.Status
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.conf.Configuration
-import org.eclipse.jetty.servlet.FilterHolder
+import org.eclipse.jetty.servlet.{ErrorPageErrorHandler, FilterHolder}
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT, FRONTEND_REST_MAX_WORKER_THREADS, METADATA_RECOVERY_THREADS}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
-import org.apache.kyuubi.server.ui.JettyServer
+import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
@@ -58,7 +58,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   lazy val host: String = conf.get(FRONTEND_REST_BIND_HOST)
     .getOrElse {
-      if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
+      if (Utils.isWindows || Utils.isMac) {
+        warn(s"Kyuubi Server run in Windows or Mac environment, binding $getName to 0.0.0.0")
+        "0.0.0.0"
+      } else if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
         Utils.findLocalInetAddress.getCanonicalHostName
       } else {
         Utils.findLocalInetAddress.getHostAddress
@@ -95,6 +98,18 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     server.addRedirectHandler("/docs", "/swagger/")
     server.addRedirectHandler("/docs/", "/swagger/")
     server.addRedirectHandler("/swagger", "/swagger/")
+
+    installWebUI()
+  }
+
+  private def installWebUI(): Unit = {
+    val servletHandler = JettyUtils.createStaticHandler("dist", "/ui")
+    // HTML5 Web History Mode requires redirect any url path under Web UI Servlet to the main page.
+    // See more details at https://router.vuejs.org/guide/essentials/history-mode.html#html5-mode
+    val errorHandler = new ErrorPageErrorHandler
+    errorHandler.addErrorPage(404, "/")
+    servletHandler.setErrorHandler(errorHandler)
+    server.addHandler(servletHandler)
   }
 
   private def startBatchChecker(): Unit = {
@@ -162,7 +177,6 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
         server.start()
         recoverBatchSessions()
         isStarted.set(true)
-        info(s"$getName has started at ${server.getServerUri}")
         startBatchChecker()
         startInternal()
       } catch {
@@ -170,6 +184,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       }
     }
     super.start()
+    info(s"Exposing REST endpoint at: http://${server.getServerUri}")
   }
 
   override def stop(): Unit = synchronized {

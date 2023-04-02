@@ -1,19 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Kudu
 
@@ -26,6 +26,7 @@ When you are reading this documentation, we suppose that you are not necessary t
 Anything missing on this page about Apache Kudu background knowledge, you can refer to its official website.
 
 ## Why Kyuubi on Kudu
+
 Basically, Kyuubi can take place of HiveServer2 as a multi tenant ad-hoc SQL on Hadoop solution, with the advantages of speed and power coming from Spark SQL. You can run SQL queries towards both data source and Hive tables whose data is secured only with computing resources you are authorized.
 
 > Spark SQL supports operating on a variety of data sources through the DataFrame interface. A DataFrame can be operated on using relational transformations and can also be used to create a temporary view. Registering a DataFrame as a temporary view allows you to run SQL queries over its data. This section describes the general methods for loading and saving data using the Spark Data Sources and then goes into specific options that are available for the built-in data sources.
@@ -33,11 +34,13 @@ Basically, Kyuubi can take place of HiveServer2 as a multi tenant ad-hoc SQL on 
 In Kyuubi, we can register Kudu tables and other data source tables as Spark temporary views to enable federated union queries across Hive, Kudu, and other data sources.
 
 ## Kudu Integration with Apache Spark
+
 Before integrating Kyuubi with Kudu, we strongly suggest that you integrate and test Spark with Kudu first. You may find the guide from Kudu's online documentation -- [Kudu Integration with Spark](https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark)
 
 ## Kudu Integration with Kyuubi
 
 #### Install Kudu Spark Dependency
+
 Confirm your Kudu cluster version and download the corresponding kudu spark dependency library, such as [org.apache.kudu:kudu-spark3_2.12-1.14.0](https://repo1.maven.org/maven2/org/apache/kudu/kudu-spark3_2.12/1.14.0/kudu-spark3_2.12-1.14.0.jar) to `$SPARK_HOME`/jars.
 
 #### Start Kyuubi
@@ -96,7 +99,6 @@ options (
 +---------+---------------+----------------+--+
 5 rows selected (1.083 seconds)
 ```
-
 
 #### Join Kudu table with Hive table
 
@@ -179,6 +181,7 @@ No rows selected (0.611 seconds)
 ```
 
 ## References
+
 [https://kudu.apache.org/](https://kudu.apache.org/)
 [https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark](https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark)
 [https://github.com/apache/kyuubi](https://github.com/apache/kyuubi)

@@ -118,7 +118,7 @@ trait ProcBuilder {
     env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
       val workingRoot = Paths.get(root).toAbsolutePath
       if (!Files.exists(workingRoot)) {
-        debug(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
+        info(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
         Files.createDirectories(workingRoot)
       }
       if (Files.isDirectory(workingRoot)) {
@@ -127,7 +127,7 @@ trait ProcBuilder {
     }.map { rootAbs =>
       val working = Paths.get(rootAbs, proxyUser)
       if (!Files.exists(working)) {
-        debug(s"Creating $proxyUser's working directory at $working")
+        info(s"Creating $proxyUser's working directory at $working")
         Files.createDirectories(working)
       }
       if (Files.isDirectory(working)) {
@@ -335,7 +335,7 @@ trait ProcBuilder {
 
   protected def validateEnv(requiredEnv: String): Throwable = {
     KyuubiSQLException(s"$requiredEnv is not set! For more information on installing and " +
-      s"configuring $requiredEnv, please visit https://kyuubi.apache.org/docs/latest/" +
+      s"configuring $requiredEnv, please visit https://kyuubi.readthedocs.io/en/master/" +
       s"deployment/settings.html#environments")
   }
 

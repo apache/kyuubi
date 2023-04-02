@@ -76,7 +76,7 @@ install_mvn() {
   fi
   # See simple version normalization: http://stackoverflow.com/questions/16989598/bash-comparing-version-numbers
   function version { echo "$@" | awk -F. '{ printf("%03d%03d%03d\n", $1,$2,$3); }'; }
-  if [ $(version $MVN_DETECTED_VERSION) -lt $(version $MVN_VERSION) ]; then
+  if [ $(version $MVN_DETECTED_VERSION) -ne $(version $MVN_VERSION) ]; then
     local APACHE_MIRROR=${APACHE_MIRROR:-'https://archive.apache.org/dist/'}
 
     install_app \

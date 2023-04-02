@@ -17,31 +17,37 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import java.util.Locale
+import java.io.InputStream
+import java.util
+import java.util.{Collections, Locale, UUID}
 import java.util.concurrent.ConcurrentHashMap
 import javax.ws.rs._
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response.Status
 
 import scala.collection.JavaConverters._
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.glassfish.jersey.media.multipart.{FormDataContentDisposition, FormDataParam}
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys._
-import org.apache.kyuubi.engine.ApplicationInfo
+import org.apache.kyuubi.engine.{ApplicationInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle}
+import org.apache.kyuubi.util.JdbcUtils
 
 @Tag(name = "Batch")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -68,7 +74,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
     val batchOp = session.batchJobSubmissionOp
     val batchOpStatus = batchOp.getStatus
-    val batchAppStatus = batchOp.currentApplicationInfo
+    val batchAppStatus = batchOp.getOrFetchCurrentApplicationInfo
 
     val name = Option(batchOp.batchName).getOrElse(batchAppStatus.map(_.name).orNull)
     var appId: String = null
@@ -102,7 +108,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       session.connectionUrl,
       batchOpStatus.state.toString,
       session.createTime,
-      batchOpStatus.completed)
+      batchOpStatus.completed,
+      Map.empty[String, String].asJava)
   }
 
   private def buildBatch(
@@ -139,7 +146,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         metadata.kyuubiInstance,
         currentBatchState,
         metadata.createTime,
-        metadata.endTime)
+        metadata.endTime,
+        Map.empty[String, String].asJava)
     }.getOrElse(MetadataManager.buildBatch(metadata))
   }
 
@@ -161,6 +169,46 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openBatchSession(request: BatchRequest): Batch = {
+    openBatchSessionInternal(request)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[Batch]))),
+    description = "create and open a batch session with uploading resource file")
+  @POST
+  @Consumes(Array(MediaType.MULTIPART_FORM_DATA))
+  def openBatchSessionWithUpload(
+      @FormDataParam("batchRequest") batchRequest: BatchRequest,
+      @FormDataParam("resourceFile") resourceFileInputStream: InputStream,
+      @FormDataParam("resourceFile") resourceFileMetadata: FormDataContentDisposition): Batch = {
+    require(
+      fe.getConf.get(KyuubiConf.BATCH_RESOURCE_UPLOAD_ENABLED),
+      "Batch resource upload function is not enabled.")
+    require(
+      batchRequest != null,
+      "batchRequest is required and please check the content type" +
+        " of batchRequest is application/json")
+    val tempFile = Utils.writeToTempFile(
+      resourceFileInputStream,
+      KyuubiApplicationManager.uploadWorkDir,
+      resourceFileMetadata.getFileName)
+    batchRequest.setResource(tempFile.getPath)
+    openBatchSessionInternal(batchRequest, isResourceFromUpload = true)
+  }
+
+  /**
+   * open new batch session with request
+   *
+   * @param request              instance of BatchRequest
+   * @param isResourceFromUpload whether to clean up temporary uploaded resource file
+   *                             in local path after execution
+   */
+  private def openBatchSessionInternal(
+      request: BatchRequest,
+      isResourceFromUpload: Boolean = false): Batch = {
     require(
       supportedBatchType(request.getBatchType),
       s"${request.getBatchType} is not in the supported list: $SUPPORTED_BATCH_TYPES}")
@@ -170,21 +218,55 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
     request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
 
-    val userName = fe.getSessionUser(request.getConf.asScala.toMap)
-    val ipAddress = fe.getIpAddress
-    request.setConf(
-      (request.getConf.asScala ++ Map(
-        KYUUBI_CLIENT_IP_KEY -> ipAddress,
-        KYUUBI_SERVER_IP_KEY -> fe.host,
-        KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
-        KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
-    val sessionHandle = sessionManager.openBatchSession(
-      userName,
-      "anonymous",
-      ipAddress,
-      request.getConf.asScala.toMap,
-      request)
-    buildBatch(sessionManager.getBatchSessionImpl(sessionHandle))
+    val userProvidedBatchId = request.getConf.asScala.get(KYUUBI_BATCH_ID_KEY)
+    userProvidedBatchId.foreach { batchId =>
+      try UUID.fromString(batchId)
+      catch {
+        case NonFatal(e) =>
+          throw new IllegalArgumentException(s"$KYUUBI_BATCH_ID_KEY=$batchId must be an UUID", e)
+      }
+    }
+
+    userProvidedBatchId.flatMap { batchId =>
+      Option(sessionManager.getBatchFromMetadataStore(batchId))
+    } match {
+      case Some(batch) =>
+        markDuplicated(batch)
+      case None =>
+        val userName = fe.getSessionUser(request.getConf.asScala.toMap)
+        val ipAddress = fe.getIpAddress
+        val batchId = userProvidedBatchId.getOrElse(UUID.randomUUID().toString)
+        request.setConf(
+          (request.getConf.asScala ++ Map(
+            KYUUBI_BATCH_ID_KEY -> batchId,
+            KYUUBI_BATCH_RESOURCE_UPLOADED_KEY -> isResourceFromUpload.toString,
+            KYUUBI_CLIENT_IP_KEY -> ipAddress,
+            KYUUBI_SERVER_IP_KEY -> fe.host,
+            KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
+            KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
+
+        Try {
+          sessionManager.openBatchSession(
+            userName,
+            "anonymous",
+            ipAddress,
+            request.getConf.asScala.toMap,
+            request)
+        } match {
+          case Success(sessionHandle) =>
+            buildBatch(sessionManager.getBatchSessionImpl(sessionHandle))
+          case Failure(cause) if JdbcUtils.isDuplicatedKeyDBErr(cause) =>
+            val batch = sessionManager.getBatchFromMetadataStore(batchId)
+            assert(batch != null, s"can not find duplicated batch $batchId from metadata store")
+            markDuplicated(batch)
+        }
+    }
+  }
+
+  private def markDuplicated(batch: Batch): Batch = {
+    warn(s"duplicated submission: ${batch.getId}, ignore and return the existing batch.")
+    batch.setBatchInfo(Map(KYUUBI_BATCH_DUPLICATED_KEY -> "true").asJava)
+    batch
   }
 
   @ApiResponse(
@@ -214,7 +296,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
               error(s"Error redirecting get batch[$batchId] to ${metadata.kyuubiInstance}", e)
               val batchAppStatus = sessionManager.applicationManager.getApplicationInfo(
                 metadata.clusterManager,
-                batchId)
+                batchId,
+                Some(metadata.createTime))
               buildBatch(metadata, batchAppStatus)
           }
         }
@@ -278,12 +361,16 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       try {
         val submissionOp = batchSession.batchJobSubmissionOp
-        val rowSet = submissionOp.getOperationLogRowSet(
-          FetchOrientation.FETCH_NEXT,
-          from,
-          size)
-        val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
-        new OperationLog(logRowSet.asJava, logRowSet.size)
+        val rowSet = submissionOp.getOperationLogRowSet(FetchOrientation.FETCH_NEXT, from, size)
+        val columns = rowSet.getColumns
+        val logRowSet: util.List[String] =
+          if (columns == null || columns.size == 0) {
+            Collections.emptyList()
+          } else {
+            assert(columns.size == 1)
+            columns.get(0).getStringVal.getValues
+          }
+        new OperationLog(logRowSet, logRowSet.size)
       } catch {
         case NonFatal(e) =>
           val errorMsg = s"Error getting operation log for batchId: $batchId"

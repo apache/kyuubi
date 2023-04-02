@@ -279,4 +279,20 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
       jdbcMetadataStore.updateMetadata(metadata)
     }
   }
+
+  test("get schema urls with correct version ordering") {
+    val url1 = "metadata-store-schema-1.7.0.mysql.sql"
+    val url2 = "metadata-store-schema-1.7.1.mysql.sql"
+    val url3 = "metadata-store-schema-1.8.0.mysql.sql"
+    val url4 = "metadata-store-schema-1.10.0.mysql.sql"
+    val url5 = "metadata-store-schema-2.1.0.mysql.sql"
+    assert(jdbcMetadataStore.getSchemaVersion(url1) === ((1, 7, 0)))
+    assert(jdbcMetadataStore.getSchemaVersion(url2) === ((1, 7, 1)))
+    assert(jdbcMetadataStore.getSchemaVersion(url3) === ((1, 8, 0)))
+    assert(jdbcMetadataStore.getSchemaVersion(url4) === ((1, 10, 0)))
+    assert(jdbcMetadataStore.getSchemaVersion(url5) === ((2, 1, 0)))
+    assert(jdbcMetadataStore.getLatestSchemaUrl(Seq(url1, url2, url3, url4)).get === url4)
+    assert(jdbcMetadataStore.getLatestSchemaUrl(Seq(url1, url3, url4, url2)).get === url4)
+    assert(jdbcMetadataStore.getLatestSchemaUrl(Seq(url1, url2, url3, url4, url5)).get === url5)
+  }
 }

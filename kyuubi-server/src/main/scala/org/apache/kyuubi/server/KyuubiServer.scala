@@ -33,6 +33,7 @@ import org.apache.kyuubi.ha.client.{AuthTypes, ServiceDiscovery}
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf
 import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable, ServiceState}
+import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
@@ -82,7 +83,7 @@ object KyuubiServer extends Logging {
         |                /\___/
         |                \/__/
        """.stripMargin)
-    info(s"Version: $KYUUBI_VERSION, Revision: $REVISION, Branch: $BRANCH," +
+    info(s"Version: $KYUUBI_VERSION, Revision: $REVISION ($REVISION_TIME), Branch: $BRANCH," +
       s" Java: $JAVA_COMPILE_VERSION, Scala: $SCALA_COMPILE_VERSION," +
       s" Spark: $SPARK_COMPILE_VERSION, Hadoop: $HADOOP_COMPILE_VERSION," +
       s" Hive: $HIVE_COMPILE_VERSION, Flink: $FLINK_COMPILE_VERSION," +
@@ -128,6 +129,14 @@ object KyuubiServer extends Logging {
     info(s"Refreshed user defaults configs with changes of " +
       s"unset: $unsetCount, updated: $updatedCount, added: $addedCount")
   }
+
+  private[kyuubi] def refreshUnlimitedUsers(): Unit = synchronized {
+    val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val existingUnlimitedUsers = sessionMgr.getUnlimitedUsers()
+    sessionMgr.refreshUnlimitedUsers(KyuubiConf().loadFileDefaults())
+    val refreshedUnlimitedUsers = sessionMgr.getUnlimitedUsers()
+    info(s"Refreshed unlimited users from $existingUnlimitedUsers to $refreshedUnlimitedUsers")
+  }
 }
 
 class KyuubiServer(name: String) extends Serverable(name) {
@@ -148,7 +157,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
         warn("MYSQL frontend protocol is experimental.")
         new KyuubiMySQLFrontendService(this)
       case TRINO =>
-        warn("Trio frontend protocol is experimental.")
+        warn("Trino frontend protocol is experimental.")
         new KyuubiTrinoFrontendService(this)
       case other =>
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
@@ -159,6 +168,9 @@ class KyuubiServer(name: String) extends Serverable(name) {
 
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
+
+    val periodicGCService = new PeriodicGCService
+    addService(periodicGCService)
 
     if (conf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)

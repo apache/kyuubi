@@ -45,7 +45,6 @@
   - ".gitattributes"
   - ".github/**/*"
   - ".gitignore"
-  - ".travis.yml"
   - "LICENSE"
   - "LICENSE-binary"
   - "NOTICE"
@@ -103,7 +102,8 @@
 
 "module:server":
   - "bin/kyuubi"
-  - "kyuubi-server/**/*"
+  - "kyuubi-server/src/**/*"
+  - "kyuubi-server/pom.xml"
   - "extension/server/kyuubi-server-plugin/**/*"
 
 "module:spark":
@@ -122,3 +122,6 @@
 
 "module:authz":
   - "extensions/spark/kyuubi-spark-authz/**/*"
+
+"module:ui":
+  - "kyuubi-server/web-ui/**/*"

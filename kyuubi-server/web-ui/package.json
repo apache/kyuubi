@@ -1,7 +1,7 @@
 {
   "name": "kyuubi-ui",
   "private": true,
-  "version": "1.7.0-SNAPSHOT",
+  "version": "1.8.0-SNAPSHOT",
   "type": "module",
   "scripts": {
     "dev": "vue-tsc --noEmit && vite --port 9090",
@@ -17,6 +17,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.9",
     "axios": "^0.27.2",
+    "date-fns": "^2.29.3",
     "element-plus": "^2.2.12",
     "pinia": "^2.0.18",
     "pinia-plugin-persistedstate": "^2.1.1",

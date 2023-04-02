@@ -1,19 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # REST API v1
 
@@ -57,10 +57,10 @@ Get an information detail of a session
 
 #### Response Body
 
-| Name      | Description                                | Type   |
-|:----------|:-------------------------------------------|:-------|
-| infoType  | The type of session information            | String |
-| infoValue | The value of session information           | String |
+| Name      | Description                      | Type   |
+|:----------|:---------------------------------|:-------|
+| infoType  | The type of session information  | String |
+| infoValue | The value of session information | String |
 
 ### GET /sessions/count
 
@@ -68,9 +68,9 @@ Get the current open session count
 
 #### Response Body
 
-| Name             | Description                       | Type |
-|:-----------------|:----------------------------------|:-----|
-| openSessionCount | The count of opening session      | Int  |
+| Name             | Description                  | Type |
+|:-----------------|:-----------------------------|:-----|
+| openSessionCount | The count of opening session | Int  |
 
 ### GET /sessions/execPool/statistic
 
@@ -89,19 +89,16 @@ Create a session
 
 #### Request Parameters
 
-| Name            | Description                              | Type   |
-|:----------------|:-----------------------------------------|:-------|
-| protocolVersion | The protocol version of Hive CLI service | Int    |
-| user            | The user name                            | String |
-| password        | The user password                        | String |
-| ipAddr          | The user client IP address               | String |
-| configs         | The configuration of the session         | Map    |
+| Name    | Description                      | Type |
+|:--------|:---------------------------------|:-----|
+| configs | The configuration of the session | Map  |
 
 #### Response Body
 
-| Name       | Description                   | Type   |
-|:-----------|:------------------------------|:-------|
-| identifier | The session handle identifier | String |
+| Name           | Description                                                                                        | Type   |
+|:---------------|:---------------------------------------------------------------------------------------------------|:-------|
+| identifier     | The session handle identifier                                                                      | String |
+| kyuubiInstance | The Kyuubi instance that holds the session and to call for the following operations in the session | String |
 
 ### DELETE /sessions/${sessionHandle}
 
@@ -113,11 +110,12 @@ Create an operation with EXECUTE_STATEMENT type
 
 #### Request Body
 
-| Name         | Description                                                    | Type    |
-|:-------------|:---------------------------------------------------------------|:--------|
-| statement    | The SQL statement that you execute                             | String  |
-| runAsync     | The flag indicates whether the query runs synchronously or not | Boolean |
-| queryTimeout | The interval of query time out                                 | Long    |
+| Name         | Description                                                    | Type           |
+|:-------------|:---------------------------------------------------------------|:---------------|
+| statement    | The SQL statement that you execute                             | String         |
+| runAsync     | The flag indicates whether the query runs synchronously or not | Boolean        |
+| queryTimeout | The interval of query time out                                 | Long           |
+| confOverlay  | The conf to overlay only for current operation                 | Map of key=val |
 
 #### Response Body
 
@@ -335,7 +333,7 @@ Returns all the batches.
 #### Request Parameters
 
 | Name       | Description                                                                                         | Type   |
-| :--------- |:----------------------------------------------------------------------------------------------------| :----- |
+|:-----------|:----------------------------------------------------------------------------------------------------|:-------|
 | batchType  | The batch type, such as spark/flink, if no batchType is specified,<br/> return all types            | String |
 | batchState | The valid batch state can be one of the following:<br/> PENDING, RUNNING, FINISHED, ERROR, CANCELED | String |
 | batchUser  | The user name that created the batch                                                                | String |
@@ -347,7 +345,7 @@ Returns all the batches.
 #### Response Body
 
 | Name    | Description                        | Type |
-| :------ |:-----------------------------------| :--- |
+|:--------|:-----------------------------------|:-----|
 | from    | The start index of fetched batches | Int  |
 | total   | Number of batches fetched          | Int  |
 | batches | [Batch](#batch) List               | List |
@@ -358,8 +356,11 @@ Create a new batch.
 
 #### Request Body
 
+- Media type: `application-json`
+- JSON structure:
+
 | Name      | Description                                        | Type             |
-| :-------- |:---------------------------------------------------|:-----------------|
+|:----------|:---------------------------------------------------|:-----------------|
 | batchType | The batch type, such as Spark, Flink               | String           |
 | resource  | The resource containing the application to execute | Path (required)  |
 | className | Application main class                             | String(required) |
@@ -371,7 +372,33 @@ Create a new batch.
 
 The created [Batch](#batch) object.
 
-### GET /batches/{batchId}
+### POST /batches (with uploading resource)
+
+Create a new batch with uploading resource file.
+
+Example of using `curl` command to send POST request to `/v1/batches` in `multipart-formdata` media type with uploading resource file from local path.
+
+```shell
+curl --location --request POST 'http://localhost:10099/api/v1/batches' \
+--form 'batchRequest="{\"batchType\":\"SPARK\",\"className\":\"org.apache.spark.examples.SparkPi\",\"name\":\"Spark Pi\"}";type=application/json' \
+--form 'resourceFile=@"/local_path/example.jar"'
+```
+
+#### Request Body
+
+- Media type: `multipart-formdata`
+- Request body structure in multiparts:
+
+| Name         | Description                                                                                       | Media Type       |
+|:-------------|:--------------------------------------------------------------------------------------------------|:-----------------|
+| batchRequest | The batch request in JSON format as request body requried in [POST /batches](#post-batches)       | application/json |
+| resourceFile | The resource to upload and execute, which will be cached on server and cleaned up after execution | File             |
+
+#### Response Body
+
+The created [Batch](#batch) object.
+
+### GET /batches/${batchId}
 
 Returns the batch information.
 
@@ -386,13 +413,13 @@ Kill the batch if it is still running.
 #### Request Parameters
 
 | Name                    | Description                   | Type             |
-| :---------------------- | :---------------------------- | :--------------- |
+|:------------------------|:------------------------------|:-----------------|
 | hive.server2.proxy.user | the proxy user to impersonate | String(optional) |
 
 #### Response Body
 
 | Name    | Description                           | Type    |
-| :------ |:--------------------------------------| :------ |
+|:--------|:--------------------------------------|:--------|
 | success | Whether killed the batch successfully | Boolean |
 | msg     | The kill batch message                | String  |
 
@@ -403,14 +430,14 @@ Gets the local log lines from this batch.
 #### Request Parameters
 
 | Name | Description                                       | Type |
-| :--- |:--------------------------------------------------| :--- |
+|:-----|:--------------------------------------------------|:-----|
 | from | Offset                                            | Int  |
 | size | Max number of log lines to return, 100 by default | Int  |
 
 #### Response Body
 
 | Name      | Description       | Type            |
-| :-------- | :---------------- |:----------------|
+|:----------|:------------------|:----------------|
 | logRowSet | The log lines     | List of Strings |
 | rowCount  | The log row count | Int             |
 
@@ -431,7 +458,7 @@ Delete the specified engine.
 #### Request Parameters
 
 | Name                    | Description                   | Type             |
-|:------------------------|:------------------------------| :--------------- |
+|:------------------------|:------------------------------|:-----------------|
 | type                    | the engine type               | String(optional) |
 | sharelevel              | the engine share level        | String(optional) |
 | subdomain               | the engine subdomain          | String(optional) |
@@ -444,13 +471,14 @@ Get a list of satisfied engines.
 #### Request Parameters
 
 | Name                    | Description                   | Type             |
-|:------------------------|:------------------------------| :--------------- |
+|:------------------------|:------------------------------|:-----------------|
 | type                    | the engine type               | String(optional) |
 | sharelevel              | the engine share level        | String(optional) |
 | subdomain               | the engine subdomain          | String(optional) |
 | hive.server2.proxy.user | the proxy user to impersonate | String(optional) |
 
 #### Response Body
+
 The [Engine](#engine) List.
 
 ## REST Objects
@@ -458,11 +486,12 @@ The [Engine](#engine) List.
 ### Batch
 
 | Name           | Description                                                       | Type   |
-| :------------- |:------------------------------------------------------------------| :----- |
+|:---------------|:------------------------------------------------------------------|:-------|
 | id             | The batch id                                                      | String |
 | user           | The user created the batch                                        | String |
 | batchType      | The batch type                                                    | String |
 | name           | The batch name                                                    | String |
+| appStartTime   | The batch application start time                                  | Long   |
 | appId          | The batch application Id                                          | String |
 | appUrl         | The batch application tracking url                                | String |
 | appState       | The batch application state                                       | String |
@@ -500,11 +529,11 @@ The [Engine](#engine) List.
 | statementId    | The unique identifier of a single operation                     | String    |
 | remoteId       | The unique identifier of a single operation at engine side      | String    |
 | statement      | The sql that you execute                                        | String    |
-| shouldRunAsync | The flag indicating whether the query runs synchronously or not | Boolean   |                       
+| shouldRunAsync | The flag indicating whether the query runs synchronously or not | Boolean   |
 | state          | The current operation state                                     | String    |
 | eventTime      | The time when the event created & logged                        | Long      |
-| createTime     | The time for changing to the current operation state            | Long      |           
-| startTime      | The time the query start to time of this operation              | Long      |          
+| createTime     | The time for changing to the current operation state            | Long      |
+| startTime      | The time the query start to time of this operation              | Long      |
 | completeTime   | Time time the query ends                                        | Long      |
 | exception      | Caught exception if have                                        | Throwable |
 | sessionId      | The identifier of the parent session                            | String    |
@@ -517,8 +546,8 @@ The [Engine](#engine) List.
 | columnName  | The name of the column                 | String |
 | dataType    | The type descriptor for this column    | String |
 | columnIndex | The index of this column in the schema | Int    |
-| precision   | The precision of the column            | Int    |  
-| scale       | The scale of the column                | Int    |  
+| precision   | The precision of the column            | Int    |
+| scale       | The scale of the column                | Int    |
 | comment     | The comment of the column              | String |
 
 ### Row
@@ -536,12 +565,13 @@ The [Engine](#engine) List.
 
 ### Engine
 
-| Name           | Description                                                        | Type   |
-| :------------- |:-------------------------------------------------------------------| :----- |
-| version        | The version of the Kyuubi server that creates this engine instance | String |
-| user           | The user created the engine                                        | String |
-| engineType     | The engine type                                                    | String |
-| sharelevel     | The engine share level                                             | String |
-| subdomain      | The engine subdomain                                               | String |
-| instance       | host:port for the engine node                                      | String |
-| namespace      | The namespace used to expose the engine to KyuubiServers           | String |
+| Name       | Description                                                        | Type   |
+|:-----------|:-------------------------------------------------------------------|:-------|
+| version    | The version of the Kyuubi server that creates this engine instance | String |
+| user       | The user created the engine                                        | String |
+| engineType | The engine type                                                    | String |
+| sharelevel | The engine share level                                             | String |
+| subdomain  | The engine subdomain                                               | String |
+| instance   | host:port for the engine node                                      | String |
+| namespace  | The namespace used to expose the engine to KyuubiServers           | String |
+

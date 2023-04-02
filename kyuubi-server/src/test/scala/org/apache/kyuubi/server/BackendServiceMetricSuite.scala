@@ -78,7 +78,7 @@ class BackendServiceMetricSuite extends WithKyuubiServer with HiveJDBCTestHelper
 
       val meters2 =
         objMapper.readTree(Paths.get(reportPath.toString, "report.json").toFile).get("meters")
-      assert(meters2.get(MetricsConstants.BS_FETCH_RESULT_ROWS_RATE).get("count").asInt() == 7)
+      assert(meters2.get(MetricsConstants.BS_FETCH_RESULT_ROWS_RATE).get("count").asInt() == 8)
       assert(meters2.get(MetricsConstants.BS_FETCH_LOG_ROWS_RATE).get("count").asInt() >= logRows1)
 
       statement.executeQuery("DROP TABLE stu_test")

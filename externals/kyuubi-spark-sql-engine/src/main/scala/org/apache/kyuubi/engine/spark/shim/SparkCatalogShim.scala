@@ -69,7 +69,8 @@ trait SparkCatalogShim extends Logging {
       catalogName: String,
       schemaPattern: String,
       tablePattern: String,
-      tableTypes: Set[String]): Seq[Row]
+      tableTypes: Set[String],
+      ignoreTableProperties: Boolean): Seq[Row]
 
   def getTempViews(
       spark: SparkSession,

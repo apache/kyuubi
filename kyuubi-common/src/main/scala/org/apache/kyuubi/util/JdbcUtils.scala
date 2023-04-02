@@ -104,4 +104,12 @@ object JdbcUtils extends Logging {
       case _ => "(empty)"
     }
   }
+
+  def isDuplicatedKeyDBErr(cause: Throwable): Boolean = {
+    val duplicatedKeyKeywords = Seq(
+      "duplicate key value in a unique or primary key constraint or unique index", // Derby
+      "Duplicate entry" // MySQL
+    )
+    duplicatedKeyKeywords.exists(cause.getMessage.contains)
+  }
 }

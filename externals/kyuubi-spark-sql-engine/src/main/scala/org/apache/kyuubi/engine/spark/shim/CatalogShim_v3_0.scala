@@ -129,13 +129,12 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
       spark: SparkSession,
       catalogName: String,
       schemaPattern: String): Seq[Row] = {
-    val catalog = getCatalog(spark, catalogName)
-    var schemas = getSchemasWithPattern(catalog, schemaPattern)
     if (catalogName == SparkCatalogShim.SESSION_CATALOG) {
-      val viewMgr = getGlobalTempViewManager(spark, schemaPattern)
-      schemas = schemas ++ viewMgr
+      super.getSchemas(spark, catalogName, schemaPattern)
+    } else {
+      val catalog = getCatalog(spark, catalogName)
+      getSchemasWithPattern(catalog, schemaPattern).map(Row(_, catalog.name))
     }
-    schemas.map(Row(_, catalog.name))
   }
 
   override def setCurrentDatabase(spark: SparkSession, databaseName: String): Unit = {
@@ -151,7 +150,8 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
       catalogName: String,
       schemaPattern: String,
       tablePattern: String,
-      tableTypes: Set[String]): Seq[Row] = {
+      tableTypes: Set[String],
+      ignoreTableProperties: Boolean = false): Seq[Row] = {
     val catalog = getCatalog(spark, catalogName)
     val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
     catalog match {
@@ -161,16 +161,17 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
           SESSION_CATALOG,
           schemaPattern,
           tablePattern,
-          tableTypes)
+          tableTypes,
+          ignoreTableProperties)
       case tc: TableCatalog =>
         val tp = tablePattern.r.pattern
         val identifiers = namespaces.flatMap { ns =>
           tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
         }
         identifiers.map { ident =>
-          val table = tc.loadTable(ident)
           // TODO: restore view type for session catalog
-          val comment = table.properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
+          val comment = if (ignoreTableProperties) ""
+          else tc.loadTable(ident).properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
           val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
           val tableName = quoteIfNeeded(ident.name())
           Row(catalog.name(), schema, tableName, "TABLE", comment, null, null, null, null, null)
@@ -188,14 +189,6 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
     val catalog = getCatalog(spark, catalogName)
 
     catalog match {
-      case builtin if builtin.name() == SESSION_CATALOG =>
-        super.getColumnsByCatalog(
-          spark,
-          SESSION_CATALOG,
-          schemaPattern,
-          tablePattern,
-          columnPattern)
-
       case tc: TableCatalog =>
         val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
         val tp = tablePattern.r.pattern
@@ -210,6 +203,14 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
           table.schema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
             .map { case (f, i) => toColumnResult(tc.name(), namespace, tableName, f, i) }
         }
+
+      case builtin if builtin.name() == SESSION_CATALOG =>
+        super.getColumnsByCatalog(
+          spark,
+          SESSION_CATALOG,
+          schemaPattern,
+          tablePattern,
+          columnPattern)
     }
   }
 }

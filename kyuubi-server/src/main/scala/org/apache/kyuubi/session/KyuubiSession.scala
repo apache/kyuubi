@@ -16,10 +16,13 @@
  */
 package org.apache.kyuubi.session
 
+import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
-import org.apache.kyuubi.events.KyuubiSessionEvent
+import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
+import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.session.SessionType.SessionType
 
 abstract class KyuubiSession(
@@ -46,8 +49,25 @@ abstract class KyuubiSession(
       f
     } catch {
       case t: Throwable =>
-        getSessionEvent.foreach(_.exception = Some(t))
+        getSessionEvent.foreach { sessionEvent =>
+          sessionEvent.exception = Some(t)
+          EventBus.post(sessionEvent)
+        }
         throw t
     }
+  }
+
+  protected def traceMetricsOnOpen(): Unit = MetricsSystem.tracing { ms =>
+    ms.incCount(CONN_TOTAL)
+    ms.incCount(MetricRegistry.name(CONN_TOTAL, sessionType.toString))
+    ms.incCount(MetricRegistry.name(CONN_OPEN, user))
+    ms.incCount(MetricRegistry.name(CONN_OPEN, user, sessionType.toString))
+    ms.incCount(MetricRegistry.name(CONN_OPEN, sessionType.toString))
+  }
+
+  protected def traceMetricsOnClose(): Unit = MetricsSystem.tracing { ms =>
+    ms.decCount(MetricRegistry.name(CONN_OPEN, user))
+    ms.decCount(MetricRegistry.name(CONN_OPEN, user, sessionType.toString))
+    ms.decCount(MetricRegistry.name(CONN_OPEN, sessionType.toString))
   }
 }

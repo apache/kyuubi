@@ -33,7 +33,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, SpecificInternalRow
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.sql.execution.datasources.PartitionedFile
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hadoopTableReader, hiveShim}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{HadoopTableReader, HiveShim}
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.SerializableConfiguration
 
@@ -108,7 +108,7 @@ case class HivePartitionedReader(
           row.update(ordinal, UTF8String.fromString(oi.getPrimitiveJavaObject(value).getValue))
       case oi: HiveDecimalObjectInspector =>
         (value: Any, row: InternalRow, ordinal: Int) =>
-          row.update(ordinal, hiveShim.toCatalystDecimal(oi, value))
+          row.update(ordinal, HiveShim.toCatalystDecimal(oi, value))
       case oi: TimestampObjectInspector =>
         (value: Any, row: InternalRow, ordinal: Int) =>
           row.setLong(ordinal, DateTimeUtils.fromJavaTimestamp(oi.getPrimitiveJavaObject(value)))
@@ -120,7 +120,7 @@ case class HivePartitionedReader(
           row.update(ordinal, oi.getPrimitiveJavaObject(value))
       case oi =>
         logDebug("HiveInspector class: " + oi.getClass.getName + ", charset: " + charset)
-        val unwrapper = hadoopTableReader.unwrapperFor(oi)
+        val unwrapper = HadoopTableReader.unwrapperFor(oi)
         (value: Any, row: InternalRow, ordinal: Int) => row(ordinal) = unwrapper(value)
     }
   }

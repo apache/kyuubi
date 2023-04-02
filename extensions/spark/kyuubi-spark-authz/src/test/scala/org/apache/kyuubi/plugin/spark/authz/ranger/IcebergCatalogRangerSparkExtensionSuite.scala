@@ -19,6 +19,8 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 // scalastyle:off
 import scala.util.Try
 
+import org.scalatest.Outcome
+
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 
@@ -29,7 +31,7 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
-    if (isSparkV32OrGreater)
+    if (isSparkV31OrGreater)
       "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
     else ""
 
@@ -38,8 +40,13 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   val table1 = "table1"
   val outputTable1 = "outputTable1"
 
+  override def withFixture(test: NoArgTest): Outcome = {
+    assume(isSparkV31OrGreater)
+    test()
+  }
+
   override def beforeAll(): Unit = {
-    if (isSparkV32OrGreater) {
+    if (isSparkV31OrGreater) {
       spark.conf.set(
         s"spark.sql.catalog.$catalogV2",
         "org.apache.iceberg.spark.SparkCatalog")
@@ -74,8 +81,6 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   test("[KYUUBI #3515] MERGE INTO") {
-    assume(isSparkV32OrGreater)
-
     val mergeIntoSql =
       s"""
          |MERGE INTO $catalogV2.$namespace1.$outputTable1 AS target
@@ -115,8 +120,6 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   test("[KYUUBI #3515] UPDATE TABLE") {
-    assume(isSparkV32OrGreater)
-
     // UpdateTable
     val e1 = intercept[AccessControlException](
       doAs(
@@ -133,8 +136,6 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   test("[KYUUBI #3515] DELETE FROM TABLE") {
-    assume(isSparkV32OrGreater)
-
     // DeleteFromTable
     val e6 = intercept[AccessControlException](
       doAs("someone", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2")))
@@ -145,8 +146,6 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   test("[KYUUBI #3666] Support {OWNER} variable for queries run on CatalogV2") {
-    assume(isSparkV32OrGreater)
-
     val table = "owner_variable"
     val select = s"SELECT key FROM $catalogV2.$namespace1.$table"
 
@@ -221,5 +220,12 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
           assert(rowCount === 1)
         })
     }
+  }
+
+  test("[KYUUBI #4255] DESCRIBE TABLE") {
+    val e1 = intercept[AccessControlException](
+      doAs("someone", sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain()))
+    assert(e1.getMessage.contains(s"does not have [select] privilege" +
+      s" on [$namespace1/$table1]"))
   }
 }

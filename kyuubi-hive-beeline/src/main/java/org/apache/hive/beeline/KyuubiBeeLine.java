@@ -40,6 +40,7 @@ public class KyuubiBeeLine extends BeeLine {
     this(true);
   }
 
+  @SuppressWarnings("deprecation")
   public KyuubiBeeLine(boolean isBeeLine) {
     super(isBeeLine);
     try {

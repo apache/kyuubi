@@ -31,7 +31,7 @@ import org.apache.thrift.transport.TTransport
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
-import org.apache.kyuubi.config.KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, SESSION_CLOSE_ON_DISCONNECT}
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -228,7 +228,7 @@ abstract class TFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        error("Error getting type info: ", e)
+        error("Error getting info: ", e)
         resp.setInfoValue(TGetInfoValue.lenValue(0))
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
@@ -608,7 +608,14 @@ abstract class TFrontendService(name: String)
       if (handle != null) {
         info(s"Session [$handle] disconnected without closing properly, close it now")
         try {
-          be.closeSession(handle)
+          val needToClose = be.sessionManager.getSession(handle).conf
+            .get(SESSION_CLOSE_ON_DISCONNECT.key).getOrElse("true").toBoolean
+          if (needToClose) {
+            be.closeSession(handle)
+          } else {
+            warn(s"Session not actually closed because configuration " +
+              s"${SESSION_CLOSE_ON_DISCONNECT.key} is set to false")
+          }
         } catch {
           case e: KyuubiSQLException =>
             error("Failed closing session", e)

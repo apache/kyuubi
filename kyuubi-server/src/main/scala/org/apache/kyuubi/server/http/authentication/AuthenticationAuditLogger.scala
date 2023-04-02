@@ -35,6 +35,7 @@ object AuthenticationAuditLogger extends Logging {
     sb.append(s"proxyIp=${HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.get()}").append("\t")
     sb.append(s"method=${request.getMethod}").append("\t")
     sb.append(s"uri=${request.getRequestURI}").append("\t")
+    sb.append(s"params=${request.getQueryString}").append("\t")
     sb.append(s"protocol=${request.getProtocol}").append("\t")
     sb.append(s"status=${response.getStatus}")
     info(sb.toString())

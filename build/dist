@@ -18,7 +18,7 @@
 #
 
 #
-# Script to create a binary distribution for easy deploys of Spark.
+# Script to create a binary distribution for easy deploys of Kyuubi.
 # The distribution directory defaults to dist/ but can be overridden below.
 # The distribution contains fat (assembly) jars that include the Scala library,
 # so it is completely self contained.
@@ -31,6 +31,7 @@ set -x
 KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 DISTDIR="$KYUUBI_HOME/dist"
 MAKE_TGZ=false
+ENABLE_WEBUI=false
 FLINK_PROVIDED=false
 SPARK_PROVIDED=false
 HIVE_PROVIDED=false
@@ -42,15 +43,16 @@ function usage {
   echo "./build/dist - Tool for making binary distributions of Kyuubi"
   echo ""
   echo "Usage:"
-  echo "+------------------------------------------------------------------------------------------------------+"
-  echo "| ./build/dist [--name <custom_name>] [--tgz] [--flink-provided] [--spark-provided] [--hive-provided]  |"
-  echo "|              [--mvn <maven_executable>] <maven build options>                                        |"
-  echo "+------------------------------------------------------------------------------------------------------+"
+  echo "+----------------------------------------------------------------------------------------------+"
+  echo "| ./build/dist [--name <custom_name>] [--tgz] [--web-ui] [--flink-provided] [--hive-provided]  |"
+  echo "|              [--spark-provided] [--mvn <maven_executable>] <maven build options>             |"
+  echo "+----------------------------------------------------------------------------------------------+"
   echo "name:           -  custom binary name, using project version if undefined"
   echo "tgz:            -  whether to make a whole bundled package"
+  echo "web-ui:         -  whether to include web ui"
   echo "flink-provided: -  whether to make a package without Flink binary"
-  echo "spark-provided: -  whether to make a package without Spark binary"
   echo "hive-provided:  -  whether to make a package without Hive binary"
+  echo "spark-provided: -  whether to make a package without Spark binary"
   echo "mvn:            -  external maven executable location"
   echo ""
 }
@@ -66,6 +68,9 @@ while (( "$#" )); do
   case $1 in
     --tgz)
       MAKE_TGZ=true
+      ;;
+    --web-ui)
+      ENABLE_WEBUI=true
       ;;
     --flink-provided)
       FLINK_PROVIDED=true
@@ -212,6 +217,10 @@ fi
 
 MVN_DIST_OPT="-DskipTests"
 
+if [[ "$ENABLE_WEBUI" == "true" ]]; then
+  MVN_DIST_OPT="$MVN_DIST_OPT -Pweb-ui"
+fi
+
 if [[ "$SPARK_PROVIDED" == "true" ]]; then
   MVN_DIST_OPT="$MVN_DIST_OPT -Pspark-provided"
 fi
@@ -238,14 +247,16 @@ echo -e "\$ ${BUILD_COMMAND[@]}\n"
 rm -rf "$DISTDIR"
 mkdir -p "$DISTDIR/pid"
 mkdir -p "$DISTDIR/logs"
-mkdir -p "$DISTDIR/jars"
 mkdir -p "$DISTDIR/work"
+mkdir -p "$DISTDIR/jars"
+mkdir -p "$DISTDIR/beeline-jars"
+mkdir -p "$DISTDIR/web-ui"
 mkdir -p "$DISTDIR/externals/engines/flink"
 mkdir -p "$DISTDIR/externals/engines/spark"
 mkdir -p "$DISTDIR/externals/engines/trino"
 mkdir -p "$DISTDIR/externals/engines/hive"
 mkdir -p "$DISTDIR/externals/engines/jdbc"
-mkdir -p "$DISTDIR/beeline-jars"
+mkdir -p "$DISTDIR/externals/engines/chat"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Scala $SCALA_VERSION" >> "$DISTDIR/RELEASE"
@@ -303,6 +314,18 @@ for jar in $(ls "$DISTDIR/jars/"); do
   fi
 done
 
+# Copy chat engines
+cp "$KYUUBI_HOME/externals/kyuubi-chat-engine/target/kyuubi-chat-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/chat/"
+cp -r "$KYUUBI_HOME"/externals/kyuubi-chat-engine/target/scala-$SCALA_VERSION/jars/*.jar "$DISTDIR/externals/engines/chat/"
+
+# Share the jars w/ server to reduce binary size
+# shellcheck disable=SC2045
+for jar in $(ls "$DISTDIR/jars/"); do
+  if [[ -f "$DISTDIR/externals/engines/chat/$jar" ]]; then
+    (cd $DISTDIR/externals/engines/chat; ln -snf "../../../jars/$jar" "$DISTDIR/externals/engines/chat/$jar")
+  fi
+done
+
 # Copy kyuubi tools
 if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SCALA_VERSION}-${VERSION}.jar" ]]; then
   mkdir -p "$DISTDIR/tools/spark-block-cleaner/kubernetes"
@@ -320,6 +343,11 @@ for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
     cp "$KYUUBI_HOME/extensions/spark/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/extension/"
   fi
 done
+
+if [[ "$ENABLE_WEBUI" == "true" ]]; then
+  # Copy web ui dist
+  cp -r "$KYUUBI_HOME/kyuubi-server/web-ui/dist" "$DISTDIR/web-ui/"
+fi
 
 if [[ "$FLINK_PROVIDED" != "true" ]]; then
   # Copy flink binary dist

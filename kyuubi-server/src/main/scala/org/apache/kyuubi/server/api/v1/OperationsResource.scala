@@ -28,8 +28,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle}
@@ -37,6 +36,7 @@ import org.apache.kyuubi.server.api.ApiRequestContext
 
 @Tag(name = "Operation")
 @Produces(Array(MediaType.APPLICATION_JSON))
+@Consumes(Array(MediaType.APPLICATION_JSON))
 private[v1] class OperationsResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
@@ -64,8 +64,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description =
       "apply an action for an operation")
   @PUT
@@ -183,24 +182,55 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
             i.getSetField.name(),
             i.getSetField match {
               case TColumnValue._Fields.STRING_VAL =>
-                i.getStringVal.getFieldValue(TStringValue._Fields.VALUE)
+                if (i.getStringVal.isSetValue) {
+                  i.getStringVal.getFieldValue(TStringValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.BOOL_VAL =>
-                i.getBoolVal.getFieldValue(TBoolValue._Fields.VALUE)
+                if (i.getBoolVal.isSetValue) {
+                  i.getBoolVal.getFieldValue(TBoolValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.BYTE_VAL =>
-                i.getByteVal.getFieldValue(TByteValue._Fields.VALUE)
+                if (i.getByteVal.isSetValue) {
+                  i.getByteVal.getFieldValue(TByteValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.DOUBLE_VAL =>
-                i.getDoubleVal.getFieldValue(TDoubleValue._Fields.VALUE)
+                if (i.getDoubleVal.isSetValue) {
+                  i.getDoubleVal.getFieldValue(TDoubleValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.I16_VAL =>
-                i.getI16Val.getFieldValue(TI16Value._Fields.VALUE)
+                if (i.getI16Val.isSetValue) {
+                  i.getI16Val.getFieldValue(TI16Value._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.I32_VAL =>
-                i.getI32Val.getFieldValue(TI32Value._Fields.VALUE)
+                if (i.getI32Val.isSetValue) {
+                  i.getI32Val.getFieldValue(TI32Value._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.I64_VAL =>
-                i.getI64Val.getFieldValue(TI64Value._Fields.VALUE)
+                if (i.getI64Val.isSetValue) {
+                  i.getI64Val.getFieldValue(TI64Value._Fields.VALUE)
+                } else {
+                  null
+                }
             })
         }).asJava)
       })
       new ResultRowSet(rows.asJava, rows.size)
     } catch {
+      case e: IllegalArgumentException =>
+        error(e.getMessage, e)
+        throw new BadRequestException(e.getMessage)
       case NonFatal(e) =>
         val errorMsg = s"Error getting result row set for operation handle $operationHandleStr"
         error(errorMsg, e)

@@ -24,7 +24,7 @@ replicaCount: 2
 
 image:
   repository: apache/kyuubi
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   tag: ~
 
 imagePullSecrets: []
@@ -58,22 +58,83 @@ probe:
     successThreshold: 1
 
 server:
-  bind:
-    host: 0.0.0.0
+  # Thrift Binary protocol (HiveServer2 compatible)
+  thriftBinary:
+    enabled: true
     port: 10009
-  confDir: /opt/kyuubi/conf
-  conf:
-    # The value (templated string) is used for kyuubi-env.sh file
-    # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments for more details
-    kyuubiEnv: ~
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.thriftBinary.port }}"
+      nodePort: ~
+      annotations: {}
 
-    # The value (templated string) is used for kyuubi-defaults.conf file
-    # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#kyuubi-configurations for more details
-    kyuubiDefaults: ~
+  # Thrift HTTP protocol (HiveServer2 compatible)
+  thriftHttp:
+    enabled: false
+    port: 10010
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.thriftHttp.port }}"
+      nodePort: ~
+      annotations: {}
 
-    # The value (templated string) is used for log4j2.xml file
-    # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#logging for more details
-    log4j2: ~
+  # REST API protocol (experimental)
+  rest:
+    enabled: true
+    port: 10099
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.rest.port }}"
+      nodePort: ~
+      annotations: {}
+
+  # MySQL compatible text protocol (experimental)
+  mysql:
+    enabled: false
+    port: 3309
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.mysql.port }}"
+      nodePort: ~
+      annotations: {}
+
+kyuubiConfDir: /opt/kyuubi/conf
+kyuubiConf:
+  # The value (templated string) is used for kyuubi-env.sh file
+  # Example:
+  #
+  # kyuubiEnv: |
+  #   export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
+  #   export SPARK_HOME=/opt/spark
+  #   export FLINK_HOME=/opt/flink
+  #   export HIVE_HOME=/opt/hive
+  #
+  # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/deployment/settings.html#environments for more details
+  kyuubiEnv: ~
+
+  # The value (templated string) is used for kyuubi-defaults.conf file
+  # Example:
+  #
+  # kyuubiDefaults: |
+  #   kyuubi.authentication=NONE
+  #   kyuubi.frontend.bind.host=10.0.0.1
+  #   kyuubi.engine.type=SPARK_SQL
+  #   kyuubi.engine.share.level=USER
+  #   kyuubi.session.engine.initialize.timeout=PT3M
+  #   kyuubi.ha.addresses=zk1:2181,zk2:2181,zk3:2181
+  #   kyuubi.ha.namespace=kyuubi
+  #
+  # See https://kyuubi.readthedocs.io/en/master/deployment/settings.html#kyuubi-configurations for more details
+  kyuubiDefaults: ~
+
+  # The value (templated string) is used for log4j2.xml file
+  # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/deployment/settings.html#logging for more details
+  log4j2: ~
+
+# Command to launch Kyuubi server (templated)
+command: ~
+# Arguments to launch Kyuubi server (templated)
+args: ~
 
 # Environment variables (templated)
 env: []
@@ -88,15 +149,6 @@ volumeMounts: []
 initContainers: []
 # Additional containers for Kyuubi pod (templated)
 containers: []
-
-service:
-  type: NodePort
-  # The default port limit of kubernetes is 30000-32767
-  # to change:
-  #   vim kube-apiserver.yaml (usually under path: /etc/kubernetes/manifests/)
-  #   add or change line 'service-node-port-range=1-32767' under kube-apiserver
-  port: 30009
-  annotations: {}
 
 resources: {}
   # Used to specify resource, default unlimited.

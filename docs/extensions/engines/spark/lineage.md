@@ -1,19 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # SQL Lineage Support
 
@@ -25,13 +25,14 @@ The source table is related to the result set, which is the SQL Lineage.
 ## Introduction
 
 The current lineage parsing functionality is implemented as a plugin by extending Spark's `QueryExecutionListener`.
-1. The `SparkListenerSQLExecutionEnd` event is triggered after the SQL execution is finished and captured by the `QueryExecuctionListener`, 
-   where the SQL lineage parsing process is performed on the successfully executed SQL.
+1. The `SparkListenerSQLExecutionEnd` event is triggered after the SQL execution is finished and captured by the `QueryExecuctionListener`,
+where the SQL lineage parsing process is performed on the successfully executed SQL.
 2. Will write the parsed lineage information to the log file in JSON format.
 
 ### Example
 
 When the following SQL is executed:
+
 ```sql
 ## table
 create table test_table0(a string, b string)
@@ -39,7 +40,9 @@ create table test_table0(a string, b string)
 ## query
 select a as col0, b as col1 from test_table0
 ```
+
 The lineage of this SQL:
+
 ```json
 {
    "inputTables": ["default.test_table0"],
@@ -56,21 +59,22 @@ The lineage of this SQL:
 
 #### Lineage specific identification
 
-- `__count__`. Means that the column is an `count(*)` aggregate expression 
+- `__count__`. Means that the column is an `count(*)` aggregate expression
   and cannot extract the specific column. Lineage of the column
   like `default.test_table0.__count__`.
 - `__local__`. Means that the lineage of the table is a `LocalRelation` and not the real table,
   like `__local__.a`
-
 
 ### SQL type support
 
 Currently supported column lineage for spark's `Command` and `Query` type:
 
 #### Query
+
 - `Select`
 
 #### Command
+
 - `AlterViewAsCommand`
 - `AppendData`
 - `CreateDataSourceTableAsSelectCommand`
@@ -89,12 +93,11 @@ Currently supported column lineage for spark's `Command` and `Query` type:
 - `ReplaceTableAsSelect`
 - `SaveIntoDataSourceCommand`
 
-
 ## Building
 
 ### Build with Apache Maven
 
-Kyuubi Spark Lineage Listener Extension is built using [Apache Maven](http://maven.apache.org).
+Kyuubi Spark Lineage Listener Extension is built using [Apache Maven](https://maven.apache.org).
 To build it, `cd` to the root direct of kyuubi project and run:
 
 ```shell
@@ -120,19 +123,19 @@ build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -DskipTests -Dspark.versi
 
 The available `spark.version`s are shown in the following table.
 
-|   Spark Version   |  Supported  |                                                              Remark                                                              |
-|:-----------------:|:-----------:|:--------------------------------------------------------------------------------------------------------------------------------:|
-|      master       |      √      |                                                                -                                                                 |
-|       3.3.x       |      √      |                                                                -                                                                 |
-|       3.2.x       |      √      |                                                                -                                                                 |
-|       3.1.x       |      √      |                                                                -                                                                 |
-|       3.0.x       |      √      |                                                                -                                                                 |
-|       2.4.x       |      x      |                                                                -                                                                 |
+| Spark Version | Supported | Remark |
+|:-------------:|:---------:|:------:|
+|    master     |     √     |   -    |
+|     3.3.x     |     √     |   -    |
+|     3.2.x     |     √     |   -    |
+|     3.1.x     |     √     |   -    |
+|     3.0.x     |     √     |   -    |
+|     2.4.x     |     x     |   -    |
 
 Currently, Spark released with Scala 2.12 are supported.
 
-
 ### Test with ScalaTest Maven plugin
+
 If you omit `-DskipTests` option in the command above, you will also get all unit tests run.
 
 ```shell
@@ -148,8 +151,6 @@ build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -DdebugForkedProcess=true
 The tests will suspend at startup and wait for a remote debugger to attach to the configured port.
 
 We will appreciate if you can share the bug or the fix to the Kyuubi community.
-
-
 
 ## Installing
 
@@ -167,15 +168,43 @@ Add `org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListene
 spark.sql.queryExecutionListeners=org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener
 ```
 
-### Settings for Lineage Logger and Path
+### Optional configuration
 
-#### Lineage Logger Path
-The location of all the engine operation lineage events go for the builtin JSON logger.
-We first need set `kyuubi.engine.event.loggers` to `JSON`.
-All operation lineage events will be written in the unified event json logger path, which be setting with 
-`kyuubi.engine.event.json.log.path`. We can get the lineage logger from the `operation_lineage` dir in the
-`kyuubi.engine.event.json.log.path`.
+#### Whether to Skip Permanent View Resolution
 
+If enabled, lineage resolution will stop at permanent views and treats them as physical tables. We need
+to add one configurations.
 
+```properties
+spark.kyuubi.plugin.lineage.skip.parsing.permanent.view.enabled=true
+```
 
+### Get Lineage Events
 
+The lineage dispatchers are used to dispatch lineage events, configured via `spark.kyuubi.plugin.lineage.dispatchers`.
+
+<ul>
+  <li>SPARK_EVENT (by default): send lineage event to spark event bus</li>
+  <li>KYUUBI_EVENT: send lineage event to kyuubi event bus</li>
+</ul>
+
+#### Get Lineage Events from SparkListener
+
+When using the `SPARK_EVENT` dispatcher, the lineage events will be sent to the `SparkListenerBus`. To handle lineage events, a new `SparkListener` needs to be added.
+Example for Adding `SparkListener`:
+
+```scala
+spark.sparkContext.addSparkListener(new SparkListener {
+      override def onOtherEvent(event: SparkListenerEvent): Unit = {
+        event match {
+          case lineageEvent: OperationLineageEvent =>
+            // Your processing logic
+          case _ =>
+        }
+      }
+    })
+```
+
+#### Get Lineage Events from Kyuubi EventHandler
+
+When using the `KYUUBI_EVENT` dispatcher, the lineage events will be sent to the Kyuubi `EventBus`. Refer to [Kyuubi Event Handler](../../server/events) to handle kyuubi events.

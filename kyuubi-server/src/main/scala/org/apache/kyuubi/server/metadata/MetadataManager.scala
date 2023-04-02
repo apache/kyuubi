@@ -20,6 +20,8 @@ package org.apache.kyuubi.server.metadata
 import java.util.concurrent.{ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.collection.JavaConverters._
+
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
@@ -29,7 +31,7 @@ import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.SessionType
-import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
+import org.apache.kyuubi.util.{ClassUtils, JdbcUtils, ThreadUtils}
 
 class MetadataManager extends AbstractService("MetadataManager") {
   import MetadataManager._
@@ -37,44 +39,55 @@ class MetadataManager extends AbstractService("MetadataManager") {
   private var _metadataStore: MetadataStore = _
 
   // Visible for testing.
-  private[metadata] val identifierRequestsRetryRefs =
+  private[metadata] val identifierRequestsAsyncRetryRefs =
     new ConcurrentHashMap[String, MetadataRequestsRetryRef]()
 
   // Visible for testing.
-  private[metadata] val identifierRequestsRetryingCounts =
+  private[metadata] val identifierRequestsAsyncRetryingCounts =
     new ConcurrentHashMap[String, AtomicInteger]()
 
-  private val requestsRetryTrigger =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-requests-retry-trigger")
+  private lazy val requestsRetryInterval =
+    conf.get(KyuubiConf.METADATA_REQUEST_RETRY_INTERVAL)
 
-  private var requestsRetryExecutor: ThreadPoolExecutor = _
+  private lazy val requestsAsyncRetryEnabled =
+    conf.get(KyuubiConf.METADATA_REQUEST_ASYNC_RETRY_ENABLED)
 
-  private var maxMetadataRequestsRetryRefs: Int = _
+  private lazy val requestsAsyncRetryTrigger =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-requests-async-retry-trigger")
 
-  private val metadataCleaner =
+  private lazy val requestsAsyncRetryExecutor: ThreadPoolExecutor =
+    ThreadUtils.newDaemonFixedThreadPool(
+      conf.get(KyuubiConf.METADATA_REQUEST_ASYNC_RETRY_THREADS),
+      "metadata-requests-async-retry")
+
+  private lazy val cleanerEnabled = conf.get(KyuubiConf.METADATA_CLEANER_ENABLED)
+
+  private lazy val metadataCleaner =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-cleaner")
 
   override def initialize(conf: KyuubiConf): Unit = {
     _metadataStore = MetadataManager.createMetadataStore(conf)
-    val retryExecutorNumThreads =
-      conf.get(KyuubiConf.METADATA_REQUEST_RETRY_THREADS)
-    requestsRetryExecutor = ThreadUtils.newDaemonFixedThreadPool(
-      retryExecutorNumThreads,
-      "metadata-requests-retry-executor")
-    maxMetadataRequestsRetryRefs = conf.get(KyuubiConf.METADATA_REQUEST_RETRY_QUEUE_SIZE)
     super.initialize(conf)
   }
 
   override def start(): Unit = {
     super.start()
-    startMetadataRequestsRetryTrigger()
-    startMetadataCleaner()
+    if (requestsAsyncRetryEnabled) {
+      startMetadataRequestsAsyncRetryTrigger()
+    }
+    if (cleanerEnabled) {
+      startMetadataCleaner()
+    }
   }
 
   override def stop(): Unit = {
-    ThreadUtils.shutdown(requestsRetryTrigger)
-    ThreadUtils.shutdown(requestsRetryExecutor)
-    ThreadUtils.shutdown(metadataCleaner)
+    if (requestsAsyncRetryEnabled) {
+      ThreadUtils.shutdown(requestsAsyncRetryTrigger)
+      ThreadUtils.shutdown(requestsAsyncRetryExecutor)
+    }
+    if (cleanerEnabled) {
+      ThreadUtils.shutdown(metadataCleaner)
+    }
     _metadataStore.close()
     super.stop()
   }
@@ -93,11 +106,19 @@ class MetadataManager extends AbstractService("MetadataManager") {
     }
   }
 
-  def insertMetadata(metadata: Metadata, retryOnError: Boolean = true): Unit = {
+  protected def unrecoverableDBErr(cause: Throwable): Boolean = {
+    // cover other cases in the future
+    JdbcUtils.isDuplicatedKeyDBErr(cause)
+  }
+
+  def insertMetadata(metadata: Metadata, asyncRetryOnError: Boolean = true): Unit = {
     try {
       withMetadataRequestMetrics(_metadataStore.insertMetadata(metadata))
     } catch {
-      case e: Throwable if retryOnError =>
+      // stop to retry when encounter duplicated key error.
+      case rethrow: Throwable if unrecoverableDBErr(rethrow) =>
+        throw rethrow
+      case e: Throwable if requestsAsyncRetryEnabled && asyncRetryOnError =>
         error(s"Error inserting metadata for session ${metadata.identifier}", e)
         addMetadataRetryRequest(InsertMetadata(metadata))
     }
@@ -156,11 +177,11 @@ class MetadataManager extends AbstractService("MetadataManager") {
     withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, true))
   }
 
-  def updateMetadata(metadata: Metadata, retryOnError: Boolean = true): Unit = {
+  def updateMetadata(metadata: Metadata, asyncRetryOnError: Boolean = true): Unit = {
     try {
       withMetadataRequestMetrics(_metadataStore.updateMetadata(metadata))
     } catch {
-      case e: Throwable if retryOnError =>
+      case e: Throwable if requestsAsyncRetryEnabled && asyncRetryOnError =>
         error(s"Error updating metadata for session ${metadata.identifier}", e)
         addMetadataRetryRequest(UpdateMetadata(metadata))
     }
@@ -171,35 +192,33 @@ class MetadataManager extends AbstractService("MetadataManager") {
   }
 
   private def startMetadataCleaner(): Unit = {
-    val cleanerEnabled = conf.get(KyuubiConf.METADATA_CLEANER_ENABLED)
     val stateMaxAge = conf.get(METADATA_MAX_AGE)
-
-    if (cleanerEnabled) {
-      val interval = conf.get(KyuubiConf.METADATA_CLEANER_INTERVAL)
-      val cleanerTask: Runnable = () => {
-        try {
-          withMetadataRequestMetrics(_metadataStore.cleanupMetadataByAge(stateMaxAge))
-        } catch {
-          case e: Throwable => error("Error cleaning up the metadata by age", e)
-        }
+    val interval = conf.get(KyuubiConf.METADATA_CLEANER_INTERVAL)
+    val cleanerTask: Runnable = () => {
+      try {
+        withMetadataRequestMetrics(_metadataStore.cleanupMetadataByAge(stateMaxAge))
+      } catch {
+        case e: Throwable => error("Error cleaning up the metadata by age", e)
       }
-
-      metadataCleaner.scheduleWithFixedDelay(
-        cleanerTask,
-        interval,
-        interval,
-        TimeUnit.MILLISECONDS)
     }
+
+    metadataCleaner.scheduleWithFixedDelay(
+      cleanerTask,
+      interval,
+      interval,
+      TimeUnit.MILLISECONDS)
   }
 
   def addMetadataRetryRequest(request: MetadataRequest): Unit = {
-    if (identifierRequestsRetryRefs.size() > maxMetadataRequestsRetryRefs) {
+    val maxRequestsAsyncRetryRefs: Int =
+      conf.get(KyuubiConf.METADATA_REQUEST_ASYNC_RETRY_QUEUE_SIZE)
+    if (identifierRequestsAsyncRetryRefs.size() > maxRequestsAsyncRetryRefs) {
       throw new KyuubiException(
         "The number of metadata requests retry instances exceeds the limitation:" +
-          maxMetadataRequestsRetryRefs)
+          maxRequestsAsyncRetryRefs)
     }
     val identifier = request.metadata.identifier
-    val ref = identifierRequestsRetryRefs.computeIfAbsent(
+    val ref = identifierRequestsAsyncRetryRefs.computeIfAbsent(
       identifier,
       identifier => {
         val ref = new MetadataRequestsRetryRef
@@ -207,30 +226,29 @@ class MetadataManager extends AbstractService("MetadataManager") {
         ref
       })
     ref.addRetryingMetadataRequest(request)
-    identifierRequestsRetryRefs.putIfAbsent(identifier, ref)
+    identifierRequestsAsyncRetryRefs.putIfAbsent(identifier, ref)
     MetricsSystem.tracing(_.markMeter(MetricsConstants.METADATA_REQUEST_RETRYING))
   }
 
   def getMetadataRequestsRetryRef(identifier: String): MetadataRequestsRetryRef = {
-    identifierRequestsRetryRefs.get(identifier)
+    identifierRequestsAsyncRetryRefs.get(identifier)
   }
 
   def deRegisterRequestsRetryRef(identifier: String): Unit = {
-    identifierRequestsRetryRefs.remove(identifier)
-    identifierRequestsRetryingCounts.remove(identifier)
+    identifierRequestsAsyncRetryRefs.remove(identifier)
+    identifierRequestsAsyncRetryingCounts.remove(identifier)
   }
 
-  private def startMetadataRequestsRetryTrigger(): Unit = {
-    val interval = conf.get(KyuubiConf.METADATA_REQUEST_RETRY_INTERVAL)
+  private def startMetadataRequestsAsyncRetryTrigger(): Unit = {
     val triggerTask = new Runnable {
       override def run(): Unit = {
-        identifierRequestsRetryRefs.forEach { (id, ref) =>
+        identifierRequestsAsyncRetryRefs.forEach { (id, ref) =>
           if (!ref.hasRemainingRequests()) {
-            identifierRequestsRetryRefs.remove(id)
-            identifierRequestsRetryingCounts.remove(id)
+            identifierRequestsAsyncRetryRefs.remove(id)
+            identifierRequestsAsyncRetryingCounts.remove(id)
           } else {
-            val retryingCount =
-              identifierRequestsRetryingCounts.computeIfAbsent(id, _ => new AtomicInteger(0))
+            val retryingCount = identifierRequestsAsyncRetryingCounts
+              .computeIfAbsent(id, _ => new AtomicInteger(0))
 
             if (retryingCount.get() == 0) {
               val retryTask = new Runnable {
@@ -241,12 +259,9 @@ class MetadataManager extends AbstractService("MetadataManager") {
                     while (request != null) {
                       request match {
                         case insert: InsertMetadata =>
-                          insertMetadata(insert.metadata, retryOnError = false)
-
+                          insertMetadata(insert.metadata, asyncRetryOnError = false)
                         case update: UpdateMetadata =>
-                          updateMetadata(update.metadata, retryOnError = false)
-
-                        case _ =>
+                          updateMetadata(update.metadata, asyncRetryOnError = false)
                       }
                       ref.metadataRequests.remove(request)
                       MetricsSystem.tracing(_.markMeter(
@@ -265,22 +280,21 @@ class MetadataManager extends AbstractService("MetadataManager") {
 
               try {
                 retryingCount.incrementAndGet()
-                requestsRetryExecutor.submit(retryTask)
+                requestsAsyncRetryExecutor.submit(retryTask)
               } catch {
                 case e: Throwable =>
                   error(s"Error submitting metadata retry requests for $id", e)
                   retryingCount.decrementAndGet()
               }
             }
-
           }
         }
       }
     }
-    requestsRetryTrigger.scheduleWithFixedDelay(
+    requestsAsyncRetryTrigger.scheduleWithFixedDelay(
       triggerTask,
-      interval,
-      interval,
+      requestsRetryInterval,
+      requestsRetryInterval,
       TimeUnit.MILLISECONDS)
   }
 }
@@ -319,6 +333,7 @@ object MetadataManager extends Logging {
       batchMetadata.kyuubiInstance,
       batchState,
       batchMetadata.createTime,
-      batchMetadata.endTime)
+      batchMetadata.endTime,
+      Map.empty[String, String].asJava)
   }
 }

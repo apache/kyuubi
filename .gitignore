@@ -32,11 +32,7 @@
 .ensime_lucene
 .generated-mima*
 .vscode/
-# The star is required for further !/.idea/ to work, see https://git-scm.com/docs/gitignore
-/.idea/*
-# Icon for JetBrains Toolbox
-!/.idea/icon.png
-!/.idea/vcs.xml
+.idea/
 .idea_modules/
 .project
 .pydevproject
@@ -44,6 +40,7 @@
 .scala_dependencies
 .settings
 build/apache-maven*
+build/maven-mvnd*
 build/release/tmp
 build/scala*
 build/test
@@ -59,10 +56,9 @@ hs_err_pid*
 spark-warehouse/
 metastore_db
 derby.log
-ldap
+rest-audit.log
 **/dependency-reduced-pom.xml
-metrics/report.json
-metrics/.report.json.crc
+metrics/
 /kyuubi-ha/embedded_zookeeper/
 embedded_zookeeper/
 /externals/kyuubi-spark-sql-engine/operation_logs/

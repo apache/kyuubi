@@ -33,14 +33,13 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
-import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.session.KyuubiSession
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
+import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
+@Consumes(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext with Logging {
   implicit def toSessionHandle(str: String): SessionHandle = SessionHandle.fromUUID(str)
   private def sessionManager = fe.be.sessionManager
@@ -53,15 +52,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "get the list of all live sessions")
   @GET
   def sessions(): Seq[SessionData] = {
-    sessionManager.allSessions().map { session =>
-      new SessionData(
-        session.handle.identifier.toString,
-        session.user,
-        session.ipAddress,
-        session.conf.asJava,
-        session.createTime,
-        session.lastAccessTime - session.createTime,
-        session.getNoOperationTime)
+    sessionManager.allSessions().map { case session =>
+      ApiUtils.sessionData(session.asInstanceOf[KyuubiSession])
     }.toSeq
   }
 
@@ -69,14 +61,32 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[KyuubiEvent]))),
+      schema = new Schema(implementation = classOf[dto.KyuubiSessionEvent]))),
     description = "get a session event via session handle identifier")
   @GET
   @Path("{sessionHandle}")
-  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiEvent = {
+  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): dto.KyuubiSessionEvent = {
     try {
       sessionManager.getSession(sessionHandleStr)
-        .asInstanceOf[KyuubiSession].getSessionEvent.get
+        .asInstanceOf[KyuubiSession].getSessionEvent.map(event =>
+          dto.KyuubiSessionEvent.builder
+            .sessionId(event.sessionId)
+            .clientVersion(event.clientVersion)
+            .sessionType(event.sessionType)
+            .sessionName(event.sessionName)
+            .user(event.user)
+            .clientIp(event.clientIP)
+            .serverIp(event.serverIP)
+            .conf(event.conf.asJava)
+            .remoteSessionId(event.remoteSessionId)
+            .engineId(event.engineId)
+            .eventTime(event.eventTime)
+            .openedTime(event.openedTime)
+            .startTime(event.startTime)
+            .endTime(event.endTime)
+            .totalOperations(event.totalOperations)
+            .exception(event.exception.getOrElse(null))
+            .build).get
     } catch {
       case NonFatal(e) =>
         error(s"Invalid $sessionHandleStr", e)
@@ -130,21 +140,20 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def execPoolStatistic(): ExecPoolStatistic = {
     new ExecPoolStatistic(
       sessionManager.getExecPoolSize,
-      sessionManager.getActiveCount)
+      sessionManager.getActiveCount,
+      sessionManager.getWorkQueueSize)
   }
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "Open(create) a session")
   @POST
-  @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): dto.SessionHandle = {
     val userName = fe.getSessionUser(request.getConfigs.asScala.toMap)
     val ipAddress = fe.getIpAddress
     val handle = fe.be.openSession(
-      TProtocolVersion.findByValue(request.getProtocolVersion),
+      SessionsResource.SESSION_PROTOCOL_VERSION,
       userName,
       "",
       ipAddress,
@@ -158,8 +167,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "Close a session")
   @DELETE
   @Path("{sessionHandle}")
@@ -183,7 +191,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       fe.be.executeStatement(
         sessionHandleStr,
         request.getStatement,
-        Map.empty,
+        request.getConfOverlay.asScala.toMap,
         request.isRunAsync,
         request.getQueryTimeout)
     } catch {
@@ -405,4 +413,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         throw new NotFoundException(errorMsg)
     }
   }
+}
+
+object SessionsResource {
+  final val SESSION_PROTOCOL_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1
 }

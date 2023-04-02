@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.7.0-SNAPSHOT</version>
+        <version>1.8.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>kyuubi-rest-client</artifactId>
@@ -60,6 +60,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client-api</artifactId>
             <optional>true</optional>
@@ -75,6 +80,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
         </dependency>
 
         <dependency>
@@ -109,6 +119,13 @@
     </dependencies>
 
     <build>
+
+        <resources>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
 
         <plugins>
             <plugin>

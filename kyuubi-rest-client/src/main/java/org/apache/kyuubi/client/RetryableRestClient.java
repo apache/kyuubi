@@ -48,6 +48,7 @@ public class RetryableRestClient implements InvocationHandler {
     newRestClient();
   }
 
+  @SuppressWarnings("rawtypes")
   public static IRestClient getRestClient(List<String> uris, RestClientConf conf) {
     RetryableRestClient client = new RetryableRestClient(uris, conf);
     return (IRestClient)

@@ -26,22 +26,26 @@ metadata:
     app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
-  {{- with .Values.server.conf.kyuubiEnv }}
+  {{- with .Values.kyuubiConf.kyuubiEnv }}
   kyuubi-env.sh: |
     #!/usr/bin/env bash
     {{- tpl . $ | nindent 4 }}
   {{- end }}
   kyuubi-defaults.conf: |
     ## Helm chart provided Kyuubi configurations
-    kyuubi.frontend.bind.host={{ .Values.server.bind.host }}
-    kyuubi.frontend.bind.port={{ .Values.server.bind.port }}
     kyuubi.kubernetes.namespace={{ .Release.Namespace }}
+    kyuubi.frontend.connection.url.use.hostname=false
+    kyuubi.frontend.thrift.binary.bind.port={{ .Values.server.thriftBinary.port }}
+    kyuubi.frontend.thrift.http.bind.port={{ .Values.server.thriftHttp.port }}
+    kyuubi.frontend.rest.bind.port={{ .Values.server.rest.port }}
+    kyuubi.frontend.mysql.bind.port={{ .Values.server.mysql.port }}
+    kyuubi.frontend.protocols={{ include "kyuubi.frontend.protocols" . }}
 
     ## User provided Kyuubi configurations
-    {{- with .Values.server.conf.kyuubiDefaults }}
+    {{- with .Values.kyuubiConf.kyuubiDefaults }}
     {{- tpl . $ | nindent 4 }}
     {{- end }}
-  {{- with .Values.server.conf.log4j2 }}
+  {{- with .Values.kyuubiConf.log4j2 }}
   log4j2.xml: |
     {{- tpl . $ | nindent 4 }}
   {{- end }}

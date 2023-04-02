@@ -38,12 +38,13 @@ import org.apache.spark.sql.connector.catalog.NamespaceChange.RemoveProperty
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.execution.datasources.DataSource
 import org.apache.spark.sql.hive.HiveUDFExpressionBuilder
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{catalogV2Util, postExternalCatalogEvent, HiveMetastoreCatalog, HiveSessionCatalog}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper._
 import org.apache.spark.sql.internal.StaticSQLConf.CATALOG_IMPLEMENTATION
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
 
 /**
  * A [[TableCatalog]] that wrap HiveExternalCatalog to as V2 CatalogPlugin instance to access Hive.
@@ -73,9 +74,9 @@ class HiveTableCatalog(sparkSession: SparkSession)
 
   private lazy val hadoopConf: Configuration = {
     val conf = sparkSession.sessionState.newHadoopConf()
-    catalogOptions.asScala.foreach {
-      case (k, v) => conf.set(k, v)
-      case _ =>
+    catalogOptions.asScala.foreach { case (k, v) => conf.set(k, v) }
+    if (catalogOptions.containsKey("hive.metastore.uris")) {
+      conf.set("hive.metastore.token.signature", metastoreTokenSignature(catalogOptions))
     }
     conf
   }
@@ -198,8 +199,8 @@ class HiveTableCatalog(sparkSession: SparkSession)
           throw new NoSuchTableException(ident)
       }
 
-    val properties = catalogV2Util.applyPropertiesChanges(catalogTable.properties, changes)
-    val schema = catalogV2Util.applySchemaChanges(
+    val properties = CatalogV2Util.applyPropertiesChanges(catalogTable.properties, changes)
+    val schema = CatalogV2Util.applySchemaChanges(
       catalogTable.schema,
       changes)
     val comment = properties.get(TableCatalog.PROP_COMMENT)
@@ -319,7 +320,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
 
         val metadata = catalog.getDatabaseMetadata(db).toMetadata
         catalog.alterDatabase(
-          toCatalogDatabase(db, catalogV2Util.applyNamespaceChanges(metadata, changes)))
+          toCatalogDatabase(db, CatalogV2Util.applyNamespaceChanges(metadata, changes)))
 
       case _ =>
         throw new NoSuchNamespaceException(namespace)

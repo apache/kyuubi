@@ -32,6 +32,7 @@ import java.util.Arrays;
  * vectorization to implement decimals by storing the fast0, fast1, and fast2 longs and the
  * fastSignum, fastScale, etc ints in the DecimalColumnVector class.
  */
+@SuppressWarnings("deprecation")
 public class FastHiveDecimalImpl extends FastHiveDecimal {
 
   /**
@@ -9369,7 +9370,7 @@ public class FastHiveDecimalImpl extends FastHiveDecimal {
   public static String displayBytes(byte[] bytes, int start, int length) {
     StringBuilder sb = new StringBuilder();
     for (int i = start; i < start + length; i++) {
-      sb.append(String.format("\\%03d", (int) (bytes[i] & 0xff)));
+      sb.append(String.format("\\%03d", bytes[i] & 0xff));
     }
     return sb.toString();
   }

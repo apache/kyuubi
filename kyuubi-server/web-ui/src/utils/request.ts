@@ -19,7 +19,7 @@ import axios, { AxiosResponse } from 'axios'
 
 // create an axios instance
 const service = axios.create({
-  baseURL: import.meta.env.VITE_APP_DEV_WEB_URL, // url = base url + request url
+  baseURL: '/', // url = base url + request url
   // withCredentials: true, // send cookies when cross-domain requests
   timeout: 60000 // request timeout
 })

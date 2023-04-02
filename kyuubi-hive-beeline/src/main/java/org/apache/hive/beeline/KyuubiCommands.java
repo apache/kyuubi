@@ -19,6 +19,7 @@ package org.apache.hive.beeline;
 
 import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
@@ -93,8 +94,9 @@ public class KyuubiCommands extends Commands {
           lines += "\n" + extra;
         }
       }
-      String[] cmds = lines.split(";");
+      String[] cmds = lines.split(beeLine.getOpts().getDelimiter());
       for (String c : cmds) {
+        c = c.trim();
         if (!executeInternal(c, false)) {
           return false;
         }
@@ -276,7 +278,8 @@ public class KyuubiCommands extends Commands {
    * quotations. It iterates through each character in the line and checks to see if it is a ;, ',
    * or "
    */
-  private List<String> getCmdList(String line, boolean entireLineAsCommand) {
+  @VisibleForTesting
+  public List<String> getCmdList(String line, boolean entireLineAsCommand) {
     List<String> cmdList = new ArrayList<String>();
     if (entireLineAsCommand) {
       cmdList.add(line);
@@ -405,7 +408,7 @@ public class KyuubiCommands extends Commands {
       }
     }
 
-    for (Iterator i = props.keySet().iterator(); i.hasNext(); ) {
+    for (Iterator<Object> i = props.keySet().iterator(); i.hasNext(); ) {
       String key = (String) i.next();
       for (int j = 0; j < keys.length; j++) {
         if (key.endsWith(keys[j])) {
@@ -470,9 +473,7 @@ public class KyuubiCommands extends Commands {
       props.setProperty(AUTH_USER, username);
       if (password == null) {
         password =
-            beeLine
-                .getConsoleReader()
-                .readLine("Enter password for " + urlForPrompt + ": ", new Character('*'));
+            beeLine.getConsoleReader().readLine("Enter password for " + urlForPrompt + ": ", '*');
       }
       props.setProperty(AUTH_PASSWD, password);
     }
@@ -487,6 +488,9 @@ public class KyuubiCommands extends Commands {
         beeLine.updateOptsForCli();
       }
       beeLine.runInit();
+      if (beeLine.getOpts().getInitFiles() != null) {
+        beeLine.initializeConsoleReader(null);
+      }
 
       beeLine.setCompletions();
       beeLine.getOpts().setLastConnectedUrl(url);

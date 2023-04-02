@@ -69,6 +69,10 @@ Usage: ``bin/kyuubi-admin refresh config [options] [<configType>]``
      - Description
    * - hadoopConf
      - The hadoop conf used for proxy user verification.
+   * - userDefaultsConf
+     - The user defaults configs with key in format in the form of `___{username}___.{config key}` from default property file.
+   * - unlimitedUsers
+     - The users without maximum connections limitation.
 
 .. _list_engine:
 

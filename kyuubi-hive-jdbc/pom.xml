@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.7.0-SNAPSHOT</version>
+        <version>1.8.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>kyuubi-hive-jdbc</artifactId>
@@ -171,6 +171,14 @@
     </dependencies>
 
     <build>
+
+        <resources>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

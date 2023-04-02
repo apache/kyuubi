@@ -18,11 +18,12 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.LinkedHashMap
+import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
 
+import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
+import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -30,6 +31,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider
 
 object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
   with RangerConfigProvider {
+  final private val LOG = LoggerFactory.getLogger(getClass)
 
   /**
    * For a Spark SQL query, it may contain 0 or more privilege objects to verify, e.g. a typical
@@ -59,6 +61,29 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
   def useUserGroupsFromUserStoreEnabled: Boolean = getRangerConf.getBoolean(
     s"ranger.plugin.$getServiceType.use.usergroups.from.userstore.enabled",
     false)
+
+  /**
+   * plugin initialization
+   * with cleanup shutdown hook registered
+   */
+  def initialize(): Unit = {
+    this.init()
+    registerCleanupShutdownHook(this)
+  }
+
+  /**
+   * register shutdown hook for plugin cleanup
+   */
+  private def registerCleanupShutdownHook(plugin: RangerBasePlugin): Unit = {
+    ShutdownHookManager.get().addShutdownHook(
+      () => {
+        if (plugin != null) {
+          LOG.info(s"clean up ranger plugin, appId: ${plugin.getAppId}")
+          this.cleanup()
+        }
+      },
+      Integer.MAX_VALUE)
+  }
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
     val result = evalRowFilterPolicies(req, null)

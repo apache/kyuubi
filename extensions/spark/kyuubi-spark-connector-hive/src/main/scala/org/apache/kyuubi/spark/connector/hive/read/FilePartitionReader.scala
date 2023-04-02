@@ -23,7 +23,7 @@ import org.apache.parquet.io.ParquetDecodingException
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.sql.execution.datasources.SchemaColumnConvertNotSupportedException
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.inputFileBlockHolder
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.InputFileBlockHolder
 import org.apache.spark.sql.internal.SQLConf
 
 // scalastyle:off line.size.limit
@@ -90,7 +90,7 @@ class FilePartitionReader[T](readers: Iterator[HivePartitionedFileReader[T]])
     if (currentReader != null) {
       currentReader.close()
     }
-    inputFileBlockHolder.unset()
+    InputFileBlockHolder.unset()
   }
 
   private def getNextReader(): HivePartitionedFileReader[T] = {
@@ -98,7 +98,7 @@ class FilePartitionReader[T](readers: Iterator[HivePartitionedFileReader[T]])
     logInfo(s"Reading file $reader")
     // Sets InputFileBlockHolder for the file block's information
     val file = reader.file
-    inputFileBlockHolder.set(file.filePath, file.start, file.length)
+    InputFileBlockHolder.set(file.filePath, file.start, file.length)
     reader
   }
 

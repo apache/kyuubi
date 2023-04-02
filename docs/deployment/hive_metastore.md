@@ -1,20 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Integration with Hive Metastore
 
@@ -31,7 +30,7 @@ In this section, you will learn how to configure Kyuubi to interact with Hive Me
 - A Spark binary distribution built with `-Phive` support
   - Use the built-in one in the Kyuubi distribution
   - Download from [Spark official website](https://spark.apache.org/downloads.html)
-  - Build from Spark source, [Building With Hive and JDBC Support](http://spark.apache.org/docs/latest/building-spark.html#building-with-hive-and-jdbc-support)
+  - Build from Spark source, [Building With Hive and JDBC Support](https://spark.apache.org/docs/latest/building-spark.html#building-with-hive-and-jdbc-support)
 - A copy of Hive client configuration
 
 So the whole thing here is to let Spark applications use this copy of Hive configuration to start a Hive metastore client for their own to talk to the Hive metastore server.
@@ -90,6 +89,7 @@ Beeline version 2.3.7 by Apache Hive
 +-----------+------------+--------------+
 No rows selected (0.04 seconds)
 ```
+
 Using this mode for experimental purposes only.
 
 In a real production environment, we always have a communal standalone metadata store,
@@ -104,18 +104,18 @@ Use remote metastore database or server mode depends on the server-side configur
 
 ### Remote Metastore Database
 
-Name | Value | Meaning
---- | --- | ---
-javax.jdo.option.ConnectionURL | jdbc:mysql://&lt;hostname&gt;/&lt;databaseName&gt;?<br>createDatabaseIfNotExist=true | metadata is stored in a MySQL server
-javax.jdo.option.ConnectionDriverName | com.mysql.jdbc.Driver | MySQL JDBC driver class
-javax.jdo.option.ConnectionUserName | &lt;username&gt; | user name for connecting to MySQL server
-javax.jdo.option.ConnectionPassword | &lt;password&gt; | password for connecting to MySQL server
+|                 Name                  |                                        Value                                         |                 Meaning                  |
+|---------------------------------------|--------------------------------------------------------------------------------------|------------------------------------------|
+| javax.jdo.option.ConnectionURL        | jdbc:mysql://&lt;hostname&gt;/&lt;databaseName&gt;?<br>createDatabaseIfNotExist=true | metadata is stored in a MySQL server     |
+| javax.jdo.option.ConnectionDriverName | com.mysql.jdbc.Driver                                                                | MySQL JDBC driver class                  |
+| javax.jdo.option.ConnectionUserName   | &lt;username&gt;                                                                     | user name for connecting to MySQL server |
+| javax.jdo.option.ConnectionPassword   | &lt;password&gt;                                                                     | password for connecting to MySQL server  |
 
 ### Remote Metastore Server
 
-Name | Value | Meaning
---- | --- | ---
-hive.metastore.uris | thrift://&lt;host&gt;:&lt;port&gt;,thrift://&lt;host1&gt;:&lt;port1&gt; | <div style='width: 200pt;word-wrap: break-word;white-space: normal'>host and port for the Thrift metastore server.</div>
+|        Name         |                                  Value                                  |                                                         Meaning                                                          |
+|---------------------|-------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| hive.metastore.uris | thrift://&lt;host&gt;:&lt;port&gt;,thrift://&lt;host1&gt;:&lt;port1&gt; | <div style='width: 200pt;word-wrap: break-word;white-space: normal'>host and port for the Thrift metastore server.</div> |
 
 ## Activate Configurations
 
@@ -199,12 +199,13 @@ Caused by: org.apache.thrift.TApplicationException: Invalid method name: 'get_ta
 	... 93 more
 ```
 
-To prevent this problem, we can use Spark's [Interacting with Different Versions of Hive Metastore](http://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html#interacting-with-different-versions-of-hive-metastore).
+To prevent this problem, we can use Spark's [Interacting with Different Versions of Hive Metastore](https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html#interacting-with-different-versions-of-hive-metastore).
 
 ## Further Readings
 
 - Hive Wiki
   - [Hive Metastore Administration](https://cwiki.apache.org/confluence/display/Hive/AdminManual+Metastore+Administration)
 - Spark Online Documentation
-  - [Custom Hadoop/Hive Configuration](http://spark.apache.org/docs/latest/configuration.html#custom-hadoophive-configuration)
-  - [Hive Tables](http://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html)
+  - [Custom Hadoop/Hive Configuration](https://spark.apache.org/docs/latest/configuration.html#custom-hadoophive-configuration)
+  - [Hive Tables](https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html)
+

@@ -1,20 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Deploy Kyuubi engines on Kubernetes
 
@@ -22,7 +21,7 @@
 
 When you want to run Kyuubi's Spark SQL engines on Kubernetes, you'd better have cognition upon the following things.
 
-* Read about [Running Spark On Kubernetes](http://spark.apache.org/docs/latest/running-on-kubernetes.html)
+* Read about [Running Spark On Kubernetes](https://spark.apache.org/docs/latest/running-on-kubernetes.html)
 * An active Kubernetes cluster
 * [Kubectl](https://kubernetes.io/docs/reference/kubectl/overview/)
 * KubeConfig of the target cluster
@@ -98,7 +97,7 @@ As it known to us all, Kubernetes can use configurations to mount volumes into d
 * persistentVolumeClaim: mounts a PersistentVolume into a pod.
 
 Note: Please
-see [the Security section of this document](http://spark.apache.org/docs/latest/running-on-kubernetes.html#security) for security issues related to volume mounts.
+see [the Security section of this document](https://spark.apache.org/docs/latest/running-on-kubernetes.html#security) for security issues related to volume mounts.
 
 ```
 spark.kubernetes.driver.volumes.<type>.<name>.options.path=<dist_path>
@@ -108,7 +107,7 @@ spark.kubernetes.executor.volumes.<type>.<name>.options.path=<dist_path>
 spark.kubernetes.executor.volumes.<type>.<name>.mount.path=<container_path>
 ```
 
-Read [Using Kubernetes Volumes](http://spark.apache.org/docs/latest/running-on-kubernetes.html#using-kubernetes-volumes) for more about volumes.
+Read [Using Kubernetes Volumes](https://spark.apache.org/docs/latest/running-on-kubernetes.html#using-kubernetes-volumes) for more about volumes.
 
 ### PodTemplateFile
 
@@ -118,4 +117,4 @@ To do so, specify the spark properties `spark.kubernetes.driver.podTemplateFile`
 
 ### Other
 
-You can read Spark's official documentation for [Running on Kubernetes](http://spark.apache.org/docs/latest/running-on-kubernetes.html) for more information.
+You can read Spark's official documentation for [Running on Kubernetes](https://spark.apache.org/docs/latest/running-on-kubernetes.html) for more information.

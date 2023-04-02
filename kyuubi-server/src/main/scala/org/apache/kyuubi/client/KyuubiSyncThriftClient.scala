@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client
 
+import java.util.UUID
 import java.util.concurrent.{ExecutorService, ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
@@ -53,8 +54,12 @@ class KyuubiSyncThriftClient private (
 
   private val lock = new ReentrantLock()
 
+  // Visible for testing.
+  private[kyuubi] def remoteSessionHandle: TSessionHandle = _remoteSessionHandle
+
   @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
   @volatile private var remoteEngineBroken: Boolean = false
+  @volatile private var clientClosedOnEngineBroken: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
   private var engineAliveThreadPool: ScheduledExecutorService = _
   @volatile private var engineLastAlive: Long = _
@@ -105,6 +110,18 @@ class KyuubiSyncThriftClient private (
           }
         } else {
           shutdownAsyncRequestExecutor()
+          warn(s"Removing Clients for ${_remoteSessionHandle}")
+          Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
+            Utils.tryLogNonFatalError {
+              if (tProtocol.getTransport.isOpen) {
+                tProtocol.getTransport.close()
+              }
+            }
+            clientClosedOnEngineBroken = true
+            Option(engineAliveThreadPool).foreach { pool =>
+              ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
+            }
+          }
         }
       }
     }
@@ -180,7 +197,10 @@ class KyuubiSyncThriftClient private (
     engineAliveProbeClient.foreach { aliveProbeClient =>
       val sessionName = SessionHandle.apply(_remoteSessionHandle).identifier + "_aliveness_probe"
       Utils.tryLogNonFatalError {
-        req.setConfiguration((configs ++ Map(KyuubiConf.SESSION_NAME.key -> sessionName)).asJava)
+        req.setConfiguration((configs ++ Map(
+          KyuubiConf.SESSION_NAME.key -> sessionName,
+          KYUUBI_SESSION_HANDLE_KEY -> UUID.randomUUID().toString,
+          KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL.key -> "")).asJava)
         val resp = aliveProbeClient.OpenSession(req)
         ThriftUtils.verifyTStatus(resp.getStatus)
         _aliveProbeSessionHandle = resp.getSessionHandle
@@ -192,6 +212,7 @@ class KyuubiSyncThriftClient private (
   }
 
   def closeSession(): Unit = {
+    if (clientClosedOnEngineBroken) return
     try {
       if (_remoteSessionHandle != null) {
         val req = new TCloseSessionReq(_remoteSessionHandle)

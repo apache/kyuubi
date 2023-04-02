@@ -23,11 +23,11 @@ on:
 
 jobs:
   stale:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       pull-requests: write
     steps:
-      - uses: actions/stale@v6
+      - uses: actions/stale@v7
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           stale-pr-message: >

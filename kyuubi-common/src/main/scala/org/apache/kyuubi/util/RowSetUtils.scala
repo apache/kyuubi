@@ -18,14 +18,11 @@
 package org.apache.kyuubi.util
 
 import java.nio.ByteBuffer
-import java.sql.Timestamp
-import java.time.{Duration, Instant, LocalDate, LocalDateTime, Period, ZoneId}
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneId}
 import java.time.chrono.IsoChronology
-import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
-import java.util.{Date, Locale, TimeZone}
-import java.util.concurrent.TimeUnit
+import java.util.{Date, Locale}
 
 import scala.language.implicitConversions
 
@@ -37,24 +34,24 @@ private[kyuubi] object RowSetUtils {
   final private val SECOND_PER_HOUR: Long = SECOND_PER_MINUTE * 60L
   final private val SECOND_PER_DAY: Long = SECOND_PER_HOUR * 24L
 
-  private lazy val dateFormatter = {
-    createDateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
+  private lazy val dateFormatter = createDateTimeFormatterBuilder()
+    .appendPattern("yyyy-MM-dd")
+    .toFormatter(Locale.US)
+    .withChronology(IsoChronology.INSTANCE)
 
   private lazy val legacyDateFormatter = FastDateFormat.getInstance("yyyy-MM-dd", Locale.US)
 
-  private lazy val timestampFormatter: DateTimeFormatter = {
-    createDateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
-      .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
+  private lazy val timeFormatter = createDateTimeFormatterBuilder()
+    .appendPattern("HH:mm:ss")
+    .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
+    .toFormatter(Locale.US)
+    .withChronology(IsoChronology.INSTANCE)
 
-  private lazy val legacyTimestampFormatter = {
-    FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
-  }
+  private lazy val timestampFormatter = createDateTimeFormatterBuilder()
+    .appendPattern("yyyy-MM-dd HH:mm:ss")
+    .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
+    .toFormatter(Locale.US)
+    .withChronology(IsoChronology.INSTANCE)
 
   private def createDateTimeFormatterBuilder(): DateTimeFormatterBuilder = {
     new DateTimeFormatterBuilder().parseCaseInsensitive()
@@ -68,6 +65,10 @@ private[kyuubi] object RowSetUtils {
     dateFormatter.format(ld)
   }
 
+  def formatLocalTime(lt: LocalTime): String = {
+    timeFormatter.format(lt)
+  }
+
   def formatLocalDateTime(ldt: LocalDateTime): String = {
     timestampFormatter.format(ldt)
   }
@@ -77,40 +78,7 @@ private[kyuubi] object RowSetUtils {
       .getOrElse(timestampFormatter.format(i))
   }
 
-  def formatTimestamp(t: Timestamp, timeZone: Option[ZoneId] = None): String = {
-    timeZone.map(zoneId => {
-      FastDateFormat.getInstance(
-        legacyTimestampFormatter.getPattern,
-        TimeZone.getTimeZone(zoneId),
-        legacyTimestampFormatter.getLocale)
-        .format(t)
-    }).getOrElse(legacyTimestampFormatter.format(t))
-  }
-
   implicit def bitSetToBuffer(bitSet: java.util.BitSet): ByteBuffer = {
     ByteBuffer.wrap(bitSet.toByteArray)
-  }
-
-  def toDayTimeIntervalString(d: Duration): String = {
-    var rest = d.getSeconds
-    var sign = ""
-    if (d.getSeconds < 0) {
-      sign = "-"
-      rest = -rest
-    }
-    val days = TimeUnit.SECONDS.toDays(rest)
-    rest %= SECOND_PER_DAY
-    val hours = TimeUnit.SECONDS.toHours(rest)
-    rest %= SECOND_PER_HOUR
-    val minutes = TimeUnit.SECONDS.toMinutes(rest)
-    val seconds = rest % SECOND_PER_MINUTE
-    f"$sign$days $hours%02d:$minutes%02d:$seconds%02d.${d.getNano}%09d"
-  }
-
-  def toYearMonthIntervalString(d: Period): String = {
-    val years = d.getYears
-    val months = d.getMonths
-    val sign = if (years < 0 || months < 0) "-" else ""
-    s"$sign${Math.abs(years)}-${Math.abs(months)}"
   }
 }

@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.api.v1
 
 import java.nio.charset.StandardCharsets
 import java.util
-import java.util.Base64
+import java.util.{Base64, Collections}
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{GenericType, MediaType, Response}
 
@@ -28,10 +28,11 @@ import scala.collection.JavaConverters._
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
+import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
-import org.apache.kyuubi.events.KyuubiSessionEvent
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
@@ -47,9 +48,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("open/close and count session") {
-    val requestObj = new SessionOpenRequest(
-      1,
-      Map("testConfig" -> "testValue").asJava)
+    val requestObj = new SessionOpenRequest(Map("testConfig" -> "testValue").asJava)
 
     var response = webTarget.path("api/v1/sessions")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -80,9 +79,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("getSessionList") {
-    val requestObj = new SessionOpenRequest(
-      1,
-      Map("testConfig" -> "testValue").asJava)
+    val requestObj = new SessionOpenRequest(Map("testConfig" -> "testValue").asJava)
 
     var response = webTarget.path("api/v1/sessions")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -108,9 +105,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("get session event") {
-    val sessionOpenRequest = new SessionOpenRequest(
-      1,
-      Map("testConfig" -> "testValue").asJava)
+    val sessionOpenRequest = new SessionOpenRequest(Map("testConfig" -> "testValue").asJava)
 
     val user = "kyuubi".getBytes()
 
@@ -126,10 +121,10 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     // get session event
     var response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().get()
     assert(200 == sessionOpenResp.getStatus)
-    val sessions = response.readEntity(classOf[KyuubiSessionEvent])
-    assert(sessions.conf("testConfig").equals("testValue"))
-    assert(sessions.sessionType.equals(SessionType.INTERACTIVE.toString))
-    assert(sessions.user.equals("kyuubi"))
+    val sessions = response.readEntity(classOf[dto.KyuubiSessionEvent])
+    assert(sessions.getConf.get("testConfig").equals("testValue"))
+    assert(sessions.getSessionType.equals(SessionType.INTERACTIVE.toString))
+    assert(sessions.getUser.equals("kyuubi"))
 
     // close an opened session
     response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
@@ -146,9 +141,9 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val failedConnections =
       MetricsSystem.counterValue(MetricsConstants.REST_CONN_FAIL).getOrElse(0L)
 
-    val requestObj = new SessionOpenRequest(
-      1,
-      Map("testConfig" -> "testValue", KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER").asJava)
+    val requestObj = new SessionOpenRequest(Map(
+      "testConfig" -> "testValue",
+      KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER").asJava)
 
     var response: Response = webTarget.path("api/v1/sessions")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -187,9 +182,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("submit operation and get operation handle") {
-    val requestObj = new SessionOpenRequest(
-      1,
-      Map("testConfig" -> "testValue").asJava)
+    val requestObj = new SessionOpenRequest(Map("testConfig" -> "testValue").asJava)
 
     var response: Response = webTarget.path("api/v1/sessions")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -199,12 +192,24 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val pathPrefix = s"api/v1/sessions/$sessionHandle"
 
-    val statementReq = new StatementRequest("show tables", true, 3000)
+    var statementReq = new StatementRequest("show tables", true, 3000)
     response = webTarget
       .path(s"$pathPrefix/operations/statement").request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     var operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle !== null)
+
+    statementReq = new StatementRequest(
+      "spark.sql(\"show tables\")",
+      true,
+      3000,
+      Collections.singletonMap(KyuubiConf.OPERATION_LANGUAGE.key, "SCALA"))
+    response = webTarget
+      .path(s"$pathPrefix/operations/statement").request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    operationHandle = response.readEntity(classOf[OperationHandle])
     assert(operationHandle !== null)
 
     response = webTarget.path(s"$pathPrefix/operations/typeInfo").request()
@@ -276,5 +281,24 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(getCrossReferenceReq, MediaType.APPLICATION_JSON_TYPE))
     assert(404 == response.getStatus)
+  }
+
+  test("post session exception if failed to open engine session") {
+    val requestObj = new SessionOpenRequest(Map(
+      "spark.master" -> "invalid",
+      KyuubiConf.ENGINE_SHARE_LEVEL.key -> ShareLevel.CONNECTION.toString).asJava)
+
+    var response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+
+    val sessionHandle = response.readEntity(classOf[SessionHandle]).getIdentifier
+
+    eventually(timeout(1.minutes), interval(200.milliseconds)) {
+      response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().get()
+      // will meet json parse exception with response.readEntity(classOf[KyuubiSessionEvent])
+      val sessionEvent = response.readEntity(classOf[String])
+      assert(sessionEvent.contains("The last 10 line(s) of log are:"))
+    }
   }
 }

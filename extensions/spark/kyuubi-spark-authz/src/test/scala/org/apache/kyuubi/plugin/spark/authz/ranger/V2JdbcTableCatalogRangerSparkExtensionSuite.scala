@@ -104,7 +104,15 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     val e1 = intercept[AccessControlException](
       doAs("someone", sql(s"select city, id from $catalogV2.$namespace1.$table1").explain()))
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/id]"))
+      s" on [$namespace1/$table1/city]"))
+  }
+
+  test("[KYUUBI #4255] DESCRIBE TABLE") {
+    assume(isSparkV31OrGreater)
+    val e1 = intercept[AccessControlException](
+      doAs("someone", sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain()))
+    assert(e1.getMessage.contains(s"does not have [select] privilege" +
+      s" on [$namespace1/$table1]"))
   }
 
   test("[KYUUBI #3424] CREATE TABLE") {

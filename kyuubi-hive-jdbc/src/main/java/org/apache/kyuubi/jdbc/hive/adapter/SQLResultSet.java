@@ -25,6 +25,7 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
 
+@SuppressWarnings("deprecation")
 public interface SQLResultSet extends ResultSet {
 
   @Override

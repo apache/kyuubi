@@ -27,7 +27,7 @@
 
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
-    <version>1.7.0-SNAPSHOT</version>
+    <version>1.8.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
@@ -60,10 +60,11 @@
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>extensions/spark/kyuubi-spark-connector-tpch</module>
         <module>extensions/spark/kyuubi-spark-lineage</module>
+        <module>externals/kyuubi-chat-engine</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
-        <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-hive-sql-engine</module>
+        <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>externals/kyuubi-trino-engine</module>
         <module>integration-tests</module>
@@ -108,16 +109,18 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <maven.version>3.8.6</maven.version>
+        <maven.version>3.8.7</maven.version>
+        <mvnd.version>0.9.0</mvnd.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.17</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
-        <arrow.version>10.0.1</arrow.version>
+        <arrow.version>11.0.0</arrow.version>
         <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
         <antlr4.version>4.9.3</antlr4.version>
+        <antlr.st4.version>4.3.4</antlr.st4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.2.8</codahale.metrics.version>
@@ -132,15 +135,14 @@
         <delta.version>2.2.0</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
-        <flink.version>1.15.2</flink.version>
-        <flink.module.scala.suffix></flink.module.scala.suffix>
+        <flexmark.version>0.62.2</flexmark.version>
+        <flink.version>1.16.1</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <grpc.version>1.48.0</grpc.version>
-        <gson.version>2.8.9</gson.version>
-        <guava.version>30.1-jre</guava.version>
+        <guava.version>31.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
         <hadoop.version>3.3.4</hadoop.version>
         <hikaricp.version>4.0.3</hikaricp.version>
@@ -153,24 +155,26 @@
         <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
         <hive.archive.download.skip>false</hive.archive.download.skip>
-        <httpclient.version>4.5.13</httpclient.version>
-        <httpcore.version>4.4.15</httpcore.version>
+        <httpclient.version>4.5.14</httpclient.version>
+        <httpcore.version>4.4.16</httpcore.version>
         <hudi.version>0.12.0</hudi.version>
-        <iceberg.version>1.1.0</iceberg.version>
-        <jackson.version>2.14.1</jackson.version>
+        <iceberg.version>1.2.0</iceberg.version>
+        <jackson.version>2.14.2</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
-        <jersey.version>2.38</jersey.version>
+        <jersey.version>2.39</jersey.version>
         <jetty.version>9.4.50.v20221201</jetty.version>
         <jline.version>0.9.94</jline.version>
-        <junit.version>4.13.1</junit.version>
-        <kubernetes-client.version>5.12.1</kubernetes-client.version>
+        <junit.version>4.13.2</junit.version>
+        <kubernetes-client.version>6.4.1</kubernetes-client.version>
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
-        <log4j.version>2.19.0</log4j.version>
-        <mysql.jdbc.version>8.0.31</mysql.jdbc.version>
-        <netty.version>4.1.84.Final</netty.version>
+        <log4j.version>2.20.0</log4j.version>
+        <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
+        <mockito.version>4.6.1</mockito.version>
+        <netty.version>4.1.89.Final</netty.version>
+        <openai.java.version>0.11.1</openai.java.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -181,24 +185,29 @@
         <scalatestplus.version>3.2.15.0</scalatestplus.version>
         <scopt.version>4.1.0</scopt.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <snakeyaml.version>1.31</snakeyaml.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.3.1</spark.version>
+        <spark.version>3.3.2</spark.version>
         <spark.binary.version>3.3</spark.binary.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.2.1</swagger.version>
         <swagger-ui.version>4.9.1</swagger-ui.version>
-        <testcontainers-scala.version>0.40.7</testcontainers-scala.version>
+        <testcontainers-scala.version>0.40.12</testcontainers-scala.version>
         <thrift.version>0.9.3</thrift.version>
         <trino.client.version>363</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <trino.tpch.version>1.1</trino.tpch.version>
         <zookeeper.version>3.4.14</zookeeper.version>
+
+        <!-- webui -->
+        <webui.skip>true</webui.skip>
+        <node.version>v16.19.1</node.version>
+        <pnpm.version>v7.27.1</pnpm.version>
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.jline.version>2.12</hive.client.jline.version>
@@ -209,15 +218,17 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
-        <maven.plugin.build.helper.version>3.2.0</maven.plugin.build.helper.version>
-        <maven.plugin.download.version>1.6.6</maven.plugin.download.version>
+        <maven.plugin.build.helper.version>3.3.0</maven.plugin.build.helper.version>
+        <maven.plugin.download.version>1.6.8</maven.plugin.download.version>
+        <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
         <maven.plugin.enforcer.mojo.rules.version>1.6.1</maven.plugin.enforcer.mojo.rules.version>
-        <maven.plugin.scala.version>4.6.1</maven.plugin.scala.version>
-        <maven.plugin.surefire.version>3.0.0-M7</maven.plugin.surefire.version>
+        <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
+        <maven.plugin.scala.version>4.8.0</maven.plugin.scala.version>
+        <maven.plugin.surefire.version>3.0.0-M8</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.2.0</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
-        <maven.plugin.spotless.version>2.27.2</maven.plugin.spotless.version>
+        <maven.plugin.spotless.version>2.30.0</maven.plugin.spotless.version>
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.4.1</maven.plugin.shade.version>
@@ -235,7 +246,7 @@
         <spotless.java.googlejavaformat.version>1.7</spotless.java.googlejavaformat.version>
         <spotless.python.includes></spotless.python.includes>
         <spotless.python.black.version>22.3.0</spotless.python.black.version>
-        <spotless.scala.scalafmt.version>3.6.1</spotless.scala.scalafmt.version>
+        <spotless.scala.scalafmt.version>3.7.1</spotless.scala.scalafmt.version>
 
         <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
         <distMgmtReleaseName>Apache Release Distribution Repository</distMgmtReleaseName>
@@ -251,6 +262,11 @@
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
                 <version>${antlr4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>ST4</artifactId>
+                <version>${antlr.st4.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.arrow</groupId>
@@ -581,6 +597,16 @@
                 <artifactId>kubernetes-client</artifactId>
                 <version>${kubernetes-client.version}</version>
             </dependency>
+            <!--
+                according to kubernetes-client MIGRATION-v6.md, we should include this dependency
+                for doing any customization to OkHttp clients.
+                https://github.com/fabric8io/kubernetes-client/blob/master/doc/MIGRATION-v6.md#okhttp-httpclient
+            -->
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-httpclient-okhttp</artifactId>
+                <version>${kubernetes-client.version}</version>
+            </dependency>
 
             <!--
               because of THRIFT-4805, we don't upgrade to libthrift:0.12.0,
@@ -678,6 +704,12 @@
             </dependency>
 
             <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-all</artifactId>
+                <version>${flexmark.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
                 <version>${slf4j.version}</version>
@@ -766,6 +798,12 @@
             </dependency>
 
             <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
                 <artifactId>jackson-jaxrs-base</artifactId>
                 <version>${jackson.version}</version>
@@ -799,6 +837,12 @@
                         <artifactId>commons-logging</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpmime</artifactId>
+                <version>${httpclient.version}</version>
             </dependency>
 
             <dependency>
@@ -879,6 +923,10 @@
                     <exclusion>
                         <groupId>io.netty</groupId>
                         <artifactId>netty-codec-xml</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-handler-ssl-ocsp</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>io.netty</groupId>
@@ -1059,6 +1107,13 @@
                 <groupId>org.scalatestplus</groupId>
                 <artifactId>mockito-4-6_${scala.binary.version}</artifactId>
                 <version>${scalatestplus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -1462,6 +1517,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-multipart</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.glassfish.jersey.test-framework</groupId>
                 <artifactId>jersey-test-framework-core</artifactId>
                 <version>${jersey.version}</version>
@@ -1510,13 +1571,13 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-streaming-java${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-streaming-java</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-clients${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-clients</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
@@ -1534,7 +1595,7 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-table-api-java-bridge${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-table-api-java-bridge</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
@@ -1546,7 +1607,7 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-table-runtime${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-table-runtime</artifactId>
                 <version>${flink.version}</version>
                 <scope>provided</scope>
             </dependency>
@@ -1559,13 +1620,13 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-sql-client${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-sql-client</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-test-utils${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-test-utils</artifactId>
                 <version>${flink.version}</version>
                 <exclusions>
                     <exclusion>
@@ -1581,12 +1642,6 @@
                         <artifactId>log4j-slf4j-impl</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>${gson.version}</version>
             </dependency>
 
             <dependency>
@@ -1610,6 +1665,12 @@
                 <groupId>net.sf.py4j</groupId>
                 <artifactId>py4j</artifactId>
                 <version>${py4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.theokanning.openai-gpt3-java</groupId>
+                <artifactId>service</artifactId>
+                <version>${openai.java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1750,7 +1811,7 @@
                         <maxmem>1024m</maxmem>
                         <fork>true</fork>
                         <compilerArgs>
-                            <arg>-Xlint:all,-serial,-path</arg>
+                            <arg>-Xlint:all,-serial,-path,-processing</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
@@ -1769,6 +1830,8 @@
                             <arg>-explaintypes</arg>
                             <arg>-Yno-adapted-args</arg>
                             <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
+                            <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
+                            <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
                             <arg>-Xfatal-warnings</arg>
                             <arg>-Ywarn-unused:imports</arg>
                         </args>
@@ -1778,7 +1841,7 @@
                             <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
                         </jvmArgs>
                         <javacArgs>
-                            <javacArg>-Xlint:all,-serial,-path,-try</javacArg>
+                            <javacArg>-Xlint:all,-serial,-path,-try,-processing</javacArg>
                         </javacArgs>
                         <compilerPlugins>
                             <compilerPlugin>
@@ -1959,6 +2022,9 @@
                             <fileset>
                                 <directory>${project.basedir}/spark-warehouse</directory>
                             </fileset>
+                            <fileset>
+                                <directory>${project.basedir}/web-ui/dist</directory>
+                            </fileset>
                         </filesets>
                     </configuration>
                 </plugin>
@@ -2036,6 +2102,19 @@
                                 <version>${spotless.python.black.version}</version>
                             </black>
                         </python>
+                        <markdown>
+                            <includes>
+                                <include>docs/**/*.md</include>
+                                <include>*/README.md</include>
+                                <include>docker/playground/README.md</include>
+                            </includes>
+                            <excludes>
+                                <exclude>docs/*/lib/python*/**/*.md</exclude>
+                            </excludes>
+                            <flexmark>
+                                <version>${flexmark.version}</version>
+                            </flexmark>
+                        </markdown>
                     </configuration>
                     <executions>
                         <execution>
@@ -2101,6 +2180,16 @@
                             <version>${maven.plugin.enforcer.mojo.rules.version}</version>
                         </dependency>
                     </dependencies>
+                </plugin>
+
+                <plugin>
+                    <groupId>com.github.eirslett</groupId>
+                    <artifactId>frontend-maven-plugin</artifactId>
+                    <version>${maven.plugin.frontend.version}</version>
+                    <configuration>
+                        <nodeVersion>${node.version}</nodeVersion>
+                        <pnpmVersion>${pnpm.version}</pnpmVersion>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -2186,9 +2275,11 @@
     <profiles>
         <profile>
             <id>mirror-cdn</id>
-            <!-- this profile works only for latest apache releases -->
             <properties>
+                <!-- the apache cdn mirror works only for latest apache releases -->
                 <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
+                <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
+                <pnpmDownloadRoot>https://registry.npmmirror.com/pnpm/-/</pnpmDownloadRoot>
             </properties>
         </profile>
 
@@ -2247,7 +2338,7 @@
             <properties>
                 <spark.version>3.2.3</spark.version>
                 <spark.binary.version>3.2</spark.binary.version>
-                <delta.version>2.0.1</delta.version>
+                <delta.version>2.0.2</delta.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
@@ -2269,9 +2360,20 @@
         <profile>
             <id>spark-master</id>
             <properties>
-                <spark.version>3.4.0-SNAPSHOT</spark.version>
+                <spark.version>3.5.0-SNAPSHOT</spark.version>
+                <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
+                <threeten.version>1.7.0</threeten.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
             </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.threeten</groupId>
+                        <artifactId>threeten-extra</artifactId>
+                        <version>${threeten.version}</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
             <repositories>
                 <repository>
                     <releases>
@@ -2287,26 +2389,16 @@
         </profile>
 
         <profile>
-            <id>flink-1.14</id>
-            <properties>
-                <flink.version>1.14.5</flink.version>
-                <flink.module.scala.suffix>_${scala.binary.version}</flink.module.scala.suffix>
-            </properties>
-        </profile>
-
-        <profile>
             <id>flink-1.15</id>
             <properties>
-                <flink.version>1.15.2</flink.version>
-                <flink.module.scala.suffix></flink.module.scala.suffix>
+                <flink.version>1.15.4</flink.version>
             </properties>
         </profile>
 
         <profile>
             <id>flink-1.16</id>
             <properties>
-                <flink.version>1.16.0</flink.version>
-                <flink.module.scala.suffix></flink.module.scala.suffix>
+                <flink.version>1.16.1</flink.version>
             </properties>
         </profile>
 
@@ -2365,6 +2457,13 @@
                 <flink.archive.download.skip>true</flink.archive.download.skip>
                 <hive.archive.download.skip>true</hive.archive.download.skip>
                 <spark.archive.download.skip>true</spark.archive.download.skip>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>web-ui</id>
+            <properties>
+                <webui.skip>false</webui.skip>
             </properties>
         </profile>
 

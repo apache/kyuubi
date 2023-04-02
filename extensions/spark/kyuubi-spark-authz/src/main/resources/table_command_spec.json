@@ -220,6 +220,20 @@
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ]
 }, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeRelation",
+  "tableDescs" : [ {
+    "fieldName" : "relation",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : true
+  } ],
+  "opType" : "DESCTABLE",
+  "queryDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropColumns",
   "tableDescs" : [ {
     "fieldName" : "child",
@@ -675,23 +689,6 @@
   "classname" : "org.apache.spark.sql.execution.command.AlterTableRenameCommand",
   "tableDescs" : [ {
     "fieldName" : "oldName",
-    "fieldExtractor" : "TableIdentifierTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : {
-      "fieldName" : null,
-      "fieldExtractor" : null,
-      "actionType" : "DELETE"
-    },
-    "tableTypeDesc" : {
-      "fieldName" : "oldName",
-      "fieldExtractor" : "TableIdentifierTableTypeExtractor",
-      "skipTypes" : [ "TEMP_VIEW" ]
-    },
-    "catalogDesc" : null,
-    "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
-  }, {
-    "fieldName" : "newName",
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : null,
@@ -1179,6 +1176,23 @@
   } ],
   "opType" : "TRUNCATETABLE",
   "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.datasources.CreateTable",
+  "tableDescs" : [ {
+    "fieldName" : "tableDesc",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanOptionQueryExtractor"
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.CreateTempViewUsing",
   "tableDescs" : [ ],

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.7.0-SNAPSHOT</version>
+        <version>1.8.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -36,6 +36,7 @@
                 <groupId>com.googlecode.maven-download-plugin</groupId>
                 <artifactId>download-maven-plugin</artifactId>
                 <configuration>
+                    <cacheDirectory>${maven.plugin.download.cache.path}</cacheDirectory>
                     <outputDirectory>${project.build.directory}</outputDirectory>
                     <readTimeOut>60000</readTimeOut>
                     <retries>3</retries>

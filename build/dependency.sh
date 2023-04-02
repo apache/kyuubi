@@ -32,7 +32,7 @@ DEP="${PWD}/dev/dependencyList"
 
 
 function build_classpath() {
-  $MVN dependency:build-classpath -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly |\
+  $MVN dependency:build-classpath --no-snapshot-updates -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly |\
     grep -v "INFO\|WARN" | \
     tail -1 | \
     tr ":" "\n" | \

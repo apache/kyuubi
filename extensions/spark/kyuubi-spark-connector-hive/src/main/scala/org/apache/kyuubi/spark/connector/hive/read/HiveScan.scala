@@ -32,7 +32,7 @@ import org.apache.spark.sql.connector.read.PartitionReaderFactory
 import org.apache.spark.sql.execution.PartitionedFileUtil
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.datasources.v2.FileScan
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.hiveClientImpl
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.HiveClientImpl
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
@@ -58,7 +58,7 @@ case class HiveScan(
     val hiveConf = sparkSession.sessionState.newHadoopConf()
     addCatalogTableConfToConf(hiveConf, catalogTable)
 
-    val table = hiveClientImpl.toHiveTable(catalogTable)
+    val table = HiveClientImpl.toHiveTable(catalogTable)
     HiveReader.initializeHiveConf(table, hiveConf, dataSchema, readDataSchema)
     val broadcastHiveConf =
       sparkSession.sparkContext.broadcast(new SerializableConfiguration(hiveConf))

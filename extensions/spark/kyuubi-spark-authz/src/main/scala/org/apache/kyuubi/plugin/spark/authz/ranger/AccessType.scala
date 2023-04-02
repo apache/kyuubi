@@ -35,14 +35,13 @@ object AccessType extends Enumeration {
           case CREATETABLE | CREATEVIEW | CREATETABLE_AS_SELECT
               if obj.privilegeObjectType == TABLE_OR_VIEW =>
             if (isInput) SELECT else CREATE
-          // new table new `CREATE` privilege here and the old table gets `DELETE` via actionType
-          case ALTERTABLE_RENAME => CREATE
           case ALTERDATABASE |
               ALTERDATABASE_LOCATION |
               ALTERTABLE_ADDCOLS |
               ALTERTABLE_ADDPARTS |
               ALTERTABLE_DROPPARTS |
               ALTERTABLE_LOCATION |
+              ALTERTABLE_RENAME |
               ALTERTABLE_PROPERTIES |
               ALTERTABLE_RENAMECOL |
               ALTERTABLE_RENAMEPART |

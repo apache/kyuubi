@@ -38,7 +38,7 @@ import org.apache.spark.sql.execution.datasources.{BasicWriteJobStatsTracker, Wr
 import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
 import org.apache.spark.sql.execution.metric.SQLMetric
 import org.apache.spark.sql.hive.execution.{HiveFileFormat, HiveOptions}
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hiveClientImpl, FileSinkDesc, StructTypeHelper}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{FileSinkDesc, HiveClientImpl, StructTypeHelper}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
@@ -56,7 +56,7 @@ case class HiveWrite(
 
   private val options = info.options()
 
-  private val hiveTable = hiveClientImpl.toHiveTable(table)
+  private val hiveTable = HiveClientImpl.toHiveTable(table)
 
   private val hadoopConf = hiveTableCatalog.hadoopConfiguration()
 
@@ -102,7 +102,9 @@ case class HiveWrite(
     committer.setupJob(job)
 
     new HiveBatchWrite(
+      sparkSession,
       table,
+      hiveTableCatalog,
       Some(tmpLocation),
       partition,
       partitionColumnNames,
@@ -110,7 +112,9 @@ case class HiveWrite(
       ifPartitionNotExists,
       hadoopConf,
       new FileBatchWrite(job, description, committer),
-      externalCatalog)
+      externalCatalog,
+      description,
+      committer)
   }
 
   private def createWriteJobDescription(

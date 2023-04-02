@@ -56,9 +56,10 @@ trait ApplicationOperation {
    * Get the engine/application status by the unique application tag
    *
    * @param tag the unique application tag for engine instance.
+   * @param submitTime engine submit to resourceManager time
    * @return [[ApplicationInfo]]
    */
-  def getApplicationInfoByTag(tag: String): ApplicationInfo
+  def getApplicationInfoByTag(tag: String, submitTime: Option[Long] = None): ApplicationInfo
 }
 
 object ApplicationState extends Enumeration {
@@ -97,6 +98,11 @@ case class ApplicationInfo(
       "url" -> url.orNull,
       "error" -> error.orNull)
   }
+}
+
+object ApplicationInfo {
+  val NOT_FOUND: ApplicationInfo = ApplicationInfo(null, null, ApplicationState.NOT_FOUND)
+  val UNKNOWN: ApplicationInfo = ApplicationInfo(null, null, ApplicationState.UNKNOWN)
 }
 
 object ApplicationOperation {

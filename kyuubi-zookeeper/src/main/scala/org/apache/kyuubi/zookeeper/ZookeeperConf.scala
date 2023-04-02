@@ -17,35 +17,34 @@
 
 package org.apache.kyuubi.zookeeper
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.{ConfigEntry, OptionalConfigEntry}
+import org.apache.kyuubi.config.KyuubiConf.buildConf
 
 object ZookeeperConf {
 
-  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
-
   @deprecated("using kyuubi.zookeeper.embedded.client.port instead", since = "1.2.0")
   val EMBEDDED_ZK_PORT: ConfigEntry[Int] = buildConf("kyuubi.zookeeper.embedded.port")
-    .doc("The port of the embedded zookeeper server")
+    .doc("The port of the embedded ZooKeeper server")
     .version("1.0.0")
     .intConf
     .createWithDefault(2181)
 
   @deprecated("using kyuubi.zookeeper.embedded.data.dir instead", since = "1.2.0")
   val EMBEDDED_ZK_TEMP_DIR: ConfigEntry[String] = buildConf("kyuubi.zookeeper.embedded.directory")
-    .doc("The temporary directory for the embedded zookeeper server")
+    .doc("The temporary directory for the embedded ZooKeeper server")
     .version("1.0.0")
     .stringConf
     .createWithDefault("embedded_zookeeper")
 
   val ZK_CLIENT_PORT: ConfigEntry[Int] = buildConf("kyuubi.zookeeper.embedded.client.port")
-    .doc("clientPort for the embedded zookeeper server to listen for client connections," +
-      " a client here could be Kyuubi server, engine and JDBC client")
+    .doc("clientPort for the embedded ZooKeeper server to listen for client connections," +
+      " a client here could be Kyuubi server, engine, and JDBC client")
     .version("1.2.0")
     .fallbackConf(EMBEDDED_ZK_PORT)
 
   val ZK_CLIENT_PORT_ADDRESS: OptionalConfigEntry[String] =
     buildConf("kyuubi.zookeeper.embedded.client.port.address")
-      .doc("clientPortAddress for the embedded zookeeper server to")
+      .doc("clientPortAddress for the embedded ZooKeeper server to")
       .version("1.2.0")
       .stringConf
       .createOptional
@@ -57,19 +56,19 @@ object ZookeeperConf {
     .fallbackConf(EMBEDDED_ZK_TEMP_DIR)
 
   val ZK_DATA_LOG_DIR: ConfigEntry[String] = buildConf("kyuubi.zookeeper.embedded.data.log.dir")
-    .doc("dataLogDir for the embedded zookeeper server where writes the transaction log .")
+    .doc("dataLogDir for the embedded ZooKeeper server where writes the transaction log .")
     .version("1.2.0")
     .fallbackConf(ZK_DATA_DIR)
 
   val ZK_TICK_TIME: ConfigEntry[Int] = buildConf("kyuubi.zookeeper.embedded.tick.time")
-    .doc("tickTime in milliseconds for the embedded zookeeper server")
+    .doc("tickTime in milliseconds for the embedded ZooKeeper server")
     .version("1.2.0")
     .intConf
     .createWithDefault(3000)
 
   val ZK_MAX_CLIENT_CONNECTIONS: ConfigEntry[Int] =
     buildConf("kyuubi.zookeeper.embedded.max.client.connections")
-      .doc("maxClientCnxns for the embedded zookeeper server to limits the number of concurrent" +
+      .doc("maxClientCnxns for the embedded ZooKeeper server to limit the number of concurrent" +
         " connections of a single client identified by IP address")
       .version("1.2.0")
       .intConf
@@ -77,7 +76,7 @@ object ZookeeperConf {
 
   val ZK_MIN_SESSION_TIMEOUT: ConfigEntry[Int] =
     buildConf("kyuubi.zookeeper.embedded.min.session.timeout")
-      .doc("minSessionTimeout in milliseconds for the embedded zookeeper server will allow the" +
+      .doc("minSessionTimeout in milliseconds for the embedded ZooKeeper server will allow the" +
         " client to negotiate. Defaults to 2 times the tickTime")
       .version("1.2.0")
       .intConf
@@ -85,7 +84,7 @@ object ZookeeperConf {
 
   val ZK_MAX_SESSION_TIMEOUT: ConfigEntry[Int] =
     buildConf("kyuubi.zookeeper.embedded.max.session.timeout")
-      .doc("maxSessionTimeout in milliseconds for the embedded zookeeper server will allow the" +
+      .doc("maxSessionTimeout in milliseconds for the embedded ZooKeeper server will allow the" +
         " client to negotiate. Defaults to 20 times the tickTime")
       .version("1.2.0")
       .intConf

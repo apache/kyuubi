@@ -20,7 +20,7 @@ package org.apache.kyuubi.metrics
 import java.lang.management.ManagementFactory
 import java.util.concurrent.TimeUnit
 
-import com.codahale.metrics.{Gauge, MetricRegistry}
+import com.codahale.metrics.{Gauge, MetricRegistry, Snapshot}
 import com.codahale.metrics.jvm._
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -120,5 +120,9 @@ object MetricsSystem {
 
   def meterValue(name: String): Option[Long] = {
     maybeSystem.map(_.registry.meter(name).getCount)
+  }
+
+  def histogramSnapshot(name: String): Option[Snapshot] = {
+    maybeSystem.map(_.registry.histogram(name).getSnapshot)
   }
 }

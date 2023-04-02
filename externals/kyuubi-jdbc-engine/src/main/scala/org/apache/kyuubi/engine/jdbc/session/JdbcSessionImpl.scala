@@ -23,8 +23,9 @@ import scala.util.{Failure, Success, Try}
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
-import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
 class JdbcSessionImpl(
     protocol: TProtocolVersion,
@@ -34,6 +35,9 @@ class JdbcSessionImpl(
     conf: Map[String, String],
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  override val handle: SessionHandle =
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
   private[jdbc] var sessionConnection: Connection = _
 
