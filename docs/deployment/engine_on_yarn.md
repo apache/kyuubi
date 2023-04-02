@@ -111,7 +111,7 @@ Please refer to [Spark properties](https://spark.apache.org/docs/latest/running-
 Kyuubi currently does not support Spark's [YARN-specific Kerberos Configuration](https://spark.apache.org/docs/3.0.1/running-on-yarn.html#kerberos),
 so `spark.kerberos.keytab` and `spark.kerberos.principal` should not use now.
 
-Instead, you can schedule a periodically `kinit` process via `crontab` task on the local machine that hosts Kyuubi server or simply use [Kyuubi Kinit](settings.html#kinit).
+Instead, you can schedule a periodically `kinit` process via `crontab` task on the local machine that hosts Kyuubi server or simply use [Kyuubi Kinit](project:settings.md#kinit).
 
 ## Deploy Kyuubi Flink Engine on Yarn
 
@@ -204,7 +204,7 @@ At present, [Application Mode](https://nightlies.apache.org/flink/flink-docs-sta
 As Kyuubi Flink SQL engine wraps the Flink SQL client that currently does not support [Flink Kerberos Configuration](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/config/#security-kerberos-login-keytab),
 so `security.kerberos.login.keytab` and `security.kerberos.login.principal` should not use now.
 
-Instead, you can schedule a periodically `kinit` process via `crontab` task on the local machine that hosts Kyuubi server or simply use [Kyuubi Kinit](settings.html#kinit).
+Instead, you can schedule a periodically `kinit` process via `crontab` task on the local machine that hosts Kyuubi server or simply use [Kyuubi Kinit](project:settings.md#kinit).
 
 ## Deploy Kyuubi Hive Engine on Yarn
 

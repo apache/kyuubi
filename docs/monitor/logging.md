@@ -138,11 +138,11 @@ Meanwhile, it also includes how all the services of an engine start/stop, how do
 
 In general, when an exception occurs, we are able to find more information and clues in the engine's logs.
 
-#### Configuring Engine Logging
+### Configuring Engine Logging
 
 Please refer to Apache Spark online documentation -[Configuring Logging](https://spark.apache.org/docs/latest/configuration.html#configuring-logging) for instructions.
 
-#### Where to Find the Engine Log
+### Where to Find the Engine Log
 
 The engine logs locate differently based on the deploy mode and the cluster manager.
 When using local backend or `client` deploy mode for other cluster managers, such as YARN, you can find the whole engine log in `$KYUUBI_WORK_DIR_ROOT/${session username}/kyuubi-spark-sql-engine.log.${num}`.
@@ -158,11 +158,11 @@ Meanwhile, it also includes how all the services of an engine start/stop, how do
 
 In general, when an exception occurs, we are able to find more information and clues in the engine's logs.
 
-#### Configuring Engine Logging
+### Configuring Engine Logging
 
 Please refer to Apache Flink online documentation -[Configuring Logging](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/advanced/logging) for instructions.
 
-#### Where to Find the Engine Log
+### Where to Find the Engine Log
 
 The engine logs locate differently based on the deploy mode and the cluster manager.
 When using local backend or `client` deploy mode for other cluster managers, such as YARN, you can find the whole engine log in `$KYUUBI_WORK_DIR_ROOT/${session username}/kyuubi-flink-sql-engine.log.${num}`.

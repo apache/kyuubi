@@ -14,7 +14,7 @@
    limitations under the License.
 
 `Apache Paimon (Incubating)`_
-==========
+=============================
 
 Apache Paimon(incubating) is a streaming data lake platform that supports high-speed data ingestion, change data tracking and efficient real-time analytics.
 
@@ -28,7 +28,7 @@ convenient, easy to understand, and easy to expand than directly using
 trino to manipulate Apache Paimon (Incubating).
 
 Apache Paimon (Incubating) Integration
--------------------
+--------------------------------------
 
 To enable the integration of kyuubi trino sql engine and Apache Paimon (Incubating), you need to:
 
@@ -71,7 +71,7 @@ For example, create $TRINO_SERVER_HOME/etc/catalog/tablestore.properties with th
    warehouse=file:///tmp/warehouse
 
 Apache Paimon (Incubating) Operations
-------------------
+-------------------------------------
 
 Apache Paimon (Incubating) supports reading table store tables through Trino.
 A common scenario is to write data with Spark or Flink and read data with Trino.

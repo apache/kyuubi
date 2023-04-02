@@ -109,7 +109,7 @@ List all the service nodes for a particular domain.
 .. _create_servers:
 
 Create server
-***********
+*************
 Expose Kyuubi server instance to another domain.
 
 First read ``kyuubi.ha.zookeeper.namespace`` in ``conf/kyuubi-defaults.conf``, if there are server instances under this namespace, register them in the new namespace specified by the ``--namespace`` parameter.
@@ -121,7 +121,7 @@ First read ``kyuubi.ha.zookeeper.namespace`` in ``conf/kyuubi-defaults.conf``, i
 .. _get_servers:
 
 Get server
-***********
+**********
 
 Get Kyuubi server info of domain.
 
@@ -132,7 +132,7 @@ Get Kyuubi server info of domain.
 .. _delete_servers:
 
 Delete server
-***********
+*************
 
 Delete the specified service node for a domain.
 
@@ -191,7 +191,7 @@ The management share level is SERVER, the user who starts the kyuubi server is A
 .. _get_engines:
 
 Get engine
-***********
+**********
 
 Get Kyuubi engine info belong to a user.
 

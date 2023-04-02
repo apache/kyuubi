@@ -51,7 +51,7 @@ When applying HA to Kyuubi deployment, we need to be aware of the below two thin
 - `kyuubi.ha.zookeeper.quorum` - the external zookeeper cluster address for deploy a `k.i.`
 - `kyuubi.ha.zookeeper.namespace` - the root directory, a.k.a. the ServerSpace for deploy a `k.i.`
 
-For more configurations, please see the HA section of [Introduction to the Kyuubi Configurations System](./settings.html#ha)
+For more configurations, please see the HA section of [Introduction to the Kyuubi Configurations System](project:settings.md#ha)
 
 ### Pseudo mode
 

@@ -170,7 +170,7 @@ Kyuubi is a long-running service to make it easier for end-users to use Spark SQ
 
 ### Setting Default Configurations
 
-[Configuring by `spark-defaults.conf`](settings.html#via-spark-defaults-conf) at the engine side is the best way to set up Kyuubi with DRA. All engines will be instantiated with DRA enabled.
+[Configuring by `spark-defaults.conf`](project:../settings.md#via-spark-defaults-conf) at the engine side is the best way to set up Kyuubi with DRA. All engines will be instantiated with DRA enabled.
 
 Here is a config setting that we use in our platform when deploying Kyuubi.
 
@@ -198,7 +198,7 @@ Note that, ```spark.cleaner.periodicGC.interval=5min``` is useful here when ```s
 
 On the server-side, the workloads for different users might be different.
 
-Then we can set different defaults for them via the [User Defaults](../settings.html#user-defaults) in ```$KYUUBI_HOME/conf/kyuubi-defaults.conf```
+Then we can set different defaults for them via the [User Defaults](project:../settings.md#user-defaults) in ```$KYUUBI_HOME/conf/kyuubi-defaults.conf```
 
 ```properties
 # For a user named kent
@@ -220,7 +220,7 @@ SELECT * FROM default.tableA;
 
 For the above case, the value - 33 will not affect as Spark does not support change core configurations in runtime.
 
-Instead, end-users can set them via [JDBC Connection URL](../settings.html#via-jdbc-connection-url) for some specific cases.
+Instead, end-users can set them via [JDBC Connection URL](project:../settings.md#via-jdbc-connection-url) for some specific cases.
 
 ## References
 

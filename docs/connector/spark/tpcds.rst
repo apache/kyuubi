@@ -14,7 +14,7 @@
    limitations under the License.
 
 TPC-DS
-=====
+======
 
 The TPC-DS is a decision support benchmark. It consists of a suite of business oriented ad-hoc queries and concurrent
 data modifications. The queries and the data populating the database have been chosen to have broad industry-wide
@@ -82,7 +82,7 @@ To add TPC-DS tables as a catalog, we can set the following configurations in ``
    spark.sql.catalog.tpcds.read.maxPartitionBytes=128m
 
 TPC-DS Operations
-----------------
+-----------------
 
 Listing databases under `tpcds` catalog.
 

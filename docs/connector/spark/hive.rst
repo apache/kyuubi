@@ -22,7 +22,7 @@ It is implemented based on Spark DataSource V2, and supports concatenating multi
 This connector can be used to federate queries of multiple hives warehouse in a single Spark cluster.
 
 Hive Connector Integration
--------------------
+--------------------------
 
 To enable the integration of kyuubi spark sql engine and Hive connector through
 Apache Spark Datasource V2 and Catalog APIs, you need to:
@@ -65,7 +65,7 @@ To activate functionality of Kyuubi Hive connector, we can set the following con
    For details about the multi-version Hive configuration, see the related multi-version Hive configurations supported by Apache Spark.
 
 Hive Connector Operations
-------------------
+-------------------------
 
 Taking ``CREATE NAMESPACE`` as a example,
 

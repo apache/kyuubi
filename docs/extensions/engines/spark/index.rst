@@ -20,6 +20,7 @@ Extensions for Spark
     :maxdepth: 1
 
     z-order
+    z-order-benchmark
     rules
     ../../../security/authorization/spark/index
     functions

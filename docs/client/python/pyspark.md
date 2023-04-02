@@ -37,16 +37,16 @@ For installation using Conda or manually downloading, please refer to [PySpark i
 
 Prepare JDBC driver jar file. Supported Hive compatible JDBC Driver as below:
 
-|                        Driver                        |            Driver Class Name            |                                                                                  Remarks                                                                                   |
-|------------------------------------------------------|-----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Kyuubi Hive Driver ([doc](../jdbc/kyuubi_jdbc.html)) | org.apache.kyuubi.jdbc.KyuubiHiveDriver | Compile for the driver on master branch, as [KYUUBI #3484](https://github.com/apache/kyuubi/pull/3485) required by Spark JDBC source not yet included in released version. |
-| Hive Driver ([doc](../jdbc/hive_jdbc.html))          | org.apache.hive.jdbc.HiveDriver         |
+| Driver                                          |            Driver Class Name            |                                                                                  Remarks                                                                                   |
+|-------------------------------------------------|-----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Kyuubi Hive Driver ([doc](../jdbc/kyuubi_jdbc)) | org.apache.kyuubi.jdbc.KyuubiHiveDriver | Compile for the driver on master branch, as [KYUUBI #3484](https://github.com/apache/kyuubi/pull/3485) required by Spark JDBC source not yet included in released version. |
+| Hive Driver ([doc](../jdbc/hive_jdbc))          | org.apache.hive.jdbc.HiveDriver         |
 
 Refer to docs of the driver and prepare the JDBC driver jar file.
 
 ### Prepare JDBC Hive Dialect extension
 
-Hive Dialect support is required by Spark for wrapping SQL correctly and sending it to the JDBC driver. Kyuubi provides a JDBC dialect extension with auto-registered Hive Dialect support for Spark. Follow the instructions in [Hive Dialect Support](../../extensions/engines/spark/jdbc-dialect.html) to prepare the plugin jar file `kyuubi-extension-spark-jdbc-dialect_-*.jar`.
+Hive Dialect support is required by Spark for wrapping SQL correctly and sending it to the JDBC driver. Kyuubi provides a JDBC dialect extension with auto-registered Hive Dialect support for Spark. Follow the instructions in [Hive Dialect Support](../../extensions/engines/spark/jdbc-dialect) to prepare the plugin jar file `kyuubi-extension-spark-jdbc-dialect_-*.jar`.
 
 ### Including jars of JDBC driver and Hive Dialect extension
 

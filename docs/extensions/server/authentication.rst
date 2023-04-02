@@ -72,7 +72,6 @@ To enable the custom authentication method, we need to
   on each node where kyuubi server is installed.
 
 .. code-block:: property
-   :margin:
 
    kyuubi.authentication=CUSTOM
    kyuubi.authentication.custom.class=YourAuthenticationProvider

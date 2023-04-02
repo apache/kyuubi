@@ -20,5 +20,3 @@ ODBC Drivers
 .. toctree::
     :maxdepth: 2
 
-    todo
-

@@ -20,5 +20,3 @@ Web UI
 .. toctree::
     :maxdepth: 2
 
-    hive_beeline
-

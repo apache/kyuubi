@@ -39,21 +39,21 @@ Before integrating Kyuubi with Kudu, we strongly suggest that you integrate and 
 
 ## Kudu Integration with Kyuubi
 
-#### Install Kudu Spark Dependency
+### Install Kudu Spark Dependency
 
 Confirm your Kudu cluster version and download the corresponding kudu spark dependency library, such as [org.apache.kudu:kudu-spark3_2.12-1.14.0](https://repo1.maven.org/maven2/org/apache/kudu/kudu-spark3_2.12/1.14.0/kudu-spark3_2.12-1.14.0.jar) to `$SPARK_HOME`/jars.
 
-#### Start Kyuubi
+### Start Kyuubi
 
 Now, you can start Kyuubi server with this kudu embedded Spark distribution.
 
-#### Start Beeline Or Other Client You Prefer
+### Start Beeline Or Other Client You Prefer
 
 ```shell
 bin/beeline -u 'jdbc:hive2://<host>:<port>/;principal=<if kerberized>;#spark.yarn.queue=kyuubi_test'
 ```
 
-#### Register Kudu table as Spark Temporary view
+### Register Kudu table as Spark Temporary view
 
 ```sql
 CREATE TEMPORARY VIEW kudutest
@@ -79,7 +79,7 @@ options (
 2 rows selected (0.29 seconds)
 ```
 
-#### Query Kudu Table
+### Query Kudu Table
 
 ```sql
 0: jdbc:hive2://spark5.jd.163.org:10009/> select * from kudutest;
@@ -100,7 +100,7 @@ options (
 5 rows selected (1.083 seconds)
 ```
 
-#### Join Kudu table with Hive table
+### Join Kudu table with Hive table
 
 ```sql
 0: jdbc:hive2://spark5.jd.163.org:10009/> select t1.*, t2.* from hive_tbl t1 join kudutest t2 on t1.userid=t2.userid+1;
@@ -118,7 +118,7 @@ options (
 3 rows selected (1.63 seconds)
 ```
 
-#### Insert to Kudu table
+### Insert to Kudu table
 
 You should notice that only `INSERT INTO` is supported by Kudu, `OVERWRITE` data is not supported
 
