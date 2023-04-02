@@ -142,7 +142,7 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite {
     command += s"-Dyarn.ship-files=${flinkExtraJars.mkString(";")}"
     command += s"-Dyarn.tags=KYUUBI,$engineRefId"
     command += "-Djobmanager.memory.process.size=1g"
-    command += "-Dtaskmanager.memory.process.size=512m"
+    command += "-Dtaskmanager.memory.process.size=1g"
     command += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
     command += "-Dexecution.target=yarn-application"
     command += "-c"
