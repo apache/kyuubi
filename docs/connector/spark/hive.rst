@@ -37,7 +37,7 @@ Dependencies
 
 The **classpath** of kyuubi spark sql engine with Hive connector supported consists of
 
-1. kyuubi-spark-connector-hive_2.12-\ |release|\ , the hive connector jar deployed with Kyuubi distributions
+1. kyuubi-spark-connector-hive_2.12-|release|.jar, the hive connector jar deployed with Kyuubi distributions
 2. a copy of spark distribution
 
 In order to make the Hive connector packages visible for the runtime classpath of engines, we can use one of these methods:
@@ -54,12 +54,11 @@ To activate functionality of Kyuubi Hive connector, we can set the following con
 
 .. code-block:: properties
 
-   spark.sql.catalog.hive_catalog     org.apache.kyuubi.spark.connector.hive.HiveTableCatalog
-   spark.sql.catalog.hive_catalog.spark.sql.hive.metastore.version     hive-metastore-version
-   spark.sql.catalog.hive_catalog.hive.metastore.uris     thrift://metastore-host:port
-   spark.sql.catalog.hive_catalog.hive.metastore.port     port
-   spark.sql.catalog.hive_catalog.spark.sql.hive.metastore.jars     path
-   spark.sql.catalog.hive_catalog.spark.sql.hive.metastore.jars.path     file:///opt/hive1/lib/*.jar
+   spark.sql.catalog.hive_catalog                                     org.apache.kyuubi.spark.connector.hive.HiveTableCatalog
+   spark.sql.catalog.hive_catalog.hive.metastore.uris                 thrift://metastore-host:port
+   spark.sql.catalog.hive_catalog.spark.sql.hive.metastore.version    hive-metastore-version
+   spark.sql.catalog.hive_catalog.spark.sql.hive.metastore.jars       path
+   spark.sql.catalog.hive_catalog.spark.sql.hive.metastore.jars.path  file:///opt/hive1/lib/*.jar
 
 .. tip::
    For details about the multi-version Hive configuration, see the related multi-version Hive configurations supported by Apache Spark.

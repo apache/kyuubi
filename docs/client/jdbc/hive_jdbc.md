@@ -19,13 +19,21 @@
 
 ## Instructions
 
-Kyuubi does not provide its own JDBC Driver so far,
-as it is fully compatible with Hive JDBC and ODBC drivers that let you connect to popular Business Intelligence (BI) tools to query,
-analyze and visualize data though Spark SQL engines.
+Kyuubi is fully compatible with Hive JDBC and ODBC drivers that let you connect to popular Business Intelligence (BI)
+tools to query, analyze and visualize data though Spark SQL engines.
+
+:::{tip}
+It's recommended to use [Kyuubi JDBC driver](./kyuubi_jdbc.rst) for new applications.
+:::
 
 ## Install Hive JDBC
 
-For programing, the easiest way to get `hive-jdbc` is from [the maven central](https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc). For example,
+For programing, the easiest way to get `hive-jdbc` is from the [Maven Central](https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc). For example,
+
+:::{tip}
+The following sections demonstrate how to use Hive JDBC driver 2.3.9 to connect Kyuubi Server, actually, any version
+less or equals 3.1.x should work fine.
+:::
 
 - **maven**
 
@@ -33,23 +41,23 @@ For programing, the easiest way to get `hive-jdbc` is from [the maven central](h
 <dependency>
     <groupId>org.apache.hive</groupId>
     <artifactId>hive-jdbc</artifactId>
-    <version>2.3.8</version>
+    <version>2.3.9</version>
 </dependency>
 ```
 
 - **sbt**
 
 ```scala
-libraryDependencies += "org.apache.hive" % "hive-jdbc" % "2.3.8"
+libraryDependencies += "org.apache.hive" % "hive-jdbc" % "2.3.9"
 ```
 
 - **gradle**
 
 ```gradle
-implementation group: 'org.apache.hive', name: 'hive-jdbc', version: '2.3.8'
+implementation group: 'org.apache.hive', name: 'hive-jdbc', version: '2.3.9'
 ```
 
-For BI tools, please refer to [Quick Start](../../quick_start/index) to check the guide for the BI tool used.
+For BI tools, please refer to [Quick Start](../../quick_start/index.rst) to check the guide for the BI tool used.
 If you find there is no specific document for the BI tool that you are using, don't worry, the configuration part for all BI tools are basically the same.
 Also, we will appreciate if you can help us to improve the document.
 
@@ -75,8 +83,3 @@ jdbc:hive2://<host>:<port>/<dbName>;<sessionVars>?<kyuubiConfs>#<[spark|hive]Var
 ```
 jdbc:hive2://localhost:10009/default;hive.server2.proxy.user=proxy_user?kyuubi.engine.share.level=CONNECTION;spark.ui.enabled=false#var_x=y
 ```
-
-## Unsupported Hive Features
-
-- Connect to HiveServer2 using HTTP transport. ```transportMode=http```
-
