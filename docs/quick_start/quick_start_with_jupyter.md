@@ -15,5 +15,5 @@
 - limitations under the License.
 -->
 
-# Getting Started with Hive Jupyter Lap
+# Getting Started with Jupyter Lap
 
