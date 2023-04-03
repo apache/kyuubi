@@ -59,27 +59,23 @@ class SparkSessionImpl(
       Array("use:catalog", "use:database").contains(k)
     }
 
-    useCatalogAndDatabaseConf.get("use:catalog") match {
-      case Some(catalog) =>
-        try {
-          SparkCatalogShim().setCurrentCatalog(spark, catalog)
-        } catch {
-          case e if e.getMessage.contains("Cannot find catalog plugin class for catalog") =>
-            warn(e.getMessage())
-        }
-      case None =>
+    useCatalogAndDatabaseConf.get("use:catalog").foreach { catalog =>
+      try {
+        SparkCatalogShim().setCurrentCatalog(spark, catalog)
+      } catch {
+        case e if e.getMessage.contains("Cannot find catalog plugin class for catalog") =>
+          warn(e.getMessage())
+      }
     }
 
-    useCatalogAndDatabaseConf.get("use:database") match {
-      case Some(database) =>
-        try {
-          SparkCatalogShim().setCurrentDatabase(spark, database)
-        } catch {
-          case e
-              if database == "default" && e.getMessage != null &&
-                e.getMessage.contains("not found") =>
-        }
-      case None =>
+    useCatalogAndDatabaseConf.get("use:database").foreach { database =>
+      try {
+        SparkCatalogShim().setCurrentDatabase(spark, database)
+      } catch {
+        case e
+            if database == "default" && e.getMessage != null &&
+              e.getMessage.contains("not found") =>
+      }
     }
 
     otherConf.foreach {

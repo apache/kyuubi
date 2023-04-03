@@ -62,30 +62,26 @@ class FlinkSessionImpl(
       Array("use:catalog", "use:database").contains(k)
     }
 
-    useCatalogAndDatabaseConf.get("use:catalog") match {
-      case Some(catalog) =>
-        val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-        try {
-          tableEnv.useCatalog(catalog)
-        } catch {
-          case NonFatal(e) =>
-            throw e
-        }
-      case None =>
+    useCatalogAndDatabaseConf.get("use:catalog").foreach { catalog =>
+      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
+      try {
+        tableEnv.useCatalog(catalog)
+      } catch {
+        case NonFatal(e) =>
+          throw e
+      }
     }
 
-    useCatalogAndDatabaseConf.get("use:database") match {
-      case Some(database) =>
-        val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-        try {
-          tableEnv.useDatabase(database)
-        } catch {
-          case NonFatal(e) =>
-            if (database != "default") {
-              throw e
-            }
-        }
-      case None =>
+    useCatalogAndDatabaseConf.get("use:database").foreach { database =>
+      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
+      try {
+        tableEnv.useDatabase(database)
+      } catch {
+        case NonFatal(e) =>
+          if (database != "default") {
+            throw e
+          }
+      }
     }
 
     otherConf.foreach {
