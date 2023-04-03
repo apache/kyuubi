@@ -54,7 +54,12 @@ class SparkSessionImpl(
   private val sessionEvent = SessionEvent(this)
 
   override def open(): Unit = {
-    normalizedConf.get("use:catalog") match {
+
+    val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
+      Array("use:catalog", "use:database").contains(k)
+    }
+
+    useCatalogAndDatabaseConf.get("use:catalog") match {
       case Some(catalog) =>
         try {
           SparkCatalogShim().setCurrentCatalog(spark, catalog)
@@ -65,7 +70,7 @@ class SparkSessionImpl(
       case None =>
     }
 
-    normalizedConf.get("use:database") match {
+    useCatalogAndDatabaseConf.get("use:database") match {
       case Some(database) =>
         try {
           SparkCatalogShim().setCurrentDatabase(spark, database)
@@ -77,7 +82,7 @@ class SparkSessionImpl(
       case None =>
     }
 
-    normalizedConf.filterKeys(key => !Set("use:catalog", "use:database").contains(key)).foreach {
+    otherConf.foreach {
       case (key, value) => setModifiableConfig(key, value)
     }
     KDFRegistry.registerAll(spark)
