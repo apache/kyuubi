@@ -63,7 +63,7 @@ public class KyuubiJDBC {
 
 ## Connect to Kerberized Kyuubi Server
 
-The following Java code is using a keytab file to login and connect to Kyuubi Server by JDBC.
+The following Java code uses a keytab file to login and connect to Kyuubi Server by JDBC.
 
 ```java
 package org.apache.kyuubi.examples;
