@@ -57,8 +57,8 @@ class FlinkSessionImpl(
 
   override def open(): Unit = {
     executor.openSession(handle.identifier.toString)
-    normalizedConf.toSeq.sortBy(!_._1.equals("use:catalog")).foreach {
-      case ("use:catalog", catalog) =>
+    normalizedConf.get("use:catalog") match {
+      case Some(catalog) =>
         val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
         try {
           tableEnv.useCatalog(catalog)
@@ -66,7 +66,11 @@ class FlinkSessionImpl(
           case NonFatal(e) =>
             throw e
         }
-      case ("use:database", database) =>
+      case None =>
+    }
+
+    normalizedConf.get("use:database") match {
+      case Some(database) =>
         val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
         try {
           tableEnv.useDatabase(database)
@@ -76,6 +80,9 @@ class FlinkSessionImpl(
               throw e
             }
         }
+      case None =>
+    }
+    normalizedConf.filterKeys(key => !Set("use:catalog", "use:database").contains(key)).foreach {
       case (key, value) => setModifiableConfig(key, value)
     }
     super.open()

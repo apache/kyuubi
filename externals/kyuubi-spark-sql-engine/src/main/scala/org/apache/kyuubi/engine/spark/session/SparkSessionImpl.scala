@@ -54,15 +54,19 @@ class SparkSessionImpl(
   private val sessionEvent = SessionEvent(this)
 
   override def open(): Unit = {
-    normalizedConf.toSeq.sortBy(!_._1.equals("use:catalog")).foreach {
-      case ("use:catalog", catalog) =>
+    normalizedConf.get("use:catalog") match {
+      case Some(catalog) =>
         try {
           SparkCatalogShim().setCurrentCatalog(spark, catalog)
         } catch {
           case e if e.getMessage.contains("Cannot find catalog plugin class for catalog") =>
             warn(e.getMessage())
         }
-      case ("use:database", database) =>
+      case None =>
+    }
+
+    normalizedConf.get("use:database") match {
+      case Some(database) =>
         try {
           SparkCatalogShim().setCurrentDatabase(spark, database)
         } catch {
@@ -70,6 +74,10 @@ class SparkSessionImpl(
               if database == "default" && e.getMessage != null &&
                 e.getMessage.contains("not found") =>
         }
+      case None =>
+    }
+
+    normalizedConf.filterKeys(key => !Set("use:catalog", "use:database").contains(key)).foreach {
       case (key, value) => setModifiableConfig(key, value)
     }
     KDFRegistry.registerAll(spark)
