@@ -142,15 +142,34 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
 
   test("aa") {
 
+    val returnSize = Seq(
+      7,
+      10,
+      13,
+      20,
+      29)
+
     withJdbcStatement() { statement =>
       loadPartitionedTable()
-      val n = 17
-      statement.executeQuery(s"SET kyuubi.operation.result.max.rows=$n")
-      val result = statement.executeQuery("select * from t_1")
-      for (i <- 0 until n) {
-        assert(result.next())
+      returnSize.foreach { size =>
+        statement.executeQuery(s"SET kyuubi.operation.result.max.rows=$size")
+        val result = statement.executeQuery("select * from t_1")
+        for (i <- 0 until size) {
+          assert(result.next())
+        }
+        assert(!result.next())
       }
-      assert(!result.next())
+    }
+
+    withJdbcStatement() { statement =>
+      loadPartitionedTable()
+      returnSize.foreach { size =>
+        val result = statement.executeQuery(s"select * from t_1 limit $size")
+        for (i <- 0 until size) {
+          assert(result.next())
+        }
+        assert(!result.next())
+      }
     }
   }
 

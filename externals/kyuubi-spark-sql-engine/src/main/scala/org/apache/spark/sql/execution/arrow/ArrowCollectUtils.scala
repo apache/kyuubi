@@ -17,40 +17,60 @@
 
 package org.apache.spark.sql.execution.arrow
 
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
-import org.apache.spark.sql.execution.{CollectLimitExec, TakeOrderedAndProjectExec}
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.execution.CollectLimitExec
 
-object ArrowCollectLimitExec extends SQLConfHelper {
+object ArrowCollectUtils extends SQLConfHelper {
 
   type Batch = (Array[Byte], Long)
 
+  /**
+   * Forked from `org.apache.spark.sql.execution.SparkPlan#executeTake()`, the algorithm can be
+   * summarized in the following steps:
+   * 1. If the limit specified in the CollectLimitExec object is 0, the function returns an empty
+   *    array of batches.
+   * 2. Otherwise, execute the child query plan of the CollectLimitExec object to obtain an RDD of
+   *    data to collect.
+   * 3. Use an iterative approach to collect data in batches until the specified limit is reached.
+   *    In each iteration, it selects a subset of the partitions of the RDD to scan and tries to
+   *    collect data from them.
+   * 4. For each partition subset, we use the runJob method of the Spark context to execute a
+   *    closure that scans the partition data and converts it to Arrow batches.
+   * 5. Check if the collected data reaches the specified limit. If not, it selects another subset
+   *    of partitions to scan and repeats the process until the limit is reached or all partitions
+   *    have been scanned.
+   * 6. Return an array of all the collected Arrow batches.
+   *
+   * Note that:
+   * 1. The returned Arrow batches row count >= limit, if the input df has more than the `limit`
+   *    row count
+   * 2. We don't implement the `takeFromEnd` logical
+   *
+   * @return
+   */
   def takeAsArrowBatches(
       collectLimitExec: CollectLimitExec,
-      schema: StructType,
       maxRecordsPerBatch: Long,
       maxEstimatedBatchSize: Long,
       timeZoneId: String): Array[Batch] = {
     val n = collectLimitExec.limit
-    // TODO
-    val takeFromEnd = false
+    val schema = collectLimitExec.schema
     if (n == 0) {
       return new Array[Batch](0)
     } else {
       val limitScaleUpFactor = Math.max(conf.limitScaleUpFactor, 2)
-      //    // TODO: refactor and reuse the code from RDD's take()
+      // TODO: refactor and reuse the code from RDD's take()
       val childRDD = collectLimitExec.child.execute()
-      val buf = if (takeFromEnd) new ListBuffer[Batch] else new ArrayBuffer[Batch]
+      val buf = new ArrayBuffer[Batch]
       var bufferedRowSize = 0L
       val totalParts = childRDD.partitions.length
       var partsScanned = 0
       while (bufferedRowSize < n && partsScanned < totalParts) {
         // The number of partitions to try in this iteration. It is ok for this number to be
         // greater than totalParts because we actually cap it at totalParts in runJob.
-//        var numPartsToTry = conf.limitInitialNumPartitions
-        var numPartsToTry = 1
+        var numPartsToTry = limitInitialNumPartitions
         if (partsScanned > 0) {
           // If we didn't find any rows after the previous iteration, multiply by
           // limitScaleUpFactor and retry. Otherwise, interpolate the number of partitions we need
@@ -65,63 +85,49 @@ object ArrowCollectLimitExec extends SQLConfHelper {
           }
         }
 
-        val parts = partsScanned.until(math.min(partsScanned + numPartsToTry, totalParts).toInt)
-        val partsToScan = if (takeFromEnd) {
-          // Reverse partitions to scan. So, if parts was [1, 2, 3] in 200 partitions (0 to 199),
-          // it becomes [198, 197, 196].
-          parts.map(p => (totalParts - 1) - p)
-        } else {
-          parts
-        }
+        val partsToScan =
+          partsScanned.until(math.min(partsScanned + numPartsToTry, totalParts).toInt)
 
         val sc = collectLimitExec.session.sparkContext
         val res = sc.runJob(
           childRDD,
           (it: Iterator[InternalRow]) => {
-            val batches = ArrowConvertersHelper.toBatchWithSchemaIterator(
+            val batches = ArrowConvertersHelper.toBatchIterator(
               it,
               schema,
               maxRecordsPerBatch,
               maxEstimatedBatchSize,
-              collectLimitExec.limit,
+              n,
               timeZoneId)
             batches.map(b => b -> batches.rowCountInLastBatch).toArray
           },
           partsToScan)
 
         var i = 0
-        if (takeFromEnd) {
-//                while (buf.length < n && i < res.length) {
-//                  val rows = decodeUnsafeRows(res(i)._2)
-//                  if (n - buf.length >= res(i)._1) {
-//                    buf.prepend(rows.toArray[InternalRow]: _*)
-//                  } else {
-//                    val dropUntil = res(i)._1 - (n - buf.length)
-//                    // Same as Iterator.drop but this only takes a long.
-//                    var j: Long = 0L
-//                    while (j < dropUntil) { rows.next(); j += 1L}
-//                    buf.prepend(rows.toArray[InternalRow]: _*)
-//                  }
-//                  i += 1
-//                }
-        } else {
-          while (bufferedRowSize < n && i < res.length) {
-            var j = 0
-            val batches = res(i)
-            while (j < batches.length && n > bufferedRowSize) {
-              val batch = batches(j)
-              val (_, batchSize) = batch
-              buf += batch
-              bufferedRowSize += batchSize
-              j += 1
-            }
-            i += 1
+        while (bufferedRowSize < n && i < res.length) {
+          var j = 0
+          val batches = res(i)
+          while (j < batches.length && n > bufferedRowSize) {
+            val batch = batches(j)
+            val (_, batchSize) = batch
+            buf += batch
+            bufferedRowSize += batchSize
+            j += 1
           }
+          i += 1
         }
         partsScanned += partsToScan.size
       }
 
       buf.toArray
     }
+  }
+
+  /**
+   * Spark introduced the config `spark.sql.limit.initialNumPartitions` since 3.4.0. see SPARK-40211
+   */
+  def limitInitialNumPartitions: Int = {
+    conf.getConfString("spark.sql.limit.initialNumPartitions", "1")
+      .toInt
   }
 }

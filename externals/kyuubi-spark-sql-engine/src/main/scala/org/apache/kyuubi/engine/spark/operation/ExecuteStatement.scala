@@ -22,9 +22,10 @@ import java.util.concurrent.RejectedExecutionException
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.execution.{CollectLimitExec, SQLExecution}
-import org.apache.spark.sql.execution.arrow.{ArrowCollectLimitExec, KyuubiArrowUtils}
+import org.apache.spark.sql.execution.arrow.{ArrowCollectUtils, KyuubiArrowUtils}
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.types._
 
@@ -213,7 +214,7 @@ class ArrowBasedExecuteStatement(
     }
   }
 
-  def executeCollect(df: DataFrame): Array[Array[Byte]] = withNewExecutionId(df) {
+  private def executeCollect(df: DataFrame): Array[Array[Byte]] = withNewExecutionId(df) {
     executeArrowBatchCollect(df).getOrElse {
       SparkDatasetHelper.toArrowBatchRdd(df).collect()
     }
@@ -223,17 +224,16 @@ class ArrowBasedExecuteStatement(
     df.queryExecution.executedPlan match {
       case collectLimit @ CollectLimitExec(limit, _) =>
         val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
-        val maxRecordsPerBatch = spark.conf.getOption(
-          "spark.sql.execution.arrow.maxRecordsPerBatch").map(_.toInt).getOrElse(10000)
-        // val maxBatchSize =
-        // (spark.sessionState.conf.getConf(SPARK_CONNECT_GRPC_ARROW_MAX_BATCH_SIZE) * 0.7).toLong
-        val maxBatchSize = 1024 * 1024 * 4
-        val batches = ArrowCollectLimitExec.takeAsArrowBatches(
+        val maxRecordsPerBatch = spark.sessionState.conf.arrowMaxRecordsPerBatch
+
+        val batches = ArrowCollectUtils.takeAsArrowBatches(
           collectLimit,
-          df.schema,
           maxRecordsPerBatch,
           maxBatchSize,
           timeZoneId)
+
+        // note that the number of rows in the returned arrow batches may be >= `limit`, performing
+        // the slicing operation of result
         val result = ArrayBuffer[Array[Byte]]()
         var i = 0
         var rest = limit
@@ -244,7 +244,7 @@ class ArrowBasedExecuteStatement(
             // returned ArrowRecordBatch has less than `limit` row count, safety to do conversion
             rest -= size.toInt
           } else { // size > rest
-            result += KyuubiArrowUtils.sliceV2(df.schema, timeZoneId, batch, 0, rest)
+            result += KyuubiArrowUtils.slice(df.schema, timeZoneId, batch, 0, rest)
             rest = 0
           }
           i += 1
@@ -261,6 +261,14 @@ class ArrowBasedExecuteStatement(
 
   private def convertComplexType(df: DataFrame): DataFrame = {
     SparkDatasetHelper.convertTopLevelComplexTypeToHiveString(df, timestampAsString)
+  }
+
+  private lazy val maxBatchSize: Long = {
+    // respect spark connect config
+    spark.sparkContext.getConf.getOption("spark.connect.grpc.arrow.maxBatchSize")
+      .orElse(Option("4m"))
+      .map(JavaUtils.byteStringAs(_, ByteUnit.MiB))
+      .get
   }
 
 }

@@ -20,45 +20,20 @@ package org.apache.spark.sql.execution.arrow
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.channels.Channels
 
-import org.apache.arrow.memory.RootAllocator
 import org.apache.arrow.vector.{VectorLoader, VectorSchemaRoot, VectorUnloader}
-import org.apache.arrow.vector.ipc.{ArrowStreamReader, ArrowStreamWriter, ReadChannel, WriteChannel}
+import org.apache.arrow.vector.ipc.{ReadChannel, WriteChannel}
 import org.apache.arrow.vector.ipc.message.MessageSerializer
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.ArrowUtils
 
 object KyuubiArrowUtils {
-  val rootAllocator = new RootAllocator(Long.MaxValue)
-    .newChildAllocator("ReadIntTest", 0, Long.MaxValue)
-  //    BufferAllocator allocator =
-  //        ArrowUtils.rootAllocator.newChildAllocator("ReadIntTest", 0, Long.MAX_VALUE);
-  def slice(bytes: Array[Byte], start: Int, length: Int): Array[Byte] = {
-    val in = new ByteArrayInputStream(bytes)
-    val out = new ByteArrayOutputStream()
 
-    var reader: ArrowStreamReader = null
-    try {
-      reader = new ArrowStreamReader(in, rootAllocator)
-//      reader.getVectorSchemaRoot.getSchema
-      reader.loadNextBatch()
-      val root = reader.getVectorSchemaRoot.slice(start, length)
-//      val loader = new VectorLoader(root)
-      val writer = new ArrowStreamWriter(root, null, out)
-      writer.start()
-      writer.writeBatch()
-      writer.end()
-      writer.close()
-      out.toByteArray
-    } finally {
-      if (reader != null) {
-        reader.close()
-      }
-      in.close()
-      out.close()
-    }
-  }
-
-  def sliceV2(
+  private val rootAllocator =
+    ArrowUtils.rootAllocator.newChildAllocator(
+      s"to${this.getClass.getSimpleName}",
+      0,
+      Long.MaxValue)
+  def slice(
       schema: StructType,
       timeZoneId: String,
       bytes: Array[Byte],
@@ -68,13 +43,6 @@ object KyuubiArrowUtils {
     val out = new ByteArrayOutputStream()
 
     try {
-//      reader = new ArrowStreamReader(in, rootAllocator)
-//      //      reader.getVectorSchemaRoot.getSchema
-//      reader.loadNextBatch()
-//      println("bytes......" + bytes.length)
-//      println("rowCount......" + reader.getVectorSchemaRoot.getRowCount)
-//      val root = reader.getVectorSchemaRoot.slice(start, length)
-
       val recordBatch = MessageSerializer.deserializeRecordBatch(
         new ReadChannel(Channels.newChannel(in)),
         rootAllocator)

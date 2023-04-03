@@ -29,22 +29,22 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.ArrowUtils
-import org.apache.spark.util.{SizeEstimator, Utils}
+import org.apache.spark.util.Utils
 
 object ArrowConvertersHelper extends Logging {
 
   /**
-   * Convert the input rows into fully contained arrow batches.
-   * Different from [[toBatchIterator]], each output arrow batch starts with the schema.
+   * Different from [[org.apache.spark.sql.execution.arrow.ArrowConvertersHelper.toBatchIterator]],
+   * each output arrow batch contains this batch row count.
    */
-  private[sql] def toBatchWithSchemaIterator(
+  def toBatchIterator(
       rowIter: Iterator[InternalRow],
       schema: StructType,
       maxRecordsPerBatch: Long,
       maxEstimatedBatchSize: Long,
       limit: Long,
-      timeZoneId: String): ArrowBatchWithSchemaIterator = {
-    new ArrowBatchWithSchemaIterator(
+      timeZoneId: String): ArrowBatchIterator = {
+    new ArrowBatchIterator(
       rowIter,
       schema,
       maxRecordsPerBatch,
@@ -54,7 +54,7 @@ object ArrowConvertersHelper extends Logging {
       TaskContext.get)
   }
 
-  private[sql] class ArrowBatchWithSchemaIterator(
+  private[sql] class ArrowBatchIterator(
       rowIter: Iterator[InternalRow],
       schema: StructType,
       maxRecordsPerBatch: Long,
@@ -88,7 +88,6 @@ object ArrowConvertersHelper extends Logging {
       false
     }
 
-    private val arrowSchemaSize = SizeEstimator.estimate(arrowSchema)
     var rowCountInLastBatch: Long = 0
     var rowCount: Long = 0
 
@@ -97,11 +96,8 @@ object ArrowConvertersHelper extends Logging {
       val writeChannel = new WriteChannel(Channels.newChannel(out))
 
       rowCountInLastBatch = 0
-//      var estimatedBatchSize = arrowSchemaSize
       var estimatedBatchSize = 0
       Utils.tryWithSafeFinally {
-        // Always write the schema.
-//        MessageSerializer.serialize(writeChannel, arrowSchema)
 
         // Always write the first row.
         while (rowIter.hasNext && (
