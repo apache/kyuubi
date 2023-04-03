@@ -19,34 +19,27 @@ package org.apache.kyuubi.engine.flink
 
 import java.util.UUID
 
-import org.apache.hadoop.security.UserGroupInformation
-
-import org.apache.kyuubi.KYUUBI_VERSION
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_TYPE}
 import org.apache.kyuubi.engine.ShareLevel
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
-import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
+import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider}
 
 trait WithDiscoveryFlinkSQLEngine extends WithFlinkSQLEngineOnYarn {
 
   override protected def engineRefId: String = UUID.randomUUID().toString
 
-  def rootNamespace: String = "/kyuubi/flink-yarn-application-test"
+  def namespace: String = "/kyuubi/flink-yarn-application-test"
 
   def shareLevel: String = ShareLevel.USER.toString
 
   def engineType: String = "flink"
 
   override def withKyuubiConf: Map[String, String] = {
-    Map(HA_NAMESPACE.key -> rootNamespace, ENGINE_SHARE_LEVEL.key -> shareLevel)
-  }
-
-  override protected def beforeEach(): Unit = {
-    super.beforeEach()
-  }
-
-  override protected def afterEach(): Unit = {
-    super.afterEach()
+    Map(
+      HA_NAMESPACE.key -> namespace,
+      HA_ENGINE_REF_ID.key -> engineRefId,
+      ENGINE_TYPE.key -> "FLINK_SQL",
+      ENGINE_SHARE_LEVEL.key -> shareLevel)
   }
 
   def withDiscoveryClient(f: DiscoveryClient => Unit): Unit = {
@@ -54,15 +47,16 @@ trait WithDiscoveryFlinkSQLEngine extends WithFlinkSQLEngineOnYarn {
   }
 
   def getFlinkEngineServiceUrl: String = {
-    var hostPort: (String, Int) = ("0.0.0.0", 0)
-    withDiscoveryClient(client => hostPort = client.getServerHost(engineSpace).get)
-    s"jdbc:hive2://${hostPort._1}:${hostPort._2}?" +
-      s"kyuubi.engine.type=FLINK_SQL;flink.execution.target=yarn-application"
-  }
-
-  def engineSpace: String = {
-    val commonParent = s"${rootNamespace}_${KYUUBI_VERSION}_${shareLevel}_$engineType"
-    val currentUser = UserGroupInformation.getCurrentUser.getShortUserName
-    DiscoveryPaths.makePath(commonParent, currentUser)
+    var hostPort: Option[(String, Int)] = None
+    var retries = 0
+    while (hostPort.isEmpty && retries < 5) {
+      withDiscoveryClient(client => hostPort = client.getServerHost(namespace))
+      retries += 1
+      Thread.sleep(1000L)
+    }
+    if (hostPort.isEmpty) {
+      throw new RuntimeException("Time out retrieving Flink engine service url.")
+    }
+    s"jdbc:hive2://${hostPort.get._1}:${hostPort.get._2}"
   }
 }

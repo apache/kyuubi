@@ -23,7 +23,7 @@ import java.net.URI
 import java.nio.file.{Files, Paths}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hdfs.MiniDFSCluster
@@ -32,9 +32,12 @@ import org.apache.hadoop.yarn.server.MiniYARNCluster
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_APPLICATION_JARS, KYUUBI_HOME}
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ADDRESSES
+import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
+import org.apache.kyuubi.zookeeper.ZookeeperConf.{ZK_CLIENT_PORT, ZK_CLIENT_PORT_ADDRESS}
 
-trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite {
+trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite with WithFlinkTestResources {
 
   protected def engineRefId: String
 
@@ -43,6 +46,8 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite {
   private var hdfsCluster: MiniDFSCluster = _
 
   private var yarnCluster: MiniYARNCluster = _
+
+  private var zkServer: EmbeddedZookeeper = _
 
   def withKyuubiConf: Map[String, String]
 
@@ -92,6 +97,12 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite {
   }
 
   override def beforeAll(): Unit = {
+    zkServer = new EmbeddedZookeeper()
+    conf.set(ZK_CLIENT_PORT, 0).set(ZK_CLIENT_PORT_ADDRESS, "localhost")
+    zkServer.initialize(conf)
+    zkServer.start()
+    conf.set(HA_ADDRESSES, zkServer.getConnectString)
+
     hdfsCluster = new MiniDFSCluster.Builder(new Configuration)
       .numDataNodes(1)
       .checkDataNodeAddrConfig(true)
@@ -142,6 +153,7 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite {
     val processBuilder: ProcessBuilder = new ProcessBuilder
     processBuilder.environment().putAll(envs.asJava)
 
+    conf.set(ENGINE_FLINK_APPLICATION_JARS, udfJar.getAbsolutePath)
     val flinkExtraJars = extraFlinkJars(envs("FLINK_HOME"))
     val command = new ArrayBuffer[String]()
 
@@ -149,7 +161,6 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite {
     command += "run-application"
     command += "-t"
     command += "yarn-application"
-    command += s"-Dpipeline.jars=${flinkExtraJars.mkString(",")}"
     command += s"-Dyarn.ship-files=${flinkExtraJars.mkString(";")}"
     command += s"-Dyarn.tags=KYUUBI,$engineRefId"
     command += "-Djobmanager.memory.process.size=1g"
@@ -163,8 +174,11 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite {
     command += "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
     command += s"${mainResource(envs).get}"
 
-    val effectiveKyuubiConf = conf.getAll ++ withKyuubiConf
-    for ((k, v) <- effectiveKyuubiConf) {
+    for ((k, v) <- withKyuubiConf) {
+      conf.set(k, v)
+    }
+
+    for ((k, v) <- conf.getAll) {
       command += "--conf"
       command += s"$k=$v"
     }
@@ -181,7 +195,8 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite {
 
   def extraFlinkJars(flinkHome: String): Array[String] = {
     // locate flink sql jars
-    val flinkExtraJars = Paths.get(flinkHome)
+    val flinkExtraJars = new ListBuffer[String]
+    val flinkSQLJars = Paths.get(flinkHome)
       .resolve("opt")
       .toFile
       .listFiles(new FilenameFilter {
@@ -190,7 +205,11 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite {
           name.toLowerCase.startsWith("flink-sql-gateway")
         }
       }).map(f => f.getAbsolutePath).sorted
-    flinkExtraJars
+    flinkExtraJars ++= flinkSQLJars
+
+    val userJars = conf.get(ENGINE_FLINK_APPLICATION_JARS)
+    userJars.foreach(jars => flinkExtraJars ++= jars.split(","))
+    flinkExtraJars.toArray
   }
 
   /**
@@ -237,6 +256,10 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite {
     if (hdfsCluster != null) {
       hdfsCluster.shutdown()
       hdfsCluster = null
+    }
+    if (zkServer != null) {
+      zkServer.stop()
+      zkServer = null
     }
   }
 }

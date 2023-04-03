@@ -753,7 +753,8 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select map ['k1', 'v1', 'k2', 'v2']")
       assert(resultSet.next())
-      assert(resultSet.getString(1) == "{k1=v1, k2=v2}")
+      assert(List("{k1=v1, k2=v2}", "{k2=v2, k1=v1}")
+        .contains(resultSet.getString(1)))
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.JAVA_OBJECT)
     }

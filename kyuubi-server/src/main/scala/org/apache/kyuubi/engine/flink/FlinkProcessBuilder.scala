@@ -21,7 +21,7 @@ import java.io.{File, FilenameFilter}
 import java.nio.file.{Files, Paths}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 import com.google.common.annotations.VisibleForTesting
 
@@ -76,8 +76,9 @@ class FlinkProcessBuilder(
         buffer += flinkExecutable
         buffer += "run-application"
 
+        val flinkExtraJars = new ListBuffer[String]
         // locate flink sql jars
-        val flinkExtraJars = Paths.get(flinkHome)
+        val flinkSqlJars = Paths.get(flinkHome)
           .resolve("opt")
           .toFile
           .listFiles(new FilenameFilter {
@@ -86,8 +87,11 @@ class FlinkProcessBuilder(
               name.toLowerCase.startsWith("flink-sql-gateway")
             }
           }).map(f => f.getAbsolutePath).sorted
+        flinkExtraJars ++= flinkSqlJars
 
-        buffer += s"-Dpipeline.jars=${flinkExtraJars.mkString(",")}"
+        val userJars = conf.get(ENGINE_FLINK_APPLICATION_JARS)
+        userJars.foreach(jars => flinkExtraJars ++= jars.split(","))
+
         buffer += s"-Dyarn.ship-files=${flinkExtraJars.mkString(";")}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."

@@ -26,7 +26,7 @@ import scala.util.matching.Regex
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS, ENGINE_FLINK_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_APPLICATION_JARS, ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS, ENGINE_FLINK_MEMORY}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
 
 class FlinkProcessBuilderSuite extends KyuubiFunSuite {
@@ -40,6 +40,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
 
   private def applicationModeConf = KyuubiConf()
     .set("flink.execution.target", "yarn-application")
+    .set(ENGINE_FLINK_APPLICATION_JARS, tempUdfJar.toString)
     .set("kyuubi.on", "off")
 
   private val tempFlinkHome = Files.createTempDirectory("flink-home").toFile
@@ -47,6 +48,10 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     Files.createDirectories(Paths.get(tempFlinkHome.toPath.toString, "opt")).toFile
   Files.createFile(Paths.get(tempOpt.toPath.toString, "flink-sql-client-1.16.1.jar"))
   Files.createFile(Paths.get(tempOpt.toPath.toString, "flink-sql-gateway-1.16.1.jar"))
+  private val tempUsrLib =
+    Files.createDirectories(Paths.get(tempFlinkHome.toPath.toString, "usrlib")).toFile
+  private val tempUdfJar =
+    Files.createFile(Paths.get(tempUsrLib.toPath.toString, "test-udf.jar"))
 
   private def envDefault: ListMap[String, String] = ListMap(
     "JAVA_HOME" -> s"${File.separator}jdk",
@@ -78,8 +83,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     val actualCommands = builder.toString
     val expectedCommands =
       escapePaths(s"${builder.flinkExecutable} run-application ") +
-        s"-Dpipeline.jars=.*\\/flink-sql-client.*jar,.*\\/flink-sql-gateway.*jar " +
-        s"-Dyarn.ship-files=.*\\/flink-sql-client.*jar;.*\\/flink-sql-gateway.*jar " +
+        s"-Dyarn.ship-files=.*\\/flink-sql-client.*jar;.*\\/flink-sql-gateway.*jar;$tempUdfJar " +
         s"-Dyarn\\.tags=KYUUBI " +
         s"-Dcontainerized\\.master\\.env\\.FLINK_CONF_DIR=\\. " +
         s"-Dexecution\\.target=yarn-application " +

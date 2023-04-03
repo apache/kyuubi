@@ -2358,14 +2358,14 @@ object KyuubiConf {
 
   val ENGINE_FLINK_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.flink.memory")
-      .doc("The heap memory for the Flink SQL engine")
+      .doc("The heap memory for the Flink SQL engine. Only effective in yarn session mode.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("1g")
 
   val ENGINE_FLINK_JAVA_OPTIONS: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.flink.java.options")
-      .doc("The extra Java options for the Flink SQL engine")
+      .doc("The extra Java options for the Flink SQL engine. Only effective in yarn session mode.")
       .version("1.6.0")
       .stringConf
       .createOptional
@@ -2373,8 +2373,16 @@ object KyuubiConf {
   val ENGINE_FLINK_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.flink.extra.classpath")
       .doc("The extra classpath for the Flink SQL engine, for configuring the location" +
-        " of hadoop client jars, etc")
+        " of hadoop client jars, etc. Only effective in yarn session mode.")
       .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_FLINK_APPLICATION_JARS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.flink.application.jars")
+      .doc("A semicolon-separated list of the jars to be shipped with the job to the cluster." +
+        "For example SQL UDF jars. Only effective in yarn application mode.")
+      .version("1.8.0")
       .stringConf
       .createOptional
 
