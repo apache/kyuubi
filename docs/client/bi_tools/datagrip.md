@@ -29,7 +29,7 @@ Please go to [Download DataGrip](https://www.jetbrains.com/datagrip/download) to
 
 ### Get Kyuubi Started
 
-[Get kyuubi server started](../../quick_start/quick_start) before you try DataGrip with kyuubi.
+[Get kyuubi server started](../../quick_start/quick_start.rst) before you try DataGrip with kyuubi.
 
 For debugging purpose, you can use `tail -f` or `tailf` to track the server log.
 
