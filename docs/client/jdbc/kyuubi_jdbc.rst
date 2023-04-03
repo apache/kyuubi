@@ -155,7 +155,7 @@ which means it does not forcibly rely on Hadoop dependencies to connect a kerber
 Kyuubi JDBC driver supports different approaches to connect a kerberized Kyuubi Server. First of all, please follow
 the `krb5.conf instruction`_ to setup ``krb5.conf`` properly.
 
-Authentication by principal and keytab
+Authentication by Principal and Keytab
 **************************************
 
 .. tip::
@@ -191,7 +191,7 @@ Authentication by `Hadoop UserGroupInformation`_ ``doAs`` (programing only)
     ...
   });
 
-Authentication by principal and TGT cache
+Authentication by Principal and TGT Cache
 *****************************************
 
 Another typical usage of Kerberos authentication is using `kinit` to generate the TGT cache first, then the application
