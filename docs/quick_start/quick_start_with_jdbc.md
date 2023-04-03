@@ -33,7 +33,7 @@ The driver is available from Maven Central:
 </dependency>
 ```
 
-## U## Connect to non-kerberized Kyuubi Server
+## Connect to non-kerberized Kyuubi Server
 
 The below java code is using a keytab file to login and connect to Kyuubi server by JDBC.
 
@@ -44,47 +44,53 @@ import java.sql.*;
 
 public class KyuubiJDBC {
 
-    private static String driverName = "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
-    private static String kyuubiJdbcUrl = "jdbc:kyuubi://localhost:10009/default;";
+  private static String driverName = "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
+  private static String kyuubiJdbcUrl = "jdbc:kyuubi://localhost:10009/default;";
 
-    public static void main(String[] args) throws SQLException {
-        Connection conn = DriverManager.getConnection(kyuubiJdbcUrl);
-        Statement stmt = conn.createStatement();
-        ResultSet rs = st.executeQuery("show databases");
-        while (rs.next()) {
+  public static void main(String[] args) throws SQLException {
+    try (Connection conn = DriverManager.getConnection(kyuubiJdbcUrl)) {
+      try (Statement stmt = conn.createStatement()) {
+        try (ResultSet rs = st.executeQuery("show databases")) {
+          while (rs.next()) {
             System.out.println(rs.getString(1));
-        }
-        rs.close();
-        stmt.close();
-        conn.close();
+          }
+        }   
+      }
     }
+  }
 }
 ```
+
 ## Connect to Kerberized Kyuubi Server
 
 The following Java code is using a keytab file to login and connect to Kyuubi Server by JDBC.
 
 ```java
 package org.apache.kyuubi.examples;
+
 import java.sql.*;
+
 public class KyuubiJDBCDemo {
-    private static String driverName = "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
-    private static String kyuubiJdbcUrlTemplate = "jdbc:kyuubi://localhost:10009/default;" +
-            "clientPrincipal=%s;clientKeytab=%s;serverPrincipal=%s";
-    public static void main(String[] args) throws SQLException {
-        String clientPrincipal = args[0]; // Kerberos principal
-        String clientKeytab = args[1];    // Keytab file location
-        String serverPrincipal = arg[2];  // Kerberos principal used by Kyuubi Server
-        String kyuubiJdbcUrl = String.format(kyuubiJdbcUrl, clientPrincipal, clientKeytab, serverPrincipal);
-        Connection conn = DriverManager.getConnection(kyuubiJdbcUrl);
-        Statement stmt = conn.createStatement();
-        ResultSet rs = st.executeQuery("show databases");
-        while (rs.next()) {
+
+  private static String driverName = "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
+  private static String kyuubiJdbcUrlTemplate = "jdbc:kyuubi://localhost:10009/default;" +
+          "clientPrincipal=%s;clientKeytab=%s;serverPrincipal=%s";
+
+  public static void main(String[] args) throws SQLException {
+    String clientPrincipal = args[0]; // Kerberos principal
+    String clientKeytab = args[1];    // Keytab file location
+    String serverPrincipal = arg[2];  // Kerberos principal used by Kyuubi Server
+    String kyuubiJdbcUrl = String.format(kyuubiJdbcUrl, clientPrincipal, clientKeytab, serverPrincipal);
+    try (Connection conn = DriverManager.getConnection(kyuubiJdbcUrl)) {
+      try (Statement stmt = conn.createStatement()) {
+        try (ResultSet rs = st.executeQuery("show databases")) {
+          while (rs.next()) {
             System.out.println(rs.getString(1));
+          }
         }
-        rs.close();
-        stmt.close();
-        conn.close();
+      }
     }
+  }
 }
 ```
+
