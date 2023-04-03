@@ -23,7 +23,7 @@ This packages aims to support some missing functionalities of the original Hive 
 For Kyuubi engines that support multiple catalogs, it provides meta APIs for better support.
 The behaviors of the original Hive JDBC have remained.
 
-To access a Hive data warehouse or new LakeHouse formats, such as Apache Iceberg/Hudi, Delta Lake using the Kyuubi JDBC driver
+To access a Hive data warehouse or new Lakehouse formats, such as Apache Iceberg/Hudi, Delta Lake using the Kyuubi JDBC driver
 for Apache Kyuubi, you need to configure the following:
 
 - The list of driver library files - :ref:`referencing-libraries`.
