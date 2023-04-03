@@ -15,7 +15,7 @@
 - limitations under the License.
 -->
 
-# Getting Started With Kyuubi on Kubernetes
+# Getting Started with Helm
 
 ## Running Kyuubi with Helm
 
