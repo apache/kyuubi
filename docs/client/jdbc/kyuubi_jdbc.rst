@@ -150,9 +150,9 @@ Kerberos Authentication
 .. versionadded:: 1.6.0
 
 Kyuubi JDBC driver implements the Kerberos authentication based on JAAS framework instead of `Hadoop UserGroupInformation`_,
-which means it does not forcibly rely on Hadoop dependencies to connect a Kerberized Kyuubi Server.
+which means it does not forcibly rely on Hadoop dependencies to connect a kerberized Kyuubi Server.
 
-Kyuubi JDBC driver supports different approaches to connect a Kerberized Kyuubi Server. First of all, please follow
+Kyuubi JDBC driver supports different approaches to connect a kerberized Kyuubi Server. First of all, please follow
 the `krb5.conf instruction`_ to setup ``krb5.conf`` properly.
 
 Authentication by principal and keytab
@@ -180,7 +180,7 @@ Authentication by `Hadoop UserGroupInformation`_ ``doAs`` (programing only)
 .. tip::
 
   This approach allows project which already uses `Hadoop UserGroupInformation`_ for Kerberos authentication to easily
-  connect the Kerberized Kyuubi Server.
+  connect the kerberized Kyuubi Server.
 
 .. code-block::
 
