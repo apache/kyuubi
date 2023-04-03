@@ -94,8 +94,9 @@ function get_os_arch() {
 # Determine the Mvnd version from the root pom.xml file and
 # install mvnd under the build/ folder if needed.
 function install_mvnd() {
-  local MVND_VERSION=$(grep "<mvnd.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
   local MVN_VERSION=$(grep "<maven.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
+  local MVND_VERSION=$(grep "<mvnd.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}')
+  local MVND_MVN_SHORT_VERSION=$(echo "$MVN_VERSION" | awk -F . '{print $1$2}')
   MVND_BIN="$(command -v mvnd)"
   if [ "$MVND_BIN" ]; then
     local MVND_DETECTED_VERSION="$(mvnd -v 2>&1 | grep '(mvnd)' | awk '{print $5}')"
@@ -111,10 +112,10 @@ function install_mvnd() {
 
     install_app \
       "${APACHE_MIRROR}/maven/mvnd/${MVND_VERSION}" \
-      "maven-mvnd-${MVND_VERSION}-${OS_TYPE}-${ARCH}.tar.gz" \
-      "maven-mvnd-${MVND_VERSION}-${OS_TYPE}-${ARCH}/bin/mvnd"
+      "maven-mvnd-${MVND_VERSION}-m${MVND_MVN_SHORT_VERSION}-${OS_TYPE}-${ARCH}.tar.gz" \
+      "maven-mvnd-${MVND_VERSION}-m${MVND_MVN_SHORT_VERSION}-${OS_TYPE}-${ARCH}/bin/mvnd"
 
-    MVND_BIN="${_DIR}/maven-mvnd-${MVND_VERSION}-${OS_TYPE}-${ARCH}/bin/mvnd"
+    MVND_BIN="${_DIR}/maven-mvnd-${MVND_VERSION}-m${MVND_MVN_SHORT_VERSION}-${OS_TYPE}-${ARCH}/bin/mvnd"
   else
     if [ "$(version $MVN_DETECTED_VERSION)" -ne "$(version $MVN_VERSION)" ]; then
       echo "Mvnd $MVND_DETECTED_VERSION embedded maven version $MVN_DETECTED_VERSION is not equivalent to $MVN_VERSION required in pom."
