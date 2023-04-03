@@ -54,7 +54,7 @@ Maven
        <version>\ |release|\</version>
    </dependency>
 
-SBT
+sbt
 ^^^
 
 .. parsed-literal::
