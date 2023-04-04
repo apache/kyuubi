@@ -75,7 +75,6 @@ class MiniDFSService(name: String, hdfsConf: Configuration)
       val key = kv.getKey
       val value = kv.getValue.replaceAll(hostName, "localhost")
       configToWrite.set(key, value)
-      getConf.set(key, value)
     }
     val writer = new FileWriter(new File(hadoopConfDir, "hdfs-site.xml"))
     configToWrite.writeXml(writer)

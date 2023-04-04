@@ -110,10 +110,8 @@ class FlinkProcessBuilder(
         buffer += "--conf"
         buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
         conf.getAll.foreach { case (k, v) =>
-          if (k.startsWith("kyuubi.")) {
-            buffer += "--conf"
-            buffer += s"$k=$v"
-          }
+          buffer += "--conf"
+          buffer += s"$k=$v"
         }
 
         buffer.toArray
