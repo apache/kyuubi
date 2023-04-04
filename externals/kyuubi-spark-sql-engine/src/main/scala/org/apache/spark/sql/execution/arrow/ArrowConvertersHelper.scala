@@ -54,6 +54,13 @@ object ArrowConvertersHelper extends Logging {
       TaskContext.get)
   }
 
+  /**
+   * This class ArrowBatchIterator is derived from
+   * [[org.apache.spark.sql.execution.arrow.ArrowConverters.ArrowBatchWithSchemaIterator]],
+   * with two key differences:
+   *   1. there is no requirement to write the schema at the batch header
+   *   2. iteration halts when `rowCount` equals `limit`
+   */
   private[sql] class ArrowBatchIterator(
       rowIter: Iterator[InternalRow],
       schema: StructType,
