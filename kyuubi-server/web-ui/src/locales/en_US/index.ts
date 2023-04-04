@@ -24,8 +24,14 @@ export default {
   create_time: 'Create Time',
   operation: 'Operation',
   delete_confirm: 'Delete Confirm',
+  close_confirm: 'Close Confirm',
+  cancel_confirm: 'Cancel Confirm',
   message: {
     delete_succeeded: 'Delete {name} Succeeded',
-    delete_failed: 'Delete {name} Failed'
+    delete_failed: 'Delete {name} Failed',
+    close_succeeded: 'Close {name} Succeeded',
+    close_failed: 'Close {name} Failed',
+    cancel_succeeded: 'Cancel {name} Succeeded',
+    cancel_failed: 'Cancel {name} Failed'
   }
 }

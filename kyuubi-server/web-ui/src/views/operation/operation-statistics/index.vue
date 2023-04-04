@@ -111,7 +111,9 @@
     actionOnOperation(operationId, { action: action }).then(() => {
       // need add delete success or failed logic after api support
       ElMessage({
-        message: t(`${action.toLowerCase()}_success`),
+        message: t(`${action.toLowerCase()}_succeeded`, {
+          operationId: operationId
+        }),
         type: 'success'
       })
       getList()

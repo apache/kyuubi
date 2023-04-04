@@ -24,8 +24,14 @@ export default {
   create_time: '创建时间',
   operation: '操作',
   delete_confirm: '确认删除',
+  close_confirm: '确认关闭',
+  cancel_confirm: '确认取消',
   message: {
     delete_succeeded: '删除 {name} 成功',
-    delete_failed: '删除 {name} 失败'
+    delete_failed: '删除 {name} 失败',
+    close_succeeded: '关闭 {name} 成功',
+    close_failed: '关闭 {name} 失败',
+    cancel_succeeded: '取消 {name} 成功',
+    cancel_failed: '取消 {name} 失败'
   }
 }
