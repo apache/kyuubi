@@ -81,6 +81,10 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
     this.httpClient = RetryableRestClient.getRestClient(baseUrls, this.conf);
   }
 
+  public List<String> getHostUrls() {
+    return baseUrls;
+  }
+
   private KyuubiRestClient() {}
 
   private KyuubiRestClient(Builder builder) {
