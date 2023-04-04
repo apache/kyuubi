@@ -721,7 +721,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             s"""INSERT OVERWRITE DIRECTORY '/tmp/test_dir' ROW FORMAT DELIMITED FIELDS
                | TERMINATED BY ','
                | SELECT * FROM $db1.$table;""".stripMargin)))
-      assert(e.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id"))
+      assert(e.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
     }
   }
 }
