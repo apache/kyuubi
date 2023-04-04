@@ -99,7 +99,7 @@ class FlinkProcessBuilder(
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
 
         val customFlinkConf = conf.getAllWithPrefix("flink", "")
-        for ((k, v) <- customFlinkConf) {
+        customFlinkConf.foreach { case (k, v) =>
           buffer += s"-D$k=$v"
         }
 
@@ -109,7 +109,7 @@ class FlinkProcessBuilder(
 
         buffer += "--conf"
         buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
-        for ((k, v) <- conf.getAll) {
+        conf.getAll.foreach { case (k, v) =>
           if (k.startsWith("kyuubi.")) {
             buffer += "--conf"
             buffer += s"$k=$v"
@@ -179,7 +179,7 @@ class FlinkProcessBuilder(
         buffer += "--conf"
         buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
 
-        for ((k, v) <- conf.getAll) {
+        conf.getAll.foreach { case (k, v) =>
           buffer += "--conf"
           buffer += s"$k=$v"
         }
