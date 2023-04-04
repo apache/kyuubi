@@ -139,7 +139,7 @@ object KyuubiSQLConf {
   val WATCHDOG_MAX_PARTITIONS =
     buildConf("spark.sql.watchdog.maxPartitions")
       .doc("Set the max partition number when spark scans a data source. " +
-        "Enable MaxPartitionStrategy by specifying this configuration. " +
+        "Enable maxPartitions Strategy by specifying this configuration. " +
         "Add maxPartitions Strategy to avoid scan excessive partitions " +
         "on partitioned table, it's optional that works with defined")
       .version("1.4.0")
@@ -149,7 +149,7 @@ object KyuubiSQLConf {
   val WATCHDOG_MAX_FILE_SIZE =
     buildConf("spark.sql.watchdog.maxFileSize")
       .doc("Set the maximum size in bytes of files when spark scans a data source. " +
-        "Enable MaxFileSizeStrategy by specifying this configuration. " +
+        "Enable maxFileSize Strategy by specifying this configuration. " +
         "Add maxFileSize Strategy to avoid scan excessive size of files," +
         " it's optional that works with defined")
       .version("1.8.0")

@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.{FinalStageResourceManager, InjectCustomResourceProfile, SparkSessionExtensions}
 
-import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MaxFileSizeStrategy, MaxPartitionStrategy}
+import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MaxScanStrategy}
 
 // scalastyle:off line.size.limit
 /**
@@ -38,8 +38,7 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
 
     // watchdog extension
     extensions.injectOptimizerRule(ForcedMaxOutputRowsRule)
-    extensions.injectPlannerStrategy(MaxPartitionStrategy)
-    extensions.injectPlannerStrategy(MaxFileSizeStrategy)
+    extensions.injectPlannerStrategy(MaxScanStrategy)
 
     extensions.injectQueryStagePrepRule(FinalStageResourceManager)
     extensions.injectQueryStagePrepRule(InjectCustomResourceProfile)
