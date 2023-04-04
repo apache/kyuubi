@@ -1579,7 +1579,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val plan = sql(
       s"""
          |INSERT OVERWRITE DIRECTORY '$directory.path'
-         |USING parquet
+         |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
          |SELECT * FROM $reusedPartTable""".stripMargin)
         .queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
