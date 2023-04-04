@@ -53,10 +53,14 @@ class TrinoSessionImpl(
   private val sessionEvent = TrinoSessionEvent(this)
 
   override def open(): Unit = {
-    normalizedConf.foreach {
+
+    val (useCatalogAndDatabaseConf, _) = normalizedConf.partition { case (k, _) =>
+      Array("use:catalog", "use:database").contains(k)
+    }
+
+    useCatalogAndDatabaseConf.foreach {
       case ("use:catalog", catalog) => catalogName = catalog
       case ("use:database", database) => databaseName = database
-      case _ => // do nothing
     }
 
     val httpClient = new OkHttpClient.Builder().build()
