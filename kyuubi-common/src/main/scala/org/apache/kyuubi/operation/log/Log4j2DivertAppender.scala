@@ -92,8 +92,8 @@ object Log4j2DivertAppender {
     LogManager.getRootLogger.asInstanceOf[org.apache.logging.log4j.core.Logger]
       .getAppenders.values().asScala
       .find(ap =>
-        (ap.isInstanceOf[ConsoleAppender] || ap.isInstanceOf[RollingFileAppender])
-          && ap.getLayout.isInstanceOf[StringLayout])
+        (ap.isInstanceOf[ConsoleAppender] || ap.isInstanceOf[RollingFileAppender]) &&
+          ap.getLayout.isInstanceOf[StringLayout])
       .map(_.getLayout.asInstanceOf[StringLayout])
       .getOrElse(PatternLayout.newBuilder().withPattern(
         "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n").build())
