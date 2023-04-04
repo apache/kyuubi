@@ -17,16 +17,93 @@
 
 package org.apache.spark.sql.kyuubi
 
+import scala.collection.mutable.ArrayBuffer
+
+import org.apache.spark.TaskContext
+import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlan, SQLExecution}
+import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
+import org.apache.spark.sql.execution.arrow.{ArrowCollectUtils, ArrowConverters, KyuubiArrowUtils}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.schema.RowSet
 
 object SparkDatasetHelper {
+
   def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
     ds.toArrowBatchRdd
+  }
+
+  /**
+   * Forked from [[Dataset.toArrowBatchRdd(plan: SparkPlan)]].
+   * Convert to an RDD of serialized ArrowRecordBatches.
+   */
+  def toArrowBatchRdd(plan: SparkPlan): RDD[Array[Byte]] = {
+    val schemaCaptured = plan.schema
+    val maxRecordsPerBatch = plan.session.sessionState.conf.arrowMaxRecordsPerBatch
+    val timeZoneId = plan.session.sessionState.conf.sessionLocalTimeZone
+    plan.execute().mapPartitionsInternal { iter =>
+      val context = TaskContext.get()
+      ArrowConverters.toBatchIterator(
+        iter,
+        schemaCaptured,
+        maxRecordsPerBatch,
+        timeZoneId,
+        context)
+    }
+  }
+
+  def doCollectLimit(collectLimit: CollectLimitExec): Array[Array[Byte]] = {
+    val timeZoneId = collectLimit.session.sessionState.conf.sessionLocalTimeZone
+    val maxRecordsPerBatch = collectLimit.session.sessionState.conf.arrowMaxRecordsPerBatch
+
+    val batches = ArrowCollectUtils.takeAsArrowBatches(
+      collectLimit,
+      maxRecordsPerBatch,
+      maxBatchSize,
+      timeZoneId)
+
+    // note that the number of rows in the returned arrow batches may be >= `limit`, preform
+    // the slicing operation of result
+    val result = ArrayBuffer[Array[Byte]]()
+    var i = 0
+    var rest = collectLimit.limit
+    while (i < batches.length && rest > 0) {
+      val (batch, size) = batches(i)
+      if (size <= rest) {
+        result += batch
+        // returned ArrowRecordBatch has less than `limit` row count, safety to do conversion
+        rest -= size.toInt
+      } else { // size > rest
+        result += KyuubiArrowUtils.slice(collectLimit.schema, timeZoneId, batch, 0, rest)
+        rest = 0
+      }
+      i += 1
+    }
+    result.toArray
+  }
+
+  def executeCollect(df: DataFrame): Array[Array[Byte]] = withNewExecutionId(df) {
+    executeArrowBatchCollect(df.queryExecution.executedPlan)
+  }
+
+  def toArrowBatchLocalIterator(df: DataFrame): Iterator[Array[Byte]] = {
+    withNewExecutionId(df) {
+      toArrowBatchRdd(df).toLocalIterator
+    }
+  }
+
+  def executeArrowBatchCollect: SparkPlan => Array[Array[Byte]] = {
+    case adaptiveSparkPlan: AdaptiveSparkPlanExec =>
+      executeArrowBatchCollect(adaptiveSparkPlan.finalPhysicalPlan)
+    case collectLimit: CollectLimitExec =>
+      doCollectLimit(collectLimit)
+    case plan: SparkPlan =>
+      toArrowBatchRdd(plan).collect()
   }
 
   def convertTopLevelComplexTypeToHiveString(
@@ -73,6 +150,27 @@ object SparkDatasetHelper {
       part
     } else {
       s"`${part.replace("`", "``")}`"
+    }
+  }
+
+  private lazy val maxBatchSize: Long = {
+    // respect spark connect config
+    KyuubiSparkUtil.globalSparkContext
+      .getConf
+      .getOption("spark.connect.grpc.arrow.maxBatchSize")
+      .orElse(Option("4m"))
+      .map(JavaUtils.byteStringAs(_, ByteUnit.MiB))
+      .get
+  }
+
+  /**
+   * refer to org.apache.spark.sql.Dataset#withAction(), assign a new execution id for arrow-based
+   * operation, so that we can track the arrow-based queries on the UI tab.
+   */
+  private def withNewExecutionId[T](df: DataFrame)(body: => T): T = {
+    SQLExecution.withNewExecutionId(df.queryExecution, Some("collectAsArrow")) {
+      df.queryExecution.executedPlan.resetMetrics()
+      body
     }
   }
 }

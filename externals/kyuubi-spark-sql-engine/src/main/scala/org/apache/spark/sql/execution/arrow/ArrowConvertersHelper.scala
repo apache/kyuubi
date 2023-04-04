@@ -136,4 +136,13 @@ object ArrowConvertersHelper extends Logging {
       out.toByteArray
     }
   }
+
+  // for testing
+  def fromBatchIterator(
+      arrowBatchIter: Iterator[Array[Byte]],
+      schema: StructType,
+      timeZoneId: String,
+      context: TaskContext): Iterator[InternalRow] = {
+    ArrowConverters.fromBatchIterator(arrowBatchIter, schema, timeZoneId, context)
+  }
 }

@@ -58,7 +58,8 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
       s"jdbc:derby:;databaseName=$metastorePath;create=true")
     System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
     System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
-    System.setProperty("spark.ui.enabled", "false")
+    System.setProperty("spark.ui.enabled", "true")
+    System.setProperty("spark.ui.port", "4040")
     withKyuubiConf.foreach { case (k, v) =>
       System.setProperty(k, v)
     }

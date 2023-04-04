@@ -22,8 +22,11 @@ import java.sql.Statement
 import org.apache.spark.KyuubiSparkContextHelper
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
-import org.apache.spark.sql.execution.QueryExecution
+import org.apache.spark.sql.execution.{CollectLimitExec, QueryExecution}
+import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
+import org.apache.spark.sql.execution.arrow.ArrowConvertersHelper
 import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.util.QueryExecutionListener
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -143,33 +146,59 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   test("aa") {
 
     val returnSize = Seq(
-      7,
-      10,
-      13,
-      20,
-      29)
+      7, // less than one partition
+      10, // equal to one partition
+      13, // between one and two partitions, run two jobs
+      20, // equal to two partitions
+      29) // between two and three partitions
 
-    withJdbcStatement() { statement =>
-      loadPartitionedTable()
-      returnSize.foreach { size =>
-        statement.executeQuery(s"SET kyuubi.operation.result.max.rows=$size")
-        val result = statement.executeQuery("select * from t_1")
-        for (i <- 0 until size) {
-          assert(result.next())
-        }
-        assert(!result.next())
+    // aqe
+    // outermost AdaptiveSparkPlanExec
+    spark.range(1000)
+      .repartitionByRange(100, col("id"))
+      .createOrReplaceTempView("t_1")
+    spark.sql("select * from t_1")
+      .foreachPartition { p: Iterator[Row] =>
+        assert(p.length == 10)
+        ()
       }
+    returnSize.foreach { size =>
+      val df = spark.sql(s"select * from t_1 limit $size")
+      val headPlan = df.queryExecution.executedPlan.collectLeaves().head
+      assert(headPlan.isInstanceOf[AdaptiveSparkPlanExec])
+      assert(
+        headPlan.asInstanceOf[AdaptiveSparkPlanExec].finalPhysicalPlan.isInstanceOf[
+          CollectLimitExec])
+
+      val arrowBinary = SparkDatasetHelper.executeArrowBatchCollect(df.queryExecution.executedPlan)
+
+      val rows = ArrowConvertersHelper.fromBatchIterator(
+        arrowBinary.iterator,
+        df.schema,
+        "",
+        KyuubiSparkContextHelper.dummyTaskContext())
+      assert(rows.size == size)
     }
 
-    withJdbcStatement() { statement =>
-      loadPartitionedTable()
-      returnSize.foreach { size =>
-        val result = statement.executeQuery(s"select * from t_1 limit $size")
-        for (i <- 0 until size) {
-          assert(result.next())
-        }
-        assert(!result.next())
+    // outermost CollectLimitExec
+    spark.range(0, 1000, 1, numPartitions = 100)
+      .createOrReplaceTempView("t_2")
+    spark.sql("select * from t_2")
+      .foreachPartition { p: Iterator[Row] =>
+        assert(p.length == 10)
+        ()
       }
+    returnSize.foreach { size =>
+      val df = spark.sql(s"select * from t_2 limit $size")
+      val plan = df.queryExecution.executedPlan
+      assert(plan.isInstanceOf[CollectLimitExec])
+      val arrowBinary = SparkDatasetHelper.executeArrowBatchCollect(df.queryExecution.executedPlan)
+      val rows = ArrowConvertersHelper.fromBatchIterator(
+        arrowBinary.iterator,
+        df.schema,
+        "",
+        KyuubiSparkContextHelper.dummyTaskContext())
+      assert(rows.size == size)
     }
   }
 
@@ -211,23 +240,5 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       .sessionManager
       .allSessions()
       .foreach(_.asInstanceOf[SparkSessionImpl].spark.listenerManager.unregister(listener))
-  }
-
-  private def loadPartitionedTable(): Unit = {
-    SparkSQLEngine.currentEngine.get
-      .backendService
-      .sessionManager
-      .allSessions()
-      .map(_.asInstanceOf[SparkSessionImpl].spark)
-      .foreach { spark =>
-        spark.range(1000)
-          .repartitionByRange(100, col("id"))
-          .createOrReplaceTempView("t_1")
-        spark.sql("select * from t_1")
-          .foreachPartition { p: Iterator[Row] =>
-            assert(p.length == 10)
-            ()
-          }
-      }
   }
 }

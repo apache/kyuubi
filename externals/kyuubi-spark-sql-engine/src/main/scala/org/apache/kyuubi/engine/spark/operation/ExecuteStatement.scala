@@ -20,13 +20,9 @@ package org.apache.kyuubi.engine.spark.operation
 import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.execution.{CollectLimitExec, SQLExecution}
-import org.apache.spark.sql.execution.arrow.{ArrowCollectUtils, KyuubiArrowUtils}
-import org.apache.spark.sql.kyuubi.SparkDatasetHelper
+import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -189,10 +185,7 @@ class ArrowBasedExecuteStatement(
     handle) {
 
   override protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
-    val df = convertComplexType(resultDF)
-    withNewExecutionId(df) {
-      SparkDatasetHelper.toArrowBatchRdd(df).toLocalIterator
-    }
+    toArrowBatchLocalIterator(convertComplexType(resultDF))
   }
 
   override protected def fullCollectResult(resultDF: DataFrame): Array[_] = {
@@ -203,72 +196,11 @@ class ArrowBasedExecuteStatement(
     executeCollect(convertComplexType(resultDF.limit(maxRows)))
   }
 
-  /**
-   * refer to org.apache.spark.sql.Dataset#withAction(), assign a new execution id for arrow-based
-   * operation, so that we can track the arrow-based queries on the UI tab.
-   */
-  private def withNewExecutionId[T](df: DataFrame)(body: => T): T = {
-    SQLExecution.withNewExecutionId(df.queryExecution, Some("collectAsArrow")) {
-      df.queryExecution.executedPlan.resetMetrics()
-      body
-    }
-  }
-
-  private def executeCollect(df: DataFrame): Array[Array[Byte]] = withNewExecutionId(df) {
-    executeArrowBatchCollect(df).getOrElse {
-      SparkDatasetHelper.toArrowBatchRdd(df).collect()
-    }
-  }
-
-  private def executeArrowBatchCollect(df: DataFrame): Option[Array[Array[Byte]]] = {
-    df.queryExecution.executedPlan match {
-      case collectLimit @ CollectLimitExec(limit, _) =>
-        val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
-        val maxRecordsPerBatch = spark.sessionState.conf.arrowMaxRecordsPerBatch
-
-        val batches = ArrowCollectUtils.takeAsArrowBatches(
-          collectLimit,
-          maxRecordsPerBatch,
-          maxBatchSize,
-          timeZoneId)
-
-        // note that the number of rows in the returned arrow batches may be >= `limit`, performing
-        // the slicing operation of result
-        val result = ArrayBuffer[Array[Byte]]()
-        var i = 0
-        var rest = limit
-        while (i < batches.length && rest > 0) {
-          val (batch, size) = batches(i)
-          if (size <= rest) {
-            result += batch
-            // returned ArrowRecordBatch has less than `limit` row count, safety to do conversion
-            rest -= size.toInt
-          } else { // size > rest
-            result += KyuubiArrowUtils.slice(df.schema, timeZoneId, batch, 0, rest)
-            rest = 0
-          }
-          i += 1
-        }
-        Option(result.toArray)
-      case _ =>
-        None
-    }
-  }
-
   override protected def isArrowBasedOperation: Boolean = true
 
   override val resultFormat = "arrow"
 
   private def convertComplexType(df: DataFrame): DataFrame = {
-    SparkDatasetHelper.convertTopLevelComplexTypeToHiveString(df, timestampAsString)
+    convertTopLevelComplexTypeToHiveString(df, timestampAsString)
   }
-
-  private lazy val maxBatchSize: Long = {
-    // respect spark connect config
-    spark.sparkContext.getConf.getOption("spark.connect.grpc.arrow.maxBatchSize")
-      .orElse(Option("4m"))
-      .map(JavaUtils.byteStringAs(_, ByteUnit.MiB))
-      .get
-  }
-
 }
