@@ -54,12 +54,14 @@ public class KyuubiCommands extends Commands {
   }
 
   private boolean isSourceCMD(String cmd) {
+    cmd = cmd.trim();
     if (cmd == null || cmd.isEmpty()) return false;
     String[] tokens = tokenizeCmd(cmd);
     return tokens[0].equalsIgnoreCase("source");
   }
 
   private boolean sourceFile(String cmd) {
+    cmd = cmd.trim();
     String[] tokens = tokenizeCmd(cmd);
     String cmd_1 = getFirstCmd(cmd, tokens[0].length());
 
