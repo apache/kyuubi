@@ -1546,7 +1546,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     }
   }
 
-  test("InsertIntoHiveDirCommand") {
+  test("InsertIntoDataSourceDirCommand") {
     assume(!isSparkV2)
     val tableDirectory = getClass.getResource("/").getPath + "table_directory"
     val directory = File(tableDirectory).createDirectory()
@@ -1554,6 +1554,32 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       s"""
          |INSERT OVERWRITE DIRECTORY '$directory.path'
          |USING parquet
+         |SELECT * FROM $reusedPartTable""".stripMargin)
+      .queryExecution.analyzed
+    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === QUERY)
+    assert(in.size === 1)
+    val po0 = in.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    assert(po0.columns === Seq("key", "value", "pid"))
+    checkTableOwner(po0)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(out.isEmpty)
+  }
+
+  test("InsertIntoHiveDirCommand") {
+    assume(!isSparkV2)
+    val tableDirectory = getClass.getResource("/").getPath + "table_directory"
+    val directory = File(tableDirectory).createDirectory()
+    val plan = sql(
+      s"""
+         |INSERT OVERWRITE DIRECTORY '$directory.path'
+         |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
          |SELECT * FROM $reusedPartTable""".stripMargin)
       .queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
