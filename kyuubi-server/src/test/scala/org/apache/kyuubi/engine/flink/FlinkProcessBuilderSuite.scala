@@ -83,10 +83,11 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     val actualCommands = builder.toString
     val expectedCommands =
       escapePaths(s"${builder.flinkExecutable} run-application ") +
+        s"-t yarn-application " +
         s"-Dyarn.ship-files=.*\\/flink-sql-client.*jar;.*\\/flink-sql-gateway.*jar;$tempUdfJar " +
         s"-Dyarn\\.tags=KYUUBI " +
         s"-Dcontainerized\\.master\\.env\\.FLINK_CONF_DIR=\\. " +
-        s"-Dexecution\\.target=yarn-application " +
+        s"-Dexecution.target=yarn-application " +
         s"-c org\\.apache\\.kyuubi\\.engine\\.flink\\.FlinkSQLEngine " +
         s".*kyuubi-flink-sql-engine_.*jar" +
         s"(?: \\\\\\n\\t--conf \\S+=\\S+)+"

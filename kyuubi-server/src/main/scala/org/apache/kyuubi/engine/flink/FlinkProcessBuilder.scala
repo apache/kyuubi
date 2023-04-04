@@ -92,10 +92,17 @@ class FlinkProcessBuilder(
         val userJars = conf.get(ENGINE_FLINK_APPLICATION_JARS)
         userJars.foreach(jars => flinkExtraJars ++= jars.split(","))
 
+        buffer += "-t"
+        buffer += "yarn-application"
         buffer += s"-Dyarn.ship-files=${flinkExtraJars.mkString(";")}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
-        buffer += "-Dexecution.target=yarn-application"
+
+        val customFlinkConf = conf.getAllWithPrefix("flink", "")
+        for ((k, v) <- customFlinkConf) {
+          buffer += s"-D$k=$v"
+        }
+
         buffer += "-c"
         buffer += s"$mainClass"
         buffer += s"${mainResource.get}"
@@ -103,8 +110,10 @@ class FlinkProcessBuilder(
         buffer += "--conf"
         buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
         for ((k, v) <- conf.getAll) {
-          buffer += "--conf"
-          buffer += s"$k=$v"
+          if (k.startsWith("kyuubi.")) {
+            buffer += "--conf"
+            buffer += s"$k=$v"
+          }
         }
 
         buffer.toArray

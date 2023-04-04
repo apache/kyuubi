@@ -28,13 +28,16 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 class FlinkOperationSuiteOnYarn extends WithKyuubiServerAndYarnMiniCluster
   with HiveJDBCTestHelper {
 
-  override val conf: KyuubiConf = KyuubiConf()
-    .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
-    .set(ENGINE_TYPE, "FLINK_SQL")
-    .set("flink.execution.target", "yarn-application")
-    .set("flink.parallelism.default", "1")
-
   override protected def jdbcUrl: String = getJdbcUrl
+
+  override def beforeAll(): Unit = {
+    conf
+      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
+      .set(ENGINE_TYPE, "FLINK_SQL")
+      .set("flink.execution.target", "yarn-application")
+      .set("flink.parallelism.default", "6")
+    super.beforeAll()
+  }
 
   test("get catalogs for flink sql") {
     withJdbcStatement() { statement =>
