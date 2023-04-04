@@ -708,7 +708,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #4658] INSERT OVERWRITE DIRECTORY did check query permission") {
+  test("[KYUUBI #4658] insert overwrite directory") {
     val db1 = "default"
     val table = "src"
 
