@@ -109,8 +109,14 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
       } else if (result.getMaskTypeDef != null) {
         result.getMaskTypeDef.getName match {
           case "MASK" => regexp_replace(col)
-          case "MASK_SHOW_FIRST_4" => maskShowFirst4(col, isSparkVersionAtLeast("3.1"))
-          case "MASK_SHOW_LAST_4" => maskShowLast4(col)
+          case "MASK_SHOW_FIRST_4" if isSparkVersionAtLeast("3.1") =>
+            regexp_replace(col, hasLen = true)
+          case "MASK_SHOW_FIRST_4" =>
+            val right = regexp_replace(s"substr($col, 5)")
+            s"concat(substr($col, 0, 4), $right)"
+          case "MASK_SHOW_LAST_4" =>
+            val left = regexp_replace(s"left($col, length($col) - 4)")
+            s"concat($left, right($col, 4))"
           case "MASK_HASH" => s"md5(cast($col as string))"
           case "MASK_DATE_SHOW_YEAR" => s"date_trunc('YEAR', $col)"
           case _ => result.getMaskTypeDef.getTransformer match {
@@ -125,28 +131,13 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
     }
   }
 
-  // public for test
-  def regexp_replace(expr: String, hasLen: Boolean = false): String = {
+  private def regexp_replace(expr: String, hasLen: Boolean = false): String = {
     val pos = if (hasLen) ", 5" else ""
     val upper = s"regexp_replace($expr, '[A-Z]', 'X'$pos)"
     val lower = s"regexp_replace($upper, '[a-z]', 'x'$pos)"
     val digits = s"regexp_replace($lower, '[0-9]', 'n'$pos)"
     val other = s"regexp_replace($digits, '[^A-Za-z0-9 ]', 'U'$pos)"
     other
-  }
-
-  def maskShowFirst4(col: String, isSparkV31OrGreater: Boolean): String = {
-    if (isSparkV31OrGreater) {
-      regexp_replace(col, hasLen = true)
-    } else {
-      val right = regexp_replace(s"substr($col, 5)")
-      s"concat(substr($col, 0, 4), $right)"
-    }
-  }
-
-  def maskShowLast4(col: String): String = {
-    val left = regexp_replace(s"left($col, length($col) - 4)")
-    s"concat($left, right($col, 4))"
   }
 
   /**

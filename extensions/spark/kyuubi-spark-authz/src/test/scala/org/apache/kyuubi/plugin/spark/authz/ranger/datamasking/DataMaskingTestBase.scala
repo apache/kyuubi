@@ -28,7 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
-import org.apache.kyuubi.plugin.spark.authz.ranger.{RangerSparkExtension, SparkRangerAdminPlugin}
+import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
 
 /**
  * Base trait for data masking tests, derivative classes shall name themselves following:
@@ -261,75 +261,46 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     }
   }
 
-  test("test regexp_replace") {
+  test("test MASK rule with non-English character set") {
     /* Although not all language character sets have been tested,
        it applies to all non-English character sets.
        This test mainly includes the UCS-2 character set.
      */
     // scalastyle:off
     // AßþΔЙקم๗ቐあア叶葉엽 reference https://zh.wikipedia.org/zh-cn/Unicode#XML.E5.92.8CUnicode
-    val col="'hello WORD 123 ~!@# AßþΔЙקم๗ቐあア叶葉엽'"
+    val col = "'hello WORD 123 ~!@# AßþΔЙקم๗ቐあア叶葉엽'"
     // scalastyle:on
-    val exp1 = SparkRangerAdminPlugin.regexp_replace(col)
-    assert(exp1 ==
-      "regexp_replace(" +
-        "regexp_replace(" +
-          "regexp_replace(" +
-            s"regexp_replace($col, '[A-Z]', 'X')" +
-            ", '[a-z]', 'x')" +
-          ", '[0-9]', 'n')" +
-        ", '[^A-Za-z0-9 ]', 'U')")
+    val exp1 = s"regexp_replace(regexp_replace(regexp_replace(regexp_replace($col, " +
+      "'[A-Z]', 'X'), '[a-z]', 'x'), '[0-9]', 'n'), '[^A-Za-z0-9 ]', 'U')"
     val s1 = s"SELECT $exp1 as value1"
     checkAnswer("admin", s1, Seq(Row("xxxxx XXXX nnn UUUU XUUUUUUUUUUUUU")))
-
   }
 
-  test("test maskShowFirst4") {
+  test("test MASK_SHOW_FIRST_4 rule with non-English character set") {
     // scalastyle:off
-    val col="'hello WORD 123 ~!@# AßþΔЙקم๗ቐあア叶葉엽'"
+    val col = "'hello WORD 123 ~!@# AßþΔЙקم๗ቐあア叶葉엽'"
     // scalastyle:on
-    val exp1 = SparkRangerAdminPlugin.maskShowFirst4(col, true)
-    assert(exp1 ==
-        "regexp_replace(" +
-          "regexp_replace(" +
-            "regexp_replace(" +
-              s"regexp_replace($col, '[A-Z]', 'X', 5)" +
-            ", '[a-z]', 'x', 5)" +
-          ", '[0-9]', 'n', 5)" +
-        ", '[^A-Za-z0-9 ]', 'U', 5)")
-    val exp2 = SparkRangerAdminPlugin.maskShowFirst4(col, false)
-    assert(exp2 ==
-        s"concat(substr($col, 0, 4), " +
-          "regexp_replace(" +
-            "regexp_replace(" +
-              "regexp_replace(" +
-                s"regexp_replace(substr($col, 5), '[A-Z]', 'X')" +
-              ", '[a-z]', 'x')" +
-            ", '[0-9]', 'n')" +
-          ", '[^A-Za-z0-9 ]', 'U')" +
-        ")")
-    val exp3 = SparkRangerAdminPlugin.maskShowFirst4(col, isSparkV31OrGreater)
-    val s1 = s"SELECT $exp3 as value1"
-    checkAnswer("admin", s1, Seq(Row("hellx XXXX nnn UUUU XUUUUUUUUUUUUU")))
+    val exp1 = s"regexp_replace(regexp_replace(regexp_replace(regexp_replace($col," +
+      s" '[A-Z]', 'X', 5), '[a-z]', 'x', 5), '[0-9]', 'n', 5), '[^A-Za-z0-9 ]', 'U', 5)"
+    val exp2 = s"concat(substr($col, 0, 4), regexp_replace(regexp_replace(regexp_replace(" +
+      s"regexp_replace(substr($col, 5), '[A-Z]', 'X'), '[a-z]', 'x'), " +
+      s"'[0-9]', 'n'), '[^A-Za-z0-9 ]', 'U'))"
+
     val s2 = s"SELECT $exp2 as value1"
     checkAnswer("admin", s2, Seq(Row("hellx XXXX nnn UUUU XUUUUUUUUUUUUU")))
+
+    assume(isSparkV31OrGreater)
+    val s1 = s"SELECT $exp1 as value1"
+    checkAnswer("admin", s1, Seq(Row("hellx XXXX nnn UUUU XUUUUUUUUUUUUU")))
   }
 
-  test("test maskShowLast4") {
+  test("test MASK_SHOW_LAST_4 rule with non-English character set") {
     // scalastyle:off
-    val col="'hello WORD 123 ~!@# AßþΔЙקم๗ቐあア叶葉엽'"
+    val col = "'hello WORD 123 ~!@# AßþΔЙקم๗ቐあア叶葉엽'"
     // scalastyle:on
-    val exp1 = SparkRangerAdminPlugin.maskShowLast4(col)
-    assert(exp1 ==
-        "concat(regexp_replace(" +
-          "regexp_replace(" +
-            "regexp_replace(" +
-              s"regexp_replace(left($col, length($col) - 4), '[A-Z]', 'X')" +
-              ", '[a-z]', 'x')" +
-            ", '[0-9]', 'n')" +
-          ", '[^A-Za-z0-9 ]', 'U')" +
-        s", right($col, 4))")
-
+    val exp1 = s"concat(regexp_replace(regexp_replace(regexp_replace(regexp_replace(" +
+      s"left($col, length($col) - 4), '[A-Z]', 'X'), '[a-z]', 'x'), " +
+      s"'[0-9]', 'n'), '[^A-Za-z0-9 ]', 'U'), right($col, 4))"
     val s1 = s"SELECT $exp1 as value1"
     // scalastyle:off
     checkAnswer("admin", s1, Seq(Row("xxxxx XXXX nnn UUUU XUUUUUUUUUア叶葉엽")))
