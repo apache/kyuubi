@@ -1581,7 +1581,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
          |INSERT OVERWRITE DIRECTORY '$directory.path'
          |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
          |SELECT * FROM $reusedPartTable""".stripMargin)
-        .queryExecution.analyzed
+      .queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
     assert(in.size === 1)
