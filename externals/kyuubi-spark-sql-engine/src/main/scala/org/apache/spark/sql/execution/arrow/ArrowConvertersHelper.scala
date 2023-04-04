@@ -115,8 +115,8 @@ object ArrowConvertersHelper extends Logging {
           arrowWriter.write(row)
           estimatedBatchSize += (row match {
             case ur: UnsafeRow => ur.getSizeInBytes
-            // Trying to estimate the size of the current row, assuming 16 bytes per value.
-            case ir: InternalRow => ir.numFields * 16
+            // Trying to estimate the size of the current row
+            case _: InternalRow => schema.defaultSize
           })
           rowCountInLastBatch += 1
           rowCount += 1
