@@ -69,6 +69,7 @@ case class FinalStageResourceManager(session: SparkSession)
       return plan
     }
 
+    // TODO: move this to query stage optimizer when updating Spark to 3.5.x
     // Since we are in `prepareQueryStage`, the AQE shuffle read has not been applied.
     // So we need to apply it by self.
     val shuffleRead = queryStageOptimizerRules.foldLeft(stageOpt.get.asInstanceOf[SparkPlan]) {
@@ -119,7 +120,11 @@ case class FinalStageResourceManager(session: SparkSession)
       shuffleId: Int,
       numReduce: Int): Seq[String] = {
     val tracker = SparkEnv.get.mapOutputTracker.asInstanceOf[MapOutputTrackerMaster]
-    val shuffleStatus = tracker.shuffleStatuses(shuffleId)
+    val shuffleStatusOpt = tracker.shuffleStatuses.get(shuffleId)
+    if (shuffleStatusOpt.isEmpty) {
+      return Seq.empty
+    }
+    val shuffleStatus = shuffleStatusOpt.get
     val executorToBlockSize = new mutable.HashMap[String, Long]
     shuffleStatus.withMapStatuses { mapStatus =>
       mapStatus.foreach { status =>
@@ -175,6 +180,9 @@ case class FinalStageResourceManager(session: SparkSession)
     val executorsToKill = findExecutorToKill(sc, targetExecutors, shuffleId, numReduce)
     logInfo(s"Request to kill executors, total count ${executorsToKill.size}, " +
       s"[${executorsToKill.mkString(", ")}].")
+    if (executorsToKill.isEmpty) {
+      return
+    }
 
     // Note, `SparkContext#killExecutors` does not allow with DRA enabled,
     // see `https://github.com/apache/spark/pull/20604`.
@@ -201,7 +209,7 @@ trait FinalRebalanceStageHelper {
       case f: FilterExec => findFinalRebalanceStage(f.child)
       case s: SortExec if !s.global => findFinalRebalanceStage(s.child)
       case stage: ShuffleQueryStageExec
-          if stage.isMaterialized &&
+          if stage.isMaterialized && stage.mapStats.isDefined &&
             stage.plan.isInstanceOf[ShuffleExchangeExec] &&
             stage.plan.asInstanceOf[ShuffleExchangeExec].shuffleOrigin != ENSURE_REQUIREMENTS =>
         Some(stage)
