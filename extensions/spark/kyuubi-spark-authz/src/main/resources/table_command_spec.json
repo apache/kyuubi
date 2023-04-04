@@ -1244,7 +1244,7 @@
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ]
 }, {
-  "classname" : "org.apache.spark.sql.execution.datasources.InsertIntoHiveDirCommand",
+  "classname" : "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand",
   "tableDescs" : [ ],
   "opType" : "QUERY",
   "queryDescs" : [ {
