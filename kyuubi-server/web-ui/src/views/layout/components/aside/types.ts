@@ -62,6 +62,11 @@ export const MENUS = [
     icon: 'List',
     children: [
       {
+        label: 'Operation Statistics',
+        icon: 'VideoPlay',
+        router: '/operation/operation-statistics'
+      },
+      {
         label: 'Running Jobs',
         icon: 'VideoPlay',
         router: '/operation/runningJobs'

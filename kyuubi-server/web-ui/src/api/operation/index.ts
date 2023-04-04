@@ -15,22 +15,24 @@
  * limitations under the License.
  */
 
-const routes = [
-  {
-    path: '/operation/runningJobs',
-    name: 'operation-runningJobs',
-    component: () => import('@/views/operation/runningJobs/index.vue')
-  },
-  {
-    path: '/operation/completedJobs',
-    name: 'operation-completedJobs',
-    component: () => import('@/views/operation/completedJobs/index.vue')
-  },
-  {
-    path: '/operation/operation-statistics',
-    name: 'operation-statistics',
-    component: () => import('@/views/operation/operation-statistics/index.vue')
-  }
-]
+import request from '@/utils/request'
 
-export default routes
+export function getAllOperations() {
+  return request({
+    url: 'api/v1/admin/operations',
+    method: 'get'
+  })
+}
+
+export function actionOnOperation(
+  operationId: string,
+  data: {
+    action: 'CANCEL' | 'CLOSE'
+  }
+) {
+  return request({
+    url: `api/v1/operations/${operationId}`,
+    method: 'put',
+    data
+  })
+}

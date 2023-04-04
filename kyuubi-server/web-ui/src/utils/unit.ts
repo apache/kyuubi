@@ -15,22 +15,25 @@
  * limitations under the License.
  */
 
-const routes = [
-  {
-    path: '/operation/runningJobs',
-    name: 'operation-runningJobs',
-    component: () => import('@/views/operation/runningJobs/index.vue')
-  },
-  {
-    path: '/operation/completedJobs',
-    name: 'operation-completedJobs',
-    component: () => import('@/views/operation/completedJobs/index.vue')
-  },
-  {
-    path: '/operation/operation-statistics',
-    name: 'operation-statistics',
-    component: () => import('@/views/operation/operation-statistics/index.vue')
-  }
-]
+function millTransfer(val: number) {
+  return secondTransfer(val / 1000)
+}
 
-export default routes
+function secondTransfer(val: number) {
+  const h = Math.floor(val / 3600)
+  const min = Math.floor((val - 3600 * h) / 60)
+  const sec = Math.round(val - 3600 * h - 60 * min)
+  return h === 0
+    ? min == 0
+      ? `${sec} sec`
+      : sec === 0
+      ? `${min} min`
+      : `${min} min ${sec} sec`
+    : sec === 0
+    ? min !== 0
+      ? `${h} hour ${min} min`
+      : `${h} hour`
+    : `${h} hour ${min} min ${sec} sec`
+}
+
+export { millTransfer, secondTransfer }
