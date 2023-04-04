@@ -2380,8 +2380,8 @@ object KyuubiConf {
 
   val ENGINE_FLINK_APPLICATION_JARS: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.flink.application.jars")
-      .doc("A semicolon-separated list of the jars to be shipped with the job to the cluster." +
-        "For example SQL UDF jars. Only effective in yarn application mode.")
+      .doc("A semicolon-separated list of the jars to be shipped with the job to the cluster. " +
+        "For example, SQL UDF jars. Only effective in yarn application mode.")
       .version("1.8.0")
       .stringConf
       .createOptional
