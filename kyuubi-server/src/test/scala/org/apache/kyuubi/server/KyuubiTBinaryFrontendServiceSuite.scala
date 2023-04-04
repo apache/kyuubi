@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.server
 
+import java.util.UUID
+
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TSessionHandle}
@@ -24,12 +26,24 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.EngineRef
+import org.apache.kyuubi.engine.ShareLevel.CONNECTION
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.TClientTestUtils
+import org.apache.kyuubi.plugin.PluginLoader
+import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager}
 
 class KyuubiTBinaryFrontendServiceSuite extends WithKyuubiServer with KyuubiFunSuite {
 
   override protected val conf: KyuubiConf = KyuubiConf()
+
+  override def afterEach(): Unit = {
+    val sessionManager = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+    sessionManager.allSessions().foreach { session =>
+      sessionManager.closeSession(session.handle)
+    }
+  }
 
   test("connection metrics") {
     val totalConnections =
@@ -115,5 +129,37 @@ class KyuubiTBinaryFrontendServiceSuite extends WithKyuubiServer with KyuubiFunS
     }
     Thread.sleep(3000L)
     assert(server.backendService.sessionManager.allSessions().size == sessionCount)
+  }
+
+  test("open session with engineRefId") {
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, CONNECTION.toString)
+    val engineRefId = UUID.randomUUID().toString
+    val engine = new EngineRef(
+      conf.clone,
+      Utils.currentUser,
+      PluginLoader.loadGroupProvider(conf),
+      engineRefId,
+      null)
+
+    withDiscoveryClient(conf) { client =>
+      engine.getOrCreate(client)
+    }
+
+    var handle: TSessionHandle = null
+    TClientTestUtils.withThriftClient(server.frontendServices.head) {
+      client =>
+        val req = new TOpenSessionReq()
+        req.setUsername(Utils.currentUser)
+        req.setPassword("anonymous")
+        req.setConfiguration(Map("kyuubi.engine.refId" -> engineRefId).asJava)
+        val resp = client.OpenSession(req)
+        handle = resp.getSessionHandle
+
+        val sessionManager = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+        assert(sessionManager.allSessions().size === 1)
+        val engineId = sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
+          .engine.getEngineRefId()
+        assert(engineId == engineRefId)
+    }
   }
 }
