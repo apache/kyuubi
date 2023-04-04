@@ -713,8 +713,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val table = "src"
 
     withCleanTmpResources(Seq((s"$db1.$table", "table"))) {
-      doAs("bob", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
-      val e1 = intercept[AccessControlException](
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
+      val e = intercept[AccessControlException](
         doAs(
           "someone",
           sql(
