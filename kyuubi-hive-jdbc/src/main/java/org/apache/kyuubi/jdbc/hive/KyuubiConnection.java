@@ -739,7 +739,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
     openConf.put(Utils.KYUUBI_CLIENT_VERSION_KEY, Utils.getVersion());
 
-    if (engineRefId != null) {
+    if (StringUtils.isNotBlank(engineRefId)) {
       openConf.put("kyuubi.engine.refId", engineId);
     }
     openReq.setConfiguration(openConf);
