@@ -29,7 +29,7 @@
       <el-table-column :label="$t('start_time')" width="160">
         <template #default="scope">
           {{
-            scope.row.startTime != null && scope.row.startTime > -1
+            scope.row.startTime != null && scope.row.startTime > 0
               ? format(scope.row.startTime, 'yyyy-MM-dd HH:mm:ss')
               : '-'
           }}
@@ -38,7 +38,7 @@
       <el-table-column :label="$t('complete_time')" width="160">
         <template #default="scope">
           {{
-            scope.row.completeTime != null && scope.row.completeTime > -1
+            scope.row.completeTime != null && scope.row.completeTime > 0
               ? format(scope.row.completeTime, 'yyyy-MM-dd HH:mm:ss')
               : '-'
           }}
@@ -48,8 +48,8 @@
         <template #default="scope">{{
           scope.row.startTime != null &&
           scope.row.completeTime != null &&
-          scope.row.startTime > -1 &&
-          scope.row.completeTime > -1
+          scope.row.startTime > 0 &&
+          scope.row.completeTime > 0
             ? millTransfer(scope.row.completeTime - scope.row.startTime)
             : '-'
         }}</template>
