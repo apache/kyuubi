@@ -136,7 +136,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
     val upper = s"regexp_replace($expr, '[A-Z]', 'X'$pos)"
     val lower = s"regexp_replace($upper, '[a-z]', 'x'$pos)"
     val digits = s"regexp_replace($lower, '[0-9]', 'n'$pos)"
-    val other = s"regexp_replace($digits, '[^A-Za-z0-9 ]', 'U'$pos)"
+    val other = s"regexp_replace($digits, '[^A-Za-z0-9]', 'U'$pos)"
     other
   }
 
