@@ -109,7 +109,7 @@
   const { tableData, loading, getList: _getList } = useTable()
   const handleOperate = (operationId: string, action: 'CANCEL' | 'CLOSE') => {
     actionOnOperation(operationId, { action: action }).then(() => {
-      // need add delete success or failed logic after api support
+      // TODO add delete success or failed logic after api support
       ElMessage({
         message: t(`${action.toLowerCase()}_succeeded`, {
           operationId: operationId
