@@ -256,7 +256,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     } else {
       fe.getSessionUser(hs2ProxyUser)
     }
-    val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
+    val engine = getEngine(userName, engineType, shareLevel, subdomain, "default")
     val engineSpace = getEngineSpace(engine)
 
     var engineNodes = ListBuffer[ServiceNodeInfo]()

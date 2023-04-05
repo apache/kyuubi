@@ -381,7 +381,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
       Utils.currentUser,
-      "")
+      "default")
 
     withDiscoveryClient(conf) { client =>
       engine.getOrCreate(client)
@@ -460,6 +460,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("type", "spark_sql")
+        .queryParam("subdomain", "")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
         .get
