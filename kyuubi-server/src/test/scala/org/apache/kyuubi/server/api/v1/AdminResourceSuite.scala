@@ -36,12 +36,11 @@ import org.apache.kyuubi.engine.{ApplicationState, EngineRef, KyuubiApplicationM
 import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, USER}
 import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceDiscovery}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
-import org.apache.kyuubi.ha.client.DiscoveryPaths
-import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.plugin.PluginLoader
+import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
-import org.apache.kyuubi.service.FrontendService
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -496,15 +495,10 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   test("list server") {
     // Mock Kyuubi Server
     val serverDiscovery = mock[ServiceDiscovery]
-    val fe = mock[FrontendService]
-    val expectHost = "test_ip"
-    val expectPort = 10009
     lenient.when(serverDiscovery.fe).thenReturn(fe)
-    lenient.when(fe.connectionUrl).thenReturn(s"${expectHost}:${expectPort}")
-    lenient.when(fe.attributes).thenReturn(Map.apply("test" -> "true"))
-
+    val namespace = conf.get(HighAvailabilityConf.HA_NAMESPACE)
     withDiscoveryClient(conf) { client =>
-      client.registerService(conf, conf.get(HighAvailabilityConf.HA_NAMESPACE), serverDiscovery)
+      client.registerService(conf, namespace, serverDiscovery)
 
       val adminUser = Utils.currentUser
       val encodeAuthorization = new String(
@@ -520,11 +514,18 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       val result = response.readEntity(new GenericType[Seq[ServerData]]() {})
       assert(result.size == 1)
       val testServer = result.head
-      assert(expectHost.equals(testServer.getHost))
-      assert(expectPort == testServer.getPort)
+      val export = fe.asInstanceOf[KyuubiRestFrontendService]
+
+      assert(namespace.equals(testServer.getNamespace.replaceFirst("/", "")))
+      assert(export.host.equals(testServer.getHost))
+      assert(export.connectionUrl.equals(testServer.getInstance()))
       assert(!testServer.getAttributes.isEmpty)
-      assert(testServer.getAttributes.containsKey("test")
-        && testServer.getAttributes.get("test").equals("true"))
+      val attributes = testServer.getAttributes
+      assert(attributes.containsKey("serviceUri") &&
+        attributes.get("serviceUri").equals(fe.connectionUrl))
+      assert(attributes.containsKey("version"))
+      assert(attributes.containsKey("sequence"))
+      assert("Running".equals(testServer.getStatus))
     }
   }
 }
