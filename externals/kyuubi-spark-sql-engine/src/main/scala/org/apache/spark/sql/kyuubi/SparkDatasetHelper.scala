@@ -25,7 +25,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
-import org.apache.spark.sql.execution.arrow.{ArrowCollectUtils, ArrowConverters, KyuubiArrowUtils}
+import org.apache.spark.sql.execution.arrow.{ArrowConverters, KyuubiArrowConverters}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
@@ -34,6 +34,19 @@ import org.apache.kyuubi.engine.spark.schema.RowSet
 import org.apache.kyuubi.reflection.DynMethods
 
 object SparkDatasetHelper {
+
+  def executeCollect(df: DataFrame): Array[Array[Byte]] = withNewExecutionId(df) {
+    executeArrowBatchCollect(df.queryExecution.executedPlan)
+  }
+
+  def executeArrowBatchCollect: SparkPlan => Array[Array[Byte]] = {
+    case adaptiveSparkPlan: AdaptiveSparkPlanExec =>
+      executeArrowBatchCollect(finalPhysicalPlan(adaptiveSparkPlan))
+    case collectLimit: CollectLimitExec =>
+      doCollectLimit(collectLimit)
+    case plan: SparkPlan =>
+      toArrowBatchRdd(plan).collect()
+  }
 
   def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
     ds.toArrowBatchRdd
@@ -58,53 +71,10 @@ object SparkDatasetHelper {
     }
   }
 
-  def doCollectLimit(collectLimit: CollectLimitExec): Array[Array[Byte]] = {
-    val timeZoneId = collectLimit.session.sessionState.conf.sessionLocalTimeZone
-    val maxRecordsPerBatch = collectLimit.session.sessionState.conf.arrowMaxRecordsPerBatch
-
-    val batches = ArrowCollectUtils.takeAsArrowBatches(
-      collectLimit,
-      maxRecordsPerBatch,
-      maxBatchSize,
-      timeZoneId)
-
-    // note that the number of rows in the returned arrow batches may be >= `limit`, perform
-    // the slicing operation of result
-    val result = ArrayBuffer[Array[Byte]]()
-    var i = 0
-    var rest = collectLimit.limit
-    while (i < batches.length && rest > 0) {
-      val (batch, size) = batches(i)
-      if (size <= rest) {
-        result += batch
-        // returned ArrowRecordBatch has less than `limit` row count, safety to do conversion
-        rest -= size.toInt
-      } else { // size > rest
-        result += KyuubiArrowUtils.slice(collectLimit.schema, timeZoneId, batch, 0, rest)
-        rest = 0
-      }
-      i += 1
-    }
-    result.toArray
-  }
-
-  def executeCollect(df: DataFrame): Array[Array[Byte]] = withNewExecutionId(df) {
-    executeArrowBatchCollect(df.queryExecution.executedPlan)
-  }
-
   def toArrowBatchLocalIterator(df: DataFrame): Iterator[Array[Byte]] = {
     withNewExecutionId(df) {
       toArrowBatchRdd(df).toLocalIterator
     }
-  }
-
-  def executeArrowBatchCollect: SparkPlan => Array[Array[Byte]] = {
-    case adaptiveSparkPlan: AdaptiveSparkPlanExec =>
-      executeArrowBatchCollect(finalPhysicalPlan(adaptiveSparkPlan))
-    case collectLimit: CollectLimitExec =>
-      doCollectLimit(collectLimit)
-    case plan: SparkPlan =>
-      toArrowBatchRdd(plan).collect()
   }
 
   def convertTopLevelComplexTypeToHiveString(
@@ -146,7 +116,7 @@ object SparkDatasetHelper {
    * Fork from Apache Spark-3.3.1 org.apache.spark.sql.catalyst.util.quoteIfNeeded to adapt to
    * Spark-3.1.x
    */
-  def quoteIfNeeded(part: String): String = {
+  private def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
       part
     } else {
@@ -162,6 +132,36 @@ object SparkDatasetHelper {
       .orElse(Option("4m"))
       .map(JavaUtils.byteStringAs(_, ByteUnit.MiB))
       .get
+  }
+
+  private def doCollectLimit(collectLimit: CollectLimitExec): Array[Array[Byte]] = {
+    val timeZoneId = collectLimit.session.sessionState.conf.sessionLocalTimeZone
+    val maxRecordsPerBatch = collectLimit.session.sessionState.conf.arrowMaxRecordsPerBatch
+
+    val batches = KyuubiArrowConverters.takeAsArrowBatches(
+      collectLimit,
+      maxRecordsPerBatch,
+      maxBatchSize,
+      timeZoneId)
+
+    // note that the number of rows in the returned arrow batches may be >= `limit`, perform
+    // the slicing operation of result
+    val result = ArrayBuffer[Array[Byte]]()
+    var i = 0
+    var rest = collectLimit.limit
+    while (i < batches.length && rest > 0) {
+      val (batch, size) = batches(i)
+      if (size <= rest) {
+        result += batch
+        // returned ArrowRecordBatch has less than `limit` row count, safety to do conversion
+        rest -= size.toInt
+      } else { // size > rest
+        result += KyuubiArrowConverters.slice(collectLimit.schema, timeZoneId, batch, 0, rest)
+        rest = 0
+      }
+      i += 1
+    }
+    result.toArray
   }
 
   /**

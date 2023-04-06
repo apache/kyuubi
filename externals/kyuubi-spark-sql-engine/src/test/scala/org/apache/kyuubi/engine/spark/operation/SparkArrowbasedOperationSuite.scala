@@ -25,7 +25,7 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.{CollectLimitExec, QueryExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
-import org.apache.spark.sql.execution.arrow.ArrowConvertersHelper
+import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.util.QueryExecutionListener
@@ -172,7 +172,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
 
       val arrowBinary = SparkDatasetHelper.executeArrowBatchCollect(df.queryExecution.executedPlan)
 
-      val rows = ArrowConvertersHelper.fromBatchIterator(
+      val rows = KyuubiArrowConverters.fromBatchIterator(
         arrowBinary.iterator,
         df.schema,
         "",
@@ -193,7 +193,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       val plan = df.queryExecution.executedPlan
       assert(plan.isInstanceOf[CollectLimitExec])
       val arrowBinary = SparkDatasetHelper.executeArrowBatchCollect(df.queryExecution.executedPlan)
-      val rows = ArrowConvertersHelper.fromBatchIterator(
+      val rows = KyuubiArrowConverters.fromBatchIterator(
         arrowBinary.iterator,
         df.schema,
         "",
