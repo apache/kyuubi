@@ -67,7 +67,7 @@ object SparkDatasetHelper {
       maxBatchSize,
       timeZoneId)
 
-    // note that the number of rows in the returned arrow batches may be >= `limit`, preform
+    // note that the number of rows in the returned arrow batches may be >= `limit`, perform
     // the slicing operation of result
     val result = ArrayBuffer[Array[Byte]]()
     var i = 0
