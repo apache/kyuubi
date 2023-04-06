@@ -24,10 +24,12 @@ import javax.ws.rs.core.{GenericType, MediaType}
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
+import org.mockito.Mockito.lenient
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
+import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, RestFrontendTestHelper, Utils}
-import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, SessionData, SessionHandle, SessionOpenRequest}
+import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, ServerData, SessionData, SessionHandle, SessionOpenRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
 import org.apache.kyuubi.engine.{ApplicationState, EngineRef, KyuubiApplicationManager}
@@ -36,8 +38,10 @@ import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, USER}
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryPaths
+import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.plugin.PluginLoader
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
+import org.apache.kyuubi.service.FrontendService
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -486,6 +490,41 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         assert(engineMgr.getApplicationInfo(None, id2)
           .exists(_.state == ApplicationState.NOT_FOUND))
       }
+    }
+  }
+
+  test("list server") {
+    // Mock Kyuubi Server
+    val serverDiscovery = mock[ServiceDiscovery]
+    val fe = mock[FrontendService]
+    val expectHost = "test_ip"
+    val expectPort = 10009
+    lenient.when(serverDiscovery.fe).thenReturn(fe)
+    lenient.when(fe.connectionUrl).thenReturn(s"${expectHost}:${expectPort}")
+    lenient.when(fe.attributes).thenReturn(Map.apply("test" -> "true"))
+
+    withDiscoveryClient(conf) { client =>
+      client.registerService(conf, conf.get(HighAvailabilityConf.HA_NAMESPACE), serverDiscovery)
+
+      val adminUser = Utils.currentUser
+      val encodeAuthorization = new String(
+        Base64.getEncoder.encode(
+          s"$adminUser:".getBytes()),
+        "UTF-8")
+      val response = webTarget.path("api/v1/admin/server")
+        .request()
+        .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+        .get
+
+      assert(200 == response.getStatus)
+      val result = response.readEntity(new GenericType[Seq[ServerData]]() {})
+      assert(result.size == 1)
+      val testServer = result.head
+      assert(expectHost.equals(testServer.getHost))
+      assert(expectPort == testServer.getPort)
+      assert(!testServer.getAttributes.isEmpty)
+      assert(testServer.getAttributes.containsKey("test")
+        && testServer.getAttributes.get("test").equals("true"))
     }
   }
 }
