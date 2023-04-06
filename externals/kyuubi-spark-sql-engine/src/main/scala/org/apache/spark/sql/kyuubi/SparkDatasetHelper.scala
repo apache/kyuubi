@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.TaskContext
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.{ArrowConverters, KyuubiArrowConverters}
@@ -58,8 +58,10 @@ object SparkDatasetHelper {
    */
   def toArrowBatchRdd(plan: SparkPlan): RDD[Array[Byte]] = {
     val schemaCaptured = plan.schema
-    val maxRecordsPerBatch = plan.session.sessionState.conf.arrowMaxRecordsPerBatch
-    val timeZoneId = plan.session.sessionState.conf.sessionLocalTimeZone
+    // TODO: SparkPlan.session introduced in SPARK-35798, replace with SparkPlan.session once we
+    // drop Spark-3.1.x support.
+    val maxRecordsPerBatch = SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch
+    val timeZoneId = SparkSession.active.sessionState.conf.sessionLocalTimeZone
     plan.execute().mapPartitionsInternal { iter =>
       val context = TaskContext.get()
       ArrowConverters.toBatchIterator(
@@ -135,8 +137,10 @@ object SparkDatasetHelper {
   }
 
   private def doCollectLimit(collectLimit: CollectLimitExec): Array[Array[Byte]] = {
-    val timeZoneId = collectLimit.session.sessionState.conf.sessionLocalTimeZone
-    val maxRecordsPerBatch = collectLimit.session.sessionState.conf.arrowMaxRecordsPerBatch
+    // TODO: SparkPlan.session introduced in SPARK-35798, replace with SparkPlan.session once we
+    // drop Spark-3.1.x support.
+    val timeZoneId = SparkSession.active.sessionState.conf.sessionLocalTimeZone
+    val maxRecordsPerBatch = SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch
 
     val batches = KyuubiArrowConverters.takeAsArrowBatches(
       collectLimit,

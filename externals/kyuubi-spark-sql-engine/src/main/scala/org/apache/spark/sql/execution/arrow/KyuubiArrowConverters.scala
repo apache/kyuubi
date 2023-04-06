@@ -27,6 +27,7 @@ import org.apache.arrow.vector.ipc.{ArrowStreamWriter, ReadChannel, WriteChannel
 import org.apache.arrow.vector.ipc.message.{IpcOption, MessageSerializer}
 import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.execution.CollectLimitExec
@@ -252,7 +253,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
         val partsToScan =
           partsScanned.until(math.min(partsScanned + numPartsToTry, totalParts).toInt)
 
-        val sc = collectLimitExec.session.sparkContext
+        // TODO: SparkPlan.session introduced in SPARK-35798, replace with SparkPlan.session once we
+        // drop Spark-3.1.x support.
+        val sc = SparkSession.active.sparkContext
         val res = sc.runJob(
           childRDD,
           (it: Iterator[InternalRow]) => {
