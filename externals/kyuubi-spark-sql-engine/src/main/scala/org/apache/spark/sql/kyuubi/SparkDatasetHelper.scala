@@ -20,6 +20,7 @@ package org.apache.spark.sql.kyuubi
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.TaskContext
+import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
@@ -33,7 +34,7 @@ import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.schema.RowSet
 import org.apache.kyuubi.reflection.DynMethods
 
-object SparkDatasetHelper {
+object SparkDatasetHelper extends Logging {
 
   def executeCollect(df: DataFrame): Array[Array[Byte]] = withNewExecutionId(df) {
     executeArrowBatchCollect(df.queryExecution.executedPlan)
@@ -43,8 +44,13 @@ object SparkDatasetHelper {
     case adaptiveSparkPlan: AdaptiveSparkPlanExec =>
       executeArrowBatchCollect(finalPhysicalPlan(adaptiveSparkPlan))
     // TODO: avoid extra shuffle if `offset` > 0
-    case collectLimit: CollectLimitExec if offset(collectLimit) <= 0 =>
+    case collectLimit: CollectLimitExec if offset(collectLimit) > 0 =>
+      logWarning("unsupported offset > 0, an extra shuffle will be introduced.")
+      toArrowBatchRdd(collectLimit).collect()
+    case collectLimit: CollectLimitExec if collectLimit.limit >= 0 =>
       doCollectLimit(collectLimit)
+    case collectLimit: CollectLimitExec if collectLimit.limit < 0 =>
+      executeArrowBatchCollect(collectLimit.child)
     case plan: SparkPlan =>
       toArrowBatchRdd(plan).collect()
   }
