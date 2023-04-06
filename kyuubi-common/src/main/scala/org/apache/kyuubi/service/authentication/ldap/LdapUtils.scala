@@ -116,7 +116,7 @@ object LdapUtils extends Logging {
    * <br>
    * <b>Example:</b>
    * <br>
-   * For user "user1@mycorp.com"" this method will return "user1"
+   * For user "user1@mycorp.com" this method will return "user1"
    *
    * @param user user
    * @return the username part in the provided user
