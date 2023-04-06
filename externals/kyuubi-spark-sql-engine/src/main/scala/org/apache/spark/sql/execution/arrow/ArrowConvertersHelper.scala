@@ -103,7 +103,7 @@ object ArrowConvertersHelper extends Logging {
       val writeChannel = new WriteChannel(Channels.newChannel(out))
 
       rowCountInLastBatch = 0
-      var estimatedBatchSize = 0
+      var estimatedBatchSize = 0L
       Utils.tryWithSafeFinally {
 
         // Always write the first row.
