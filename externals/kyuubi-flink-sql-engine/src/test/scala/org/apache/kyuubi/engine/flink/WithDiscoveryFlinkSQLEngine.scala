@@ -57,6 +57,9 @@ trait WithDiscoveryFlinkSQLEngine extends WithFlinkSQLEngineOnYarn {
     if (hostPort.isEmpty) {
       throw new RuntimeException("Time out retrieving Flink engine service url.")
     }
+    // delay the access to thrift service because the thrift service
+    // may not be ready although it's registered
+    Thread.sleep(3000L)
     s"jdbc:hive2://${hostPort.get._1}:${hostPort.get._2}"
   }
 }

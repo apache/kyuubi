@@ -28,7 +28,12 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 class FlinkOperationSuiteOnYarn extends WithKyuubiServerAndYarnMiniCluster
   with HiveJDBCTestHelper {
 
-  override protected def jdbcUrl: String = getJdbcUrl
+  override protected def jdbcUrl: String = {
+    // delay the access to thrift service because the thrift service
+    // may not be ready although it's registered
+    Thread.sleep(3000L)
+    getJdbcUrl
+  }
 
   override def beforeAll(): Unit = {
     conf
