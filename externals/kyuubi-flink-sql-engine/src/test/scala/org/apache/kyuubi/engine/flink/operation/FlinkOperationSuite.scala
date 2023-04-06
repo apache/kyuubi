@@ -812,6 +812,16 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
+  test("execute statement - select varbinary") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("select cast('kyuubi' as varbinary)")
+      assert(resultSet.next())
+      assert(resultSet.getString(1) == "kyuubi")
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.BINARY)
+    }
+  }
+
   test("execute statement - select float") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT cast(0.1 as float)")

@@ -177,7 +177,7 @@ class ExecuteStatement(
               row.setField(i, d.toObjectArray(arrayType.getElementType))
             case _ =>
           }
-        case _: BinaryType =>
+        case _: BinaryType | _: VarBinaryType =>
           row.setField(i, r.getBinary(i))
         case _: BigIntType =>
           row.setField(i, r.getLong(i))
