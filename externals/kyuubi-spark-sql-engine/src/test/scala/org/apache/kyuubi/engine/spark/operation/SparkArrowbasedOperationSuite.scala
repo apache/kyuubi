@@ -204,6 +204,26 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     }
   }
 
+  test("result offset support") {
+    assume(SPARK_ENGINE_RUNTIME_VERSION > "3.3")
+    var numStages = 0
+    val listener = new SparkListener {
+      override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
+        numStages = jobStart.stageInfos.length
+      }
+    }
+    withJdbcStatement() { statement =>
+      withSparkListener(listener) {
+        withPartitionedTable("t_3") {
+          statement.executeQuery("select * from t_3 limit 10 offset 10")
+        }
+        KyuubiSparkContextHelper.waitListenerBus(spark)
+      }
+    }
+    // the extra shuffle be introduced if the `offset` > 0
+    assert(numStages == 2)
+  }
+
   test("arrow serialization should not introduce extra shuffle for outermost limit") {
     var numStages = 0
     val listener = new SparkListener {

@@ -42,7 +42,8 @@ object SparkDatasetHelper {
   def executeArrowBatchCollect: SparkPlan => Array[Array[Byte]] = {
     case adaptiveSparkPlan: AdaptiveSparkPlanExec =>
       executeArrowBatchCollect(finalPhysicalPlan(adaptiveSparkPlan))
-    case collectLimit: CollectLimitExec =>
+    // TODO: avoid extra shuffle if `offset` > 0
+    case collectLimit: CollectLimitExec if offset(collectLimit) <= 0 =>
       doCollectLimit(collectLimit)
     case plan: SparkPlan =>
       toArrowBatchRdd(plan).collect()
@@ -193,9 +194,22 @@ object SparkDatasetHelper {
     val result = fun(plan)
     val finalPlanUpdate = DynMethods.builder("finalPlanUpdate")
       .hiddenImpl(adaptiveSparkPlanExec.getClass)
-      .build(adaptiveSparkPlanExec)
+      .build()
     finalPlanUpdate.invoke[Unit](adaptiveSparkPlanExec)
     result
+  }
+
+  /**
+   * offset support was add since Spark-3.4(set SPARK-28330), to ensure backward compatibility with
+   * earlier versions of Spark, this function uses reflective calls to the "offset".
+   */
+  private def offset(collectLimitExec: CollectLimitExec): Int = {
+    val offset = DynMethods.builder("offset")
+      .impl(collectLimitExec.getClass)
+      .orNoop()
+      .build()
+    Option(offset.invoke[Int](collectLimitExec))
+      .getOrElse(0)
   }
 
   /**
