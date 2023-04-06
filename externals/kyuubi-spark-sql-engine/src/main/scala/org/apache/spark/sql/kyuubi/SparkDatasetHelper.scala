@@ -31,6 +31,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.schema.RowSet
+import org.apache.kyuubi.reflection.DynMethods
 
 object SparkDatasetHelper {
 
@@ -99,7 +100,7 @@ object SparkDatasetHelper {
 
   def executeArrowBatchCollect: SparkPlan => Array[Array[Byte]] = {
     case adaptiveSparkPlan: AdaptiveSparkPlanExec =>
-      executeArrowBatchCollect(adaptiveSparkPlan.finalPhysicalPlan)
+      executeArrowBatchCollect(finalPhysicalPlan(adaptiveSparkPlan))
     case collectLimit: CollectLimitExec =>
       doCollectLimit(collectLimit)
     case plan: SparkPlan =>
@@ -161,6 +162,36 @@ object SparkDatasetHelper {
       .orElse(Option("4m"))
       .map(JavaUtils.byteStringAs(_, ByteUnit.MiB))
       .get
+  }
+
+  /**
+   * This method provides a reflection-based implementation of
+   * [[AdaptiveSparkPlanExec.finalPhysicalPlan]] that enables us to adapt to the Spark runtime
+   * without patching SPARK-41914.
+   *
+   * TODO: Once we drop support for Spark 3.1.x, we can directly call
+   * [[AdaptiveSparkPlanExec.finalPhysicalPlan]].
+   */
+  private def finalPhysicalPlan(adaptiveSparkPlanExec: AdaptiveSparkPlanExec): SparkPlan = {
+    withFinalPlanUpdate(adaptiveSparkPlanExec, identity)
+  }
+
+  /**
+   * A reflection-based implementation of [[AdaptiveSparkPlanExec.withFinalPlanUpdate]].
+   */
+  private def withFinalPlanUpdate[T](
+      adaptiveSparkPlanExec: AdaptiveSparkPlanExec,
+      fun: SparkPlan => T): T = {
+    val getFinalPhysicalPlan = DynMethods.builder("getFinalPhysicalPlan")
+      .hiddenImpl(adaptiveSparkPlanExec.getClass)
+      .build()
+    val plan = getFinalPhysicalPlan.invoke[SparkPlan](adaptiveSparkPlanExec)
+    val result = fun(plan)
+    val finalPlanUpdate = DynMethods.builder("finalPlanUpdate")
+      .hiddenImpl(adaptiveSparkPlanExec.getClass)
+      .build(adaptiveSparkPlanExec)
+    finalPlanUpdate.invoke[Unit](adaptiveSparkPlanExec)
+    result
   }
 
   /**
