@@ -176,7 +176,7 @@ object SparkDatasetHelper {
    * TODO: Once we drop support for Spark 3.1.x, we can directly call
    * [[AdaptiveSparkPlanExec.finalPhysicalPlan]].
    */
-  private def finalPhysicalPlan(adaptiveSparkPlanExec: AdaptiveSparkPlanExec): SparkPlan = {
+  def finalPhysicalPlan(adaptiveSparkPlanExec: AdaptiveSparkPlanExec): SparkPlan = {
     withFinalPlanUpdate(adaptiveSparkPlanExec, identity)
   }
 

@@ -166,9 +166,8 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       val df = spark.sql(s"select * from t_1 limit $size")
       val headPlan = df.queryExecution.executedPlan.collectLeaves().head
       assert(headPlan.isInstanceOf[AdaptiveSparkPlanExec])
-      assert(
-        headPlan.asInstanceOf[AdaptiveSparkPlanExec].finalPhysicalPlan.isInstanceOf[
-          CollectLimitExec])
+      val finalPhysicalPlan = SparkDatasetHelper.finalPhysicalPlan(AdaptiveSparkPlanExec)
+      assert(finalPhysicalPlan.isInstanceOf[CollectLimitExec])
 
       val arrowBinary = SparkDatasetHelper.executeArrowBatchCollect(df.queryExecution.executedPlan)
 
