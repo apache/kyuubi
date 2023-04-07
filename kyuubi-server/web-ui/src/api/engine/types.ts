@@ -15,41 +15,11 @@
  * limitations under the License.
  */
 
-import { createRouter, createWebHistory } from 'vue-router'
-import overviewRoutes from './overview'
-import workloadRoutes from './workload'
-import operationRoutes from './operation'
-import contactRoutes from './contact'
-import sessionRoutes from './session'
-import engineRoutes from './engine'
+interface IEngineSearch {
+  type: null | string
+  sharelevel: null | string
+  'hive.server2.proxy.user': null | string
+  subdomain?: null | string
+}
 
-const routes = [
-  {
-    path: '/',
-    name: 'main',
-    redirect: {
-      name: 'layout'
-    }
-  },
-  {
-    path: '/layout',
-    name: 'layout',
-    component: () => import('@/views/layout/index.vue'),
-    redirect: 'overview',
-    children: [
-      ...overviewRoutes,
-      ...sessionRoutes,
-      ...workloadRoutes,
-      ...operationRoutes,
-      ...engineRoutes,
-      ...contactRoutes
-    ]
-  }
-]
-
-const router = createRouter({
-  history: createWebHistory('/ui'),
-  routes
-})
-
-export default router
+export { IEngineSearch }
