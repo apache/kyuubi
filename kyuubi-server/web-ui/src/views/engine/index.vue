@@ -38,7 +38,7 @@
           style="width: 210px"
           @change="getList">
           <el-option
-            v-for="item in ['CONNECTION', 'USER', 'GROUP', 'SERVER']"
+            v-for="item in getShareLevel()"
             :key="item"
             :label="item"
             :value="item" />
@@ -78,17 +78,17 @@
 
       <el-table-column prop="user" :label="$t('user')" min-width="15%" />
       <el-table-column prop="version" :label="$t('version')" min-width="15%" />
-      <el-table-column fixed="right" :label="$t('operation')" width="120">
+      <el-table-column fixed="right" :label="$t('operation.text')" width="120">
         <template #default="scope">
           <el-space wrap>
             <el-popconfirm
-              :title="$t('delete_confirm')"
+              :title="$t('operation.delete_confirm')"
               @confirm="handleDeleteEngine(scope.row)">
               <template #reference>
                 <span>
                   <el-tooltip
                     effect="dark"
-                    :content="$t('delete')"
+                    :content="$t('operation.delete')"
                     placement="top">
                     <template #default>
                       <el-button type="danger" icon="Delete" circle />
@@ -111,7 +111,7 @@
   import { useTable } from '@/views/common/use-table'
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
-  import { getEngineType } from '@/utils/engine'
+  import { getEngineType, getShareLevel } from '@/utils/engine'
 
   const { t } = useI18n()
   const { tableData, loading, getList: _getList } = useTable()

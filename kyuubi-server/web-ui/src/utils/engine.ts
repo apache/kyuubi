@@ -19,4 +19,8 @@ function getEngineType() {
   return ['SPARK_SQL', 'FLINK_SQL', 'TRINO', 'HIVE_SQL', 'JDBC']
 }
 
-export { getEngineType }
+function getShareLevel() {
+  return ['CONNECTION', 'USER', 'GROUP', 'SERVER']
+}
+
+export { getEngineType, getShareLevel }
