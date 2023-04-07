@@ -152,6 +152,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
 
   test("SparkDatasetHelper.executeArrowBatchCollect should return expect row count") {
     val returnSize = Seq(
+      0, // spark optimizer guaranty the `limit != 0`, it's just for the sanity check
       7, // less than one partition
       10, // equal to one partition
       13, // between one and two partitions, run two jobs
@@ -159,13 +160,23 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       29, // between two and three partitions
       1000, // all partitions
       1001) // more than total row count
-//      -1) // all
 
+    def runAndCheck(sparkPlan: SparkPlan, expectSize: Int): Unit = {
+      val arrowBinary = SparkDatasetHelper.executeArrowBatchCollect(sparkPlan)
+      val rows = KyuubiArrowConverters.fromBatchIterator(
+        arrowBinary.iterator,
+        sparkPlan.schema,
+        "",
+        KyuubiSparkContextHelper.dummyTaskContext())
+      assert(rows.size == expectSize)
+    }
+
+    val excludedRules = Seq(
+      "org.apache.spark.sql.catalyst.optimizer.EliminateLimits",
+      "org.apache.spark.sql.execution.adaptive.AQEPropagateEmptyRelation").mkString(",")
     withSQLConf(
-      SQLConf.OPTIMIZER_EXCLUDED_RULES.key ->
-        "org.apache.spark.sql.catalyst.optimizer.EliminateLimits",
-      SQLConf.ADAPTIVE_OPTIMIZER_EXCLUDED_RULES.key ->
-        "org.apache.spark.sql.catalyst.optimizer.EliminateLimits") {
+      SQLConf.OPTIMIZER_EXCLUDED_RULES.key -> excludedRules,
+      SQLConf.ADAPTIVE_OPTIMIZER_EXCLUDED_RULES.key -> excludedRules) {
       // aqe
       // outermost AdaptiveSparkPlanExec
       spark.range(1000)
@@ -185,19 +196,10 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
             SparkDatasetHelper.finalPhysicalPlan(headPlan.asInstanceOf[AdaptiveSparkPlanExec])
           assert(finalPhysicalPlan.isInstanceOf[CollectLimitExec])
         }
-
-        val arrowBinary = SparkDatasetHelper.executeArrowBatchCollect(df.queryExecution
-          .executedPlan)
-
-        val rows = KyuubiArrowConverters.fromBatchIterator(
-          arrowBinary.iterator,
-          df.schema,
-          "",
-          KyuubiSparkContextHelper.dummyTaskContext())
         if (size > 1000) {
-          assert(rows.size == 1000)
+          runAndCheck(df.queryExecution.executedPlan, 1000)
         } else {
-          assert(rows.size == size)
+          runAndCheck(df.queryExecution.executedPlan, size)
         }
       }
 
@@ -221,9 +223,9 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
           "",
           KyuubiSparkContextHelper.dummyTaskContext())
         if (size > 1000) {
-          assert(rows.size == 1000)
+          runAndCheck(df.queryExecution.executedPlan, 1000)
         } else {
-          assert(rows.size == size)
+          runAndCheck(df.queryExecution.executedPlan, size)
         }
       }
     }
