@@ -29,7 +29,6 @@
 build/mvn clean package -pl :kyuubi-spark-authz_2.12 -Dspark.version=3.2.1 -Dranger.version=2.3.0
 ```
 
-
 ### Supported Apache Spark Versions
 
 `-Dspark.version=`
@@ -53,4 +52,5 @@ build/mvn clean package -pl :kyuubi-spark-authz_2.12 -Dspark.version=3.2.1 -Dran
 - [x] 1.1.x
 - [x] 1.0.x
 - [x] 0.7.x
-- [x] 0.6.x
+- [ ] 0.6.x
+
