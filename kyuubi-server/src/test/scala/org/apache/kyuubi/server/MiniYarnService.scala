@@ -34,7 +34,7 @@ import org.apache.kyuubi.service.AbstractService
 class MiniYarnService extends AbstractService("TestMiniYarnService") {
 
   private val hadoopConfDir: File = Utils.createTempDir().toFile
-  private val yarnConf: YarnConfiguration = {
+  private var yarnConf: YarnConfiguration = {
     val yarnConfig = new YarnConfiguration()
     // Disable the disk utilization check to avoid the test hanging when people's disks are
     // getting full.
@@ -70,6 +70,10 @@ class MiniYarnService extends AbstractService("TestMiniYarnService") {
     yarnConfig
   }
   private val yarnCluster: MiniYARNCluster = new MiniYARNCluster(getName, 1, 1, 1)
+
+  def setYarnConf(yarnConf: YarnConfiguration): Unit = {
+    this.yarnConf = yarnConf
+  }
 
   override def initialize(conf: KyuubiConf): Unit = {
     yarnCluster.init(yarnConf)

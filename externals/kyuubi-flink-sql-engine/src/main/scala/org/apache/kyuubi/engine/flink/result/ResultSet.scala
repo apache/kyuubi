@@ -22,7 +22,8 @@ import java.util
 import scala.collection.JavaConverters._
 
 import com.google.common.collect.Iterators
-import org.apache.flink.table.api.{ResultKind, TableResult}
+import org.apache.flink.api.common.JobID
+import org.apache.flink.table.api.{DataTypes, ResultKind, TableResult}
 import org.apache.flink.table.catalog.Column
 import org.apache.flink.types.Row
 
@@ -66,6 +67,20 @@ object ResultSet {
       .columns(schema.getColumns)
       .data(rows)
       .build
+  }
+
+  def fromJobId(jobID: JobID): ResultSet = {
+    val data: Array[Row] = if (jobID != null) {
+      Array(Row.of(jobID.toString))
+    } else {
+      // should not happen
+      Array(Row.of("(Empty Job ID)"))
+    }
+    builder
+      .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(Column.physical("result", DataTypes.STRING()))
+      .data(data)
+      .build;
   }
 
   def builder: Builder = new ResultSet.Builder

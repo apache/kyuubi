@@ -24,31 +24,19 @@ import org.apache.flink.configuration.{Configuration, RestOptions}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.table.client.gateway.context.DefaultContext
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 
-trait WithFlinkSQLEngine extends KyuubiFunSuite {
+trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources {
 
   protected val flinkConfig = new Configuration()
   protected var miniCluster: MiniCluster = _
   protected var engine: FlinkSQLEngine = _
   // conf will be loaded until start flink engine
   def withKyuubiConf: Map[String, String]
-  val kyuubiConf: KyuubiConf = FlinkSQLEngine.kyuubiConf
+  protected val kyuubiConf: KyuubiConf = FlinkSQLEngine.kyuubiConf
 
   protected var connectionUrl: String = _
-
-  protected val GENERATED_UDF_CLASS: String = "LowerUDF"
-
-  protected val GENERATED_UDF_CODE: String =
-    s"""
-      public class $GENERATED_UDF_CLASS extends org.apache.flink.table.functions.ScalarFunction {
-        public String eval(String str) {
-          return str.toLowerCase();
-        }
-      }
-     """
 
   override def beforeAll(): Unit = {
     startMiniCluster()
@@ -67,11 +55,6 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
       System.setProperty(k, v)
       kyuubiConf.set(k, v)
     }
-    val udfJar = TestUserClassLoaderJar.createJarFile(
-      Utils.createTempDir("test-jar").toFile,
-      "test-classloader-udf.jar",
-      GENERATED_UDF_CLASS,
-      GENERATED_UDF_CODE)
     val engineContext = new DefaultContext(
       List(udfJar.toURI.toURL).asJava,
       flinkConfig,

@@ -28,7 +28,7 @@ import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.client.gateway.TypedResult
 import org.apache.flink.table.data.{GenericArrayData, GenericMapData, RowData}
 import org.apache.flink.table.data.binary.{BinaryArrayData, BinaryMapData}
-import org.apache.flink.table.operations.{Operation, QueryOperation}
+import org.apache.flink.table.operations.{ModifyOperation, Operation, QueryOperation}
 import org.apache.flink.table.operations.command._
 import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.logical._
@@ -80,6 +80,7 @@ class ExecuteStatement(
       val operation = executor.parseStatement(sessionId, statement)
       operation match {
         case queryOperation: QueryOperation => runQueryOperation(queryOperation)
+        case modifyOperation: ModifyOperation => runModifyOperation(modifyOperation)
         case setOperation: SetOperation =>
           resultSet = OperationUtils.runSetOperation(setOperation, executor, sessionId)
         case resetOperation: ResetOperation =>
@@ -141,6 +142,12 @@ class ExecuteStatement(
         cleanupQueryResult(resultId)
       }
     }
+  }
+
+  private def runModifyOperation(operation: ModifyOperation): Unit = {
+    val result = executor.executeOperation(sessionId, operation)
+    jobId = result.getJobClient.asScala.map(_.getJobID)
+    resultSet = ResultSet.fromJobId(jobId.orNull)
   }
 
   private def runOperation(operation: Operation): Unit = {
