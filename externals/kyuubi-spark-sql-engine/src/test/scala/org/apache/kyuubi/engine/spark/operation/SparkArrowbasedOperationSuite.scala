@@ -173,6 +173,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
 
     val excludedRules = Seq(
       "org.apache.spark.sql.catalyst.optimizer.EliminateLimits",
+      "org.apache.spark.sql.catalyst.optimizer.OptimizeLimitZero",
       "org.apache.spark.sql.execution.adaptive.AQEPropagateEmptyRelation").mkString(",")
     withSQLConf(
       SQLConf.OPTIMIZER_EXCLUDED_RULES.key -> excludedRules,
@@ -214,10 +215,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       returnSize.foreach { size =>
         val df = spark.sql(s"select * from t_2 limit $size")
         val plan = df.queryExecution.executedPlan
-        // rule PropagateEmptyRelation can't be excluded in the Spark-3.1.x, skipped.
-        if (!(SPARK_ENGINE_RUNTIME_VERSION < "3.2" && size == 0)) {
-          assert(plan.isInstanceOf[CollectLimitExec])
-        }
+        assert(plan.isInstanceOf[CollectLimitExec])
         if (size > 1000) {
           runAndCheck(df.queryExecution.executedPlan, 1000)
         } else {
