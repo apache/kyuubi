@@ -214,14 +214,10 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       returnSize.foreach { size =>
         val df = spark.sql(s"select * from t_2 limit $size")
         val plan = df.queryExecution.executedPlan
-        assert(plan.isInstanceOf[CollectLimitExec])
-        val arrowBinary = SparkDatasetHelper.executeArrowBatchCollect(df.queryExecution
-          .executedPlan)
-        val rows = KyuubiArrowConverters.fromBatchIterator(
-          arrowBinary.iterator,
-          df.schema,
-          "",
-          KyuubiSparkContextHelper.dummyTaskContext())
+        // rule PropagateEmptyRelation can't be excluded in the Spark-3.1.x, skipped.
+        if (!(SPARK_ENGINE_RUNTIME_VERSION < "3.2" && size == 0)) {
+          assert(plan.isInstanceOf[CollectLimitExec])
+        }
         if (size > 1000) {
           runAndCheck(df.queryExecution.executedPlan, 1000)
         } else {
