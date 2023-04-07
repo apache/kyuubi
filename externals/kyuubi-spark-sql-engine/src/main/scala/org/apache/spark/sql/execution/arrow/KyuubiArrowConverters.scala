@@ -39,11 +39,6 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
 
   type Batch = (Array[Byte], Long)
 
-  private val rootAllocator = ArrowUtils.rootAllocator.newChildAllocator(
-    s"to${this.getClass.getSimpleName}",
-    0,
-    Long.MaxValue)
-
   /**
    * this method is to slice the input Arrow record batch byte array `bytes`, starting from `start`
    * and taking `length` number of elements.
@@ -57,13 +52,16 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     val in = new ByteArrayInputStream(bytes)
     val out = new ByteArrayOutputStream(bytes.length)
 
+    val rootAllocator = ArrowUtils.rootAllocator.newChildAllocator(
+      s"slice",
+      0,
+      Long.MaxValue)
+    val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId)
+    val root = VectorSchemaRoot.create(arrowSchema, rootAllocator)
     try {
       val recordBatch = MessageSerializer.deserializeRecordBatch(
         new ReadChannel(Channels.newChannel(in)),
         rootAllocator)
-      val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId)
-
-      val root = VectorSchemaRoot.create(arrowSchema, rootAllocator)
       val vectorLoader = new VectorLoader(root)
       vectorLoader.load(recordBatch)
       recordBatch.close()
@@ -77,6 +75,8 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     } finally {
       in.close()
       out.close()
+      root.close()
+      rootAllocator.close()
     }
   }
 
