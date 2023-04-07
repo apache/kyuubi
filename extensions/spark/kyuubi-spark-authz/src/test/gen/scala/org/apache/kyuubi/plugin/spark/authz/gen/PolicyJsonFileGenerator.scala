@@ -76,7 +76,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     }
   }
 
-  def servicePolicies: JsonNode = {
+  private def servicePolicies: JsonNode = {
     val inputStream = Thread.currentThread().getContextClassLoader
       .getResourceAsStream("policies_base.json")
     val rootObjNode = mapper.readTree(inputStream).asInstanceOf[ObjectNode]
