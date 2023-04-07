@@ -38,6 +38,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{SparkSQLEngine, WithSparkSQLEngine}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.SparkDataTypeTests
+import org.apache.kyuubi.reflection.DynFields
 
 class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTypeTests {
 
@@ -406,7 +407,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       }
     }
     (keys, values).zipped.foreach { (k, v) =>
-      if (SQLConf.isStaticConfigKey(k)) {
+      if (isStaticConfigKey(k)) {
         throw new KyuubiException(s"Cannot modify the value of a static config: $k")
       }
       conf.setConfString(k, v)
@@ -418,6 +419,21 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         case (key, None) => conf.unsetConf(key)
       }
     }
+  }
+
+  /**
+   * This method provides a reflection-based implementation of [[SQLConf.isStaticConfigKey]] to
+   * adapt Spark-3.1.x
+   *
+   * TODO: Once we drop support for Spark 3.1.x, we can directly call
+   * [[SQLConf.isStaticConfigKey()]].
+   */
+  private def isStaticConfigKey(key: String): Boolean = {
+    val staticConfKeys = DynFields.builder()
+      .hiddenImpl(SQLConf.getClass, "staticConfKeys")
+      .build[java.util.Set[String]](SQLConf)
+      .get()
+    staticConfKeys.contains(key)
   }
 }
 
