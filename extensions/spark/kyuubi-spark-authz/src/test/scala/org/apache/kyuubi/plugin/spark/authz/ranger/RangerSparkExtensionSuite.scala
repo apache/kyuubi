@@ -708,20 +708,37 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #4658] INSERT OVERWRITE DIRECTORY did check query permission") {
+  test("[KYUUBI #4658] insert overwrite hive directory") {
     val db1 = "default"
     val table = "src"
 
     withCleanTmpResources(Seq((s"$db1.$table", "table"))) {
-      doAs("bob", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
-      val e1 = intercept[AccessControlException](
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
+      val e = intercept[AccessControlException](
         doAs(
           "someone",
           sql(
             s"""INSERT OVERWRITE DIRECTORY '/tmp/test_dir' ROW FORMAT DELIMITED FIELDS
                | TERMINATED BY ','
                | SELECT * FROM $db1.$table;""".stripMargin)))
-      assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id"))
+      assert(e.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+    }
+  }
+
+  test("[KYUUBI #4658] insert overwrite datasource directory") {
+    val db1 = "default"
+    val table = "src"
+
+    withCleanTmpResources(Seq((s"$db1.$table", "table"))) {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
+      val e = intercept[AccessControlException](
+        doAs(
+          "someone",
+          sql(
+            s"""INSERT OVERWRITE DIRECTORY '/tmp/test_dir'
+               | USING parquet
+               | SELECT * FROM $db1.$table;""".stripMargin)))
+      assert(e.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
     }
   }
 }
