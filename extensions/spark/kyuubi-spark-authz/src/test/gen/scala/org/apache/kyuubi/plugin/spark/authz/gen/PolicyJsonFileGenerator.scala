@@ -76,15 +76,6 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     }
   }
 
-  def writeRangerServicePolicesJson(): Unit = {
-    val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-      .split("target").head
-    val policyFileName = "sparkSql_hive_jenkins.json"
-    val policyFile = Paths.get(pluginHome, "src", "test", "resources", policyFileName).toFile
-
-    mapper.writerWithDefaultPrettyPrinter().writeValue(policyFile, servicePolicies)
-  }
-
   def servicePolicies: JsonNode = {
     val inputStream = Thread.currentThread().getContextClassLoader
       .getResourceAsStream("policies_base.json")
