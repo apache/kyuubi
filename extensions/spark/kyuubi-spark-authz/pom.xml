@@ -321,7 +321,6 @@
     </dependencies>
 
     <build>
-
         <testResources>
             <testResource>
                 <directory>${project.basedir}/src/test/resources</directory>
@@ -331,4 +330,38 @@
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
 
+    <profiles>
+        <profile>
+            <id>genpolicy</id>
+            <activation>
+                <!-- activated when Ranger version is identical to required-->
+                <property>
+                    <name>ranger.version</name>
+                    <value>2.3.0</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>add-test-source</id>
+                                <goals>
+                                    <goal>add-test-source</goal>
+                                </goals>
+                                <phase>generate-sources</phase>
+                                <configuration>
+                                    <sources>
+                                        <source>src/test/gen/scala</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
