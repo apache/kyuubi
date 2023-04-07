@@ -17,7 +17,7 @@
 
 import request from '@/utils/request'
 
-export function getAllEngines(params) {
+export function getAllEngines(params: IEngineSearch) {
   return request({
     url: 'api/v1/admin/engine',
     method: 'get',
@@ -25,7 +25,7 @@ export function getAllEngines(params) {
   })
 }
 
-export function deleteEngine(params) {
+export function deleteEngine(params: IEngineSearch) {
   return request({
     url: 'api/v1/admin/engine',
     method: 'delete',
