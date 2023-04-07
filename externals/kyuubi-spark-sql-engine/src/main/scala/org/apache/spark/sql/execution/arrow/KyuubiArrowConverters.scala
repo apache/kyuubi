@@ -55,7 +55,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       start: Int,
       length: Int): Array[Byte] = {
     val in = new ByteArrayInputStream(bytes)
-    val out = new ByteArrayOutputStream()
+    val out = new ByteArrayOutputStream(bytes.length)
 
     try {
       val recordBatch = MessageSerializer.deserializeRecordBatch(

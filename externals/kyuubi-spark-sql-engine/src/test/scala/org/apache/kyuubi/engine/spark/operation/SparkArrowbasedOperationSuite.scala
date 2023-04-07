@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import java.sql.Statement
+import java.util.{Set => JSet}
 
 import org.apache.spark.KyuubiSparkContextHelper
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
@@ -431,7 +432,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   private def isStaticConfigKey(key: String): Boolean = {
     val staticConfKeys = DynFields.builder()
       .hiddenImpl(SQLConf.getClass, "staticConfKeys")
-      .build[java.util.Set[String]](SQLConf)
+      .build[JSet[String]](SQLConf)
       .get()
     staticConfKeys.contains(key)
   }

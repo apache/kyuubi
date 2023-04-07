@@ -210,11 +210,12 @@ object SparkDatasetHelper extends Logging {
    * earlier versions of Spark, this function uses reflective calls to the "offset".
    */
   private def offset(collectLimitExec: CollectLimitExec): Int = {
-    val offset = DynMethods.builder("offset")
-      .impl(collectLimitExec.getClass)
-      .orNoop()
-      .build()
-    Option(offset.invoke[Int](collectLimitExec))
+    Option(
+      DynMethods.builder("offset")
+        .impl(collectLimitExec.getClass)
+        .orNoop()
+        .build()
+        .invoke[Int](collectLimitExec))
       .getOrElse(0)
   }
 
