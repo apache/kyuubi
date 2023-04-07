@@ -182,3 +182,17 @@ case class KRangerPolicyItemRowFilterInfo(
     i
   }
 }
+
+object RangerAccessType {
+  val select = "select"
+  val update = "update"
+  val create = "create"
+  val drop = "drop"
+  val alter = "alter"
+  val index = "index"
+  val lock = "lock"
+  val all = "all"
+  val read = "read"
+  val write = "write"
+  val use = "use"
+}

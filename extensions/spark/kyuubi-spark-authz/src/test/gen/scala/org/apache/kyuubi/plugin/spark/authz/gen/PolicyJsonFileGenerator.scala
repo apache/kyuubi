@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
-import java.nio.file.Paths
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
-import scala.language.implicitConversions
+import scala.collection.JavaConverters._
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
@@ -31,38 +32,60 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.ranger.plugin.model.RangerPolicy
 
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess.allowTypes
-import org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator.RangerAccessType.{all, alter, create, drop, index, lock, read, select, update, use, write, RangerAccessType}
+import org.apache.kyuubi.plugin.spark.authz.gen.RangerAccessType._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions.getRangerObject
 
 /**
  * Generates the policy file to test/main/resources dir.
  *
  * Usage:
- * build/mvn scala:run -pl :kyuubi-spark-authz_2.12
- * -DmainClass=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator
+ * KYUUBI_UPDATE=1 build/mvn clean test -pl :kyuubi-spark-authz_2.12 -Dtest=none
+ * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator -Pgenpolicy
  */
-private object PolicyJsonFileGenerator {
-  def main(args: Array[String]): Unit = {
-    writeRangerServicePolicesJson()
-  }
 
+// scalastyle:off
+import org.scalatest.funsuite.AnyFunSuite
+class PolicyJsonFileGenerator extends AnyFunSuite {
+  // scalastyle:on
   final private val mapper: ObjectMapper = JsonMapper.builder()
     .addModule(DefaultScalaModule)
     .serializationInclusion(Include.NON_NULL)
     .build()
+
+  test("Check ranger policy file") {
+    val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
+      .split("target").head
+    val policyFileName = "sparkSql_hive_jenkins.json"
+    val policyFilePath =
+      Paths.get(pluginHome, "src", "test", "resources", policyFileName)
+    val generatedStr = mapper.writerWithDefaultPrettyPrinter()
+      .writeValueAsString(servicePolicies)
+
+    if (sys.env.get("KYUUBI_UPDATE").contains("1")) {
+      // scalastyle:off println
+      println(s"Writing ranger policies to $policyFileName.")
+      // scalastyle:on println
+      Files.write(
+        policyFilePath,
+        generatedStr.getBytes(StandardCharsets.UTF_8),
+        StandardOpenOption.CREATE,
+        StandardOpenOption.TRUNCATE_EXISTING)
+    } else {
+      val exitedFileContent = Files.readAllLines(policyFilePath).asScala.mkString("\n")
+      assert(generatedStr.equals(exitedFileContent))
+    }
+  }
 
   def writeRangerServicePolicesJson(): Unit = {
     val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
       .split("target").head
     val policyFileName = "sparkSql_hive_jenkins.json"
     val policyFile = Paths.get(pluginHome, "src", "test", "resources", policyFileName).toFile
-    // scalastyle:off println
-    println(s"Writing ranger policies to $policyFileName.")
-    // scalastyle:on println
+
     mapper.writerWithDefaultPrettyPrinter().writeValue(policyFile, servicePolicies)
   }
 
-  private def servicePolicies: JsonNode = {
+  def servicePolicies: JsonNode = {
     val inputStream = Thread.currentThread().getContextClassLoader
       .getResourceAsStream("policies_base.json")
     val rootObjNode = mapper.readTree(inputStream).asInstanceOf[ObjectNode]
@@ -129,13 +152,6 @@ private object PolicyJsonFileGenerator {
   private val sparkCatalog = "spark_catalog"
   private val icebergNamespace = "iceberg_ns"
   private val namespace1 = "ns1"
-
-  // access type
-  object RangerAccessType extends Enumeration {
-    type RangerAccessType = Value
-    val select, update, create, drop, alter, index, lock, all, read, write, use = Value
-  }
-  implicit def actionTypeStr(t: RangerAccessType): String = t.toString
 
   // resources
   private val allDatabaseRes = databaseRes(List("*"))
