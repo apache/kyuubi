@@ -16,6 +16,7 @@
  */
 
 import request from '@/utils/request'
+import { IEngineSearch } from './types'
 
 export function getAllEngines(params: IEngineSearch) {
   return request({
