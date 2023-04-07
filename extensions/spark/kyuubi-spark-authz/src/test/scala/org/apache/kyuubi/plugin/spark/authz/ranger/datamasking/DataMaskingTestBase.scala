@@ -128,7 +128,7 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
       "bob",
       "SELECT coalesce(max(value1), 1), coalesce(max(value2), 1), coalesce(max(value3), 1), " +
         "coalesce(max(value4), timestamp '2018-01-01 22:33:44'), coalesce(max(value5), 1) " +
-        "FROM default.src  where key = 1",
+        "FROM default.src where key = 1",
       result)
   }
 
@@ -138,7 +138,7 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     checkAnswer(
       "bob",
       "SELECT value1, value2, value3, value4, value5 FROM default.src WHERE value2 in " +
-        "(SELECT value2 as key FROM default.src  where key = 1)",
+        "(SELECT value2 as key FROM default.src where key = 1)",
       result)
   }
 
@@ -186,7 +186,7 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
 
   test("self join on a masked table") {
     val s = "SELECT a.value1, b.value1 FROM default.src a" +
-      " join default.src b on a.value1=b.value1  where a.key = 1 and b.key = 1 "
+      " join default.src b on a.value1=b.value1 where a.key = 1 and b.key = 1 "
     checkAnswer("bob", s, Seq(Row(md5Hex("1"), md5Hex("1"))))
     // just for testing query multiple times, don't delete it
     checkAnswer("bob", s, Seq(Row(md5Hex("1"), md5Hex("1"))))
