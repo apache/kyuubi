@@ -71,8 +71,8 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
         StandardOpenOption.CREATE,
         StandardOpenOption.TRUNCATE_EXISTING)
     } else {
-      val exitedFileContent = Files.readAllLines(policyFilePath).asScala.mkString("\n")
-      assert(generatedStr.equals(exitedFileContent))
+      val existedFileContent = Files.readAllLines(policyFilePath).asScala.mkString("\n")
+      assert(generatedStr.equals(existedFileContent))
     }
   }
 
