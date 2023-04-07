@@ -30,21 +30,12 @@ import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.ranger.plugin.model.RangerPolicy
+// scalastyle:off
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess.allowTypes
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerAccessType._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions.getRangerObject
-
-/**
- * Generates the policy file to test/main/resources dir.
- *
- * Usage:
- * KYUUBI_UPDATE=1 build/mvn clean test -pl :kyuubi-spark-authz_2.12 -Dtest=none
- * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator -Pgenpolicy
- */
-
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
 class PolicyJsonFileGenerator extends AnyFunSuite {
   // scalastyle:on
   final private val mapper: ObjectMapper = JsonMapper.builder()
@@ -72,7 +63,12 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
         StandardOpenOption.TRUNCATE_EXISTING)
     } else {
       val existedFileContent = Files.readAllLines(policyFilePath).asScala.mkString("\n")
-      assert(generatedStr.equals(existedFileContent))
+      withClue("Please regenerate the ranger policy file by running"
+        + "`KYUUBI_UPDATE=1 build/mvn clean test -Pgenpolicy"
+        + " -pl :kyuubi-spark-authz_2.12 -Dtest=none"
+        + " -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator`") {
+        assert(generatedStr.equals(existedFileContent))
+      }
     }
   }
 
