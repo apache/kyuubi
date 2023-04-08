@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.arrow
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.channels.Channels
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.arrow.vector._
@@ -52,21 +53,25 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     val in = new ByteArrayInputStream(bytes)
     val out = new ByteArrayOutputStream(bytes.length)
 
-    val rootAllocator = ArrowUtils.rootAllocator.newChildAllocator(
-      s"slice",
+    var vectorSchemaRoot: VectorSchemaRoot = null
+    var slicedVectorSchemaRoot: VectorSchemaRoot = null
+
+    val sliceAllocator = ArrowUtils.rootAllocator.newChildAllocator(
+      "slice",
       0,
       Long.MaxValue)
     val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId)
-    val root = VectorSchemaRoot.create(arrowSchema, rootAllocator)
+    vectorSchemaRoot = VectorSchemaRoot.create(arrowSchema, sliceAllocator)
     try {
       val recordBatch = MessageSerializer.deserializeRecordBatch(
         new ReadChannel(Channels.newChannel(in)),
-        rootAllocator)
-      val vectorLoader = new VectorLoader(root)
+        sliceAllocator)
+      val vectorLoader = new VectorLoader(vectorSchemaRoot)
       vectorLoader.load(recordBatch)
       recordBatch.close()
+      slicedVectorSchemaRoot = vectorSchemaRoot.slice(start, length)
 
-      val unloader = new VectorUnloader(root.slice(start, length))
+      val unloader = new VectorUnloader(slicedVectorSchemaRoot)
       val writeChannel = new WriteChannel(Channels.newChannel(out))
       val batch = unloader.getRecordBatch()
       MessageSerializer.serialize(writeChannel, batch)
@@ -75,8 +80,15 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     } finally {
       in.close()
       out.close()
-      root.close()
-      rootAllocator.close()
+      if (vectorSchemaRoot != null) {
+        vectorSchemaRoot.getFieldVectors.asScala.foreach(_.close())
+        vectorSchemaRoot.close()
+      }
+      if (slicedVectorSchemaRoot != null) {
+        slicedVectorSchemaRoot.getFieldVectors.asScala.foreach(_.close())
+        slicedVectorSchemaRoot.close()
+      }
+      sliceAllocator.close()
     }
   }
 
