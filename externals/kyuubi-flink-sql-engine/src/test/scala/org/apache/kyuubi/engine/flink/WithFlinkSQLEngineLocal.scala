@@ -19,10 +19,9 @@ package org.apache.kyuubi.engine.flink
 
 import scala.collection.JavaConverters._
 
-import org.apache.flink.client.cli.{CustomCommandLine, DefaultCLI}
 import org.apache.flink.configuration.{Configuration, RestOptions}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
-import org.apache.flink.table.client.gateway.context.DefaultContext
+import org.apache.flink.table.gateway.service.context.DefaultContext
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
@@ -32,13 +31,18 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
   protected val flinkConfig = new Configuration()
   protected var miniCluster: MiniCluster = _
   protected var engine: FlinkSQLEngine = _
-  // conf will be loaded until start flink engine
+  // conf will be loaded when flink engine starts
   def withKyuubiConf: Map[String, String]
   protected val kyuubiConf: KyuubiConf = FlinkSQLEngine.kyuubiConf
 
   protected var connectionUrl: String = _
 
   override def beforeAll(): Unit = {
+    withKyuubiConf.foreach { case (k, v) =>
+      if (k.startsWith("flink.")) {
+        flinkConfig.setString(k.stripPrefix("flink."), v)
+      }
+    }
     startMiniCluster()
     startFlinkEngine()
     super.beforeAll()
@@ -56,9 +60,8 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
       kyuubiConf.set(k, v)
     }
     val engineContext = new DefaultContext(
-      List(udfJar.toURI.toURL).asJava,
       flinkConfig,
-      List[CustomCommandLine](new DefaultCLI).asJava)
+      List(udfJar.toURI.toURL).asJava)
     FlinkSQLEngine.startEngine(engineContext)
     engine = FlinkSQLEngine.currentEngine.get
     connectionUrl = engine.frontendServices.head.connectionUrl

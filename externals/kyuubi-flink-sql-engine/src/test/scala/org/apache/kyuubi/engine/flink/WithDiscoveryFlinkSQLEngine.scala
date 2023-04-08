@@ -39,7 +39,7 @@ trait WithDiscoveryFlinkSQLEngine extends WithFlinkSQLEngineOnYarn {
       HA_NAMESPACE.key -> namespace,
       HA_ENGINE_REF_ID.key -> engineRefId,
       ENGINE_TYPE.key -> "FLINK_SQL",
-      ENGINE_SHARE_LEVEL.key -> shareLevel)
+      ENGINE_SHARE_LEVEL.key -> shareLevel) ++ testExtraConf
   }
 
   def withDiscoveryClient(f: DiscoveryClient => Unit): Unit = {
@@ -49,7 +49,7 @@ trait WithDiscoveryFlinkSQLEngine extends WithFlinkSQLEngineOnYarn {
   def getFlinkEngineServiceUrl: String = {
     var hostPort: Option[(String, Int)] = None
     var retries = 0
-    while (hostPort.isEmpty && retries < 5) {
+    while (hostPort.isEmpty && retries < 10) {
       withDiscoveryClient(client => hostPort = client.getServerHost(namespace))
       retries += 1
       Thread.sleep(1000L)

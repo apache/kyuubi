@@ -77,6 +77,12 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
+            <artifactId>flink-sql-gateway</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
             <artifactId>flink-table-common</artifactId>
             <scope>provided</scope>
         </dependency>

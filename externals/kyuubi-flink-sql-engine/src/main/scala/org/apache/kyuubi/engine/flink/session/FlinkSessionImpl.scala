@@ -19,10 +19,12 @@ package org.apache.kyuubi.engine.flink.session
 
 import scala.util.control.NonFatal
 
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.util.EnvironmentInformation
 import org.apache.flink.table.client.gateway.SqlExecutionException
-import org.apache.flink.table.client.gateway.context.SessionContext
-import org.apache.flink.table.client.gateway.local.LocalExecutor
+import org.apache.flink.table.gateway.api.operation.OperationHandle
+import org.apache.flink.table.gateway.service.context.SessionContext
+import org.apache.flink.table.gateway.service.session.Session
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -37,14 +39,15 @@ class FlinkSessionImpl(
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,
-    val executor: LocalExecutor)
+    val _session: Session)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   override val handle: SessionHandle =
-    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
+      .getOrElse(SessionHandle.fromUUID(_session.getSessionHandle.getIdentifier.toString))
 
   lazy val sessionContext: SessionContext = {
-    FlinkEngineUtils.getSessionContext(executor, handle.identifier.toString)
+    FlinkEngineUtils.getSessionContext(_session)
   }
 
   private def setModifiableConfig(key: String, value: String): Unit = {
@@ -56,16 +59,15 @@ class FlinkSessionImpl(
   }
 
   override def open(): Unit = {
-    executor.openSession(handle.identifier.toString)
+    val executor = _session.createExecutor(Configuration.fromMap(_session.getSessionConfig))
 
     val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
       Array("use:catalog", "use:database").contains(k)
     }
 
     useCatalogAndDatabaseConf.get("use:catalog").foreach { catalog =>
-      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
       try {
-        tableEnv.useCatalog(catalog)
+        executor.executeStatement(OperationHandle.create, s"USE CATALOG $catalog")
       } catch {
         case NonFatal(e) =>
           throw e
@@ -73,9 +75,8 @@ class FlinkSessionImpl(
     }
 
     useCatalogAndDatabaseConf.get("use:database").foreach { database =>
-      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
       try {
-        tableEnv.useDatabase(database)
+        executor.executeStatement(OperationHandle.create, s"USE $database")
       } catch {
         case NonFatal(e) =>
           if (database != "default") {

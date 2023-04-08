@@ -25,7 +25,9 @@ class FlinkOperationLocalSuite extends FlinkOperationSuite
   with WithFlinkSQLEngineLocal {
 
   override def withKyuubiConf: Map[String, String] =
-    Map(OPERATION_PLAN_ONLY_MODE.key -> NoneMode.name)
+    Map(
+      OPERATION_PLAN_ONLY_MODE.key -> NoneMode.name,
+      "flink.execution.target" -> "remote") ++ testExtraConf
 
   override protected def jdbcUrl: String =
     s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;"
