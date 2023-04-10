@@ -27,4 +27,6 @@ object KyuubiSparkContextHelper {
   def waitListenerBus(spark: SparkSession): Unit = {
     spark.sparkContext.listenerBus.waitUntilEmpty()
   }
+
+  def dummyTaskContext(): TaskContextImpl = TaskContext.empty()
 }

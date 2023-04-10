@@ -529,8 +529,8 @@
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
                     <!--
-                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
-                      version of Log4j it depends on.
+                      The module is only used in Kyuubi Spark Extensions and Engine Spark SQL, so we
+                      don't care about which version of Log4j it depends on.
                      -->
                 </exclusions>
             </dependency>
