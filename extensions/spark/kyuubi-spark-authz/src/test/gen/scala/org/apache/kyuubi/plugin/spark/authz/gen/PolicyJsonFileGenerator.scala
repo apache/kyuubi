@@ -78,7 +78,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
       withClue("Please regenerate the ranger policy file by running"
         + "`KYUUBI_UPDATE=1 build/mvn clean test -Pgen-policy"
         + " -pl :kyuubi-spark-authz_2.12 -Dtest=none"
-        + " -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator`") {
+        + " -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator`.") {
         assert(generatedStr.equals(existedFileContent))
       }
     }
