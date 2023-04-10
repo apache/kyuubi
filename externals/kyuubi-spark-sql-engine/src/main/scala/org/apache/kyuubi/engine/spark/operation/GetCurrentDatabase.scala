@@ -21,10 +21,15 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.IterableFetchIterator
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_SCHEM
 import org.apache.kyuubi.session.Session
 
 class GetCurrentDatabase(session: Session) extends SparkOperation(session) {
+
+  private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
+
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def resultSchema: StructType = {
     new StructType()
