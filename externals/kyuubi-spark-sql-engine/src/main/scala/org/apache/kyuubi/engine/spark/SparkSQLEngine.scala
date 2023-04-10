@@ -359,7 +359,7 @@ object SparkSQLEngine extends Logging {
 
   private def startInitTimeoutChecker(startTime: Long, timeout: Long): Unit = {
     val mainThread = Thread.currentThread()
-    new Thread(
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor("CreateSparkTimeoutChecker", false).execute(
       () => {
         while (System.currentTimeMillis() - startTime < timeout && !sparkSessionCreated.get()) {
           Thread.sleep(500)
@@ -367,8 +367,7 @@ object SparkSQLEngine extends Logging {
         if (!sparkSessionCreated.get()) {
           mainThread.interrupt()
         }
-      },
-      "CreateSparkTimeoutChecker").start()
+      })
   }
 
   private def isOnK8sClusterMode: Boolean = {
