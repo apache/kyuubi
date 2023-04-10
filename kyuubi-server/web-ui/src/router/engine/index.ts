@@ -15,18 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark
-
-import org.apache.spark.sql.SparkSession
-
-/**
- * A place to invoke non-public APIs of [[SparkContext]], for test only.
- */
-object KyuubiSparkContextHelper {
-
-  def waitListenerBus(spark: SparkSession): Unit = {
-    spark.sparkContext.listenerBus.waitUntilEmpty()
+const routes = [
+  {
+    path: '/engine/engine-statistics',
+    name: 'engine-statistics',
+    component: () => import('@/views/engine/index.vue')
   }
+]
 
-  def dummyTaskContext(): TaskContextImpl = TaskContext.empty()
-}
+export default routes

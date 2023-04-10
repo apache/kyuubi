@@ -26,6 +26,7 @@ import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{FilterExec, ProjectExec, SortExec, SparkPlan}
 import org.apache.spark.sql.execution.adaptive._
+import org.apache.spark.sql.execution.columnar.InMemoryTableScanExec
 import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExchangeExec}
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, MarkNumOutputColumnsRule}
@@ -66,6 +67,13 @@ case class FinalStageResourceManager(session: SparkSession)
 
     val stageOpt = findFinalRebalanceStage(plan)
     if (stageOpt.isEmpty) {
+      return plan
+    }
+
+    // It's not safe to kill executors if this plan contains table cache.
+    // If the executor loses then the rdd would re-compute those partition.
+    if (hasTableCache(plan) &&
+      conf.getConf(KyuubiSQLConf.FINAL_WRITE_STAGE_SKIP_KILLING_EXECUTORS_FOR_TABLE_CACHE)) {
       return plan
     }
 
@@ -188,9 +196,18 @@ case class FinalStageResourceManager(session: SparkSession)
     // see `https://github.com/apache/spark/pull/20604`.
     // It may cause the status in `ExecutorAllocationManager` inconsistent with
     // `CoarseGrainedSchedulerBackend` for a while. But it should be synchronous finally.
+    //
+    // We should adjust target num executors, otherwise `YarnAllocator` might re-request original
+    // target executors if DRA has not updated target executors yet.
+    // Note, DRA would re-adjust executors if there are more tasks to be executed, so we are safe.
+    //
+    //  * We kill executor
+    //      * YarnAllocator re-request target executors
+    //         * DRA can not release executors since they are new added
+    // ----------------------------------------------------------------> timeline
     executorAllocationClient.killExecutors(
       executorIds = executorsToKill,
-      adjustTargetNumExecutors = false,
+      adjustTargetNumExecutors = true,
       countFailures = false,
       force = false)
   }
@@ -201,7 +218,7 @@ case class FinalStageResourceManager(session: SparkSession)
     OptimizeShuffleWithLocalRead)
 }
 
-trait FinalRebalanceStageHelper {
+trait FinalRebalanceStageHelper extends AdaptiveSparkPlanHelper {
   @tailrec
   final protected def findFinalRebalanceStage(plan: SparkPlan): Option[ShuffleQueryStageExec] = {
     plan match {
@@ -215,5 +232,12 @@ trait FinalRebalanceStageHelper {
         Some(stage)
       case _ => None
     }
+  }
+
+  final protected def hasTableCache(plan: SparkPlan): Boolean = {
+    find(plan) {
+      case _: InMemoryTableScanExec => true
+      case _ => false
+    }.isDefined
   }
 }

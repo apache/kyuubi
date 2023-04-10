@@ -55,6 +55,17 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
       "SELECT 20, 2, 'kyuubi', 'y', timestamp'2018-11-17 12:34:56', 'world'")
     sql("INSERT INTO default.src " +
       "SELECT 30, 3, 'spark', 'a', timestamp'2018-11-17 12:34:56', 'world'")
+
+    // scalastyle:off
+    val value1 = "hello WORD 123 ~!@# AßþΔЙקم๗ቐあア叶葉엽"
+    val value2 = "AßþΔЙקم๗ቐあア叶葉엽 hello WORD 123 ~!@#"
+    // AßþΔЙקم๗ቐあア叶葉엽 reference https://zh.wikipedia.org/zh-cn/Unicode#XML.E5.92.8CUnicode
+    // scalastyle:on
+    sql(s"INSERT INTO default.src " +
+      s"SELECT 10, 4, '$value1', '$value1', timestamp'2018-11-17 12:34:56', '$value1'")
+    sql("INSERT INTO default.src " +
+      s"SELECT 11, 5, '$value2', '$value2', timestamp'2018-11-17 12:34:56', '$value2'")
+
     sql(s"CREATE TABLE default.unmasked $format AS SELECT * FROM default.src")
   }
 
@@ -74,23 +85,30 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   }
 
   test("simple query with a user doesn't have mask rules") {
-    checkAnswer("kent", "SELECT key FROM default.src order by key", Seq(Row(1), Row(20), Row(30)))
+    checkAnswer(
+      "kent",
+      "SELECT key FROM default.src order by key",
+      Seq(Row(1), Row(10), Row(11), Row(20), Row(30)))
   }
 
   test("simple query with a user has mask rules") {
     val result =
       Seq(Row(md5Hex("1"), "xxxxx", "worlx", Timestamp.valueOf("2018-01-01 00:00:00"), "Xorld"))
-    checkAnswer("bob", "SELECT value1, value2, value3, value4, value5 FROM default.src", result)
     checkAnswer(
       "bob",
-      "SELECT value1 as key, value2, value3, value4, value5 FROM default.src",
+      "SELECT value1, value2, value3, value4, value5 FROM default.src " +
+        "where key = 1",
+      result)
+    checkAnswer(
+      "bob",
+      "SELECT value1 as key, value2, value3, value4, value5 FROM default.src where key = 1",
       result)
   }
 
   test("star") {
     val result =
       Seq(Row(1, md5Hex("1"), "xxxxx", "worlx", Timestamp.valueOf("2018-01-01 00:00:00"), "Xorld"))
-    checkAnswer("bob", "SELECT * FROM default.src", result)
+    checkAnswer("bob", "SELECT * FROM default.src where key = 1", result)
   }
 
   test("simple udf") {
@@ -98,7 +116,8 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
       Seq(Row(md5Hex("1"), "xxxxx", "worlx", Timestamp.valueOf("2018-01-01 00:00:00"), "Xorld"))
     checkAnswer(
       "bob",
-      "SELECT max(value1), max(value2), max(value3), max(value4), max(value5) FROM default.src",
+      "SELECT max(value1), max(value2), max(value3), max(value4), max(value5) FROM default.src" +
+        " where key = 1",
       result)
   }
 
@@ -109,7 +128,7 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
       "bob",
       "SELECT coalesce(max(value1), 1), coalesce(max(value2), 1), coalesce(max(value3), 1), " +
         "coalesce(max(value4), timestamp '2018-01-01 22:33:44'), coalesce(max(value5), 1) " +
-        "FROM default.src",
+        "FROM default.src where key = 1",
       result)
   }
 
@@ -119,13 +138,16 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     checkAnswer(
       "bob",
       "SELECT value1, value2, value3, value4, value5 FROM default.src WHERE value2 in " +
-        "(SELECT value2 as key FROM default.src)",
+        "(SELECT value2 as key FROM default.src where key = 1)",
       result)
   }
 
   test("create a unmasked table as select from a masked one") {
     withCleanTmpResources(Seq(("default.src2", "table"))) {
-      doAs("bob", sql(s"CREATE TABLE default.src2 $format AS SELECT value1 FROM default.src"))
+      doAs(
+        "bob",
+        sql(s"CREATE TABLE default.src2 $format AS SELECT value1 FROM default.src " +
+          s"where key = 1"))
       checkAnswer("bob", "SELECT value1 FROM default.src2", Seq(Row(md5Hex("1"))))
     }
   }
@@ -133,12 +155,24 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   test("insert into a unmasked table from a masked one") {
     withCleanTmpResources(Seq(("default.src2", "table"), ("default.src3", "table"))) {
       doAs("bob", sql(s"CREATE TABLE default.src2 (value1 string) $format"))
-      doAs("bob", sql(s"INSERT INTO default.src2 SELECT value1 from default.src"))
-      doAs("bob", sql(s"INSERT INTO default.src2 SELECT value1 as v from default.src"))
+      doAs(
+        "bob",
+        sql(s"INSERT INTO default.src2 SELECT value1 from default.src " +
+          s"where key = 1"))
+      doAs(
+        "bob",
+        sql(s"INSERT INTO default.src2 SELECT value1 as v from default.src " +
+          s"where key = 1"))
       checkAnswer("bob", "SELECT value1 FROM default.src2", Seq(Row(md5Hex("1")), Row(md5Hex("1"))))
       doAs("bob", sql(s"CREATE TABLE default.src3 (k int, value string) $format"))
-      doAs("bob", sql(s"INSERT INTO default.src3 SELECT key, value1 from default.src"))
-      doAs("bob", sql(s"INSERT INTO default.src3 SELECT key, value1 as v from default.src"))
+      doAs(
+        "bob",
+        sql(s"INSERT INTO default.src3 SELECT key, value1 from default.src  " +
+          s"where key = 1"))
+      doAs(
+        "bob",
+        sql(s"INSERT INTO default.src3 SELECT key, value1 as v from default.src " +
+          s"where key = 1"))
       checkAnswer("bob", "SELECT value FROM default.src3", Seq(Row(md5Hex("1")), Row(md5Hex("1"))))
     }
   }
@@ -152,7 +186,7 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
 
   test("self join on a masked table") {
     val s = "SELECT a.value1, b.value1 FROM default.src a" +
-      " join default.src b on a.value1=b.value1"
+      " join default.src b on a.value1=b.value1 where a.key = 1 and b.key = 1 "
     checkAnswer("bob", s, Seq(Row(md5Hex("1"), md5Hex("1"))))
     // just for testing query multiple times, don't delete it
     checkAnswer("bob", s, Seq(Row(md5Hex("1"), md5Hex("1"))))
@@ -228,17 +262,18 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   test("union an unmasked table") {
     val s = """
       SELECT value1 from (
-           SELECT a.value1 FROM default.src a
+           SELECT a.value1 FROM default.src a where a.key = 1
            union
           (SELECT b.value1 FROM default.unmasked b)
       ) c order by value1
       """
-    checkAnswer("bob", s, Seq(Row("1"), Row("2"), Row("3"), Row(md5Hex("1"))))
+    doAs("bob", sql(s).show)
+    checkAnswer("bob", s, Seq(Row("1"), Row("2"), Row("3"), Row("4"), Row("5"), Row(md5Hex("1"))))
   }
 
   test("union a masked table") {
-    val s = "SELECT a.value1 FROM default.src a union" +
-      " (SELECT b.value1 FROM default.src b)"
+    val s = "SELECT a.value1 FROM default.src a where a.key = 1 union" +
+      " (SELECT b.value1 FROM default.src b where b.key = 1)"
     checkAnswer("bob", s, Seq(Row(md5Hex("1"))))
   }
 
@@ -252,12 +287,42 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     withCleanTmpResources(Seq(("default.perm_view", "view"))) {
       checkAnswer(
         "perm_view_user",
-        "SELECT value1, value2 FROM default.src where key < 20",
+        "SELECT value1, value2 FROM default.src where key = 1",
         Seq(Row(1, "hello")))
       checkAnswer(
         "perm_view_user",
-        "SELECT value1, value2 FROM default.perm_view where key < 20",
+        "SELECT value1, value2 FROM default.perm_view where key = 1",
         Seq(Row(md5Hex("1"), "hello")))
     }
   }
+
+  // This test only includes a small subset of UCS-2 characters.
+  // But in theory, it should work for all characters
+  test("test MASK,MASK_SHOW_FIRST_4,MASK_SHOW_LAST_4 rule  with non-English character set") {
+    val s1 = s"SELECT * FROM default.src where key = 10"
+    val s2 = s"SELECT * FROM default.src where key = 11"
+    // scalastyle:off
+    checkAnswer(
+      "bob",
+      s1,
+      Seq(Row(
+        10,
+        md5Hex("4"),
+        "xxxxxUXXXXUnnnUUUUUUXUUUUUUUUUUUUU",
+        "hellxUXXXXUnnnUUUUUUXUUUUUUUUUUUUU",
+        Timestamp.valueOf("2018-01-01 00:00:00"),
+        "xxxxxUXXXXUnnnUUUUUUXUUUUUUUUUア叶葉엽")))
+    checkAnswer(
+      "bob",
+      s2,
+      Seq(Row(
+        11,
+        md5Hex("5"),
+        "XUUUUUUUUUUUUUUxxxxxUXXXXUnnnUUUUU",
+        "AßþΔUUUUUUUUUUUxxxxxUXXXXUnnnUUUUU",
+        Timestamp.valueOf("2018-01-01 00:00:00"),
+        "XUUUUUUUUUUUUUUxxxxxUXXXXUnnnU~!@#")))
+    // scalastyle:on
+  }
+
 }

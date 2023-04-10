@@ -54,18 +54,18 @@
             : '-'
         }}</template>
       </el-table-column>
-      <el-table-column fixed="right" :label="$t('operation')" width="110">
+      <el-table-column fixed="right" :label="$t('operation.text')" width="110">
         <template #default="scope">
           <el-space wrap>
             <el-popconfirm
               v-if="!isTerminalState(scope.row.state)"
-              :title="$t('cancel_confirm')"
+              :title="$t('operation.cancel_confirm')"
               @confirm="handleOperate(scope.row.identifier, 'CANCEL')">
               <template #reference>
                 <span>
                   <el-tooltip
                     effect="dark"
-                    :content="$t('cancel')"
+                    :content="$t('operation.cancel')"
                     placement="top">
                     <template #default>
                       <el-button type="danger" icon="Remove" circle />
@@ -75,13 +75,13 @@
               </template>
             </el-popconfirm>
             <el-popconfirm
-              :title="$t('close_confirm')"
+              :title="$t('operation.close_confirm')"
               @confirm="handleOperate(scope.row.identifier, 'CLOSE')">
               <template #reference>
                 <span>
                   <el-tooltip
                     effect="dark"
-                    :content="$t('close')"
+                    :content="$t('operation.close')"
                     placement="top">
                     <template #default>
                       <el-button type="danger" icon="CircleClose" circle />

@@ -21,6 +21,7 @@ import workloadRoutes from './workload'
 import operationRoutes from './operation'
 import contactRoutes from './contact'
 import sessionRoutes from './session'
+import engineRoutes from './engine'
 
 const routes = [
   {
@@ -40,6 +41,7 @@ const routes = [
       ...sessionRoutes,
       ...workloadRoutes,
       ...operationRoutes,
+      ...engineRoutes,
       ...contactRoutes
     ]
   }

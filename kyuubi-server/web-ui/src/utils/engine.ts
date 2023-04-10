@@ -15,18 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark
-
-import org.apache.spark.sql.SparkSession
-
-/**
- * A place to invoke non-public APIs of [[SparkContext]], for test only.
- */
-object KyuubiSparkContextHelper {
-
-  def waitListenerBus(spark: SparkSession): Unit = {
-    spark.sparkContext.listenerBus.waitUntilEmpty()
-  }
-
-  def dummyTaskContext(): TaskContextImpl = TaskContext.empty()
+function getEngineType() {
+  return ['SPARK_SQL', 'FLINK_SQL', 'TRINO', 'HIVE_SQL', 'JDBC']
 }
+
+function getShareLevel() {
+  return ['CONNECTION', 'USER', 'GROUP', 'SERVER']
+}
+
+export { getEngineType, getShareLevel }

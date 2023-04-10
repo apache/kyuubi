@@ -198,6 +198,13 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val FINAL_WRITE_STAGE_SKIP_KILLING_EXECUTORS_FOR_TABLE_CACHE =
+    buildConf("spark.sql.finalWriteStage.skipKillingExecutorsForTableCache")
+      .doc("When true, skip killing executors if the plan has table caches.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val FINAL_WRITE_STAGE_PARTITION_FACTOR =
     buildConf("spark.sql.finalWriteStage.retainExecutorsFactor")
       .doc("If the target executors * factor < active executors, and " +

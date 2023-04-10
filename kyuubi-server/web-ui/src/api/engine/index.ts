@@ -15,18 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.spark
+import request from '@/utils/request'
+import { IEngineSearch } from './types'
 
-import org.apache.spark.sql.SparkSession
+export function getAllEngines(params: IEngineSearch) {
+  return request({
+    url: 'api/v1/admin/engine',
+    method: 'get',
+    params
+  })
+}
 
-/**
- * A place to invoke non-public APIs of [[SparkContext]], for test only.
- */
-object KyuubiSparkContextHelper {
-
-  def waitListenerBus(spark: SparkSession): Unit = {
-    spark.sparkContext.listenerBus.waitUntilEmpty()
-  }
-
-  def dummyTaskContext(): TaskContextImpl = TaskContext.empty()
+export function deleteEngine(params: IEngineSearch) {
+  return request({
+    url: 'api/v1/admin/engine',
+    method: 'delete',
+    params
+  })
 }

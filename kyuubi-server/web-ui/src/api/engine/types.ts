@@ -15,18 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.spark
-
-import org.apache.spark.sql.SparkSession
-
-/**
- * A place to invoke non-public APIs of [[SparkContext]], for test only.
- */
-object KyuubiSparkContextHelper {
-
-  def waitListenerBus(spark: SparkSession): Unit = {
-    spark.sparkContext.listenerBus.waitUntilEmpty()
-  }
-
-  def dummyTaskContext(): TaskContextImpl = TaskContext.empty()
+interface IEngineSearch {
+  type: null | string
+  sharelevel: null | string
+  'hive.server2.proxy.user': null | string
+  subdomain?: null | string
 }
+
+export { IEngineSearch }
