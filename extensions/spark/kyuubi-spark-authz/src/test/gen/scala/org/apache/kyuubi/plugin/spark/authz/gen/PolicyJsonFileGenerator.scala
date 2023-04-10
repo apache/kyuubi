@@ -28,9 +28,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.io.FileUtils
 import org.apache.ranger.plugin.model.RangerPolicy
-
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
+
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess._
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyResource._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerAccessType._
