@@ -1692,8 +1692,8 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>gcs-maven-central-mirror</id>
-            <name>GCS Maven Central mirror Asia Pacific</name>
-            <url>https://maven-central-asia.storage-download.googleapis.com/maven2/</url>
+            <name>GCS Maven Central mirror</name>
+            <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
         </repository>
 
         <repository>
@@ -1718,8 +1718,8 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>gcs-maven-central-mirror</id>
-            <name>GCS Maven Central mirror Asia Pacific</name>
-            <url>https://maven-central-asia.storage-download.googleapis.com/maven2/</url>
+            <name>GCS Maven Central mirror</name>
+            <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
         </pluginRepository>
 
         <pluginRepository>
