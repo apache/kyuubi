@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.File
 import java.net.URL
-import java.util.List
+import java.util.{Collections, List}
 
 import scala.collection.JavaConverters._
 import scala.collection.convert.ImplicitConversions._
@@ -111,8 +111,10 @@ object FlinkEngineUtils extends Logging {
       flinkConfDir: String): DefaultContext = {
     val parser = new DefaultParser
     val line = parser.parse(EMBEDDED_MODE_CLIENT_OPTIONS, args, true)
-    val jars: java.util.List[URL] = checkUrls(line, CliOptionsParser.OPTION_JAR)
-    val libDirs: java.util.List[URL] = checkUrls(line, CliOptionsParser.OPTION_LIBRARY)
+    val jars: java.util.List[URL] = Option(checkUrls(line, CliOptionsParser.OPTION_JAR))
+      .getOrElse(Collections.emptyList())
+    val libDirs: java.util.List[URL] = Option(checkUrls(line, CliOptionsParser.OPTION_LIBRARY))
+      .getOrElse(Collections.emptyList())
     val dependencies: java.util.List[URL] = discoverDependencies(jars, libDirs)
     if (FlinkEngineUtils.isFlinkVersionAtMost("1.16")) {
       val commandLines: java.util.List[CustomCommandLine] =
