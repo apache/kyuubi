@@ -22,6 +22,8 @@ import scala.language.implicitConversions
 import org.apache.ranger.plugin.model.RangerPolicy
 import org.apache.ranger.plugin.model.RangerPolicy._
 
+import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions.getRangerObject
+
 trait RangerObjectGenerator[T] {
   def get: T
 }
@@ -81,6 +83,17 @@ case class KRangerPolicyResource(
     r.setIsRecursive(isRecursive)
     r
   }
+}
+
+object KRangerPolicyResource {
+  def databaseRes(values: String*): (String, RangerPolicyResource) =
+    "database" -> KRangerPolicyResource(values.toList)
+
+  def tableRes(values: String*): (String, RangerPolicyResource) =
+    "table" -> KRangerPolicyResource(values.toList)
+
+  def columnRes(values: String*): (String, RangerPolicyResource) =
+    "column" -> KRangerPolicyResource(values.toList)
 }
 
 case class KRangerPolicyItemCondition(

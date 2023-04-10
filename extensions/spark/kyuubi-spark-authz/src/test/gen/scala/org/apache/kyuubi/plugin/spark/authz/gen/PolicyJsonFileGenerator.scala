@@ -32,9 +32,10 @@ import org.apache.ranger.plugin.model.RangerPolicy
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess.allowTypes
+import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess._
+import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyResource._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerAccessType._
-import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions.getRangerObject
+import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions._
 
 /**
  * Generates the policy file to test/main/resources dir.
@@ -54,7 +55,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     .serializationInclusion(Include.NON_NULL)
     .build()
 
-  test("Check ranger policy file") {
+  test("check ranger policy file") {
     val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
       .split("target").head
     val policyFileName = "sparkSql_hive_jenkins.json"
@@ -128,14 +129,6 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
 
   final private lazy val policyIdCounter = new AtomicLong(0)
 
-  // resource template
-  private def databaseRes(values: List[String]) =
-    "database" -> KRangerPolicyResource(values = values).get
-  private def tableRes(values: List[String]) =
-    "table" -> KRangerPolicyResource(values = values).get
-  private def columnRes(values: List[String]) =
-    "column" -> KRangerPolicyResource(values = values).get
-
   // users
   private val admin = "admin"
   private val bob = "bob"
@@ -153,10 +146,10 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
   private val namespace1 = "ns1"
 
   // resources
-  private val allDatabaseRes = databaseRes(List("*"))
-  private val allTableRes = tableRes(List("*"))
-  private val allColumnRes = columnRes(List("*"))
-  private val srcTableRes = tableRes(List("src"))
+  private val allDatabaseRes = databaseRes("*")
+  private val allTableRes = tableRes("*")
+  private val allColumnRes = columnRes("*")
+  private val srcTableRes = tableRes("src")
 
   // policy type
   private val POLICY_TYPE_ACCESS: Int = 0
@@ -197,7 +190,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     name = "all - database, udf",
     description = "Policy for all - database, udf",
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog, icebergNamespace, namespace1)),
+      databaseRes(defaultDb, sparkCatalog, icebergNamespace, namespace1),
       allTableRes,
       allColumnRes),
     policyItems = List(
@@ -213,9 +206,9 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
   private val policyAccessForDefaultDbSrcTable = KRangerPolicy(
     name = "default_kent",
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
+      databaseRes(defaultDb, sparkCatalog),
       srcTableRes,
-      columnRes(List("key"))),
+      columnRes("key")),
     policyItems = List(
       KRangerPolicyItem(
         users = List(kent),
@@ -230,7 +223,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     name = "src_key_less_than_20",
     policyType = POLICY_TYPE_ROWFILTER,
     resources = Map(
-      databaseRes(List(defaultDb)),
+      databaseRes(defaultDb),
       srcTableRes),
     rowFilterPolicyItems = List(
       KRangerRowFilterPolicyItem(
@@ -242,8 +235,8 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     name = "perm_view_key_less_than_20",
     policyType = POLICY_TYPE_ROWFILTER,
     resources = Map(
-      databaseRes(List(defaultDb)),
-      tableRes(List("perm_view"))),
+      databaseRes(defaultDb),
+      tableRes("perm_view")),
     rowFilterPolicyItems = List(
       KRangerRowFilterPolicyItem(
         rowFilterInfo = KRangerPolicyItemRowFilterInfo(filterExpr = "key<20"),
@@ -253,8 +246,8 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
   private val policyAccessForDefaultBobUse = KRangerPolicy(
     name = "default_bob_use",
     resources = Map(
-      databaseRes(List("default_bob", sparkCatalog)),
-      tableRes(List("table_use*")),
+      databaseRes("default_bob", sparkCatalog),
+      tableRes("table_use*"),
       allColumnRes),
     policyItems = List(
       KRangerPolicyItem(
@@ -265,8 +258,8 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
   private val policyAccessForDefaultBobSelect = KRangerPolicy(
     name = "default_bob_select",
     resources = Map(
-      databaseRes(List("default_bob", sparkCatalog)),
-      tableRes(List("table_select*")),
+      databaseRes("default_bob", sparkCatalog),
+      tableRes("table_select*"),
       allColumnRes),
     policyItems = List(
       KRangerPolicyItem(
@@ -278,9 +271,9 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     name = "src_value_hash_perm_view",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
+      databaseRes(defaultDb, sparkCatalog),
       srcTableRes,
-      columnRes(List("value1"))),
+      columnRes("value1")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK_HASH"),
@@ -292,9 +285,9 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     name = "src_value_hash",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
-      tableRes(List("perm_view")),
-      columnRes(List("value1"))),
+      databaseRes(defaultDb, sparkCatalog),
+      tableRes("perm_view"),
+      columnRes("value1")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK_HASH"),
@@ -306,9 +299,9 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     name = "src_value2_nullify",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog, icebergNamespace, namespace1)),
+      databaseRes(defaultDb, sparkCatalog, icebergNamespace, namespace1),
       srcTableRes,
-      columnRes(List("value2"))),
+      columnRes("value2")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK"),
@@ -320,9 +313,9 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     name = "src_value3_sf4",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
+      databaseRes(defaultDb, sparkCatalog),
       srcTableRes,
-      columnRes(List("value3"))),
+      columnRes("value3")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK_SHOW_FIRST_4"),
@@ -334,9 +327,9 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     name = "src_value4_sf4",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
+      databaseRes(defaultDb, sparkCatalog),
       srcTableRes,
-      columnRes(List("value4"))),
+      columnRes("value4")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK_DATE_SHOW_YEAR"),
@@ -348,9 +341,9 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     name = "src_value5_sf4",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
+      databaseRes(defaultDb, sparkCatalog),
       srcTableRes,
-      columnRes(List("value5"))),
+      columnRes("value5")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK_SHOW_LAST_4"),
@@ -361,8 +354,8 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
   private val policyAccessForPermViewAccessOnly = KRangerPolicy(
     name = "someone_access_perm_view",
     resources = Map(
-      databaseRes(List(defaultDb)),
-      tableRes(List("perm_view")),
+      databaseRes(defaultDb),
+      tableRes("perm_view"),
       allColumnRes),
     policyItems = List(
       KRangerPolicyItem(
