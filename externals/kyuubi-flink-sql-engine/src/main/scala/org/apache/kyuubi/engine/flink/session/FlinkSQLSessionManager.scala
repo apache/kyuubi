@@ -23,11 +23,12 @@ import scala.collection.JavaConverters.mapAsJavaMap
 import org.apache.flink.table.gateway.api.session.SessionEnvironment
 import org.apache.flink.table.gateway.rest.util.SqlGatewayRestAPIVersion
 import org.apache.flink.table.gateway.service.context.DefaultContext
-import org.apache.flink.table.gateway.service.session.SessionManagerImpl
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils
 import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
+import org.apache.kyuubi.reflection.DynConstructors
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 
 class FlinkSQLSessionManager(engineContext: DefaultContext)
@@ -36,7 +37,23 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
   override protected def isServer: Boolean = false
 
   val operationManager = new FlinkSQLOperationManager()
-  val sessionManager = new SessionManagerImpl(engineContext)
+  val sessionManager: org.apache.flink.table.gateway.service.session.SessionManager = {
+    if (FlinkEngineUtils.isFlinkVersionAtMost("1.16")) {
+      DynConstructors.builder().impl(
+        "org.apache.flink.table.gateway.service.session.SessionManager",
+        classOf[DefaultContext])
+        .build()
+        .newInstance(engineContext)
+        .asInstanceOf[org.apache.flink.table.gateway.service.session.SessionManager]
+    } else {
+      DynConstructors.builder().impl(
+        "org.apache.flink.table.gateway.service.session.SessionManagerImpl",
+        classOf[DefaultContext])
+        .build()
+        .newInstance(engineContext)
+        .asInstanceOf[org.apache.flink.table.gateway.service.session.SessionManager]
+    }
+  }
 
   override def start(): Unit = {
     super.start()
@@ -74,5 +91,10 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
     super.closeSession(sessionHandle)
     sessionManager.closeSession(
       new org.apache.flink.table.gateway.api.session.SessionHandle(sessionHandle.identifier))
+  }
+
+  override def stop(): Unit = synchronized {
+    sessionManager.stop()
+    super.stop()
   }
 }
