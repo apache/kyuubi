@@ -35,6 +35,18 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess.allowTypes
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerAccessType._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions.getRangerObject
+
+/**
+ * Generates the policy file to test/main/resources dir.
+ *
+ * To run the test suite:
+ * build/mvn clean test -Pgen-policy -pl :kyuubi-spark-authz_2.12 -Dtest=none
+ * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator
+ *
+ * To regenerate the ranger policy file:
+ * KYUUBI_UPDATE=1 build/mvn clean test -Pgen-policy -pl :kyuubi-spark-authz_2.12 -Dtest=none
+ * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator
+ */
 class PolicyJsonFileGenerator extends AnyFunSuite {
   // scalastyle:on
   final private val mapper: ObjectMapper = JsonMapper.builder()
