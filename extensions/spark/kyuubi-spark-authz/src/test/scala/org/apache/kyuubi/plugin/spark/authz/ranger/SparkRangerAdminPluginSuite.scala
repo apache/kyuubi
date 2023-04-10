@@ -50,11 +50,14 @@ class SparkRangerAdminPluginSuite extends AnyFunSuite {
     }
     assert(getMaskingExpr(buildAccessRequest(bob, "value1")).get === "md5(cast(value1 as string))")
     assert(getMaskingExpr(buildAccessRequest(bob, "value2")).get ===
-      "regexp_replace(regexp_replace(regexp_replace(value2, '[A-Z]', 'X'), '[a-z]', 'x')," +
-      " '[0-9]', 'n')")
+      "regexp_replace(regexp_replace(regexp_replace(regexp_replace(value2, '[A-Z]', 'X')," +
+      " '[a-z]', 'x'), '[0-9]', 'n'), '[^A-Za-z0-9]', 'U')")
     assert(getMaskingExpr(buildAccessRequest(bob, "value3")).get contains "regexp_replace")
     assert(getMaskingExpr(buildAccessRequest(bob, "value4")).get === "date_trunc('YEAR', value4)")
-    assert(getMaskingExpr(buildAccessRequest(bob, "value5")).get contains "regexp_replace")
+    assert(getMaskingExpr(buildAccessRequest(bob, "value5")).get ===
+      "concat(regexp_replace(regexp_replace(regexp_replace(regexp_replace(" +
+      "left(value5, length(value5) - 4), '[A-Z]', 'X'), '[a-z]', 'x')," +
+      " '[0-9]', 'n'), '[^A-Za-z0-9]', 'U'), right(value5, 4))")
 
     Seq("admin", "alice").foreach { user =>
       val ugi = UserGroupInformation.createRemoteUser(user)
