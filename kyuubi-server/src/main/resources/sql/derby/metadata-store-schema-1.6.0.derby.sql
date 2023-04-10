@@ -19,6 +19,7 @@ CREATE TABLE metadata(
     create_time BIGINT NOT NULL, -- the metadata create time
     engine_type varchar(1024) NOT NULL, -- the engine type
     cluster_manager varchar(128), -- the engine cluster manager
+    deploy_mode varchar(128), -- the engine deploy mode
     engine_id varchar(128), -- the engine application id
     engine_name clob, -- the engine application name
     engine_url varchar(1024), -- the engine tracking url

@@ -66,6 +66,7 @@ case class Metadata(
     createTime: Long = 0L,
     engineType: String = null,
     clusterManager: Option[String] = None,
+    deployMode: Option[String] = None,
     engineOpenTime: Long = 0L,
     engineId: String = null,
     engineName: String = null,

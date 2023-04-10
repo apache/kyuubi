@@ -298,7 +298,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
                 metadata.clusterManager,
                 batchId,
                 // prevent that the batch be marked as terminated if application state is NOT_FOUND
-                Some(metadata.engineOpenTime).filter(_ > 0).orElse(Some(System.currentTimeMillis)))
+                Some(metadata.engineOpenTime).filter(_ > 0).orElse(Some(System.currentTimeMillis)),
+                metadata.deployMode)
               buildBatch(metadata, batchAppStatus)
           }
         }
@@ -436,7 +437,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
               error(s"Error redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}", e)
               val appMgrKillResp = sessionManager.applicationManager.killApplication(
                 metadata.clusterManager,
-                batchId)
+                batchId,
+                metadata.deployMode)
               info(
                 s"Marking batch[$batchId/${metadata.kyuubiInstance}] closed by ${fe.connectionUrl}")
               sessionManager.updateMetadata(Metadata(
