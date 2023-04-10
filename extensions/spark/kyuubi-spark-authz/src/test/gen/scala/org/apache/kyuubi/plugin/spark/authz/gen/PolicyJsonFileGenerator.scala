@@ -20,7 +20,6 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicLong
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
@@ -29,9 +28,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.io.FileUtils
 import org.apache.ranger.plugin.model.RangerPolicy
+
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
-
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess._
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyResource._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerAccessType._
@@ -119,15 +118,14 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
       policyMaskDateShowYearForValue4,
       policyMaskShowFirst4ForValue5)
       // fill the id and guid with auto-increased index
-      .map(p => {
-        val id = policyIdCounter.incrementAndGet()
-        p.setId(id)
-        p.setGuid(UUID.nameUUIDFromBytes(id.toString.getBytes()).toString)
-        p
-      })
+      .zipWithIndex
+      .map {
+        case (p, index) =>
+          p.setId(index)
+          p.setGuid(UUID.nameUUIDFromBytes(index.toString.getBytes()).toString)
+          p
+      }
   }
-
-  final private lazy val policyIdCounter = new AtomicLong(0)
 
   // users
   private val admin = "admin"
