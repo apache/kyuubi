@@ -22,13 +22,12 @@ import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
-import scala.collection.JavaConverters._
-
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.apache.commons.io.FileUtils
 import org.apache.ranger.plugin.model.RangerPolicy
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
@@ -62,7 +61,8 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
         StandardOpenOption.CREATE,
         StandardOpenOption.TRUNCATE_EXISTING)
     } else {
-      val existedFileContent = Files.readAllLines(policyFilePath).asScala.mkString("\n")
+      val existedFileContent =
+        FileUtils.readFileToString(policyFilePath.toFile, StandardCharsets.UTF_8)
       withClue("Please regenerate the ranger policy file by running"
         + "`KYUUBI_UPDATE=1 build/mvn clean test -Pgen-policy"
         + " -pl :kyuubi-spark-authz_2.12 -Dtest=none"
