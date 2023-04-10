@@ -19,22 +19,28 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.File
 import java.net.URL
+import java.util.List
 
+import scala.collection.JavaConverters._
 import scala.collection.convert.ImplicitConversions._
 
-import org.apache.commons.cli.{CommandLine, DefaultParser, Option, Options, ParseException}
+import org.apache.commons.cli.{CommandLine, DefaultParser, Option, Options}
 import org.apache.flink.api.common.JobID
+import org.apache.flink.client.cli.{CustomCommandLine, DefaultCLI, GenericCLI}
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.core.fs.Path
 import org.apache.flink.runtime.util.EnvironmentInformation
 import org.apache.flink.table.client.SqlClientException
-import org.apache.flink.table.client.cli.{CliClient, CliOptions, CliOptionsParser}
+import org.apache.flink.table.client.cli.CliOptionsParser
 import org.apache.flink.table.client.cli.CliOptionsParser._
-import org.apache.flink.table.gateway.service.context.SessionContext
+import org.apache.flink.table.gateway.service.context.{DefaultContext, SessionContext}
 import org.apache.flink.table.gateway.service.result.ResultFetcher
 import org.apache.flink.table.gateway.service.session.Session
+import org.apache.flink.util.JarUtils
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.SemanticVersion
+import org.apache.kyuubi.reflection.{DynConstructors, DynMethods}
 
 object FlinkEngineUtils extends Logging {
 
@@ -64,43 +70,76 @@ object FlinkEngineUtils extends Logging {
   def isFlinkVersionEqualTo(targetVersionString: String): Boolean =
     SemanticVersion(EnvironmentInformation.getVersion).isVersionEqualTo(targetVersionString)
 
-  def parseCliOptions(args: Array[String]): CliOptions.EmbeddedCliOptions = {
-    val (mode, modeArgs) =
-      if (args.isEmpty || args(0).startsWith("-")) (MODE_EMBEDDED, args)
-      else (args(0), args.drop(1))
-    val options = parseEmbeddedModeClient(modeArgs)
-    if (mode == MODE_EMBEDDED) {
-      if (options.isPrintHelp) {
-        printHelpEmbeddedModeClient(CliClient.DEFAULT_TERMINAL_FACTORY.get().writer())
-      }
-      options
-    } else {
-      throw new NotImplementedError("Standalone Flink SQL gateway mode is not supported yet.")
-    }
-  }
-
   /**
    * Copied and modified from [[org.apache.flink.table.client.cli.CliOptionsParser]]
    * to avoid loading flink-python classes which we doesn't support yet.
    */
-  def parseEmbeddedModeClient(args: Array[String]): CliOptions.EmbeddedCliOptions =
-    try {
-      val parser = new DefaultParser
-      val line = parser.parse(EMBEDDED_MODE_CLIENT_OPTIONS, args, true)
-      new CliOptions.EmbeddedCliOptions(
-        line.hasOption(CliOptionsParser.OPTION_HELP.getOpt),
-        checkSessionId(line),
-        checkUrl(line, CliOptionsParser.OPTION_INIT_FILE),
-        checkUrl(line, CliOptionsParser.OPTION_FILE),
-        line.getOptionValue(CliOptionsParser.OPTION_UPDATE.getOpt),
-        line.getOptionValue(CliOptionsParser.OPTION_HISTORY.getOpt),
-        checkUrls(line, CliOptionsParser.OPTION_JAR),
-        checkUrls(line, CliOptionsParser.OPTION_LIBRARY),
-        null)
+  private def discoverDependencies(
+      jars: java.util.List[URL],
+      libraries: java.util.List[URL]): java.util.List[URL] = {
+    val dependencies: java.util.List[URL] = new java.util.ArrayList[URL]
+    try { // find jar files
+      for (url <- jars) {
+        JarUtils.checkJarFile(url)
+        dependencies.add(url)
+      }
+      // find jar files in library directories
+      for (libUrl <- libraries) {
+        val dir: File = new File(libUrl.toURI)
+        if (!dir.isDirectory) throw new SqlClientException("Directory expected: " + dir)
+        else if (!dir.canRead) throw new SqlClientException("Directory cannot be read: " + dir)
+        val files: Array[File] = dir.listFiles
+        if (files == null) throw new SqlClientException("Directory cannot be read: " + dir)
+        for (f <- files) { // only consider jars
+          if (f.isFile && f.getAbsolutePath.toLowerCase.endsWith(".jar")) {
+            val url: URL = f.toURI.toURL
+            JarUtils.checkJarFile(url)
+            dependencies.add(url)
+          }
+        }
+      }
     } catch {
-      case e: ParseException =>
-        throw new SqlClientException(e.getMessage)
+      case e: Exception =>
+        throw new SqlClientException("Could not load all required JAR files.", e)
     }
+    dependencies
+  }
+
+  def getDefaultContext(
+      args: Array[String],
+      flinkConf: Configuration,
+      flinkConfDir: String): DefaultContext = {
+    val parser = new DefaultParser
+    val line = parser.parse(EMBEDDED_MODE_CLIENT_OPTIONS, args, true)
+    val jars: java.util.List[URL] = checkUrls(line, CliOptionsParser.OPTION_JAR)
+    val libDirs: java.util.List[URL] = checkUrls(line, CliOptionsParser.OPTION_LIBRARY)
+    val dependencies: java.util.List[URL] = discoverDependencies(jars, libDirs)
+    if (FlinkEngineUtils.isFlinkVersionAtMost("1.16")) {
+      val commandLines: java.util.List[CustomCommandLine] =
+        Seq(new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava
+      DynConstructors.builder()
+        .impl(
+          classOf[DefaultContext],
+          classOf[Configuration],
+          classOf[java.util.List[CustomCommandLine]])
+        .build()
+        .newInstance(flinkConf, commandLines)
+        .asInstanceOf[DefaultContext]
+    } else {
+      DynMethods.builder("load")
+        .impl(
+          classOf[DefaultContext],
+          classOf[java.util.List[URL]],
+          classOf[java.lang.Boolean],
+          classOf[java.lang.Boolean])
+        .buildStatic()
+        .invoke[DefaultContext](
+          flinkConf,
+          dependencies,
+          new java.lang.Boolean(true),
+          new java.lang.Boolean(false))
+    }
+  }
 
   def getSessionContext(session: Session): SessionContext = {
     val field = classOf[Session].getDeclaredField("sessionContext")

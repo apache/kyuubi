@@ -17,11 +17,8 @@
 
 package org.apache.kyuubi.engine.flink
 
-import scala.collection.JavaConverters._
-
 import org.apache.flink.configuration.{Configuration, RestOptions}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
-import org.apache.flink.table.gateway.service.context.DefaultContext
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
@@ -59,9 +56,10 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
       System.setProperty(k, v)
       kyuubiConf.set(k, v)
     }
-    val engineContext = new DefaultContext(
+    val engineContext = FlinkEngineUtils.getDefaultContext(
+      new Array[String](0),
       flinkConfig,
-      List(udfJar.toURI.toURL).asJava)
+      System.getenv("FLINK_CONF_DIR"))
     FlinkSQLEngine.startEngine(engineContext)
     engine = FlinkSQLEngine.currentEngine.get
     connectionUrl = engine.frontendServices.head.connectionUrl

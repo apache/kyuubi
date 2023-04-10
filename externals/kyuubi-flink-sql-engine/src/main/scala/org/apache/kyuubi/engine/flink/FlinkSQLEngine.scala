@@ -18,24 +18,20 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.File
-import java.net.URL
 import java.nio.file.Paths
 import java.time.Instant
-import java.util.Collections
 import java.util.concurrent.CountDownLatch
 
 import scala.collection.JavaConverters._
 
 import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration}
 import org.apache.flink.table.api.TableEnvironment
-import org.apache.flink.table.client.gateway.DefaultContextUtils
 import org.apache.flink.table.gateway.service.context.DefaultContext
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, currentUser, FLINK_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.{countDownLatch, currentEngine}
-import org.apache.kyuubi.reflection.DynMethods
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
@@ -117,20 +113,9 @@ object FlinkSQLEngine extends Logging {
           debug(s"Skip generating app name for execution target $other")
       }
 
-      val cliOptions = FlinkEngineUtils.parseCliOptions(args)
-      val jars: java.util.List[URL] = Option(cliOptions.getJars).getOrElse(Collections.emptyList())
-      val libDirs: java.util.List[URL] = Option(cliOptions.getLibraryDirs)
-        .getOrElse(Collections.emptyList())
-      val dependencies = DynMethods.builder("discoverDependencies")
-        .hiddenImpl(
-          classOf[DefaultContextUtils],
-          classOf[java.util.List[URL]],
-          classOf[java.util.List[URL]])
-        .buildStatic().invoke[java.util.List[URL]](jars, libDirs)
-      val engineContext = DefaultContext.load(flinkConf, dependencies, true, false)
-
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
+      val engineContext = FlinkEngineUtils.getDefaultContext(args, flinkConf, flinkConfDir)
       startEngine(engineContext)
       info("Flink engine started")
 
