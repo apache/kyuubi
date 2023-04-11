@@ -32,6 +32,13 @@ cluster using the [Helm](https://helm.sh) package manager.
 - Kubernetes cluster
 - Helm 3.0+
 
+## Template rendering
+When you want to test the template rendering, but not actually install anything. This command will render the templates. 
+It will return the rendered template to you so you can see the output.
+```shell
+helm install --dry-run --generate-name ../kyuubi
+```
+
 <!-- ## Features -->
 
 ## Documentation
