@@ -130,7 +130,7 @@ object FlinkEngineUtils extends Logging {
     } else {
       DynMethods.builder("load")
         .impl(
-          "org.apache.flink.table.client.gateway.DefaultContext",
+          classOf[DefaultContext],
           classOf[Configuration],
           classOf[java.util.List[URL]],
           JavaPrimitiveClasses.CLASS_PRIMITIVE_BOOLEAN,
