@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.engine.flink
 
-import org.apache.flink.configuration.{Configuration, RestOptions}
+import java.io.File
+import java.nio.file.Paths
+
+import org.apache.flink.configuration.{Configuration, GlobalConfiguration, RestOptions}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -56,10 +59,21 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
       System.setProperty(k, v)
       kyuubiConf.set(k, v)
     }
+    val flinkConfDir = sys.env.getOrElse(
+      "FLINK_CONF_DIR", {
+        val flinkHome = sys.env.getOrElse(
+          "FLINK_HOME", {
+            // detect the FLINK_HOME by flink-core*.jar location if unset
+            val jarLoc =
+              classOf[GlobalConfiguration].getProtectionDomain.getCodeSource.getLocation
+            new File(jarLoc.toURI).getParentFile.getParent
+          })
+        Paths.get(flinkHome, "conf").toString
+      })
     val engineContext = FlinkEngineUtils.getDefaultContext(
       new Array[String](0),
       flinkConfig,
-      System.getenv("FLINK_CONF_DIR"))
+      flinkConfDir)
     FlinkSQLEngine.startEngine(engineContext)
     engine = FlinkSQLEngine.currentEngine.get
     connectionUrl = engine.frontendServices.head.connectionUrl
