@@ -26,7 +26,7 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.retry._
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
+import org.apache.hadoop.security.authentication.util.JaasConfiguration
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
