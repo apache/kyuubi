@@ -71,10 +71,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
   private def sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
-  private def buildBatch(session: KyuubiBatchSessionImpl, needAppStatus: Boolean = true): Batch = {
+  private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
     val batchOp = session.batchJobSubmissionOp
     val batchOpStatus = batchOp.getStatus
-    val batchAppStatus = if (needAppStatus) batchOp.getOrFetchCurrentApplicationInfo else None
+    val batchAppStatus = batchOp.getOrFetchCurrentApplicationInfo
 
     val name = Option(batchOp.batchName).getOrElse(batchAppStatus.map(_.name).orNull)
     var appId: String = null
@@ -254,7 +254,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             request)
         } match {
           case Success(sessionHandle) =>
-            buildBatch(sessionManager.getBatchSessionImpl(sessionHandle), false)
+            buildBatch(sessionManager.getBatchSessionImpl(sessionHandle))
           case Failure(cause) if JdbcUtils.isDuplicatedKeyDBErr(cause) =>
             val batch = sessionManager.getBatchFromMetadataStore(batchId)
             assert(batch != null, s"can not find duplicated batch $batchId from metadata store")
