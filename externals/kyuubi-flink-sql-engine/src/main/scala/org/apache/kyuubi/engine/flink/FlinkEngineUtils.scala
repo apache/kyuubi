@@ -19,12 +19,12 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.File
 import java.net.URL
-import java.util.{Collections, List}
+import java.util.Collections
 
 import scala.collection.JavaConverters._
 import scala.collection.convert.ImplicitConversions._
 
-import org.apache.commons.cli.{CommandLine, DefaultParser, Option, Options}
+import org.apache.commons.cli.{CommandLine, DefaultParser, Options}
 import org.apache.flink.api.common.JobID
 import org.apache.flink.client.cli.{CustomCommandLine, DefaultCLI, GenericCLI}
 import org.apache.flink.configuration.Configuration
@@ -40,7 +40,7 @@ import org.apache.flink.util.JarUtils
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.SemanticVersion
-import org.apache.kyuubi.reflection.{DynConstructors, DynMethods}
+import org.apache.kyuubi.reflection.{DynConstructors, DynMethods, JavaPrimitiveClasses}
 
 object FlinkEngineUtils extends Logging {
 
@@ -130,10 +130,11 @@ object FlinkEngineUtils extends Logging {
     } else {
       DynMethods.builder("load")
         .impl(
-          classOf[DefaultContext],
+          "org.apache.flink.table.client.gateway.DefaultContext",
+          classOf[Configuration],
           classOf[java.util.List[URL]],
-          classOf[java.lang.Boolean],
-          classOf[java.lang.Boolean])
+          JavaPrimitiveClasses.CLASS_PRIMITIVE_BOOLEAN,
+          JavaPrimitiveClasses.CLASS_PRIMITIVE_BOOLEAN)
         .buildStatic()
         .invoke[DefaultContext](
           flinkConf,
@@ -168,13 +169,13 @@ object FlinkEngineUtils extends Logging {
     } else sessionId
   }
 
-  def checkUrl(line: CommandLine, option: Option): URL = {
-    val urls: List[URL] = checkUrls(line, option)
+  def checkUrl(line: CommandLine, option: org.apache.commons.cli.Option): URL = {
+    val urls: java.util.List[URL] = checkUrls(line, option)
     if (urls != null && urls.nonEmpty) urls.head
     else null
   }
 
-  def checkUrls(line: CommandLine, option: Option): List[URL] = {
+  def checkUrls(line: CommandLine, option: org.apache.commons.cli.Option): java.util.List[URL] = {
     if (line.hasOption(option.getOpt)) {
       line.getOptionValues(option.getOpt).distinct.map((url: String) => {
         checkFilePath(url)
