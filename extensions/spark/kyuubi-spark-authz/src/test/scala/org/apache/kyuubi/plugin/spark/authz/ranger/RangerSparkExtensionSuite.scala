@@ -233,6 +233,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       doAs("admin", assert(sql(s"show tables from $db").collect().length === 2))
       doAs("bob", assert(sql(s"show tables from $db").collect().length === 0))
       doAs("i_am_invisible", assert(sql(s"show tables from $db").collect().length === 0))
+      doAs("i_am_invisible", assert(sql(s"show tables from $db").limit(1).isEmpty))
     }
   }
 
@@ -247,6 +248,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
       doAs("bob", assert(sql(s"SHOW DATABASES").collect().length == 1))
       doAs("bob", assert(sql(s"SHOW DATABASES").collectAsList().get(0).getString(0) == "default"))
+      doAs("i_am_invisible", assert(sql(s"SHOW DATABASES").limit(1).isEmpty))
     }
   }
 
@@ -521,26 +523,60 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("[KYUUBI #3326] check persisted view and skip shadowed table") {
+    val db1 = "default"
     val table = "hive_src"
     val permView = "perm_view"
-    val db1 = "default"
-    val db2 = "db2"
 
     withCleanTmpResources(Seq(
       (s"$db1.$table", "table"),
-      (s"$db2.$permView", "view"),
-      (db2, "database"))) {
-      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int)"))
+      (s"$db1.$permView", "view"))) {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
+      doAs("admin", sql(s"CREATE VIEW $db1.$permView AS SELECT * FROM $db1.$table"))
 
-      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db2"))
-      doAs("admin", sql(s"CREATE VIEW $db2.$permView AS SELECT * FROM $table"))
-
+      // KYUUBI #3326: with no privileges to the permanent view or the source table
       val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"select * from $db2.$permView")).show(0))
+        doAs(
+          "someone", {
+            sql(s"select * from $db1.$permView").collect()
+          }))
       if (isSparkV31OrGreater) {
-        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db2/$permView/id]"))
+        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$permView/id]"))
       } else {
         assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+      }
+    }
+  }
+
+  test("KYUUBI #4504: query permanent view with privilege to permanent view only") {
+    val db1 = "default"
+    val table = "hive_src"
+    val permView = "perm_view"
+    val userPermViewOnly = "user_perm_view_only"
+
+    withCleanTmpResources(Seq(
+      (s"$db1.$table", "table"),
+      (s"$db1.$permView", "view"))) {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
+      doAs("admin", sql(s"CREATE VIEW $db1.$permView AS SELECT * FROM $db1.$table"))
+
+      // query all columns of the permanent view
+      // with access privileges to the permanent view but no privilege to the source table
+      val sql1 = s"SELECT * FROM $db1.$permView"
+      if (isSparkV31OrGreater) {
+        doAs(userPermViewOnly, { sql(sql1).collect() })
+      } else {
+        val e1 = intercept[AccessControlException](doAs(userPermViewOnly, { sql(sql1).collect() }))
+        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+      }
+
+      // query the second column of permanent view with multiple columns
+      // with access privileges to the permanent view but no privilege to the source table
+      val sql2 = s"SELECT name FROM $db1.$permView"
+      if (isSparkV31OrGreater) {
+        doAs(userPermViewOnly, { sql(sql2).collect() })
+      } else {
+        val e2 = intercept[AccessControlException](doAs(userPermViewOnly, { sql(sql2).collect() }))
+        assert(e2.getMessage.contains(s"does not have [select] privilege on [$db1/$table/name]"))
       }
     }
   }
@@ -669,6 +705,40 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.$table (key int) USING $format"))
       sql("SHOW DATABASES").queryExecution.optimizedPlan.stats
       sql(s"SHOW TABLES IN $db").queryExecution.optimizedPlan.stats
+    }
+  }
+
+  test("[KYUUBI #4658] insert overwrite hive directory") {
+    val db1 = "default"
+    val table = "src"
+
+    withCleanTmpResources(Seq((s"$db1.$table", "table"))) {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
+      val e = intercept[AccessControlException](
+        doAs(
+          "someone",
+          sql(
+            s"""INSERT OVERWRITE DIRECTORY '/tmp/test_dir' ROW FORMAT DELIMITED FIELDS
+               | TERMINATED BY ','
+               | SELECT * FROM $db1.$table;""".stripMargin)))
+      assert(e.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+    }
+  }
+
+  test("[KYUUBI #4658] insert overwrite datasource directory") {
+    val db1 = "default"
+    val table = "src"
+
+    withCleanTmpResources(Seq((s"$db1.$table", "table"))) {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
+      val e = intercept[AccessControlException](
+        doAs(
+          "someone",
+          sql(
+            s"""INSERT OVERWRITE DIRECTORY '/tmp/test_dir'
+               | USING parquet
+               | SELECT * FROM $db1.$table;""".stripMargin)))
+      assert(e.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
     }
   }
 }

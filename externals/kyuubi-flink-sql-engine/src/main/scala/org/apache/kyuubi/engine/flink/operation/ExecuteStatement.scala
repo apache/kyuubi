@@ -17,18 +17,18 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalTime}
 import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.flink.api.common.JobID
-import org.apache.flink.table.api.{ResultKind, TableResult}
+import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.client.gateway.TypedResult
 import org.apache.flink.table.data.{GenericArrayData, GenericMapData, RowData}
 import org.apache.flink.table.data.binary.{BinaryArrayData, BinaryMapData}
-import org.apache.flink.table.operations.{Operation, QueryOperation}
+import org.apache.flink.table.operations.{ModifyOperation, Operation, QueryOperation}
 import org.apache.flink.table.operations.command._
 import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.logical._
@@ -80,6 +80,7 @@ class ExecuteStatement(
       val operation = executor.parseStatement(sessionId, statement)
       operation match {
         case queryOperation: QueryOperation => runQueryOperation(queryOperation)
+        case modifyOperation: ModifyOperation => runModifyOperation(modifyOperation)
         case setOperation: SetOperation =>
           resultSet = OperationUtils.runSetOperation(setOperation, executor, sessionId)
         case resetOperation: ResetOperation =>
@@ -120,18 +121,8 @@ class ExecuteStatement(
           case TypedResult.ResultType.PAYLOAD =>
             (1 to result.getPayload).foreach { page =>
               if (rows.size < resultMaxRows) {
-                // FLINK-24461 retrieveResultPage method changes the return type from Row to RowData
-                val retrieveResultPage = DynMethods.builder("retrieveResultPage")
-                  .impl(executor.getClass, classOf[String], classOf[Int])
-                  .build(executor)
-                val _page = Integer.valueOf(page)
-                if (isFlinkVersionEqualTo("1.14")) {
-                  val result = retrieveResultPage.invoke[util.List[Row]](resultId, _page)
-                  rows ++= result.asScala
-                } else if (isFlinkVersionAtLeast("1.15")) {
-                  val result = retrieveResultPage.invoke[util.List[RowData]](resultId, _page)
-                  rows ++= result.asScala.map(r => convertToRow(r, dataTypes))
-                }
+                val result = executor.retrieveResultPage(resultId, page)
+                rows ++= result.asScala.map(r => convertToRow(r, dataTypes))
               } else {
                 loop = false
               }
@@ -153,13 +144,14 @@ class ExecuteStatement(
     }
   }
 
+  private def runModifyOperation(operation: ModifyOperation): Unit = {
+    val result = executor.executeOperation(sessionId, operation)
+    jobId = result.getJobClient.asScala.map(_.getJobID)
+    resultSet = ResultSet.fromJobId(jobId.orNull)
+  }
+
   private def runOperation(operation: Operation): Unit = {
-    // FLINK-24461 executeOperation method changes the return type
-    // from TableResult to TableResultInternal
-    val executeOperation = DynMethods.builder("executeOperation")
-      .impl(executor.getClass, classOf[String], classOf[Operation])
-      .build(executor)
-    val result = executeOperation.invoke[TableResult](sessionId, operation)
+    val result = executor.executeOperation(sessionId, operation)
     jobId = result.getJobClient.asScala.map(_.getJobID)
     // after FLINK-24461, TableResult#await() would block insert statements
     // until the job finishes, instead of returning row affected immediately
@@ -192,7 +184,7 @@ class ExecuteStatement(
               row.setField(i, d.toObjectArray(arrayType.getElementType))
             case _ =>
           }
-        case _: BinaryType =>
+        case _: BinaryType | _: VarBinaryType =>
           row.setField(i, r.getBinary(i))
         case _: BigIntType =>
           row.setField(i, r.getLong(i))
@@ -205,6 +197,9 @@ class ExecuteStatement(
         case _: DateType =>
           val date = RowSetUtils.formatLocalDate(LocalDate.ofEpochDay(r.getInt(i)))
           row.setField(i, date)
+        case _: TimeType =>
+          val time = RowSetUtils.formatLocalTime(LocalTime.ofNanoOfDay(r.getLong(i) * 1000 * 1000))
+          row.setField(i, time)
         case t: TimestampType =>
           val ts = RowSetUtils
             .formatLocalDateTime(r.getTimestamp(i, t.getPrecision)

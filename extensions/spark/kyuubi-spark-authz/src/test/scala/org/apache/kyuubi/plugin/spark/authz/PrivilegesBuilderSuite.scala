@@ -1546,7 +1546,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     }
   }
 
-  test("InsertIntoHiveDirCommand") {
+  test("InsertIntoDataSourceDirCommand") {
     assume(!isSparkV2)
     val tableDirectory = getClass.getResource("/").getPath + "table_directory"
     val directory = File(tableDirectory).createDirectory()
@@ -1554,6 +1554,32 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       s"""
          |INSERT OVERWRITE DIRECTORY '$directory.path'
          |USING parquet
+         |SELECT * FROM $reusedPartTable""".stripMargin)
+      .queryExecution.analyzed
+    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === QUERY)
+    assert(in.size === 1)
+    val po0 = in.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    assert(po0.columns === Seq("key", "value", "pid"))
+    checkTableOwner(po0)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(out.isEmpty)
+  }
+
+  test("InsertIntoHiveDirCommand") {
+    assume(!isSparkV2)
+    val tableDirectory = getClass.getResource("/").getPath + "table_directory"
+    val directory = File(tableDirectory).createDirectory()
+    val plan = sql(
+      s"""
+         |INSERT OVERWRITE DIRECTORY '$directory.path'
+         |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
          |SELECT * FROM $reusedPartTable""".stripMargin)
       .queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
@@ -1644,6 +1670,48 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po.columns === Seq("a"))
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
+  }
+
+  test("KYUUBI #4532: Displays the columns involved in extracting the aggregation operator") {
+    // case1: There is no project operator involving all columns.
+    val plan1 = sql(s"SELECT COUNT(key), MAX(value) FROM $reusedPartTable GROUP BY pid")
+      .queryExecution.optimizedPlan
+    val (in1, out1, _) = PrivilegesBuilder.build(plan1, spark)
+    assert(in1.size === 1)
+    assert(out1.isEmpty)
+    val pi1 = in1.head
+    assert(pi1.columns.size === 3)
+    assert(pi1.columns === Seq("key", "value", "pid"))
+
+    // case2: Some columns are involved, and the group column is not selected.
+    val plan2 = sql(s"SELECT COUNT(key) FROM $reusedPartTable GROUP BY pid")
+      .queryExecution.optimizedPlan
+    val (in2, out2, _) = PrivilegesBuilder.build(plan2, spark)
+    assert(in2.size === 1)
+    assert(out2.isEmpty)
+    val pi2 = in2.head
+    assert(pi2.columns.size === 2)
+    assert(pi2.columns === Seq("key", "pid"))
+
+    // case3: Some columns are involved, and the group column is selected.
+    val plan3 = sql(s"SELECT COUNT(key), pid FROM $reusedPartTable GROUP BY pid")
+      .queryExecution.optimizedPlan
+    val (in3, out3, _) = PrivilegesBuilder.build(plan3, spark)
+    assert(in3.size === 1)
+    assert(out3.isEmpty)
+    val pi3 = in3.head
+    assert(pi3.columns.size === 2)
+    assert(pi3.columns === Seq("key", "pid"))
+
+    // case4: HAVING & GROUP clause
+    val plan4 = sql(s"SELECT COUNT(key) FROM $reusedPartTable GROUP BY pid HAVING MAX(key) > 1000")
+      .queryExecution.optimizedPlan
+    val (in4, out4, _) = PrivilegesBuilder.build(plan4, spark)
+    assert(in4.size === 1)
+    assert(out4.isEmpty)
+    val pi4 = in4.head
+    assert(pi4.columns.size === 2)
+    assert(pi4.columns === Seq("key", "pid"))
   }
 }
 

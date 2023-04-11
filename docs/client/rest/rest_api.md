@@ -89,13 +89,9 @@ Create a session
 
 #### Request Parameters
 
-| Name            | Description                              | Type   |
-|:----------------|:-----------------------------------------|:-------|
-| protocolVersion | The protocol version of Hive CLI service | Int    |
-| user            | The user name                            | String |
-| password        | The user password                        | String |
-| ipAddr          | The user client IP address               | String |
-| configs         | The configuration of the session         | Map    |
+| Name    | Description                      | Type |
+|:--------|:---------------------------------|:-----|
+| configs | The configuration of the session | Map  |
 
 #### Response Body
 
@@ -114,11 +110,12 @@ Create an operation with EXECUTE_STATEMENT type
 
 #### Request Body
 
-| Name         | Description                                                    | Type    |
-|:-------------|:---------------------------------------------------------------|:--------|
-| statement    | The SQL statement that you execute                             | String  |
-| runAsync     | The flag indicates whether the query runs synchronously or not | Boolean |
-| queryTimeout | The interval of query time out                                 | Long    |
+| Name         | Description                                                    | Type           |
+|:-------------|:---------------------------------------------------------------|:---------------|
+| statement    | The SQL statement that you execute                             | String         |
+| runAsync     | The flag indicates whether the query runs synchronously or not | Boolean        |
+| queryTimeout | The interval of query time out                                 | Long           |
+| confOverlay  | The conf to overlay only for current operation                 | Map of key=val |
 
 #### Response Body
 
@@ -401,7 +398,7 @@ curl --location --request POST 'http://localhost:10099/api/v1/batches' \
 
 The created [Batch](#batch) object.
 
-### GET /batches/{batchId}
+### GET /batches/${batchId}
 
 Returns the batch information.
 

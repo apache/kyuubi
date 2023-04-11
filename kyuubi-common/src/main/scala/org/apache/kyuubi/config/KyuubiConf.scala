@@ -1171,6 +1171,15 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD: ConfigEntry[Long] =
+    buildConf("kyuubi.kubernetes.terminatedApplicationRetainPeriod")
+      .doc("The period for which the Kyuubi server retains application information after " +
+        "the application terminates.")
+      .version("1.7.1")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(Duration.ofMinutes(5).toMillis)
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -1357,6 +1366,14 @@ object KyuubiConf {
     .doc("session idle timeout, it will be closed when it's not accessed for this duration")
     .version("1.2.0")
     .fallbackConf(SESSION_TIMEOUT)
+
+  val SESSION_CLOSE_ON_DISCONNECT: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.close.on.disconnect")
+      .doc("Session will be closed when client disconnects from kyuubi gateway. " +
+        "Set this to false to have session outlive its parent connection.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(true)
 
   val BATCH_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.batch.session.idle.timeout")
     .doc("Batch session idle timeout, it will be closed when it's not accessed for this duration")
@@ -1817,6 +1834,7 @@ object KyuubiConf {
       " all the capacity of the Hive Server2.</li>" +
       " <li>JDBC: specify this engine type will launch a JDBC engine which can provide" +
       " a MySQL protocol connector, for now we only support Doris dialect.</li>" +
+      " <li>CHAT: specify this engine type will launch a Chat engine.</li>" +
       "</ul>")
     .version("1.4.0")
     .stringConf
@@ -2349,14 +2367,14 @@ object KyuubiConf {
 
   val ENGINE_FLINK_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.flink.memory")
-      .doc("The heap memory for the Flink SQL engine")
+      .doc("The heap memory for the Flink SQL engine. Only effective in yarn session mode.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("1g")
 
   val ENGINE_FLINK_JAVA_OPTIONS: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.flink.java.options")
-      .doc("The extra Java options for the Flink SQL engine")
+      .doc("The extra Java options for the Flink SQL engine. Only effective in yarn session mode.")
       .version("1.6.0")
       .stringConf
       .createOptional
@@ -2364,8 +2382,16 @@ object KyuubiConf {
   val ENGINE_FLINK_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.flink.extra.classpath")
       .doc("The extra classpath for the Flink SQL engine, for configuring the location" +
-        " of hadoop client jars, etc")
+        " of hadoop client jars, etc. Only effective in yarn session mode.")
       .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_FLINK_APPLICATION_JARS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.flink.application.jars")
+      .doc("A comma-separated list of the local jars to be shipped with the job to the cluster. " +
+        "For example, SQL UDF jars. Only effective in yarn application mode.")
+      .version("1.8.0")
       .stringConf
       .createOptional
 
@@ -2544,7 +2570,7 @@ object KyuubiConf {
   val ENGINE_SUBMIT_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.engine.submit.timeout")
       .doc("Period to tolerant Driver Pod ephemerally invisible after submitting. " +
-        "In some Resource Managers, e.g. K8s, the Driver Pod is not invisible immediately " +
+        "In some Resource Managers, e.g. K8s, the Driver Pod is not visible immediately " +
         "after `spark-submit` is returned.")
       .version("1.7.1")
       .timeConf
@@ -2621,6 +2647,84 @@ object KyuubiConf {
     Map(configs.map { cfg => cfg.key -> cfg }: _*)
   }
 
+  val ENGINE_CHAT_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.memory")
+      .doc("The heap memory for the Chat engine")
+      .version("1.8.0")
+      .stringConf
+      .createWithDefault("1g")
+
+  val ENGINE_CHAT_JAVA_OPTIONS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.java.options")
+      .doc("The extra Java options for the Chat engine")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_CHAT_PROVIDER: ConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.provider")
+      .doc("The provider for the Chat engine. Candidates: <ul>" +
+        " <li>ECHO: simply replies a welcome message.</li>" +
+        " <li>GPT: a.k.a ChatGPT, powered by OpenAI.</li>" +
+        "</ul>")
+      .version("1.8.0")
+      .stringConf
+      .transform {
+        case "ECHO" | "echo" => "org.apache.kyuubi.engine.chat.provider.EchoProvider"
+        case "GPT" | "gpt" | "ChatGPT" => "org.apache.kyuubi.engine.chat.provider.ChatGPTProvider"
+        case other => other
+      }
+      .createWithDefault("ECHO")
+
+  val ENGINE_CHAT_GPT_API_KEY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.gpt.apiKey")
+      .doc("The key to access OpenAI open API, which could be got at " +
+        "https://platform.openai.com/account/api-keys")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_CHAT_GPT_MODEL: ConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.gpt.model")
+      .doc("ID of the model used in ChatGPT. Available models refer to OpenAI's " +
+        "[Model overview](https://platform.openai.com/docs/models/overview).")
+      .version("1.8.0")
+      .stringConf
+      .createWithDefault("gpt-3.5-turbo")
+
+  val ENGINE_CHAT_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.extra.classpath")
+      .doc("The extra classpath for the Chat engine, for configuring the location " +
+        "of the SDK and etc.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_CHAT_GPT_HTTP_PROXY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.chat.gpt.http.proxy")
+      .doc("HTTP proxy url for API calling in Chat GPT engine. e.g. http://127.0.0.1:1087")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_CHAT_GPT_HTTP_CONNECT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.chat.gpt.http.connect.timeout")
+      .doc("The timeout[ms] for establishing the connection with the Chat GPT server. " +
+        "A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.8.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofSeconds(120).toMillis)
+
+  val ENGINE_CHAT_GPT_HTTP_SOCKET_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.chat.gpt.http.socket.timeout")
+      .doc("The timeout[ms] for waiting for data packets after Chat GPT server " +
+        "connection is established. A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.8.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofSeconds(120).toMillis)
+
   val ENGINE_JDBC_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.memory")
       .doc("The heap memory for the JDBC query engine")
@@ -2676,6 +2780,15 @@ object KyuubiConf {
       .version("1.7.0")
       .stringConf
       .createWithDefault("bin/python")
+
+  val ENGINE_SPARK_REGISTER_ATTRIBUTES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.spark.register.attributes")
+      .internal
+      .doc("The extra attributes to expose when registering for Spark engine.")
+      .version("1.8.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Seq("spark.driver.memory", "spark.executor.memory"))
 
   val ENGINE_HIVE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.hive.event.loggers")

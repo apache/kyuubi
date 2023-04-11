@@ -19,6 +19,6 @@ Connectors For Flink SQL Query Engine
 .. toctree::
     :maxdepth: 2
 
-    flink_table_store
+    paimon
     hudi
     iceberg

@@ -137,6 +137,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       assert(connection.getEngineId.startsWith("local-"))
       assert(connection.getEngineName.startsWith("kyuubi"))
       assert(connection.getEngineUrl.nonEmpty)
+      assert(connection.getEngineRefId.nonEmpty)
       val stmt = connection.createStatement()
       try {
         stmt.execute("select engine_name()")

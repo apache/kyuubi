@@ -56,9 +56,7 @@ class SparkBatchProcessBuilder(
       buffer += s"${convertConfigKey(k)}=$v"
     }
 
-    setSparkUserName(proxyUser, buffer)
-    buffer += PROXY_USER
-    buffer += proxyUser
+    setupKerberos(buffer)
 
     assert(mainResource.isDefined)
     buffer += mainResource.get

@@ -17,6 +17,7 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
@@ -26,24 +27,29 @@ import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 
 trait FilteredShowObjectsExec extends LeafExecNode {
-  def delegated: SparkPlan
+  def result: Array[InternalRow]
 
-  final override def output: Seq[Attribute] = delegated.output
-
-  final private lazy val result = {
-    delegated.executeCollect().filter(isAllowed(_, AuthZUtils.getAuthzUgi(sparkContext)))
-  }
+  override def output: Seq[Attribute]
 
   final override def doExecute(): RDD[InternalRow] = {
     sparkContext.parallelize(result, 1)
   }
-
-  protected def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean
 }
 
-case class FilteredShowNamespaceExec(delegated: SparkPlan) extends FilteredShowObjectsExec {
+trait FilteredShowObjectsCheck {
+  def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean
+}
 
-  override protected def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean = {
+case class FilteredShowNamespaceExec(result: Array[InternalRow], output: Seq[Attribute])
+  extends FilteredShowObjectsExec {}
+object FilteredShowNamespaceExec extends FilteredShowObjectsCheck {
+  def apply(delegated: SparkPlan, sc: SparkContext): FilteredShowNamespaceExec = {
+    val result = delegated.executeCollect()
+      .filter(isAllowed(_, AuthZUtils.getAuthzUgi(sc)))
+    new FilteredShowNamespaceExec(result, delegated.output)
+  }
+
+  override def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)
     val resource = AccessResource(ObjectType.DATABASE, database, null, null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWDATABASES, AccessType.USE)
@@ -52,8 +58,16 @@ case class FilteredShowNamespaceExec(delegated: SparkPlan) extends FilteredShowO
   }
 }
 
-case class FilteredShowTablesExec(delegated: SparkPlan) extends FilteredShowObjectsExec {
-  override protected def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean = {
+case class FilteredShowTablesExec(result: Array[InternalRow], output: Seq[Attribute])
+  extends FilteredShowObjectsExec {}
+object FilteredShowTablesExec extends FilteredShowObjectsCheck {
+  def apply(delegated: SparkPlan, sc: SparkContext): FilteredShowNamespaceExec = {
+    val result = delegated.executeCollect()
+      .filter(isAllowed(_, AuthZUtils.getAuthzUgi(sc)))
+    new FilteredShowNamespaceExec(result, delegated.output)
+  }
+
+  override def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)
     val table = r.getString(1)
     val isTemp = r.getBoolean(2)

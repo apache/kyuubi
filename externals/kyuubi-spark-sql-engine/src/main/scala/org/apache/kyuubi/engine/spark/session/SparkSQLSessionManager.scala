@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark.session
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.spark.api.python.KyuubiPythonGatewayServer
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -94,6 +95,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   override def stop(): Unit = {
     super.stop()
+    KyuubiPythonGatewayServer.shutdown()
     userIsolatedSparkSessionThread.foreach(_.shutdown())
   }
 

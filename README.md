@@ -84,7 +84,7 @@ HiveServer2 can identify and authenticate a caller, and then if the caller also 
 
 Kyuubi extends the use of STS in a multi-tenant model based on a unified interface and relies on the concept of multi-tenancy to interact with cluster managers to finally gain the ability of resources sharing/isolation and data security. The loosely coupled architecture of the Kyuubi server and engine dramatically improves the client concurrency and service stability of the service itself.
 
-#### DataLake/LakeHouse Support
+#### DataLake/Lakehouse Support
 
 The vision of Kyuubi is to unify the portal and become an easy-to-use data lake management platform. Different kinds of workloads, such as ETL processing and BI analytics, can be supported by one platform, using one copy of data, with one SQL interface.
 

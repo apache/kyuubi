@@ -25,7 +25,7 @@ import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParser._
 import org.apache.kyuubi.sql.KyuubiTrinoFeBaseParserBaseVisitor
 import org.apache.kyuubi.sql.parser.KyuubiParser.unescapeSQLString
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetColumns, GetPrimaryKeys, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
+import org.apache.kyuubi.sql.plan.trino.{Deallocate, ExecuteForPreparing, GetCatalogs, GetColumns, GetPrimaryKeys, GetSchemas, GetTables, GetTableTypes, GetTypeInfo, Prepare}
 
 class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef] {
 
@@ -122,5 +122,22 @@ class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef]
 
   override def visitTypesFilter(ctx: TypesFilterContext): List[String] = {
     ctx.stringLit().asScala.map(v => unescapeSQLString(v.getText)).toList
+  }
+
+  override def visitExecute(ctx: ExecuteContext): KyuubiTreeNode = {
+    val parameters = Option(ctx.parameterList()) match {
+      case Some(para) =>
+        para.anyStr().asScala.toList.map(p => p.getText.substring(1, p.getText.length - 1))
+      case None => List[String]()
+    }
+    ExecuteForPreparing(ctx.IDENTIFIER().getText, parameters)
+  }
+
+  override def visitPrepare(ctx: PrepareContext): KyuubiTreeNode = {
+    Prepare(ctx.IDENTIFIER().getText, ctx.statement().getText)
+  }
+
+  override def visitDeallocate(ctx: DeallocateContext): KyuubiTreeNode = {
+    Deallocate(ctx.IDENTIFIER().getText)
   }
 }

@@ -25,48 +25,35 @@ import org.yaml.snakeyaml.Yaml
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_SHARE_LEVEL_SUBDOMAIN, ENGINE_TYPE}
-import org.apache.kyuubi.ctl.opt.{CliConfig, ControlObject}
+import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 
 object CtlUtils {
 
-  private[ctl] def getZkNamespace(conf: KyuubiConf, cliConfig: CliConfig): String = {
-    cliConfig.resource match {
-      case ControlObject.SERVER =>
-        DiscoveryPaths.makePath(null, cliConfig.zkOpts.namespace)
-      case ControlObject.ENGINE =>
-        val engineType = Some(cliConfig.engineOpts.engineType)
-          .filter(_ != null).filter(_.nonEmpty)
-          .getOrElse(conf.get(ENGINE_TYPE))
-        val engineSubdomain = Some(cliConfig.engineOpts.engineSubdomain)
-          .filter(_ != null).filter(_.nonEmpty)
-          .getOrElse(conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse("default"))
-        val engineShareLevel = Some(cliConfig.engineOpts.engineShareLevel)
-          .filter(_ != null).filter(_.nonEmpty)
-          .getOrElse(conf.get(ENGINE_SHARE_LEVEL))
-        // The path of the engine defined in zookeeper comes from
-        // org.apache.kyuubi.engine.EngineRef#engineSpace
-        DiscoveryPaths.makePath(
-          s"${cliConfig.zkOpts.namespace}_" +
-            s"${cliConfig.zkOpts.version}_" +
-            s"${engineShareLevel}_${engineType}",
-          cliConfig.engineOpts.user,
-          engineSubdomain)
-    }
+  private[ctl] def getZkServerNamespace(conf: KyuubiConf, cliConfig: CliConfig): String = {
+    DiscoveryPaths.makePath(null, cliConfig.zkOpts.namespace)
   }
 
-  private[ctl] def getServiceNodes(
-      discoveryClient: DiscoveryClient,
-      znodeRoot: String,
-      hostPortOpt: Option[(String, Int)]): Seq[ServiceNodeInfo] = {
-    val serviceNodes = discoveryClient.getServiceNodesInfo(znodeRoot)
-    hostPortOpt match {
-      case Some((host, port)) => serviceNodes.filter { sn =>
-          sn.host == host && sn.port == port
-        }
-      case _ => serviceNodes
-    }
+  private[ctl] def getZkEngineNamespaceAndSubdomain(
+      conf: KyuubiConf,
+      cliConfig: CliConfig): (String, Option[String]) = {
+    val engineType = Some(cliConfig.engineOpts.engineType)
+      .filter(_ != null).filter(_.nonEmpty)
+      .getOrElse(conf.get(ENGINE_TYPE))
+    val engineShareLevel = Some(cliConfig.engineOpts.engineShareLevel)
+      .filter(_ != null).filter(_.nonEmpty)
+      .getOrElse(conf.get(ENGINE_SHARE_LEVEL))
+    val engineSubdomain = Option(cliConfig.engineOpts.engineSubdomain)
+      .filter(_.nonEmpty).orElse(conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN))
+    // The path of the engine defined in zookeeper comes from
+    // org.apache.kyuubi.engine.EngineRef#engineSpace
+    val rootPath = DiscoveryPaths.makePath(
+      s"${cliConfig.zkOpts.namespace}_" +
+        s"${cliConfig.zkOpts.version}_" +
+        s"${engineShareLevel}_${engineType}",
+      cliConfig.engineOpts.user)
+    (rootPath, engineSubdomain)
   }
 
   /**
@@ -75,17 +62,41 @@ object CtlUtils {
   private[ctl] def listZkServerNodes(
       conf: KyuubiConf,
       cliConfig: CliConfig,
-      filterHostPort: Boolean): Seq[ServiceNodeInfo] = {
-    var nodes = Seq.empty[ServiceNodeInfo]
+      hostPortOpt: Option[(String, Int)]): Seq[ServiceNodeInfo] = {
     withDiscoveryClient(conf) { discoveryClient =>
-      val znodeRoot = getZkNamespace(conf, cliConfig)
-      val hostPortOpt =
-        if (filterHostPort) {
-          Some((cliConfig.zkOpts.host, cliConfig.zkOpts.port.toInt))
-        } else None
-      nodes = getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
+      val znodeRoot = getZkServerNamespace(conf, cliConfig)
+      getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
     }
-    nodes
+  }
+
+  /**
+   * List Kyuubi engine nodes info.
+   */
+  private[ctl] def listZkEngineNodes(
+      conf: KyuubiConf,
+      cliConfig: CliConfig,
+      hostPortOpt: Option[(String, Int)]): Seq[ServiceNodeInfo] = {
+    withDiscoveryClient(conf) { discoveryClient =>
+      val (znodeRoot, subdomainOpt) = getZkEngineNamespaceAndSubdomain(conf, cliConfig)
+      val candidates = discoveryClient.getChildren(znodeRoot)
+      val matched = subdomainOpt match {
+        case Some(subdomain) => candidates.filter(_ == subdomain)
+        case None => candidates
+      }
+      matched.flatMap { subdomain =>
+        getServiceNodes(discoveryClient, s"$znodeRoot/$subdomain", hostPortOpt)
+      }
+    }
+  }
+
+  private[ctl] def getServiceNodes(
+      discoveryClient: DiscoveryClient,
+      znodeRoot: String,
+      hostPortOpt: Option[(String, Int)]): Seq[ServiceNodeInfo] = {
+    val serviceNodes = discoveryClient.getServiceNodesInfo(znodeRoot)
+    hostPortOpt.map { case (host, port) =>
+      serviceNodes.filter { sn => sn.host == host && sn.port == port }
+    }.getOrElse(serviceNodes)
   }
 
   private[ctl] def loadYamlAsMap(cliConfig: CliConfig): JMap[String, Object] = {

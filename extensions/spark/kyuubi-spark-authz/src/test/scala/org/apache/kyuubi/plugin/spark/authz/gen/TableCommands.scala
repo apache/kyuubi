@@ -637,7 +637,7 @@ object TableCommands {
       "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand"),
     InsertIntoHadoopFsRelationCommand,
     InsertIntoDataSourceDir.copy(classname =
-      "org.apache.spark.sql.execution.datasources.InsertIntoHiveDirCommand"),
+      "org.apache.spark.sql.execution.datasources.InsertIntoDataSourceDirCommand"),
     InsertIntoHiveTable,
     LoadData,
     MergeIntoTable,

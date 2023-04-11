@@ -77,7 +77,7 @@ class KyuubiSessionImpl(
   lazy val engine: EngineRef = new EngineRef(
     sessionConf,
     user,
-    sessionManager.groupProvider.primaryGroup(user, optimizedConf.asJava),
+    sessionManager.groupProvider,
     handle.identifier.toString,
     sessionManager.applicationManager)
   private[kyuubi] val launchEngineOp = sessionManager.operationManager

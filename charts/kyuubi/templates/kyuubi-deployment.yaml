@@ -50,6 +50,12 @@ spec:
         - name: kyuubi-server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.command }}
+          command: {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+          {{- with .Values.args }}
+          args: {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
           {{- with .Values.env }}
           env: {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}

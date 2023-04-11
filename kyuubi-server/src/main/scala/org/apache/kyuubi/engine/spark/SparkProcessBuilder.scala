@@ -121,6 +121,16 @@ class SparkProcessBuilder(
       buffer += s"${convertConfigKey(k)}=$v"
     }
 
+    setupKerberos(buffer)
+
+    mainResource.foreach { r => buffer += r }
+
+    buffer.toArray
+  }
+
+  override protected def module: String = "kyuubi-spark-sql-engine"
+
+  protected def setupKerberos(buffer: ArrayBuffer[String]): Unit = {
     // if the keytab is specified, PROXY_USER is not supported
     tryKeytab() match {
       case None =>
@@ -130,13 +140,7 @@ class SparkProcessBuilder(
       case Some(name) =>
         setSparkUserName(name, buffer)
     }
-
-    mainResource.foreach { r => buffer += r }
-
-    buffer.toArray
   }
-
-  override protected def module: String = "kyuubi-spark-sql-engine"
 
   private def tryKeytab(): Option[String] = {
     val principal = conf.getOption(PRINCIPAL)

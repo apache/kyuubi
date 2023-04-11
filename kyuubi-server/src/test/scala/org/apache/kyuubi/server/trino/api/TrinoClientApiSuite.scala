@@ -114,6 +114,7 @@ class TrinoClientApiSuite extends KyuubiFunSuite with TrinoRestFrontendTestHelpe
         (false, List[List[Any]]())
       }
     }
+
     Iterator.continually(getData(trino)).takeWhile(_._1).flatMap(_._2).toList
   }
 

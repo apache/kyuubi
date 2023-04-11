@@ -20,10 +20,10 @@ package org.apache.kyuubi.engine.flink.operation
 import java.sql.Statement
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
+import org.apache.kyuubi.engine.flink.WithFlinkSQLEngineLocal
 import org.apache.kyuubi.operation.{AnalyzeMode, ExecutionMode, HiveJDBCTestHelper, ParseMode, PhysicalMode}
 
-class PlanOnlyOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
+class PlanOnlyOperationSuite extends WithFlinkSQLEngineLocal with HiveJDBCTestHelper {
 
   override def withKyuubiConf: Map[String, String] =
     Map(

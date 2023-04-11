@@ -68,6 +68,7 @@ services:
     ports:
       - 4040-4050:4040-4050
       - 10009:10009
+      - 10099:10099
     volumes:
       - ./conf/core-site.xml:/etc/hadoop/conf/core-site.xml
       - ./conf/hive-site.xml:/etc/hive/conf/hive-site.xml

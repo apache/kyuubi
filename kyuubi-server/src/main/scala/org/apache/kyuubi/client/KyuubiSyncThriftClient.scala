@@ -59,6 +59,7 @@ class KyuubiSyncThriftClient private (
 
   @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
   @volatile private var remoteEngineBroken: Boolean = false
+  @volatile private var clientClosedOnEngineBroken: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
   private var engineAliveThreadPool: ScheduledExecutorService = _
   @volatile private var engineLastAlive: Long = _
@@ -109,6 +110,18 @@ class KyuubiSyncThriftClient private (
           }
         } else {
           shutdownAsyncRequestExecutor()
+          warn(s"Removing Clients for ${_remoteSessionHandle}")
+          Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
+            Utils.tryLogNonFatalError {
+              if (tProtocol.getTransport.isOpen) {
+                tProtocol.getTransport.close()
+              }
+            }
+            clientClosedOnEngineBroken = true
+            Option(engineAliveThreadPool).foreach { pool =>
+              ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
+            }
+          }
         }
       }
     }
@@ -199,6 +212,7 @@ class KyuubiSyncThriftClient private (
   }
 
   def closeSession(): Unit = {
+    if (clientClosedOnEngineBroken) return
     try {
       if (_remoteSessionHandle != null) {
         val req = new TCloseSessionReq(_remoteSessionHandle)

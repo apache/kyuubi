@@ -4,7 +4,7 @@
   "vueIndentScriptAndStyle": true,
   "singleQuote": true,
   "quoteProps": "as-needed",
-  "jsxBracketSameLine": false,
+  "bracketSameLine": true,
   "jsxSingleQuote": true,
   "arrowParens": "always",
   "htmlWhitespaceSensitivity": "strict",

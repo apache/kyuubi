@@ -307,6 +307,8 @@ object RowSet {
     case _: MapType => TTypeId.MAP_TYPE
     case _: RowType => TTypeId.STRUCT_TYPE
     case _: BinaryType => TTypeId.BINARY_TYPE
+    case _: VarBinaryType => TTypeId.BINARY_TYPE
+    case _: TimeType => TTypeId.STRING_TYPE
     case t @ (_: ZonedTimestampType | _: LocalZonedTimestampType | _: MultisetType |
         _: YearMonthIntervalType | _: DayTimeIntervalType) =>
       throw new IllegalArgumentException(
@@ -368,7 +370,7 @@ object RowSet {
         // Only match string in nested type values
         "\"" + s + "\""
 
-      case (bin: Array[Byte], _: BinaryType) =>
+      case (bin: Array[Byte], _ @(_: BinaryType | _: VarBinaryType)) =>
         new String(bin, StandardCharsets.UTF_8)
 
       case (other, _) =>

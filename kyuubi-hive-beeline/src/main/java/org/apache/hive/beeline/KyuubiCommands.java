@@ -19,6 +19,7 @@ package org.apache.hive.beeline;
 
 import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
@@ -53,12 +54,14 @@ public class KyuubiCommands extends Commands {
   }
 
   private boolean isSourceCMD(String cmd) {
+    cmd = cmd.trim();
     if (cmd == null || cmd.isEmpty()) return false;
     String[] tokens = tokenizeCmd(cmd);
     return tokens[0].equalsIgnoreCase("source");
   }
 
   private boolean sourceFile(String cmd) {
+    cmd = cmd.trim();
     String[] tokens = tokenizeCmd(cmd);
     String cmd_1 = getFirstCmd(cmd, tokens[0].length());
 
@@ -93,8 +96,9 @@ public class KyuubiCommands extends Commands {
           lines += "\n" + extra;
         }
       }
-      String[] cmds = lines.split(";");
+      String[] cmds = lines.split(beeLine.getOpts().getDelimiter());
       for (String c : cmds) {
+        c = c.trim();
         if (!executeInternal(c, false)) {
           return false;
         }
@@ -276,7 +280,8 @@ public class KyuubiCommands extends Commands {
    * quotations. It iterates through each character in the line and checks to see if it is a ;, ',
    * or "
    */
-  private List<String> getCmdList(String line, boolean entireLineAsCommand) {
+  @VisibleForTesting
+  public List<String> getCmdList(String line, boolean entireLineAsCommand) {
     List<String> cmdList = new ArrayList<String>();
     if (entireLineAsCommand) {
       cmdList.add(line);
@@ -485,6 +490,9 @@ public class KyuubiCommands extends Commands {
         beeLine.updateOptsForCli();
       }
       beeLine.runInit();
+      if (beeLine.getOpts().getInitFiles() != null) {
+        beeLine.initializeConsoleReader(null);
+      }
 
       beeLine.setCompletions();
       beeLine.getOpts().setLastConnectedUrl(url);
