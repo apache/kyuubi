@@ -449,7 +449,7 @@ jobs:
         if: failure()
         run: |
           kubectl get pods
-          kubectl get pods | awk -F " " '{print$1}' | xargs -I {} kubectl logs {}
+          kubectl get pods | grep driver | awk -F " " '{print$1}' | xargs -I {} kubectl logs {}
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
