@@ -151,6 +151,9 @@ object FlinkEngineUtils extends Logging {
   }
 
   def getResultJobId(resultFetch: ResultFetcher): JobID = {
+    if (FlinkEngineUtils.isFlinkVersionAtMost("1.16")) {
+      return null
+    }
     val field = classOf[ResultFetcher].getDeclaredField("jobID")
     field.setAccessible(true);
     try {
