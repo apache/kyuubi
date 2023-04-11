@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.lineage.helper
 
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
+
 import org.apache.spark.internal.Logging
 import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
 import org.apache.spark.sql.SparkSession
@@ -35,6 +36,7 @@ import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StringType
+
 import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
@@ -71,9 +73,11 @@ trait LineageParser {
   private def mergeColumnsLineage(
       left: AttributeMap[AttributeSet],
       right: AttributeMap[AttributeSet]): AttributeMap[AttributeSet] = {
-    left ++ right.map {
-      case (k, attrs) =>
-        k -> (attrs ++ left.getOrElse(k, AttributeSet.empty))
+    if (left.isEmpty || right.isEmpty) left ++ right
+    else {
+      val head =
+        ListMap(left.head._1 -> (left.head._2 ++ right.getOrElse(left.head._1, AttributeSet.empty)))
+      head ++ mergeColumnsLineage(left.tail, right - left.head._1)
     }
   }
 
@@ -83,13 +87,15 @@ trait LineageParser {
     if (parent.isEmpty) child
     else {
       val childMap = child.map { case (k, attrs) => (k.exprId, attrs) }
-      parent.map { case (k, attrs) =>
+      val essential = parent.map { case (k, attrs) =>
         k -> AttributeSet(attrs.flatMap(attr =>
           childMap.getOrElse(
             attr.exprId,
             if (attr.name.equalsIgnoreCase(AGGREGATE_COUNT_COLUMN_IDENTIFIER)) AttributeSet(attr)
             else AttributeSet.empty)))
       }
+      val additional = child.filter(_._1.name.equalsIgnoreCase(ADDITIONAL_COLUMN_IDENTIFIER))
+      mergeColumnsLineage(essential, additional)
     }
   }
 
@@ -195,7 +201,9 @@ trait LineageParser {
     joinColumnsLineage(parentColumnsLineage, mergedRelationColumnLineage)
   }
 
-  private def extractExpressionColumnLine(expr: Expression, parentColumnsLineage: AttributeMap[AttributeSet]): AttributeMap[AttributeSet] = {
+  private def extractExpressionColumnLine(
+      expr: Expression,
+      parentColumnsLineage: AttributeMap[AttributeSet]): AttributeMap[AttributeSet] = {
     expr match {
       case expr: InSubquery =>
         expr.query.plan.children.map(
@@ -353,21 +361,29 @@ trait LineageParser {
           case UpdateAction(_, assignments) => assignments
           case InsertAction(_, assignments) => assignments
         }.flatten
-        val nextColumnsLlineage = ListMap(allAssignments.map { assignment =>
-          (
-            assignment.key.asInstanceOf[Attribute],
-            assignment.value.references)
-        }: _*)
+
+        val nextColumnsLineage = allAssignments.map { assignment =>
+          assignment.key.asInstanceOf[Attribute] -> assignment.value.references
+        }.foldLeft(ListMap[Attribute, AttributeSet]()) {
+          case (columnsLineage, (attr, attrRef)) =>
+            columnsLineage + (attr -> (attrRef ++ columnsLineage.getOrElse(
+              attr,
+              AttributeSet.empty)))
+        }
+
         val targetTable = getPlanField[LogicalPlan]("targetTable", plan)
         val sourceTable = getPlanField[LogicalPlan]("sourceTable", plan)
         val targetColumnsLineage = extractColumnsLineage(
           targetTable,
-          nextColumnsLlineage.map { case (k, _) => (k, AttributeSet(k)) })
-        val sourceColumnsLineage = extractColumnsLineage(sourceTable, nextColumnsLlineage)
-        val targetColumnsWithTargetTable = targetColumnsLineage.values.flatten.map { column =>
-          column.withName(s"${column.qualifiedName}")
+          nextColumnsLineage.map { case (k, _) => (k, AttributeSet(k)) })
+        val sourceColumnsLineage = extractColumnsLineage(sourceTable, nextColumnsLineage)
+        val targetColumnsLineageWithTargetTable = targetColumnsLineage.map {
+          case (attr, attrRef) =>
+            val qualifiedName = attrRef.find(_.exprId == attr.exprId).getOrElse(attr).qualifiedName
+            attr.withName(s"$qualifiedName") ->
+              attrRef
         }
-        ListMap(targetColumnsWithTargetTable.zip(sourceColumnsLineage.values).toSeq: _*)
+        joinColumnsLineage(targetColumnsLineageWithTargetTable, sourceColumnsLineage)
 
       case p if p.nodeName == "WithCTE" =>
         val optimized = sparkSession.sessionState.optimizer.execute(p)
@@ -578,7 +594,6 @@ case class SparkSQLLineageParseHelper(sparkSession: SparkSession) extends Lineag
     Try(parse(plan)).recover {
       case e: Exception =>
         logWarning(s"Extract Statement[$executionId] columns lineage failed.", e)
-        e.printStackTrace()
         throw e
     }.toOption
   }
