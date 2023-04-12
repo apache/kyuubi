@@ -18,13 +18,16 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.File
-import java.nio.file.Paths
 
-import org.apache.flink.configuration.{Configuration, GlobalConfiguration, RestOptions}
+import scala.collection.JavaConverters._
+
+import org.apache.flink.configuration.{Configuration, RestOptions}
+import org.apache.flink.runtime.clusterframework.BootstrapTools
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.util.EnvUtils
 
 trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources {
 
@@ -59,24 +62,22 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
       System.setProperty(k, v)
       kyuubiConf.set(k, v)
     }
-    val flinkConfDir = sys.env.getOrElse(
-      "FLINK_CONF_DIR", {
-        val flinkHome = sys.env.getOrElse(
-          "FLINK_HOME", {
-            // detect the FLINK_HOME by flink-core*.jar location if unset
-            val jarLoc =
-              classOf[GlobalConfiguration].getProtectionDomain.getCodeSource.getLocation
-            new File(jarLoc.toURI).getParentFile.getParent
-          })
-        Paths.get(flinkHome, "conf").toString
+    // persist the configuration because DefaultContext loads Flink conf from FLINK_CONF_DIR
+    // environment
+    val flinkConfDir = Utils.createTempDir().toFile
+    BootstrapTools.writeConfiguration(flinkConfig, new File(flinkConfDir, "flink-conf.yaml"))
+    EnvUtils.withTestEnv(
+      System.getenv().asScala.toMap ++
+        Map("FLINK_CONF_DIR" -> flinkConfDir.getAbsolutePath),
+      () => {
+        val engineContext = FlinkEngineUtils.getDefaultContext(
+          new Array[String](0),
+          flinkConfig,
+          flinkConfDir.getAbsolutePath)
+        FlinkSQLEngine.startEngine(engineContext)
+        engine = FlinkSQLEngine.currentEngine.get
+        connectionUrl = engine.frontendServices.head.connectionUrl
       })
-    val engineContext = FlinkEngineUtils.getDefaultContext(
-      new Array[String](0),
-      flinkConfig,
-      flinkConfDir)
-    FlinkSQLEngine.startEngine(engineContext)
-    engine = FlinkSQLEngine.currentEngine.get
-    connectionUrl = engine.frontendServices.head.connectionUrl
   }
 
   def stopFlinkEngine(): Unit = {
