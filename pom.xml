@@ -2395,13 +2395,6 @@
         </profile>
 
         <profile>
-            <id>flink-1.15</id>
-            <properties>
-                <flink.version>1.15.4</flink.version>
-            </properties>
-        </profile>
-
-        <profile>
             <id>flink-1.16</id>
             <properties>
                 <flink.version>1.16.1</flink.version>
