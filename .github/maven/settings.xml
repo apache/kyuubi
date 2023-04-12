@@ -5,7 +5,7 @@
         <server>
             <id>gcs-maven-central-mirror</id>
             <configuration>
-                <connectTimeout>10000</connectTimeout>
+                <connectTimeout>60000</connectTimeout>
             </configuration>
         </server>
     </servers>
