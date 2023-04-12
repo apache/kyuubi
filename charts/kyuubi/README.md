@@ -32,6 +32,17 @@ cluster using the [Helm](https://helm.sh) package manager.
 - Kubernetes cluster
 - Helm 3.0+
 
+## Template rendering
+When you want to test the template rendering, but not actually install anything. There are two ways to [render templates](https://helm.sh/docs/chart_template_guide/debugging/).
+It will return the rendered template to you so you can see the output.
+- Local rendering chart templates
+```shell
+helm template --debug ../kyuubi
+```
+- Server side rendering chart templates
+```shell
+helm install --dry-run --debug --generate-name ../kyuubi
+```
 <!-- ## Features -->
 
 ## Documentation
