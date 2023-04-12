@@ -33,8 +33,8 @@ cluster using the [Helm](https://helm.sh) package manager.
 - Helm 3.0+
 
 ## Template rendering
-When you want to test the template rendering, but not actually install anything. There are two ways to [render templates](https://helm.sh/docs/chart_template_guide/debugging/).
-It will return the rendered template to you so you can see the output.
+When you want to test the template rendering, but not actually install anything. [Debugging templates](https://helm.sh/docs/chart_template_guide/debugging/) provide a quick way of viewing the generated content without YAML parse errors blocking.
+There are two ways to render templates. It will return the rendered template to you so you can see the output.
 - Local rendering chart templates
 ```shell
 helm template --debug ../kyuubi
