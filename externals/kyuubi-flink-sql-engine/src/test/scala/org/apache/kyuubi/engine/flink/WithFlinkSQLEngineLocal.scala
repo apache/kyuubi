@@ -70,8 +70,9 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
       System.getenv().asScala.toMap ++
         Map("FLINK_CONF_DIR" -> flinkConfDir.getAbsolutePath),
       () => {
+        val args = Array("-j", s"${udfJar.getAbsolutePath}")
         val engineContext = FlinkEngineUtils.getDefaultContext(
-          new Array[String](0),
+          args,
           flinkConfig,
           flinkConfDir.getAbsolutePath)
         FlinkSQLEngine.startEngine(engineContext)
