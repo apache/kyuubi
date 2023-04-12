@@ -1372,6 +1372,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     withTable("t1", "t2") { _ =>
       spark.sql("CREATE TABLE t1 (a string, b string) USING hive")
       spark.sql("CREATE TABLE t2 (a string, b string) USING hive")
+
       val ret0 = exectractLineage("select t1.a from t1 where t1.b in (select b from t2)")
       assert(ret0 == Lineage(
         List("default.t1", "default.t2"),
