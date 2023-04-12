@@ -32,7 +32,6 @@
 NOTICE*
 docs/**
 build/apache-maven-*/**
-build/maven-mvnd-*/**
 build/scala-*/**
 **/**/operation_logs/**/**
 **/**/server_operation_logs/**/**
