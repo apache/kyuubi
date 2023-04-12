@@ -112,10 +112,10 @@ function install_mvnd() {
 
     install_app \
       "${APACHE_MIRROR}/maven/mvnd/${MVND_VERSION}" \
-      "maven-mvnd-${MVND_VERSION}-m${MVND_MVN_SHORT_VERSION}-${OS_TYPE}-${ARCH}.tar.gz" \
-      "maven-mvnd-${MVND_VERSION}-m${MVND_MVN_SHORT_VERSION}-${OS_TYPE}-${ARCH}/bin/mvnd"
+      "maven-mvnd-${MVND_VERSION}-${OS_TYPE}-${ARCH}.tar.gz" \
+      "maven-mvnd-${MVND_VERSION}-${OS_TYPE}-${ARCH}/bin/mvnd"
 
-    MVND_BIN="${_DIR}/maven-mvnd-${MVND_VERSION}-m${MVND_MVN_SHORT_VERSION}-${OS_TYPE}-${ARCH}/bin/mvnd"
+    MVND_BIN="${_DIR}/maven-mvnd-${MVND_VERSION}-${OS_TYPE}-${ARCH}/bin/mvnd"
   else
     if [ "$(version $MVN_DETECTED_VERSION)" -ne "$(version $MVN_VERSION)" ]; then
       echo "Mvnd $MVND_DETECTED_VERSION embedded maven version $MVN_DETECTED_VERSION is not equivalent to $MVN_VERSION required in pom."
