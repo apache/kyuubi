@@ -54,7 +54,7 @@ object EnvUtils {
             map.putAll(newEnv.asJava)
           }
         }
-      case e : Throwable => throw e
+      case e: Throwable => throw e
     }
   }
 

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import com.google.common.base.Preconditions
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.gateway.api.operation.OperationHandle
 import org.apache.flink.table.operations.command._
@@ -46,11 +47,18 @@ class PlanOnlyStatement(
 
   override protected def runInternal(): Unit = {
     try {
-      val operation = executor.getTableEnvironment.getParser.parse(statement)
+      val operations = executor.getTableEnvironment.getParser.parse(statement)
+      Preconditions.checkArgument(
+        operations.size() == 1,
+        "Plan-only mode supports single statement only",
+        null)
+      val operation = operations.get(0)
       operation match {
         case _: SetOperation | _: ResetOperation | _: AddJarOperation | _: RemoveJarOperation |
             _: ShowJarsOperation =>
-          val resultFetcher = executor.executeStatement(OperationHandle.create(), statement)
+          val resultFetcher = executor.executeStatement(
+            new OperationHandle(getHandle.identifier),
+            statement)
           resultSet = ResultSetUtil.fromResultFetcher(resultFetcher);
         case _ => explainOperation(statement)
       }
