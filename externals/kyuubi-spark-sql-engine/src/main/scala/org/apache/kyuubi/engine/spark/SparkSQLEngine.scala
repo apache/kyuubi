@@ -366,7 +366,7 @@ object SparkSQLEngine extends Logging {
       if (!sparkSessionCreated.get()) {
         mainThread.interrupt()
       }
-    })
+    }, "CreateSparkTimeoutChecker")
     checker.setDaemon(true)
     checker.start()
   }
