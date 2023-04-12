@@ -5,7 +5,7 @@
         <server>
             <id>gcs-maven-central-mirror</id>
             <configuration>
-                <aether.connector.connectTimeout>60000</aether.connector.connectTimeout>
+                <connectTimeout>10000</connectTimeout>
             </configuration>
         </server>
     </servers>
