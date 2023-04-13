@@ -123,7 +123,7 @@ object ZookeeperClientProvider extends Logging {
             classOf[String],
             classOf[String],
             classOf[String])
-          .build()
+          .build[Configuration]()
           .newInstance("KyuubiZooKeeperClient", serverPrincipal, keytab)
         Configuration.setConfiguration(jaasConf)
       case _ =>
