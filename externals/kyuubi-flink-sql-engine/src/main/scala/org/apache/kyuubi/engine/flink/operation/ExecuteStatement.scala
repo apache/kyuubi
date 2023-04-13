@@ -119,12 +119,13 @@ class ExecuteStatement(
         val result = executor.snapshotResult(sessionId, resultId, pageSize)
         result.getType match {
           case TypedResult.ResultType.PAYLOAD =>
-            (1 to result.getPayload).foreach { page =>
-              if (rows.size < resultMaxRows) {
+            if (rows.size >= resultMaxRows) {
+              loop = false
+            } else {
+              rows.clear()
+              (1 to result.getPayload).foreach { page =>
                 val result = executor.retrieveResultPage(resultId, page)
                 rows ++= result.asScala.map(r => convertToRow(r, dataTypes))
-              } else {
-                loop = false
               }
             }
           case TypedResult.ResultType.EOS => loop = false
