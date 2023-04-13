@@ -17,10 +17,31 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import org.apache.kyuubi.engine.flink.WithDiscoveryFlinkSQLEngine
+import java.util.UUID
+
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_TYPE}
+import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.flink.{WithDiscoveryFlinkSQLEngine, WithFlinkSQLEngineOnYarn}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
 
 class FlinkOperationOnYarnSuite extends FlinkOperationSuite
-  with WithDiscoveryFlinkSQLEngine {
+  with WithDiscoveryFlinkSQLEngine with WithFlinkSQLEngineOnYarn {
 
   protected def jdbcUrl: String = getFlinkEngineServiceUrl
+
+  override def withKyuubiConf: Map[String, String] = {
+    Map(
+      HA_NAMESPACE.key -> namespace,
+      HA_ENGINE_REF_ID.key -> engineRefId,
+      ENGINE_TYPE.key -> "FLINK_SQL",
+      ENGINE_SHARE_LEVEL.key -> shareLevel) ++ testExtraConf
+  }
+
+  override protected def engineRefId: String = UUID.randomUUID().toString
+
+  def namespace: String = "/kyuubi/flink-yarn-application-test"
+
+  def shareLevel: String = ShareLevel.USER.toString
+
+  def engineType: String = "flink"
 }
