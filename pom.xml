@@ -24,7 +24,7 @@
         <artifactId>apache</artifactId>
         <version>29</version>
     </parent>
-
+R
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
     <version>1.8.0-SNAPSHOT</version>
@@ -245,7 +245,7 @@
         <spotless.java.googlejavaformat.version>1.7</spotless.java.googlejavaformat.version>
         <spotless.python.includes></spotless.python.includes>
         <spotless.python.black.version>22.3.0</spotless.python.black.version>
-        <spotless.scala.scalafmt.version>3.7.1</spotless.scala.scalafmt.version>
+        <spotless.scala.scalafmt.version>3.7.3</spotless.scala.scalafmt.version>
 
         <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
         <distMgmtReleaseName>Apache Release Distribution Repository</distMgmtReleaseName>
