@@ -43,7 +43,7 @@ data:
 
     ## User provided Kyuubi configurations
     {{- with .Values.kyuubiConf.kyuubiDefaults }}
-    {{- tpl . $ | nindent 4 }}
+      {{- tpl . $ | nindent 4 }}
     {{- end }}
   {{- with .Values.kyuubiConf.log4j2 }}
   log4j2.xml: |

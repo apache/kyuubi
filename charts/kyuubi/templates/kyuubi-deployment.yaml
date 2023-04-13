@@ -42,7 +42,9 @@ spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if or .Values.serviceAccount.name .Values.serviceAccount.create }}
       serviceAccountName: {{ .Values.serviceAccount.name | default .Release.Name }}
+      {{- end }}
       {{- with .Values.initContainers }}
       initContainers: {{- tpl (toYaml .) $ | nindent 8 }}
       {{- end }}
@@ -90,7 +92,7 @@ spec:
             successThreshold: {{ .Values.probe.readiness.successThreshold }}
           {{- end }}
           {{- with .Values.resources }}
-          resources:  {{- toYaml . | nindent 12 }}
+          resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: conf
