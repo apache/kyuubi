@@ -1066,6 +1066,32 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
     }
   }
 
+  test("ensure data is exactly-once added to the resultSet") {
+    withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "20"))(Map.empty) {
+      withJdbcStatement() { statement =>
+        statement.execute(
+          """
+            |create table tbl_src (
+            |           a bigint
+            |           ) with (
+            |           'connector' = 'datagen',
+            |          'rows-per-second'='1',
+            |          'fields.a.kind'='sequence',
+            |          'fields.a.start'='1',
+            |          'fields.a.end'='5'
+            |          )
+            |""".stripMargin)
+        val resultSet = statement.executeQuery(s"select a from tbl_src")
+        var rows = List[Long]()
+        while (resultSet.next()) {
+          rows :+= resultSet.getLong("a")
+        }
+        // rows size more than the input data
+        assert(rows.size == 5)
+      }
+    }
+  }
+
   test("execute statement - add/remove/show jar") {
     val jarName = s"newly-added-${UUID.randomUUID()}.jar"
     val newJar = TestUserClassLoaderJar.createJarFile(
