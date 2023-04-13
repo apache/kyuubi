@@ -102,43 +102,40 @@ object ZookeeperClientProvider extends Logging {
    */
   @throws[Exception]
   def setUpZooKeeperAuth(conf: KyuubiConf): Unit = {
-    def setupZkAuth(): Unit = {
-      (conf.get(HA_ZK_AUTH_PRINCIPAL), getKeyTabFile(conf)) match {
-        case (Some(principal), Some(keytab)) if UserGroupInformation.isSecurityEnabled =>
-          if (!new File(keytab).exists()) {
-            throw new IOException(s"${HA_ZK_AUTH_KEYTAB.key}: $keytab does not exists")
-          }
-          System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
-          val serverPrincipal = KyuubiHadoopUtils.getServerPrincipal(principal)
-          // HDFS-16591 makes breaking change on JaasConfiguration
-          val jaasConf = DynConstructors.builder()
-            .impl( // Hadoop 3.3.5 and above
-              "org.apache.hadoop.security.authentication.util.JaasConfiguration",
-              classOf[String],
-              classOf[String],
-              classOf[String])
-            .impl( // Hadoop 3.3.4 and previous
-              // scalastyle:off
-              "org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration",
-              // scalastyle:on
-              classOf[String],
-              classOf[String],
-              classOf[String])
-            .build()
-            .newInstance("KyuubiZooKeeperClient", serverPrincipal, keytab)
-          Configuration.setConfiguration(jaasConf)
-        case _ =>
-      }
+    def setupZkAuth(): Unit = (conf.get(HA_ZK_AUTH_PRINCIPAL), getKeyTabFile(conf)) match {
+      case (Some(principal), Some(keytab)) if UserGroupInformation.isSecurityEnabled =>
+        if (!new File(keytab).exists()) {
+          throw new IOException(s"${HA_ZK_AUTH_KEYTAB.key}: $keytab does not exists")
+        }
+        System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
+        val serverPrincipal = KyuubiHadoopUtils.getServerPrincipal(principal)
+        // HDFS-16591 makes breaking change on JaasConfiguration
+        val jaasConf = DynConstructors.builder()
+          .impl( // Hadoop 3.3.5 and above
+            "org.apache.hadoop.security.authentication.util.JaasConfiguration",
+            classOf[String],
+            classOf[String],
+            classOf[String])
+          .impl( // Hadoop 3.3.4 and previous
+            // scalastyle:off
+            "org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration",
+            // scalastyle:on
+            classOf[String],
+            classOf[String],
+            classOf[String])
+          .build()
+          .newInstance("KyuubiZooKeeperClient", serverPrincipal, keytab)
+        Configuration.setConfiguration(jaasConf)
+      case _ =>
     }
 
-    if (conf.get(HA_ENGINE_REF_ID).isEmpty
-      && AuthTypes.withName(conf.get(HA_ZK_AUTH_TYPE)) == AuthTypes.KERBEROS) {
+    if (conf.get(HA_ENGINE_REF_ID).isEmpty &&
+      AuthTypes.withName(conf.get(HA_ZK_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       setupZkAuth()
-    } else if (conf.get(HA_ENGINE_REF_ID).nonEmpty && AuthTypes
-        .withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
+    } else if (conf.get(HA_ENGINE_REF_ID).nonEmpty &&
+      AuthTypes.withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       setupZkAuth()
     }
-
   }
 
   @VisibleForTesting
