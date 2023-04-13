@@ -24,7 +24,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
-import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlan, SQLExecution}
+import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.{ArrowConverters, KyuubiArrowConverters}
 import org.apache.spark.sql.functions._
@@ -43,6 +43,8 @@ object SparkDatasetHelper extends Logging {
   def executeArrowBatchCollect: SparkPlan => Array[Array[Byte]] = {
     case adaptiveSparkPlan: AdaptiveSparkPlanExec =>
       executeArrowBatchCollect(finalPhysicalPlan(adaptiveSparkPlan))
+    case commandResultExec: CommandResultExec =>
+      doCommandResultExec(commandResultExec)
     // TODO: avoid extra shuffle if `offset` > 0
     case collectLimit: CollectLimitExec if offset(collectLimit) > 0 =>
       logWarning("unsupported offset > 0, an extra shuffle will be introduced.")
@@ -173,6 +175,16 @@ object SparkDatasetHelper extends Logging {
       i += 1
     }
     result.toArray
+  }
+
+  def doCommandResultExec(commandResultExec: CommandResultExec): Array[Array[Byte]] = {
+    KyuubiArrowConverters.toBatchIterator(
+      commandResultExec.rows.iterator,
+      commandResultExec.schema,
+      SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch,
+      maxBatchSize,
+      -1,
+      SparkSession.active.sessionState.conf.sessionLocalTimeZone).toArray
   }
 
   /**

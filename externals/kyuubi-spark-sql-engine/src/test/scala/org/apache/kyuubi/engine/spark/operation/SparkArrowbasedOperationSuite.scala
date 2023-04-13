@@ -24,7 +24,7 @@ import org.apache.spark.KyuubiSparkContextHelper
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.{QueryTest, Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
-import org.apache.spark.sql.execution.{CollectLimitExec, QueryExecution, SparkPlan}
+import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, QueryExecution, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.exchange.Exchange
@@ -297,6 +297,27 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     }
     // Should be only one stage since there is no shuffle.
     assert(numStages == 1)
+  }
+
+  test("CommandResultExec should not trigger job") {
+    var numJobs = 0
+    val listener = new SparkListener {
+      override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
+        numJobs += 1
+      }
+    }
+    assert(
+      spark.sql("SHOW TABLES").queryExecution.executedPlan.isInstanceOf[CommandResultExec])
+    withJdbcStatement("table_1") { statement =>
+      statement.executeQuery(s"CREATE TABLE table_1 (id bigint) USING parquet")
+      withSparkListener(listener) {
+        val resultSet = statement.executeQuery("SHOW TABLES")
+        assert(resultSet.next())
+        assert(resultSet.getString("tableName") == "table_1")
+        KyuubiSparkContextHelper.waitListenerBus(spark)
+      }
+    }
+    assert(numJobs == 0)
   }
 
   private def checkResultSetFormat(statement: Statement, expectFormat: String): Unit = {
