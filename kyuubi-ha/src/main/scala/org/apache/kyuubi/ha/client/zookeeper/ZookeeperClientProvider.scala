@@ -143,13 +143,9 @@ object ZookeeperClientProvider extends Logging {
 
   @VisibleForTesting
   def getKeyTabFile(conf: KyuubiConf): Option[String] = {
-    conf.get(HA_ZK_AUTH_KEYTAB).map { zkAuthKeytabPath =>
-      val filename = new File(zkAuthKeytabPath).getName
-      if (new File(filename).exists()) {
-        filename
-      } else {
-        zkAuthKeytabPath
-      }
+    conf.get(HA_ZK_AUTH_KEYTAB).map { fullPath =>
+      val filename = new File(fullPath).getName
+      if (new File(filename).exists()) filename else fullPath
     }
   }
 }
