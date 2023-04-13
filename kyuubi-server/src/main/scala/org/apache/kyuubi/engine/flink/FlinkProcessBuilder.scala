@@ -133,16 +133,16 @@ class FlinkProcessBuilder(
         val classpathEntries = new java.util.LinkedHashSet[String]
         // flink engine runtime jar
         mainResource.foreach(classpathEntries.add)
-        // flink sql client jar
-        val flinkSqlClientPath = Paths.get(flinkHome)
+        // flink sql jars
+        Paths.get(flinkHome)
           .resolve("opt")
           .toFile
           .listFiles(new FilenameFilter {
             override def accept(dir: File, name: String): Boolean = {
-              name.toLowerCase.startsWith("flink-sql-client")
+              name.toLowerCase.startsWith("flink-sql-client") ||
+              name.toLowerCase.startsWith("flink-sql-gateway")
             }
-          }).head.getAbsolutePath
-        classpathEntries.add(flinkSqlClientPath)
+          }).foreach(jar => classpathEntries.add(jar.getAbsolutePath))
 
         // jars from flink lib
         classpathEntries.add(s"$flinkHome${File.separator}lib${File.separator}*")
