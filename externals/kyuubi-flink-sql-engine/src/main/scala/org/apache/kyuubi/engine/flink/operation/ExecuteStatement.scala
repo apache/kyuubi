@@ -115,8 +115,7 @@ class ExecuteStatement(
       while (loop) {
         Thread.sleep(50) // slow the processing down
 
-        val pageSize = Math.min(500, resultMaxRows)
-        val result = executor.snapshotResult(sessionId, resultId, pageSize)
+        val result = executor.snapshotResult(sessionId, resultId, resultMaxRows)
         result.getType match {
           case TypedResult.ResultType.PAYLOAD =>
             if (rows.size >= resultMaxRows) {
