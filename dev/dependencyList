@@ -51,8 +51,8 @@ grpc-protobuf/1.48.0//grpc-protobuf-1.48.0.jar
 grpc-stub/1.48.0//grpc-stub-1.48.0.jar
 gson/2.9.0//gson-2.9.0.jar
 guava/31.1-jre//guava-31.1-jre.jar
-hadoop-client-api/3.3.4//hadoop-client-api-3.3.4.jar
-hadoop-client-runtime/3.3.4//hadoop-client-runtime-3.3.4.jar
+hadoop-client-api/3.3.5//hadoop-client-api-3.3.5.jar
+hadoop-client-runtime/3.3.5//hadoop-client-runtime-3.3.5.jar
 hive-common/3.1.3//hive-common-3.1.3.jar
 hive-metastore/3.1.3//hive-metastore-3.1.3.jar
 hive-serde/3.1.3//hive-serde-3.1.3.jar
