@@ -2075,6 +2075,7 @@
                             <includes>
                                 <include>src/main/scala/**/*.scala</include>
                                 <include>src/test/scala/**/*.scala</include>
+                                <include>src/test/gen/scala/**/*.scala</include>
                             </includes>
                             <scalafmt>
                                 <version>${spotless.scala.scalafmt.version}</version>

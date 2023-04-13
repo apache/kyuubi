@@ -17,49 +17,71 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
-import java.nio.file.Paths
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicLong
-
-import scala.language.implicitConversions
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.apache.commons.io.FileUtils
 import org.apache.ranger.plugin.model.RangerPolicy
+// scalastyle:off
+import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess.allowTypes
-import org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator.RangerAccessType.{all, alter, create, drop, index, lock, read, select, update, use, write, RangerAccessType}
-import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions.getRangerObject
+import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess._
+import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyResource._
+import org.apache.kyuubi.plugin.spark.authz.gen.RangerAccessType._
+import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions._
 
 /**
  * Generates the policy file to test/main/resources dir.
  *
- * Usage:
- * build/mvn scala:run -pl :kyuubi-spark-authz_2.12
- * -DmainClass=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator
+ * To run the test suite:
+ * build/mvn clean test -Pgen-policy -pl :kyuubi-spark-authz_2.12 -Dtest=none
+ * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator
+ *
+ * To regenerate the ranger policy file:
+ * KYUUBI_UPDATE=1 build/mvn clean test -Pgen-policy -pl :kyuubi-spark-authz_2.12 -Dtest=none
+ * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator
  */
-private object PolicyJsonFileGenerator {
-  def main(args: Array[String]): Unit = {
-    writeRangerServicePolicesJson()
-  }
-
+class PolicyJsonFileGenerator extends AnyFunSuite {
+  // scalastyle:on
   final private val mapper: ObjectMapper = JsonMapper.builder()
     .addModule(DefaultScalaModule)
     .serializationInclusion(Include.NON_NULL)
     .build()
 
-  def writeRangerServicePolicesJson(): Unit = {
+  test("check ranger policy file") {
     val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
       .split("target").head
     val policyFileName = "sparkSql_hive_jenkins.json"
-    val policyFile = Paths.get(pluginHome, "src", "test", "resources", policyFileName).toFile
-    // scalastyle:off println
-    println(s"Writing ranger policies to $policyFileName.")
-    // scalastyle:on println
-    mapper.writerWithDefaultPrettyPrinter().writeValue(policyFile, servicePolicies)
+    val policyFilePath =
+      Paths.get(pluginHome, "src", "test", "resources", policyFileName)
+    val generatedStr = mapper.writerWithDefaultPrettyPrinter()
+      .writeValueAsString(servicePolicies)
+
+    if (sys.env.get("KYUUBI_UPDATE").contains("1")) {
+      // scalastyle:off println
+      println(s"Writing ranger policies to $policyFileName.")
+      // scalastyle:on println
+      Files.write(
+        policyFilePath,
+        generatedStr.getBytes(StandardCharsets.UTF_8),
+        StandardOpenOption.CREATE,
+        StandardOpenOption.TRUNCATE_EXISTING)
+    } else {
+      val existedFileContent =
+        FileUtils.readFileToString(policyFilePath.toFile, StandardCharsets.UTF_8)
+      withClue("Please regenerate the ranger policy file by running"
+        + "`KYUUBI_UPDATE=1 build/mvn clean test -Pgen-policy"
+        + " -pl :kyuubi-spark-authz_2.12 -Dtest=none"
+        + " -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator`.") {
+        assert(generatedStr.equals(existedFileContent))
+      }
+    }
   }
 
   private def servicePolicies: JsonNode = {
@@ -96,23 +118,14 @@ private object PolicyJsonFileGenerator {
       policyMaskDateShowYearForValue4,
       policyMaskShowFirst4ForValue5)
       // fill the id and guid with auto-increased index
-      .map(p => {
-        val id = policyIdCounter.incrementAndGet()
-        p.setId(id)
-        p.setGuid(UUID.nameUUIDFromBytes(id.toString.getBytes()).toString)
-        p
-      })
+      .zipWithIndex
+      .map {
+        case (p, index) =>
+          p.setId(index)
+          p.setGuid(UUID.nameUUIDFromBytes(index.toString.getBytes()).toString)
+          p
+      }
   }
-
-  final private lazy val policyIdCounter = new AtomicLong(0)
-
-  // resource template
-  private def databaseRes(values: List[String]) =
-    "database" -> KRangerPolicyResource(values = values).get
-  private def tableRes(values: List[String]) =
-    "table" -> KRangerPolicyResource(values = values).get
-  private def columnRes(values: List[String]) =
-    "column" -> KRangerPolicyResource(values = values).get
 
   // users
   private val admin = "admin"
@@ -130,18 +143,11 @@ private object PolicyJsonFileGenerator {
   private val icebergNamespace = "iceberg_ns"
   private val namespace1 = "ns1"
 
-  // access type
-  object RangerAccessType extends Enumeration {
-    type RangerAccessType = Value
-    val select, update, create, drop, alter, index, lock, all, read, write, use = Value
-  }
-  implicit def actionTypeStr(t: RangerAccessType): String = t.toString
-
   // resources
-  private val allDatabaseRes = databaseRes(List("*"))
-  private val allTableRes = tableRes(List("*"))
-  private val allColumnRes = columnRes(List("*"))
-  private val srcTableRes = tableRes(List("src"))
+  private val allDatabaseRes = databaseRes("*")
+  private val allTableRes = tableRes("*")
+  private val allColumnRes = columnRes("*")
+  private val srcTableRes = tableRes("src")
 
   // policy type
   private val POLICY_TYPE_ACCESS: Int = 0
@@ -182,7 +188,7 @@ private object PolicyJsonFileGenerator {
     name = "all - database, udf",
     description = "Policy for all - database, udf",
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog, icebergNamespace, namespace1)),
+      databaseRes(defaultDb, sparkCatalog, icebergNamespace, namespace1),
       allTableRes,
       allColumnRes),
     policyItems = List(
@@ -198,9 +204,9 @@ private object PolicyJsonFileGenerator {
   private val policyAccessForDefaultDbSrcTable = KRangerPolicy(
     name = "default_kent",
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
+      databaseRes(defaultDb, sparkCatalog),
       srcTableRes,
-      columnRes(List("key"))),
+      columnRes("key")),
     policyItems = List(
       KRangerPolicyItem(
         users = List(kent),
@@ -215,7 +221,7 @@ private object PolicyJsonFileGenerator {
     name = "src_key_less_than_20",
     policyType = POLICY_TYPE_ROWFILTER,
     resources = Map(
-      databaseRes(List(defaultDb)),
+      databaseRes(defaultDb),
       srcTableRes),
     rowFilterPolicyItems = List(
       KRangerRowFilterPolicyItem(
@@ -227,8 +233,8 @@ private object PolicyJsonFileGenerator {
     name = "perm_view_key_less_than_20",
     policyType = POLICY_TYPE_ROWFILTER,
     resources = Map(
-      databaseRes(List(defaultDb)),
-      tableRes(List("perm_view"))),
+      databaseRes(defaultDb),
+      tableRes("perm_view")),
     rowFilterPolicyItems = List(
       KRangerRowFilterPolicyItem(
         rowFilterInfo = KRangerPolicyItemRowFilterInfo(filterExpr = "key<20"),
@@ -238,8 +244,8 @@ private object PolicyJsonFileGenerator {
   private val policyAccessForDefaultBobUse = KRangerPolicy(
     name = "default_bob_use",
     resources = Map(
-      databaseRes(List("default_bob", sparkCatalog)),
-      tableRes(List("table_use*")),
+      databaseRes("default_bob", sparkCatalog),
+      tableRes("table_use*"),
       allColumnRes),
     policyItems = List(
       KRangerPolicyItem(
@@ -250,8 +256,8 @@ private object PolicyJsonFileGenerator {
   private val policyAccessForDefaultBobSelect = KRangerPolicy(
     name = "default_bob_select",
     resources = Map(
-      databaseRes(List("default_bob", sparkCatalog)),
-      tableRes(List("table_select*")),
+      databaseRes("default_bob", sparkCatalog),
+      tableRes("table_select*"),
       allColumnRes),
     policyItems = List(
       KRangerPolicyItem(
@@ -263,9 +269,9 @@ private object PolicyJsonFileGenerator {
     name = "src_value_hash_perm_view",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
+      databaseRes(defaultDb, sparkCatalog),
       srcTableRes,
-      columnRes(List("value1"))),
+      columnRes("value1")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK_HASH"),
@@ -277,9 +283,9 @@ private object PolicyJsonFileGenerator {
     name = "src_value_hash",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
-      tableRes(List("perm_view")),
-      columnRes(List("value1"))),
+      databaseRes(defaultDb, sparkCatalog),
+      tableRes("perm_view"),
+      columnRes("value1")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK_HASH"),
@@ -291,9 +297,9 @@ private object PolicyJsonFileGenerator {
     name = "src_value2_nullify",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog, icebergNamespace, namespace1)),
+      databaseRes(defaultDb, sparkCatalog, icebergNamespace, namespace1),
       srcTableRes,
-      columnRes(List("value2"))),
+      columnRes("value2")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK"),
@@ -305,9 +311,9 @@ private object PolicyJsonFileGenerator {
     name = "src_value3_sf4",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
+      databaseRes(defaultDb, sparkCatalog),
       srcTableRes,
-      columnRes(List("value3"))),
+      columnRes("value3")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK_SHOW_FIRST_4"),
@@ -319,9 +325,9 @@ private object PolicyJsonFileGenerator {
     name = "src_value4_sf4",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
+      databaseRes(defaultDb, sparkCatalog),
       srcTableRes,
-      columnRes(List("value4"))),
+      columnRes("value4")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK_DATE_SHOW_YEAR"),
@@ -333,9 +339,9 @@ private object PolicyJsonFileGenerator {
     name = "src_value5_sf4",
     policyType = POLICY_TYPE_DATAMASK,
     resources = Map(
-      databaseRes(List(defaultDb, sparkCatalog)),
+      databaseRes(defaultDb, sparkCatalog),
       srcTableRes,
-      columnRes(List("value5"))),
+      columnRes("value5")),
     dataMaskPolicyItems = List(
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK_SHOW_LAST_4"),
@@ -346,8 +352,8 @@ private object PolicyJsonFileGenerator {
   private val policyAccessForPermViewAccessOnly = KRangerPolicy(
     name = "someone_access_perm_view",
     resources = Map(
-      databaseRes(List(defaultDb)),
-      tableRes(List("perm_view")),
+      databaseRes(defaultDb),
+      tableRes("perm_view"),
       allColumnRes),
     policyItems = List(
       KRangerPolicyItem(
