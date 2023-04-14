@@ -38,7 +38,7 @@ import org.apache.flink.table.gateway.service.result.ResultFetcher
 import org.apache.flink.table.gateway.service.session.Session
 import org.apache.flink.util.JarUtils
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.reflection.{DynConstructors, DynMethods, JavaPrimitiveClasses}
 
@@ -116,7 +116,7 @@ object FlinkEngineUtils extends Logging {
     val libDirs: java.util.List[URL] = Option(checkUrls(line, CliOptionsParser.OPTION_LIBRARY))
       .getOrElse(Collections.emptyList())
     val dependencies: java.util.List[URL] = discoverDependencies(jars, libDirs)
-    if (FlinkEngineUtils.isFlinkVersionAtMost("1.16")) {
+    if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
       val commandLines: java.util.List[CustomCommandLine] =
         Seq(new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava
       DynConstructors.builder()
@@ -127,7 +127,7 @@ object FlinkEngineUtils extends Logging {
         .build()
         .newInstance(flinkConf, commandLines)
         .asInstanceOf[DefaultContext]
-    } else {
+    } else if (FlinkEngineUtils.isFlinkVersionEqualTo("1.17")) {
       DynMethods.builder("load")
         .impl(
           classOf[DefaultContext],
@@ -141,6 +141,9 @@ object FlinkEngineUtils extends Logging {
           dependencies,
           new java.lang.Boolean(true),
           new java.lang.Boolean(false))
+    } else {
+      throw new KyuubiException(
+        s"Flink version ${EnvironmentInformation.getVersion} are not supported currently.")
     }
   }
 
