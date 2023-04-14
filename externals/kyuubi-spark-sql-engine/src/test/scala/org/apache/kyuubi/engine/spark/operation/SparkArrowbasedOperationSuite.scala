@@ -24,7 +24,7 @@ import org.apache.spark.KyuubiSparkContextHelper
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.{QueryTest, Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
-import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, QueryExecution, SparkPlan}
+import org.apache.spark.sql.execution.{CollectLimitExec, QueryExecution, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.exchange.Exchange
@@ -306,8 +306,9 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         numJobs += 1
       }
     }
-    assert(
-      spark.sql("SHOW TABLES").queryExecution.executedPlan.isInstanceOf[CommandResultExec])
+    val nodeName = spark.sql("SHOW TABLES").queryExecution.executedPlan.getClass.getName
+    assert(nodeName == "org.apache.spark.sql.execution.command.ExecutedCommandExec" ||
+      nodeName == "org.apache.spark.sql.execution.CommandResultExec")
     withJdbcStatement("table_1") { statement =>
       statement.executeQuery(s"CREATE TABLE table_1 (id bigint) USING parquet")
       withSparkListener(listener) {

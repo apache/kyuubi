@@ -19,14 +19,17 @@ package org.apache.spark.sql.kyuubi
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
-import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, SparkPlan, SQLExecution}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.{ArrowConverters, KyuubiArrowConverters}
+import org.apache.spark.sql.execution.command.ExecutedCommandExec
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
@@ -43,8 +46,6 @@ object SparkDatasetHelper extends Logging {
   def executeArrowBatchCollect: SparkPlan => Array[Array[Byte]] = {
     case adaptiveSparkPlan: AdaptiveSparkPlanExec =>
       executeArrowBatchCollect(finalPhysicalPlan(adaptiveSparkPlan))
-    case commandResultExec: CommandResultExec =>
-      doCommandResultExec(commandResultExec)
     // TODO: avoid extra shuffle if `offset` > 0
     case collectLimit: CollectLimitExec if offset(collectLimit) > 0 =>
       logWarning("unsupported offset > 0, an extra shuffle will be introduced.")
@@ -53,6 +54,8 @@ object SparkDatasetHelper extends Logging {
       doCollectLimit(collectLimit)
     case collectLimit: CollectLimitExec if collectLimit.limit < 0 =>
       executeArrowBatchCollect(collectLimit.child)
+    case command: SparkPlan if isRunnableCommand(command) =>
+      doCommandResultExec(command)
     case plan: SparkPlan =>
       toArrowBatchRdd(plan).collect()
   }
@@ -177,10 +180,12 @@ object SparkDatasetHelper extends Logging {
     result.toArray
   }
 
-  def doCommandResultExec(commandResultExec: CommandResultExec): Array[Array[Byte]] = {
+  def doCommandResultExec(command: SparkPlan): Array[Array[Byte]] = {
+    assert(isRunnableCommand(command))
     KyuubiArrowConverters.toBatchIterator(
-      commandResultExec.rows.iterator,
-      commandResultExec.schema,
+      // TODO: replace with `command.rows.iterator` once we drop Spark-3.1 support.
+      getRunnableCommandOutputRows(command).iterator,
+      command.schema,
       SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch,
       maxBatchSize,
       -1,
@@ -229,6 +234,65 @@ object SparkDatasetHelper extends Logging {
         .build()
         .invoke[Int](collectLimitExec))
       .getOrElse(0)
+  }
+
+  /**
+   * TODO: replace L54 with directly match like following, once we drop Spark-3.1.x support.
+   * ```
+   *   case commandResultExec: CommandResultExec =>
+   *     doCommandResultExec(commandResultExec)
+   * ```
+   */
+  private def isRunnableCommand(sparkPlan: SparkPlan): Boolean = {
+    // scalastyle:off line.size.limit
+    sparkPlan.getClass.getName match {
+      case "org.apache.spark.sql.execution.command.ExecutedCommandExec" =>
+        // before SPARK-35378(Spark-3.2.x) the physical plan of runnable command is
+        // ExecutedCommandExec.
+        // for instance:
+        // ```
+        // scala> spark.sql("show tables").queryExecution.executedPlan
+        // res2: org.apache.spark.sql.execution.SparkPlan =
+        // Execute ShowTablesCommand
+        //    +- ShowTablesCommand default, false
+        //
+        // scala> spark.sql("show tables").queryExecution.executedPlan.getClass
+        // res3: Class[_ <: org.apache.spark.sql.execution.SparkPlan] = class org.apache.spark.sql.execution.command.ExecutedCommandExec
+        // ```
+        true
+      case "org.apache.spark.sql.execution.CommandResultExec" =>
+        // the CommandResultExec was introduced in SPARK-35378 (Spark-3.2.x), after SPARK-35378 the
+        // physical plan of runnable command is CommandResultExec.
+        // for instance:
+        // ```
+        // scala> spark.sql("show tables").queryExecution.executedPlan
+        // res0: org.apache.spark.sql.execution.SparkPlan =
+        // CommandResult <empty>, [namespace#0, tableName#1, isTemporary#2]
+        //   +- ShowTables [namespace#0, tableName#1, isTemporary#2], V2SessionCatalog(spark_catalog), [default]
+        //
+        // scala > spark.sql("show tables").queryExecution.executedPlan.getClass
+        // res1: Class[_ <: org.apache.spark.sql.execution.SparkPlan] = class org.apache.spark.sql.execution.CommandResultExec
+        // ```
+        true
+      case _ => false
+    }
+    // scalastyle:on line.size.limit
+  }
+
+  private def getRunnableCommandOutputRows(command: SparkPlan): Seq[InternalRow] = {
+    command match {
+      case executedCommand: ExecutedCommandExec =>
+        println("xxxxxxxxx")
+        executedCommand.sideEffectResult
+      case commandResult: SparkPlan if command.getClass.getName ==
+        "org.apache.spark.sql.execution.CommandResultExec" =>
+        DynMethods.builder("rows")
+          .impl("org.apache.spark.sql.execution.CommandResultExec")
+          .build()
+          .invoke[Seq[InternalRow]](commandResult)
+      case _: SparkPlan =>
+        throw new KyuubiSQLException(s"illegal input argument $command", null)
+    }
   }
 
   /**
