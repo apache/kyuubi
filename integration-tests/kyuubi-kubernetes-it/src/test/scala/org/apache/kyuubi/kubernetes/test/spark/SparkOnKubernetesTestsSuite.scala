@@ -57,6 +57,7 @@ abstract class SparkOnKubernetesSuiteBase
       .set("spark.kubernetes.executor.request.cores", "250m")
       .set("kyuubi.kubernetes.context", "minikube")
       .set("kyuubi.frontend.protocols", "THRIFT_BINARY,REST")
+      .set("kyuubi.session.engine.initialize.timeout", "PT10M")
   }
 }
 
