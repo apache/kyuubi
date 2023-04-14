@@ -28,8 +28,7 @@ metadata:
     app.kubernetes.io/version: {{ $.Values.image.tag | default $.Chart.AppVersion | quote }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
   {{- with $frontend.service.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
+  annotations: {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   type: {{ $frontend.service.type }}
