@@ -54,9 +54,6 @@ class FlinkProcessBuilder(
     Paths.get(flinkHome, "bin", FLINK_EXEC_FILE).toFile.getCanonicalPath
   }
 
-  // flink.execution.target are required in Kyuubi conf currently
-  val executionTarget: Option[String] = conf.getOption("flink.execution.target")
-
   override protected def module: String = "kyuubi-flink-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
@@ -66,17 +63,13 @@ class FlinkProcessBuilder(
       "FLINK_CONF_DIR",
       s"$flinkHome${File.separator}conf"))
 
-  override def clusterManager(): Option[String] = {
-    executionTarget match {
-      case Some("yarn-application") => Some("yarn")
-      case _ => None
-    }
-  }
+  override def clusterManager(): Option[String] = Some("yarn")
 
   override protected val commands: Array[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
 
     // flink.execution.target are required in Kyuubi conf currently
+    val executionTarget = conf.getOption("flink.execution.target")
     executionTarget match {
       case Some("yarn-application") =>
         val buffer = new ArrayBuffer[String]()
@@ -187,10 +180,8 @@ class FlinkProcessBuilder(
         buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
 
         conf.getAll.foreach { case (k, v) =>
-          if (k.startsWith("kyuubi.")) {
-            buffer += "--conf"
-            buffer += s"$k=$v"
-          }
+          buffer += "--conf"
+          buffer += s"$k=$v"
         }
         buffer.toArray
     }
