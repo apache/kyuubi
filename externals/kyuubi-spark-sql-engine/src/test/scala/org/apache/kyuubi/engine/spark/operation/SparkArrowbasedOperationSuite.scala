@@ -24,7 +24,7 @@ import org.apache.spark.KyuubiSparkContextHelper
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.{QueryTest, Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.Project
-import org.apache.spark.sql.execution.{CollectLimitExec, QueryExecution, SparkPlan}
+import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, QueryExecution, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.exchange.Exchange
@@ -33,8 +33,8 @@ import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.util.QueryExecutionListener
-
 import org.apache.kyuubi.KyuubiException
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{SparkSQLEngine, WithSparkSQLEngine}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
@@ -290,6 +290,8 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         withAllSessions { s =>
           import s.implicits._
           Seq((1, "a")).toDF("c1", "c2").createOrReplaceTempView("view_1")
+          val plan = s.sql("select * from view_1").queryExecution.executedPlan
+          assert(plan.isInstanceOf[LocalTableScanExec])
         }
         val resultSet = statement.executeQuery("select * from view_1")
         assert(resultSet.next())
