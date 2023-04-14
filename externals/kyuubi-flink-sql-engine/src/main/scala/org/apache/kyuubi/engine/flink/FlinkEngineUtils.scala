@@ -159,10 +159,12 @@ object FlinkEngineUtils extends Logging {
     if (FlinkEngineUtils.isFlinkVersionAtMost("1.16")) {
       return null
     }
-    val field = classOf[ResultFetcher].getDeclaredField("jobID")
-    field.setAccessible(true);
     try {
-      field.get(resultFetch).asInstanceOf[JobID]
+      DynFields.builder()
+        .hiddenImpl(classOf[ResultFetcher], "jobID")
+        .build()
+        .get(resultFetch)
+        .asInstanceOf[JobID]
     } catch {
       case _: NullPointerException => null
       case e: Throwable =>
