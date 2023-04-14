@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import scala.collection.mutable.ListBuffer
 import java.sql.DatabaseMetaData
 import java.util.UUID
 
@@ -34,6 +35,7 @@ import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+
 
 abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTestResources {
 
@@ -1071,20 +1073,20 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       withJdbcStatement() { statement =>
         statement.execute(
           """
-            |create table tbl_src (
-            |           a bigint
-            |           ) with (
-            |           'connector' = 'datagen',
-            |          'rows-per-second'='1',
-            |          'fields.a.kind'='sequence',
-            |          'fields.a.start'='1',
-            |          'fields.a.end'='5'
-            |          )
+            |CREATE TABLE tbl_src (
+            |  a bigint
+            |) WITH (
+            |  'connector' = 'datagen',
+            |  'rows-per-second'='1',
+            |  'fields.a.kind'='sequence',
+            |  'fields.a.start'='1',
+            |  'fields.a.end'='5'
+            |)
             |""".stripMargin)
-        val resultSet = statement.executeQuery(s"select a from tbl_src")
-        var rows = List[Long]()
+        val resultSet = statement.executeQuery("select a from tbl_src")
+        var rows = ListBuffer[Long]()
         while (resultSet.next()) {
-          rows :+= resultSet.getLong("a")
+          rows += resultSet.getLong("a")
         }
         // rows size more than the input data
         assert(rows.size == 5)
