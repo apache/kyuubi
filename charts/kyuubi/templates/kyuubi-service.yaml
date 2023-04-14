@@ -37,7 +37,7 @@ spec:
       nodePort: {{ $frontend.service.nodePort }}
       {{- end }}
   selector:
-    {{- include "kyuubi.common.labels" $ | nindent 4 }}
+    {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
 ---
 {{- end }}
 {{- end }}

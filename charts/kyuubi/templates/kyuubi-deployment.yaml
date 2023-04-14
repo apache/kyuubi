@@ -25,11 +25,11 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "kyuubi.common.labels" . | nindent 6 }}
+      {{- include "kyuubi.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "kyuubi.common.labels" . | nindent 8 }}
+        {{- include "kyuubi.selectorLabels" . | nindent 8 }}
       annotations:
         checksum/conf: {{ include (print $.Template.BasePath "/kyuubi-configmap.yaml") . | sha256sum }}
     spec:
