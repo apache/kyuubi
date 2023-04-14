@@ -149,7 +149,7 @@ class FlinkProcessBuilder(
               name.toLowerCase.startsWith("flink-sql-client") ||
               name.toLowerCase.startsWith("flink-sql-gateway")
             }
-          }).foreach(jar => classpathEntries.add(jar.getAbsolutePath))
+          }).sorted.foreach(jar => classpathEntries.add(jar.getAbsolutePath))
 
         // jars from flink lib
         classpathEntries.add(s"$flinkHome${File.separator}lib${File.separator}*")
