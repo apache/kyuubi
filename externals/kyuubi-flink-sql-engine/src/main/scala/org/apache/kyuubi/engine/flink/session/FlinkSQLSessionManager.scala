@@ -26,9 +26,8 @@ import org.apache.flink.table.gateway.service.context.DefaultContext
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
-import org.apache.kyuubi.engine.flink.FlinkEngineUtils
+import org.apache.kyuubi.engine.flink.delegation.FlinkSessionManager
 import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
-import org.apache.kyuubi.reflection.DynConstructors
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 
 class FlinkSQLSessionManager(engineContext: DefaultContext)
@@ -37,23 +36,7 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
   override protected def isServer: Boolean = false
 
   val operationManager = new FlinkSQLOperationManager()
-  val sessionManager: org.apache.flink.table.gateway.service.session.SessionManager = {
-    if (FlinkEngineUtils.isFlinkVersionAtMost("1.16")) {
-      DynConstructors.builder().impl(
-        "org.apache.flink.table.gateway.service.session.SessionManager",
-        classOf[DefaultContext])
-        .build()
-        .newInstance(engineContext)
-        .asInstanceOf[org.apache.flink.table.gateway.service.session.SessionManager]
-    } else {
-      DynConstructors.builder().impl(
-        "org.apache.flink.table.gateway.service.session.SessionManagerImpl",
-        classOf[DefaultContext])
-        .build()
-        .newInstance(engineContext)
-        .asInstanceOf[org.apache.flink.table.gateway.service.session.SessionManager]
-    }
-  }
+  val sessionManager = new FlinkSessionManager(engineContext)
 
   override def start(): Unit = {
     super.start()
@@ -68,12 +51,12 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
       conf: Map[String, String]): Session = {
     conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
       getSessionOption).getOrElse {
-      val _session = sessionManager.openSession(
+      val flinkInternalSession = sessionManager.openSession(
         SessionEnvironment.newBuilder
           .setSessionEndpointVersion(SqlGatewayRestAPIVersion.V1)
           .addSessionConfig(mapAsJavaMap(conf))
           .build)
-      val sessionConfig = _session.getSessionConfig
+      val sessionConfig = flinkInternalSession.getSessionConfig
       sessionConfig.putAll(conf.asJava)
       val session = new FlinkSessionImpl(
         protocol,
@@ -82,7 +65,7 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
         ipAddress,
         conf,
         this,
-        _session)
+        flinkInternalSession)
       session
     }
   }

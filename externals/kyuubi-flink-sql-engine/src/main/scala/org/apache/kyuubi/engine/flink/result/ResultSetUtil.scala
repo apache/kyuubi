@@ -29,6 +29,8 @@ import org.apache.flink.table.gateway.service.result.ResultFetcher
 import org.apache.flink.table.types.DataType
 import org.apache.flink.types.Row
 
+import org.apache.kyuubi.engine.flink.delegation.FlinkResultSet
+
 /** Utility object for building ResultSet. */
 object ResultSetUtil {
 
@@ -97,10 +99,10 @@ object ResultSetUtil {
   def fromResultFetcher(resultFetcher: ResultFetcher): ResultSet = {
     val schema = resultFetcher.getResultSchema
     val resultRowData = ListBuffer.newBuilder[RowData]
-    var fetched: org.apache.flink.table.gateway.api.results.ResultSet = null
+    var fetched: FlinkResultSet = null
     var token: Long = 0
     do {
-      fetched = resultFetcher.fetchResults(token, FETCH_ROWS_PER_SECOND)
+      fetched = new FlinkResultSet(resultFetcher.fetchResults(token, FETCH_ROWS_PER_SECOND))
       resultRowData ++= fetched.getData
       token = fetched.getNextToken
       try Thread.sleep(1000L)
