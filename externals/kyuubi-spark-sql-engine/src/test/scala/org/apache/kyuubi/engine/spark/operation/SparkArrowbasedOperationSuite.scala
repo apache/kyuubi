@@ -113,7 +113,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       }
     }
 
-    KyuubiSparkContextHelper.waitListenerBus(spark)
     assert(listener.queryExecution.analyzed.isInstanceOf[Project])
   }
 
@@ -126,8 +125,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         assert(result.getInt("c1") == 1)
       }
     }
-
-    KyuubiSparkContextHelper.waitListenerBus(spark)
 
     val metrics = listener.queryExecution.executedPlan.collectLeaves().head.metrics
     assert(metrics.contains("numOutputRows"))
@@ -257,7 +254,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         withPartitionedTable("t_3") {
           statement.executeQuery("select * from t_3 limit 10 offset 10")
         }
-        KyuubiSparkContextHelper.waitListenerBus(spark)
       }
     }
     // the extra shuffle be introduced if the `offset` > 0
@@ -276,7 +272,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         withPartitionedTable("t_3") {
           statement.executeQuery("select * from t_3 limit 1000")
         }
-        KyuubiSparkContextHelper.waitListenerBus(spark)
       }
     }
     // Should be only one stage since there is no shuffle.
@@ -298,7 +293,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         assert(!resultSet.next())
       }
     }
-    KyuubiSparkContextHelper.waitListenerBus(spark)
     assert(listener.numJobs == 0)
   }
 
@@ -315,8 +309,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         assert(!result.next())
       }
     }
-
-    KyuubiSparkContextHelper.waitListenerBus(spark)
 
     val metrics = listener.queryExecution.executedPlan.collectLeaves().head.metrics
     assert(metrics.contains("numOutputRows"))
@@ -350,7 +342,9 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   private def withSparkListener[T](listener: QueryExecutionListener)(body: => T): T = {
     withAllSessions(s => s.listenerManager.register(listener))
     try {
-      body
+      val result = body
+      KyuubiSparkContextHelper.waitListenerBus(spark)
+      result
     } finally {
       withAllSessions(s => s.listenerManager.unregister(listener))
     }
@@ -361,7 +355,9 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   private def withSparkListener[T](listener: SparkListener)(body: => T): T = {
     withAllSessions(s => s.sparkContext.addSparkListener(listener))
     try {
-      body
+      val result = body
+      KyuubiSparkContextHelper.waitListenerBus(spark)
+      result
     } finally {
       withAllSessions(s => s.sparkContext.removeSparkListener(listener))
     }
