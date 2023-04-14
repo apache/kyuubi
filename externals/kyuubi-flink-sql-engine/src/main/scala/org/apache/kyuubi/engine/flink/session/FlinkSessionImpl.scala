@@ -24,7 +24,7 @@ import org.apache.flink.runtime.util.EnvironmentInformation
 import org.apache.flink.table.client.gateway.SqlExecutionException
 import org.apache.flink.table.gateway.api.operation.OperationHandle
 import org.apache.flink.table.gateway.service.context.SessionContext
-import org.apache.flink.table.gateway.service.session.Session
+import org.apache.flink.table.gateway.service.session.{Session => FSession}
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -39,15 +39,15 @@ class FlinkSessionImpl(
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,
-    val _session: Session)
+    val fSession: FSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   override val handle: SessionHandle =
     conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
-      .getOrElse(SessionHandle.fromUUID(_session.getSessionHandle.getIdentifier.toString))
+      .getOrElse(SessionHandle.fromUUID(fSession.getSessionHandle.getIdentifier.toString))
 
   lazy val sessionContext: SessionContext = {
-    FlinkEngineUtils.getSessionContext(_session)
+    FlinkEngineUtils.getSessionContext(fSession)
   }
 
   private def setModifiableConfig(key: String, value: String): Unit = {
@@ -59,7 +59,7 @@ class FlinkSessionImpl(
   }
 
   override def open(): Unit = {
-    val executor = _session.createExecutor(Configuration.fromMap(_session.getSessionConfig))
+    val executor = fSession.createExecutor(Configuration.fromMap(fSession.getSessionConfig))
 
     val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
       Array("use:catalog", "use:database").contains(k)

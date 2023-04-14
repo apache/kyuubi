@@ -45,7 +45,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val flinkSession = session.asInstanceOf[FlinkSessionImpl]
-    val sessionConfig = flinkSession._session.getSessionConfig
+    val sessionConfig = flinkSession.fSession.getSessionConfig
     if (sessionConfig.getOrDefault(
         ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key,
         operationConvertCatalogDatabaseDefault.toString).toBoolean) {
@@ -60,7 +60,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
         OPERATION_PLAN_ONLY_MODE.key,
         operationModeDefault))
 
-    val sessionContext = FlinkEngineUtils.getSessionContext(flinkSession._session)
+    val sessionContext = FlinkEngineUtils.getSessionContext(flinkSession.fSession)
     sessionContext.set(OPERATION_PLAN_ONLY_MODE.key, mode.name)
     val resultMaxRows =
       flinkSession.normalizedConf.getOrElse(

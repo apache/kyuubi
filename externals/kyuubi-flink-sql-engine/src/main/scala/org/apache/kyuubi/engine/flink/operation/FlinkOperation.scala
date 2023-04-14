@@ -38,7 +38,7 @@ import org.apache.kyuubi.session.Session
 abstract class FlinkOperation(session: Session) extends AbstractOperation(session) {
 
   protected val flinkSession: org.apache.flink.table.gateway.service.session.Session =
-    session.asInstanceOf[FlinkSessionImpl]._session
+    session.asInstanceOf[FlinkSessionImpl].fSession
 
   protected val executor: OperationExecutor = flinkSession.createExecutor(
     Configuration.fromMap(flinkSession.getSessionConfig))
