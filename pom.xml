@@ -24,7 +24,7 @@
         <artifactId>apache</artifactId>
         <version>29</version>
     </parent>
-R
+
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
     <version>1.8.0-SNAPSHOT</version>
