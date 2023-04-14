@@ -40,7 +40,7 @@ import org.apache.flink.util.JarUtils
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.engine.SemanticVersion
-import org.apache.kyuubi.reflection.{DynConstructors, DynMethods, JavaPrimitiveClasses}
+import org.apache.kyuubi.reflection.{DynConstructors, DynFields, DynMethods, JavaPrimitiveClasses}
 
 object FlinkEngineUtils extends Logging {
 
@@ -148,9 +148,11 @@ object FlinkEngineUtils extends Logging {
   }
 
   def getSessionContext(session: Session): SessionContext = {
-    val field = classOf[Session].getDeclaredField("sessionContext")
-    field.setAccessible(true);
-    field.get(session).asInstanceOf[SessionContext]
+    DynFields.builder()
+      .hiddenImpl(classOf[Session], "sessionContext")
+      .build()
+      .get(session)
+      .asInstanceOf[SessionContext]
   }
 
   def getResultJobId(resultFetch: ResultFetcher): JobID = {
