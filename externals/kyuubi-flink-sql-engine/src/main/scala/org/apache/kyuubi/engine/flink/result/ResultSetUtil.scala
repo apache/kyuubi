@@ -69,11 +69,11 @@ object ResultSetUtil {
   def fromResultFetcher(resultFetcher: ResultFetcher, maxRows: Int): ResultSet = {
     val schema = resultFetcher.getResultSchema
     val resultRowData = ListBuffer.newBuilder[RowData]
-    var fetched: org.apache.flink.table.gateway.api.results.ResultSet = null
+    var fetched: FlinkResultSet = null
     var token: Long = 0
     var rowNum: Int = 0
     do {
-      fetched = resultFetcher.fetchResults(token, FETCH_ROWS_PER_SECOND)
+      fetched = new FlinkResultSet(resultFetcher.fetchResults(token, FETCH_ROWS_PER_SECOND))
       val data = fetched.getData
       val slice = data.slice(0, maxRows - rowNum)
       resultRowData ++= slice
