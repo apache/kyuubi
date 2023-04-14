@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hive.service.rpc.thrift.TStatus;
 import org.apache.hive.service.rpc.thrift.TStatusCode;
 import org.slf4j.Logger;
@@ -193,12 +194,20 @@ public class Utils {
       }
     }
 
+    Pattern confPattern = Pattern.compile("([^;]*)([^;]*);?");
+
     // parse hive conf settings
     String confStr = jdbcURI.getQuery();
     if (confStr != null) {
-      Matcher confMatcher = pattern.matcher(confStr);
+      Matcher confMatcher = confPattern.matcher(confStr);
       while (confMatcher.find()) {
-        connParams.getHiveConfs().put(confMatcher.group(1), confMatcher.group(2));
+        String connParam = confMatcher.group(1);
+        if (StringUtils.isNotBlank(connParam) && connParam.contains("=")) {
+          int symbolIndex = connParam.indexOf('=');
+          connParams
+              .getHiveConfs()
+              .put(connParam.substring(0, symbolIndex), connParam.substring(symbolIndex + 1));
+        }
       }
     }
 
