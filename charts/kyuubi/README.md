@@ -19,7 +19,7 @@
 
 # Helm Chart for Apache Kyuubi
 
-[Apache Kyuubi](https://airflow.apache.org/) is a distributed and multi-tenant gateway to provide serverless SQL on Data Warehouses and Lakehouses.
+[Apache Kyuubi](https://kyuubi.apache.org) is a distributed and multi-tenant gateway to provide serverless SQL on Data Warehouses and Lakehouses.
 
 
 ## Introduction
@@ -32,6 +32,20 @@ cluster using the [Helm](https://helm.sh) package manager.
 - Kubernetes cluster
 - Helm 3.0+
 
+## Template rendering
+
+When you want to test the template rendering, but not actually install anything. [Debugging templates](https://helm.sh/docs/chart_template_guide/debugging/) provide a quick way of viewing the generated content without YAML parse errors blocking.
+
+There are two ways to render templates. It will return the rendered template to you so you can see the output.
+
+- Local rendering chart templates
+```shell
+helm template --debug ../kyuubi
+```
+- Server side rendering chart templates
+```shell
+helm install --dry-run --debug --generate-name ../kyuubi
+```
 <!-- ## Features -->
 
 ## Documentation

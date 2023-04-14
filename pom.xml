@@ -109,8 +109,7 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <maven.version>3.9.1</maven.version>
-        <mvnd.version>1.0-m6</mvnd.version>
+        <maven.version>3.8.7</maven.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.17</scala.version>
@@ -144,7 +143,7 @@
         <grpc.version>1.48.0</grpc.version>
         <guava.version>31.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
-        <hadoop.version>3.3.4</hadoop.version>
+        <hadoop.version>3.3.5</hadoop.version>
         <hikaricp.version>4.0.3</hikaricp.version>
         <derby.version>10.14.2.0</derby.version>
         <fliptables.verion>1.0.2</fliptables.verion>
@@ -246,7 +245,8 @@
         <spotless.java.googlejavaformat.version>1.7</spotless.java.googlejavaformat.version>
         <spotless.python.includes></spotless.python.includes>
         <spotless.python.black.version>22.3.0</spotless.python.black.version>
-        <spotless.scala.scalafmt.version>3.7.1</spotless.scala.scalafmt.version>
+        <!-- Please also update .scalafmt.conf when you change it here -->
+        <spotless.scala.scalafmt.version>3.7.3</spotless.scala.scalafmt.version>
 
         <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
         <distMgmtReleaseName>Apache Release Distribution Repository</distMgmtReleaseName>
@@ -2076,6 +2076,7 @@
                             <includes>
                                 <include>src/main/scala/**/*.scala</include>
                                 <include>src/test/scala/**/*.scala</include>
+                                <include>src/test/gen/scala/**/*.scala</include>
                             </includes>
                             <scalafmt>
                                 <version>${spotless.scala.scalafmt.version}</version>

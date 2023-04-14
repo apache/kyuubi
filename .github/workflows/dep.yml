@@ -26,7 +26,6 @@ on:
       # when pom or dependency workflow changes
       - '**/pom.xml'
       - '.github/workflows/dep.yml'
-      - .github/actions/setup-mvnd/*.yaml
 
 concurrency:
   group: dep-${{ github.head_ref || github.run_id }}
@@ -45,12 +44,10 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
-      - name: Setup Maven and Mvnd
-        uses: ./.github/actions/setup-mvnd
       - name: Check kyuubi modules available
         id: modules-check
         run: >-
-          build/mvnd dependency:resolve validate -q
+          build/mvn dependency:resolve validate
           -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile"
           -Pfast -Denforcer.skip=false
           -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
@@ -60,7 +57,7 @@ jobs:
           MAVEN_OPTS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error
         if: steps.modules-check.conclusion == 'success' && steps.modules-check.outcome == 'failure'
         run: >-
-          build/mvnd clean install
+          build/mvn clean install
           -Pflink-provided,spark-provided,hive-provided
           -Dmaven.javadoc.skip=true
           -Drat.skip=true

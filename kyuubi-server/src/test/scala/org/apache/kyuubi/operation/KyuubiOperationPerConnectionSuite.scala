@@ -31,7 +31,7 @@ import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
 import org.apache.kyuubi.engine.ApplicationState
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
-import org.apache.kyuubi.jdbc.hive.KyuubiConnection
+import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiSQLException}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.plugin.SessionConfAdvisor
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionType}
@@ -279,6 +279,16 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val rs = stmt.executeQuery(s"set spark.${KyuubiReservedKeys.KYUUBI_CLIENT_VERSION_KEY}")
       assert(rs.next())
       assert(rs.getString(2) === KYUUBI_VERSION)
+    }
+  }
+
+  test("JDBC client should catch task failed exception in the incremental mode") {
+    withJdbcStatement() { statement =>
+      statement.executeQuery(s"set ${KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key}=true;")
+      val resultSet = statement.executeQuery(
+        "SELECT raise_error('client should catch this exception');")
+      val e = intercept[KyuubiSQLException](resultSet.next())
+      assert(e.getMessage.contains("client should catch this exception"))
     }
   }
 }
