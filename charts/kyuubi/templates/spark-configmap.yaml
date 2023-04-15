@@ -1,0 +1,91 @@
+{{/*
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-spark
+  labels: {{- include "kyuubi.labels" . | nindent 4 }}
+data:
+  {{- with .Values.engine.spark.conf.sparkEnv }}
+  spark-env.sh: |
+    #!/usr/bin/env bash
+    {{- tpl . $ | nindent 4 }}
+  {{- end }}
+
+  spark-defaults.conf: |
+    ## Helm chart provided Spark configurations
+    spark.submit.deployMode=cluster
+
+    spark.master={{ .Values.engine.spark.master }}
+    spark.kubernetes.namespace={{ .Values.engine.spark.namespace | default .Release.Namespace }}
+
+    spark.kubernetes.authenticate.driver.serviceAccountName={{ .Values.engine.spark.serviceAccount.name | default (printf "%s-spark" .Release.Name) }}
+    spark.kubernetes.authenticate.executor.serviceAccountName={{ .Values.engine.spark.serviceAccount.name | default (printf "%s-spark" .Release.Name) }}
+
+    ### Image properties
+    spark.kubernetes.container.image={{ .Values.engine.spark.image.repository }}:{{ .Values.engine.spark.image.tag }}
+    spark.kubernetes.container.image.pullPolicy={{ .Values.engine.spark.image.pullPolicy }}
+    spark.kubernetes.container.image.pullSecrets={{ range .Values.imagePullSecrets }}{{ print .name "," }}{{ end }}
+
+    ### Driver resources
+    spark.driver.cores={{ .Values.engine.spark.driver.resources.cores }}
+    {{- with .Values.engine.spark.driver.resources.coresRequest }}
+    spark.kubernetes.driver.request.cores={{ . }}
+    {{- end }}
+    {{- with .Values.engine.spark.driver.resources.coresLimit }}
+    spark.kubernetes.driver.limit.cores={{ . }}
+    {{- end }}
+    spark.driver.memory={{ .Values.engine.spark.driver.resources.memory }}
+    {{- with .Values.engine.spark.driver.resources.memoryOverhead }}
+    spark.driver.memoryOverhead={{ . }}
+    {{- end }}
+    {{- with .Values.engine.spark.driver.resources.memoryOverheadFactor }}
+    spark.driver.memoryOverheadFactor={{ . }}
+    {{- end }}
+
+    ### Executor resources
+    spark.executor.instances={{ .Values.engine.spark.executor.instances }}
+    spark.executor.cores={{ .Values.engine.spark.executor.resources.cores }}
+    {{- with .Values.engine.spark.executor.resources.coresRequest }}
+    spark.kubernetes.executor.request.cores={{ . }}
+    {{- end }}
+    {{- with .Values.engine.spark.executor.resources.coresLimit }}
+    spark.kubernetes.executor.limit.cores={{ . }}
+    {{- end }}
+    spark.executor.memory={{ .Values.engine.spark.executor.resources.memory }}
+    {{- with .Values.engine.spark.executor.resources.memoryOverhead }}
+    spark.executor.memoryOverhead={{ . }}
+    {{- end }}
+    {{- with .Values.engine.spark.executor.resources.memoryOverheadFactor }}
+    spark.executor.memoryOverheadFactor={{ . }}
+    {{- end }}
+
+    ## User provided Spark configurations
+    {{- with .Values.engine.spark.conf.sparkDefaults }}
+      {{- tpl . $ | nindent 4 }}
+    {{- end }}
+
+  {{- with .Values.engine.spark.conf.driverPodTemplate }}
+  driver-pod-template.yaml: |
+    {{- tpl . $ | nindent 4 }}
+  {{- end }}
+
+  {{- with .Values.engine.spark.conf.executorPodTemplate }}
+  executor-pod-template.yaml: |
+    {{- tpl . $ | nindent 4 }}
+  {{- end }}

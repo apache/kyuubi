@@ -15,27 +15,17 @@
   limitations under the License.
 */}}
 
-{{- range $name, $frontend := .Values.api }}
-{{- if $frontend.enabled }}
-apiVersion: v1
-kind: Service
+{{- if .Values.engine.spark.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
-  name: {{ $.Release.Name }}-{{ $name | kebabcase }}
-  labels: {{- include "kyuubi.labels" $ | nindent 4 }}
-  {{- with $frontend.service.annotations }}
-  annotations: {{- toYaml . | nindent 4 }}
+  name: {{ .Release.Name }}-spark
+  {{- if .Values.engine.spark.namespace }}
+  namespace: {{ .Values.engine.spark.namespace }}
   {{- end }}
-spec:
-  type: {{ $frontend.service.type }}
-  ports:
-    - name: {{ $name | kebabcase }}
-      port: {{ tpl $frontend.service.port $ }}
-      targetPort: {{ $frontend.port }}
-      {{- if and (eq $frontend.service.type "NodePort") ($frontend.service.nodePort) }}
-      nodePort: {{ $frontend.service.nodePort }}
-      {{- end }}
-  selector:
-    {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
----
-{{- end }}
+  labels: {{- include "kyuubi.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "pods", "services"]
+    verbs: ["list", "create", "get", "watch", "delete"]
 {{- end }}

@@ -21,7 +21,7 @@ For details, see 'kyuubi.frontend.protocols': https://kyuubi.readthedocs.io/en/m
 */}}
 {{- define "kyuubi.frontend.protocols" -}}
   {{- $protocols := list }}
-  {{- range $name, $frontend := .Values.server }}
+  {{- range $name, $frontend := .Values.api }}
     {{- if $frontend.enabled }}
       {{- $protocols = $name | snakecase | upper | append $protocols }}
     {{- end }}

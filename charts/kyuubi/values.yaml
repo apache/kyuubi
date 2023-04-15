@@ -19,9 +19,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# Kyuubi server numbers
-replicaCount: 2
-
 image:
   repository: apache/kyuubi
   pullPolicy: IfNotPresent
@@ -29,42 +26,31 @@ image:
 
 imagePullSecrets: []
 
-# ServiceAccount used for Kyuubi create/list/delete pod in kubernetes
+# Role-based access control
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+  # RBAC rules
+  rules:
+    - apiGroups: [""]
+      resources: ["configmaps", "pods", "services"]
+      verbs: ["list", "create", "get", "watch", "delete"]
+
+# ServiceAccount used by Kyuubi for requesting Kubernetes API server
 serviceAccount:
+  # Specifies whether a ServiceAccount should be created
   create: true
   name: ~
 
-rbac:
-  create: true
-  rules:
-    - apiGroups: [""]
-      resources: ["pods"]
-      verbs: ["create", "list", "delete"]
-
-probe:
-  liveness:
-    enabled: true
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 2
-    failureThreshold: 10
-    successThreshold: 1
-  readiness:
-    enabled: true
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 2
-    failureThreshold: 10
-    successThreshold: 1
-
-server:
+# APIs for connectivity and interoperation between supported clients and Kyuubi server
+api:
   # Thrift Binary protocol (HiveServer2 compatible)
   thriftBinary:
     enabled: true
     port: 10009
     service:
       type: ClusterIP
-      port: "{{ .Values.server.thriftBinary.port }}"
+      port: "{{ .Values.api.thriftBinary.port }}"
       nodePort: ~
       annotations: {}
 
@@ -74,7 +60,7 @@ server:
     port: 10010
     service:
       type: ClusterIP
-      port: "{{ .Values.server.thriftHttp.port }}"
+      port: "{{ .Values.api.thriftHttp.port }}"
       nodePort: ~
       annotations: {}
 
@@ -84,7 +70,7 @@ server:
     port: 10099
     service:
       type: ClusterIP
-      port: "{{ .Values.server.rest.port }}"
+      port: "{{ .Values.api.rest.port }}"
       nodePort: ~
       annotations: {}
 
@@ -94,77 +80,176 @@ server:
     port: 3309
     service:
       type: ClusterIP
-      port: "{{ .Values.server.mysql.port }}"
+      port: "{{ .Values.api.mysql.port }}"
       nodePort: ~
       annotations: {}
 
-kyuubiConfDir: /opt/kyuubi/conf
-kyuubiConf:
-  # The value (templated string) is used for kyuubi-env.sh file
+# Kyuubi server configuration
+server:
+  # Number of servers
+  replicas: 2
+
+  # Command to launch Kyuubi server (templated)
+  command: ~
+  # Arguments to launch Kyuubi server (templated)
+  args: ~
+
+  # Environment variables (templated)
+  env: []
+  # Environment variables from ConfigMaps and Secrets (templated)
+  envFrom: []
+
+  # Additional volumes for Kyuubi pod (templated)
+  volumes: []
+  # Additional volumeMounts for Kyuubi container (templated)
+  volumeMounts: []
+
+  # Additional init containers for Kyuubi pod (templated)
+  initContainers: []
+  # Additional containers for Kyuubi pod (templated)
+  containers: []
+
+  # Resource requests and limits
+  resources: {}
   # Example:
   #
-  # kyuubiEnv: |
-  #   export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
-  #   export SPARK_HOME=/opt/spark
-  #   export FLINK_HOME=/opt/flink
-  #   export HIVE_HOME=/opt/hive
-  #
-  # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/deployment/settings.html#environments for more details
-  kyuubiEnv: ~
+  #  resources:
+  #    limits:
+  #      cpu: 4
+  #      memory: 10Gi
+  #    requests:
+  #      cpu: 2
+  #      memory: 4Gi
 
-  # The value (templated string) is used for kyuubi-defaults.conf file
+  # Liveness probe
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 10
+    successThreshold: 1
+  # Readiness probe
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 10
+    successThreshold: 1
+
+  # Constrain server pods to nodes with specific node labels
+  nodeSelector: {}
+  # Constrain server pods to nodes by complex affinity/anti-affinity rules
+  affinity: {}
+  # Allow to schedule server pods on nodes with matching taints
+  tolerations: []
+
+  # Pod security context
+  securityContext: {}
   # Example:
   #
-  # kyuubiDefaults: |
-  #   kyuubi.authentication=NONE
-  #   kyuubi.frontend.bind.host=10.0.0.1
-  #   kyuubi.engine.type=SPARK_SQL
-  #   kyuubi.engine.share.level=USER
-  #   kyuubi.session.engine.initialize.timeout=PT3M
-  #   kyuubi.ha.addresses=zk1:2181,zk2:2181,zk3:2181
-  #   kyuubi.ha.namespace=kyuubi
-  #
-  # See https://kyuubi.readthedocs.io/en/master/deployment/settings.html#kyuubi-configurations for more details
-  kyuubiDefaults: ~
+  #  securityContext:
+  #    runAsUser: 1000
+  #    fsGroup: 1000
+  #    runAsGroup: 1000
 
-  # The value (templated string) is used for log4j2.xml file
-  # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/deployment/settings.html#logging for more details
-  log4j2: ~
+  # $KYUUBI_CONF_DIR directory
+  confDir: /opt/kyuubi/conf
+  # Kyuubi configurations files
+  conf:
+    # The value (templated string) is used for kyuubi-env.sh file
+    # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/deployment/settings.html#environments for more details
+    kyuubiEnv: ~
+    # Example:
+    #
+    #  kyuubiEnv: |
+    #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
+    #    export SPARK_HOME=/opt/spark
+    #    export FLINK_HOME=/opt/flink
+    #    export HIVE_HOME=/opt/hive
+    #
 
-# Command to launch Kyuubi server (templated)
-command: ~
-# Arguments to launch Kyuubi server (templated)
-args: ~
+    # The value (templated string) is used for kyuubi-defaults.conf file
+    # See https://kyuubi.readthedocs.io/en/master/deployment/settings.html#kyuubi-configurations for more details
+    kyuubiDefaults: ~
+    # Example:
+    #
+    #  kyuubiDefaults: |
+    #    kyuubi.authentication=NONE
+    #    kyuubi.frontend.bind.host=10.0.0.1
+    #    kyuubi.engine.type=SPARK_SQL
+    #    kyuubi.engine.share.level=USER
+    #    kyuubi.session.engine.initialize.timeout=PT3M
+    #    kyuubi.ha.addresses=zk1:2181,zk2:2181,zk3:2181
+    #    kyuubi.ha.namespace=kyuubi
+    #
 
-# Environment variables (templated)
-env: []
-envFrom: []
+    # The value (templated string) is used for log4j2.xml file
+    # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/deployment/settings.html#logging for more details
+    log4j2: ~
 
-# Additional volumes for Kyuubi pod (templated)
-volumes: []
-# Additional volumeMounts for Kyuubi container (templated)
-volumeMounts: []
-
-# Additional init containers for Kyuubi pod (templated)
-initContainers: []
-# Additional containers for Kyuubi pod (templated)
-containers: []
-
-resources: {}
-  # Used to specify resource, default unlimited.
-  # If you do want to specify resources:
-  #   1. remove the curly braces after 'resources:'
-  #   2. uncomment the following lines
-  # limits:
-  #   cpu: 4
-  #   memory: 10Gi
-  # requests:
-  #   cpu: 2
-  #   memory: 4Gi
-
-# Constrain Kyuubi server pods to specific nodes
-nodeSelector: {}
-tolerations: []
-affinity: {}
-
-securityContext: {}
+# Query engines
+engine:
+  # Apache Spark default configuration
+  spark:
+    # Spark master - spark.master
+    master: k8s://https://kubernetes.default.svc
+    # Namespace to be used for running pods - spark.kubernetes.namespace
+    namespace: ~
+    # Spark image
+    image:
+      repository: apache/spark
+      pullPolicy: IfNotPresent
+      tag: v3.3.2
+    # Role-based access control
+    rbac:
+      # Specifies whether RBAC resources should be created
+      create: true
+    # ServiceAccount used by Spark for requesting Kubernetes API server
+    serviceAccount:
+      # Specifies whether a ServiceAccount should be created
+      create: true
+      name: ~
+    # Driver configuration
+    driver:
+      resources:
+        cores: 1
+        coresRequest: ~
+        coresLimit: ~
+        memory: 1g
+        memoryOverhead: ~
+        memoryOverheadFactor: ~
+    # Executor configuration
+    executor:
+      instances: 1
+      resources:
+        cores: 1
+        coresRequest: ~
+        coresLimit: ~
+        memory: 1g
+        memoryOverhead: ~
+        memoryOverheadFactor: ~
+    # $SPARK_CONF_DIR directory
+    confDir: /opt/kyuubi/externals/spark-3.3.2-bin-hadoop3/conf
+    # Spark configuration files
+    conf:
+      # The value (templated string) is used for $SPARK_HOME/conf/spark-env.sh file
+      # See example template https://github.com/apache/spark/blob/master/conf/spark-env.sh.template for more details
+      sparkEnv: ~
+      # The value (templated string) is used for $SPARK_HOME/conf/spark-defaults.conf file
+      # See example template https://github.com/apache/spark/blob/master/conf/spark-defaults.conf.template for more details
+      sparkDefaults: ~
+      # The value (templated string) is used for $SPARK_HOME/conf/driver-pod-template.yaml file
+      driverPodTemplate: ~
+      # Example:
+      #
+      #  driverPodTemplate: |
+      #    apiVersion: v1
+      #    kind: Pod
+      #    spec:
+      #      tolerations:
+      #        - key: "spark-node"
+      #          operator: "Exists"
+      # The value (templated string) is used for $SPARK_HOME/conf/executor-pod-template.yaml file
+      executorPodTemplate: ~

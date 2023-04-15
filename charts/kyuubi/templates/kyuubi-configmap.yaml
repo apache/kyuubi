@@ -19,29 +19,30 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}
-  labels:
-    {{- include "kyuubi.labels" . | nindent 4 }}
+  labels: {{- include "kyuubi.labels" . | nindent 4 }}
 data:
-  {{- with .Values.kyuubiConf.kyuubiEnv }}
+  {{- with .Values.server.conf.kyuubiEnv }}
   kyuubi-env.sh: |
     #!/usr/bin/env bash
     {{- tpl . $ | nindent 4 }}
   {{- end }}
+
   kyuubi-defaults.conf: |
     ## Helm chart provided Kyuubi configurations
     kyuubi.kubernetes.namespace={{ .Release.Namespace }}
     kyuubi.frontend.connection.url.use.hostname=false
-    kyuubi.frontend.thrift.binary.bind.port={{ .Values.server.thriftBinary.port }}
-    kyuubi.frontend.thrift.http.bind.port={{ .Values.server.thriftHttp.port }}
-    kyuubi.frontend.rest.bind.port={{ .Values.server.rest.port }}
-    kyuubi.frontend.mysql.bind.port={{ .Values.server.mysql.port }}
+    kyuubi.frontend.thrift.binary.bind.port={{ .Values.api.thriftBinary.port }}
+    kyuubi.frontend.thrift.http.bind.port={{ .Values.api.thriftHttp.port }}
+    kyuubi.frontend.rest.bind.port={{ .Values.api.rest.port }}
+    kyuubi.frontend.mysql.bind.port={{ .Values.api.mysql.port }}
     kyuubi.frontend.protocols={{ include "kyuubi.frontend.protocols" . }}
 
     ## User provided Kyuubi configurations
-    {{- with .Values.kyuubiConf.kyuubiDefaults }}
+    {{- with .Values.server.conf.kyuubiDefaults }}
       {{- tpl . $ | nindent 4 }}
     {{- end }}
-  {{- with .Values.kyuubiConf.log4j2 }}
+
+  {{- with .Values.server.conf.log4j2 }}
   log4j2.xml: |
     {{- tpl . $ | nindent 4 }}
   {{- end }}
