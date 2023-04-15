@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.flink
 import java.io.File
 import java.lang.{Boolean => JBoolean}
 import java.net.URL
-import java.util
+import java.util.{ArrayList => JArrayList, Collections => JCollections, List => JList}
 
 import scala.collection.JavaConverters._
 import scala.collection.convert.ImplicitConversions._
@@ -75,9 +75,9 @@ object FlinkEngineUtils extends Logging {
    * to avoid loading flink-python classes which we doesn't support yet.
    */
   private def discoverDependencies(
-      jars: util.List[URL],
-      libraries: util.List[URL]): util.List[URL] = {
-    val dependencies: util.List[URL] = new util.ArrayList[URL]
+      jars: JList[URL],
+      libraries: JList[URL]): JList[URL] = {
+    val dependencies: JList[URL] = new JArrayList[URL]
     try { // find jar files
       for (url <- jars) {
         JarUtils.checkJarFile(url)
@@ -109,19 +109,19 @@ object FlinkEngineUtils extends Logging {
       flinkConfDir: String): DefaultContext = {
     val parser = new DefaultParser
     val line = parser.parse(EMBEDDED_MODE_CLIENT_OPTIONS, args, true)
-    val jars: util.List[URL] = Option(checkUrls(line, CliOptionsParser.OPTION_JAR))
-      .getOrElse(util.Collections.emptyList())
-    val libDirs: util.List[URL] = Option(checkUrls(line, CliOptionsParser.OPTION_LIBRARY))
-      .getOrElse(util.Collections.emptyList())
-    val dependencies: util.List[URL] = discoverDependencies(jars, libDirs)
+    val jars: JList[URL] = Option(checkUrls(line, CliOptionsParser.OPTION_JAR))
+      .getOrElse(JCollections.emptyList())
+    val libDirs: JList[URL] = Option(checkUrls(line, CliOptionsParser.OPTION_LIBRARY))
+      .getOrElse(JCollections.emptyList())
+    val dependencies: JList[URL] = discoverDependencies(jars, libDirs)
     if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
-      val commandLines: util.List[CustomCommandLine] =
+      val commandLines: JList[CustomCommandLine] =
         Seq(new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava
       DynConstructors.builder()
         .impl(
           classOf[DefaultContext],
           classOf[Configuration],
-          classOf[util.List[CustomCommandLine]])
+          classOf[JList[CustomCommandLine]])
         .build()
         .newInstance(flinkConf, commandLines)
         .asInstanceOf[DefaultContext]
@@ -130,7 +130,7 @@ object FlinkEngineUtils extends Logging {
         .impl(
           classOf[DefaultContext],
           classOf[Configuration],
-          classOf[util.List[URL]],
+          classOf[JList[URL]],
           classOf[Boolean],
           classOf[Boolean])
         .buildStatic()
@@ -178,12 +178,12 @@ object FlinkEngineUtils extends Logging {
   }
 
   def checkUrl(line: CommandLine, option: org.apache.commons.cli.Option): URL = {
-    val urls: util.List[URL] = checkUrls(line, option)
+    val urls: JList[URL] = checkUrls(line, option)
     if (urls != null && urls.nonEmpty) urls.head
     else null
   }
 
-  def checkUrls(line: CommandLine, option: org.apache.commons.cli.Option): util.List[URL] = {
+  def checkUrls(line: CommandLine, option: org.apache.commons.cli.Option): JList[URL] = {
     if (line.hasOption(option.getOpt)) {
       line.getOptionValues(option.getOpt).distinct.map((url: String) => {
         checkFilePath(url)
