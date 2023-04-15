@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.File
+import java.lang.{Boolean => JBoolean}
 import java.net.URL
 import java.util
 
@@ -138,8 +139,8 @@ object FlinkEngineUtils extends Logging {
         .invoke[DefaultContext](
           flinkConf,
           dependencies,
-          new java.lang.Boolean(true),
-          new java.lang.Boolean(false))
+          new JBoolean(true),
+          new JBoolean(false))
     } else {
       throw new KyuubiException(
         s"Flink version ${EnvironmentInformation.getVersion} are not supported currently.")
