@@ -45,7 +45,7 @@ import org.apache.kyuubi.reflection.{DynConstructors, DynFields, DynMethods}
 
 object FlinkEngineUtils extends Logging {
 
-  val EMBEDDED_MODE_CLIENT_OPTIONS: Options = getEmbeddedModeClientOptions(new Options);
+  val EMBEDDED_MODE_CLIENT_OPTIONS: Options = getEmbeddedModeClientOptions(new Options)
 
   val SUPPORTED_FLINK_VERSIONS: Array[SemanticVersion] =
     Array("1.16", "1.17").map(SemanticVersion.apply)
@@ -86,16 +86,14 @@ object FlinkEngineUtils extends Logging {
       // find jar files in library directories
       for (libUrl <- libraries) {
         val dir: File = new File(libUrl.toURI)
-        if (!dir.isDirectory) throw new SqlClientException("Directory expected: " + dir)
-        else if (!dir.canRead) throw new SqlClientException("Directory cannot be read: " + dir)
+        if (!dir.isDirectory) throw new SqlClientException(s"Directory expected: $dir")
+        if (!dir.canRead) throw new SqlClientException(s"Directory cannot be read: $dir")
         val files: Array[File] = dir.listFiles
-        if (files == null) throw new SqlClientException("Directory cannot be read: " + dir)
-        for (f <- files) { // only consider jars
-          if (f.isFile && f.getAbsolutePath.toLowerCase.endsWith(".jar")) {
+        if (files == null) throw new SqlClientException(s"Directory cannot be read: $dir")
+        for (f <- files.filter(f => f.isFile && f.getAbsolutePath.toLowerCase.endsWith(".jar"))) {
             val url: URL = f.toURI.toURL
             JarUtils.checkJarFile(url)
             dependencies.add(url)
-          }
         }
       }
     } catch {
