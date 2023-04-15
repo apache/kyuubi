@@ -66,6 +66,9 @@ jobs:
             comment: 'verify-on-spark-3.2-binary'
     env:
       SPARK_LOCAL_IP: localhost
+    permissions:
+      statuses: write
+      checks: write
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM
@@ -120,6 +123,11 @@ jobs:
         comment: ["normal"]
     env:
       SPARK_LOCAL_IP: localhost
+
+    permissions:
+      contents: read
+      statuses: write
+      checks: write
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM
@@ -138,6 +146,14 @@ jobs:
           TEST_MODULES="extensions/spark/kyuubi-spark-authz"
           ./build/mvn clean test ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Dspark.version=${{ matrix.spark }}
+      - uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Maven Tests
+          path: "**/surefire-reports/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
