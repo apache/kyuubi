@@ -44,7 +44,6 @@ import org.apache.kyuubi.reflection.{DynConstructors, DynFields, DynMethods}
 
 object FlinkEngineUtils extends Logging {
 
-  val MODE_EMBEDDED = "embedded"
   val EMBEDDED_MODE_CLIENT_OPTIONS: Options = getEmbeddedModeClientOptions(new Options);
 
   val SUPPORTED_FLINK_VERSIONS: Array[SemanticVersion] =
