@@ -40,7 +40,7 @@ import org.apache.flink.util.JarUtils
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.engine.SemanticVersion
-import org.apache.kyuubi.reflection.{DynConstructors, DynFields, DynMethods, JavaPrimitiveClasses}
+import org.apache.kyuubi.reflection.{DynConstructors, DynFields, DynMethods}
 
 object FlinkEngineUtils extends Logging {
 
@@ -133,8 +133,8 @@ object FlinkEngineUtils extends Logging {
           classOf[DefaultContext],
           classOf[Configuration],
           classOf[java.util.List[URL]],
-          JavaPrimitiveClasses.CLASS_PRIMITIVE_BOOLEAN,
-          JavaPrimitiveClasses.CLASS_PRIMITIVE_BOOLEAN)
+          classOf[Boolean],
+          classOf[Boolean])
         .buildStatic()
         .invoke[DefaultContext](
           flinkConf,
