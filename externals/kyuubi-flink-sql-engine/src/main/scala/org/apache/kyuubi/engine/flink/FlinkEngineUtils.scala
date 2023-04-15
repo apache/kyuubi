@@ -84,7 +84,7 @@ object FlinkEngineUtils extends Logging {
         dependencies.add(url)
       }
       // find jar files in library directories
-      for (libUrl <- libraries) {
+      libraries.foreach { libUrl =>
         val dir: File = new File(libUrl.toURI)
         if (!dir.isDirectory) throw new SqlClientException(s"Directory expected: $dir")
         if (!dir.canRead) throw new SqlClientException(s"Directory cannot be read: $dir")
