@@ -36,7 +36,6 @@ import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-
 abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTestResources {
 
   test("get catalogs") {
