@@ -159,7 +159,7 @@ object FlinkEngineUtils extends Logging {
       return None
     }
     try {
-      Some(DynFields.builder()
+      Option(DynFields.builder()
         .hiddenImpl(classOf[ResultFetcher], "jobID")
         .build()
         .get(resultFetch)
