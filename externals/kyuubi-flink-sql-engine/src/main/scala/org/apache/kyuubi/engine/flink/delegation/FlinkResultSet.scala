@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.delegation
 
+import java.lang.{Long => JLong}
 import java.util
 
 import org.apache.flink.table.data.RowData
@@ -43,19 +44,19 @@ class FlinkResultSet(resultSet: AnyRef) {
     }
   }
 
-  def getNextToken: java.lang.Long = {
+  def getNextToken: JLong = {
     if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
       DynMethods.builder("getNextToken")
         .impl("org.apache.flink.table.gateway.api.results.ResultSet")
         .build()
         .invoke(resultSet)
-        .asInstanceOf[java.lang.Long]
+        .asInstanceOf[JLong]
     } else {
       DynMethods.builder("getNextToken")
         .impl("org.apache.flink.table.gateway.api.results.ResultSetImpl")
         .build()
         .invoke(resultSet)
-        .asInstanceOf[java.lang.Long]
+        .asInstanceOf[JLong]
     }
   }
 
