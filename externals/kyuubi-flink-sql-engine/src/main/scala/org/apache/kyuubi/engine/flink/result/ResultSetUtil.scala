@@ -29,7 +29,7 @@ import org.apache.flink.table.gateway.service.result.ResultFetcher
 import org.apache.flink.table.types.DataType
 import org.apache.flink.types.Row
 
-import org.apache.kyuubi.engine.flink.delegation.FlinkResultSet
+import org.apache.kyuubi.engine.flink.shim.FlinkResultSet
 
 /** Utility object for building ResultSet. */
 object ResultSetUtil {

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.delegation
+package org.apache.kyuubi.engine.flink.shim
 
 import java.lang.{Long => JLong}
 import java.util

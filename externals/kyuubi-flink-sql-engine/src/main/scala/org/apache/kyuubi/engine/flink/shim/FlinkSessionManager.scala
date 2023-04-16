@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.delegation
+package org.apache.kyuubi.engine.flink.shim
 
 import org.apache.flink.table.gateway.api.session.{SessionEnvironment, SessionHandle}
 import org.apache.flink.table.gateway.service.context.DefaultContext
