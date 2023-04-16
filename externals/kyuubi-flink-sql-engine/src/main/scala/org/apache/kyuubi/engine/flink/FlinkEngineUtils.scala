@@ -90,7 +90,8 @@ object FlinkEngineUtils extends Logging {
         if (!dir.canRead) throw new SqlClientException(s"Directory cannot be read: $dir")
         val files: Array[File] = dir.listFiles
         if (files == null) throw new SqlClientException(s"Directory cannot be read: $dir")
-        for (f <- files.filter(f => f.isFile && f.getAbsolutePath.toLowerCase.endsWith(".jar"))) {
+        files.filter { f => f.isFile && f.getAbsolutePath.toLowerCase.endsWith(".jar") }
+          .foreach { f =>
           val url: URL = f.toURI.toURL
           JarUtils.checkJarFile(url)
           dependencies.add(url)
