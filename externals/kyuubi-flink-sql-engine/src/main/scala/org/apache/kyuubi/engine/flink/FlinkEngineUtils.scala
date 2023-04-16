@@ -156,7 +156,7 @@ object FlinkEngineUtils extends Logging {
 
   def getResultJobId(resultFetch: ResultFetcher): Option[JobID] = {
     if (FlinkEngineUtils.isFlinkVersionAtMost("1.16")) {
-      return null
+      return None
     }
     try {
       Some(DynFields.builder()
