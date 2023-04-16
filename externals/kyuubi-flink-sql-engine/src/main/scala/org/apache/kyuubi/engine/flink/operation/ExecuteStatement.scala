@@ -63,7 +63,7 @@ class ExecuteStatement(
       val resultFetcher = executor.executeStatement(
         new OperationHandle(getHandle.identifier),
         statement)
-      jobId = Option(FlinkEngineUtils.getResultJobId(resultFetcher))
+      jobId = FlinkEngineUtils.getResultJobId(resultFetcher)
       resultSet = ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows)
       setState(OperationState.FINISHED)
     } catch {

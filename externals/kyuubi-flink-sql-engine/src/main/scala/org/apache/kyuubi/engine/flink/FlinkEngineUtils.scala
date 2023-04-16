@@ -92,10 +92,10 @@ object FlinkEngineUtils extends Logging {
         if (files == null) throw new SqlClientException(s"Directory cannot be read: $dir")
         files.filter { f => f.isFile && f.getAbsolutePath.toLowerCase.endsWith(".jar") }
           .foreach { f =>
-          val url: URL = f.toURI.toURL
-          JarUtils.checkJarFile(url)
-          dependencies.add(url)
-        }
+            val url: URL = f.toURI.toURL
+            JarUtils.checkJarFile(url)
+            dependencies.add(url)
+          }
       }
     } catch {
       case e: Exception =>
@@ -154,18 +154,18 @@ object FlinkEngineUtils extends Logging {
       .asInstanceOf[SessionContext]
   }
 
-  def getResultJobId(resultFetch: ResultFetcher): JobID = {
+  def getResultJobId(resultFetch: ResultFetcher): Option[JobID] = {
     if (FlinkEngineUtils.isFlinkVersionAtMost("1.16")) {
       return null
     }
     try {
-      DynFields.builder()
+      Some(DynFields.builder()
         .hiddenImpl(classOf[ResultFetcher], "jobID")
         .build()
         .get(resultFetch)
-        .asInstanceOf[JobID]
+        .asInstanceOf[JobID])
     } catch {
-      case _: NullPointerException => null
+      case _: NullPointerException => None
       case e: Throwable =>
         throw new IllegalStateException("Unexpected error occurred while fetching query ID", e)
     }
