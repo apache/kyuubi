@@ -78,31 +78,30 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
       eventually(Timeout(3.seconds)) {
         assert(job0Started)
       }
-      Seq(1, 0).foreach { priority =>
-        threads.execute(() => {
-          priority match {
-            case 0 =>
-              // job name job2
-              withJdbcStatement() { statement =>
-                statement.execute("SET kyuubi.operation.scheduler.pool=p0")
-                statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 1500l)" +
-                  "FROM range(1, 3, 1, 2)")
-              }
-
-            case 1 =>
-              withJdbcStatement() { statement =>
-                statement.execute("SET kyuubi.operation.scheduler.pool=p1")
-                statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 1500l)" +
-                  " FROM range(1, 3, 1, 2)")
-              }
-              // make sure this job name job1
-              Thread.sleep(1000)
-          }
-        })
+      threads.execute(() => {
+        // job name job1
+        withJdbcStatement() { statement =>
+          statement.execute("SET kyuubi.operation.scheduler.pool=p1")
+          statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 1500l)" +
+            " FROM range(1, 3, 1, 2)")
+        }
+      })
+      // make sure job1 started before job2
+      eventually(Timeout(2.seconds)) {
+        assert(job1StartTime > 0)
       }
+
+      threads.execute(() => {
+        // job name job2
+        withJdbcStatement() { statement =>
+          statement.execute("SET kyuubi.operation.scheduler.pool=p0")
+          statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 1500l)" +
+            "FROM range(1, 3, 1, 2)")
+        }
+      })
       threads.shutdown()
       threads.awaitTermination(20, SECONDS)
-      // because after job1 submitted, sleep 1s, so job1 should be started before job2
+      // job1 should be started before job2
       assert(job1StartTime < job2StartTime)
       // job2 minShare is 2(total resource) so that job1 should be allocated tasks after
       // job2 finished.
