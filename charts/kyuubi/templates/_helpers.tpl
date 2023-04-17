@@ -31,3 +31,21 @@ For details, see 'kyuubi.frontend.protocols': https://kyuubi.readthedocs.io/en/m
   {{- end }}
   {{- $protocols |  join "," }}
 {{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "kyuubi.selectorLabels" -}}
+app.kubernetes.io/name: {{ .Chart.Name }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Common labels
+*/}}
+{{- define "kyuubi.labels" -}}
+helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+{{ include "kyuubi.selectorLabels" . }}
+app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}

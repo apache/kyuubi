@@ -22,11 +22,7 @@ kind: Service
 metadata:
   name: {{ $.Release.Name }}-{{ $name | kebabcase }}
   labels:
-    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version }}
-    app.kubernetes.io/name: {{ $.Chart.Name }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
-    app.kubernetes.io/version: {{ $.Values.image.tag | default $.Chart.AppVersion | quote }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    {{- include "kyuubi.labels" $ | nindent 4 }}
   {{- with $frontend.service.annotations }}
   annotations: {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -40,8 +36,7 @@ spec:
       nodePort: {{ $frontend.service.nodePort }}
       {{- end }}
   selector:
-    app.kubernetes.io/name: {{ $.Chart.Name }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
+    {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
 ---
 {{- end }}
 {{- end }}

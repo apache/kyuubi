@@ -21,10 +21,6 @@ kind: Role
 metadata:
   name: {{ .Release.Name }}
   labels:
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- include "kyuubi.labels" . | nindent 4 }}
 rules: {{- toYaml .Values.rbac.rules | nindent 2 }}
 {{- end }}
