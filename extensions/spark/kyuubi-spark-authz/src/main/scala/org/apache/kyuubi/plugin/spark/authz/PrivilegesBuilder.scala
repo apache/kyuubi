@@ -235,4 +235,27 @@ object PrivilegesBuilder {
     }
     (inputObjs, outputObjs, opType)
   }
+
+  /**
+   * Build input  privilege objects from a Spark's LogicalPlan for hive permanent functions
+   *
+   * For `Command`s and other queries, build inputs.
+   *
+   * @param plan A Spark LogicalPlan
+   */
+  def buildFunctionPrivileges(
+      plan: LogicalPlan,
+      spark: SparkSession): PrivilegesAndOpType = {
+    val inputObjs = new ArrayBuffer[PrivilegeObject]
+    plan transformAllExpressions {
+      case hiveFunction: Expression if isKnowFunction(hiveFunction) =>
+        val functionSpec: ScanSpec = getFunctionSpec(hiveFunction)
+        if (functionSpec.functionDescs.exists(!_.functionTypeDesc.get.skip(hiveFunction, spark))) {
+          functionSpec.functions(hiveFunction).foreach(func =>
+            inputObjs += PrivilegeObject(func))
+        }
+        hiveFunction
+    }
+    (inputObjs, Seq.empty, OperationType.QUERY)
+  }
 }

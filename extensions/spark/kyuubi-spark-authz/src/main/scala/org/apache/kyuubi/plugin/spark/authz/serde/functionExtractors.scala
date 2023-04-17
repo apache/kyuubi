@@ -20,11 +20,22 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.apache.spark.sql.catalyst.expressions.ExpressionInfo
 
+import org.apache.kyuubi.plugin.spark.authz.serde.FunctionExtractor.buildFunctionIdentFromQualifiedName
+
 trait FunctionExtractor extends (AnyRef => Function) with Extractor
 
 object FunctionExtractor {
   val functionExtractors: Map[String, FunctionExtractor] = {
     loadExtractorsToMap[FunctionExtractor]
+  }
+
+  def buildFunctionIdentFromQualifiedName(qualifiedName: String): (String, Option[String]) = {
+    val parts: Array[String] = qualifiedName.split("\\.", 2)
+    if (parts.length == 1) {
+      (qualifiedName, None)
+    } else {
+      (parts.last, Some(parts.head))
+    }
   }
 }
 
@@ -34,6 +45,17 @@ object FunctionExtractor {
 class StringFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     Function(None, v1.asInstanceOf[String])
+  }
+}
+
+/**
+ *  * String
+ */
+class QualifiedNameStringFunctionExtractor extends FunctionExtractor {
+  override def apply(v1: AnyRef): Function = {
+    val qualifiedName: String = v1.asInstanceOf[String]
+    val (funcName, database) = buildFunctionIdentFromQualifiedName(qualifiedName)
+    Function(database, funcName)
   }
 }
 

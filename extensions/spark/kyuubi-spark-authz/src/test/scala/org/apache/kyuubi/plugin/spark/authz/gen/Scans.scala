@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.gen
 
 import org.apache.kyuubi.plugin.spark.authz.serde._
+import org.apache.kyuubi.plugin.spark.authz.serde.FunctionType._
 
 object Scans {
 
@@ -57,9 +58,34 @@ object Scans {
     ScanSpec(r, Seq(tableDesc))
   }
 
+  val HiveSimpleUDF = {
+    ScanSpec(
+      "org.apache.spark.sql.hive.HiveSimpleUDF",
+      Seq.empty,
+      Seq(FunctionDesc(
+        "name",
+        classOf[QualifiedNameStringFunctionExtractor],
+        functionTypeDesc = Some(FunctionTypeDesc(
+          "name",
+          classOf[FunctionNameFunctionTypeExtractor],
+          Seq(TEMP, SYSTEM))),
+        isInput = true)))
+  }
+
+  val HiveGenericUDF = HiveSimpleUDF.copy(classname = "org.apache.spark.sql.hive.HiveGenericUDF")
+
+  val HiveUDAFFunction = HiveSimpleUDF.copy(classname =
+    "org.apache.spark.sql.hive.HiveUDAFFunction")
+
+  val HiveGenericUDTF = HiveSimpleUDF.copy(classname = "org.apache.spark.sql.hive.HiveGenericUDTF")
+
   val data: Array[ScanSpec] = Array(
     HiveTableRelation,
     LogicalRelation,
     DataSourceV2Relation,
-    PermanentViewMarker)
+    PermanentViewMarker,
+    HiveSimpleUDF,
+    HiveGenericUDF,
+    HiveUDAFFunction,
+    HiveGenericUDTF)
 }
