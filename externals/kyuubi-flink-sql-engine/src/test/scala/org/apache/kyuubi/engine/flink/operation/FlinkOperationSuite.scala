@@ -17,11 +17,11 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import scala.collection.mutable.ListBuffer
 import java.sql.DatabaseMetaData
 import java.util.UUID
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 
 import org.apache.flink.api.common.JobID
 import org.apache.flink.table.types.logical.LogicalTypeRoot
