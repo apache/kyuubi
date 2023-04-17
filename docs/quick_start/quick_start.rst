@@ -43,7 +43,7 @@ pre-installed and the `JAVA_HOME` is correctly set to each component.
   **Kyuubi**       Gateway      \ |release| \   - Kyuubi Server
                    Engine lib                   - Kyuubi Engine
                    Beeline                      - Kyuubi Hive Beeline
-  **Spark**        Engine       >=3.0.0         A Spark distribution
+  **Spark**        Engine       >=3.1           A Spark distribution
   **Flink**        Engine       >=1.15.0        A Flink distribution
   **Trino**        Engine       >=363           A Trino cluster
   **Doris**        Engine       N/A             A Doris cluster
