@@ -22,7 +22,7 @@ import scala.language.implicitConversions
 import org.apache.ranger.plugin.model.RangerPolicy
 import org.apache.ranger.plugin.model.RangerPolicy._
 
-import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions.getRangerObject
+import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions._
 
 trait RangerObjectGenerator[T] {
   def get: T
