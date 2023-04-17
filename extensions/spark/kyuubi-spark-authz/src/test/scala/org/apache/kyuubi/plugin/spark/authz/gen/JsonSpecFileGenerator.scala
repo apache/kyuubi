@@ -34,16 +34,13 @@ object JsonSpecFileGenerator {
     writeCommandSpecJson("database", DatabaseCommands.data)
     writeCommandSpecJson("table", TableCommands.data ++ IcebergCommands.data)
     writeCommandSpecJson("function", FunctionCommands.data)
-    writeCommandSpecJson("scan", Scans.data, isScanResource = true)
+    writeCommandSpecJson("scan", Scans.data)
   }
 
-  def writeCommandSpecJson[T <: CommandSpec](
-      commandType: String,
-      specArr: Array[T],
-      isScanResource: Boolean = false): Unit = {
+  def writeCommandSpecJson[T <: CommandSpec](commandType: String, specArr: Array[T]): Unit = {
     val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
       .split("target").head
-    val filename = s"${commandType}${if (isScanResource) "" else "_command"}_spec.json"
+    val filename = s"${commandType}_command_spec.json"
     val writer = {
       val p = Paths.get(pluginHome, "src", "main", "resources", filename)
       Files.newBufferedWriter(p, StandardCharsets.UTF_8)
