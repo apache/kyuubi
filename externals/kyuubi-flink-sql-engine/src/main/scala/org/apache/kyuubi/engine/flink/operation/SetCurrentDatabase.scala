@@ -30,8 +30,8 @@ class SetCurrentDatabase(session: Session, database: String)
 
   override protected def runInternal(): Unit = {
     try {
-      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-      tableEnv.useDatabase(database)
+      val catalogManager = sessionContext.getSessionState.catalogManager
+      catalogManager.setCurrentDatabase(database)
       setHasResultSet(false)
     } catch onError()
   }

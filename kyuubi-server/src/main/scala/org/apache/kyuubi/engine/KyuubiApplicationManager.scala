@@ -176,7 +176,7 @@ object KyuubiApplicationManager {
         // if the master is not identified ahead, add all tags
         setupSparkYarnTag(applicationTag, conf)
         setupSparkK8sTag(applicationTag, conf)
-      case ("FLINK", _) =>
+      case ("FLINK", Some("YARN")) =>
         // running flink on other platforms is not yet supported
         setupFlinkYarnTag(applicationTag, conf)
       // other engine types are running locally yet

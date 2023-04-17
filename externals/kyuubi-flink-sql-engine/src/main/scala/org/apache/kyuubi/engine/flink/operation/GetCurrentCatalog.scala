@@ -31,8 +31,7 @@ class GetCurrentCatalog(session: Session) extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {
-      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-      val catalog = tableEnv.getCurrentCatalog
+      val catalog = executor.getCurrentCatalog
       resultSet = ResultSetUtil.stringListToResultSet(List(catalog), TABLE_CAT)
     } catch onError()
   }

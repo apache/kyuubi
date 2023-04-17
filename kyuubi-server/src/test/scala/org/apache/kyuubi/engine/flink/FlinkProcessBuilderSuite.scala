@@ -63,7 +63,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def envWithAllHadoop: ListMap[String, String] = envWithoutHadoopCLASSPATH +
     (FLINK_HADOOP_CLASSPATH_KEY -> s"${File.separator}hadoop")
   private def confStr: String = {
-    sessionModeConf.clone.set("yarn.tags", "KYUUBI").getAll
+    sessionModeConf.clone.getAll
       .map { case (k, v) => s"\\\\\\n\\t--conf $k=$v" }
       .mkString(" ")
   }
@@ -106,6 +106,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
 
     val flinkHome = builder.flinkHome
     classpathEntries.add(s"$flinkHome$flinkSqlClientJarPathSuffixRegex")
+    classpathEntries.add(s"$flinkHome$flinkSqlGatewayJarPathSuffixRegex")
     classpathEntries.add(s"$flinkHome$flinkLibPathSuffixRegex")
     classpathEntries.add(s"$flinkHome$flinkConfPathSuffix")
     val envMap = builder.env
@@ -123,6 +124,8 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private val javaPath = s"${envDefault("JAVA_HOME")}${File.separator}bin${File.separator}java"
   private val flinkSqlClientJarPathSuffixRegex = s"${File.separator}opt${File.separator}" +
     s"flink-sql-client-.*.jar"
+  private val flinkSqlGatewayJarPathSuffixRegex = s"${File.separator}opt${File.separator}" +
+    s"flink-sql-gateway-.*.jar"
   private val flinkLibPathSuffixRegex = s"${File.separator}lib${File.separator}\\*"
   private val flinkConfPathSuffix = s"${File.separator}conf"
   private val mainClassStr = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"

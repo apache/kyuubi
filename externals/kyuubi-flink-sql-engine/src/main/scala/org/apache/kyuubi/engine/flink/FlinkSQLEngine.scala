@@ -18,22 +18,17 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.File
-import java.net.URL
 import java.nio.file.Paths
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 
-import org.apache.flink.client.cli.{DefaultCLI, GenericCLI}
 import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration}
 import org.apache.flink.table.api.TableEnvironment
-import org.apache.flink.table.client.SqlClientException
-import org.apache.flink.table.client.gateway.context.DefaultContext
-import org.apache.flink.util.JarUtils
+import org.apache.flink.table.gateway.service.context.DefaultContext
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, currentUser, FLINK_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.{countDownLatch, currentEngine}
@@ -118,18 +113,9 @@ object FlinkSQLEngine extends Logging {
           debug(s"Skip generating app name for execution target $other")
       }
 
-      val cliOptions = FlinkEngineUtils.parseCliOptions(args)
-      val jars = if (cliOptions.getJars != null) cliOptions.getJars.asScala else List.empty
-      val libDirs =
-        if (cliOptions.getLibraryDirs != null) cliOptions.getLibraryDirs.asScala else List.empty
-      val dependencies = discoverDependencies(jars, libDirs)
-      val engineContext = new DefaultContext(
-        dependencies.asJava,
-        flinkConf,
-        Seq(new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava)
-
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
+      val engineContext = FlinkEngineUtils.getDefaultContext(args, flinkConf, flinkConfDir)
       startEngine(engineContext)
       info("Flink engine started")
 
@@ -146,7 +132,7 @@ object FlinkSQLEngine extends Logging {
           engine.stop()
         }
       case t: Throwable =>
-        error("Create FlinkSQL Engine Failed", t)
+        error("Failed to create FlinkSQL Engine", t)
     }
   }
 
@@ -166,38 +152,5 @@ object FlinkSQLEngine extends Logging {
     val res = tableEnv.executeSql("select 'kyuubi'")
     res.await()
     info("Initial Flink SQL finished.")
-  }
-
-  private def discoverDependencies(
-      jars: Seq[URL],
-      libraries: Seq[URL]): List[URL] = {
-    try {
-      var dependencies: ListBuffer[URL] = ListBuffer()
-      // find jar files
-      jars.foreach { url =>
-        JarUtils.checkJarFile(url)
-        dependencies = dependencies += url
-      }
-      // find jar files in library directories
-      libraries.foreach { libUrl =>
-        val dir: File = new File(libUrl.toURI)
-        if (!dir.isDirectory) throw new SqlClientException("Directory expected: " + dir)
-        else if (!dir.canRead) throw new SqlClientException("Directory cannot be read: " + dir)
-        val files: Array[File] = dir.listFiles
-        if (files == null) throw new SqlClientException("Directory cannot be read: " + dir)
-        files.foreach { f =>
-          // only consider jars
-          if (f.isFile && f.getAbsolutePath.toLowerCase.endsWith(".jar")) {
-            val url: URL = f.toURI.toURL
-            JarUtils.checkJarFile(url)
-            dependencies = dependencies += url
-          }
-        }
-      }
-      dependencies.toList
-    } catch {
-      case e: Exception =>
-        throw KyuubiSQLException(s"Could not load all required JAR files.", e)
-    }
   }
 }

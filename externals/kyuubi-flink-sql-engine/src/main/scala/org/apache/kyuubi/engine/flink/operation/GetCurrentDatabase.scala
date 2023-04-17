@@ -31,8 +31,7 @@ class GetCurrentDatabase(session: Session) extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {
-      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-      val database = tableEnv.getCurrentDatabase
+      val database = sessionContext.getSessionState.catalogManager.getCurrentDatabase
       resultSet = ResultSetUtil.stringListToResultSet(List(database), TABLE_SCHEM)
     } catch onError()
   }
