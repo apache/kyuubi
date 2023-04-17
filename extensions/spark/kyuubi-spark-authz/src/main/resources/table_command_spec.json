@@ -1244,6 +1244,14 @@
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ]
 }, {
+  "classname" : "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
   "classname" : "org.apache.spark.sql.execution.datasources.RefreshTable",
   "tableDescs" : [ {
     "fieldName" : "tableIdent",
@@ -1281,14 +1289,6 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "CREATETABLE_AS_SELECT",
-  "queryDescs" : [ {
-    "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
-}, {
-  "classname" : "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand",
-  "tableDescs" : [ ],
-  "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
     "fieldExtractor" : "LogicalPlanQueryExtractor"

@@ -66,10 +66,9 @@ package object serde {
   }
 
   final private lazy val SCAN_SPECS: Map[String, ScanSpec] = {
-    val is = getClass.getClassLoader.getResourceAsStream("scan_spec.json")
+    val is = getClass.getClassLoader.getResourceAsStream("scan_command_spec.json")
     mapper.readValue(is, new TypeReference[Array[ScanSpec]] {})
-      .map(e => (e.classname, e))
-      .filter(t => t._2.scanDescs.nonEmpty).toMap
+      .map(e => (e.classname, e)).toMap
   }
 
   def isKnownScan(r: AnyRef): Boolean = {
@@ -78,21 +77,6 @@ package object serde {
 
   def getScanSpec(r: AnyRef): ScanSpec = {
     SCAN_SPECS(r.getClass.getName)
-  }
-
-  final private lazy val FUNCTION_SPECS: Map[String, ScanSpec] = {
-    val is = getClass.getClassLoader.getResourceAsStream("scan_spec.json")
-    mapper.readValue(is, new TypeReference[Array[ScanSpec]] {})
-      .map(e => (e.classname, e))
-      .filter(t => t._2.functionDescs.nonEmpty).toMap
-  }
-
-  def isKnowFunction(r: AnyRef): Boolean = {
-    FUNCTION_SPECS.contains(r.getClass.getName)
-  }
-
-  def getFunctionSpec(r: AnyRef): ScanSpec = {
-    FUNCTION_SPECS(r.getClass.getName)
   }
 
   def operationType(plan: LogicalPlan): OperationType = {

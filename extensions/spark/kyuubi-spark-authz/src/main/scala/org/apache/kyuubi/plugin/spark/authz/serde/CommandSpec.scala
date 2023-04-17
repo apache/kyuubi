@@ -19,7 +19,6 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.slf4j.LoggerFactory
 
@@ -95,8 +94,7 @@ case class TableCommandSpec(
 
 case class ScanSpec(
     classname: String,
-    scanDescs: Seq[ScanDesc],
-    functionDescs: Seq[FunctionDesc] = Seq.empty) extends CommandSpec {
+    scanDescs: Seq[ScanDesc]) extends CommandSpec {
   override def opType: String = OperationType.QUERY.toString
   def tables: (LogicalPlan, SparkSession) => Seq[Table] = (plan, spark) => {
     scanDescs.flatMap { td =>
@@ -105,18 +103,6 @@ case class ScanSpec(
       } catch {
         case e: Exception =>
           LOG.debug(td.error(plan, e))
-          None
-      }
-    }
-  }
-
-  def functions: (Expression) => Seq[Function] = (expr) => {
-    functionDescs.flatMap { fd =>
-      try {
-        Some(fd.extract(expr))
-      } catch {
-        case e: Exception =>
-          LOG.debug(fd.error(expr, e))
           None
       }
     }
