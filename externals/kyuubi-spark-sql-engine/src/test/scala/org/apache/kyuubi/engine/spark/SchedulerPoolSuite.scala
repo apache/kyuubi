@@ -19,8 +19,6 @@ package org.apache.kyuubi.engine.spark
 
 import java.util.concurrent.Executors
 
-import scala.concurrent.duration.SECONDS
-
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobEnd, SparkListenerJobStart}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
@@ -82,7 +80,6 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
         threads.execute(() => {
           priority match {
             case 0 =>
-              // job name job2
               withJdbcStatement() { statement =>
                 statement.execute("SET kyuubi.operation.scheduler.pool=p0")
                 statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 1500l)" +
@@ -95,18 +92,17 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
                 statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 1500l)" +
                   " FROM range(1, 3, 1, 2)")
               }
-              // make sure this job name job1
-              Thread.sleep(1000)
           }
         })
       }
       threads.shutdown()
-      threads.awaitTermination(20, SECONDS)
-      // because after job1 submitted, sleep 1s, so job1 should be started before job2
-      assert(job1StartTime < job2StartTime)
-      // job2 minShare is 2(total resource) so that job1 should be allocated tasks after
-      // job2 finished.
-      assert(job2FinishTime < job1FinishTime)
+      eventually(Timeout(20.seconds)) {
+        // We can not ensure that job1 is started before job2 so here using abs.
+        assert(Math.abs(job1StartTime - job2StartTime) < 1000)
+        // Job1 minShare is 2(total resource) so that job2 should be allocated tasks after
+        // job1 finished.
+        assert(job2FinishTime - job1FinishTime >= 1000)
+      }
     } finally {
       spark.sparkContext.removeSparkListener(listener)
     }
