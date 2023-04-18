@@ -39,8 +39,8 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
   jps.initialize(null)
 
   test("JpsApplicationOperation with jstat") {
-    assert(jps.isSupported(None))
-    assert(jps.isSupported(Some("local")))
+    assert(jps.isSupported(None, None))
+    assert(jps.isSupported(Some("local"), None))
     assert(!jps.killApplicationByTag(null)._1)
     assert(!jps.killApplicationByTag("have a space")._1)
     val currentProcess = ManagementFactory.getRuntimeMXBean.getName
@@ -79,7 +79,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     val builder = new SparkProcessBuilder(user, conf)
     builder.start
 
-    assert(jps.isSupported(builder.clusterManager()))
+    assert(jps.isSupported(builder.clusterManager(), builder.deployMode()))
     eventually(Timeout(10.seconds)) {
       val desc1 = jps.getApplicationInfoByTag(id)
       assert(desc1.id != null)
