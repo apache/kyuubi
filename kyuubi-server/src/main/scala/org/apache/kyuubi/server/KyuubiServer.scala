@@ -96,6 +96,7 @@ object KyuubiServer extends Logging {
     JDBCMetadataStoreConf
     val conf = new KyuubiConf().loadFileDefaults()
     UserGroupInformation.setConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
+    conf.set("kyuubi.server.administrators", "anonymous")
     startServer(conf)
   }
 
