@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{GenericType, MediaType}
@@ -24,19 +25,22 @@ import javax.ws.rs.core.{GenericType, MediaType}
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
+import org.mockito.Mockito.lenient
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
+import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, RestFrontendTestHelper, Utils}
-import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, SessionData, SessionHandle, SessionOpenRequest}
+import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, ServerData, SessionData, SessionHandle, SessionOpenRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
 import org.apache.kyuubi.engine.{ApplicationState, EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, USER}
 import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceDiscovery}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
-import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.plugin.PluginLoader
+import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -45,6 +49,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
     .set(KyuubiConf.SERVER_ADMINISTRATORS, Seq("admin001"))
+
+  private val encodeAuthorization: String = {
+    new String(
+      Base64.getEncoder.encode(
+        s"${Utils.currentUser}:".getBytes()),
+      StandardCharsets.UTF_8)
+  }
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -63,11 +74,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(null)
     assert(405 == response.getStatus)
 
-    val adminUser = Utils.currentUser
-    val encodeAuthorization = new String(
-      Base64.getEncoder.encode(
-        s"$adminUser:".getBytes()),
-      "UTF-8")
     response = webTarget.path("api/v1/admin/refresh/hadoop_conf")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
@@ -76,7 +82,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val admin001AuthHeader = new String(
       Base64.getEncoder.encode("admin001".getBytes()),
-      "UTF-8")
+      StandardCharsets.UTF_8)
     response = webTarget.path("api/v1/admin/refresh/hadoop_conf")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $admin001AuthHeader")
@@ -85,7 +91,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val admin002AuthHeader = new String(
       Base64.getEncoder.encode("admin002".getBytes()),
-      "UTF-8")
+      StandardCharsets.UTF_8)
     response = webTarget.path("api/v1/admin/refresh/hadoop_conf")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $admin002AuthHeader")
@@ -99,11 +105,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(null)
     assert(405 == response.getStatus)
 
-    val adminUser = Utils.currentUser
-    val encodeAuthorization = new String(
-      Base64.getEncoder.encode(
-        s"$adminUser:".getBytes()),
-      "UTF-8")
     response = webTarget.path("api/v1/admin/refresh/user_defaults_conf")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
@@ -117,11 +118,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(null)
     assert(405 == response.getStatus)
 
-    val adminUser = Utils.currentUser
-    val encodeAuthorization = new String(
-      Base64.getEncoder.encode(
-        s"$adminUser:".getBytes()),
-      "UTF-8")
     response = webTarget.path("api/v1/admin/refresh/unlimited_users")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
@@ -135,12 +131,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     var response = webTarget.path("api/v1/sessions")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
-
-    val adminUser = Utils.currentUser
-    val encodeAuthorization = new String(
-      Base64.getEncoder.encode(
-        s"$adminUser:".getBytes()),
-      "UTF-8")
 
     // get session list
     var response2 = webTarget.path("api/v1/admin/sessions").request()
@@ -196,12 +186,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "localhost",
       Map("testConfig" -> "testValue"))
 
-    val adminUser = Utils.currentUser
-    val encodeAuthorization = new String(
-      Base64.getEncoder.encode(
-        s"$adminUser:".getBytes()),
-      "UTF-8")
-
     // list sessions
     var response = webTarget.path("api/v1/admin/sessions")
       .queryParam("users", "admin")
@@ -249,12 +233,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       Map("testConfig" -> "testValue"))
     val operation = fe.be.getCatalogs(sessionHandle)
 
-    val adminUser = Utils.currentUser
-    val encodeAuthorization = new String(
-      Base64.getEncoder.encode(
-        s"$adminUser:".getBytes()),
-      "UTF-8")
-
     // list operations
     var response = webTarget.path("api/v1/admin/operations").request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
@@ -301,11 +279,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
-      val adminUser = Utils.currentUser
-      val encodeAuthorization = new String(
-        Base64.getEncoder.encode(
-          s"$adminUser:".getBytes()),
-        "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("sharelevel", "USER")
         .queryParam("type", "spark_sql")
@@ -349,11 +322,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
-      val adminUser = Utils.currentUser
-      val encodeAuthorization = new String(
-        Base64.getEncoder.encode(
-          s"$adminUser:".getBytes()),
-        "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("sharelevel", "connection")
         .queryParam("type", "spark_sql")
@@ -389,11 +357,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
-      val adminUser = Utils.currentUser
-      val encodeAuthorization = new String(
-        Base64.getEncoder.encode(
-          s"$adminUser:".getBytes()),
-        "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("type", "spark_sql")
         .request(MediaType.APPLICATION_JSON_TYPE)
@@ -453,11 +416,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace1))
       assert(client.pathExists(engineSpace2))
 
-      val adminUser = Utils.currentUser
-      val encodeAuthorization = new String(
-        Base64.getEncoder.encode(
-          s"$adminUser:".getBytes()),
-        "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("type", "spark_sql")
         .request(MediaType.APPLICATION_JSON_TYPE)
@@ -486,6 +444,38 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         assert(engineMgr.getApplicationInfo(None, id2)
           .exists(_.state == ApplicationState.NOT_FOUND))
       }
+    }
+  }
+
+  test("list server") {
+    // Mock Kyuubi Server
+    val serverDiscovery = mock[ServiceDiscovery]
+    lenient.when(serverDiscovery.fe).thenReturn(fe)
+    val namespace = conf.get(HighAvailabilityConf.HA_NAMESPACE)
+    withDiscoveryClient(conf) { client =>
+      client.registerService(conf, namespace, serverDiscovery)
+
+      val response = webTarget.path("api/v1/admin/server")
+        .request()
+        .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+        .get
+
+      assert(200 == response.getStatus)
+      val result = response.readEntity(new GenericType[Seq[ServerData]]() {})
+      assert(result.size == 1)
+      val testServer = result.head
+      val export = fe.asInstanceOf[KyuubiRestFrontendService]
+
+      assert(namespace.equals(testServer.getNamespace.replaceFirst("/", "")))
+      assert(export.host.equals(testServer.getHost))
+      assert(export.connectionUrl.equals(testServer.getInstance()))
+      assert(!testServer.getAttributes.isEmpty)
+      val attributes = testServer.getAttributes
+      assert(attributes.containsKey("serviceUri") &&
+        attributes.get("serviceUri").equals(fe.connectionUrl))
+      assert(attributes.containsKey("version"))
+      assert(attributes.containsKey("sequence"))
+      assert("Running".equals(testServer.getStatus))
     }
   }
 }
