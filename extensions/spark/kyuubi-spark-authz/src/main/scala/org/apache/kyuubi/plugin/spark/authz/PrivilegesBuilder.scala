@@ -71,9 +71,17 @@ object PrivilegesBuilder {
       }
     }
 
-    plan match {
-      case p: Project => buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
+    def resolve(plan: LogicalPlan): LogicalPlan = {
+      val analyzer = spark.sessionState.analyzer
+      analyzer.execute(analyzer.ResolveRelations(plan))
+    }
 
+    plan match {
+      case p: Project => if (p.resolved) {
+        buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
+      } else {
+        buildQuery(resolve(p), privilegeObjects, projectionList, conditionList, spark)
+      }
       case j: Join =>
         val cols =
           conditionList ++ j.condition.map(expr => collectLeaves(expr)).getOrElse(Nil)
