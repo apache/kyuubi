@@ -41,6 +41,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
   test("JpsApplicationOperation with jstat") {
     assert(jps.isSupported(None, None))
     assert(jps.isSupported(Some("local"), None))
+    assert(jps.isSupported(Some("k8s://test"), Some("client")))
     assert(!jps.killApplicationByTag(null)._1)
     assert(!jps.killApplicationByTag("have a space")._1)
     val currentProcess = ManagementFactory.getRuntimeMXBean.getName
