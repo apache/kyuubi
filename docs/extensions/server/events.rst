@@ -55,7 +55,7 @@ To create custom EventHandlerProvider class derived from the above interface, we
 
    <dependency>
       <groupId>org.apache.kyuubi</groupId>
-      <artifactId>kyuubi-event_2.12</artifactId>
+      <artifactId>kyuubi-events_2.12</artifactId>
       <version>\ |release|\</version>
       <scope>provided</scope>
    </dependency>
