@@ -513,12 +513,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       assert(e1.getMessage.contains(s"does not have [create] privilege on [default/$permView]"))
 
       val e2 = intercept[AccessControlException](
-        doAs("someone", sql(s"CREATE VIEW $permView AS SELECT * FROM $table")))
-      if (isSparkV32OrGreater) {
-        assert(e2.getMessage.contains(s"does not have [select] privilege on [default/$table/id]"))
-      } else {
-        assert(e2.getMessage.contains(s"does not have [select] privilege on [$table]"))
-      }
+        doAs("someone", sql(s"CREATE VIEW $permView AS SELECT id FROM $table")))
+      assert(e2.getMessage.contains(s"does not have [select] privilege on [default/$table/id]"))
     }
   }
 
@@ -742,7 +738,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #4728] Create view with select which no permission but success") {
+  test("[KYUUBI #4728] Create view with select column which no permission but success") {
     val db1 = "default"
     val table = "src"
     val permView = "perm_view"
@@ -752,7 +748,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       (s"$db1.$permView", "view"))) {
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int, name string)"))
       val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"CREATE VIEW $db1.$permView AS SELECT * FROM $db1.$table")))
+        doAs("someone", sql(s"CREATE VIEW $db1.$permView AS SELECT id FROM $db1.$table")))
 
       assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
     }

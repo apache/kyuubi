@@ -484,12 +484,8 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
-    if (isSparkV32OrGreater) {
-      assert(po0.columns.head === "key")
-      checkTableOwner(po0)
-    } else {
-      assert(po0.columns.isEmpty)
-    }
+    assert(po0.columns.head === "key")
+    checkTableOwner(po0)
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
