@@ -49,8 +49,10 @@ case class MaxScanStrategy(session: SparkSession)
     Nil
   }
 
-  private def checkScan(plan: LogicalPlan, maxScanPartitionsOpt: Option[Int],
-                        maxFileSizeOpt: Option[Long]): Unit = {
+  private def checkScan(
+      plan: LogicalPlan,
+      maxScanPartitionsOpt: Option[Int],
+      maxFileSizeOpt: Option[Long]): Unit = {
     plan match {
       case ScanOperation(_, _, relation: HiveTableRelation) =>
         if (relation.isPartitioned) {
