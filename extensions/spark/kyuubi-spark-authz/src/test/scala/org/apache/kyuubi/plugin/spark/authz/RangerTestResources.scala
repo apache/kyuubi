@@ -15,24 +15,31 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.operation
+package org.apache.kyuubi.plugin.spark.authz
 
-import org.apache.kyuubi.engine.flink.result.ResultSetUtil
-import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_SCHEM
-import org.apache.kyuubi.session.Session
+object RangerTestUsers {
+  // authorized users used in policy generation
+  val admin = "admin"
+  val alice = "alice"
+  val bob = "bob"
+  val kent = "kent"
+  val permViewUser = "perm_view_user"
+  val ownerPlaceHolder = "{OWNER}"
+  val createOnlyUser = "create_only_user"
+  val defaultTableOwner = "default_table_owner"
+  val permViewOnlyUser = "user_perm_view_only"
 
-class GetCurrentDatabase(session: Session) extends FlinkOperation(session) {
+  // non-authorized users
+  val invisibleUser = "i_am_invisible"
+  val denyUser = "denyuser"
+  val denyUser2 = "denyuser2"
+  val someone = "someone"
+}
 
-  private val operationLog: OperationLog =
-    OperationLog.createOperationLog(session, getHandle)
-
-  override def getOperationLog: Option[OperationLog] = Option(operationLog)
-
-  override protected def runInternal(): Unit = {
-    try {
-      val database = sessionContext.getSessionState.catalogManager.getCurrentDatabase
-      resultSet = ResultSetUtil.stringListToResultSet(List(database), TABLE_SCHEM)
-    } catch onError()
-  }
+object RangerTestNamespace {
+  val defaultDb = "default"
+  val sparkCatalog = "spark_catalog"
+  val icebergNamespace = "iceberg_ns"
+  val namespace1 = "ns1"
+  val namespace2 = "ns2"
 }

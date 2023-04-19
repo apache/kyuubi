@@ -21,8 +21,9 @@ import java.io.IOException
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
-import org.apache.flink.table.client.gateway.Executor
-import org.apache.flink.table.client.gateway.context.SessionContext
+import org.apache.flink.configuration.Configuration
+import org.apache.flink.table.gateway.service.context.SessionContext
+import org.apache.flink.table.gateway.service.operation.OperationExecutor
 import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
@@ -36,11 +37,15 @@ import org.apache.kyuubi.session.Session
 
 abstract class FlinkOperation(session: Session) extends AbstractOperation(session) {
 
+  protected val flinkSession: org.apache.flink.table.gateway.service.session.Session =
+    session.asInstanceOf[FlinkSessionImpl].fSession
+
+  protected val executor: OperationExecutor = flinkSession.createExecutor(
+    Configuration.fromMap(flinkSession.getSessionConfig))
+
   protected val sessionContext: SessionContext = {
     session.asInstanceOf[FlinkSessionImpl].sessionContext
   }
-
-  protected val executor: Executor = session.asInstanceOf[FlinkSessionImpl].executor
 
   protected val sessionId: String = session.handle.identifier.toString
 

@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 
 import com.google.common.collect.Iterators
 import org.apache.flink.api.common.JobID
-import org.apache.flink.table.api.{DataTypes, ResultKind, TableResult}
+import org.apache.flink.table.api.{DataTypes, ResultKind}
 import org.apache.flink.table.catalog.Column
 import org.apache.flink.types.Row
 
@@ -57,17 +57,6 @@ case class ResultSet(
  * flags for streaming mode.
  */
 object ResultSet {
-
-  def fromTableResult(tableResult: TableResult): ResultSet = {
-    val schema = tableResult.getResolvedSchema
-    // collect all rows from table result as list
-    // this is ok as TableResult contains limited rows
-    val rows = tableResult.collect.asScala.toArray
-    builder.resultKind(tableResult.getResultKind)
-      .columns(schema.getColumns)
-      .data(rows)
-      .build
-  }
 
   def fromJobId(jobID: JobID): ResultSet = {
     val data: Array[Row] = if (jobID != null) {

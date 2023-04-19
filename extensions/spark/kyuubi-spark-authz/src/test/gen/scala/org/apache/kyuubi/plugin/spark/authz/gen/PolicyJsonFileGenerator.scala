@@ -31,7 +31,9 @@ import org.apache.ranger.plugin.model.RangerPolicy
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess._
+import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
+import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
+import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess.allowTypes
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyResource._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerAccessType._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions._
@@ -126,22 +128,6 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
           p
       }
   }
-
-  // users
-  private val admin = "admin"
-  private val bob = "bob"
-  private val kent = "kent"
-  private val permViewUser = "perm_view_user"
-  private val ownerPlaceHolder = "{OWNER}"
-  private val createOnlyUser = "create_only_user"
-  private val defaultTableOwner = "default_table_owner"
-  private val permViewOnlyUser = "user_perm_view_only"
-
-  // db
-  private val defaultDb = "default"
-  private val sparkCatalog = "spark_catalog"
-  private val icebergNamespace = "iceberg_ns"
-  private val namespace1 = "ns1"
 
   // resources
   private val allDatabaseRes = databaseRes("*")

@@ -135,7 +135,7 @@
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
-        <flink.version>1.16.1</flink.version>
+        <flink.version>1.17.0</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
@@ -1626,6 +1626,12 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
+                <artifactId>flink-sql-gateway</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
                 <artifactId>flink-test-utils</artifactId>
                 <version>${flink.version}</version>
                 <exclusions>
@@ -2337,7 +2343,7 @@
                 <module>extensions/spark/kyuubi-extension-spark-3-2</module>
             </modules>
             <properties>
-                <spark.version>3.2.3</spark.version>
+                <spark.version>3.2.4</spark.version>
                 <spark.binary.version>3.2</spark.binary.version>
                 <delta.version>2.0.2</delta.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
@@ -2390,16 +2396,16 @@
         </profile>
 
         <profile>
-            <id>flink-1.15</id>
+            <id>flink-1.16</id>
             <properties>
-                <flink.version>1.15.4</flink.version>
+                <flink.version>1.16.1</flink.version>
             </properties>
         </profile>
 
         <profile>
-            <id>flink-1.16</id>
+            <id>flink-1.17</id>
             <properties>
-                <flink.version>1.16.1</flink.version>
+                <flink.version>1.17.0</flink.version>
             </properties>
         </profile>
 

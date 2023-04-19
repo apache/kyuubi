@@ -30,8 +30,8 @@ class SetCurrentCatalog(session: Session, catalog: String)
 
   override protected def runInternal(): Unit = {
     try {
-      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-      tableEnv.useCatalog(catalog)
+      val catalogManager = sessionContext.getSessionState.catalogManager
+      catalogManager.setCurrentCatalog(catalog)
       setHasResultSet(false)
     } catch onError()
   }
