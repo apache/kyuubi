@@ -41,25 +41,26 @@ case class MaxScanStrategy(session: SparkSession)
   with SQLConfHelper
   with PruneFileSourcePartitionHelper {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
-    val maxScanPartitions = conf.getConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS).getOrElse(0)
-    val maxFileSize = conf.getConf(KyuubiSQLConf.WATCHDOG_MAX_FILE_SIZE).getOrElse(0L)
-    if (maxScanPartitions > 0 || maxFileSize > 0) {
-      checkScan(plan, maxScanPartitions, maxFileSize)
+    val maxScanPartitionsOpt = conf.getConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS)
+    val maxFileSizeOpt = conf.getConf(KyuubiSQLConf.WATCHDOG_MAX_FILE_SIZE)
+    if (maxScanPartitionsOpt.isDefined || maxFileSizeOpt.isDefined) {
+      checkScan(plan, maxScanPartitionsOpt, maxFileSizeOpt)
     }
     Nil
   }
 
-  private def checkScan(plan: LogicalPlan, maxScanPartitions: Int, maxFileSize: Long): Unit = {
+  private def checkScan(plan: LogicalPlan, maxScanPartitionsOpt: Option[Int],
+                        maxFileSizeOpt: Option[Long]): Unit = {
     plan match {
       case ScanOperation(_, _, relation: HiveTableRelation) =>
         if (relation.isPartitioned) {
           relation.prunedPartitions match {
             case Some(prunedPartitions) =>
-              if (maxScanPartitions > 0 && prunedPartitions.size > maxScanPartitions) {
+              if (maxScanPartitionsOpt.exists(_ <= prunedPartitions.size)) {
                 throw new MaxPartitionExceedException(
                   s"""
                      |SQL job scan hive partition: ${prunedPartitions.size}
-                     |exceed restrict of hive scan maxPartition $maxScanPartitions
+                     |exceed restrict of hive scan maxPartition ${maxScanPartitionsOpt.get}
                      |You should optimize your SQL logical according partition structure
                      |or shorten query scope such as p_date, detail as below:
                      |Table: ${relation.tableMeta.qualifiedName}
@@ -68,10 +69,10 @@ case class MaxScanStrategy(session: SparkSession)
                      |""".stripMargin)
               }
               lazy val scanFileSize = prunedPartitions.flatMap(_.stats).map(_.sizeInBytes).sum
-              if (maxFileSize > 0 && scanFileSize > maxFileSize) {
+              if (maxFileSizeOpt.exists(_ <= scanFileSize)) {
                 throw partTableMaxFileExceedError(
                   scanFileSize,
-                  maxFileSize,
+                  maxFileSizeOpt.get,
                   Some(relation.tableMeta),
                   prunedPartitions.flatMap(_.storage.locationUri).map(_.toString),
                   relation.partitionCols.map(_.name))
@@ -81,7 +82,7 @@ case class MaxScanStrategy(session: SparkSession)
                 .sessionState.catalog.externalCatalog.listPartitions(
                   relation.tableMeta.database,
                   relation.tableMeta.identifier.table)
-              if (maxScanPartitions > 0 && totalPartitions.size > maxScanPartitions) {
+              if (maxScanPartitionsOpt.exists(_ <= totalPartitions.size)) {
                 throw new MaxPartitionExceedException(
                   s"""
                      |Your SQL job scan a whole huge table without any partition filter,
@@ -93,7 +94,7 @@ case class MaxScanStrategy(session: SparkSession)
                      |""".stripMargin)
               }
               lazy val scanFileSize = totalPartitions.flatMap(_.stats).map(_.sizeInBytes).sum
-              if (maxFileSize > 0 && scanFileSize > maxFileSize) {
+              if (maxFileSizeOpt.exists(_ <= scanFileSize)) {
                 throw new MaxFileSizeExceedException(
                   s"""
                      |Your SQL job scan a whole huge table without any partition filter,
@@ -107,10 +108,10 @@ case class MaxScanStrategy(session: SparkSession)
           }
         } else {
           lazy val scanFileSize = relation.tableMeta.stats.map(_.sizeInBytes).sum
-          if (maxFileSize > 0 && scanFileSize > maxFileSize) {
+          if (maxFileSizeOpt.exists(_ <= scanFileSize)) {
             throw nonPartTableMaxFileExceedError(
               scanFileSize,
-              maxFileSize,
+              maxFileSizeOpt.get,
               Some(relation.tableMeta))
           }
         }
@@ -139,29 +140,29 @@ case class MaxScanStrategy(session: SparkSession)
           val prunedPartitions = fileIndex.listFiles(
             partitionKeyFilters.toSeq,
             dataFilter)
-          if (maxScanPartitions > 0 && prunedPartitions.size > maxScanPartitions) {
+          if (maxScanPartitionsOpt.exists(_ <= prunedPartitions.size)) {
             throw maxPartitionExceedError(
               prunedPartitions.size,
-              maxScanPartitions,
+              maxScanPartitionsOpt.get,
               relation.catalogTable,
               fileIndex.rootPaths,
               fsRelation.partitionSchema)
           }
           lazy val scanFileSize = prunedPartitions.flatMap(_.files).map(_.getLen).sum
-          if (maxFileSize > 0 && scanFileSize > maxFileSize) {
+          if (maxFileSizeOpt.exists(_ <= scanFileSize)) {
             throw partTableMaxFileExceedError(
               scanFileSize,
-              maxFileSize,
+              maxFileSizeOpt.get,
               relation.catalogTable,
               fileIndex.rootPaths.map(_.toString),
               fsRelation.partitionSchema.map(_.name))
           }
         } else {
           lazy val scanFileSize = fileIndex.sizeInBytes
-          if (maxFileSize > 0 && scanFileSize > maxFileSize) {
+          if (maxFileSizeOpt.exists(_ <= scanFileSize)) {
             throw nonPartTableMaxFileExceedError(
               scanFileSize,
-              maxFileSize,
+              maxFileSizeOpt.get,
               relation.catalogTable)
           }
         }
@@ -192,10 +193,10 @@ case class MaxScanStrategy(session: SparkSession)
             partitionKeyFilters.toSeq)
 
           lazy val prunedPartitionSize = fileIndex.partitionSpec().partitions.size
-          if (maxScanPartitions > 0 && prunedPartitionSize > maxScanPartitions) {
+          if (maxScanPartitionsOpt.exists(_ <= prunedPartitionSize)) {
             throw maxPartitionExceedError(
               prunedPartitionSize,
-              maxScanPartitions,
+              maxScanPartitionsOpt.get,
               logicalRelation.catalogTable,
               catalogFileIndex.rootPaths,
               fsRelation.partitionSchema)
@@ -203,20 +204,20 @@ case class MaxScanStrategy(session: SparkSession)
 
           lazy val scanFileSize = fileIndex
             .listFiles(Nil, Nil).flatMap(_.files).map(_.getLen).sum
-          if (maxFileSize > 0 && scanFileSize > maxFileSize) {
+          if (maxFileSizeOpt.exists(_ <= scanFileSize)) {
             throw partTableMaxFileExceedError(
               scanFileSize,
-              maxFileSize,
+              maxFileSizeOpt.get,
               logicalRelation.catalogTable,
               catalogFileIndex.rootPaths.map(_.toString),
               fsRelation.partitionSchema.map(_.name))
           }
         } else {
           lazy val scanFileSize = catalogFileIndex.sizeInBytes
-          if (maxFileSize > 0 && scanFileSize > maxFileSize) {
+          if (maxFileSizeOpt.exists(_ <= scanFileSize)) {
             throw nonPartTableMaxFileExceedError(
               scanFileSize,
-              maxFileSize,
+              maxFileSizeOpt.get,
               logicalRelation.catalogTable)
           }
         }
