@@ -70,9 +70,6 @@ class JsonSpecFileGenerator extends AnyFunSuite {
     } else {
       val existedFileContent =
         FileUtils.readFileToString(filePath.toFile, StandardCharsets.UTF_8)
-      // scalastyle:off println
-      println(s"checking ${specArr.length} specs in $filename")
-      // scalastyle:on println
       withClue(s"Check $filename failed. Please regenerate the ranger policy file by running"
         + "`KYUUBI_UPDATE=1 build/mvn clean test -Pgen-policy"
         + " -pl :kyuubi-spark-authz_2.12 -Dtest=none"
