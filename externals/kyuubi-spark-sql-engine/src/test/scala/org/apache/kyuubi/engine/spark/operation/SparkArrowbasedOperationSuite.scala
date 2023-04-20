@@ -23,8 +23,8 @@ import java.util.{Set => JSet}
 import org.apache.spark.KyuubiSparkContextHelper
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.{QueryTest, Row, SparkSession}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
-import org.apache.spark.sql.execution.{CollectLimitExec, QueryExecution, SparkPlan}
+import org.apache.spark.sql.catalyst.plans.logical.Project
+import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, QueryExecution, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.exchange.Exchange
@@ -104,48 +104,29 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   }
 
   test("assign a new execution id for arrow-based result") {
-    var plan: LogicalPlan = null
-
-    val listener = new QueryExecutionListener {
-      override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
-        plan = qe.analyzed
-      }
-      override def onFailure(funcName: String, qe: QueryExecution, exception: Exception): Unit = {}
-    }
+    val listener = new SQLMetricsListener
     withJdbcStatement() { statement =>
-      // since all the new sessions have their owner listener bus, we should register the listener
-      // in the current session.
-      registerListener(listener)
-
-      val result = statement.executeQuery("select 1 as c1")
-      assert(result.next())
-      assert(result.getInt("c1") == 1)
+      withSparkListener(listener) {
+        val result = statement.executeQuery("select 1 as c1")
+        assert(result.next())
+        assert(result.getInt("c1") == 1)
+      }
     }
-    KyuubiSparkContextHelper.waitListenerBus(spark)
-    unregisterListener(listener)
-    assert(plan.isInstanceOf[Project])
+
+    assert(listener.queryExecution.analyzed.isInstanceOf[Project])
   }
 
   test("arrow-based query metrics") {
-    var queryExecution: QueryExecution = null
-
-    val listener = new QueryExecutionListener {
-      override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
-        queryExecution = qe
-      }
-      override def onFailure(funcName: String, qe: QueryExecution, exception: Exception): Unit = {}
-    }
+    val listener = new SQLMetricsListener
     withJdbcStatement() { statement =>
-      registerListener(listener)
-      val result = statement.executeQuery("select 1 as c1")
-      assert(result.next())
-      assert(result.getInt("c1") == 1)
+      withSparkListener(listener) {
+        val result = statement.executeQuery("select 1 as c1")
+        assert(result.next())
+        assert(result.getInt("c1") == 1)
+      }
     }
 
-    KyuubiSparkContextHelper.waitListenerBus(spark)
-    unregisterListener(listener)
-
-    val metrics = queryExecution.executedPlan.collectLeaves().head.metrics
+    val metrics = listener.queryExecution.executedPlan.collectLeaves().head.metrics
     assert(metrics.contains("numOutputRows"))
     assert(metrics("numOutputRows").value === 1)
   }
@@ -273,7 +254,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         withPartitionedTable("t_3") {
           statement.executeQuery("select * from t_3 limit 10 offset 10")
         }
-        KyuubiSparkContextHelper.waitListenerBus(spark)
       }
     }
     // the extra shuffle be introduced if the `offset` > 0
@@ -292,11 +272,47 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         withPartitionedTable("t_3") {
           statement.executeQuery("select * from t_3 limit 1000")
         }
-        KyuubiSparkContextHelper.waitListenerBus(spark)
       }
     }
     // Should be only one stage since there is no shuffle.
     assert(numStages == 1)
+  }
+
+  test("LocalTableScanExec should not trigger job") {
+    val listener = new JobCountListener
+    withJdbcStatement("view_1") { statement =>
+      withSparkListener(listener) {
+        withAllSessions { s =>
+          import s.implicits._
+          Seq((1, "a")).toDF("c1", "c2").createOrReplaceTempView("view_1")
+          val plan = s.sql("select * from view_1").queryExecution.executedPlan
+          assert(plan.isInstanceOf[LocalTableScanExec])
+        }
+        val resultSet = statement.executeQuery("select * from view_1")
+        assert(resultSet.next())
+        assert(!resultSet.next())
+      }
+    }
+    assert(listener.numJobs == 0)
+  }
+
+  test("LocalTableScanExec metrics") {
+    val listener = new SQLMetricsListener
+    withJdbcStatement("view_1") { statement =>
+      withSparkListener(listener) {
+        withAllSessions { s =>
+          import s.implicits._
+          Seq((1, "a")).toDF("c1", "c2").createOrReplaceTempView("view_1")
+        }
+        val result = statement.executeQuery("select * from view_1")
+        assert(result.next())
+        assert(!result.next())
+      }
+    }
+
+    val metrics = listener.queryExecution.executedPlan.collectLeaves().head.metrics
+    assert(metrics.contains("numOutputRows"))
+    assert(metrics("numOutputRows").value === 1)
   }
 
   private def checkResultSetFormat(statement: Statement, expectFormat: String): Unit = {
@@ -321,32 +337,30 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     assert(resultSet.getString("col") === expect)
   }
 
-  private def registerListener(listener: QueryExecutionListener): Unit = {
-    // since all the new sessions have their owner listener bus, we should register the listener
-    // in the current session.
-    SparkSQLEngine.currentEngine.get
-      .backendService
-      .sessionManager
-      .allSessions()
-      .foreach(_.asInstanceOf[SparkSessionImpl].spark.listenerManager.register(listener))
+  // since all the new sessions have their owner listener bus, we should register the listener
+  // in the current session.
+  private def withSparkListener[T](listener: QueryExecutionListener)(body: => T): T = {
+    withAllSessions(s => s.listenerManager.register(listener))
+    try {
+      val result = body
+      KyuubiSparkContextHelper.waitListenerBus(spark)
+      result
+    } finally {
+      withAllSessions(s => s.listenerManager.unregister(listener))
+    }
   }
 
-  private def unregisterListener(listener: QueryExecutionListener): Unit = {
-    SparkSQLEngine.currentEngine.get
-      .backendService
-      .sessionManager
-      .allSessions()
-      .foreach(_.asInstanceOf[SparkSessionImpl].spark.listenerManager.unregister(listener))
-  }
-
+  // since all the new sessions have their owner listener bus, we should register the listener
+  // in the current session.
   private def withSparkListener[T](listener: SparkListener)(body: => T): T = {
     withAllSessions(s => s.sparkContext.addSparkListener(listener))
     try {
-      body
+      val result = body
+      KyuubiSparkContextHelper.waitListenerBus(spark)
+      result
     } finally {
       withAllSessions(s => s.sparkContext.removeSparkListener(listener))
     }
-
   }
 
   private def withPartitionedTable[T](viewName: String)(body: => T): T = {
@@ -431,6 +445,21 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       .build[JSet[String]](SQLConf)
       .get()
     staticConfKeys.contains(key)
+  }
+
+  class JobCountListener extends SparkListener {
+    var numJobs = 0
+    override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
+      numJobs += 1
+    }
+  }
+
+  class SQLMetricsListener extends QueryExecutionListener {
+    var queryExecution: QueryExecution = null
+    override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
+      queryExecution = qe
+    }
+    override def onFailure(funcName: String, qe: QueryExecution, exception: Exception): Unit = {}
   }
 }
 

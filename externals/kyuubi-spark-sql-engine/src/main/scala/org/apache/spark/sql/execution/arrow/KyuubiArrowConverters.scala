@@ -203,7 +203,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
    * Different from [[org.apache.spark.sql.execution.arrow.ArrowConverters.toBatchIterator]],
    * each output arrow batch contains this batch row count.
    */
-  private def toBatchIterator(
+  def toBatchIterator(
       rowIter: Iterator[InternalRow],
       schema: StructType,
       maxRecordsPerBatch: Long,
@@ -226,6 +226,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
    * with two key differences:
    *   1. there is no requirement to write the schema at the batch header
    *   2. iteration halts when `rowCount` equals `limit`
+   * Note that `limit < 0` means no limit, and return all rows the in the iterator.
    */
   private[sql] class ArrowBatchIterator(
       rowIter: Iterator[InternalRow],
@@ -255,7 +256,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       }
     }
 
-    override def hasNext: Boolean = (rowIter.hasNext && rowCount < limit) || {
+    override def hasNext: Boolean = (rowIter.hasNext && (rowCount < limit || limit < 0)) || {
       root.close()
       allocator.close()
       false
@@ -283,7 +284,8 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
               // If the size of rows are 0 or negative, unlimit it.
               maxRecordsPerBatch <= 0 ||
               rowCountInLastBatch < maxRecordsPerBatch ||
-              rowCount < limit)) {
+              rowCount < limit ||
+              limit < 0)) {
           val row = rowIter.next()
           arrowWriter.write(row)
           estimatedBatchSize += (row match {
