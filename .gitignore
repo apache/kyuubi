@@ -32,6 +32,8 @@
 .ensime_lucene
 .generated-mima*
 .vscode/
+.bloop/
+.metals/
 .idea/
 .idea_modules/
 .project
