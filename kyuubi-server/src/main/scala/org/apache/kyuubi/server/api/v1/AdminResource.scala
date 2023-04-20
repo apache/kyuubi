@@ -355,9 +355,15 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
 
   private def getEngineSpace(engine: Engine): String = {
     val serverSpace = fe.getConf.get(HA_NAMESPACE)
+    val owner = if (engine.getSharelevel == "GROUP") {
+      fe.sessionManager.groupProvider.primaryGroup(engine.getUser, fe.getConf.getAll.asJava)
+    } else {
+      engine.getUser
+    }
+
     DiscoveryPaths.makePath(
       s"${serverSpace}_${engine.getVersion}_${engine.getSharelevel}_${engine.getEngineType}",
-      engine.getUser,
+      owner,
       engine.getSubdomain)
   }
 
