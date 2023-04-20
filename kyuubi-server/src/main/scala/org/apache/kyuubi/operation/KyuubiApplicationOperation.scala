@@ -31,10 +31,10 @@ import org.apache.kyuubi.util.ThriftUtils
 
 abstract class KyuubiApplicationOperation(session: Session) extends KyuubiOperation(session) {
 
-  protected def currentApplicationInfo: Option[ApplicationInfo]
+  protected def currentApplicationInfo(): Option[ApplicationInfo]
 
   protected def applicationInfoMap: Option[Map[String, String]] = {
-    currentApplicationInfo.map(_.toMap)
+    currentApplicationInfo().map(_.toMap)
   }
 
   override def getResultSetMetadata: TGetResultSetMetadataResp = {
