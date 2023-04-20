@@ -21,8 +21,9 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.api.{DataTypes, ResultKind}
-import org.apache.flink.table.catalog.Column
+import org.apache.flink.table.catalog.{Column, ObjectIdentifier}
 import org.apache.flink.types.Row
+import org.apache.flink.util.FlinkException
 
 import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
@@ -37,22 +38,25 @@ class GetPrimaryKeys(
 
   override protected def runInternal(): Unit = {
     try {
-      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
+      val catalogManager = sessionContext.getSessionState.catalogManager
 
       val catalogName =
-        if (StringUtils.isEmpty(catalogNameOrEmpty)) tableEnv.getCurrentCatalog
+        if (StringUtils.isEmpty(catalogNameOrEmpty)) catalogManager.getCurrentCatalog
         else catalogNameOrEmpty
 
       val schemaName =
         if (StringUtils.isEmpty(schemaNameOrEmpty)) {
-          if (catalogName != tableEnv.getCurrentCatalog) {
-            tableEnv.getCatalog(catalogName).get().getDefaultDatabase
+          if (catalogName != executor.getCurrentCatalog) {
+            catalogManager.getCatalog(catalogName).get().getDefaultDatabase
           } else {
-            tableEnv.getCurrentDatabase
+            catalogManager.getCurrentDatabase
           }
         } else schemaNameOrEmpty
 
-      val flinkTable = tableEnv.from(s"`$catalogName`.`$schemaName`.`$tableName`")
+      val flinkTable = catalogManager
+        .getTable(ObjectIdentifier.of(catalogName, schemaName, tableName))
+        .orElseThrow(() =>
+          new FlinkException(s"Table `$catalogName`.`$schemaName`.`$tableName`` not found."))
 
       val resolvedSchema = flinkTable.getResolvedSchema
       val primaryKeySchema = resolvedSchema.getPrimaryKey
@@ -102,5 +106,4 @@ class GetPrimaryKeys(
     )
     // format: on
   }
-
 }

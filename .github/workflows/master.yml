@@ -32,7 +32,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded -Dmaven.plugin.download.cache.path=/tmp/engine-archives
+  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
   KUBERNETES_VERSION: v1.26.1
   MINIKUBE_VERSION: v1.29.0
 
@@ -61,7 +61,7 @@ jobs:
             comment: 'verify-on-spark-3.1-binary'
           - java: 8
             spark: '3.3'
-            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.3 -Dspark.archive.name=spark-3.2.3-bin-hadoop3.2.tgz'
+            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.4 -Dspark.archive.name=spark-3.2.4-bin-hadoop3.2.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
             comment: 'verify-on-spark-3.2-binary'
     env:
@@ -157,15 +157,15 @@ jobs:
           - 8
           - 11
         flink:
-          - '1.15'
           - '1.16'
+          - '1.17'
         flink-archive: [ "" ]
         comment: [ "normal" ]
         include:
           - java: 8
-            flink: '1.16'
-            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.4 -Dflink.archive.name=flink-1.15.4-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.15-binary'
+            flink: '1.17'
+            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.16.1 -Dflink.archive.name=flink-1.16.1-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-1.16-binary'
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM

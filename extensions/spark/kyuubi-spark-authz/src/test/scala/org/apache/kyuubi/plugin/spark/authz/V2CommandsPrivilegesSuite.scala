@@ -23,6 +23,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.execution.QueryExecution
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
+import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 import org.apache.kyuubi.plugin.spark.authz.serde.{Database, DB_COMMAND_SPECS}
 
@@ -688,8 +689,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
     assert(po.catalog.get === sparkSessionCatalogName)
-    assert(po.dbname === "default")
-    assert(po.objectName === "default")
+    assert(po.dbname === defaultDb)
+    assert(po.objectName === defaultDb)
     assert(po.columns.isEmpty)
   }
 
@@ -732,8 +733,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
     assert(po.catalog.get === sparkSessionCatalogName)
-    assert(po.dbname === "default")
-    assert(po.objectName === "default")
+    assert(po.dbname === defaultDb)
+    assert(po.objectName === defaultDb)
     assert(po.columns.isEmpty)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)

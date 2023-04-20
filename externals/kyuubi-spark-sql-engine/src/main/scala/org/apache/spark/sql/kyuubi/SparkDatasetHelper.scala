@@ -27,6 +27,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlan, SQLExecution}
+import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.{ArrowConverters, KyuubiArrowConverters}
 import org.apache.spark.sql.execution.command.ExecutedCommandExec
@@ -56,6 +57,8 @@ object SparkDatasetHelper extends Logging {
       executeArrowBatchCollect(collectLimit.child)
     case command: SparkPlan if isRunnableCommand(command) =>
       doCommandResultExec(command)
+    case localTableScan: LocalTableScanExec =>
+      doLocalTableScan(localTableScan)
     case plan: SparkPlan =>
       toArrowBatchRdd(plan).collect()
   }
@@ -186,6 +189,17 @@ object SparkDatasetHelper extends Logging {
       // TODO: replace with `command.rows.iterator` once we drop Spark-3.1 support.
       getRunnableCommandOutputRows(command).iterator,
       command.schema,
+      SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch,
+      maxBatchSize,
+      -1,
+      SparkSession.active.sessionState.conf.sessionLocalTimeZone).toArray
+  }
+
+  def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
+    localTableScan.longMetric("numOutputRows").add(localTableScan.rows.size)
+    KyuubiArrowConverters.toBatchIterator(
+      localTableScan.rows.iterator,
+      localTableScan.schema,
       SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch,
       maxBatchSize,
       -1,

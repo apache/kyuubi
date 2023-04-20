@@ -101,13 +101,12 @@ Kyuubi Spark Lineage Listener Extension is built using [Apache Maven](https://ma
 To build it, `cd` to the root direct of kyuubi project and run:
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -DskipTests
+build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -am -DskipTests
 ```
 
 After a while, if everything goes well, you will get the plugin finally in two parts:
 
 - The main plugin jar, which is under `./extensions/spark/kyuubi-spark-lineage/target/kyuubi-spark-lineage_${scala.binary.version}-${project.version}.jar`
-- The least transitive dependencies needed, which are under `./extensions/spark/kyuubi-spark-lineage/target/scala-${scala.binary.version}/jars`
 
 ### Build against Different Apache Spark Versions
 
@@ -118,7 +117,7 @@ Sometimes, it may be incompatible with other Spark distributions, then you may n
 For example,
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -DskipTests -Dspark.version=3.1.2
+build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -am -DskipTests -Dspark.version=3.1.2
 ```
 
 The available `spark.version`s are shown in the following table.

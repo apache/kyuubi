@@ -19,7 +19,7 @@
 
 # Helm Chart for Apache Kyuubi
 
-[Apache Kyuubi](https://airflow.apache.org/) is a distributed and multi-tenant gateway to provide serverless SQL on Data Warehouses and Lakehouses.
+[Apache Kyuubi](https://kyuubi.apache.org) is a distributed and multi-tenant gateway to provide serverless SQL on Data Warehouses and Lakehouses.
 
 
 ## Introduction

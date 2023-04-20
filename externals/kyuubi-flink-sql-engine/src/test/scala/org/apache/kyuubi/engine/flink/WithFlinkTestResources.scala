@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink
 
+import java.io.File
+
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 
@@ -33,9 +35,12 @@ trait WithFlinkTestResources {
       }
      """
 
-  protected val udfJar = TestUserClassLoaderJar.createJarFile(
+  protected val udfJar: File = TestUserClassLoaderJar.createJarFile(
     Utils.createTempDir("test-jar").toFile,
     "test-classloader-udf.jar",
     GENERATED_UDF_CLASS,
     GENERATED_UDF_CODE)
+
+  protected val testExtraConf: Map[String, String] = Map(
+    "flink.pipeline.name" -> "test-job")
 }

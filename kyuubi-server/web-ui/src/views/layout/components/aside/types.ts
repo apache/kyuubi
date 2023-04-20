@@ -42,6 +42,16 @@ export const MENUS = [
     ]
   },
   {
+    label: 'Server Management',
+    icon: 'List',
+    children: [
+      {
+        label: 'Server Statistics',
+        router: '/server/server-statistics'
+      }
+    ]
+  },
+  {
     label: 'Workload',
     icon: 'List',
     children: [
