@@ -32,7 +32,7 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
 /**
  * Add MaxScanStrategy to avoid scan excessive partitions or files
  * 1. Check if scan exceed maxPartition of partitioned table
- * 2. Check if scan exceed maxFileSize
+ * 2. Check if scan exceed maxFileSize (calculated by hive table and partition statistics)
  * This Strategy Add Planner Strategy after LogicalOptimizer
  * @param session
  */
@@ -80,35 +80,11 @@ case class MaxScanStrategy(session: SparkSession)
                   relation.partitionCols.map(_.name))
               }
             case _ =>
-              var partitionSize: Option[Int] = None
-
-              def scanFileSize: BigInt = {
-                val partitions = session
-                  .sessionState.catalog.externalCatalog.listPartitions(
-                    relation.tableMeta.database,
-                    relation.tableMeta.identifier.table)
-                partitionSize = Some(partitions.size)
-                partitions.flatMap(_.stats).map(_.sizeInBytes).sum
-              }
-              if (maxFileSizeOpt.exists(_ < scanFileSize)) {
-                throw new MaxFileSizeExceedException(
-                  s"""
-                     |Your SQL job scan a whole huge table without any partition filter,
-                     |You should optimize your SQL logical according partition structure
-                     |or shorten query scope such as p_date, detail as below:
-                     |Table: ${relation.tableMeta.qualifiedName}
-                     |Owner: ${relation.tableMeta.owner}
-                     |Partition Structure: ${relation.partitionCols.map(_.name).mkString(", ")}
-                     |""".stripMargin)
-              }
-
-              def scanPartitionSize: Int = partitionSize.getOrElse {
-                session
-                  .sessionState.catalog.externalCatalog.listPartitionNames(
-                    relation.tableMeta.database,
-                    relation.tableMeta.identifier.table).size
-              }
-              if (maxScanPartitionsOpt.exists(_ < scanPartitionSize)) {
+              lazy val scanPartitions: Int = session
+                .sessionState.catalog.externalCatalog.listPartitionNames(
+                  relation.tableMeta.database,
+                  relation.tableMeta.identifier.table).size
+              if (maxScanPartitionsOpt.exists(_ < scanPartitions)) {
                 throw new MaxPartitionExceedException(
                   s"""
                      |Your SQL job scan a whole huge table without any partition filter,
@@ -120,6 +96,24 @@ case class MaxScanStrategy(session: SparkSession)
                      |""".stripMargin)
               }
 
+              lazy val scanFileSize: BigInt =
+                relation.tableMeta.stats.map(_.sizeInBytes).getOrElse {
+                  session
+                    .sessionState.catalog.externalCatalog.listPartitions(
+                      relation.tableMeta.database,
+                      relation.tableMeta.identifier.table).flatMap(_.stats).map(_.sizeInBytes).sum
+                }
+              if (maxFileSizeOpt.exists(_ < scanFileSize)) {
+                throw new MaxFileSizeExceedException(
+                  s"""
+                     |Your SQL job scan a whole huge table without any partition filter,
+                     |You should optimize your SQL logical according partition structure
+                     |or shorten query scope such as p_date, detail as below:
+                     |Table: ${relation.tableMeta.qualifiedName}
+                     |Owner: ${relation.tableMeta.owner}
+                     |Partition Structure: ${relation.partitionCols.map(_.name).mkString(", ")}
+                     |""".stripMargin)
+              }
           }
         } else {
           lazy val scanFileSize = relation.tableMeta.stats.map(_.sizeInBytes).sum
