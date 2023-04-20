@@ -165,7 +165,7 @@ class BatchJobSubmission(
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
 
   // we can not set to other state if it is canceled
-  private def setStateIfNotCanceled(newState: OperationState): Unit = state.synchronized {
+  private def setStateIfNotCanceled(newState: OperationState): Unit = withLockRequired {
     if (state != CANCELED) {
       setState(newState)
       _applicationInfo.filter(_.id != null).foreach { ai =>
@@ -321,7 +321,7 @@ class BatchJobSubmission(
     }
   }
 
-  override def close(): Unit = state.synchronized {
+  override def close(): Unit = withLockRequired {
     if (!isClosedOrCanceled) {
       try {
         getOperationLog.foreach(_.close())

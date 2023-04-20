@@ -18,6 +18,7 @@
 package org.apache.kyuubi.operation
 
 import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
 
@@ -45,7 +46,16 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
-  protected def cleanup(targetState: OperationState): Unit = state.synchronized {
+  private val lock: ReentrantLock = new ReentrantLock()
+
+  protected def withLockRequired[T](block: => T): T = {
+    try {
+      lock.lock()
+      block
+    } finally lock.unlock()
+  }
+
+  protected def cleanup(targetState: OperationState): Unit = withLockRequired {
     if (!isTerminalState(state)) {
       setState(targetState)
       Option(getBackgroundHandle).foreach(_.cancel(true))
