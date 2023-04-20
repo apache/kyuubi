@@ -101,6 +101,10 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
       })
       threads.shutdown()
       threads.awaitTermination(20, SECONDS)
+      // make sure the SparkListener has received the finished events for job1 and job2.
+      eventually(Timeout(10.seconds)) {
+        assert(job1StartTime > 0 && job2StartTime > 0 && job1FinishTime > 0 && job2FinishTime > 0)
+      }
       // job1 should be started before job2
       assert(job1StartTime < job2StartTime)
       // job2 minShare is 2(total resource) so that job1 should be allocated tasks after
