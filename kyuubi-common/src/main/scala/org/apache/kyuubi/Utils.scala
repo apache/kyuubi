@@ -24,6 +24,7 @@ import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import java.text.SimpleDateFormat
 import java.util.{Date, Properties, TimeZone, UUID}
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.Lock
 
 import scala.collection.JavaConverters._
 import scala.sys.process._
@@ -405,6 +406,15 @@ object Utils extends Logging {
       val stringWriter = new StringWriter()
       e.printStackTrace(new PrintWriter(stringWriter))
       stringWriter.toString
+    }
+  }
+
+  def withLockRequired[T](lock: Lock)(block: => T): T = {
+    try {
+      lock.lock()
+      block
+    } finally {
+      lock.unlock()
     }
   }
 }

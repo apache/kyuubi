@@ -25,7 +25,7 @@ import scala.collection.JavaConverters._
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TProgressUpdateResp, TProtocolVersion, TRowSet, TStatus, TStatusCode}
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
@@ -48,12 +48,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   private val lock: ReentrantLock = new ReentrantLock()
 
-  protected def withLockRequired[T](block: => T): T = {
-    try {
-      lock.lock()
-      block
-    } finally lock.unlock()
-  }
+  protected def withLockRequired[T](block: => T): T = Utils.withLockRequired(lock)(block)
 
   protected def cleanup(targetState: OperationState): Unit = withLockRequired {
     if (!isTerminalState(state)) {
