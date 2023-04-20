@@ -410,13 +410,11 @@ object Utils extends Logging {
   }
 
   def withLockRequired[T](lock: Lock)(block: => T): T = {
-    var locked: Boolean = false
     try {
-      lock.lockInterruptibly()
-      locked = true
+      lock.lock()
       block
     } finally {
-      if (locked) lock.unlock()
+      lock.unlock()
     }
   }
 }
