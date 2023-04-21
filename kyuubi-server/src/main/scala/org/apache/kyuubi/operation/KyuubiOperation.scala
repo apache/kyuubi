@@ -56,7 +56,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   protected def onError(action: String = "operating"): PartialFunction[Throwable, Unit] = {
     case e: Throwable =>
-      state.synchronized {
+      withLockRequired {
         if (isTerminalState(state)) {
           warn(s"Ignore exception in terminal state with $statementId", e)
         } else {
@@ -98,14 +98,14 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
   }
 
   override protected def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }
     }
   }
 
-  override def cancel(): Unit = state.synchronized {
+  override def cancel(): Unit = withLockRequired {
     if (!isClosedOrCanceled) {
       setState(OperationState.CANCELED)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
@@ -120,7 +120,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     }
   }
 
-  override def close(): Unit = state.synchronized {
+  override def close(): Unit = withLockRequired {
     if (!isClosedOrCanceled) {
       setState(OperationState.CLOSED)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))

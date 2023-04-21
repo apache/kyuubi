@@ -101,7 +101,7 @@ abstract class SparkOperation(session: Session)
     super.getStatus
   }
 
-  override def cleanup(targetState: OperationState): Unit = state.synchronized {
+  override def cleanup(targetState: OperationState): Unit = withLockRequired {
     operationListener.foreach(_.cleanup())
     if (!isTerminalState(state)) {
       setState(targetState)
@@ -174,7 +174,7 @@ abstract class SparkOperation(session: Session)
     // could be thrown.
     case e: Throwable =>
       if (cancel && !spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
-      state.synchronized {
+      withLockRequired {
         val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {
           val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")
@@ -201,7 +201,7 @@ abstract class SparkOperation(session: Session)
   }
 
   override protected def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }
