@@ -85,7 +85,7 @@ jakarta.validation-api/2.0.2//jakarta.validation-api-2.0.2.jar
 jakarta.ws.rs-api/2.1.6//jakarta.ws.rs-api-2.1.6.jar
 jakarta.xml.bind-api/2.3.2//jakarta.xml.bind-api-2.3.2.jar
 javassist/3.25.0-GA//javassist-3.25.0-GA.jar
-jcl-over-slf4j/1.7.36//jcl-over-slf4j-1.7.36.jar
+jcl-over-slf4j/2.0.7//jcl-over-slf4j-2.0.7.jar
 jersey-client/2.39//jersey-client-2.39.jar
 jersey-common/2.39//jersey-common-2.39.jar
 jersey-container-servlet-core/2.39//jersey-container-servlet-core-2.39.jar
@@ -106,7 +106,7 @@ jetty-servlet/9.4.50.v20221201//jetty-servlet-9.4.50.v20221201.jar
 jetty-util-ajax/9.4.50.v20221201//jetty-util-ajax-9.4.50.v20221201.jar
 jetty-util/9.4.50.v20221201//jetty-util-9.4.50.v20221201.jar
 jline/0.9.94//jline-0.9.94.jar
-jul-to-slf4j/1.7.36//jul-to-slf4j-1.7.36.jar
+jul-to-slf4j/2.0.7//jul-to-slf4j-2.0.7.jar
 kubernetes-client-api/6.4.1//kubernetes-client-api-6.4.1.jar
 kubernetes-client/6.4.1//kubernetes-client-6.4.1.jar
 kubernetes-httpclient-okhttp/6.4.1//kubernetes-httpclient-okhttp-6.4.1.jar
@@ -136,7 +136,7 @@ libthrift/0.9.3//libthrift-0.9.3.jar
 log4j-1.2-api/2.20.0//log4j-1.2-api-2.20.0.jar
 log4j-api/2.20.0//log4j-api-2.20.0.jar
 log4j-core/2.20.0//log4j-core-2.20.0.jar
-log4j-slf4j-impl/2.20.0//log4j-slf4j-impl-2.20.0.jar
+log4j-slf4j2-impl/2.20.0//log4j-slf4j2-impl-2.20.0.jar
 logging-interceptor/3.12.12//logging-interceptor-3.12.12.jar
 metrics-core/4.2.8//metrics-core-4.2.8.jar
 metrics-jmx/4.2.8//metrics-jmx-4.2.8.jar
@@ -179,7 +179,7 @@ simpleclient_servlet_common/0.16.0//simpleclient_servlet_common-0.16.0.jar
 simpleclient_tracer_common/0.16.0//simpleclient_tracer_common-0.16.0.jar
 simpleclient_tracer_otel/0.16.0//simpleclient_tracer_otel-0.16.0.jar
 simpleclient_tracer_otel_agent/0.16.0//simpleclient_tracer_otel_agent-0.16.0.jar
-slf4j-api/1.7.36//slf4j-api-1.7.36.jar
+slf4j-api/2.0.7//slf4j-api-2.0.7.jar
 snakeyaml/1.33//snakeyaml-1.33.jar
 swagger-annotations/2.2.1//swagger-annotations-2.2.1.jar
 swagger-core/2.2.1//swagger-core-2.2.1.jar

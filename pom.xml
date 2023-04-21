@@ -168,7 +168,16 @@
         <kubernetes-client.version>6.4.1</kubernetes-client.version>
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
-        <log4j.version>2.20.0</log4j.version>
+        <!--
+          SPARK-6305 switch to LOG4J2 (since Spark 3.3.0)
+          SPARK-40511 switch to SLF4J2 (since Spark 3.4.0)
+          Spark internally invokes SFL4J and LOG4J private API, we must align the version
+          in modules which call Spark as libraries, i.e. Spark SQL engine, Spark plugins,
+          Spark DataSource connectors, to avoid linkage issues.
+          -->
+        <log4j1.version>1.2.17</log4j1.version>
+        <log4j2.version>2.20.0</log4j2.version>
+        <log4j2-slf4j-impl.name>log4j-slf4j-impl</log4j2-slf4j-impl.name>
         <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
         <mockito.version>4.6.1</mockito.version>
         <netty.version>4.1.89.Final</netty.version>
@@ -420,7 +429,7 @@
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
-                    <!-- Use log4j-slf4j2-impl -->
+                    <!-- Use ${log4j2-slf4j-impl.name} -->
                     <exclusion>
                         <groupId>org.apache.logging.log4j</groupId>
                         <artifactId>log4j-slf4j-impl</artifactId>
@@ -447,7 +456,7 @@
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
-                    <!-- Use log4j-slf4j2-impl -->
+                    <!-- Use ${log4j2-slf4j-impl.name} -->
                     <exclusion>
                         <groupId>org.apache.logging.log4j</groupId>
                         <artifactId>log4j-slf4j-impl</artifactId>
@@ -474,7 +483,7 @@
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
-                    <!-- Use log4j-slf4j2-impl -->
+                    <!-- Use ${log4j2-slf4j-impl.name} -->
                     <exclusion>
                         <groupId>org.apache.logging.log4j</groupId>
                         <artifactId>log4j-slf4j-impl</artifactId>
@@ -502,7 +511,7 @@
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
-                    <!-- Use log4j-slf4j2-impl -->
+                    <!-- Use ${log4j2-slf4j-impl.name} -->
                     <exclusion>
                         <groupId>org.apache.logging.log4j</groupId>
                         <artifactId>log4j-slf4j-impl</artifactId>
@@ -530,7 +539,7 @@
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
-                    <!-- Use log4j-slf4j2-impl -->
+                    <!-- Use ${log4j2-slf4j-impl.name} -->
                     <exclusion>
                         <groupId>org.apache.logging.log4j</groupId>
                         <artifactId>log4j-slf4j-impl</artifactId>
@@ -558,7 +567,7 @@
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
-                    <!-- Use log4j-slf4j2-impl -->
+                    <!-- Use ${log4j2-slf4j-impl.name} -->
                     <exclusion>
                         <groupId>org.apache.logging.log4j</groupId>
                         <artifactId>log4j-slf4j-impl</artifactId>
@@ -744,25 +753,36 @@
             </dependency>
 
             <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${log4j1.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-slf4j2-impl</artifactId>
-                <version>${log4j.version}</version>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>${log4j2-slf4j-impl.name}</artifactId>
+                <version>${log4j2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
-                <version>${log4j.version}</version>
+                <version>${log4j2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-core</artifactId>
-                <version>${log4j.version}</version>
+                <version>${log4j2.version}</version>
             </dependency>
             <dependency>
                 <!-- API bridge between log4j 1 and 2 -->
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-1.2-api</artifactId>
-                <version>${log4j.version}</version>
+                <version>${log4j2.version}</version>
             </dependency>
 
             <dependency>
@@ -2237,6 +2257,7 @@
             <id>spark-master</id>
             <properties>
                 <spark.version>3.5.0-SNAPSHOT</spark.version>
+                <log4j2-slf4j-impl.name>log4j-slf4j2-impl</log4j2-slf4j-impl.name>
                 <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
                 <threeten.version>1.7.0</threeten.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
