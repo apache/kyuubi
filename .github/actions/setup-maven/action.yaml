@@ -23,7 +23,7 @@ runs:
     - name: Restore cached Maven
       uses: actions/cache@v3
       with:
-        path: /build/maven-*
+        path: build/apache-maven-*
         key: setup-maven-${{ hashFiles('pom.xml') }}
     - name: Install Maven
       shell: bash
