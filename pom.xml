@@ -765,7 +765,12 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>${log4j2-slf4j-impl.name}</artifactId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j2-impl</artifactId>
                 <version>${log4j2.version}</version>
             </dependency>
             <dependency>
