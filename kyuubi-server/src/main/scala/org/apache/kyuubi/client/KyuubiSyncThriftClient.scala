@@ -141,6 +141,10 @@ class KyuubiSyncThriftClient private (
   }
 
   private def withLockAcquiredAsyncRequest[T](block: => T): T = withLockAcquired {
+    if (asyncRequestExecutor.isShutdown) {
+      throw KyuubiSQLException.connectionDoesNotExist()
+    }
+
     val task = asyncRequestExecutor.submit(() => {
       val resp = block
       remoteEngineBroken = false
