@@ -154,6 +154,11 @@
             <id>spark-3.1</id>
             <dependencies>
                 <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
                     <scope>provided</scope>
@@ -163,6 +168,11 @@
         <profile>
             <id>spark-3.2</id>
             <dependencies>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                    <scope>provided</scope>
+                </dependency>
                 <dependency>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
