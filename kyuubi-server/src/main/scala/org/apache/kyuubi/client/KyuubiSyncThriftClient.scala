@@ -64,18 +64,15 @@ class KyuubiSyncThriftClient private (
   private var engineAliveThreadPool: ScheduledExecutorService = _
   @volatile private var engineLastAlive: Long = _
 
-  private var asyncRequestExecutor: ExecutorService = _
+  private lazy val asyncRequestExecutor: ExecutorService =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor(
+      "async-request-executor-" + SessionHandle(_remoteSessionHandle))
 
   @VisibleForTesting
   @volatile private[kyuubi] var asyncRequestInterrupted: Boolean = false
 
   @VisibleForTesting
   private[kyuubi] def getEngineAliveProbeProtocol: Option[TProtocol] = engineAliveProbeProtocol
-
-  private def newAsyncRequestExecutor(): ExecutorService = {
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor(
-      "async-request-executor-" + _remoteSessionHandle)
-  }
 
   private def shutdownAsyncRequestExecutor(): Unit = {
     Option(asyncRequestExecutor).filterNot(_.isShutdown).foreach(ThreadUtils.shutdown(_))
@@ -109,7 +106,6 @@ class KyuubiSyncThriftClient private (
             }
           }
         } else {
-          shutdownAsyncRequestExecutor()
           warn(s"Removing Clients for ${_remoteSessionHandle}")
           Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
             Utils.tryLogNonFatalError {
@@ -117,10 +113,11 @@ class KyuubiSyncThriftClient private (
                 tProtocol.getTransport.close()
               }
             }
-            clientClosedOnEngineBroken = true
-            Option(engineAliveThreadPool).foreach { pool =>
-              ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
-            }
+          }
+          clientClosedOnEngineBroken = true
+          shutdownAsyncRequestExecutor()
+          Option(engineAliveThreadPool).foreach { pool =>
+            ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
           }
         }
       }
@@ -144,8 +141,8 @@ class KyuubiSyncThriftClient private (
   }
 
   private def withLockAcquiredAsyncRequest[T](block: => T): T = withLockAcquired {
-    if (asyncRequestExecutor == null || asyncRequestExecutor.isShutdown) {
-      asyncRequestExecutor = newAsyncRequestExecutor()
+    if (asyncRequestExecutor.isShutdown) {
+      throw KyuubiSQLException.connectionDoesNotExist()
     }
 
     val task = asyncRequestExecutor.submit(() => {
