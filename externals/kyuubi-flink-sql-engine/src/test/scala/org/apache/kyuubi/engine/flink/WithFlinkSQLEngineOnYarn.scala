@@ -49,7 +49,7 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite with WithFlinkTestResource
 
   private var zkServer: EmbeddedZookeeper = _
 
-  def withKyuubiConf: Map[String, String]
+  def withKyuubiConf: Map[String, String] = testExtraConf
 
   private val yarnConf: YarnConfiguration = {
     val yarnConfig = new YarnConfiguration()

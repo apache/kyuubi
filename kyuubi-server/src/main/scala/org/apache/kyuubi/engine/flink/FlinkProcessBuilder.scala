@@ -54,6 +54,9 @@ class FlinkProcessBuilder(
     Paths.get(flinkHome, "bin", FLINK_EXEC_FILE).toFile.getCanonicalPath
   }
 
+  // flink.execution.target are required in Kyuubi conf currently
+  val executionTarget: Option[String] = conf.getOption("flink.execution.target")
+
   override protected def module: String = "kyuubi-flink-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
@@ -63,13 +66,17 @@ class FlinkProcessBuilder(
       "FLINK_CONF_DIR",
       s"$flinkHome${File.separator}conf"))
 
-  override def clusterManager(): Option[String] = Some("yarn")
+  override def clusterManager(): Option[String] = {
+    executionTarget match {
+      case Some("yarn-application") => Some("yarn")
+      case _ => None
+    }
+  }
 
   override protected val commands: Array[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
 
     // flink.execution.target are required in Kyuubi conf currently
-    val executionTarget = conf.getOption("flink.execution.target")
     executionTarget match {
       case Some("yarn-application") =>
         val buffer = new ArrayBuffer[String]()
@@ -133,16 +140,16 @@ class FlinkProcessBuilder(
         val classpathEntries = new java.util.LinkedHashSet[String]
         // flink engine runtime jar
         mainResource.foreach(classpathEntries.add)
-        // flink sql client jar
-        val flinkSqlClientPath = Paths.get(flinkHome)
+        // flink sql jars
+        Paths.get(flinkHome)
           .resolve("opt")
           .toFile
           .listFiles(new FilenameFilter {
             override def accept(dir: File, name: String): Boolean = {
-              name.toLowerCase.startsWith("flink-sql-client")
+              name.toLowerCase.startsWith("flink-sql-client") ||
+              name.toLowerCase.startsWith("flink-sql-gateway")
             }
-          }).head.getAbsolutePath
-        classpathEntries.add(flinkSqlClientPath)
+          }).sorted.foreach(jar => classpathEntries.add(jar.getAbsolutePath))
 
         // jars from flink lib
         classpathEntries.add(s"$flinkHome${File.separator}lib${File.separator}*")

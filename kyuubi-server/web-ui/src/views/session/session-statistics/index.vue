@@ -46,16 +46,16 @@
           }}
         </template>
       </el-table-column>
-      <el-table-column fixed="right" :label="$t('operation')">
+      <el-table-column fixed="right" :label="$t('operation.text')">
         <template #default="scope">
           <el-popconfirm
-            :title="$t('delete_confirm')"
+            :title="$t('operation.delete_confirm')"
             @confirm="handleDeleteSession(scope.row.identifier)">
             <template #reference>
               <span>
                 <el-tooltip
                   effect="dark"
-                  :content="$t('delete')"
+                  :content="$t('operation.delete')"
                   placement="top">
                   <template #default>
                     <el-button type="danger" icon="Delete" circle />

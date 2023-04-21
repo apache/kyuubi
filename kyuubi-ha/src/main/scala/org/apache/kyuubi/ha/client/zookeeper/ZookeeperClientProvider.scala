@@ -18,6 +18,7 @@
 package org.apache.kyuubi.ha.client.zookeeper
 
 import java.io.{File, IOException}
+import java.nio.charset.StandardCharsets
 import javax.security.auth.login.Configuration
 
 import scala.util.Random
@@ -26,13 +27,13 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.retry._
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{AuthTypes, RetryPolicies}
 import org.apache.kyuubi.ha.client.RetryPolicies._
+import org.apache.kyuubi.reflection.DynConstructors
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 object ZookeeperClientProvider extends Logging {
@@ -65,10 +66,8 @@ object ZookeeperClientProvider extends Logging {
       .aclProvider(new ZookeeperACLProvider(conf))
       .retryPolicy(retryPolicy)
 
-    conf.get(HA_ZK_AUTH_DIGEST) match {
-      case Some(anthString) =>
-        builder.authorization("digest", anthString.getBytes("UTF-8"))
-      case _ =>
+    conf.get(HA_ZK_AUTH_DIGEST).foreach { authString =>
+      builder.authorization("digest", authString.getBytes(StandardCharsets.UTF_8))
     }
 
     builder.build()
@@ -103,46 +102,47 @@ object ZookeeperClientProvider extends Logging {
    */
   @throws[Exception]
   def setUpZooKeeperAuth(conf: KyuubiConf): Unit = {
-    def setupZkAuth(): Unit = {
-      val keyTabFile = getKeyTabFile(conf)
-      val maybePrincipal = conf.get(HA_ZK_AUTH_PRINCIPAL)
-      val kerberized = maybePrincipal.isDefined && keyTabFile.isDefined
-      if (UserGroupInformation.isSecurityEnabled && kerberized) {
-        if (!new File(keyTabFile.get).exists()) {
-          throw new IOException(s"${HA_ZK_AUTH_KEYTAB.key}: $keyTabFile does not exists")
+    def setupZkAuth(): Unit = (conf.get(HA_ZK_AUTH_PRINCIPAL), getKeyTabFile(conf)) match {
+      case (Some(principal), Some(keytab)) if UserGroupInformation.isSecurityEnabled =>
+        if (!new File(keytab).exists()) {
+          throw new IOException(s"${HA_ZK_AUTH_KEYTAB.key}: $keytab does not exists")
         }
         System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
-        var principal = maybePrincipal.get
-        principal = KyuubiHadoopUtils.getServerPrincipal(principal)
-        val jaasConf = new JaasConfiguration("KyuubiZooKeeperClient", principal, keyTabFile.get)
+        val serverPrincipal = KyuubiHadoopUtils.getServerPrincipal(principal)
+        // HDFS-16591 makes breaking change on JaasConfiguration
+        val jaasConf = DynConstructors.builder()
+          .impl( // Hadoop 3.3.5 and above
+            "org.apache.hadoop.security.authentication.util.JaasConfiguration",
+            classOf[String],
+            classOf[String],
+            classOf[String])
+          .impl( // Hadoop 3.3.4 and previous
+            // scalastyle:off
+            "org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration",
+            // scalastyle:on
+            classOf[String],
+            classOf[String],
+            classOf[String])
+          .build[Configuration]()
+          .newInstance("KyuubiZooKeeperClient", serverPrincipal, keytab)
         Configuration.setConfiguration(jaasConf)
-      }
+      case _ =>
     }
 
-    if (conf.get(HA_ENGINE_REF_ID).isEmpty
-      && AuthTypes.withName(conf.get(HA_ZK_AUTH_TYPE)) == AuthTypes.KERBEROS) {
+    if (conf.get(HA_ENGINE_REF_ID).isEmpty &&
+      AuthTypes.withName(conf.get(HA_ZK_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       setupZkAuth()
-    } else if (conf.get(HA_ENGINE_REF_ID).nonEmpty && AuthTypes
-        .withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
+    } else if (conf.get(HA_ENGINE_REF_ID).nonEmpty &&
+      AuthTypes.withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       setupZkAuth()
     }
-
   }
 
   @VisibleForTesting
   def getKeyTabFile(conf: KyuubiConf): Option[String] = {
-    val zkAuthKeytab = conf.get(HA_ZK_AUTH_KEYTAB)
-    if (zkAuthKeytab.isDefined) {
-      val zkAuthKeytabPath = zkAuthKeytab.get
-      val relativeFileName = new File(zkAuthKeytabPath).getName
-      if (new File(relativeFileName).exists()) {
-        Some(relativeFileName)
-      } else {
-        Some(zkAuthKeytabPath)
-      }
-    } else {
-      None
+    conf.get(HA_ZK_AUTH_KEYTAB).map { fullPath =>
+      val filename = new File(fullPath).getName
+      if (new File(filename).exists()) filename else fullPath
     }
   }
-
 }

@@ -31,7 +31,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.zookeeper.KeeperException.NoNodeException
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
-import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, SessionData}
+import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, ServerData, SessionData}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
@@ -294,6 +294,35 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.instance,
         node.namespace,
         node.attributes.asJava))
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(
+      new Content(
+        mediaType = MediaType.APPLICATION_JSON,
+        array = new ArraySchema(schema = new Schema(implementation =
+          classOf[OperationData])))),
+    description = "list all live kyuubi servers")
+  @GET
+  @Path("server")
+  def listServers(): Seq[ServerData] = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received list all live kyuubi servers request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to list all live kyuubi servers")
+    }
+    val kyuubiConf = fe.getConf
+    val servers = ListBuffer[ServerData]()
+    val serverSpec = DiscoveryPaths.makePath(null, kyuubiConf.get(HA_NAMESPACE))
+    withDiscoveryClient(kyuubiConf) { discoveryClient =>
+      discoveryClient.getServiceNodesInfo(serverSpec).map(nodeInfo => {
+        servers += ApiUtils.serverData(nodeInfo)
+      })
+    }
+    servers
   }
 
   private def getEngine(

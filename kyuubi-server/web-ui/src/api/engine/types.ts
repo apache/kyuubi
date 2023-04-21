@@ -15,16 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
-
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.HudiMetadataTests
-import org.apache.kyuubi.tags.HudiTest
-
-@HudiTest
-class SparkHudiOperationSuite extends WithSparkSQLEngine with HudiMetadataTests {
-
-  override protected def jdbcUrl: String = getJdbcUrl
-
-  override def withKyuubiConf: Map[String, String] = extraConfigs
+interface IEngineSearch {
+  type: null | string
+  sharelevel: null | string
+  'hive.server2.proxy.user': null | string
+  subdomain?: null | string
 }
+
+export { IEngineSearch }

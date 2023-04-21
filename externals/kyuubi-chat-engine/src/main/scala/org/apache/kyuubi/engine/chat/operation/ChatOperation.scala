@@ -62,7 +62,7 @@ abstract class ChatOperation(session: Session) extends AbstractOperation(session
     // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
     // could be thrown.
     case e: Throwable =>
-      state.synchronized {
+      withLockRequired {
         val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {
           val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")

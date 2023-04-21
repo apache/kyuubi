@@ -24,7 +24,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
-import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlan, SQLExecution}
+import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.{ArrowConverters, KyuubiArrowConverters}
 import org.apache.spark.sql.functions._
@@ -51,6 +51,8 @@ object SparkDatasetHelper extends Logging {
       doCollectLimit(collectLimit)
     case collectLimit: CollectLimitExec if collectLimit.limit < 0 =>
       executeArrowBatchCollect(collectLimit.child)
+    case localTableScan: LocalTableScanExec =>
+      doLocalTableScan(localTableScan)
     case plan: SparkPlan =>
       toArrowBatchRdd(plan).collect()
   }
@@ -173,6 +175,17 @@ object SparkDatasetHelper extends Logging {
       i += 1
     }
     result.toArray
+  }
+
+  def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
+    localTableScan.longMetric("numOutputRows").add(localTableScan.rows.size)
+    KyuubiArrowConverters.toBatchIterator(
+      localTableScan.rows.iterator,
+      localTableScan.schema,
+      SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch,
+      maxBatchSize,
+      -1,
+      SparkSession.active.sessionState.conf.sessionLocalTimeZone).toArray
   }
 
   /**

@@ -22,6 +22,8 @@ import scala.util.Try
 
 // scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
+import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 
 /**
  * Tests for RangerSparkExtensionSuite
@@ -32,8 +34,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
   val catalogV2 = "testcat"
   val jdbcCatalogV2 = "jdbc2"
-  val namespace1 = "ns1"
-  val namespace2 = "ns2"
   val table1 = "table1"
   val table2 = "table2"
   val outputTable1 = "outputTable1"
@@ -54,13 +54,13 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
       super.beforeAll()
 
-      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
       doAs(
-        "admin",
+        admin,
         sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
           " (id int, name string, city string)"))
       doAs(
-        "admin",
+        admin,
         sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
           " (id int, name string, city string)"))
     }
@@ -82,7 +82,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
     // create database
     val e1 = intercept[AccessControlException](
-      doAs("someone", sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace2").explain()))
+      doAs(someone, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace2").explain()))
     assert(e1.getMessage.contains(s"does not have [create] privilege" +
       s" on [$namespace2]"))
   }
@@ -92,7 +92,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
     // create database
     val e1 = intercept[AccessControlException](
-      doAs("someone", sql(s"DROP DATABASE IF EXISTS $catalogV2.$namespace2").explain()))
+      doAs(someone, sql(s"DROP DATABASE IF EXISTS $catalogV2.$namespace2").explain()))
     assert(e1.getMessage.contains(s"does not have [drop] privilege" +
       s" on [$namespace2]"))
   }
@@ -102,7 +102,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
     // select
     val e1 = intercept[AccessControlException](
-      doAs("someone", sql(s"select city, id from $catalogV2.$namespace1.$table1").explain()))
+      doAs(someone, sql(s"select city, id from $catalogV2.$namespace1.$table1").explain()))
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
       s" on [$namespace1/$table1/city]"))
   }
@@ -110,7 +110,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   test("[KYUUBI #4255] DESCRIBE TABLE") {
     assume(isSparkV31OrGreater)
     val e1 = intercept[AccessControlException](
-      doAs("someone", sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain()))
+      doAs(someone, sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain()))
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
       s" on [$namespace1/$table1]"))
   }
@@ -120,14 +120,14 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
     // CreateTable
     val e2 = intercept[AccessControlException](
-      doAs("someone", sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2")))
+      doAs(someone, sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2")))
     assert(e2.getMessage.contains(s"does not have [create] privilege" +
       s" on [$namespace1/$table2]"))
 
     // CreateTableAsSelect
     val e21 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2" +
           s" AS select * from $catalogV2.$namespace1.$table1")))
     assert(e21.getMessage.contains(s"does not have [select] privilege" +
@@ -139,7 +139,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
     // DropTable
     val e3 = intercept[AccessControlException](
-      doAs("someone", sql(s"DROP TABLE $catalogV2.$namespace1.$table1")))
+      doAs(someone, sql(s"DROP TABLE $catalogV2.$namespace1.$table1")))
     assert(e3.getMessage.contains(s"does not have [drop] privilege" +
       s" on [$namespace1/$table1]"))
   }
@@ -150,7 +150,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // AppendData: Insert Using a VALUES Clause
     val e4 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
           s" VALUES (1, 'bowenliang123', 'Guangzhou')")))
     assert(e4.getMessage.contains(s"does not have [update] privilege" +
@@ -159,7 +159,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // AppendData: Insert Using a TABLE Statement
     val e42 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
           s" TABLE $catalogV2.$namespace1.$table1")))
     assert(e42.getMessage.contains(s"does not have [select] privilege" +
@@ -168,7 +168,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // AppendData: Insert Using a SELECT Statement
     val e43 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
           s" SELECT * from $catalogV2.$namespace1.$table1")))
     assert(e43.getMessage.contains(s"does not have [select] privilege" +
@@ -177,7 +177,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // OverwriteByExpression: Insert Overwrite
     val e44 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"INSERT OVERWRITE $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
           s" VALUES (1, 'bowenliang123', 'Guangzhou')")))
     assert(e44.getMessage.contains(s"does not have [update] privilege" +
@@ -199,7 +199,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // MergeIntoTable:  Using a MERGE INTO Statement
     val e1 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(mergeIntoSql)))
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
       s" on [$namespace1/$table1/id]"))
@@ -210,7 +210,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
         true)
       val e2 = intercept[AccessControlException](
         doAs(
-          "someone",
+          someone,
           sql(mergeIntoSql)))
       assert(e2.getMessage.contains(s"does not have" +
         s" [select] privilege" +
@@ -229,7 +229,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // UpdateTable
     val e5 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Hangzhou' " +
           " WHERE id=1")))
     assert(e5.getMessage.contains(s"does not have [update] privilege" +
@@ -241,7 +241,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
     // DeleteFromTable
     val e6 = intercept[AccessControlException](
-      doAs("someone", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1")))
+      doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1")))
     assert(e6.getMessage.contains(s"does not have [update] privilege" +
       s" on [$namespace1/$table1]"))
   }
@@ -252,7 +252,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // CacheTable
     val e7 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"CACHE TABLE $cacheTable1" +
           s" AS select * from $catalogV2.$namespace1.$table1")))
     if (isSparkV32OrGreater) {
@@ -269,7 +269,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
     val e1 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"TRUNCATE TABLE $catalogV2.$namespace1.$table1")))
     assert(e1.getMessage.contains(s"does not have [update] privilege" +
       s" on [$namespace1/$table1]"))
@@ -280,7 +280,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
     val e1 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"MSCK REPAIR TABLE $catalogV2.$namespace1.$table1")))
     assert(e1.getMessage.contains(s"does not have [alter] privilege" +
       s" on [$namespace1/$table1]"))
@@ -292,7 +292,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // AddColumns
     val e61 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"ALTER TABLE $catalogV2.$namespace1.$table1 ADD COLUMNS (age int) ").explain()))
     assert(e61.getMessage.contains(s"does not have [alter] privilege" +
       s" on [$namespace1/$table1]"))
@@ -300,7 +300,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // DropColumns
     val e62 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"ALTER TABLE $catalogV2.$namespace1.$table1 DROP COLUMNS city ").explain()))
     assert(e62.getMessage.contains(s"does not have [alter] privilege" +
       s" on [$namespace1/$table1]"))
@@ -308,7 +308,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // RenameColumn
     val e63 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"ALTER TABLE $catalogV2.$namespace1.$table1 RENAME COLUMN city TO city2 ").explain()))
     assert(e63.getMessage.contains(s"does not have [alter] privilege" +
       s" on [$namespace1/$table1]"))
@@ -316,7 +316,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // AlterColumn
     val e64 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"ALTER TABLE $catalogV2.$namespace1.$table1 " +
           s"ALTER COLUMN city COMMENT 'city' ")))
     assert(e64.getMessage.contains(s"does not have [alter] privilege" +
@@ -329,7 +329,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // CommentOnNamespace
     val e1 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"COMMENT ON DATABASE $catalogV2.$namespace1 IS 'xYz' ").explain()))
     assert(e1.getMessage.contains(s"does not have [alter] privilege" +
       s" on [$namespace1]"))
@@ -337,7 +337,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // CommentOnNamespace
     val e2 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"COMMENT ON NAMESPACE $catalogV2.$namespace1 IS 'xYz' ").explain()))
     assert(e2.getMessage.contains(s"does not have [alter] privilege" +
       s" on [$namespace1]"))
@@ -345,7 +345,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     // CommentOnTable
     val e3 = intercept[AccessControlException](
       doAs(
-        "someone",
+        someone,
         sql(s"COMMENT ON TABLE $catalogV2.$namespace1.$table1 IS 'xYz' ").explain()))
     assert(e3.getMessage.contains(s"does not have [alter] privilege" +
       s" on [$namespace1/$table1]"))

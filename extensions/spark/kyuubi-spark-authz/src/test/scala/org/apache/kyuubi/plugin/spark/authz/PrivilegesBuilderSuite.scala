@@ -30,6 +30,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
+import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
+import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isSparkVersionAtMost
@@ -122,8 +124,8 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
     assert(po.catalog.isEmpty)
-    assert(po.dbname === "default")
-    assert(po.objectName === "default")
+    assert(po.dbname === defaultDb)
+    assert(po.objectName === defaultDb)
     assert(po.columns.isEmpty)
   }
 
@@ -365,7 +367,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.catalog.isEmpty)
-    assert(po.dbname === (if (isSparkV2) null else "default"))
+    assert(po.dbname === (if (isSparkV2) null else defaultDb))
     assert(po.objectName === "AlterViewAsCommand")
     checkTableOwner(po)
     assert(po.columns.isEmpty)
@@ -521,7 +523,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.catalog.isEmpty)
-    assert(po.dbname === (if (isSparkV2) null else "default"))
+    assert(po.dbname === (if (isSparkV2) null else defaultDb))
     assert(po.objectName === "CreateViewCommand")
     assert(po.columns.isEmpty)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
@@ -541,7 +543,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.catalog.isEmpty)
-      assert(po.dbname === (if (isSparkV2) null else "default"))
+      assert(po.dbname === (if (isSparkV2) null else defaultDb))
       assert(po.objectName === tableName)
       assert(po.columns.isEmpty)
       val accessType = ranger.AccessType(po, operationType, isInput = false)
@@ -588,7 +590,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
     assert(po.catalog.isEmpty)
-    val db = if (isSparkV33OrGreater) "default" else null
+    val db = if (isSparkV33OrGreater) defaultDb else null
     assert(po.dbname === db)
     assert(po.objectName === "CreateFunctionCommand")
     assert(po.columns.isEmpty)
@@ -620,7 +622,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
     assert(po.catalog.isEmpty)
-    val db = if (isSparkV33OrGreater) "default" else null
+    val db = if (isSparkV33OrGreater) defaultDb else null
     assert(po.dbname === db)
     assert(po.objectName === "DropFunctionCommand")
     assert(po.columns.isEmpty)
@@ -641,7 +643,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
     assert(po.catalog.isEmpty)
-    val db = if (isSparkV33OrGreater) "default" else null
+    val db = if (isSparkV33OrGreater) defaultDb else null
     assert(po.dbname === db)
     assert(po.objectName === "RefreshFunctionCommand")
     assert(po.columns.isEmpty)
@@ -1267,8 +1269,8 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
     assert(po.catalog.isEmpty)
-    assert(po.dbname === "default")
-    assert(po.objectName === "default")
+    assert(po.dbname === defaultDb)
+    assert(po.objectName === defaultDb)
     assert(po.columns.isEmpty)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
@@ -1296,7 +1298,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.catalog.isEmpty)
-    assert(po.dbname === (if (isSparkV2) null else "default"))
+    assert(po.dbname === (if (isSparkV2) null else defaultDb))
     assert(po.objectName === "CreateDataSourceTableAsSelectCommand")
     if (catalogImpl == "hive") {
       assert(po.columns === Seq("key", "value"))
@@ -1328,7 +1330,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.catalog.isEmpty)
-      assert(po.dbname === "default")
+      assert(po.dbname === defaultDb)
       assert(po.objectName === t)
       assert(po.columns.head === "pid")
       checkTableOwner(po)
@@ -1350,7 +1352,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.catalog.isEmpty)
-      assert(po.dbname === "default")
+      assert(po.dbname === defaultDb)
       assert(po.objectName === "CreateTableCommand")
       assert(po.columns.isEmpty)
       val accessType = ranger.AccessType(po, operationType, isInput = false)
@@ -1382,7 +1384,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.catalog.isEmpty)
-    assert(po.dbname === "default")
+    assert(po.dbname === defaultDb)
     assert(po.objectName === "CreateHiveTableAsSelectCommand")
     assert(po.columns === Seq("key", "value"))
     val accessType = ranger.AccessType(po, operationType, isInput = false)
@@ -1493,7 +1495,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         assert(po.actionType === PrivilegeObjectActionType.INSERT)
         assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
         assert(po.catalog.isEmpty)
-        assert(po.dbname equalsIgnoreCase "default")
+        assert(po.dbname equalsIgnoreCase defaultDb)
         assert(po.objectName equalsIgnoreCase tableName)
         assert(po.columns.isEmpty)
         checkTableOwner(po)
@@ -1536,7 +1538,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         assert(po.actionType === PrivilegeObjectActionType.INSERT)
         assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
         assert(po.catalog.isEmpty)
-        assert(po.dbname equalsIgnoreCase "default")
+        assert(po.dbname equalsIgnoreCase defaultDb)
         assert(po.objectName equalsIgnoreCase tableName)
         assert(po.columns === Seq("a", "b"))
         checkTableOwner(po)
@@ -1618,7 +1620,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         assert(po.actionType === PrivilegeObjectActionType.INSERT)
         assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
         assert(po.catalog.isEmpty)
-        assert(po.dbname equalsIgnoreCase "default")
+        assert(po.dbname equalsIgnoreCase defaultDb)
         assert(po.objectName equalsIgnoreCase tableName)
         assert(po.columns === Seq("a", "b"))
         checkTableOwner(po)
@@ -1639,7 +1641,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       val po0 = in.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
       assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-      assert(po0.dbname === "default")
+      assert(po0.dbname === defaultDb)
       assert(po0.objectName === t)
       assert(po0.columns.isEmpty)
       checkTableOwner(po0)
@@ -1665,7 +1667,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.catalog.isEmpty)
-    assert(po.dbname === "default")
+    assert(po.dbname === defaultDb)
     assert(po.objectName === "OptimizedCreateHiveTableAsSelectCommand")
     assert(po.columns === Seq("a"))
     val accessType = ranger.AccessType(po, operationType, isInput = false)

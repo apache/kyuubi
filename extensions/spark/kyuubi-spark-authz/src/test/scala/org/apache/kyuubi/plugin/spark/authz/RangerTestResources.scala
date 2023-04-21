@@ -15,20 +15,31 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation.datalake
+package org.apache.kyuubi.plugin.spark.authz
 
-import org.apache.kyuubi.WithKyuubiServer
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.HudiMetadataTests
-import org.apache.kyuubi.tags.HudiTest
+object RangerTestUsers {
+  // authorized users used in policy generation
+  val admin = "admin"
+  val alice = "alice"
+  val bob = "bob"
+  val kent = "kent"
+  val permViewUser = "perm_view_user"
+  val ownerPlaceHolder = "{OWNER}"
+  val createOnlyUser = "create_only_user"
+  val defaultTableOwner = "default_table_owner"
+  val permViewOnlyUser = "user_perm_view_only"
 
-@HudiTest
-class HudiOperationSuite extends WithKyuubiServer with HudiMetadataTests {
-  override protected val conf: KyuubiConf = {
-    val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
-    extraConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }
-    kyuubiConf
-  }
+  // non-authorized users
+  val invisibleUser = "i_am_invisible"
+  val denyUser = "denyuser"
+  val denyUser2 = "denyuser2"
+  val someone = "someone"
+}
 
-  override def jdbcUrl: String = getJdbcUrl
+object RangerTestNamespace {
+  val defaultDb = "default"
+  val sparkCatalog = "spark_catalog"
+  val icebergNamespace = "iceberg_ns"
+  val namespace1 = "ns1"
+  val namespace2 = "ns2"
 }

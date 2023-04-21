@@ -26,7 +26,7 @@
 ## Build
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -Dspark.version=3.2.1
+build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -am -Dspark.version=3.2.1
 ```
 
 ### Supported Apache Spark Versions

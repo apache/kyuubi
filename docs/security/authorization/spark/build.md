@@ -70,6 +70,7 @@ The available `ranger.version`s are shown in the following table.
 
 | Ranger Version | Supported |                                          Remark                                           |
 |:--------------:|:---------:|:-----------------------------------------------------------------------------------------:|
+|     2.4.x      |     √     |                                             -                                             |
 |     2.3.x      |     √     |                                             -                                             |
 |     2.2.x      |     √     |                                             -                                             |
 |     2.1.x      |     √     |                                             -                                             |
@@ -78,7 +79,7 @@ The available `ranger.version`s are shown in the following table.
 |     1.1.x      |     √     |                                             -                                             |
 |     1.0.x      |     √     |                                             -                                             |
 |     0.7.x      |     √     |                                             -                                             |
-|     0.6.x      |     X     | [RANGER-4672](https://github.com/apache/kyuubi/issues/4672) reported unresolved failures. |
+|     0.6.x      |     X     | [KYUUBI-4672](https://github.com/apache/kyuubi/issues/4672) reported unresolved failures. |
 
 Currently, all ranger releases are supported.
 

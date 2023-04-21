@@ -17,17 +17,35 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.util.UUID
+
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.flink.WithFlinkSQLEngineLocal
+import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.flink.{WithDiscoveryFlinkSQLEngine, WithFlinkSQLEngineLocal}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
 import org.apache.kyuubi.operation.NoneMode
 
 class FlinkOperationLocalSuite extends FlinkOperationSuite
-  with WithFlinkSQLEngineLocal {
+  with WithDiscoveryFlinkSQLEngine with WithFlinkSQLEngineLocal {
 
-  override def withKyuubiConf: Map[String, String] =
-    Map(OPERATION_PLAN_ONLY_MODE.key -> NoneMode.name)
+  protected def jdbcUrl: String = getFlinkEngineServiceUrl
 
-  override protected def jdbcUrl: String =
-    s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;"
+  override def withKyuubiConf: Map[String, String] = {
+    Map(
+      "flink.execution.target" -> "remote",
+      HA_NAMESPACE.key -> namespace,
+      HA_ENGINE_REF_ID.key -> engineRefId,
+      ENGINE_TYPE.key -> "FLINK_SQL",
+      ENGINE_SHARE_LEVEL.key -> shareLevel,
+      OPERATION_PLAN_ONLY_MODE.key -> NoneMode.name) ++ testExtraConf
+  }
+
+  override protected def engineRefId: String = UUID.randomUUID().toString
+
+  def namespace: String = "/kyuubi/flink-local-engine-test"
+
+  def shareLevel: String = ShareLevel.USER.toString
+
+  def engineType: String = "flink"
 
 }

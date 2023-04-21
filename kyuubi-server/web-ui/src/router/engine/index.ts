@@ -15,15 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.tags;
+const routes = [
+  {
+    path: '/engine/engine-statistics',
+    name: 'engine-statistics',
+    component: () => import('@/views/engine/index.vue')
+  }
+]
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import org.scalatest.TagAnnotation;
-
-@TagAnnotation
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.TYPE})
-public @interface HudiTest {}
+export default routes

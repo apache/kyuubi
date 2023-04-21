@@ -32,6 +32,26 @@ export const MENUS = [
     ]
   },
   {
+    label: 'Engine Management',
+    icon: 'List',
+    children: [
+      {
+        label: 'Engine Statistics',
+        router: '/engine/engine-statistics'
+      }
+    ]
+  },
+  {
+    label: 'Server Management',
+    icon: 'List',
+    children: [
+      {
+        label: 'Server Statistics',
+        router: '/server/server-statistics'
+      }
+    ]
+  },
+  {
     label: 'Workload',
     icon: 'List',
     children: [

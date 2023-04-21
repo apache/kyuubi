@@ -332,14 +332,7 @@
 
     <profiles>
         <profile>
-            <id>genpolicy</id>
-            <activation>
-                <!-- activated when Ranger version is identical to required-->
-                <property>
-                    <name>ranger.version</name>
-                    <value>2.3.0</value>
-                </property>
-            </activation>
+            <id>gen-policy</id>
             <build>
                 <plugins>
                     <plugin>

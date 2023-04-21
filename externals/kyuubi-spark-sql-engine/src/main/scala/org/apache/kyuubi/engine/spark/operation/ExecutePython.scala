@@ -180,12 +180,7 @@ case class SessionPythonWorker(
     new BufferedReader(new InputStreamReader(workerProcess.getInputStream), 1)
   private val lock = new ReentrantLock()
 
-  private def withLockRequired[T](block: => T): T = {
-    try {
-      lock.lock()
-      block
-    } finally lock.unlock()
-  }
+  private def withLockRequired[T](block: => T): T = Utils.withLockRequired(lock)(block)
 
   /**
    * Run the python code and return the response. This method maybe invoked internally,
