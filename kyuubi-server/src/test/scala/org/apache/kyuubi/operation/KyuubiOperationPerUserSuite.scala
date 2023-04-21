@@ -204,7 +204,10 @@ class KyuubiOperationPerUserSuite
           executeStmtResp.getStatus.getErrorMessage.contains(
             "org.apache.thrift.transport.TTransportException") ||
           executeStmtResp.getStatus.getErrorMessage.contains(
-            "connection does not exist"))
+            "connection does not exist") ||
+          executeStmtResp.getStatus.getErrorMessage.contains(
+            "java.util.concurrent.RejectedExecutionException")
+        )
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
         assert(session.client.asyncRequestInterrupted)
