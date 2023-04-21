@@ -113,7 +113,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Super Linter Checks
-        uses: github/super-linter/slim@v5
+        uses: github/super-linter/slim@latest
         env:
           CREATE_LOG_FILE: true
           ERROR_ON_MISSING_EXEC_BIT: true
@@ -123,6 +123,8 @@ jobs:
           LINTER_RULES_PATH: /
           LOG_LEVEL: NOTICE
           SUPPRESS_POSSUM: true
+          BASH_SEVERITY: error
+          VALIDATE_BASH: true
           VALIDATE_BASH_EXEC: true
           VALIDATE_ENV: true
           VALIDATE_JSONC: true
