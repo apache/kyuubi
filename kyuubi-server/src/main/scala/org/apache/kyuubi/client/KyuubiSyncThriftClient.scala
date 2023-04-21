@@ -113,11 +113,11 @@ class KyuubiSyncThriftClient private (
                 tProtocol.getTransport.close()
               }
             }
-            clientClosedOnEngineBroken = true
-            shutdownAsyncRequestExecutor()
-            Option(engineAliveThreadPool).foreach { pool =>
-              ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
-            }
+          }
+          clientClosedOnEngineBroken = true
+          shutdownAsyncRequestExecutor()
+          Option(engineAliveThreadPool).foreach { pool =>
+            ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
           }
         }
       }
