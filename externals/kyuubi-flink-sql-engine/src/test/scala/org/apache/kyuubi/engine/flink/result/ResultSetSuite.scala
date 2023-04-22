@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink.result
 
+import java.time.ZoneId
+
 import org.apache.flink.table.api.{DataTypes, ResultKind}
 import org.apache.flink.table.catalog.Column
 import org.apache.flink.table.data.StringData
@@ -44,9 +46,9 @@ class ResultSetSuite extends KyuubiFunSuite {
       .data(rowsNew)
       .build
 
-    assert(RowSet.toRowBaseSet(rowsNew, resultSetNew)
-      === RowSet.toRowBaseSet(rowsOld, resultSetOld))
-    assert(RowSet.toColumnBasedSet(rowsNew, resultSetNew)
-      === RowSet.toColumnBasedSet(rowsOld, resultSetOld))
+    assert(RowSet.toRowBaseSet(rowsNew, resultSetNew, ZoneId.systemDefault())
+      === RowSet.toRowBaseSet(rowsOld, resultSetOld, ZoneId.systemDefault()))
+    assert(RowSet.toColumnBasedSet(rowsNew, resultSetNew, ZoneId.systemDefault())
+      === RowSet.toColumnBasedSet(rowsOld, resultSetOld, ZoneId.systemDefault()))
   }
 }
