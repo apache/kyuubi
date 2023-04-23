@@ -67,7 +67,7 @@ object SparkDatasetHelper extends Logging {
   def toArrowBatchRdd(plan: SparkPlan): RDD[Array[Byte]] = {
     val schemaCaptured = plan.schema
     // TODO: SparkPlan.session introduced in SPARK-35798, replace with SparkPlan.session once we
-    // drop Spark-3.1.x support.
+    // drop Spark 3.1 support.
     val maxRecordsPerBatch = SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch
     val timeZoneId = SparkSession.active.sessionState.conf.sessionLocalTimeZone
     val maxBatchSizePerBatch = maxBatchSize
