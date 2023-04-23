@@ -19,14 +19,13 @@ package org.apache.spark.sql.kyuubi
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
-import org.apache.spark.sql.execution.arrow.{ArrowConverters, KyuubiArrowConverters}
+import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
@@ -71,14 +70,15 @@ object SparkDatasetHelper extends Logging {
     // drop Spark-3.1.x support.
     val maxRecordsPerBatch = SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch
     val timeZoneId = SparkSession.active.sessionState.conf.sessionLocalTimeZone
+    val maxBatchSizePerBatch = maxBatchSize
     plan.execute().mapPartitionsInternal { iter =>
-      val context = TaskContext.get()
-      ArrowConverters.toBatchIterator(
+      KyuubiArrowConverters.toBatchIterator(
         iter,
         schemaCaptured,
         maxRecordsPerBatch,
-        timeZoneId,
-        context)
+        maxBatchSizePerBatch,
+        -1,
+        timeZoneId)
     }
   }
 
