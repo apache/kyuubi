@@ -70,7 +70,6 @@ object SparkDatasetHelper extends Logging {
     // drop Spark 3.1 support.
     val maxRecordsPerBatch = SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch
     val timeZoneId = SparkSession.active.sessionState.conf.sessionLocalTimeZone
-    val maxBatchSizePerBatch = maxBatchSize
     plan.execute().mapPartitionsInternal { iter =>
       KyuubiArrowConverters.toBatchIterator(
         iter,
