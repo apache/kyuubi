@@ -134,7 +134,7 @@ object SparkDatasetHelper extends Logging {
     }
   }
 
-  private lazy val maxBatchSize: Long = {
+  private val maxBatchSize: Long = {
     // respect spark connect config
     KyuubiSparkUtil.globalSparkContext
       .getConf
