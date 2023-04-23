@@ -184,8 +184,8 @@ object SparkDatasetHelper extends Logging {
 
   def doCommandResultExec(command: SparkPlan): Array[Array[Byte]] = {
     KyuubiArrowConverters.toBatchIterator(
-      // TODO: replace with `command.rows.iterator` once we drop Spark-3.1 support.
-      getRunnableCommandOutputRows(command).iterator,
+      // TODO: replace with `command.rows.iterator` once we drop Spark 3.1 support.
+      commandResultExecRowsMethod.invoke[Seq[InternalRow]](command).iterator,
       command.schema,
       SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch,
       maxBatchSize,
@@ -250,7 +250,7 @@ object SparkDatasetHelper extends Logging {
 
   private def isCommandResultExec(sparkPlan: SparkPlan): Boolean = {
     // scalastyle:off line.size.limit
-    // the CommandResultExec was introduced in SPARK-35378 (Spark-3.2.x), after SPARK-35378 the
+    // the CommandResultExec was introduced in SPARK-35378 (Spark 3.2), after SPARK-35378 the
     // physical plan of runnable command is CommandResultExec.
     // for instance:
     // ```
@@ -269,11 +269,6 @@ object SparkDatasetHelper extends Logging {
   private lazy val commandResultExecRowsMethod = DynMethods.builder("rows")
     .impl("org.apache.spark.sql.execution.CommandResultExec")
     .build()
-
-  private def getRunnableCommandOutputRows(command: SparkPlan): Seq[InternalRow] = {
-    assert(isCommandResultExec(command))
-    commandResultExecRowsMethod.invoke[Seq[InternalRow]](command)
-  }
 
   /**
    * refer to org.apache.spark.sql.Dataset#withAction(), assign a new execution id for arrow-based
