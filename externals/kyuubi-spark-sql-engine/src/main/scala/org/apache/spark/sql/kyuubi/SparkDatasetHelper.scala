@@ -70,12 +70,15 @@ object SparkDatasetHelper extends Logging {
     // drop Spark 3.1 support.
     val maxRecordsPerBatch = SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch
     val timeZoneId = SparkSession.active.sessionState.conf.sessionLocalTimeZone
+    // note that, we can't pass the lazy variable `maxBatchSize` directly, this is because input
+    // arguments are serialized and sent to the executor side for execution.
+    val maxBatchSizePerBatch = maxBatchSize
     plan.execute().mapPartitionsInternal { iter =>
       KyuubiArrowConverters.toBatchIterator(
         iter,
         schemaCaptured,
         maxRecordsPerBatch,
-        maxBatchSize,
+        maxBatchSizePerBatch,
         -1,
         timeZoneId)
     }
