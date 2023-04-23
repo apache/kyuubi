@@ -32,7 +32,6 @@ import org.apache.spark.sql.execution.arrow.{ArrowConverters, KyuubiArrowConvert
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.schema.RowSet
 import org.apache.kyuubi.reflection.DynMethods
@@ -54,8 +53,8 @@ object SparkDatasetHelper extends Logging {
       doCollectLimit(collectLimit)
     case collectLimit: CollectLimitExec if collectLimit.limit < 0 =>
       executeArrowBatchCollect(collectLimit.child)
-    // TODO: replace with directly pattern match, once we drop Spark-3.1.x support.
-    case command: SparkPlan if isRunnableCommand(command) =>
+    // TODO: replace with pattern match once we drop Spark 3.1 support.
+    case command: SparkPlan if isCommandResultExec(command) =>
       doCommandResultExec(command)
     case localTableScan: LocalTableScanExec =>
       doLocalTableScan(localTableScan)
@@ -184,7 +183,6 @@ object SparkDatasetHelper extends Logging {
   }
 
   def doCommandResultExec(command: SparkPlan): Array[Array[Byte]] = {
-    assert(isRunnableCommand(command))
     KyuubiArrowConverters.toBatchIterator(
       // TODO: replace with `command.rows.iterator` once we drop Spark-3.1 support.
       getRunnableCommandOutputRows(command).iterator,
@@ -250,40 +248,31 @@ object SparkDatasetHelper extends Logging {
       .getOrElse(0)
   }
 
-  private def isRunnableCommand(sparkPlan: SparkPlan): Boolean = {
+  private def isCommandResultExec(sparkPlan: SparkPlan): Boolean = {
     // scalastyle:off line.size.limit
-    sparkPlan.getClass.getName match {
-      case "org.apache.spark.sql.execution.CommandResultExec" =>
-        // the CommandResultExec was introduced in SPARK-35378 (Spark-3.2.x), after SPARK-35378 the
-        // physical plan of runnable command is CommandResultExec.
-        // for instance:
-        // ```
-        // scala> spark.sql("show tables").queryExecution.executedPlan
-        // res0: org.apache.spark.sql.execution.SparkPlan =
-        // CommandResult <empty>, [namespace#0, tableName#1, isTemporary#2]
-        //   +- ShowTables [namespace#0, tableName#1, isTemporary#2], V2SessionCatalog(spark_catalog), [default]
-        //
-        // scala > spark.sql("show tables").queryExecution.executedPlan.getClass
-        // res1: Class[_ <: org.apache.spark.sql.execution.SparkPlan] = class org.apache.spark.sql.execution.CommandResultExec
-        // ```
-        true
-      case _ => false
-    }
+    // the CommandResultExec was introduced in SPARK-35378 (Spark-3.2.x), after SPARK-35378 the
+    // physical plan of runnable command is CommandResultExec.
+    // for instance:
+    // ```
+    // scala> spark.sql("show tables").queryExecution.executedPlan
+    // res0: org.apache.spark.sql.execution.SparkPlan =
+    // CommandResult <empty>, [namespace#0, tableName#1, isTemporary#2]
+    //   +- ShowTables [namespace#0, tableName#1, isTemporary#2], V2SessionCatalog(spark_catalog), [default]
+    //
+    // scala > spark.sql("show tables").queryExecution.executedPlan.getClass
+    // res1: Class[_ <: org.apache.spark.sql.execution.SparkPlan] = class org.apache.spark.sql.execution.CommandResultExec
+    // ```
     // scalastyle:on line.size.limit
+    sparkPlan.getClass.getName == "org.apache.spark.sql.execution.CommandResultExec"
   }
 
+  private lazy val commandResultExecRowsMethod = DynMethods.builder("rows")
+    .impl("org.apache.spark.sql.execution.CommandResultExec")
+    .build()
+
   private def getRunnableCommandOutputRows(command: SparkPlan): Seq[InternalRow] = {
-    command match {
-      case commandResult: SparkPlan
-          if command.getClass.getName ==
-            "org.apache.spark.sql.execution.CommandResultExec" =>
-        DynMethods.builder("rows")
-          .impl("org.apache.spark.sql.execution.CommandResultExec")
-          .build()
-          .invoke[Seq[InternalRow]](commandResult)
-      case _: SparkPlan =>
-        throw new KyuubiSQLException(s"illegal input argument $command", null)
-    }
+    assert(isCommandResultExec(command))
+    commandResultExecRowsMethod.invoke[Seq[InternalRow]](command)
   }
 
   /**

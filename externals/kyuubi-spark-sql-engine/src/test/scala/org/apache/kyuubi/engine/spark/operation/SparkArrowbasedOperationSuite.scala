@@ -300,8 +300,8 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     }
 
     if (SPARK_ENGINE_RUNTIME_VERSION < "3.2") {
-      // Note that before Spark-3.2, a LocalTableScan SparkPlan will be submitted, and the issue of
-      // preventing LocalTableScan from triggering a job submission was addressed in KYUUBI #4710.
+      // Note that before Spark 3.2, a LocalTableScan SparkPlan will be submitted, and the issue of
+      // preventing LocalTableScan from triggering a job submission was addressed in [KYUUBI #4710].
       assert(l2.queryExecution.executedPlan.getClass.getName ==
         "org.apache.spark.sql.execution.LocalTableScanExec")
     } else {
