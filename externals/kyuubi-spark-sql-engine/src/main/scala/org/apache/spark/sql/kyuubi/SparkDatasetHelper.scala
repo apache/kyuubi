@@ -76,7 +76,7 @@ object SparkDatasetHelper extends Logging {
         iter,
         schemaCaptured,
         maxRecordsPerBatch,
-        maxBatchSizePerBatch,
+        maxBatchSize,
         -1,
         timeZoneId)
     }
