@@ -24,7 +24,9 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
+import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.{ArrowConverters, KyuubiArrowConverters}
 import org.apache.spark.sql.functions._
@@ -51,6 +53,9 @@ object SparkDatasetHelper extends Logging {
       doCollectLimit(collectLimit)
     case collectLimit: CollectLimitExec if collectLimit.limit < 0 =>
       executeArrowBatchCollect(collectLimit.child)
+    // TODO: replace with pattern match once we drop Spark 3.1 support.
+    case command: SparkPlan if isCommandResultExec(command) =>
+      doCommandResultExec(command)
     case localTableScan: LocalTableScanExec =>
       doLocalTableScan(localTableScan)
     case plan: SparkPlan =>
@@ -177,6 +182,17 @@ object SparkDatasetHelper extends Logging {
     result.toArray
   }
 
+  def doCommandResultExec(command: SparkPlan): Array[Array[Byte]] = {
+    KyuubiArrowConverters.toBatchIterator(
+      // TODO: replace with `command.rows.iterator` once we drop Spark 3.1 support.
+      commandResultExecRowsMethod.invoke[Seq[InternalRow]](command).iterator,
+      command.schema,
+      SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch,
+      maxBatchSize,
+      -1,
+      SparkSession.active.sessionState.conf.sessionLocalTimeZone).toArray
+  }
+
   def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
     localTableScan.longMetric("numOutputRows").add(localTableScan.rows.size)
     KyuubiArrowConverters.toBatchIterator(
@@ -231,6 +247,28 @@ object SparkDatasetHelper extends Logging {
         .invoke[Int](collectLimitExec))
       .getOrElse(0)
   }
+
+  private def isCommandResultExec(sparkPlan: SparkPlan): Boolean = {
+    // scalastyle:off line.size.limit
+    // the CommandResultExec was introduced in SPARK-35378 (Spark 3.2), after SPARK-35378 the
+    // physical plan of runnable command is CommandResultExec.
+    // for instance:
+    // ```
+    // scala> spark.sql("show tables").queryExecution.executedPlan
+    // res0: org.apache.spark.sql.execution.SparkPlan =
+    // CommandResult <empty>, [namespace#0, tableName#1, isTemporary#2]
+    //   +- ShowTables [namespace#0, tableName#1, isTemporary#2], V2SessionCatalog(spark_catalog), [default]
+    //
+    // scala > spark.sql("show tables").queryExecution.executedPlan.getClass
+    // res1: Class[_ <: org.apache.spark.sql.execution.SparkPlan] = class org.apache.spark.sql.execution.CommandResultExec
+    // ```
+    // scalastyle:on line.size.limit
+    sparkPlan.getClass.getName == "org.apache.spark.sql.execution.CommandResultExec"
+  }
+
+  private lazy val commandResultExecRowsMethod = DynMethods.builder("rows")
+    .impl("org.apache.spark.sql.execution.CommandResultExec")
+    .build()
 
   /**
    * refer to org.apache.spark.sql.Dataset#withAction(), assign a new execution id for arrow-based

@@ -278,6 +278,39 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     assert(numStages == 1)
   }
 
+  test("CommandResultExec should not trigger job") {
+    val listener = new JobCountListener
+    val l2 = new SQLMetricsListener
+    val nodeName = spark.sql("SHOW TABLES").queryExecution.executedPlan.getClass.getName
+    if (SPARK_ENGINE_RUNTIME_VERSION < "3.2") {
+      assert(nodeName == "org.apache.spark.sql.execution.command.ExecutedCommandExec")
+    } else {
+      assert(nodeName == "org.apache.spark.sql.execution.CommandResultExec")
+    }
+    withJdbcStatement("table_1") { statement =>
+      statement.executeQuery(s"CREATE TABLE table_1 (id bigint) USING parquet")
+      withSparkListener(listener) {
+        withSparkListener(l2) {
+          val resultSet = statement.executeQuery("SHOW TABLES")
+          assert(resultSet.next())
+          assert(resultSet.getString("tableName") == "table_1")
+          KyuubiSparkContextHelper.waitListenerBus(spark)
+        }
+      }
+    }
+
+    if (SPARK_ENGINE_RUNTIME_VERSION < "3.2") {
+      // Note that before Spark 3.2, a LocalTableScan SparkPlan will be submitted, and the issue of
+      // preventing LocalTableScan from triggering a job submission was addressed in [KYUUBI #4710].
+      assert(l2.queryExecution.executedPlan.getClass.getName ==
+        "org.apache.spark.sql.execution.LocalTableScanExec")
+    } else {
+      assert(l2.queryExecution.executedPlan.getClass.getName ==
+        "org.apache.spark.sql.execution.CommandResultExec")
+    }
+    assert(listener.numJobs == 0)
+  }
+
   test("LocalTableScanExec should not trigger job") {
     val listener = new JobCountListener
     withJdbcStatement("view_1") { statement =>
