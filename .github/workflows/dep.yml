@@ -44,6 +44,8 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Check kyuubi modules available
         id: modules-check
         run: >-

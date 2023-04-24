@@ -196,6 +196,8 @@
         <swagger.version>2.2.1</swagger.version>
         <swagger-ui.version>4.9.1</swagger-ui.version>
         <testcontainers-scala.version>0.40.12</testcontainers-scala.version>
+        <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
+        <threeten.version>1.7.0</threeten.version>
         <thrift.version>0.9.3</thrift.version>
         <trino.client.version>363</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
@@ -403,19 +405,15 @@
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
-                <artifactId>spark-repl_${scala.binary.version}</artifactId>
+                <artifactId>spark-core_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
+                    <!-- Use Hadoop Shaded Client to gain more clean transitive dependencies -->
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
-                    <!--
-                      Use log4j2
-                     -->
+                    <!--  Use log4j2 -->
                     <exclusion>
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
@@ -423,34 +421,25 @@
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <!-- SPARK-40511 upgrade SLF4J2, which is not compatible w/ SLF4J1 -->
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j2-impl</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
+                <artifactId>spark-repl_${scala.binary.version}</artifactId>
+                <version>${spark.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.spark</groupId>
                 <artifactId>spark-sql_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
-                <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <!--
-                      Use log4j2
-                     -->
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -458,27 +447,10 @@
                 <artifactId>spark-hive_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
+                    <!-- Use Hadoop Shaded Client to gain more clean transitive dependencies -->
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-common</artifactId>
-                    </exclusion>
-                    <!--
-                      Use log4j2
-                     -->
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -489,17 +461,25 @@
                 <version>${spark.version}</version>
                 <type>test-jar</type>
                 <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
+                    <!-- Use Hadoop Shaded Client to gain more clean transitive dependencies -->
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
-                    <!--
-                      The module is only used in Kyuubi Spark Extensions, we should respect
-                      the Spark bundled log4j.
-                     -->
+                    <!--  Use log4j2 -->
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <!-- SPARK-40511 upgrade SLF4J2, which is not compatible w/ SLF4J1 -->
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j2-impl</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -508,19 +488,6 @@
                 <artifactId>spark-catalyst_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <type>test-jar</type>
-                <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <!--
-                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
-                      version of Log4j it depends on.
-                     -->
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -528,19 +495,6 @@
                 <artifactId>spark-sql_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <type>test-jar</type>
-                <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <!--
-                      The module is only used in Kyuubi Spark Extensions and Engine Spark SQL, so we
-                      don't care about which version of Log4j it depends on.
-                     -->
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -1524,6 +1478,12 @@
                 <artifactId>service</artifactId>
                 <version>${openai.java.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.threeten</groupId>
+                <artifactId>threeten-extra</artifactId>
+                <version>${threeten.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -2211,22 +2171,25 @@
         </profile>
 
         <profile>
+            <id>spark-3.4</id>
+            <modules>
+                <module>extensions/spark/kyuubi-spark-connector-hive</module>
+                <module>extensions/spark/kyuubi-spark-connector-kudu</module>
+            </modules>
+            <properties>
+                <spark.version>3.4.0</spark.version>
+                <!-- FIXME: used for constructing Iceberg artifact name, correct it once Iceberg supports Spark 3.4 -->
+                <spark.binary.version>3.3</spark.binary.version>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
+            </properties>
+        </profile>
+
+        <profile>
             <id>spark-master</id>
             <properties>
                 <spark.version>3.5.0-SNAPSHOT</spark.version>
-                <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
-                <threeten.version>1.7.0</threeten.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
             </properties>
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.threeten</groupId>
-                        <artifactId>threeten-extra</artifactId>
-                        <version>${threeten.version}</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
             <repositories>
                 <repository>
                     <releases>

@@ -50,6 +50,7 @@ jobs:
           - '3.1'
           - '3.2'
           - '3.3'
+          - '3.4'
         spark-archive: [""]
         exclude-tags: [""]
         comment: ["normal"]
@@ -64,6 +65,11 @@ jobs:
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.4 -Dspark.archive.name=spark-3.2.4-bin-hadoop3.2.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest'
             comment: 'verify-on-spark-3.2-binary'
+          - java: 8
+            spark: '3.3'
+            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.4.0 -Dspark.archive.name=spark-3.4.0-bin-hadoop3.tgz'
+            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest'
+            comment: 'verify-on-spark-3.4-binary'
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -79,6 +85,8 @@ jobs:
           check-latest: false
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -86,6 +94,12 @@ jobs:
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
+          if [[ "${{ matrix.spark }}" == "3.4" ]]; then
+            # FIXME: Spark 3.4 supports authz plugin
+            TEST_MODULES="$TEST_MODULES,!extensions/spark/kyuubi-spark-authz"
+            # FIXME: Spark 3.4 supports lineage plugin
+            TEST_MODULES="$TEST_MODULES,!extensions/spark/kyuubi-spark-lineage"
+          fi
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
@@ -131,6 +145,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Build and test Kyuubi AuthZ with supported Spark versions
@@ -177,6 +193,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Build Flink with maven w/o linters
@@ -223,6 +241,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Build and test Hive with maven w/o linters
@@ -260,6 +280,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Build and test JDBC with maven w/o linters
@@ -297,6 +319,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Build and test Trino with maven w/o linters
@@ -329,6 +353,8 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Run TPC-DS Tests
@@ -466,6 +492,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: zookeeper integration tests
