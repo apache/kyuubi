@@ -314,7 +314,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
-      fe.asInstanceOf[KyuubiRestFrontendService].sessionManager.groupProvider.primaryGroup(Utils.currentUser, null),
+      fe.asInstanceOf[KyuubiRestFrontendService].sessionManager.groupProvider.primaryGroup(
+        Utils.currentUser,
+        null),
       "default")
 
     withDiscoveryClient(conf) { client =>
@@ -436,7 +438,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
-      fe.asInstanceOf[KyuubiRestFrontendService].sessionManager.groupProvider.primaryGroup(Utils.currentUser, null),
+      fe.asInstanceOf[KyuubiRestFrontendService].sessionManager.groupProvider.primaryGroup(
+        Utils.currentUser,
+        null),
       "")
 
     withDiscoveryClient(conf) { client =>
