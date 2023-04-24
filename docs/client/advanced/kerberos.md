@@ -242,5 +242,5 @@ jdbc:hive2://<kyuubi_server_address>:<kyuubi_server_port>/<db>;kyuubiServerPrinc
 - `principal` is inherited from Hive JDBC Driver and is a little ambiguous, and we could use `kyuubiServerPrincipal` as its alias.
 - `kyuubi_server_principal` is the value of `kyuubi.kinit.principal` set in `kyuubi-defaults.conf`.
 - As a command line argument, JDBC URL should be quoted to avoid being split into 2 commands by ";".
-- As to DBeaver, `<db>;principal=<kyuubi_server_principal>` should be set as the `Database/Schema` argument.
+- As to DBeaver, `<db>;principal=<kyuubi_server_principal>` or `<db>;kyuubiServerPrincipal=<kyuubi_server_principal>` should be set as the `Database/Schema` argument.
 
