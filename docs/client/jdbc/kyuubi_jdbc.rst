@@ -173,7 +173,7 @@ It's straightforward to use principal and keytab for Kerberos authentication, ju
 - kyuubiClientPrincipal: Kerberos ``principal`` for client authentication
 - kyuubiClientKeytab: path of Kerberos ``keytab`` file for client authentication
 - principal: Kerberos ``principal`` configured by `kyuubi.kinit.principal` at the server side. ``kyuubiServerPrincipal`` is available
-  as a alias since 1.7.1.
+  as an alias since 1.7.1.
 
 Authentication by Principal and TGT Cache
 *****************************************
