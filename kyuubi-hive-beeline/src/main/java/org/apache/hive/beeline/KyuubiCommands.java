@@ -467,7 +467,7 @@ public class KyuubiCommands extends Commands {
 
     beeLine.info("Connecting to " + url);
     if (Utils.parsePropertyFromUrl(url, AUTH_PRINCIPAL) == null
-        || Utils.parsePropertyFromUrl(url, AUTH_KYUUBI_SERVER_PRINCIPAL) == null) {
+        && Utils.parsePropertyFromUrl(url, AUTH_KYUUBI_SERVER_PRINCIPAL) == null) {
       String urlForPrompt = url.substring(0, url.contains(";") ? url.indexOf(';') : url.length());
       if (username == null) {
         username = beeLine.getConsoleReader().readLine("Enter username for " + urlForPrompt + ": ");
