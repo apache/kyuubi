@@ -168,7 +168,6 @@ It's straightforward to use principal and keytab for Kerberos authentication, ju
 
 .. code-block::
 
-   jdbc:subprotocol://<zookeeper quorum>/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi
    jdbc:kyuubi://host:port/schema;clientKeytab=<clientKeytab>;clientPrincipal=<clientPrincipal>;serverPrincipal=<serverPrincipal>
 
 - clientKeytab: path of Kerberos ``keytab`` file for client authentication
