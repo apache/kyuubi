@@ -103,7 +103,6 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
 
   /** unset a parameter from the configuration */
   def unset(key: String): KyuubiConf = {
-    logDeprecationWarning(key)
     settings.remove(key)
     this
   }
