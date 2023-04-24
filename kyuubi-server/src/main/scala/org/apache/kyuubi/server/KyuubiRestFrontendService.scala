@@ -52,7 +52,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
 
-  private def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
+  private[kyuubi] def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   private val batchChecker = ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-checker")
 
