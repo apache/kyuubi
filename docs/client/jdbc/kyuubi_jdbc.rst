@@ -168,12 +168,12 @@ It's straightforward to use principal and keytab for Kerberos authentication, ju
 
 .. code-block::
 
-   jdbc:kyuubi://host:port/schema;kyuubiClientPrincipal=<clientPrincipal>;kyuubiClientKeytab=<clientKeytab>;principal=<serverPrincipal>
+   jdbc:kyuubi://host:port/schema;kyuubiClientPrincipal=<clientPrincipal>;kyuubiClientKeytab=<clientKeytab>;kyuubiServerPrincipal=<serverPrincipal>
 
 - kyuubiClientPrincipal: Kerberos ``principal`` for client authentication
 - kyuubiClientKeytab: path of Kerberos ``keytab`` file for client authentication
-- principal: Kerberos ``principal`` configured by `kyuubi.kinit.principal` at the server side. ``kyuubiServerPrincipal`` is available
-  as an alias since 1.7.1.
+- kyuubiServerPrincipal: Kerberos ``principal`` configured by `kyuubi.kinit.principal` at the server side. ``kyuubiServerPrincipal`` is available
+  as an alias of ``principal`` since 1.7.0, use ``principal`` for previous versions.
 
 Authentication by Principal and TGT Cache
 *****************************************
@@ -183,7 +183,7 @@ does Kerberos authentication through the TGT cache.
 
 .. code-block::
 
-   jdbc:kyuubi://host:port/schema;principal=<serverPrincipal>
+   jdbc:kyuubi://host:port/schema;kyuubiServerPrincipal=<serverPrincipal>
 
 Authentication by `Hadoop UserGroupInformation`_ ``doAs`` (programing only)
 ***************************************************************************
@@ -195,7 +195,7 @@ Authentication by `Hadoop UserGroupInformation`_ ``doAs`` (programing only)
 
 .. code-block::
 
-  String jdbcUrl = "jdbc:kyuubi://host:port/schema;principal=<serverPrincipal>"
+  String jdbcUrl = "jdbc:kyuubi://host:port/schema;kyuubiServerPrincipal=<serverPrincipal>"
   UserGroupInformation ugi = UserGroupInformation.loginUserFromKeytab(clientPrincipal, clientKeytab);
   ugi.doAs((PrivilegedExceptionAction<String>) () -> {
     Connection conn = DriverManager.getConnection(jdbcUrl);
@@ -207,7 +207,7 @@ Authentication by Subject (programing only)
 
 .. code-block:: java
 
-   String jdbcUrl = "jdbc:kyuubi://host:port/schema;principal=<serverPrincipal>;kerberosAuthType=fromSubject"
+   String jdbcUrl = "jdbc:kyuubi://host:port/schema;kyuubiServerPrincipal=<serverPrincipal>;kerberosAuthType=fromSubject"
    Subject kerberizedSubject = ...;
    Subject.doAs(kerberizedSubject, (PrivilegedExceptionAction<String>) () -> {
      Connection conn = DriverManager.getConnection(jdbcUrl);
