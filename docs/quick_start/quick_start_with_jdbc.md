@@ -74,7 +74,7 @@ public class KyuubiJDBCDemo {
 
   private static String driverName = "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
   private static String kyuubiJdbcUrlTemplate = "jdbc:kyuubi://localhost:10009/default;" +
-          "clientPrincipal=%s;clientKeytab=%s;serverPrincipal=%s";
+          "kyuubiClientPrincipal=%s;kyuubiClientKeytab=%s;kyuubiServerPrincipal=%s";
 
   public static void main(String[] args) throws SQLException {
     String clientPrincipal = args[0]; // Kerberos principal
