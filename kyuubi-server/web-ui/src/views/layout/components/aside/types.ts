@@ -22,32 +22,24 @@ export const MENUS = [
     router: '/overview'
   },
   {
-    label: 'Session Management',
+    label: 'Management',
     icon: 'List',
     children: [
       {
         label: 'Session Statistics',
-        router: '/session/session-statistics'
-      }
-    ]
-  },
-  {
-    label: 'Engine Management',
-    icon: 'List',
-    children: [
+        router: '/management/session-statistics'
+      },
+      {
+        label: 'Operation Statistics',
+        router: '/management/operation-statistics'
+      },
       {
         label: 'Engine Statistics',
-        router: '/engine/engine-statistics'
-      }
-    ]
-  },
-  {
-    label: 'Server Management',
-    icon: 'List',
-    children: [
+        router: '/management/engine-statistics'
+      },
       {
         label: 'Server Statistics',
-        router: '/server/server-statistics'
+        router: '/management/server-statistics'
       }
     ]
   },
@@ -81,11 +73,6 @@ export const MENUS = [
     label: 'Operation',
     icon: 'List',
     children: [
-      {
-        label: 'Operation Statistics',
-        icon: 'VideoPlay',
-        router: '/operation/operation-statistics'
-      },
       {
         label: 'Running Jobs',
         icon: 'VideoPlay',
