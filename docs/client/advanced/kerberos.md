@@ -235,7 +235,7 @@ jdbc:hive2://<kyuubi_server_address>:<kyuubi_server_port>/<db>;principal=<kyuubi
 or
 
 ```
-jdbc:hive2://<kyuubi_server_address>:<kyuubi_server_port>/<db>;kyuubiServerPrincipal=<kyuubi_server_principal>
+jdbc:hive2://<kyuubi_server_address>:<kyuubi_server_port>/<db>;principal=<kyuubi_server_principal>
 ```
 
 **Note**:  
