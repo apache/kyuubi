@@ -167,6 +167,7 @@ Authentication by Principal and Keytab
 It's straightforward to use principal and keytab for Kerberos authentication, just simply configure them in the JDBC URL.
 
 .. code-block::
+
    jdbc:subprotocol://<zookeeper quorum>/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi
    jdbc:kyuubi://host:port/schema;clientKeytab=<clientKeytab>;clientPrincipal=<clientPrincipal>;serverPrincipal=<serverPrincipal>
 
