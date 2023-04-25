@@ -298,7 +298,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
                 metadata.clusterManager,
                 batchId,
                 // prevent that the batch be marked as terminated if application state is NOT_FOUND
-                Some(System.currentTimeMillis()))
+                Some(metadata.engineOpenTime).filter(_ > 0).orElse(Some(System.currentTimeMillis)))
               buildBatch(metadata, batchAppStatus)
           }
         }
