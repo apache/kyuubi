@@ -261,8 +261,8 @@ class BatchJobSubmission(
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
 
-        // wait the application id ready to monitor
-        while (applicationId(_applicationInfo).isEmpty &&
+        while (_appStartTime == 0 &&
+          applicationId(_applicationInfo).isEmpty &&
           !applicationTerminated(_applicationInfo)) {
           updateApplicationInfoMetadataIfNeeded()
           if (applicationId(_applicationInfo).isEmpty && !applicationTerminated(_applicationInfo)) {
