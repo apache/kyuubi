@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
 import javax.ws.rs.core.{GenericType, MediaType}
 
@@ -39,8 +40,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   private val engineMgr = new KyuubiApplicationManager()
 
-  val encodeAuthorization =
-    new String(Base64.getEncoder.encode(s"${Utils.currentUser}:".getBytes()), "UTF-8")
+  val encodeAuthorization = new String(
+    Base64.getEncoder.encode(s"${Utils.currentUser}:".getBytes()),
+    StandardCharsets.UTF_8)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
