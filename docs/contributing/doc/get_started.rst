@@ -87,14 +87,14 @@ Once you have made the changes,
 .. code-block::
    :caption: commit the changes
 
-   git commit -m "Description of changes made"
+   $ git commit -m "Description of changes made"
 
 - Push the changes to your forked repository using the command
 
 .. code-block::
    :caption: push the changes
 
-   git push origin guide
+   $ git push origin guide
 
 - `Create A Pull Request`_ with a descriptive PR title and description.
 

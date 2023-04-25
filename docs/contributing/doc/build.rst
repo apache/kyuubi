@@ -29,14 +29,14 @@ Setup Environment
 .. code-block:: sh
    :caption: Install virtualenv
 
-   pip install virtualenv
+   $ pip install virtualenv
 
 - Switch to the ``docs`` root directory.
 
 .. code-block:: sh
    :caption: Switch to docs
 
-   cd $KYUUBI_SOURCE_PATH/docs
+   $ cd $KYUUBI_SOURCE_PATH/docs
 
 - Create a virtual environment named 'kyuubi' or anything you like using ``virtualenv``
   if it's not existing.
@@ -44,14 +44,14 @@ Setup Environment
 .. code-block:: sh
    :caption: New virtual environment
 
-   virtualenv kyuubi
+   $ virtualenv kyuubi
 
 - Activate the virtual environment,
 
 .. code-block:: sh
    :caption: Activate virtual environment
 
-   source ./kyuubi/bin/activate
+   $ source ./kyuubi/bin/activate
 
 Install All Dependencies
 ------------------------
@@ -61,7 +61,7 @@ Install all dependencies enumerated in the ``requirements.txt``.
 .. code-block:: sh
    :caption: Install dependencies
 
-   pip install -r requirements.txt
+   $ pip install -r requirements.txt
 
 
 Create Documentation
@@ -75,7 +75,7 @@ Linux & MacOS
 .. code-block:: sh
    :caption: Sphinx build on unix-like OS
 
-   make html
+   $ make html
 
 Windows
 ~~~~~~~
@@ -83,7 +83,7 @@ Windows
 .. code-block:: sh
    :caption: Sphinx build on windows
 
-   make.bat html
+   $ make.bat html
 
 
 If the build process succeed, the HTML pages are in
