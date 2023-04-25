@@ -179,8 +179,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.getChildren(engineSpace).size == 1)
 
       val adminUser = Utils.currentUser
-      val encodeAuthorization = new String(
-        Base64.getEncoder.encode(s"$adminUser:".getBytes()), "UTF-8")
+      val encodeAuthorization =
+        new String(Base64.getEncoder.encode(s"$adminUser:".getBytes()), "UTF-8")
 
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("sharelevel", "GROUP")
