@@ -118,7 +118,7 @@ object ZookeeperClientProvider extends Logging {
             classOf[String])
           .impl( // Hadoop 3.3.4 and previous
             // scalastyle:off
-            "org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration",
+            "org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager$JaasConfiguration",
             // scalastyle:on
             classOf[String],
             classOf[String],
