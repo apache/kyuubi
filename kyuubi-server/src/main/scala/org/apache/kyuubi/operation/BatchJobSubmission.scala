@@ -80,6 +80,7 @@ class BatchJobSubmission(
   def appStartTime: Long = _appStartTime
 
   private lazy val _submitTime = if (_appStartTime > 0) _appStartTime else System.currentTimeMillis
+  @volatile private var _submitApplication: Boolean = false
 
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
@@ -205,7 +206,12 @@ class BatchJobSubmission(
           }.getOrElse {
             submitAndMonitorBatchJob()
           }
-          setStateIfNotCanceled(OperationState.FINISHED)
+
+          if (_submitApplication && _applicationInfo == Some(ApplicationInfo.NOT_FOUND)) {
+            setStateIfNotCanceled(OperationState.ERROR)
+          } else {
+            setStateIfNotCanceled(OperationState.FINISHED)
+          }
         }
       } catch {
         onError()
@@ -227,6 +233,7 @@ class BatchJobSubmission(
   }
 
   private def submitAndMonitorBatchJob(): Unit = {
+    _submitApplication = true
     var appStatusFirstUpdated = false
     var lastStarvationCheckTime = createTime
     try {
