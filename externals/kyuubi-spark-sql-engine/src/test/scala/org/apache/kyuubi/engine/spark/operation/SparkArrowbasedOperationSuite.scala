@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import java.sql.Statement
-import java.util.{Set => JSet}
+import java.util.{Locale, Set => JSet}
 
 import org.apache.spark.KyuubiSparkContextHelper
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
@@ -33,15 +33,17 @@ import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.util.QueryExecutionListener
-
 import org.apache.kyuubi.KyuubiException
+import org.apache.spark.sql.execution.metric.SparkMetricsTestUtils
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{SparkSQLEngine, WithSparkSQLEngine}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.SparkDataTypeTests
 import org.apache.kyuubi.reflection.DynFields
 
-class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTypeTests {
+class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTypeTests
+    with SparkMetricsTestUtils {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -288,13 +290,12 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       assert(nodeName == "org.apache.spark.sql.execution.CommandResultExec")
     }
     withJdbcStatement("table_1") { statement =>
-      statement.executeQuery(s"CREATE TABLE table_1 (id bigint) USING parquet")
+      statement.executeQuery("CREATE TABLE table_1 (id bigint) USING parquet")
       withSparkListener(listener) {
         withSparkListener(l2) {
           val resultSet = statement.executeQuery("SHOW TABLES")
           assert(resultSet.next())
           assert(resultSet.getString("tableName") == "table_1")
-          KyuubiSparkContextHelper.waitListenerBus(spark)
         }
       }
     }
@@ -330,22 +331,97 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   }
 
   test("LocalTableScanExec metrics") {
+    val expectedMetrics = Map(
+      0L -> (("LocalTableScan", Map("number of output rows" -> "1"))))
+
     val listener = new SQLMetricsListener
     withJdbcStatement("view_1") { statement =>
       withSparkListener(listener) {
         withAllSessions { s =>
           import s.implicits._
           Seq((1, "a")).toDF("c1", "c2").createOrReplaceTempView("view_1")
+          val plan = s.sql("select * from view_1").queryExecution.executedPlan
+          assert(plan.isInstanceOf[LocalTableScanExec])
         }
-        val result = statement.executeQuery("select * from view_1")
-        assert(result.next())
-        assert(!result.next())
+        val metrics = getSparkPlanMetrics(listener) {
+          val resultSet = statement.executeQuery("select * from view_1")
+          assert(resultSet.next())
+          assert(!resultSet.next())
+        }
+        // make sure the metrics store in the Spark status store, so that user can track the metrics
+        // on the SQL UI tab.
+        assert(metrics == expectedMetrics)
       }
     }
 
     val metrics = listener.queryExecution.executedPlan.collectLeaves().head.metrics
+    // make sure the metrics can be visited by the event.
     assert(metrics.contains("numOutputRows"))
     assert(metrics("numOutputRows").value === 1)
+  }
+
+  test("CommandResultExec metrics") {
+    assume(SPARK_ENGINE_RUNTIME_VERSION >= "3.2")
+    val expectedMetrics = Map(
+      0L -> (("LocalTableScan", Map("number of output rows" -> "1"))))
+
+    val listener = new SQLMetricsListener
+    withJdbcStatement("table_1") { statement =>
+      statement.executeQuery("CREATE TABLE table_1 (id bigint) USING parquet")
+      withSparkListener(listener) {
+        val metrics = getSparkPlanMetrics(listener) {
+          val resultSet = statement.executeQuery("SHOW TABLES")
+          assert(resultSet.next())
+          assert(resultSet.getString("tableName") == "table_1")
+          assert(!resultSet.next())
+        }
+        // make sure the metrics store in the Spark status store, so that user can track the metrics
+        // on the SQL UI tab.
+        assert(metrics == expectedMetrics)
+      }
+    }
+    val metrics = listener.queryExecution.executedPlan.collectLeaves().head.metrics
+    // make sure the metrics can be visited by the event.
+    assert(metrics.contains("numOutputRows"))
+    assert(metrics("numOutputRows").value === 1)
+
+//    val listener = new SQLMetricsListener
+//    withJdbcStatement("view_1") { statement =>
+//      withSparkListener(listener) {
+//        withAllSessions { s =>
+//          import s.implicits._
+//          Seq((1, "a")).toDF("c1", "c2").createOrReplaceTempView("view_1")
+//          val plan = s.sql("select * from view_1").queryExecution.executedPlan
+//          assert(plan.isInstanceOf[LocalTableScanExec])
+//        }
+//        val metrics = getSparkPlanMetrics(listener) {
+//          val resultSet = statement.executeQuery("select * from view_1")
+//          assert(resultSet.next())
+//          assert(!resultSet.next())
+//        }
+//        // make sure the metrics store in the Spark status store, so that user can track the metrics
+//        // on the SQL UI tab.
+//        assert(metrics == expectedMetrics)
+//      }
+//    }
+//
+//    val metrics = listener.queryExecution.executedPlan.collectLeaves().head.metrics
+//    // make sure the metrics can be visited by the event.
+//    assert(metrics.contains("numOutputRows"))
+//    assert(metrics("numOutputRows").value === 1)
+  }
+
+  test("aa") {
+    assume(SPARK_ENGINE_RUNTIME_VERSION >= "3.2")
+    val expectedMetrics = Map(
+      0L -> (("CommandResult", Map("number of output rows" -> "2"))))
+    withTables("table_1", "table_2") {
+      spark.sql("CREATE TABLE table_1 (id bigint) USING parquet")
+      spark.sql("CREATE TABLE table_2 (id bigint) USING parquet")
+      val df = spark.sql("SHOW TABLES")
+      val metrics = getSparkPlanMetricsV2(df)
+      assert(expectedMetrics == metrics)
+    }
   }
 
   private def checkResultSetFormat(statement: Statement, expectFormat: String): Unit = {
@@ -465,6 +541,20 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     }
   }
 
+  private def withTables[T](tableNames: String*)(f: => T): T = {
+    try {
+      f
+    } finally {
+      tableNames.foreach { name =>
+        if (name.toUpperCase(Locale.ROOT).startsWith("VIEW")) {
+          spark.sql(s"DROP VIEW IF EXISTS $name")
+        } else {
+          spark.sql(s"DROP TABLE IF EXISTS $name")
+        }
+      }
+    }
+  }
+
   /**
    * This method provides a reflection-based implementation of [[SQLConf.isStaticConfigKey]] to
    * adapt Spark-3.1.x
@@ -479,21 +569,21 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       .get()
     staticConfKeys.contains(key)
   }
+}
 
-  class JobCountListener extends SparkListener {
-    var numJobs = 0
-    override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
-      numJobs += 1
-    }
+class JobCountListener extends SparkListener {
+  var numJobs = 0
+  override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
+    numJobs += 1
   }
+}
 
-  class SQLMetricsListener extends QueryExecutionListener {
-    var queryExecution: QueryExecution = null
-    override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
-      queryExecution = qe
-    }
-    override def onFailure(funcName: String, qe: QueryExecution, exception: Exception): Unit = {}
+class SQLMetricsListener extends QueryExecutionListener {
+  var queryExecution: QueryExecution = null
+  override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
+    queryExecution = qe
   }
+  override def onFailure(funcName: String, qe: QueryExecution, exception: Exception): Unit = {}
 }
 
 case class TestData(key: Int, value: String)
