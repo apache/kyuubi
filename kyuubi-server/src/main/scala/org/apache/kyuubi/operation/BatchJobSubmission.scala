@@ -76,6 +76,7 @@ class BatchJobSubmission(
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
 
+  private lazy val _submitTime = System.currentTimeMillis()
   @volatile private var _appStartTime = recoveryMetadata.map(_.engineOpenTime).getOrElse(0L)
   def appStartTime: Long = _appStartTime
 
@@ -101,16 +102,11 @@ class BatchJobSubmission(
 
   override protected def currentApplicationInfo(): Option[ApplicationInfo] = {
     if (isTerminal(state) && _applicationInfo.nonEmpty) return _applicationInfo
-    val submitTime = if (_appStartTime <= 0) {
-      System.currentTimeMillis()
-    } else {
-      _appStartTime
-    }
     val applicationInfo =
       applicationManager.getApplicationInfo(
         builder.clusterManager(),
         batchId,
-        Some(submitTime))
+        Some(_submitTime))
     applicationId(applicationInfo).foreach { _ =>
       if (_appStartTime <= 0) {
         _appStartTime = System.currentTimeMillis()
