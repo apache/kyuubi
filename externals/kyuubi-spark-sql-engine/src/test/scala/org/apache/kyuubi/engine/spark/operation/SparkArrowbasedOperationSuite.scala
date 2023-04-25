@@ -382,7 +382,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       spark.sql("CREATE TABLE table_2 (id bigint) USING parquet")
       val df = spark.sql("SHOW TABLES")
       val metrics = getSparkPlanMetrics(df)
-      println(expectedMetrics)
       assert(metrics == expectedMetrics)
     }
   }
