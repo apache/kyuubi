@@ -78,6 +78,7 @@ class BatchJobSubmission(
 
   @volatile private var _appStartTime = recoveryMetadata.map(_.engineOpenTime).getOrElse(0L)
   def appStartTime: Long = _appStartTime
+  def appStarted: Boolean = _appStartTime > 0
 
   private lazy val _submitTime = if (_appStartTime > 0) _appStartTime else System.currentTimeMillis
 
@@ -261,21 +262,18 @@ class BatchJobSubmission(
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
 
-        while (_appStartTime == 0 &&
-          applicationId(_applicationInfo).isEmpty &&
-          !applicationTerminated(_applicationInfo)) {
+        while (!appStarted && applicationId(_applicationInfo).isEmpty && !applicationTerminated(
+            _applicationInfo)) {
+          Thread.sleep(applicationCheckInterval)
           updateApplicationInfoMetadataIfNeeded()
-          if (applicationId(_applicationInfo).isEmpty && !applicationTerminated(_applicationInfo)) {
-            Thread.sleep(applicationCheckInterval)
-          }
         }
 
         applicationId(_applicationInfo) match {
           case Some(appId) => monitorBatchJob(appId)
-          case None if _appStartTime == 0 =>
+          case None if !appStarted =>
             throw new RuntimeException(
               s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
-          case _ =>
+          case None =>
         }
       }
     } finally {
