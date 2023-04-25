@@ -22,7 +22,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.{Date, Timestamp}
 import java.time.{Instant, LocalDate, LocalDateTime, ZonedDateTime, ZoneId}
-import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
+import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder, TextStyle}
 import java.time.temporal.ChronoField
 import java.util.Collections
 
@@ -399,22 +399,25 @@ object RowSet {
     }
   }
 
-  /** should stay in sync with [[org.apache.hadoop.hive.common.type.TimestampTZUtil]] */
+  /** should stay in sync with org.apache.kyuubi.jdbc.hive.common.TimestampTZUtil */
   var TIMESTAMP_LZT_FORMATTER: DateTimeFormatter = {
-    val builder = new DateTimeFormatterBuilder()
+    val builder = new DateTimeFormatterBuilder
     // Date part
-    builder.append(DateTimeFormatter.ofPattern("uuuu-MM-dd"))
+    builder.append(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
     // Time part
-    builder.optionalStart().appendLiteral(" ").append(
-      DateTimeFormatter.ofPattern("HH:mm:ss")).optionalStart().appendFraction(
-      ChronoField.NANO_OF_SECOND,
-      1,
-      9,
-      true).optionalEnd().optionalEnd()
-    // Zone part
-    builder.optionalStart().appendLiteral(" ").optionalEnd()
-    builder.optionalStart().appendZoneOrOffsetId().optionalEnd()
+    builder
+      .optionalStart
+      .appendLiteral(" ")
+      .append(DateTimeFormatter.ofPattern("HH:mm:ss"))
+      .optionalStart
+      .appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
+      .optionalEnd
+      .optionalEnd
 
-    builder.toFormatter()
+    // Zone part
+    builder.optionalStart.appendLiteral(" ").optionalEnd
+    builder.optionalStart.appendZoneText(TextStyle.NARROW).optionalEnd
+
+    builder.toFormatter
   }
 }
