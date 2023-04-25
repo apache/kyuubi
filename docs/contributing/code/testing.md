@@ -52,4 +52,3 @@ You can leverage the ready-made tool for creating a binary distribution.
 ```bash
 ./build/dist
 ```
-
