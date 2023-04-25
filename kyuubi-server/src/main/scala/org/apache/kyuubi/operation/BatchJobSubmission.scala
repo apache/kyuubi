@@ -269,7 +269,19 @@ class BatchJobSubmission(
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
 
-        applicationId(_applicationInfo).foreach(monitorBatchJob)
+        // wait the application id ready to monitor
+        while (applicationId(_applicationInfo).isEmpty &&
+          !applicationTerminated(_applicationInfo)) {
+          updateApplicationInfoMetadataIfNeeded()
+          Thread.sleep(applicationCheckInterval)
+        }
+
+        applicationId(_applicationInfo) match {
+          case Some(appId) => monitorBatchJob(appId)
+          case None =>
+            throw new RuntimeException(
+              s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+        }
       }
     } finally {
       builder.close()
