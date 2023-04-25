@@ -76,9 +76,10 @@ class BatchJobSubmission(
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
 
-  private lazy val _submitTime = System.currentTimeMillis()
   @volatile private var _appStartTime = recoveryMetadata.map(_.engineOpenTime).getOrElse(0L)
   def appStartTime: Long = _appStartTime
+
+  private lazy val _submitTime = if (_appStartTime > 0) _appStartTime else System.currentTimeMillis
 
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
