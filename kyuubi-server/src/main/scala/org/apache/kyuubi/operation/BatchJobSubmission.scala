@@ -266,7 +266,9 @@ class BatchJobSubmission(
         while (applicationId(_applicationInfo).isEmpty &&
           !applicationTerminated(_applicationInfo)) {
           updateApplicationInfoMetadataIfNeeded()
-          Thread.sleep(applicationCheckInterval)
+          if (applicationId(_applicationInfo).isEmpty && !applicationTerminated(_applicationInfo)) {
+            Thread.sleep(applicationCheckInterval)
+          }
         }
 
         applicationId(_applicationInfo) match {
