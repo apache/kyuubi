@@ -39,6 +39,10 @@ import org.apache.kyuubi.reflection.DynMethods
 
 object SparkDatasetHelper extends Logging {
 
+  private lazy val commandResultExecRowsMethod = DynMethods.builder("rows")
+    .impl("org.apache.spark.sql.execution.CommandResultExec")
+    .build()
+
   def executeCollect(df: DataFrame): Array[Array[Byte]] = withNewExecutionId(df) {
     executeArrowBatchCollect(df.queryExecution.executedPlan)
   }
@@ -186,7 +190,7 @@ object SparkDatasetHelper extends Logging {
     result.toArray
   }
 
-  def doCommandResultExec(command: SparkPlan): Array[Array[Byte]] = {
+  private def doCommandResultExec(command: SparkPlan): Array[Array[Byte]] = {
     val spark = SparkSession.active
     // TODO: replace with `command.rows` once we drop Spark 3.1 support.
     val rows = commandResultExecRowsMethod.invoke[Seq[InternalRow]](command)
@@ -201,7 +205,7 @@ object SparkDatasetHelper extends Logging {
       spark.sessionState.conf.sessionLocalTimeZone).toArray
   }
 
-  def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
+  private def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
     val spark = SparkSession.active
     localTableScan.longMetric("numOutputRows").add(localTableScan.rows.size)
     sendDriverMetrics(spark.sparkContext, localTableScan.metrics)
@@ -275,10 +279,6 @@ object SparkDatasetHelper extends Logging {
     // scalastyle:on line.size.limit
     sparkPlan.getClass.getName == "org.apache.spark.sql.execution.CommandResultExec"
   }
-
-  private lazy val commandResultExecRowsMethod = DynMethods.builder("rows")
-    .impl("org.apache.spark.sql.execution.CommandResultExec")
-    .build()
 
   /**
    * refer to org.apache.spark.sql.Dataset#withAction(), assign a new execution id for arrow-based
