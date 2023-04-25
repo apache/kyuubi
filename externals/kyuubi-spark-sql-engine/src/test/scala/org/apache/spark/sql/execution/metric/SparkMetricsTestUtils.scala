@@ -28,12 +28,12 @@ trait SparkMetricsTestUtils {
   this: WithSparkSQLEngine =>
 
   private lazy val statusStore = spark.sharedState.statusStore
-  protected def currentExecutionIds(): Set[Long] = {
+  private def currentExecutionIds(): Set[Long] = {
     spark.sparkContext.listenerBus.waitUntilEmpty(10000)
     statusStore.executionsList.map(_.executionId).toSet
   }
 
-  def getSparkPlanMetrics(df: DataFrame): Map[Long, (String, Map[String, Any])] = {
+  protected def getSparkPlanMetrics(df: DataFrame): Map[Long, (String, Map[String, Any])] = {
     val previousExecutionIds = currentExecutionIds()
     SparkDatasetHelper.executeCollect(df)
     spark.sparkContext.listenerBus.waitUntilEmpty(10000)
