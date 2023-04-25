@@ -739,6 +739,23 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
     }
   }
 
+  test("execute statement - select timestamp with local time zone") {
+    withJdbcStatement() { statement =>
+      statement.executeQuery("CREATE VIEW T1 AS SELECT TO_TIMESTAMP_LTZ(4001, 3)")
+      statement.executeQuery("SET 'table.local-time-zone' = 'UTC'")
+      val resultSetUTC = statement.executeQuery("SELECT * FROM T1")
+      val metaData = resultSetUTC.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.OTHER)
+      assert(resultSetUTC.next())
+      assert(resultSetUTC.getString(1) === "1970-01-01 00:00:04.001 UTC")
+
+      statement.executeQuery("SET 'table.local-time-zone' = 'America/Los_Angeles'")
+      val resultSetPST = statement.executeQuery("SELECT * FROM T1")
+      assert(resultSetPST.next())
+      assert(resultSetPST.getString(1) === "1969-12-31 16:00:04.001 America/Los_Angeles")
+    }
+  }
+
   test("execute statement - select time") {
     withJdbcStatement() { statement =>
       val resultSet =
