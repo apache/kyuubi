@@ -39,10 +39,6 @@ import org.apache.kyuubi.reflection.DynMethods
 
 object SparkDatasetHelper extends Logging {
 
-  private lazy val commandResultExecRowsMethod = DynMethods.builder("rows")
-    .impl("org.apache.spark.sql.execution.CommandResultExec")
-    .build()
-
   def executeCollect(df: DataFrame): Array[Array[Byte]] = withNewExecutionId(df) {
     executeArrowBatchCollect(df.queryExecution.executedPlan)
   }
@@ -189,6 +185,10 @@ object SparkDatasetHelper extends Logging {
     }
     result.toArray
   }
+
+  private lazy val commandResultExecRowsMethod = DynMethods.builder("rows")
+    .impl("org.apache.spark.sql.execution.CommandResultExec")
+    .build()
 
   private def doCommandResultExec(command: SparkPlan): Array[Array[Byte]] = {
     val spark = SparkSession.active
