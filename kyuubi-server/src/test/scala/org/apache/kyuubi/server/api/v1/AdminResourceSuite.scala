@@ -20,6 +20,7 @@ package org.apache.kyuubi.server.api.v1
 import java.util.{Base64, UUID}
 import javax.ws.rs.core.{GenericType, MediaType}
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, RestFrontendTestHelper, Utils}
@@ -166,9 +167,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
-      fe.asInstanceOf[KyuubiRestFrontendService].sessionManager.groupProvider.primaryGroup(
-        Utils.currentUser,
-        null),
+      UserGroupInformation.getCurrentUser.getPrimaryGroupName,
       "default")
 
     withDiscoveryClient(conf) { client =>
@@ -177,6 +176,11 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
+      val adminUser = Utils.currentUser
+      val encodeAuthorization = new String(
+        Base64.getEncoder.encode(
+          s"$adminUser:".getBytes()),
+        "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("sharelevel", "GROUP")
         .queryParam("type", "spark_sql")
@@ -300,9 +304,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
-      fe.asInstanceOf[KyuubiRestFrontendService].sessionManager.groupProvider.primaryGroup(
-        Utils.currentUser,
-        null),
+      UserGroupInformation.getCurrentUser.getPrimaryGroupName,
       "")
 
     withDiscoveryClient(conf) { client =>
@@ -311,6 +313,10 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
+      val encodeAuthorization = new String(
+        Base64.getEncoder.encode(
+          s"${Utils.currentUser}:".getBytes()),
+        "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("type", "spark_sql")
         .request(MediaType.APPLICATION_JSON_TYPE)
