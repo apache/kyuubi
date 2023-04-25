@@ -255,7 +255,7 @@ class BatchJobSubmission(
 
       if (applicationFailed(_applicationInfo)) {
         process.destroyForcibly()
-        throw new RuntimeException(s"Batch job failed: ${_applicationInfo}")
+        throw new KyuubiException(s"Batch job failed: ${_applicationInfo}")
       } else {
         process.waitFor()
         if (process.exitValue() != 0) {
@@ -271,8 +271,7 @@ class BatchJobSubmission(
         applicationId(_applicationInfo) match {
           case Some(appId) => monitorBatchJob(appId)
           case None if !appStarted =>
-            throw new RuntimeException(
-              s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+            throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
           case None =>
         }
       }
@@ -293,7 +292,7 @@ class BatchJobSubmission(
     if (_applicationInfo.isEmpty) {
       info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
     } else if (applicationFailed(_applicationInfo)) {
-      throw new RuntimeException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+      throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
     } else {
       updateBatchMetadata()
       // TODO: add limit for max batch job submission lifetime
@@ -303,7 +302,7 @@ class BatchJobSubmission(
       }
 
       if (applicationFailed(_applicationInfo)) {
-        throw new RuntimeException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+        throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
       }
     }
   }
