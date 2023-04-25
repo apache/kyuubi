@@ -78,6 +78,7 @@ class BatchJobSubmission(
 
   @volatile private var _appStartTime = recoveryMetadata.map(_.engineOpenTime).getOrElse(0L)
   def appStartTime: Long = _appStartTime
+  def appStarted: Boolean = _appStartTime > 0
 
   private lazy val _submitTime = if (_appStartTime > 0) _appStartTime else System.currentTimeMillis
   @volatile private var _submitApplication: Boolean = false
@@ -207,7 +208,7 @@ class BatchJobSubmission(
             submitAndMonitorBatchJob()
           }
 
-          if (_submitApplication && _applicationInfo == Some(ApplicationInfo.NOT_FOUND)) {
+          if (_submitApplication && !appStarted) {
             setStateIfNotCanceled(OperationState.ERROR)
           } else {
             setStateIfNotCanceled(OperationState.FINISHED)
