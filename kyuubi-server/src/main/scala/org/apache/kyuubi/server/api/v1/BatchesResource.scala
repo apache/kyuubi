@@ -297,7 +297,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
               val batchAppStatus = sessionManager.applicationManager.getApplicationInfo(
                 metadata.clusterManager,
                 batchId,
-                None)
+                // prevent that the batch be marked as terminated if application state is NOT_FOUND
+                Some(System.currentTimeMillis()))
               buildBatch(metadata, batchAppStatus)
           }
         }
