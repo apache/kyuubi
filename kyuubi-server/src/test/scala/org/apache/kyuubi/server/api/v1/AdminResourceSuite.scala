@@ -32,6 +32,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.plugin.PluginLoader
+import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -177,6 +178,12 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
+      val adminUser = Utils.currentUser
+      val encodeAuthorization = new String(
+        Base64.getEncoder.encode(
+          s"$adminUser:".getBytes()),
+        "UTF-8")
+
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("sharelevel", "GROUP")
         .queryParam("type", "spark_sql")
@@ -310,6 +317,12 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
+
+      val adminUser = Utils.currentUser
+      val encodeAuthorization = new String(
+        Base64.getEncoder.encode(
+          s"$adminUser:".getBytes()),
+        "UTF-8")
 
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("type", "spark_sql")
