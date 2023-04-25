@@ -90,3 +90,4 @@ The `fast` profile helps to significantly reduce build time, which is useful for
 ```bash
 build/mvn clean package -Pfast
 ```
+
