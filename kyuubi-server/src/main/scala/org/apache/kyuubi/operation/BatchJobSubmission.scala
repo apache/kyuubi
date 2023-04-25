@@ -139,21 +139,20 @@ class BatchJobSubmission(
 
     if (isTerminalState(state)) {
       if (_applicationInfo.isEmpty) {
-        _applicationInfo =
-          Option(ApplicationInfo(id = null, name = null, state = ApplicationState.NOT_FOUND))
+        _applicationInfo = Some(ApplicationInfo.NOT_FOUND)
       }
     }
 
-    _applicationInfo.foreach { status =>
+    _applicationInfo.foreach { appInfo =>
       val metadataToUpdate = Metadata(
         identifier = batchId,
         state = state.toString,
         engineOpenTime = appStartTime,
-        engineId = status.id,
-        engineName = status.name,
-        engineUrl = status.url.orNull,
-        engineState = status.state.toString,
-        engineError = status.error,
+        engineId = appInfo.id,
+        engineName = appInfo.name,
+        engineUrl = appInfo.url.orNull,
+        engineState = appInfo.state.toString,
+        engineError = appInfo.error,
         endTime = endTime)
       session.sessionManager.updateMetadata(metadataToUpdate)
     }
