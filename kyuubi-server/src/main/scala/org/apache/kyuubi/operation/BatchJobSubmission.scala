@@ -80,7 +80,7 @@ class BatchJobSubmission(
   def appStartTime: Long = _appStartTime
   def appStarted: Boolean = _appStartTime > 0
 
-  private lazy val _submitTime = if (_appStartTime > 0) _appStartTime else System.currentTimeMillis
+  private lazy val _submitTime = if (appStarted) _appStartTime else System.currentTimeMillis
 
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
