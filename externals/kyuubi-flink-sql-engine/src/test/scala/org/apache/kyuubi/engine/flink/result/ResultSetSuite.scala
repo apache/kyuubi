@@ -46,9 +46,10 @@ class ResultSetSuite extends KyuubiFunSuite {
       .data(rowsNew)
       .build
 
-    assert(RowSet.toRowBaseSet(rowsNew, resultSetNew, ZoneId.systemDefault())
-      === RowSet.toRowBaseSet(rowsOld, resultSetOld, ZoneId.systemDefault()))
-    assert(RowSet.toColumnBasedSet(rowsNew, resultSetNew, ZoneId.systemDefault())
-      === RowSet.toColumnBasedSet(rowsOld, resultSetOld, ZoneId.systemDefault()))
+    val timeZone = ZoneId.of("America/Los_Angeles")
+    assert(RowSet.toRowBaseSet(rowsNew, resultSetNew, timeZone)
+      === RowSet.toRowBaseSet(rowsOld, resultSetOld, timeZone))
+    assert(RowSet.toColumnBasedSet(rowsNew, resultSetNew, timeZone)
+      === RowSet.toColumnBasedSet(rowsOld, resultSetOld, timeZone))
   }
 }
