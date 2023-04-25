@@ -205,7 +205,6 @@ class BatchJobSubmission(
           }.getOrElse {
             submitAndMonitorBatchJob()
           }
-
           setStateIfNotCanceled(OperationState.FINISHED)
         }
       } catch {
@@ -273,9 +272,10 @@ class BatchJobSubmission(
 
         applicationId(_applicationInfo) match {
           case Some(appId) => monitorBatchJob(appId)
-          case None =>
+          case None if _appStartTime == 0 =>
             throw new RuntimeException(
               s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+          case _ =>
         }
       }
     } finally {
