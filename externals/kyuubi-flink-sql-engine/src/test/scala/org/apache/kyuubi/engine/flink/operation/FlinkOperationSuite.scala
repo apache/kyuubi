@@ -750,9 +750,9 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       assert(resultSetUTC.getString(1) === "1970-01-01 00:00:04.001 UTC")
 
       statement.executeQuery("SET 'table.local-time-zone' = 'America/Los_Angeles'")
-      val resultSetUTCPlus8 = statement.executeQuery("SELECT * FROM T1")
-      assert(resultSetUTCPlus8.next())
-      assert(resultSetUTCPlus8.getString(1) === "1969-12-31 16:00:04.001 America/Los_Angeles")
+      val resultSetPST = statement.executeQuery("SELECT * FROM T1")
+      assert(resultSetPST.next())
+      assert(resultSetPST.getString(1) === "1969-12-31 16:00:04.001 America/Los_Angeles")
     }
   }
 
