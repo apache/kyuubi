@@ -19,6 +19,7 @@ package org.apache.spark.sql.kyuubi
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.SparkContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
@@ -28,6 +29,7 @@ import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, Spa
 import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
+import org.apache.spark.sql.execution.metric.{SQLMetric, SQLMetrics}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
@@ -184,26 +186,36 @@ object SparkDatasetHelper extends Logging {
     result.toArray
   }
 
-  def doCommandResultExec(command: SparkPlan): Array[Array[Byte]] = {
+  private lazy val commandResultExecRowsMethod = DynMethods.builder("rows")
+    .impl("org.apache.spark.sql.execution.CommandResultExec")
+    .build()
+
+  private def doCommandResultExec(command: SparkPlan): Array[Array[Byte]] = {
+    val spark = SparkSession.active
+    // TODO: replace with `command.rows` once we drop Spark 3.1 support.
+    val rows = commandResultExecRowsMethod.invoke[Seq[InternalRow]](command)
+    command.longMetric("numOutputRows").add(rows.size)
+    sendDriverMetrics(spark.sparkContext, command.metrics)
     KyuubiArrowConverters.toBatchIterator(
-      // TODO: replace with `command.rows.iterator` once we drop Spark 3.1 support.
-      commandResultExecRowsMethod.invoke[Seq[InternalRow]](command).iterator,
+      rows.iterator,
       command.schema,
-      SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch,
+      spark.sessionState.conf.arrowMaxRecordsPerBatch,
       maxBatchSize,
       -1,
-      SparkSession.active.sessionState.conf.sessionLocalTimeZone).toArray
+      spark.sessionState.conf.sessionLocalTimeZone).toArray
   }
 
-  def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
+  private def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
+    val spark = SparkSession.active
     localTableScan.longMetric("numOutputRows").add(localTableScan.rows.size)
+    sendDriverMetrics(spark.sparkContext, localTableScan.metrics)
     KyuubiArrowConverters.toBatchIterator(
       localTableScan.rows.iterator,
       localTableScan.schema,
-      SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch,
+      spark.sessionState.conf.arrowMaxRecordsPerBatch,
       maxBatchSize,
       -1,
-      SparkSession.active.sessionState.conf.sessionLocalTimeZone).toArray
+      spark.sessionState.conf.sessionLocalTimeZone).toArray
   }
 
   /**
@@ -268,10 +280,6 @@ object SparkDatasetHelper extends Logging {
     sparkPlan.getClass.getName == "org.apache.spark.sql.execution.CommandResultExec"
   }
 
-  private lazy val commandResultExecRowsMethod = DynMethods.builder("rows")
-    .impl("org.apache.spark.sql.execution.CommandResultExec")
-    .build()
-
   /**
    * refer to org.apache.spark.sql.Dataset#withAction(), assign a new execution id for arrow-based
    * operation, so that we can track the arrow-based queries on the UI tab.
@@ -281,5 +289,10 @@ object SparkDatasetHelper extends Logging {
       df.queryExecution.executedPlan.resetMetrics()
       body
     }
+  }
+
+  private def sendDriverMetrics(sc: SparkContext, metrics: Map[String, SQLMetric]): Unit = {
+    val executionId = sc.getLocalProperty(SQLExecution.EXECUTION_ID_KEY)
+    SQLMetrics.postDriverMetricUpdates(sc, executionId, metrics.values.toSeq)
   }
 }
