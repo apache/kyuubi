@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.nio.file.Paths
 import java.sql.DatabaseMetaData
 import java.util.UUID
 
@@ -33,6 +34,7 @@ import org.apache.kyuubi.engine.flink.{FlinkEngineUtils, WithFlinkTestResources}
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
+import org.apache.kyuubi.jdbc.hive.common.TimestampTZ
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
@@ -994,7 +996,14 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       assert(metadata.getColumnName(1) === "job id")
       assert(metadata.getColumnType(1) === java.sql.Types.VARCHAR)
       assert(resultSet.next())
-      assert(resultSet.getString(1).length == 32)
+      val jobId = resultSet.getString(1)
+      assert(jobId.length == 32)
+
+      if (FlinkEngineUtils.isFlinkVersionAtLeast("1.17")) {
+        val stopResult = statement.executeQuery(s"stop job '$jobId'")
+        assert(stopResult.next())
+        assert(stopResult.getString(1) === "OK")
+      }
     })
   }
 
@@ -1182,6 +1191,55 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
         assert(queryId !== null)
         // parse the string to check if it's valid Flink job id
         assert(JobID.fromHexString(queryId) !== null)
+      }
+    }
+  }
+
+  test("execute statement - show/stop jobs") {
+    if (FlinkEngineUtils.isFlinkVersionAtLeast("1.17")) {
+      withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "10"))(Map.empty) {
+        withMultipleConnectionJdbcStatement()({ statement =>
+          statement.executeQuery(
+            "create table tbl_a (a int) with (" +
+              "'connector' = 'datagen', " +
+              "'rows-per-second'='10')")
+          statement.executeQuery("create table tbl_b (a int) with ('connector' = 'blackhole')")
+          val insertResult1 = statement.executeQuery("insert into tbl_b select * from tbl_a")
+          assert(insertResult1.next())
+          val jobId1 = insertResult1.getString(1)
+
+          val showResult = statement.executeQuery("show jobs")
+          val metadata = showResult.getMetaData
+          assert(metadata.getColumnName(1) === "job id")
+          assert(metadata.getColumnType(1) === java.sql.Types.VARCHAR)
+          assert(metadata.getColumnName(2) === "job name")
+          assert(metadata.getColumnType(2) === java.sql.Types.VARCHAR)
+          assert(metadata.getColumnName(3) === "status")
+          assert(metadata.getColumnType(3) === java.sql.Types.VARCHAR)
+          assert(metadata.getColumnName(4) === "start time")
+          assert(metadata.getColumnType(4) === java.sql.Types.OTHER)
+
+          assert(showResult.next())
+          assert(showResult.getString(1) === jobId1)
+          assert(showResult.getString(2) === "test-job")
+          assert(showResult.getString(3) === "RUNNING")
+          assert(showResult.getObject(4).isInstanceOf[TimestampTZ])
+
+          val stopResult1 = statement.executeQuery(s"stop job '$jobId1'")
+          assert(stopResult1.next())
+          assert(stopResult1.getString(1) === "OK")
+
+          val selectResult = statement.executeQuery("select * from tbl_a")
+          val jobId2 = statement.asInstanceOf[KyuubiStatement].getQueryId
+          assert(jobId2 !== null)
+          while (!selectResult.next()) {
+            Thread.sleep(1000L)
+          }
+          val stopResult2 = statement.executeQuery(s"stop job '$jobId2' with savepoint")
+          assert(stopResult2.getMetaData.getColumnName(1).equals("savepoint path"))
+          assert(stopResult2.next())
+          assert(Paths.get(stopResult2.getString(1)).getFileName.toString.startsWith("savepoint-"))
+        })
       }
     }
   }
