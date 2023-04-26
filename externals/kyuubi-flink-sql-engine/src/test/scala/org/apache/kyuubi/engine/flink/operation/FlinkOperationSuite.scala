@@ -1219,11 +1219,16 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
           assert(metadata.getColumnName(4) === "start time")
           assert(metadata.getColumnType(4) === java.sql.Types.OTHER)
 
-          assert(showResult.next())
-          assert(showResult.getString(1) === jobId1)
-          assert(showResult.getString(2) === "test-job")
-          assert(showResult.getString(3) === "RUNNING")
-          assert(showResult.getObject(4).isInstanceOf[TimestampTZ])
+          var isFound = false
+          while (showResult.next()) {
+            if (showResult.getString(1) === jobId1) {
+              isFound = true
+              assert(showResult.getString(2) === "test-job")
+              assert(showResult.getString(3) === "RUNNING")
+              assert(showResult.getObject(4).isInstanceOf[TimestampTZ])
+            }
+          }
+          assert(isFound)
 
           val stopResult1 = statement.executeQuery(s"stop job '$jobId1'")
           assert(stopResult1.next())
