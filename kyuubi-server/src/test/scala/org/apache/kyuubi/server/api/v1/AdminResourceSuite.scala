@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
 import javax.ws.rs.core.{GenericType, MediaType}
 
@@ -32,11 +33,16 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.plugin.PluginLoader
+import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   private val engineMgr = new KyuubiApplicationManager()
+
+  val encodeAuthorization = new String(
+    Base64.getEncoder.encode(s"${Utils.currentUser}:".getBytes()),
+    StandardCharsets.UTF_8)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -55,11 +61,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(null)
     assert(405 == response.getStatus)
 
-    val adminUser = Utils.currentUser
-    val encodeAuthorization = new String(
-      Base64.getEncoder.encode(
-        s"$adminUser:".getBytes()),
-      "UTF-8")
     response = webTarget.path("api/v1/admin/refresh/hadoop_conf")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
@@ -73,11 +74,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(null)
     assert(405 == response.getStatus)
 
-    val adminUser = Utils.currentUser
-    val encodeAuthorization = new String(
-      Base64.getEncoder.encode(
-        s"$adminUser:".getBytes()),
-      "UTF-8")
     response = webTarget.path("api/v1/admin/refresh/user_defaults_conf")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
@@ -91,11 +87,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(null)
     assert(405 == response.getStatus)
 
-    val adminUser = Utils.currentUser
-    val encodeAuthorization = new String(
-      Base64.getEncoder.encode(
-        s"$adminUser:".getBytes()),
-      "UTF-8")
     response = webTarget.path("api/v1/admin/refresh/unlimited_users")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
@@ -126,11 +117,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
-      val adminUser = Utils.currentUser
-      val encodeAuthorization = new String(
-        Base64.getEncoder.encode(
-          s"$adminUser:".getBytes()),
-        "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("sharelevel", "USER")
         .queryParam("type", "spark_sql")
@@ -220,11 +206,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
-      val adminUser = Utils.currentUser
-      val encodeAuthorization = new String(
-        Base64.getEncoder.encode(
-          s"$adminUser:".getBytes()),
-        "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("sharelevel", "connection")
         .queryParam("type", "spark_sql")
@@ -260,11 +241,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
-      val adminUser = Utils.currentUser
-      val encodeAuthorization = new String(
-        Base64.getEncoder.encode(
-          s"$adminUser:".getBytes()),
-        "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("type", "spark_sql")
         .request(MediaType.APPLICATION_JSON_TYPE)
@@ -370,11 +346,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace1))
       assert(client.pathExists(engineSpace2))
 
-      val adminUser = Utils.currentUser
-      val encodeAuthorization = new String(
-        Base64.getEncoder.encode(
-          s"$adminUser:".getBytes()),
-        "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("type", "spark_sql")
         .request(MediaType.APPLICATION_JSON_TYPE)
