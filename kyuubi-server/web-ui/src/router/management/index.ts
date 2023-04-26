@@ -17,24 +17,24 @@
 
 const router = [
   {
-    path: '/management/engine-statistics',
-    name: 'engine-statistics',
-    component: () => import('@/views/management/engine-statistics/index.vue')
+    path: '/management/engine',
+    name: 'engine',
+    component: () => import('@/views/management/engine/index.vue')
   },
   {
-    path: '/management/server-statistics',
-    name: 'server-statistics',
-    component: () => import('@/views/management/server-statistics/index.vue')
+    path: '/management/server',
+    name: 'server',
+    component: () => import('@/views/management/server/index.vue')
   },
   {
-    path: '/management/session-statistics',
-    name: 'session-statistics',
-    component: () => import('@/views/management/session-statistics/index.vue')
+    path: '/management/session',
+    name: 'session',
+    component: () => import('@/views/management/session/index.vue')
   },
   {
-    path: '/management/operation-statistics',
-    name: 'operation-statistics',
-    component: () => import('@/views/management/operation-statistics/index.vue')
+    path: '/management/operation',
+    name: 'operation',
+    component: () => import('@/views/management/operation/index.vue')
   }
 ]
 

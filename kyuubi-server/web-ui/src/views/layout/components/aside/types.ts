@@ -26,20 +26,20 @@ export const MENUS = [
     icon: 'List',
     children: [
       {
-        label: 'Session Statistics',
-        router: '/management/session-statistics'
+        label: 'Session',
+        router: '/management/session'
       },
       {
-        label: 'Operation Statistics',
-        router: '/management/operation-statistics'
+        label: 'Operation',
+        router: '/management/operation'
       },
       {
-        label: 'Engine Statistics',
-        router: '/management/engine-statistics'
+        label: 'Engine',
+        router: '/management/engine'
       },
       {
-        label: 'Server Statistics',
-        router: '/management/server-statistics'
+        label: 'Server',
+        router: '/management/server'
       }
     ]
   },
