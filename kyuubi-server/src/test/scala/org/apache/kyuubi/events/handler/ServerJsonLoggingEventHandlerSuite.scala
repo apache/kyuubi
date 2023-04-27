@@ -198,7 +198,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
     server.initialize(conf)
     server.start()
     server.stop()
-    ServerEventHandlerRegister.registerEventLoggers(conf)   // register event loggers again
+    ServerEventHandlerRegister.registerEventLoggers(conf) // register event loggers again
 
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val kyuubiServerInfoPath =
