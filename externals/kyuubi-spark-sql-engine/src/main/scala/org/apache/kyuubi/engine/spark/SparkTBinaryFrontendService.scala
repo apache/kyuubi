@@ -27,6 +27,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
@@ -94,7 +95,15 @@ class SparkTBinaryFrontendService(
   }
 
   override def attributes: Map[String, String] = {
-    Map(KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId)
+    val extraAttributes = conf.get(KyuubiConf.ENGINE_SPARK_REGISTER_ATTRIBUTES).map { attr =>
+      attr -> KyuubiSparkUtil.globalSparkContext.getConf.get(attr, "")
+    }.toMap
+    val attributes = extraAttributes ++ Map(KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId)
+    // TODO Support Spark Web UI Enabled SSL
+    sc.uiWebUrl match {
+      case Some(url) => attributes ++ Map(KYUUBI_ENGINE_URL -> url.split("//").last)
+      case None => attributes
+    }
   }
 }
 

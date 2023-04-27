@@ -297,4 +297,25 @@ class OperationLogSuite extends KyuubiFunSuite {
       Utils.deleteDirectoryRecursively(extraFile.toFile)
     }
   }
+
+  test("Closing the unwritten operation log should not throw an exception") {
+    val sessionManager = new NoopSessionManager
+    sessionManager.initialize(KyuubiConf())
+    val sHandle = sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      Map.empty)
+    val session = sessionManager.getSession(sHandle)
+    OperationLog.createOperationLogRootDirectory(session)
+    val oHandle = OperationHandle()
+
+    val log = OperationLog.createOperationLog(session, oHandle)
+    val tRowSet = log.read(1)
+    assert(tRowSet == ThriftUtils.newEmptyRowSet)
+    // close the operation log without writing
+    log.close()
+    session.close()
+  }
 }

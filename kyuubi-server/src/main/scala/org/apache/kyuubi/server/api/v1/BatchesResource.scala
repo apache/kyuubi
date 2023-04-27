@@ -19,13 +19,14 @@ package org.apache.kyuubi.server.api.v1
 
 import java.io.InputStream
 import java.util
-import java.util.{Collections, Locale}
+import java.util.{Collections, Locale, UUID}
 import java.util.concurrent.ConcurrentHashMap
 import javax.ws.rs._
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response.Status
 
 import scala.collection.JavaConverters._
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
@@ -36,6 +37,7 @@ import org.glassfish.jersey.media.multipart.{FormDataContentDisposition, FormDat
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.engine.{ApplicationInfo, KyuubiApplicationManager}
@@ -45,6 +47,7 @@ import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle}
+import org.apache.kyuubi.util.JdbcUtils
 
 @Tag(name = "Batch")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -71,7 +74,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
     val batchOp = session.batchJobSubmissionOp
     val batchOpStatus = batchOp.getStatus
-    val batchAppStatus = batchOp.getOrFetchCurrentApplicationInfo
+    val batchAppStatus = batchOp.getApplicationInfo
 
     val name = Option(batchOp.batchName).getOrElse(batchAppStatus.map(_.name).orNull)
     var appId: String = null
@@ -105,7 +108,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       session.connectionUrl,
       batchOpStatus.state.toString,
       session.createTime,
-      batchOpStatus.completed)
+      batchOpStatus.completed,
+      Map.empty[String, String].asJava)
   }
 
   private def buildBatch(
@@ -142,7 +146,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         metadata.kyuubiInstance,
         currentBatchState,
         metadata.createTime,
-        metadata.endTime)
+        metadata.endTime,
+        Map.empty[String, String].asJava)
     }.getOrElse(MetadataManager.buildBatch(metadata))
   }
 
@@ -180,6 +185,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @FormDataParam("resourceFile") resourceFileInputStream: InputStream,
       @FormDataParam("resourceFile") resourceFileMetadata: FormDataContentDisposition): Batch = {
     require(
+      fe.getConf.get(KyuubiConf.BATCH_RESOURCE_UPLOAD_ENABLED),
+      "Batch resource upload function is not enabled.")
+    require(
       batchRequest != null,
       "batchRequest is required and please check the content type" +
         " of batchRequest is application/json")
@@ -210,22 +218,55 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
     request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
 
-    val userName = fe.getSessionUser(request.getConf.asScala.toMap)
-    val ipAddress = fe.getIpAddress
-    request.setConf(
-      (request.getConf.asScala ++ Map(
-        KYUUBI_BATCH_RESOURCE_UPLOADED_KEY -> isResourceFromUpload.toString,
-        KYUUBI_CLIENT_IP_KEY -> ipAddress,
-        KYUUBI_SERVER_IP_KEY -> fe.host,
-        KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
-        KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
-    val sessionHandle = sessionManager.openBatchSession(
-      userName,
-      "anonymous",
-      ipAddress,
-      request.getConf.asScala.toMap,
-      request)
-    buildBatch(sessionManager.getBatchSessionImpl(sessionHandle))
+    val userProvidedBatchId = request.getConf.asScala.get(KYUUBI_BATCH_ID_KEY)
+    userProvidedBatchId.foreach { batchId =>
+      try UUID.fromString(batchId)
+      catch {
+        case NonFatal(e) =>
+          throw new IllegalArgumentException(s"$KYUUBI_BATCH_ID_KEY=$batchId must be an UUID", e)
+      }
+    }
+
+    userProvidedBatchId.flatMap { batchId =>
+      Option(sessionManager.getBatchFromMetadataStore(batchId))
+    } match {
+      case Some(batch) =>
+        markDuplicated(batch)
+      case None =>
+        val userName = fe.getSessionUser(request.getConf.asScala.toMap)
+        val ipAddress = fe.getIpAddress
+        val batchId = userProvidedBatchId.getOrElse(UUID.randomUUID().toString)
+        request.setConf(
+          (request.getConf.asScala ++ Map(
+            KYUUBI_BATCH_ID_KEY -> batchId,
+            KYUUBI_BATCH_RESOURCE_UPLOADED_KEY -> isResourceFromUpload.toString,
+            KYUUBI_CLIENT_IP_KEY -> ipAddress,
+            KYUUBI_SERVER_IP_KEY -> fe.host,
+            KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
+            KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
+
+        Try {
+          sessionManager.openBatchSession(
+            userName,
+            "anonymous",
+            ipAddress,
+            request.getConf.asScala.toMap,
+            request)
+        } match {
+          case Success(sessionHandle) =>
+            buildBatch(sessionManager.getBatchSessionImpl(sessionHandle))
+          case Failure(cause) if JdbcUtils.isDuplicatedKeyDBErr(cause) =>
+            val batch = sessionManager.getBatchFromMetadataStore(batchId)
+            assert(batch != null, s"can not find duplicated batch $batchId from metadata store")
+            markDuplicated(batch)
+        }
+    }
+  }
+
+  private def markDuplicated(batch: Batch): Batch = {
+    warn(s"duplicated submission: ${batch.getId}, ignore and return the existing batch.")
+    batch.setBatchInfo(Map(KYUUBI_BATCH_DUPLICATED_KEY -> "true").asJava)
+    batch
   }
 
   @ApiResponse(
@@ -255,7 +296,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
               error(s"Error redirecting get batch[$batchId] to ${metadata.kyuubiInstance}", e)
               val batchAppStatus = sessionManager.applicationManager.getApplicationInfo(
                 metadata.clusterManager,
-                batchId)
+                batchId,
+                // prevent that the batch be marked as terminated if application state is NOT_FOUND
+                Some(metadata.engineOpenTime).filter(_ > 0).orElse(Some(System.currentTimeMillis)))
               buildBatch(metadata, batchAppStatus)
           }
         }

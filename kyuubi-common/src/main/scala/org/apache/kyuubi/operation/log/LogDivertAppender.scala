@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation.log
 
-import org.slf4j.impl.StaticLoggerBinder
+import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.Logging
 
@@ -30,9 +30,8 @@ object LogDivertAppender extends Logging {
         Log4j12DivertAppender.initialize()
       } else {
         warn(s"Unsupported SLF4J binding" +
-          s" ${StaticLoggerBinder.getSingleton.getLoggerFactoryClassStr}")
+          s" ${LoggerFactory.getILoggerFactory.getClass.getName}")
       }
     }
-
   }
 }

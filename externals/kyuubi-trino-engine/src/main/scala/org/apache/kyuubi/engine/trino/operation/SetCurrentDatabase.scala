@@ -19,10 +19,15 @@ package org.apache.kyuubi.engine.trino.operation
 
 import io.trino.client.ClientSession
 
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 class SetCurrentDatabase(session: Session, database: String)
   extends TrinoOperation(session) {
+
+  private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
+
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def runInternal(): Unit = {
     try {

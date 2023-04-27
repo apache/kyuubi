@@ -33,7 +33,7 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     }
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
 
-  override protected def currentApplicationInfo: Option[ApplicationInfo] = {
+  override protected def currentApplicationInfo(): Option[ApplicationInfo] = {
     Option(client).map { cli =>
       ApplicationInfo(
         cli.engineId.orNull,
@@ -68,4 +68,9 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
 
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
+
+  override protected def applicationInfoMap: Option[Map[String, String]] = {
+    super.applicationInfoMap.map { _ + ("refId" -> session.engine.getEngineRefId()) }
+  }
+
 }

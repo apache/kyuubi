@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.{Filter, LogEvent, StringLayout}
-import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAppender, WriterManager}
+import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAppender, RollingFileAppender, WriterManager}
 import org.apache.logging.log4j.core.filter.AbstractFilter
 import org.apache.logging.log4j.core.layout.PatternLayout
 
@@ -91,7 +91,9 @@ object Log4j2DivertAppender {
   def initLayout(): StringLayout = {
     LogManager.getRootLogger.asInstanceOf[org.apache.logging.log4j.core.Logger]
       .getAppenders.values().asScala
-      .find(ap => ap.isInstanceOf[ConsoleAppender] && ap.getLayout.isInstanceOf[StringLayout])
+      .find(ap =>
+        (ap.isInstanceOf[ConsoleAppender] || ap.isInstanceOf[RollingFileAppender]) &&
+          ap.getLayout.isInstanceOf[StringLayout])
       .map(_.getLayout.asInstanceOf[StringLayout])
       .getOrElse(PatternLayout.newBuilder().withPattern(
         "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n").build())

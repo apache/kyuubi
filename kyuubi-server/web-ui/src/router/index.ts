@@ -20,6 +20,9 @@ import overviewRoutes from './overview'
 import workloadRoutes from './workload'
 import operationRoutes from './operation'
 import contactRoutes from './contact'
+import sessionRoutes from './session'
+import engineRoutes from './engine'
+import serverRoutes from './server'
 
 const routes = [
   {
@@ -36,8 +39,11 @@ const routes = [
     redirect: 'overview',
     children: [
       ...overviewRoutes,
+      ...sessionRoutes,
       ...workloadRoutes,
       ...operationRoutes,
+      ...engineRoutes,
+      ...serverRoutes,
       ...contactRoutes
     ]
   }

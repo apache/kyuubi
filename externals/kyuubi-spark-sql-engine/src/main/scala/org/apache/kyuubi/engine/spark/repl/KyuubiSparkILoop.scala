@@ -29,6 +29,8 @@ import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
 
+import org.apache.kyuubi.Utils
+
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
     output: ByteArrayOutputStream)
@@ -124,10 +126,5 @@ private[spark] object KyuubiSparkILoop {
   }
 
   private val lock = new ReentrantLock()
-  private def withLockRequired[T](block: => T): T = {
-    try {
-      lock.lock()
-      block
-    } finally lock.unlock()
-  }
+  private def withLockRequired[T](block: => T): T = Utils.withLockRequired(lock)(block)
 }

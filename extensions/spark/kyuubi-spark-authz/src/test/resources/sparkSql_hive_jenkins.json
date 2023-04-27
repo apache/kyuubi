@@ -1,1614 +1,1353 @@
 {
-  "serviceName": "hive_jenkins",
-  "serviceId": 1,
-  "policyVersion": 85,
-  "policyUpdateTime": "20190429-21:36:09.000-+0800",
-  "policies": [
-    {
-      "service": "hive_jenkins",
-      "name": "all - url",
-      "policyType": 0,
-      "policyPriority": 0,
-      "description": "Policy for all - url",
-      "isAuditEnabled": true,
-      "resources": {
-        "url": {
-          "values": [
-            "*"
-          ],
-          "isExcludes": false,
-          "isRecursive": true
-        }
-      },
-      "policyItems": [
-        {
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            },
-            {
-              "type": "update",
-              "isAllowed": true
-            },
-            {
-              "type": "create",
-              "isAllowed": true
-            },
-            {
-              "type": "drop",
-              "isAllowed": true
-            },
-            {
-              "type": "alter",
-              "isAllowed": true
-            },
-            {
-              "type": "index",
-              "isAllowed": true
-            },
-            {
-              "type": "lock",
-              "isAllowed": true
-            },
-            {
-              "type": "all",
-              "isAllowed": true
-            },
-            {
-              "type": "read",
-              "isAllowed": true
-            },
-            {
-              "type": "write",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "admin"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": true
-        }
-      ],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [],
-      "id": 1,
-      "guid": "cf7e6725-492f-434f-bffe-6bb4e3147246",
-      "isEnabled": true,
-      "version": 1
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "all - database, table, column",
-      "policyType": 0,
-      "policyPriority": 0,
-      "description": "Policy for all - database, table, column",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "*"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "column": {
-          "values": [
-            "*"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "*"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [
-        {
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            },
-            {
-              "type": "update",
-              "isAllowed": true
-            },
-            {
-              "type": "create",
-              "isAllowed": true
-            },
-            {
-              "type": "drop",
-              "isAllowed": true
-            },
-            {
-              "type": "alter",
-              "isAllowed": true
-            },
-            {
-              "type": "index",
-              "isAllowed": true
-            },
-            {
-              "type": "lock",
-              "isAllowed": true
-            },
-            {
-              "type": "all",
-              "isAllowed": true
-            },
-            {
-              "type": "read",
-              "isAllowed": true
-            },
-            {
-              "type": "write",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "admin"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": true
-        }
-      ],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [],
-      "id": 2,
-      "guid": "3b96138a-af4d-48bc-9544-58c5bfa1979b",
-      "isEnabled": true,
-      "version": 1
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "all - database, udf",
-      "policyType": 0,
-      "policyPriority": 0,
-      "description": "Policy for all - database, udf",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "*"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "udf": {
-          "values": [
-            "*"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [
-        {
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            },
-            {
-              "type": "update",
-              "isAllowed": true
-            },
-            {
-              "type": "create",
-              "isAllowed": true
-            },
-            {
-              "type": "drop",
-              "isAllowed": true
-            },
-            {
-              "type": "alter",
-              "isAllowed": true
-            },
-            {
-              "type": "index",
-              "isAllowed": true
-            },
-            {
-              "type": "lock",
-              "isAllowed": true
-            },
-            {
-              "type": "all",
-              "isAllowed": true
-            },
-            {
-              "type": "read",
-              "isAllowed": true
-            },
-            {
-              "type": "write",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "admin"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": true
-        }
-      ],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [],
-      "id": 3,
-      "guid": "db08fbb0-61da-4f33-8144-ccd89816151d",
-      "isEnabled": true,
-      "version": 1
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "default",
-      "policyType": 0,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default",
-            "spark_catalog",
-            "iceberg_ns",
-            "ns1"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "column": {
-          "values": [
-            "*"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "*"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [
-        {
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            },
-            {
-              "type": "update",
-              "isAllowed": true
-            },
-            {
-              "type": "create",
-              "isAllowed": true
-            },
-            {
-              "type": "drop",
-              "isAllowed": true
-            },
-            {
-              "type": "alter",
-              "isAllowed": true
-            },
-            {
-              "type": "index",
-              "isAllowed": true
-            },
-            {
-              "type": "lock",
-              "isAllowed": true
-            },
-            {
-              "type": "all",
-              "isAllowed": true
-            },
-            {
-              "type": "read",
-              "isAllowed": true
-            },
-            {
-              "type": "write",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "bob",
-            "perm_view_user",
-            "{OWNER}"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }, {
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": false
-            },
-            {
-              "type": "update",
-              "isAllowed": false
-            },
-            {
-              "type": "create",
-              "isAllowed": true
-            },
-            {
-              "type": "drop",
-              "isAllowed": false
-            },
-            {
-              "type": "alter",
-              "isAllowed": false
-            },
-            {
-              "type": "index",
-              "isAllowed": false
-            },
-            {
-              "type": "lock",
-              "isAllowed": false
-            },
-            {
-              "type": "all",
-              "isAllowed": false
-            },
-            {
-              "type": "read",
-              "isAllowed": false
-            },
-            {
-              "type": "write",
-              "isAllowed": false
-            }
-          ],
-          "users": [
-            "default_table_owner",
-            "create_only_user"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 5,
-      "guid": "2db6099d-e4f1-41df-9d24-f2f47bed618e",
-      "isEnabled": true,
-      "version": 5
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "default_kent",
-      "policyType": 0,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default",
-            "spark_catalog"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "column": {
-          "values": [
-            "key"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "src"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [
-        {
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            },
-            {
-              "type": "update",
-              "isAllowed": true
-            },
-            {
-              "type": "create",
-              "isAllowed": true
-            },
-            {
-              "type": "drop",
-              "isAllowed": true
-            },
-            {
-              "type": "alter",
-              "isAllowed": true
-            },
-            {
-              "type": "index",
-              "isAllowed": true
-            },
-            {
-              "type": "lock",
-              "isAllowed": true
-            },
-            {
-              "type": "all",
-              "isAllowed": true
-            },
-            {
-              "type": "read",
-              "isAllowed": true
-            },
-            {
-              "type": "write",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "kent"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 5,
-      "guid": "fd24db19-f7cc-4e13-a8ba-bbd5a07a2d8d",
-      "isEnabled": true,
-      "version": 5
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "src_key _less_than_20",
-      "policyType": 2,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "src"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [
-        {
-          "rowFilterInfo": {
-            "filterExpr": "key\u003c20"
-          },
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "bob"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "serviceType": "hive",
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 4,
-      "guid": "f588a9ed-f7b1-48f7-9d0d-c12cf2b9b7ed",
-      "isEnabled": true,
-      "version": 26
-    },{
-      "service": "hive_jenkins",
-      "name": "src_key_less_than_20_perm_view",
-      "policyType": 2,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "perm_view"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [
-        {
-          "rowFilterInfo": {
-            "filterExpr": "key\u003c20"
-          },
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "perm_view_user"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "serviceType": "hive",
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 22,
-      "guid": "c240a7ea-9d26-4db2-b925-d5dbe49bd447 \n",
-      "isEnabled": true,
-      "version": 26
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "default_bob_use",
-      "policyType": 0,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default_bob",
-            "spark_catalog"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "column": {
-          "values": [
-            "*"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "table_use*"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [
-        {
-          "accesses": [
-            {
-              "type": "update",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "bob"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 5,
-      "guid": "2eb6099d-e4f1-41df-9d24-f2f47bed618e",
-      "isEnabled": true,
-      "version": 5
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "default_bob_select",
-      "policyType": 0,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default_bob",
-            "spark_catalog"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "column": {
-          "values": [
-            "*"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "table_select*"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [
-        {
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            },
-            {
-              "type": "use",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "bob"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 5,
-      "guid": "2fb6099d-e4f1-41df-9d24-f2f47bed618e",
-      "isEnabled": true,
-      "version": 5
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "src_value_hash_perm_view",
-      "policyType": 1,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default",
-            "spark_catalog"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "column": {
-          "values": [
-            "value1"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "src"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [
-        {
-          "dataMaskInfo": {
-            "dataMaskType": "MASK_HASH"
-          },
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "bob"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 5,
-      "guid": "ed1868a1-bf79-4721-a3d5-6815cc7d4986",
-      "isEnabled": true,
-      "version": 1
-    },{
-      "service": "hive_jenkins",
-      "name": "src_value_hash",
-      "policyType": 1,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default",
-            "spark_catalog"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "column": {
-          "values": [
-            "value1"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "perm_view"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [
-        {
-          "dataMaskInfo": {
-            "dataMaskType": "MASK_HASH"
-          },
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "perm_view_user"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 20,
-      "guid": "bfeddeab-50d0-4902-985f-42559efa39c3",
-      "isEnabled": true,
-      "version": 1
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "src_value2_nullify",
-      "policyType": 1,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default",
-            "spark_catalog",
-            "iceberg_ns",
-            "ns1"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "column": {
-          "values": [
-            "value2"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "src"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [
-        {
-          "dataMaskInfo": {
-            "dataMaskType": "MASK"
-          },
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "bob"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 6,
-      "guid": "98a04cd7-8d14-4466-adc9-126d87a3af69",
-      "isEnabled": true,
-      "version": 1
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "src_value3_sf4",
-      "policyType": 1,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default",
-            "spark_catalog"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "column": {
-          "values": [
-            "value3"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "src"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [
-        {
-          "dataMaskInfo": {
-            "dataMaskType": "MASK_SHOW_FIRST_4"
-          },
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "bob"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 7,
-      "guid": "9d50a525-b24c-4cf5-a885-d10d426368d1",
-      "isEnabled": true,
-      "version": 1
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "src_value4_sf4",
-      "policyType": 1,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default",
-            "spark_catalog"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "column": {
-          "values": [
-            "value4"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "src"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [
-        {
-          "dataMaskInfo": {
-            "dataMaskType": "MASK_DATE_SHOW_YEAR"
-          },
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "bob"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 8,
-      "guid": "9d50a526-b24c-4cf5-a885-d10d426368d1",
-      "isEnabled": true,
-      "version": 1
-    },
-    {
-      "service": "hive_jenkins",
-      "name": "src_value5_show_last_4",
-      "policyType": 1,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default",
-            "spark_catalog"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "column": {
-          "values": [
-            "value5"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "src"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [
-        {
-          "dataMaskInfo": {
-            "dataMaskType": "MASK_SHOW_LAST_4"
-          },
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            }
-          ],
-          "users": [
-            "bob"
-          ],
-          "groups": [],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],
-      "rowFilterPolicyItems": [],
-      "options": {},
-      "validitySchedules": [],
-      "policyLabels": [
-        ""
-      ],
-      "id": 32,
-      "guid": "b3f1f1e0-2bd6-4b20-8a32-a531006ae151",
-      "isEnabled": true,
-      "version": 1
-    }
-  ],
-  "serviceDef": {
-    "name": "hive",
-    "implClass": "org.apache.ranger.services.hive.RangerServiceHive",
-    "label": "Hive Server2",
-    "description": "Hive Server2",
-    "options": {
-      "enableDenyAndExceptionsInPolicies": "true"
-    },
-    "configs": [
-      {
-        "itemId": 1,
-        "name": "username",
-        "type": "string",
-        "mandatory": true,
-        "validationRegEx": "",
-        "validationMessage": "",
-        "uiHint": "",
-        "label": "Username"
-      },
-      {
-        "itemId": 2,
-        "name": "password",
-        "type": "password",
-        "mandatory": true,
-        "validationRegEx": "",
-        "validationMessage": "",
-        "uiHint": "",
-        "label": "Password"
-      },
-      {
-        "itemId": 3,
-        "name": "jdbc.driverClassName",
-        "type": "string",
-        "mandatory": true,
-        "defaultValue": "org.apache.hive.jdbc.HiveDriver",
-        "validationRegEx": "",
-        "validationMessage": "",
-        "uiHint": ""
-      },
-      {
-        "itemId": 4,
-        "name": "jdbc.url",
-        "type": "string",
-        "mandatory": true,
-        "defaultValue": "",
-        "validationRegEx": "",
-        "validationMessage": "",
-        "uiHint": "{\"TextFieldWithIcon\":true, \"info\": \"1.For Remote Mode, eg.\u003cbr\u003ejdbc:hive2://\u0026lt;host\u0026gt;:\u0026lt;port\u0026gt;\u003cbr\u003e2.For Embedded Mode (no host or port), eg.\u003cbr\u003ejdbc:hive2:///;initFile\u003d\u0026lt;file\u0026gt;\u003cbr\u003e3.For HTTP Mode, eg.\u003cbr\u003ejdbc:hive2://\u0026lt;host\u0026gt;:\u0026lt;port\u0026gt;/;\u003cbr\u003etransportMode\u003dhttp;httpPath\u003d\u0026lt;httpPath\u0026gt;\u003cbr\u003e4.For SSL Mode, eg.\u003cbr\u003ejdbc:hive2://\u0026lt;host\u0026gt;:\u0026lt;port\u0026gt;/;ssl\u003dtrue;\u003cbr\u003esslTrustStore\u003dtStore;trustStorePassword\u003dpw\u003cbr\u003e5.For ZooKeeper Mode, eg.\u003cbr\u003ejdbc:hive2://\u0026lt;host\u0026gt;/;serviceDiscoveryMode\u003d\u003cbr\u003ezooKeeper;zooKeeperNamespace\u003dhiveserver2\u003cbr\u003e6.For Kerberos Mode, eg.\u003cbr\u003ejdbc:hive2://\u0026lt;host\u0026gt;:\u0026lt;port\u0026gt;/;\u003cbr\u003eprincipal\u003dhive/domain@EXAMPLE.COM\u003cbr\u003e\"}"
-      },
-      {
-        "itemId": 5,
-        "name": "commonNameForCertificate",
-        "type": "string",
-        "mandatory": false,
-        "validationRegEx": "",
-        "validationMessage": "",
-        "uiHint": "",
-        "label": "Common Name for Certificate"
+  "serviceName" : "hive_jenkins",
+  "serviceId" : 1,
+  "policyVersion" : 85,
+  "policyUpdateTime" : "20190429-21:36:09.000-+0800",
+  "policies" : [ {
+    "id" : 0,
+    "guid" : "cfcd2084-95d5-35ef-a6e7-dff9f98764da",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "all - url",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "description" : "Policy for all - url",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "url" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : true
       }
-    ],
-    "resources": [
-      {
-        "itemId": 1,
-        "name": "database",
-        "type": "string",
-        "level": 10,
-        "mandatory": true,
-        "lookupSupported": true,
-        "recursiveSupported": false,
-        "excludesSupported": true,
-        "matcher": "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
-        "matcherOptions": {
-          "wildCard": "true",
-          "ignoreCase": "true"
-        },
-        "validationRegEx": "",
-        "validationMessage": "",
-        "uiHint": "",
-        "label": "Hive Database",
-        "description": "Hive Database",
-        "accessTypeRestrictions": [],
-        "isValidLeaf": false
-      },
-      {
-        "itemId": 5,
-        "name": "url",
-        "type": "string",
-        "level": 10,
-        "mandatory": true,
-        "lookupSupported": false,
-        "recursiveSupported": true,
-        "excludesSupported": false,
-        "matcher": "org.apache.ranger.plugin.resourcematcher.RangerPathResourceMatcher",
-        "matcherOptions": {
-          "wildCard": "true",
-          "ignoreCase": "false"
-        },
-        "validationRegEx": "",
-        "validationMessage": "",
-        "uiHint": "",
-        "label": "URL",
-        "description": "URL",
-        "accessTypeRestrictions": [],
-        "isValidLeaf": true
-      },
-      {
-        "itemId": 2,
-        "name": "table",
-        "type": "string",
-        "level": 20,
-        "parent": "database",
-        "mandatory": true,
-        "lookupSupported": true,
-        "recursiveSupported": false,
-        "excludesSupported": true,
-        "matcher": "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
-        "matcherOptions": {
-          "wildCard": "true",
-          "ignoreCase": "true"
-        },
-        "validationRegEx": "",
-        "validationMessage": "",
-        "uiHint": "",
-        "label": "Hive Table",
-        "description": "Hive Table",
-        "accessTypeRestrictions": [],
-        "isValidLeaf": false
-      },
-      {
-        "itemId": 3,
-        "name": "udf",
-        "type": "string",
-        "level": 20,
-        "parent": "database",
-        "mandatory": true,
-        "lookupSupported": true,
-        "recursiveSupported": false,
-        "excludesSupported": true,
-        "matcher": "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
-        "matcherOptions": {
-          "wildCard": "true",
-          "ignoreCase": "true"
-        },
-        "validationRegEx": "",
-        "validationMessage": "",
-        "uiHint": "",
-        "label": "Hive UDF",
-        "description": "Hive UDF",
-        "accessTypeRestrictions": [],
-        "isValidLeaf": true
-      },
-      {
-        "itemId": 4,
-        "name": "column",
-        "type": "string",
-        "level": 30,
-        "parent": "table",
-        "mandatory": true,
-        "lookupSupported": true,
-        "recursiveSupported": false,
-        "excludesSupported": true,
-        "matcher": "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
-        "matcherOptions": {
-          "wildCard": "true",
-          "ignoreCase": "true"
-        },
-        "validationRegEx": "",
-        "validationMessage": "",
-        "uiHint": "",
-        "label": "Hive Column",
-        "description": "Hive Column",
-        "accessTypeRestrictions": [],
-        "isValidLeaf": true
-      }
-    ],
-    "accessTypes": [
-      {
-        "itemId": 1,
-        "name": "select",
-        "label": "select",
-        "impliedGrants": []
-      },
-      {
-        "itemId": 2,
-        "name": "update",
-        "label": "update",
-        "impliedGrants": []
-      },
-      {
-        "itemId": 3,
-        "name": "create",
-        "label": "Create",
-        "impliedGrants": []
-      },
-      {
-        "itemId": 4,
-        "name": "drop",
-        "label": "Drop",
-        "impliedGrants": []
-      },
-      {
-        "itemId": 5,
-        "name": "alter",
-        "label": "Alter",
-        "impliedGrants": []
-      },
-      {
-        "itemId": 6,
-        "name": "index",
-        "label": "Index",
-        "impliedGrants": []
-      },
-      {
-        "itemId": 7,
-        "name": "lock",
-        "label": "Lock",
-        "impliedGrants": []
-      },
-      {
-        "itemId": 8,
-        "name": "all",
-        "label": "All",
-        "impliedGrants": [
-          "select",
-          "update",
-          "create",
-          "drop",
-          "alter",
-          "index",
-          "lock",
-          "read",
-          "write"
-        ]
-      },
-      {
-        "itemId": 9,
-        "name": "read",
-        "label": "Read",
-        "impliedGrants": []
-      },
-      {
-        "itemId": 10,
-        "name": "write",
-        "label": "Write",
-        "impliedGrants": []
-      }
-    ],
-    "policyConditions": [],
-    "contextEnrichers": [],
-    "enums": [],
-    "dataMaskDef": {
-      "maskTypes": [
-        {
-          "itemId": 1,
-          "name": "MASK",
-          "label": "Redact",
-          "description": "Replace lowercase with \u0027x\u0027, uppercase with \u0027X\u0027, digits with \u00270\u0027",
-          "transformer": "mask({col})",
-          "dataMaskOptions": {}
-        },
-        {
-          "itemId": 2,
-          "name": "MASK_SHOW_LAST_4",
-          "label": "Partial mask: show last 4",
-          "description": "Show last 4 characters; replace rest with \u0027x\u0027",
-          "transformer": "mask_show_last_n({col}, 4, \u0027x\u0027, \u0027x\u0027, \u0027x\u0027, -1, \u00271\u0027)",
-          "dataMaskOptions": {}
-        },
-        {
-          "itemId": 3,
-          "name": "MASK_SHOW_FIRST_4",
-          "label": "Partial mask: show first 4",
-          "description": "Show first 4 characters; replace rest with \u0027x\u0027",
-          "transformer": "mask_show_first_n({col}, 4, \u0027x\u0027, \u0027x\u0027, \u0027x\u0027, -1, \u00271\u0027)",
-          "dataMaskOptions": {}
-        },
-        {
-          "itemId": 4,
-          "name": "MASK_HASH",
-          "label": "Hash",
-          "description": "Hash the value",
-          "transformer": "mask_hash({col})",
-          "dataMaskOptions": {}
-        },
-        {
-          "itemId": 5,
-          "name": "MASK_NULL",
-          "label": "Nullify",
-          "description": "Replace with NULL",
-          "dataMaskOptions": {}
-        },
-        {
-          "itemId": 6,
-          "name": "MASK_NONE",
-          "label": "Unmasked (retain original value)",
-          "description": "No masking",
-          "dataMaskOptions": {}
-        },
-        {
-          "itemId": 12,
-          "name": "MASK_DATE_SHOW_YEAR",
-          "label": "Date: show only year",
-          "description": "Date: show only year",
-          "transformer": "mask({col}, \u0027x\u0027, \u0027x\u0027, \u0027x\u0027, -1, \u00271\u0027, 1, 0, -1)",
-          "dataMaskOptions": {}
-        },
-        {
-          "itemId": 13,
-          "name": "CUSTOM",
-          "label": "Custom",
-          "description": "Custom",
-          "dataMaskOptions": {}
-        }
-      ],
-      "accessTypes": [
-        {
-          "itemId": 1,
-          "name": "select",
-          "label": "select",
-          "impliedGrants": []
-        }
-      ],
-      "resources": [
-        {
-          "itemId": 1,
-          "name": "database",
-          "type": "string",
-          "level": 10,
-          "mandatory": true,
-          "lookupSupported": true,
-          "recursiveSupported": false,
-          "excludesSupported": false,
-          "matcher": "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
-          "matcherOptions": {
-            "wildCard": "false",
-            "ignoreCase": "true"
-          },
-          "validationRegEx": "",
-          "validationMessage": "",
-          "uiHint": "{ \"singleValue\":true }",
-          "label": "Hive Database",
-          "description": "Hive Database",
-          "accessTypeRestrictions": [],
-          "isValidLeaf": false
-        },
-        {
-          "itemId": 2,
-          "name": "table",
-          "type": "string",
-          "level": 20,
-          "parent": "database",
-          "mandatory": true,
-          "lookupSupported": true,
-          "recursiveSupported": false,
-          "excludesSupported": false,
-          "matcher": "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
-          "matcherOptions": {
-            "wildCard": "false",
-            "ignoreCase": "true"
-          },
-          "validationRegEx": "",
-          "validationMessage": "",
-          "uiHint": "{ \"singleValue\":true }",
-          "label": "Hive Table",
-          "description": "Hive Table",
-          "accessTypeRestrictions": [],
-          "isValidLeaf": false
-        },
-        {
-          "itemId": 4,
-          "name": "column",
-          "type": "string",
-          "level": 30,
-          "parent": "table",
-          "mandatory": true,
-          "lookupSupported": true,
-          "recursiveSupported": false,
-          "excludesSupported": false,
-          "matcher": "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
-          "matcherOptions": {
-            "wildCard": "false",
-            "ignoreCase": "true"
-          },
-          "validationRegEx": "",
-          "validationMessage": "",
-          "uiHint": "{ \"singleValue\":true }",
-          "label": "Hive Column",
-          "description": "Hive Column",
-          "accessTypeRestrictions": [],
-          "isValidLeaf": true
-        }
-      ]
     },
-    "rowFilterDef": {
-      "accessTypes": [
-        {
-          "itemId": 1,
-          "name": "select",
-          "label": "select",
-          "impliedGrants": []
-        }
-      ],
-      "resources": [
-        {
-          "itemId": 1,
-          "name": "database",
-          "type": "string",
-          "level": 10,
-          "mandatory": true,
-          "lookupSupported": true,
-          "recursiveSupported": false,
-          "excludesSupported": false,
-          "matcher": "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
-          "matcherOptions": {
-            "wildCard": "false",
-            "ignoreCase": "true"
-          },
-          "validationRegEx": "",
-          "validationMessage": "",
-          "uiHint": "{ \"singleValue\":true }",
-          "label": "Hive Database",
-          "description": "Hive Database",
-          "accessTypeRestrictions": [],
-          "isValidLeaf": false
-        },
-        {
-          "itemId": 2,
-          "name": "table",
-          "type": "string",
-          "level": 20,
-          "parent": "database",
-          "mandatory": true,
-          "lookupSupported": true,
-          "recursiveSupported": false,
-          "excludesSupported": false,
-          "matcher": "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
-          "matcherOptions": {
-            "wildCard": "false",
-            "ignoreCase": "true"
-          },
-          "validationRegEx": "",
-          "validationMessage": "",
-          "uiHint": "{ \"singleValue\":true }",
-          "label": "Hive Table",
-          "description": "Hive Table",
-          "accessTypeRestrictions": [],
-          "isValidLeaf": true
-        }
-      ]
+    "conditions" : [ ],
+    "policyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      }, {
+        "type" : "update",
+        "isAllowed" : true
+      }, {
+        "type" : "create",
+        "isAllowed" : true
+      }, {
+        "type" : "drop",
+        "isAllowed" : true
+      }, {
+        "type" : "alter",
+        "isAllowed" : true
+      }, {
+        "type" : "index",
+        "isAllowed" : true
+      }, {
+        "type" : "lock",
+        "isAllowed" : true
+      }, {
+        "type" : "all",
+        "isAllowed" : true
+      }, {
+        "type" : "read",
+        "isAllowed" : true
+      }, {
+        "type" : "write",
+        "isAllowed" : true
+      } ],
+      "users" : [ "admin" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true
+    } ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 1,
+    "guid" : "c4ca4238-a0b9-3382-8dcc-509a6f75849b",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "all - database, table, column",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "description" : "Policy for all - database, table, column",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
     },
-    "id": 3,
-    "guid": "3e1afb5a-184a-4e82-9d9c-87a5cacc243c",
-    "isEnabled": true,
-    "createTime": "20190401-20:14:36.000-+0800",
-    "updateTime": "20190401-20:14:36.000-+0800",
-    "version": 1
+    "conditions" : [ ],
+    "policyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      }, {
+        "type" : "update",
+        "isAllowed" : true
+      }, {
+        "type" : "create",
+        "isAllowed" : true
+      }, {
+        "type" : "drop",
+        "isAllowed" : true
+      }, {
+        "type" : "alter",
+        "isAllowed" : true
+      }, {
+        "type" : "index",
+        "isAllowed" : true
+      }, {
+        "type" : "lock",
+        "isAllowed" : true
+      }, {
+        "type" : "all",
+        "isAllowed" : true
+      }, {
+        "type" : "read",
+        "isAllowed" : true
+      }, {
+        "type" : "write",
+        "isAllowed" : true
+      } ],
+      "users" : [ "admin" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true
+    } ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 2,
+    "guid" : "c81e728d-9d4c-3f63-af06-7f89cc14862c",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "all - database, udf",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "description" : "Policy for all - database, udf",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "udf" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      }, {
+        "type" : "update",
+        "isAllowed" : true
+      }, {
+        "type" : "create",
+        "isAllowed" : true
+      }, {
+        "type" : "drop",
+        "isAllowed" : true
+      }, {
+        "type" : "alter",
+        "isAllowed" : true
+      }, {
+        "type" : "index",
+        "isAllowed" : true
+      }, {
+        "type" : "lock",
+        "isAllowed" : true
+      }, {
+        "type" : "all",
+        "isAllowed" : true
+      }, {
+        "type" : "read",
+        "isAllowed" : true
+      }, {
+        "type" : "write",
+        "isAllowed" : true
+      } ],
+      "users" : [ "admin" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true
+    } ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 3,
+    "guid" : "eccbc87e-4b5c-32fe-a830-8fd9f2a7baf3",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "all - database, udf",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "description" : "Policy for all - database, udf",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default", "spark_catalog", "iceberg_ns", "ns1" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      }, {
+        "type" : "update",
+        "isAllowed" : true
+      }, {
+        "type" : "create",
+        "isAllowed" : true
+      }, {
+        "type" : "drop",
+        "isAllowed" : true
+      }, {
+        "type" : "alter",
+        "isAllowed" : true
+      }, {
+        "type" : "index",
+        "isAllowed" : true
+      }, {
+        "type" : "lock",
+        "isAllowed" : true
+      }, {
+        "type" : "all",
+        "isAllowed" : true
+      }, {
+        "type" : "read",
+        "isAllowed" : true
+      }, {
+        "type" : "write",
+        "isAllowed" : true
+      } ],
+      "users" : [ "bob", "perm_view_user", "{OWNER}" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true
+    }, {
+      "accesses" : [ {
+        "type" : "create",
+        "isAllowed" : true
+      } ],
+      "users" : [ "default_table_owner", "create_only_user" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true
+    } ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 4,
+    "guid" : "a87ff679-a2f3-371d-9181-a67b7542122c",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "default_kent",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "key" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "src" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      }, {
+        "type" : "update",
+        "isAllowed" : true
+      }, {
+        "type" : "create",
+        "isAllowed" : true
+      }, {
+        "type" : "drop",
+        "isAllowed" : true
+      }, {
+        "type" : "alter",
+        "isAllowed" : true
+      }, {
+        "type" : "index",
+        "isAllowed" : true
+      }, {
+        "type" : "lock",
+        "isAllowed" : true
+      }, {
+        "type" : "all",
+        "isAllowed" : true
+      }, {
+        "type" : "read",
+        "isAllowed" : true
+      }, {
+        "type" : "write",
+        "isAllowed" : true
+      } ],
+      "users" : [ "kent" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true
+    }, {
+      "accesses" : [ {
+        "type" : "create",
+        "isAllowed" : true
+      } ],
+      "users" : [ "default_table_owner", "create_only_user" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true
+    } ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 5,
+    "guid" : "e4da3b7f-bbce-3345-9777-2b0674a318d5",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "default_bob_use",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default_bob", "spark_catalog" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "table_use*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ {
+      "accesses" : [ {
+        "type" : "update",
+        "isAllowed" : true
+      } ],
+      "users" : [ "bob" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true
+    } ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 6,
+    "guid" : "1679091c-5a88-3faf-afb5-e6087eb1b2dc",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "default_bob_select",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default_bob", "spark_catalog" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "table_select*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      }, {
+        "type" : "use",
+        "isAllowed" : true
+      } ],
+      "users" : [ "bob" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true
+    } ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 7,
+    "guid" : "8f14e45f-ceea-367a-9a36-dedd4bea2543",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "someone_access_perm_view",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "perm_view" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "user_perm_view_only" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true
+    } ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 8,
+    "guid" : "c9f0f895-fb98-3b91-99f5-1fd0297e236d",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "src_key_less_than_20",
+    "policyType" : 2,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "src" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ ],
+    "rowFilterPolicyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "bob", "perm_view_user" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : false,
+      "rowFilterInfo" : {
+        "filterExpr" : "key<20"
+      }
+    } ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 9,
+    "guid" : "45c48cce-2e2d-3fbd-aa1a-fc51c7c6ad26",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "perm_view_key_less_than_20",
+    "policyType" : 2,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "perm_view" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ ],
+    "rowFilterPolicyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "perm_view_user" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : false,
+      "rowFilterInfo" : {
+        "filterExpr" : "key<20"
+      }
+    } ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 10,
+    "guid" : "d3d94468-02a4-3259-b55d-38e6d163e820",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "src_value_hash_perm_view",
+    "policyType" : 1,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "value1" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "src" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "bob" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true,
+      "dataMaskInfo" : {
+        "dataMaskType" : "MASK_HASH"
+      }
+    } ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 11,
+    "guid" : "6512bd43-d9ca-36e0-ac99-0b0a82652dca",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "src_value_hash",
+    "policyType" : 1,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "value1" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "perm_view" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "perm_view_user" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true,
+      "dataMaskInfo" : {
+        "dataMaskType" : "MASK_HASH"
+      }
+    } ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 12,
+    "guid" : "c20ad4d7-6fe9-3759-aa27-a0c99bff6710",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "src_value2_nullify",
+    "policyType" : 1,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default", "spark_catalog", "iceberg_ns", "ns1" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "value2" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "src" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "bob" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true,
+      "dataMaskInfo" : {
+        "dataMaskType" : "MASK"
+      }
+    } ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 13,
+    "guid" : "c51ce410-c124-310e-8db5-e4b97fc2af39",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "src_value3_sf4",
+    "policyType" : 1,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "value3" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "src" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "bob" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true,
+      "dataMaskInfo" : {
+        "dataMaskType" : "MASK_SHOW_FIRST_4"
+      }
+    } ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 14,
+    "guid" : "aab32389-22bc-325a-af60-6eb525ffdc56",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "src_value4_sf4",
+    "policyType" : 1,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "value4" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "src" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "bob" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true,
+      "dataMaskInfo" : {
+        "dataMaskType" : "MASK_DATE_SHOW_YEAR"
+      }
+    } ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 15,
+    "guid" : "9bf31c7f-f062-336a-96d3-c8bd1f8f2ff3",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "src_value5_sf4",
+    "policyType" : 1,
+    "policyPriority" : 0,
+    "description" : "",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "column" : {
+        "values" : [ "value5" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "src" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "conditions" : [ ],
+    "policyItems" : [ ],
+    "denyPolicyItems" : [ ],
+    "allowExceptions" : [ ],
+    "denyExceptions" : [ ],
+    "dataMaskPolicyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "bob" ],
+      "groups" : [ ],
+      "roles" : [ ],
+      "conditions" : [ ],
+      "delegateAdmin" : true,
+      "dataMaskInfo" : {
+        "dataMaskType" : "MASK_SHOW_LAST_4"
+      }
+    } ],
+    "rowFilterPolicyItems" : [ ],
+    "options" : { },
+    "validitySchedules" : [ ],
+    "policyLabels" : [ ],
+    "isDenyAllElse" : false
+  } ],
+  "serviceDef" : {
+    "name" : "hive",
+    "implClass" : "org.apache.ranger.services.hive.RangerServiceHive",
+    "label" : "Hive Server2",
+    "description" : "Hive Server2",
+    "options" : {
+      "enableDenyAndExceptionsInPolicies" : "true"
+    },
+    "configs" : [ {
+      "itemId" : 1,
+      "name" : "username",
+      "type" : "string",
+      "mandatory" : true,
+      "validationRegEx" : "",
+      "validationMessage" : "",
+      "uiHint" : "",
+      "label" : "Username"
+    }, {
+      "itemId" : 2,
+      "name" : "password",
+      "type" : "password",
+      "mandatory" : true,
+      "validationRegEx" : "",
+      "validationMessage" : "",
+      "uiHint" : "",
+      "label" : "Password"
+    }, {
+      "itemId" : 3,
+      "name" : "jdbc.driverClassName",
+      "type" : "string",
+      "mandatory" : true,
+      "defaultValue" : "org.apache.hive.jdbc.HiveDriver",
+      "validationRegEx" : "",
+      "validationMessage" : "",
+      "uiHint" : ""
+    }, {
+      "itemId" : 4,
+      "name" : "jdbc.url",
+      "type" : "string",
+      "mandatory" : true,
+      "defaultValue" : "",
+      "validationRegEx" : "",
+      "validationMessage" : "",
+      "uiHint" : "{\"TextFieldWithIcon\":true, \"info\": \"1.For Remote Mode, eg.<br>jdbc:hive2://&lt;host&gt;:&lt;port&gt;<br>2.For Embedded Mode (no host or port), eg.<br>jdbc:hive2:///;initFile=&lt;file&gt;<br>3.For HTTP Mode, eg.<br>jdbc:hive2://&lt;host&gt;:&lt;port&gt;/;<br>transportMode=http;httpPath=&lt;httpPath&gt;<br>4.For SSL Mode, eg.<br>jdbc:hive2://&lt;host&gt;:&lt;port&gt;/;ssl=true;<br>sslTrustStore=tStore;trustStorePassword=pw<br>5.For ZooKeeper Mode, eg.<br>jdbc:hive2://&lt;host&gt;/;serviceDiscoveryMode=<br>zooKeeper;zooKeeperNamespace=hiveserver2<br>6.For Kerberos Mode, eg.<br>jdbc:hive2://&lt;host&gt;:&lt;port&gt;/;<br>principal=hive/domain@EXAMPLE.COM<br>\"}"
+    }, {
+      "itemId" : 5,
+      "name" : "commonNameForCertificate",
+      "type" : "string",
+      "mandatory" : false,
+      "validationRegEx" : "",
+      "validationMessage" : "",
+      "uiHint" : "",
+      "label" : "Common Name for Certificate"
+    } ],
+    "resources" : [ {
+      "itemId" : 1,
+      "name" : "database",
+      "type" : "string",
+      "level" : 10,
+      "mandatory" : true,
+      "lookupSupported" : true,
+      "recursiveSupported" : false,
+      "excludesSupported" : true,
+      "matcher" : "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
+      "matcherOptions" : {
+        "wildCard" : "true",
+        "ignoreCase" : "true"
+      },
+      "validationRegEx" : "",
+      "validationMessage" : "",
+      "uiHint" : "",
+      "label" : "Hive Database",
+      "description" : "Hive Database",
+      "accessTypeRestrictions" : [ ],
+      "isValidLeaf" : false
+    }, {
+      "itemId" : 5,
+      "name" : "url",
+      "type" : "string",
+      "level" : 10,
+      "mandatory" : true,
+      "lookupSupported" : false,
+      "recursiveSupported" : true,
+      "excludesSupported" : false,
+      "matcher" : "org.apache.ranger.plugin.resourcematcher.RangerPathResourceMatcher",
+      "matcherOptions" : {
+        "wildCard" : "true",
+        "ignoreCase" : "false"
+      },
+      "validationRegEx" : "",
+      "validationMessage" : "",
+      "uiHint" : "",
+      "label" : "URL",
+      "description" : "URL",
+      "accessTypeRestrictions" : [ ],
+      "isValidLeaf" : true
+    }, {
+      "itemId" : 2,
+      "name" : "table",
+      "type" : "string",
+      "level" : 20,
+      "parent" : "database",
+      "mandatory" : true,
+      "lookupSupported" : true,
+      "recursiveSupported" : false,
+      "excludesSupported" : true,
+      "matcher" : "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
+      "matcherOptions" : {
+        "wildCard" : "true",
+        "ignoreCase" : "true"
+      },
+      "validationRegEx" : "",
+      "validationMessage" : "",
+      "uiHint" : "",
+      "label" : "Hive Table",
+      "description" : "Hive Table",
+      "accessTypeRestrictions" : [ ],
+      "isValidLeaf" : false
+    }, {
+      "itemId" : 3,
+      "name" : "udf",
+      "type" : "string",
+      "level" : 20,
+      "parent" : "database",
+      "mandatory" : true,
+      "lookupSupported" : true,
+      "recursiveSupported" : false,
+      "excludesSupported" : true,
+      "matcher" : "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
+      "matcherOptions" : {
+        "wildCard" : "true",
+        "ignoreCase" : "true"
+      },
+      "validationRegEx" : "",
+      "validationMessage" : "",
+      "uiHint" : "",
+      "label" : "Hive UDF",
+      "description" : "Hive UDF",
+      "accessTypeRestrictions" : [ ],
+      "isValidLeaf" : true
+    }, {
+      "itemId" : 4,
+      "name" : "column",
+      "type" : "string",
+      "level" : 30,
+      "parent" : "table",
+      "mandatory" : true,
+      "lookupSupported" : true,
+      "recursiveSupported" : false,
+      "excludesSupported" : true,
+      "matcher" : "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
+      "matcherOptions" : {
+        "wildCard" : "true",
+        "ignoreCase" : "true"
+      },
+      "validationRegEx" : "",
+      "validationMessage" : "",
+      "uiHint" : "",
+      "label" : "Hive Column",
+      "description" : "Hive Column",
+      "accessTypeRestrictions" : [ ],
+      "isValidLeaf" : true
+    } ],
+    "accessTypes" : [ {
+      "itemId" : 1,
+      "name" : "select",
+      "label" : "select",
+      "impliedGrants" : [ ]
+    }, {
+      "itemId" : 2,
+      "name" : "update",
+      "label" : "update",
+      "impliedGrants" : [ ]
+    }, {
+      "itemId" : 3,
+      "name" : "create",
+      "label" : "Create",
+      "impliedGrants" : [ ]
+    }, {
+      "itemId" : 4,
+      "name" : "drop",
+      "label" : "Drop",
+      "impliedGrants" : [ ]
+    }, {
+      "itemId" : 5,
+      "name" : "alter",
+      "label" : "Alter",
+      "impliedGrants" : [ ]
+    }, {
+      "itemId" : 6,
+      "name" : "index",
+      "label" : "Index",
+      "impliedGrants" : [ ]
+    }, {
+      "itemId" : 7,
+      "name" : "lock",
+      "label" : "Lock",
+      "impliedGrants" : [ ]
+    }, {
+      "itemId" : 8,
+      "name" : "all",
+      "label" : "All",
+      "impliedGrants" : [ "select", "update", "create", "drop", "alter", "index", "lock", "read", "write" ]
+    }, {
+      "itemId" : 9,
+      "name" : "read",
+      "label" : "Read",
+      "impliedGrants" : [ ]
+    }, {
+      "itemId" : 10,
+      "name" : "write",
+      "label" : "Write",
+      "impliedGrants" : [ ]
+    } ],
+    "policyConditions" : [ ],
+    "contextEnrichers" : [ ],
+    "enums" : [ ],
+    "dataMaskDef" : {
+      "maskTypes" : [ {
+        "itemId" : 1,
+        "name" : "MASK",
+        "label" : "Redact",
+        "description" : "Replace lowercase with 'x', uppercase with 'X', digits with '0'",
+        "transformer" : "mask({col})",
+        "dataMaskOptions" : { }
+      }, {
+        "itemId" : 2,
+        "name" : "MASK_SHOW_LAST_4",
+        "label" : "Partial mask: show last 4",
+        "description" : "Show last 4 characters; replace rest with 'x'",
+        "transformer" : "mask_show_last_n({col}, 4, 'x', 'x', 'x', -1, '1')",
+        "dataMaskOptions" : { }
+      }, {
+        "itemId" : 3,
+        "name" : "MASK_SHOW_FIRST_4",
+        "label" : "Partial mask: show first 4",
+        "description" : "Show first 4 characters; replace rest with 'x'",
+        "transformer" : "mask_show_first_n({col}, 4, 'x', 'x', 'x', -1, '1')",
+        "dataMaskOptions" : { }
+      }, {
+        "itemId" : 4,
+        "name" : "MASK_HASH",
+        "label" : "Hash",
+        "description" : "Hash the value",
+        "transformer" : "mask_hash({col})",
+        "dataMaskOptions" : { }
+      }, {
+        "itemId" : 5,
+        "name" : "MASK_NULL",
+        "label" : "Nullify",
+        "description" : "Replace with NULL",
+        "dataMaskOptions" : { }
+      }, {
+        "itemId" : 6,
+        "name" : "MASK_NONE",
+        "label" : "Unmasked (retain original value)",
+        "description" : "No masking",
+        "dataMaskOptions" : { }
+      }, {
+        "itemId" : 12,
+        "name" : "MASK_DATE_SHOW_YEAR",
+        "label" : "Date: show only year",
+        "description" : "Date: show only year",
+        "transformer" : "mask({col}, 'x', 'x', 'x', -1, '1', 1, 0, -1)",
+        "dataMaskOptions" : { }
+      }, {
+        "itemId" : 13,
+        "name" : "CUSTOM",
+        "label" : "Custom",
+        "description" : "Custom",
+        "dataMaskOptions" : { }
+      } ],
+      "accessTypes" : [ {
+        "itemId" : 1,
+        "name" : "select",
+        "label" : "select",
+        "impliedGrants" : [ ]
+      } ],
+      "resources" : [ {
+        "itemId" : 1,
+        "name" : "database",
+        "type" : "string",
+        "level" : 10,
+        "mandatory" : true,
+        "lookupSupported" : true,
+        "recursiveSupported" : false,
+        "excludesSupported" : false,
+        "matcher" : "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
+        "matcherOptions" : {
+          "wildCard" : "false",
+          "ignoreCase" : "true"
+        },
+        "validationRegEx" : "",
+        "validationMessage" : "",
+        "uiHint" : "{ \"singleValue\":true }",
+        "label" : "Hive Database",
+        "description" : "Hive Database",
+        "accessTypeRestrictions" : [ ],
+        "isValidLeaf" : false
+      }, {
+        "itemId" : 2,
+        "name" : "table",
+        "type" : "string",
+        "level" : 20,
+        "parent" : "database",
+        "mandatory" : true,
+        "lookupSupported" : true,
+        "recursiveSupported" : false,
+        "excludesSupported" : false,
+        "matcher" : "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
+        "matcherOptions" : {
+          "wildCard" : "false",
+          "ignoreCase" : "true"
+        },
+        "validationRegEx" : "",
+        "validationMessage" : "",
+        "uiHint" : "{ \"singleValue\":true }",
+        "label" : "Hive Table",
+        "description" : "Hive Table",
+        "accessTypeRestrictions" : [ ],
+        "isValidLeaf" : false
+      }, {
+        "itemId" : 4,
+        "name" : "column",
+        "type" : "string",
+        "level" : 30,
+        "parent" : "table",
+        "mandatory" : true,
+        "lookupSupported" : true,
+        "recursiveSupported" : false,
+        "excludesSupported" : false,
+        "matcher" : "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
+        "matcherOptions" : {
+          "wildCard" : "false",
+          "ignoreCase" : "true"
+        },
+        "validationRegEx" : "",
+        "validationMessage" : "",
+        "uiHint" : "{ \"singleValue\":true }",
+        "label" : "Hive Column",
+        "description" : "Hive Column",
+        "accessTypeRestrictions" : [ ],
+        "isValidLeaf" : true
+      } ]
+    },
+    "rowFilterDef" : {
+      "accessTypes" : [ {
+        "itemId" : 1,
+        "name" : "select",
+        "label" : "select",
+        "impliedGrants" : [ ]
+      } ],
+      "resources" : [ {
+        "itemId" : 1,
+        "name" : "database",
+        "type" : "string",
+        "level" : 10,
+        "mandatory" : true,
+        "lookupSupported" : true,
+        "recursiveSupported" : false,
+        "excludesSupported" : false,
+        "matcher" : "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
+        "matcherOptions" : {
+          "wildCard" : "false",
+          "ignoreCase" : "true"
+        },
+        "validationRegEx" : "",
+        "validationMessage" : "",
+        "uiHint" : "{ \"singleValue\":true }",
+        "label" : "Hive Database",
+        "description" : "Hive Database",
+        "accessTypeRestrictions" : [ ],
+        "isValidLeaf" : false
+      }, {
+        "itemId" : 2,
+        "name" : "table",
+        "type" : "string",
+        "level" : 20,
+        "parent" : "database",
+        "mandatory" : true,
+        "lookupSupported" : true,
+        "recursiveSupported" : false,
+        "excludesSupported" : false,
+        "matcher" : "org.apache.ranger.plugin.resourcematcher.RangerDefaultResourceMatcher",
+        "matcherOptions" : {
+          "wildCard" : "false",
+          "ignoreCase" : "true"
+        },
+        "validationRegEx" : "",
+        "validationMessage" : "",
+        "uiHint" : "{ \"singleValue\":true }",
+        "label" : "Hive Table",
+        "description" : "Hive Table",
+        "accessTypeRestrictions" : [ ],
+        "isValidLeaf" : true
+      } ]
+    },
+    "id" : 3,
+    "guid" : "3e1afb5a-184a-4e82-9d9c-87a5cacc243c",
+    "isEnabled" : true,
+    "createTime" : "20190401-20:14:36.000-+0800",
+    "updateTime" : "20190401-20:14:36.000-+0800",
+    "version" : 1
   },
-  "auditMode": "audit-default"
+  "auditMode" : "audit-default"
 }

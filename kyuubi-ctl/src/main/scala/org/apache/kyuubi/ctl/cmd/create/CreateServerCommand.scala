@@ -56,7 +56,7 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeI
     withDiscoveryClient(kyuubiConf) { discoveryClient =>
       val fromNamespace =
         DiscoveryPaths.makePath(null, kyuubiConf.get(HA_NAMESPACE))
-      val toNamespace = CtlUtils.getZkNamespace(kyuubiConf, normalizedCliConfig)
+      val toNamespace = CtlUtils.getZkServerNamespace(kyuubiConf, normalizedCliConfig)
 
       val currentServerNodes = discoveryClient.getServiceNodesInfo(fromNamespace)
       val exposedServiceNodes = ListBuffer[ServiceNodeInfo]()

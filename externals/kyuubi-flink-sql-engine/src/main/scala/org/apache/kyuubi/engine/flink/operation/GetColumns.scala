@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.api.{DataTypes, ResultKind}
-import org.apache.flink.table.catalog.Column
+import org.apache.flink.table.catalog.{Column, ObjectIdentifier}
 import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 
@@ -40,17 +40,17 @@ class GetColumns(
 
   override protected def runInternal(): Unit = {
     try {
-      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
 
       val catalogName =
-        if (StringUtils.isEmpty(catalogNameOrEmpty)) tableEnv.getCurrentCatalog
+        if (StringUtils.isEmpty(catalogNameOrEmpty)) executor.getCurrentCatalog
         else catalogNameOrEmpty
 
       val schemaNameRegex = toJavaRegex(schemaNamePattern)
       val tableNameRegex = toJavaRegex(tableNamePattern)
       val columnNameRegex = toJavaRegex(columnNamePattern).r
 
-      val columns = tableEnv.getCatalog(catalogName).asScala.toArray.flatMap { flinkCatalog =>
+      val catalogManager = sessionContext.getSessionState.catalogManager
+      val columns = catalogManager.getCatalog(catalogName).asScala.toArray.flatMap { flinkCatalog =>
         SchemaHelper.getSchemasWithPattern(flinkCatalog, schemaNameRegex)
           .flatMap { schemaName =>
             SchemaHelper.getFlinkTablesWithPattern(
@@ -60,7 +60,8 @@ class GetColumns(
               tableNameRegex)
               .filter { _._2.isDefined }
               .flatMap { case (tableName, _) =>
-                val flinkTable = tableEnv.from(s"`$catalogName`.`$schemaName`.`$tableName`")
+                val flinkTable = catalogManager.getTable(
+                  ObjectIdentifier.of(catalogName, schemaName, tableName)).get()
                 val resolvedSchema = flinkTable.getResolvedSchema
                 resolvedSchema.getColumns.asScala.toArray.zipWithIndex
                   .filter { case (column, _) =>

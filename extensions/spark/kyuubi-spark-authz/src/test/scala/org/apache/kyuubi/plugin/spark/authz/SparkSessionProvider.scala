@@ -22,9 +22,11 @@ import java.security.PrivilegedExceptionAction
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession, SparkSessionExtensions}
+import org.scalatest.Assertions.convertToEqualizer
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 trait SparkSessionProvider {
@@ -38,7 +40,6 @@ trait SparkSessionProvider {
   protected val extension: SparkSessionExtensions => Unit = _ => Unit
   protected val sqlExtensions: String = ""
 
-  protected val defaultTableOwner = "default_table_owner"
   protected val extraSparkConf: SparkConf = new SparkConf()
 
   protected lazy val spark: SparkSession = {
@@ -82,17 +83,21 @@ trait SparkSessionProvider {
       f
     } finally {
       res.foreach {
-        case (t, "table") => doAs("admin", sql(s"DROP TABLE IF EXISTS $t"))
-        case (db, "database") => doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
-        case (fn, "function") => doAs("admin", sql(s"DROP FUNCTION IF EXISTS $fn"))
-        case (view, "view") => doAs("admin", sql(s"DROP VIEW IF EXISTS $view"))
+        case (t, "table") => doAs(admin, sql(s"DROP TABLE IF EXISTS $t"))
+        case (db, "database") => doAs(admin, sql(s"DROP DATABASE IF EXISTS $db"))
+        case (fn, "function") => doAs(admin, sql(s"DROP FUNCTION IF EXISTS $fn"))
+        case (view, "view") => doAs(admin, sql(s"DROP VIEW IF EXISTS $view"))
         case (cacheTable, "cache") => if (isSparkV32OrGreater) {
-            doAs("admin", sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
+            doAs(admin, sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
           }
         case (_, e) =>
           throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
       }
     }
+  }
+
+  protected def checkAnswer(user: String, query: String, result: Seq[Row]): Unit = {
+    doAs(user, assert(sql(query).collect() === result))
   }
 
 }

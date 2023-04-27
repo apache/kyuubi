@@ -30,7 +30,7 @@ import org.apache.hadoop.io.Writable
 import org.apache.hadoop.mapred.{InputFormat, JobConf}
 import org.apache.hadoop.util.ReflectionUtils
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hiveShim, hiveTableUtil}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{HiveShim, HiveTableUtil}
 import org.apache.spark.sql.types.StructType
 
 object HiveReader {
@@ -46,7 +46,7 @@ object HiveReader {
     addColumnMetadataToConf(tableDesc, hiveConf, dataSchema, readDataSchema)
     // Copy hive table properties to hiveConf. For example,
     // initial job conf to read files with specified format
-    hiveTableUtil.configureJobPropertiesForStorageHandler(tableDesc, hiveConf, false)
+    HiveTableUtil.configureJobPropertiesForStorageHandler(tableDesc, hiveConf, false)
   }
 
   private def addColumnMetadataToConf(
@@ -60,7 +60,7 @@ object HiveReader {
     val neededColumnIDs =
       readDataSchema.map(field => Integer.valueOf(dataSchema.fields.indexOf(field)))
 
-    hiveShim.appendReadColumns(hiveConf, neededColumnIDs, neededColumnNames)
+    HiveShim.appendReadColumns(hiveConf, neededColumnIDs, neededColumnNames)
 
     val deserializer = tableDesc.getDeserializerClass.newInstance
     deserializer.initialize(hiveConf, tableDesc.getProperties)

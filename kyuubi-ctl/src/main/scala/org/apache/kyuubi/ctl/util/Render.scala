@@ -111,6 +111,9 @@ private[ctl] object Render {
 
   private def buildBatchAppInfo(batch: Batch, showDiagnostic: Boolean = true): List[String] = {
     val batchAppInfo = ListBuffer[String]()
+    batch.getBatchInfo.asScala.foreach { case (key, value) =>
+      batchAppInfo += s"$key: $value"
+    }
     if (batch.getAppStartTime > 0) {
       batchAppInfo += s"App Start Time:" +
         s" ${millisToDateString(batch.getAppStartTime, "yyyy-MM-dd HH:mm:ss")}"

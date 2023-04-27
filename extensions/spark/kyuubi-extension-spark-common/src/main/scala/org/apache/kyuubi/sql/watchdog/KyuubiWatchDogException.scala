@@ -23,3 +23,8 @@ final class MaxPartitionExceedException(
     private val reason: String = "",
     private val cause: Throwable = None.orNull)
   extends KyuubiSQLExtensionException(reason, cause)
+
+final class MaxFileSizeExceedException(
+    private val reason: String = "",
+    private val cause: Throwable = None.orNull)
+  extends KyuubiSQLExtensionException(reason, cause)

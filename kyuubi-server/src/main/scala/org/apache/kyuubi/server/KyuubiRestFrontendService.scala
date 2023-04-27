@@ -52,13 +52,16 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
 
-  private def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
+  private[kyuubi] def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   private val batchChecker = ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-checker")
 
   lazy val host: String = conf.get(FRONTEND_REST_BIND_HOST)
     .getOrElse {
-      if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
+      if (Utils.isWindows || Utils.isMac) {
+        warn(s"Kyuubi Server run in Windows or Mac environment, binding $getName to 0.0.0.0")
+        "0.0.0.0"
+      } else if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
         Utils.findLocalInetAddress.getCanonicalHostName
       } else {
         Utils.findLocalInetAddress.getHostAddress
@@ -174,7 +177,6 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
         server.start()
         recoverBatchSessions()
         isStarted.set(true)
-        info(s"$getName has started at ${server.getServerUri}")
         startBatchChecker()
         startInternal()
       } catch {
@@ -182,6 +184,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       }
     }
     super.start()
+    info(s"Exposing REST endpoint at: http://${server.getServerUri}")
   }
 
   override def stop(): Unit = synchronized {

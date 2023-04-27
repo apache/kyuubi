@@ -64,7 +64,8 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
       catalogName: String,
       schemaPattern: String,
       tablePattern: String,
-      tableTypes: Set[String]): Seq[Row] = {
+      tableTypes: Set[String],
+      ignoreTableProperties: Boolean): Seq[Row] = {
     val catalog = spark.sessionState.catalog
     val databases = catalog.listDatabases(schemaPattern)
 

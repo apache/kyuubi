@@ -17,14 +17,14 @@ Kyuubi Hive JDBC Driver
 =======================
 
 .. versionadded:: 1.4.0
-   Since 1.4.0, kyuubi community maintains a forked hive jdbc driver module and provides both shaded and non-shaded packages.
+   Kyuubi community maintains a forked Hive JDBC driver module and provides both shaded and non-shaded packages.
 
-This packages aims to support some missing functionalities of the original hive jdbc.
-For kyuubi engines that support multiple catalogs, it provides meta APIs for better support.
-The behaviors of the original hive jdbc have remained.
+This packages aims to support some missing functionalities of the original Hive JDBC driver.
+For Kyuubi engines that support multiple catalogs, it provides meta APIs for better support.
+The behaviors of the original Hive JDBC driver have remained.
 
-To access a Hive data warehouse or new lakehouse formats, such as Apache Iceberg/Hudi, delta lake using the kyuubi jdbc driver for Apache kyuubi, you need to configure
-the following:
+To access a Hive data warehouse or new Lakehouse formats, such as Apache Iceberg/Hudi, Delta Lake using the Kyuubi JDBC driver
+for Apache kyuubi, you need to configure the following:
 
 - The list of driver library files - :ref:`referencing-libraries`.
 - The Driver or DataSource class - :ref:`registering_class`.
@@ -46,28 +46,28 @@ In the code, specify the artifact `kyuubi-hive-jdbc-shaded` from `Maven Central`
 Maven
 ^^^^^
 
-.. code-block:: xml
+.. parsed-literal::
 
    <dependency>
        <groupId>org.apache.kyuubi</groupId>
        <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
-       <version>1.5.2-incubating</version>
+       <version>\ |release|\</version>
    </dependency>
 
-Sbt
+sbt
 ^^^
 
-.. code-block:: sbt
+.. parsed-literal::
 
-   libraryDependencies += "org.apache.kyuubi" % "kyuubi-hive-jdbc-shaded" % "1.5.2-incubating"
+   libraryDependencies += "org.apache.kyuubi" % "kyuubi-hive-jdbc-shaded" % "\ |release|\"
 
 
 Gradle
 ^^^^^^
 
-.. code-block:: gradle
+.. parsed-literal::
 
-   implementation group: 'org.apache.kyuubi', name: 'kyuubi-hive-jdbc-shaded', version: '1.5.2-incubating'
+   implementation group: 'org.apache.kyuubi', name: 'kyuubi-hive-jdbc-shaded', version: '\ |release|\'
 
 Using the Driver in a JDBC Application
 **************************************
@@ -92,11 +92,9 @@ connection for JDBC:
 
 .. code-block:: java
 
-   private static Connection connectViaDM() throws Exception
-   {
-      Connection connection = null;
-      connection = DriverManager.getConnection(CONNECTION_URL);
-      return connection;
+   private static Connection newKyuubiConnection() throws Exception {
+     Connection connection = DriverManager.getConnection(CONNECTION_URL);
+     return connection;
    }
 
 .. _building_url:
@@ -112,12 +110,13 @@ accessing. The following is the format of the connection URL for the Kyuubi Hive
 
 .. code-block:: jdbc
 
-   jdbc:subprotocol://host:port/schema;<clientProperties;><[#|?]sessionProperties>
+   jdbc:subprotocol://host:port[/catalog]/[schema];<clientProperties;><[#|?]sessionProperties>
 
 - subprotocol: kyuubi or hive2
 - host: DNS or IP address of the kyuubi server
 - port: The number of the TCP port that the server uses to listen for client requests
-- dbName: Optional database name to set the current database to run the query against, use `default` if absent.
+- catalog: Optional catalog name to set the current catalog to run the query against.
+- schema: Optional database name to set the current database to run the query against, use `default` if absent.
 - clientProperties: Optional `semicolon(;)` separated `key=value` parameters identified and affect the client behavior locally. e.g., user=foo;password=bar.
 - sessionProperties: Optional `semicolon(;)` separated `key=value` parameters used to configure the session, operation or background engines.
   For instance, `kyuubi.engine.share.level=CONNECTION` determines the background engine instance is used only by the current connection. `spark.ui.enabled=false` disables the Spark UI of the engine.
@@ -127,7 +126,7 @@ accessing. The following is the format of the connection URL for the Kyuubi Hive
    - Properties are case-sensitive
    - Do not duplicate properties in the connection URL
 
-Connection URL over Http
+Connection URL over HTTP
 ************************
 
 .. versionadded:: 1.6.0
@@ -145,16 +144,78 @@ Connection URL over Service Discovery
 
    jdbc:subprotocol://<zookeeper quorum>/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi
 
-- zookeeper quorum is the corresponding zookeeper cluster configured by `kyuubi.ha.zookeeper.quorum` at the server side.
-- zooKeeperNamespace is  the corresponding namespace configured by `kyuubi.ha.zookeeper.namespace` at the server side.
+- zookeeper quorum is the corresponding zookeeper cluster configured by `kyuubi.ha.addresses` at the server side.
+- zooKeeperNamespace is  the corresponding namespace configured by `kyuubi.ha.namespace` at the server side.
 
-Authentication
---------------
+Kerberos Authentication
+-----------------------
+Since 1.6.0, Kyuubi JDBC driver implements the Kerberos authentication based on JAAS framework instead of `Hadoop UserGroupInformation`_,
+which means it does not forcibly rely on Hadoop dependencies to connect a kerberized Kyuubi Server.
 
+Kyuubi JDBC driver supports different approaches to connect a kerberized Kyuubi Server. First of all, please follow
+the `krb5.conf instruction`_ to setup ``krb5.conf`` properly.
 
-DataTypes
----------
+Authentication by Principal and Keytab
+**************************************
+
+.. versionadded:: 1.6.0
+
+.. tip::
+
+   It's the simplest way w/ minimal setup requirements for Kerberos authentication.
+
+It's straightforward to use principal and keytab for Kerberos authentication, just simply configure them in the JDBC URL.
+
+.. code-block::
+
+   jdbc:kyuubi://host:port/schema;kyuubiClientPrincipal=<clientPrincipal>;kyuubiClientKeytab=<clientKeytab>;kyuubiServerPrincipal=<serverPrincipal>
+
+- kyuubiClientPrincipal: Kerberos ``principal`` for client authentication
+- kyuubiClientKeytab: path of Kerberos ``keytab`` file for client authentication
+- kyuubiServerPrincipal: Kerberos ``principal`` configured by `kyuubi.kinit.principal` at the server side. ``kyuubiServerPrincipal`` is available
+  as an alias of ``principal`` since 1.7.0, use ``principal`` for previous versions.
+
+Authentication by Principal and TGT Cache
+*****************************************
+
+Another typical usage of Kerberos authentication is using `kinit` to generate the TGT cache first, then the application
+does Kerberos authentication through the TGT cache.
+
+.. code-block::
+
+   jdbc:kyuubi://host:port/schema;kyuubiServerPrincipal=<serverPrincipal>
+
+Authentication by `Hadoop UserGroupInformation`_ ``doAs`` (programing only)
+***************************************************************************
+
+.. tip::
+
+  This approach allows project which already uses `Hadoop UserGroupInformation`_ for Kerberos authentication to easily
+  connect the kerberized Kyuubi Server. This approach does not work between [1.6.0, 1.7.0], and got fixed in 1.7.1.
+
+.. code-block::
+
+  String jdbcUrl = "jdbc:kyuubi://host:port/schema;kyuubiServerPrincipal=<serverPrincipal>"
+  UserGroupInformation ugi = UserGroupInformation.loginUserFromKeytab(clientPrincipal, clientKeytab);
+  ugi.doAs((PrivilegedExceptionAction<String>) () -> {
+    Connection conn = DriverManager.getConnection(jdbcUrl);
+    ...
+  });
+
+Authentication by Subject (programing only)
+*******************************************
+
+.. code-block:: java
+
+   String jdbcUrl = "jdbc:kyuubi://host:port/schema;kyuubiServerPrincipal=<serverPrincipal>;kerberosAuthType=fromSubject"
+   Subject kerberizedSubject = ...;
+   Subject.doAs(kerberizedSubject, (PrivilegedExceptionAction<String>) () -> {
+     Connection conn = DriverManager.getConnection(jdbcUrl);
+     ...
+   });
 
 .. _Maven Central: https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-hive-jdbc-shaded
 .. _JDBC Applications: ../bi_tools/index.html
 .. _java.sql.DriverManager: https://docs.oracle.com/javase/8/docs/api/java/sql/DriverManager.html
+.. _Hadoop UserGroupInformation: https://hadoop.apache.org/docs/stable/api/org/apache/hadoop/security/UserGroupInformation.html
+.. _krb5.conf instruction: https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html

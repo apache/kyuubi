@@ -18,21 +18,33 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import java.sql.Statement
+import java.util.UUID
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
+import org.apache.kyuubi.engine.flink.{WithDiscoveryFlinkSQLEngine, WithFlinkSQLEngineLocal}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
 import org.apache.kyuubi.operation.{AnalyzeMode, ExecutionMode, HiveJDBCTestHelper, ParseMode, PhysicalMode}
 
-class PlanOnlyOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
+class PlanOnlyOperationSuite extends WithFlinkSQLEngineLocal
+  with HiveJDBCTestHelper with WithDiscoveryFlinkSQLEngine {
+
+  override protected def engineRefId: String = UUID.randomUUID().toString
+
+  override protected def namespace: String = "/kyuubi/flink-plan-only-test"
+
+  def engineType: String = "flink"
 
   override def withKyuubiConf: Map[String, String] =
     Map(
+      "flink.execution.target" -> "remote",
+      HA_NAMESPACE.key -> namespace,
+      HA_ENGINE_REF_ID.key -> engineRefId,
+      KyuubiConf.ENGINE_TYPE.key -> "FLINK_SQL",
       KyuubiConf.ENGINE_SHARE_LEVEL.key -> "user",
       KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> ParseMode.name,
-      KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "plan-only")
+      KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "plan-only") ++ testExtraConf
 
-  override protected def jdbcUrl: String =
-    s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;"
+  override protected def jdbcUrl: String = getFlinkEngineServiceUrl
 
   test("Plan only operation with system defaults") {
     withJdbcStatement() { statement =>

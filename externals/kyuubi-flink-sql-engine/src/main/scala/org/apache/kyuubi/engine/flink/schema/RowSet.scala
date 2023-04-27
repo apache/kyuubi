@@ -21,7 +21,9 @@ import java.{lang, util}
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.{Date, Timestamp}
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{Instant, LocalDate, LocalDateTime, ZonedDateTime, ZoneId}
+import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder, TextStyle}
+import java.time.temporal.ChronoField
 import java.util.Collections
 
 import scala.collection.JavaConverters._
@@ -42,15 +44,16 @@ object RowSet {
   def resultSetToTRowSet(
       rows: Seq[Row],
       resultSet: ResultSet,
+      zoneId: ZoneId,
       protocolVersion: TProtocolVersion): TRowSet = {
     if (protocolVersion.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
-      toRowBaseSet(rows, resultSet)
+      toRowBaseSet(rows, resultSet, zoneId)
     } else {
-      toColumnBasedSet(rows, resultSet)
+      toColumnBasedSet(rows, resultSet, zoneId)
     }
   }
 
-  def toRowBaseSet(rows: Seq[Row], resultSet: ResultSet): TRowSet = {
+  def toRowBaseSet(rows: Seq[Row], resultSet: ResultSet, zoneId: ZoneId): TRowSet = {
     val rowSize = rows.size
     val tRows = new util.ArrayList[TRow](rowSize)
     var i = 0
@@ -60,7 +63,7 @@ object RowSet {
       val columnSize = row.getArity
       var j = 0
       while (j < columnSize) {
-        val columnValue = toTColumnValue(j, row, resultSet)
+        val columnValue = toTColumnValue(j, row, resultSet, zoneId)
         tRow.addToColVals(columnValue)
         j += 1
       }
@@ -71,14 +74,14 @@ object RowSet {
     new TRowSet(0, tRows)
   }
 
-  def toColumnBasedSet(rows: Seq[Row], resultSet: ResultSet): TRowSet = {
+  def toColumnBasedSet(rows: Seq[Row], resultSet: ResultSet, zoneId: ZoneId): TRowSet = {
     val size = rows.length
     val tRowSet = new TRowSet(0, new util.ArrayList[TRow](size))
     val columnSize = resultSet.getColumns.size()
     var i = 0
     while (i < columnSize) {
       val field = resultSet.getColumns.get(i)
-      val tColumn = toTColumn(rows, i, field.getDataType.getLogicalType)
+      val tColumn = toTColumn(rows, i, field.getDataType.getLogicalType, zoneId)
       tRowSet.addToColumns(tColumn)
       i += 1
     }
@@ -88,7 +91,8 @@ object RowSet {
   private def toTColumnValue(
       ordinal: Int,
       row: Row,
-      resultSet: ResultSet): TColumnValue = {
+      resultSet: ResultSet,
+      zoneId: ZoneId): TColumnValue = {
 
     val column = resultSet.getColumns.get(ordinal)
     val logicalType = column.getDataType.getLogicalType
@@ -153,6 +157,12 @@ object RowSet {
                 s"for type ${t.getClass}.")
         }
         TColumnValue.stringVal(tStringValue)
+      case _: LocalZonedTimestampType =>
+        val tStringValue = new TStringValue
+        val fieldValue = row.getField(ordinal)
+        tStringValue.setValue(TIMESTAMP_LZT_FORMATTER.format(
+          ZonedDateTime.ofInstant(fieldValue.asInstanceOf[Instant], zoneId)))
+        TColumnValue.stringVal(tStringValue)
       case t =>
         val tStringValue = new TStringValue
         if (row.getField(ordinal) != null) {
@@ -166,7 +176,11 @@ object RowSet {
     ByteBuffer.wrap(bitSet.toByteArray)
   }
 
-  private def toTColumn(rows: Seq[Row], ordinal: Int, logicalType: LogicalType): TColumn = {
+  private def toTColumn(
+      rows: Seq[Row],
+      ordinal: Int,
+      logicalType: LogicalType,
+      zoneId: ZoneId): TColumn = {
     val nulls = new java.util.BitSet()
     // for each column, determine the conversion class by sampling the first non-value value
     // if there's no row, set the entire column empty
@@ -211,6 +225,12 @@ object RowSet {
                 s"for type ${t.getClass}.")
         }
         TColumn.stringVal(new TStringColumn(values, nulls))
+      case _: LocalZonedTimestampType =>
+        val values = getOrSetAsNull[Instant](rows, ordinal, nulls, Instant.EPOCH)
+          .toArray().map(v =>
+            TIMESTAMP_LZT_FORMATTER.format(
+              ZonedDateTime.ofInstant(v.asInstanceOf[Instant], zoneId)))
+        TColumn.stringVal(new TStringColumn(values.toList.asJava, nulls))
       case _ =>
         var i = 0
         val rowSize = rows.length
@@ -303,11 +323,14 @@ object RowSet {
     case _: DecimalType => TTypeId.DECIMAL_TYPE
     case _: DateType => TTypeId.DATE_TYPE
     case _: TimestampType => TTypeId.TIMESTAMP_TYPE
+    case _: LocalZonedTimestampType => TTypeId.TIMESTAMPLOCALTZ_TYPE
     case _: ArrayType => TTypeId.ARRAY_TYPE
     case _: MapType => TTypeId.MAP_TYPE
     case _: RowType => TTypeId.STRUCT_TYPE
     case _: BinaryType => TTypeId.BINARY_TYPE
-    case t @ (_: ZonedTimestampType | _: LocalZonedTimestampType | _: MultisetType |
+    case _: VarBinaryType => TTypeId.BINARY_TYPE
+    case _: TimeType => TTypeId.STRING_TYPE
+    case t @ (_: ZonedTimestampType | _: MultisetType |
         _: YearMonthIntervalType | _: DayTimeIntervalType) =>
       throw new IllegalArgumentException(
         "Flink data type `%s` is not supported currently".format(t.asSummaryString()),
@@ -368,11 +391,33 @@ object RowSet {
         // Only match string in nested type values
         "\"" + s + "\""
 
-      case (bin: Array[Byte], _: BinaryType) =>
+      case (bin: Array[Byte], _ @(_: BinaryType | _: VarBinaryType)) =>
         new String(bin, StandardCharsets.UTF_8)
 
       case (other, _) =>
         other.toString
     }
+  }
+
+  /** should stay in sync with org.apache.kyuubi.jdbc.hive.common.TimestampTZUtil */
+  var TIMESTAMP_LZT_FORMATTER: DateTimeFormatter = {
+    val builder = new DateTimeFormatterBuilder
+    // Date part
+    builder.append(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+    // Time part
+    builder
+      .optionalStart
+      .appendLiteral(" ")
+      .append(DateTimeFormatter.ofPattern("HH:mm:ss"))
+      .optionalStart
+      .appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
+      .optionalEnd
+      .optionalEnd
+
+    // Zone part
+    builder.optionalStart.appendLiteral(" ").optionalEnd
+    builder.optionalStart.appendZoneText(TextStyle.NARROW).optionalEnd
+
+    builder.toFormatter
   }
 }
