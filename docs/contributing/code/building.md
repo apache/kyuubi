@@ -15,9 +15,9 @@
 - limitations under the License.
 -->
 
-# Building Kyuubi
+# Building From Source
 
-## Building Kyuubi with Apache Maven
+## Building With Maven
 
 **Kyuubi** is built based on [Apache Maven](https://maven.apache.org),
 
@@ -33,7 +33,7 @@ If you want to test it manually, you can start Kyuubi directly from the Kyuubi p
 bin/kyuubi start
 ```
 
-## Building a Submodule Individually
+## Building A Submodule Individually
 
 For instance, you can build the Kyuubi Common module using:
 
@@ -49,7 +49,7 @@ For instance, you can build the Kyuubi Common module using:
 build/mvn clean package -pl kyuubi-common,kyuubi-ha -DskipTests
 ```
 
-## Skipping Some modules
+## Skipping Some Modules
 
 For instance, you can build the Kyuubi modules without Kyuubi Codecov and Assembly modules using:
 
@@ -57,7 +57,7 @@ For instance, you can build the Kyuubi modules without Kyuubi Codecov and Assemb
 mvn clean install -pl '!dev/kyuubi-codecov,!kyuubi-assembly' -DskipTests
 ```
 
-## Building Kyuubi against Different Apache Spark versions
+## Building Kyuubi Against Different Apache Spark Versions
 
 Since v1.1.0, Kyuubi support building with different Spark profiles,
 
@@ -67,7 +67,7 @@ Since v1.1.0, Kyuubi support building with different Spark profiles,
 | -Pspark-3.2 | No      | 1.4.0 |
 | -Pspark-3.3 | Yes     | 1.6.0 |
 
-## Building with Apache dlcdn site
+## Building With Apache dlcdn Site
 
 By default, we use `https://archive.apache.org/dist/` to download the built-in release packages of engines,
 such as Spark or Flink.

@@ -13,15 +13,19 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-Develop Tools
-=============
+Contributing Code
+=================
+
+These sections explain the process, guidelines, and tools for contributing
+code to the Kyuubi project.
 
 .. toctree::
     :maxdepth: 2
 
+    get_started
+    style
     building
     distribution
-    build_document
     testing
     debugging
     developer

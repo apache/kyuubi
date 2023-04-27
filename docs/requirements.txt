@@ -24,3 +24,5 @@ sphinx-book-theme==0.3.3
 sphinx-markdown-tables==0.0.17
 sphinx-notfound-page==0.8.3
 sphinx-togglebutton===0.3.2
+sphinxemoji===0.2.0
+sphinx-copybutton===0.5.2

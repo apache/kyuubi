@@ -77,9 +77,11 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'recommonmark',
+    'sphinx_copybutton',
     'sphinx_markdown_tables',
     'sphinx_togglebutton',
     'notfound.extension',
+    'sphinxemoji.sphinxemoji',
 ]
 
 master_doc = 'index'
