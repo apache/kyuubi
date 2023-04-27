@@ -81,7 +81,7 @@ Windows
 ~~~~~~~
 
 .. code-block:: sh
-   :caption: Sphinx build on windows
+   :caption: Sphinx build on Windows
 
    $ make.bat html
 
