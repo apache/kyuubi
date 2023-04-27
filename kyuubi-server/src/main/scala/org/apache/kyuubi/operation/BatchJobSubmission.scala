@@ -78,6 +78,9 @@ class BatchJobSubmission(
 
   @volatile private var _appStartTime = recoveryMetadata.map(_.engineOpenTime).getOrElse(0L)
   def appStartTime: Long = _appStartTime
+  def appStarted: Boolean = _appStartTime > 0
+
+  private lazy val _submitTime = if (appStarted) _appStartTime else System.currentTimeMillis
 
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
@@ -101,16 +104,11 @@ class BatchJobSubmission(
 
   override protected def currentApplicationInfo(): Option[ApplicationInfo] = {
     if (isTerminal(state) && _applicationInfo.nonEmpty) return _applicationInfo
-    val submitTime = if (_appStartTime <= 0) {
-      System.currentTimeMillis()
-    } else {
-      _appStartTime
-    }
     val applicationInfo =
       applicationManager.getApplicationInfo(
         builder.clusterManager(),
         batchId,
-        Some(submitTime))
+        Some(_submitTime))
     applicationId(applicationInfo).foreach { _ =>
       if (_appStartTime <= 0) {
         _appStartTime = System.currentTimeMillis()
@@ -142,21 +140,20 @@ class BatchJobSubmission(
 
     if (isTerminalState(state)) {
       if (_applicationInfo.isEmpty) {
-        _applicationInfo =
-          Option(ApplicationInfo(id = null, name = null, state = ApplicationState.NOT_FOUND))
+        _applicationInfo = Some(ApplicationInfo.NOT_FOUND)
       }
     }
 
-    _applicationInfo.foreach { status =>
+    _applicationInfo.foreach { appInfo =>
       val metadataToUpdate = Metadata(
         identifier = batchId,
         state = state.toString,
         engineOpenTime = appStartTime,
-        engineId = status.id,
-        engineName = status.name,
-        engineUrl = status.url.orNull,
-        engineState = status.state.toString,
-        engineError = status.error,
+        engineId = appInfo.id,
+        engineName = appInfo.name,
+        engineUrl = appInfo.url.orNull,
+        engineState = appInfo.state.toString,
+        engineError = appInfo.error,
         endTime = endTime)
       session.sessionManager.updateMetadata(metadataToUpdate)
     }
@@ -258,14 +255,25 @@ class BatchJobSubmission(
 
       if (applicationFailed(_applicationInfo)) {
         process.destroyForcibly()
-        throw new RuntimeException(s"Batch job failed: ${_applicationInfo}")
+        throw new KyuubiException(s"Batch job failed: ${_applicationInfo}")
       } else {
         process.waitFor()
         if (process.exitValue() != 0) {
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
 
-        applicationId(_applicationInfo).foreach(monitorBatchJob)
+        while (!appStarted && applicationId(_applicationInfo).isEmpty &&
+          !applicationTerminated(_applicationInfo)) {
+          Thread.sleep(applicationCheckInterval)
+          updateApplicationInfoMetadataIfNeeded()
+        }
+
+        applicationId(_applicationInfo) match {
+          case Some(appId) => monitorBatchJob(appId)
+          case None if !appStarted =>
+            throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+          case None =>
+        }
       }
     } finally {
       builder.close()
@@ -284,7 +292,7 @@ class BatchJobSubmission(
     if (_applicationInfo.isEmpty) {
       info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
     } else if (applicationFailed(_applicationInfo)) {
-      throw new RuntimeException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+      throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
     } else {
       updateBatchMetadata()
       // TODO: add limit for max batch job submission lifetime
@@ -294,7 +302,7 @@ class BatchJobSubmission(
       }
 
       if (applicationFailed(_applicationInfo)) {
-        throw new RuntimeException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+        throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
       }
     }
   }
