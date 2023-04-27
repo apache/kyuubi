@@ -73,7 +73,7 @@ Linux & MacOS
 ~~~~~~~~~~~~~
 
 .. code-block:: sh
-   :caption: Sphinx build on unix-like OS
+   :caption: Sphinx build on Unix-like OS
 
    $ make html
 
