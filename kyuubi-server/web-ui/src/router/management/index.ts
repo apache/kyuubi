@@ -15,12 +15,27 @@
  * limitations under the License.
  */
 
-const routes = [
+const router = [
   {
-    path: '/engine/engine-statistics',
-    name: 'engine-statistics',
-    component: () => import('@/views/engine/index.vue')
+    path: '/management/engine',
+    name: 'engine',
+    component: () => import('@/views/management/engine/index.vue')
+  },
+  {
+    path: '/management/server',
+    name: 'server',
+    component: () => import('@/views/management/server/index.vue')
+  },
+  {
+    path: '/management/session',
+    name: 'session',
+    component: () => import('@/views/management/session/index.vue')
+  },
+  {
+    path: '/management/operation',
+    name: 'operation',
+    component: () => import('@/views/management/operation/index.vue')
   }
 ]
 
-export default routes
+export default router

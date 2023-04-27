@@ -35,7 +35,7 @@ In the IDE, you set the corresponding parameters(host&port) in debug configurati
 
 <div align=center>
 
-![](../imgs/idea_debug.png)
+![](../../imgs/idea_debug.png)
 
 </div>
 

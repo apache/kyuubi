@@ -15,7 +15,7 @@
 - limitations under the License.
 -->
 
-# Building a Runnable Distribution
+# Building A Runnable Distribution
 
 To create a Kyuubi distribution like those distributed by [Kyuubi Release Page](https://kyuubi.apache.org/releases.html),
 and that is laid out to be runnable, use `./build/dist` in the project root directory.
