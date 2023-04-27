@@ -48,7 +48,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   private val driverClassOpt = conf.get(METADATA_STORE_JDBC_DRIVER)
   private val driverClass = dbType match {
     case DERBY => driverClassOpt.getOrElse("org.apache.derby.jdbc.AutoloadedDriver")
-    case MYSQL => driverClassOpt.getOrElse("com.mysql.jdbc.Driver")
+    case MYSQL => driverClassOpt.getOrElse("com.mysql.cj.jdbc.Driver")
     case CUSTOM => driverClassOpt.getOrElse(
         throw new IllegalArgumentException("No jdbc driver defined"))
   }

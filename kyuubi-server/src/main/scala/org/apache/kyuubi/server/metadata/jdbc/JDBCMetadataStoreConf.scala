@@ -38,7 +38,7 @@ object JDBCMetadataStoreConf {
     buildConf("kyuubi.metadata.store.jdbc.database.type")
       .doc("The database type for server jdbc metadata store.<ul>" +
         " <li>DERBY: Apache Derby, JDBC driver `org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
-        " <li>MYSQL: MySQL, JDBC driver `com.mysql.jdbc.Driver`.</li>" +
+        " <li>MYSQL: MySQL, JDBC driver `com.mysql.cj.jdbc.Driver`.</li>" +
         " <li>CUSTOM: User-defined database type, need to specify corresponding JDBC driver.</li>" +
         " Note that: The JDBC datasource is powered by HiKariCP, for datasource properties," +
         " please specify them with the prefix: kyuubi.metadata.store.jdbc.datasource." +
