@@ -26,6 +26,7 @@ import org.apache.thrift.TException
 import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_OPERATION_HANDLE_KEY
 import org.apache.kyuubi.events.{EventBus, KyuubiOperationEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_STATE, OPERATION_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -46,6 +47,8 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   protected[operation] lazy val client = session.asInstanceOf[KyuubiSessionImpl].client
 
+  protected val operationHandleConf = Map(KYUUBI_OPERATION_HANDLE_KEY -> handle.identifier.toString)
+
   @volatile protected var _remoteOpHandle: TOperationHandle = _
 
   def remoteOpHandle(): TOperationHandle = _remoteOpHandle
@@ -56,7 +59,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   protected def onError(action: String = "operating"): PartialFunction[Throwable, Unit] = {
     case e: Throwable =>
-      state.synchronized {
+      withLockRequired {
         if (isTerminalState(state)) {
           warn(s"Ignore exception in terminal state with $statementId", e)
         } else {
@@ -98,14 +101,14 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
   }
 
   override protected def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }
     }
   }
 
-  override def cancel(): Unit = state.synchronized {
+  override def cancel(): Unit = withLockRequired {
     if (!isClosedOrCanceled) {
       setState(OperationState.CANCELED)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
@@ -120,7 +123,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     }
   }
 
-  override def close(): Unit = state.synchronized {
+  override def close(): Unit = withLockRequired {
     if (!isClosedOrCanceled) {
       setState(OperationState.CLOSED)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))

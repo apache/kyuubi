@@ -26,12 +26,12 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift._
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.WithKyuubiServer
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.{KYUUBI_VERSION, WithKyuubiServer}
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
 import org.apache.kyuubi.engine.ApplicationState
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
-import org.apache.kyuubi.jdbc.hive.KyuubiConnection
+import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiSQLException}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.plugin.SessionConfAdvisor
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionType}
@@ -137,6 +137,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       assert(connection.getEngineId.startsWith("local-"))
       assert(connection.getEngineName.startsWith("kyuubi"))
       assert(connection.getEngineUrl.nonEmpty)
+      assert(connection.getEngineRefId.nonEmpty)
       val stmt = connection.createStatement()
       try {
         stmt.execute("select engine_name()")
@@ -270,6 +271,24 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       assert(MetricsSystem.counterValue(connTotalMetric).getOrElse(0L) - connTotalCount > 1)
       assert(MetricsSystem.counterValue(connOpenMetric).getOrElse(0L) === 0)
       assert(MetricsSystem.counterValue(connFailedMetric).getOrElse(0L) > connFailedCount)
+    }
+  }
+
+  test("support to transfer client version when opening jdbc connection") {
+    withJdbcStatement() { stmt =>
+      val rs = stmt.executeQuery(s"set spark.${KyuubiReservedKeys.KYUUBI_CLIENT_VERSION_KEY}")
+      assert(rs.next())
+      assert(rs.getString(2) === KYUUBI_VERSION)
+    }
+  }
+
+  test("JDBC client should catch task failed exception in the incremental mode") {
+    withJdbcStatement() { statement =>
+      statement.executeQuery(s"set ${KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key}=true;")
+      val resultSet = statement.executeQuery(
+        "SELECT raise_error('client should catch this exception');")
+      val e = intercept[KyuubiSQLException](resultSet.next())
+      assert(e.getMessage.contains("client should catch this exception"))
     }
   }
 }

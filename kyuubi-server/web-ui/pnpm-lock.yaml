@@ -12,6 +12,7 @@ specifiers:
   '@vue/eslint-config-typescript': ^11.0.0
   '@vue/test-utils': ^2.0.2
   axios: ^0.27.2
+  date-fns: ^2.29.3
   element-plus: ^2.2.12
   eslint: ^8.21.0
   eslint-plugin-prettier: ^4.2.1
@@ -32,6 +33,7 @@ specifiers:
 dependencies:
   '@element-plus/icons-vue': 2.0.9_vue@3.2.37
   axios: 0.27.2
+  date-fns: 2.29.3
   element-plus: 2.2.13_vue@3.2.37
   pinia: 2.0.18_j6bzmzd4ujpabbp5objtwxyjp4
   pinia-plugin-persistedstate: 2.1.1_pinia@2.0.18
@@ -906,6 +908,11 @@ packages:
       whatwg-mimetype: 3.0.0
       whatwg-url: 11.0.0
     dev: true
+
+  /date-fns/2.29.3:
+    resolution: {integrity: sha512-dDCnyH2WnnKusqvZZ6+jA1O51Ibt8ZMRNkDZdyAyK4YfbDwa/cEmuztzG5pk6hqlp9aSBPYcjOlktquahGwGeA==}
+    engines: {node: '>=0.11'}
+    dev: false
 
   /dayjs/1.11.5:
     resolution: {integrity: sha512-CAdX5Q3YW3Gclyo5Vpqkgpj8fSdLQcRuzfX6mC6Phy0nfJ0eGYOeS7m4mt2plDWLAtA4TqTakvbboHvUxfe4iA==}

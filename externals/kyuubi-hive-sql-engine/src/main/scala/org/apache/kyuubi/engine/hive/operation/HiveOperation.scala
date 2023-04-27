@@ -46,7 +46,7 @@ abstract class HiveOperation(session: Session) extends AbstractOperation(session
   }
 
   override def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }

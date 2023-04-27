@@ -43,6 +43,10 @@ FALSE: 'FALSE';
 LIKE: 'LIKE';
 IN: 'IN';
 WHERE: 'WHERE';
+EXECUTE: 'EXECUTE';
+PREPARE: 'PREPARE';
+DEALLOCATE: 'DEALLOCATE';
+USING: 'USING';
 
 ESCAPE: 'ESCAPE';
 AUTO_INCREMENT: 'AUTO_INCREMENT';
@@ -97,6 +101,21 @@ SCOPE_TABLE: 'SCOPE_TABLE';
 SOURCE_DATA_TYPE: 'SOURCE_DATA_TYPE';
 IS_AUTOINCREMENT: 'IS_AUTOINCREMENT';
 IS_GENERATEDCOLUMN: 'IS_GENERATEDCOLUMN';
+VARCHAR: 'VARCHAR';
+TINYINT: 'TINYINT';
+SMALLINT: 'SMALLINT';
+INTEGER: 'INTEGER';
+BIGINT: 'BIGINT';
+REAL: 'REAL';
+DOUBLE: 'DOUBLE';
+DECIMAL: 'DECIMAL';
+DATE: 'DATE';
+TIME: 'TIME';
+TIMESTAMP: 'TIMESTAMP';
+CAST: 'CAST';
+AS: 'AS';
+KEY_SEQ: 'KEY_SEQ';
+PK_NAME: 'PK_NAME';
 
 fragment SEARCH_STRING_ESCAPE: '\'' '\\' '\'';
 
@@ -108,6 +127,10 @@ STRING
     : '\'' ( ~'\'' | '\'\'' )* '\''
     ;
 
+STRING_MARK
+    : '\''
+    ;
+
 SIMPLE_COMMENT
     : '--' ~[\r\n]* '\r'? '\n'? -> channel(HIDDEN)
     ;
@@ -117,6 +140,10 @@ BRACKETED_COMMENT
     ;
 
 WS  : [ \r\n\t]+ -> channel(HIDDEN)
+    ;
+
+IDENTIFIER
+    : [A-Za-z_$0-9\u0080-\uFFFF]*?[A-Za-z_$\u0080-\uFFFF]+?[A-Za-z_$0-9\u0080-\uFFFF]*
     ;
 
 // Catch-all for anything we can't recognize.

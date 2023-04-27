@@ -26,7 +26,7 @@ import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
-    if (isSparkV32OrGreater) {
+    if (isSparkV31OrGreater) {
       "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
     } else ""
   override protected def format = "iceberg"
@@ -38,7 +38,7 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val supportsPartitionManagement = false
 
   override def beforeAll(): Unit = {
-    if (isSparkV32OrGreater) {
+    if (isSparkV31OrGreater) {
       spark.conf.set(
         s"spark.sql.catalog.$catalogV2",
         "org.apache.iceberg.spark.SparkCatalog")
@@ -51,7 +51,7 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   }
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV31OrGreater)
     test()
   }
 

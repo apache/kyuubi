@@ -28,7 +28,6 @@ import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsRe
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.util.SparkVersionUtil.isSparkVersionAtLeast
 
 trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
 
@@ -187,7 +186,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
     withJdbcStatement("t") { statement =>
       try {
         val assertTableOrViewNotfound: (Exception, String) => Unit = (e, tableName) => {
-          if (isSparkVersionAtLeast("3.4")) {
+          if (SPARK_ENGINE_RUNTIME_VERSION >= "3.4") {
             assert(e.getMessage.contains("[TABLE_OR_VIEW_NOT_FOUND]"))
             assert(e.getMessage.contains(s"The table or view `$tableName` cannot be found."))
           } else {
@@ -433,13 +432,13 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
         expectedFormat = "thrift")
       checkStatusAndResultSetFormatHint(
         sql = "set kyuubi.operation.result.format=arrow",
-        expectedFormat = "arrow")
+        expectedFormat = "thrift")
       checkStatusAndResultSetFormatHint(
         sql = "SELECT 1",
         expectedFormat = "arrow")
       checkStatusAndResultSetFormatHint(
         sql = "set kyuubi.operation.result.format=thrift",
-        expectedFormat = "thrift")
+        expectedFormat = "arrow")
       checkStatusAndResultSetFormatHint(
         sql = "set kyuubi.operation.result.format",
         expectedFormat = "thrift")

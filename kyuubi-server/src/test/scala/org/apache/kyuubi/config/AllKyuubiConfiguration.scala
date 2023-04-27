@@ -35,12 +35,12 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
  *
  * To run the entire test suite:
  * {{{
- *   build/mvn clean test -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
+ *   build/mvn clean test -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -Dtest=none -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
  * }}}
  *
  * To re-generate golden files for entire suite, run:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn clean test -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
+ *   KYUUBI_UPDATE=1 build/mvn clean test -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -Dtest=none -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
  * }}}
  */
 // scalastyle:on line.size.limit
@@ -75,9 +75,8 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
          | e.g, `JAVA_HOME`, then this java runtime will be used both for Kyuubi server instance and
          | the applications it launches. You can also change the variable in the subprocess's env
          | configuration file, e.g.`$SPARK_HOME/conf/spark-env.sh` to use more specific ENV for
-         | SQL engine applications.
+         | SQL engine applications. see `$KYUUBI_HOME/conf/kyuubi-env.sh.template` as an example.
          | """)
-      .fileWithBlock(Paths.get(kyuubiHome, "conf", "kyuubi-env.sh.template"))
       .line(
         """
         | For the environment variables that only needed to be transferred into engine
@@ -89,8 +88,9 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
         | """)
       .line("## Kyuubi Configurations")
       .line(""" You can configure the Kyuubi properties in
-         | `$KYUUBI_HOME/conf/kyuubi-defaults.conf`. For example: """)
-      .fileWithBlock(Paths.get(kyuubiHome, "conf", "kyuubi-defaults.conf.template"))
+         | `$KYUUBI_HOME/conf/kyuubi-defaults.conf`, see
+         | `$KYUUBI_HOME/conf/kyuubi-defaults.conf.template` as an example.
+         | """)
 
     KyuubiConf.getConfigEntries().asScala
       .toStream
@@ -188,8 +188,9 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     builder
       .line("## Logging")
       .line("""Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging.
-        | You can configure it using `$KYUUBI_HOME/conf/log4j2.xml`.""")
-      .fileWithBlock(Paths.get(kyuubiHome, "conf", "log4j2.xml.template"))
+        | You can configure it using `$KYUUBI_HOME/conf/log4j2.xml`, see
+        | `$KYUUBI_HOME/conf/log4j2.xml.template` as an example.
+        | """)
 
     builder
       .lines("""

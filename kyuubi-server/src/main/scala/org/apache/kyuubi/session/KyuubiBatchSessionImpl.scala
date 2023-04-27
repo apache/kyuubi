@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.session
 
-import java.util.UUID
-
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
@@ -50,9 +49,10 @@ class KyuubiBatchSessionImpl(
     sessionManager) {
   override val sessionType: SessionType = SessionType.BATCH
 
-  override val handle: SessionHandle = recoveryMetadata.map { metadata =>
-    SessionHandle(UUID.fromString(metadata.identifier))
-  }.getOrElse(SessionHandle())
+  override val handle: SessionHandle = {
+    val batchId = recoveryMetadata.map(_.identifier).getOrElse(conf(KYUUBI_BATCH_ID_KEY))
+    SessionHandle.fromUUID(batchId)
+  }
 
   override def createTime: Long = recoveryMetadata.map(_.createTime).getOrElse(super.createTime)
 
@@ -68,18 +68,31 @@ class KyuubiBatchSessionImpl(
   override val sessionIdleTimeoutThreshold: Long =
     sessionManager.getConf.get(KyuubiConf.BATCH_SESSION_IDLE_TIMEOUT)
 
-  // TODO: Support batch conf advisor
   override val normalizedConf: Map[String, String] = {
     sessionConf.getBatchConf(batchRequest.getBatchType) ++
       sessionManager.validateBatchConf(batchRequest.getConf.asScala.toMap)
   }
 
+  private val optimizedConf: Map[String, String] = {
+    val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
+      user,
+      normalizedConf.asJava)
+    if (confOverlay != null) {
+      val overlayConf = new KyuubiConf(false)
+      confOverlay.asScala.foreach { case (k, v) => overlayConf.set(k, v) }
+      normalizedConf ++ overlayConf.getBatchConf(batchRequest.getBatchType)
+    } else {
+      warn(s"the server plugin return null value for user: $user, ignore it")
+      normalizedConf
+    }
+  }
+
   override lazy val name: Option[String] = Option(batchRequest.getName).orElse(
-    normalizedConf.get(KyuubiConf.SESSION_NAME.key))
+    optimizedConf.get(KyuubiConf.SESSION_NAME.key))
 
   // whether the resource file is from uploading
   private[kyuubi] val isResourceUploaded: Boolean = batchRequest.getConf
-    .getOrDefault(KyuubiReservedKeys.KYUUBI_SESSION_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
+    .getOrDefault(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
@@ -88,7 +101,7 @@ class KyuubiBatchSessionImpl(
       name.orNull,
       batchRequest.getResource,
       batchRequest.getClassName,
-      normalizedConf,
+      optimizedConf,
       batchRequest.getArgs.asScala,
       recoveryMetadata)
 
@@ -105,7 +118,7 @@ class KyuubiBatchSessionImpl(
   }
 
   private val sessionEvent = KyuubiSessionEvent(this)
-  recoveryMetadata.map(metadata => sessionEvent.engineId = metadata.engineId)
+  recoveryMetadata.foreach(metadata => sessionEvent.engineId = metadata.engineId)
   EventBus.post(sessionEvent)
 
   override def getSessionEvent: Option[KyuubiSessionEvent] = {
@@ -115,7 +128,7 @@ class KyuubiBatchSessionImpl(
   override def checkSessionAccessPathURIs(): Unit = {
     KyuubiApplicationManager.checkApplicationAccessPaths(
       batchRequest.getBatchType,
-      normalizedConf,
+      optimizedConf,
       sessionManager.getConf)
     if (batchRequest.getResource != SparkProcessBuilder.INTERNAL_RESOURCE
       && !isResourceUploaded) {
@@ -140,12 +153,13 @@ class KyuubiBatchSessionImpl(
         resource = batchRequest.getResource,
         className = batchRequest.getClassName,
         requestName = name.orNull,
-        requestConf = normalizedConf,
+        requestConf = optimizedConf,
         requestArgs = batchRequest.getArgs.asScala,
         createTime = createTime,
         engineType = batchRequest.getBatchType,
         clusterManager = batchJobSubmissionOp.builder.clusterManager())
 
+      // there is a chance that operation failed w/ duplicated key error
       sessionManager.insertMetadata(metaData)
     }
 

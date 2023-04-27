@@ -30,7 +30,7 @@ class Log4j12DivertAppender extends WriterAppender {
 
   final private val lo = Logger.getRootLogger
     .getAllAppenders.asScala
-    .find(_.isInstanceOf[ConsoleAppender])
+    .find(ap => ap.isInstanceOf[ConsoleAppender] || ap.isInstanceOf[RollingFileAppender])
     .map(_.asInstanceOf[Appender].getLayout)
     .getOrElse(new PatternLayout("%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n"))
 
@@ -39,7 +39,7 @@ class Log4j12DivertAppender extends WriterAppender {
   setLayout(lo)
 
   addFilter { _: LoggingEvent =>
-    if (OperationLog.getCurrentOperationLog == null) Filter.DENY else Filter.NEUTRAL
+    if (OperationLog.getCurrentOperationLog.isDefined) Filter.NEUTRAL else Filter.DENY
   }
 
   /**
@@ -51,8 +51,7 @@ class Log4j12DivertAppender extends WriterAppender {
     // That should've gone into our writer. Notify the LogContext.
     val logOutput = writer.toString
     writer.reset()
-    val log = OperationLog.getCurrentOperationLog
-    if (log != null) log.write(logOutput)
+    OperationLog.getCurrentOperationLog.foreach(_.write(logOutput))
   }
 }
 

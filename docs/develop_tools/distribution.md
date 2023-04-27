@@ -26,15 +26,16 @@ For more information on usage, run `./build/dist --help`
 ./build/dist - Tool for making binary distributions of Kyuubi
 
 Usage:
-+------------------------------------------------------------------------------------------------------+
-| ./build/dist [--name <custom_name>] [--tgz] [--flink-provided] [--spark-provided] [--hive-provided]  |
-|              [--mvn <maven_executable>] <maven build options>                                        |
-+------------------------------------------------------------------------------------------------------+
++----------------------------------------------------------------------------------------------+
+| ./build/dist [--name <custom_name>] [--tgz] [--web-ui] [--flink-provided] [--hive-provided]  |
+|              [--spark-provided] [--mvn <maven_executable>] <maven build options>             |
++----------------------------------------------------------------------------------------------+
 name:           -  custom binary name, using project version if undefined
 tgz:            -  whether to make a whole bundled package
+web-ui:         -  whether to include web ui
 flink-provided: -  whether to make a package without Flink binary
-spark-provided: -  whether to make a package without Spark binary
 hive-provided:  -  whether to make a package without Hive binary
+spark-provided: -  whether to make a package without Spark binary
 mvn:            -  external maven executable location
 ```
 

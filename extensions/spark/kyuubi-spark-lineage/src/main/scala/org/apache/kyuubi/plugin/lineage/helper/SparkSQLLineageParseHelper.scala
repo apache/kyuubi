@@ -21,12 +21,12 @@ import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.internal.Logging
+import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, HiveTableRelation}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression}
-import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression, ScalarSubquery}
 import org.apache.spark.sql.catalyst.expressions.aggregate.Count
 import org.apache.spark.sql.catalyst.plans.{LeftAnti, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -36,7 +36,7 @@ import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 
-import org.apache.kyuubi.plugin.lineage.events.Lineage
+import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
 trait LineageParser {
@@ -128,7 +128,7 @@ trait LineageParser {
           exp.toAttribute,
           if (!containsCountAll(exp.child)) references
           else references + exp.toAttribute.withName(AGGREGATE_COUNT_COLUMN_IDENTIFIER))
-      case a: Attribute => a -> a.references
+      case a: Attribute => a -> AttributeSet(a)
     }
     ListMap(exps: _*)
   }
@@ -149,6 +149,9 @@ trait LineageParser {
             attr.withQualifier(attr.qualifier.init)
           case attr if attr.name.equalsIgnoreCase(AGGREGATE_COUNT_COLUMN_IDENTIFIER) =>
             attr.withQualifier(qualifier)
+          case attr if isNameWithQualifier(attr, qualifier) =>
+            val newName = attr.name.split('.').last.stripPrefix("`").stripSuffix("`")
+            attr.withName(newName).withQualifier(qualifier)
         })
       }
     } else {
@@ -158,6 +161,12 @@ trait LineageParser {
           AttributeSet(attr.withQualifier(qualifier)))
       }: _*)
     }
+  }
+
+  private def isNameWithQualifier(attr: Attribute, qualifier: Seq[String]): Boolean = {
+    val nameTokens = attr.name.split('.')
+    val namespace = nameTokens.init.mkString(".")
+    nameTokens.length > 1 && namespace.endsWith(qualifier.mkString("."))
   }
 
   private def mergeRelationColumnLineage(
@@ -303,7 +312,7 @@ trait LineageParser {
         val nextColumnsLlineage = ListMap(allAssignments.map { assignment =>
           (
             assignment.key.asInstanceOf[Attribute],
-            AttributeSet(assignment.value.asInstanceOf[Attribute]))
+            assignment.value.references)
         }: _*)
         val targetTable = getPlanField[LogicalPlan]("targetTable", plan)
         val sourceTable = getPlanField[LogicalPlan]("sourceTable", plan)
@@ -316,6 +325,10 @@ trait LineageParser {
         }
         ListMap(targetColumnsWithTargetTable.zip(sourceColumnsLineage.values).toSeq: _*)
 
+      case p if p.nodeName == "WithCTE" =>
+        val optimized = sparkSession.sessionState.optimizer.execute(p)
+        extractColumnsLineage(optimized, parentColumnsLineage)
+
       // For query
       case p: Project =>
         val nextColumnsLineage =
@@ -325,6 +338,45 @@ trait LineageParser {
       case p: Aggregate =>
         val nextColumnsLineage =
           joinColumnsLineage(parentColumnsLineage, getSelectColumnLineage(p.aggregateExpressions))
+        p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
+
+      case p: Expand =>
+        val references =
+          p.projections.transpose.map(_.flatMap(x => x.references)).map(AttributeSet(_))
+
+        val childColumnsLineage = ListMap(p.output.zip(references): _*)
+        val nextColumnsLineage =
+          joinColumnsLineage(parentColumnsLineage, childColumnsLineage)
+        p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
+
+      case p: Generate =>
+        val generateColumnsLineageWithId =
+          ListMap(p.generatorOutput.map(attrRef => (attrRef.toAttribute.exprId, p.references)): _*)
+
+        val nextColumnsLineage = parentColumnsLineage.map {
+          case (key, attrRefs) =>
+            key -> AttributeSet(attrRefs.flatMap(attr =>
+              generateColumnsLineageWithId.getOrElse(
+                attr.exprId,
+                AttributeSet(attr))))
+        }
+        p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
+
+      case p: Window =>
+        val windowColumnsLineage =
+          ListMap(p.windowExpressions.map(exp => (exp.toAttribute, exp.references)): _*)
+
+        val nextColumnsLineage = if (parentColumnsLineage.isEmpty) {
+          ListMap(p.child.output.map(attr => (attr, attr.references)): _*) ++ windowColumnsLineage
+        } else {
+          parentColumnsLineage.map {
+            case (k, _) if windowColumnsLineage.contains(k) =>
+              k -> windowColumnsLineage(k)
+            case (k, attrs) =>
+              k -> AttributeSet(attrs.flatten(attr =>
+                windowColumnsLineage.getOrElse(attr, AttributeSet(attr))))
+          }
+        }
         p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
 
       case p: Join =>
@@ -337,14 +389,22 @@ trait LineageParser {
         }
 
       case p: Union =>
-        // merge all children in to one derivedColumns
-        val childrenUnion =
-          p.children.map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]())).map(
-            _.values).reduce {
-            (left, right) =>
-              left.zip(right).map(attr => attr._1 ++ attr._2)
+        val childrenColumnsLineage =
+          // support for the multi-insert statement
+          if (p.output.isEmpty) {
+            p.children
+              .map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]()))
+              .reduce(mergeColumnsLineage)
+          } else {
+            // merge all children in to one derivedColumns
+            val childrenUnion =
+              p.children.map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]())).map(
+                _.values).reduce {
+                (left, right) =>
+                  left.zip(right).map(attr => attr._1 ++ attr._2)
+              }
+            ListMap(p.output.zip(childrenUnion): _*)
           }
-        val childrenColumnsLineage = ListMap(p.output.zip(childrenUnion): _*)
         joinColumnsLineage(parentColumnsLineage, childrenColumnsLineage)
 
       case p: LogicalRelation if p.catalogTable.nonEmpty =>
@@ -368,6 +428,29 @@ trait LineageParser {
 
       case p: LocalRelation =>
         joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(LOCAL_TABLE_IDENTIFIER))
+
+      case _: OneRowRelation =>
+        parentColumnsLineage.map {
+          case (k, attrs) =>
+            k -> AttributeSet(attrs.map {
+              case attr
+                  if attr.qualifier.nonEmpty && attr.qualifier.last.equalsIgnoreCase(
+                    SUBQUERY_COLUMN_IDENTIFIER) =>
+                attr.withQualifier(attr.qualifier.init)
+              case attr => attr
+            })
+        }
+
+      case p: View =>
+        if (!p.isTempView && SparkContextHelper.getConf(
+            LineageConf.SKIP_PARSING_PERMANENT_VIEW_ENABLED)) {
+          val viewName = p.desc.qualifiedName
+          joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(viewName))
+        } else {
+          val viewColumnsLineage =
+            extractColumnsLineage(p.child, ListMap[Attribute, AttributeSet]())
+          mergeRelationColumnLineage(parentColumnsLineage, p.output, viewColumnsLineage)
+        }
 
       case p: InMemoryRelation =>
         // get logical plan from cachedPlan

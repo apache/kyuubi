@@ -27,6 +27,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -126,6 +127,21 @@ public class RestClient implements IRestClient {
   }
 
   @Override
+  public <T> T put(String path, String body, Class<T> type, String authHeader) {
+    String responseJson = put(path, body, authHeader);
+    return JsonUtils.fromJson(responseJson, type);
+  }
+
+  @Override
+  public String put(String path, String body, String authHeader) {
+    RequestBuilder putRequestBuilder = RequestBuilder.put();
+    if (body != null) {
+      putRequestBuilder.setEntity(new StringEntity(body, StandardCharsets.UTF_8));
+    }
+    return doRequest(buildURI(path), authHeader, putRequestBuilder);
+  }
+
+  @Override
   public <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     String responseJson = delete(path, params, authHeader);
     return JsonUtils.fromJson(responseJson, type);
@@ -164,7 +180,7 @@ public class RestClient implements IRestClient {
 
       response = httpclient.execute(httpRequest, responseHandler);
       LOG.debug("Response: {}", response);
-    } catch (ConnectException | ConnectTimeoutException e) {
+    } catch (ConnectException | ConnectTimeoutException | NoHttpResponseException e) {
       // net exception can be retried by connecting to other Kyuubi server
       throw new RetryableKyuubiRestException("Api request failed for " + uri.toString(), e);
     } catch (KyuubiRestException rethrow) {

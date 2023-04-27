@@ -102,6 +102,6 @@ object AdminCommandLine extends CommonCommandLine {
           .optional()
           .action((v, c) => c.copy(adminConfigOpts = c.adminConfigOpts.copy(configType = v)))
           .text("The valid config type can be one of the following: " +
-            s"$HADOOP_CONF, $USER_DEFAULTS_CONF."))
+            s"$HADOOP_CONF, $USER_DEFAULTS_CONF, $UNLIMITED_USERS."))
   }
 }

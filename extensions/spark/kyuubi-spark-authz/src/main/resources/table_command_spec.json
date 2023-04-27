@@ -1177,6 +1177,23 @@
   "opType" : "TRUNCATETABLE",
   "queryDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.execution.datasources.CreateTable",
+  "tableDescs" : [ {
+    "fieldName" : "tableDesc",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanOptionQueryExtractor"
+  } ]
+}, {
   "classname" : "org.apache.spark.sql.execution.datasources.CreateTempViewUsing",
   "tableDescs" : [ ],
   "opType" : "CREATEVIEW",
@@ -1227,14 +1244,6 @@
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ]
 }, {
-  "classname" : "org.apache.spark.sql.execution.datasources.InsertIntoHiveDirCommand",
-  "tableDescs" : [ ],
-  "opType" : "QUERY",
-  "queryDescs" : [ {
-    "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
-}, {
   "classname" : "org.apache.spark.sql.execution.datasources.RefreshTable",
   "tableDescs" : [ {
     "fieldName" : "tableIdent",
@@ -1272,6 +1281,14 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "CREATETABLE_AS_SELECT",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
     "fieldExtractor" : "LogicalPlanQueryExtractor"

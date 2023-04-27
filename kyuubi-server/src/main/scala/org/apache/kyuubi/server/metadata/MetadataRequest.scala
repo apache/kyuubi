@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.metadata
 
 import org.apache.kyuubi.server.metadata.api.Metadata
 
-trait MetadataRequest {
+sealed trait MetadataRequest {
   def metadata: Metadata
 }
 

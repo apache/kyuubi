@@ -56,4 +56,5 @@ class KyuubiTrinoFeParser extends KyuubiParserBase[KyuubiTrinoFeBaseParser] {
   }
 
   override def parseTree(parser: KyuubiTrinoFeBaseParser): ParseTree = parser.singleStatement()
+
 }

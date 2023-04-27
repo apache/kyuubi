@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.sql
 
+import org.apache.spark.network.util.ByteUnit
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.internal.SQLConf._
 
@@ -138,11 +139,21 @@ object KyuubiSQLConf {
   val WATCHDOG_MAX_PARTITIONS =
     buildConf("spark.sql.watchdog.maxPartitions")
       .doc("Set the max partition number when spark scans a data source. " +
-        "Enable MaxPartitionStrategy by specifying this configuration. " +
+        "Enable maxPartitions Strategy by specifying this configuration. " +
         "Add maxPartitions Strategy to avoid scan excessive partitions " +
         "on partitioned table, it's optional that works with defined")
       .version("1.4.0")
       .intConf
+      .createOptional
+
+  val WATCHDOG_MAX_FILE_SIZE =
+    buildConf("spark.sql.watchdog.maxFileSize")
+      .doc("Set the maximum size in bytes of files when spark scans a data source. " +
+        "Enable maxFileSize Strategy by specifying this configuration. " +
+        "Add maxFileSize Strategy to avoid scan excessive size of files," +
+        " it's optional that works with defined")
+      .version("1.8.0")
+      .bytesConf(ByteUnit.BYTE)
       .createOptional
 
   val WATCHDOG_FORCED_MAXOUTPUTROWS =
@@ -190,4 +201,67 @@ object KyuubiSQLConf {
       .version("1.7.0")
       .booleanConf
       .createWithDefault(true)
+
+  val FINAL_WRITE_STAGE_EAGERLY_KILL_EXECUTORS_ENABLED =
+    buildConf("spark.sql.finalWriteStage.eagerlyKillExecutors.enabled")
+      .doc("When true, eagerly kill redundant executors before running final write stage.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FINAL_WRITE_STAGE_SKIP_KILLING_EXECUTORS_FOR_TABLE_CACHE =
+    buildConf("spark.sql.finalWriteStage.skipKillingExecutorsForTableCache")
+      .doc("When true, skip killing executors if the plan has table caches.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val FINAL_WRITE_STAGE_PARTITION_FACTOR =
+    buildConf("spark.sql.finalWriteStage.retainExecutorsFactor")
+      .doc("If the target executors * factor < active executors, and " +
+        "target executors * factor > min executors, then kill redundant executors.")
+      .version("1.8.0")
+      .doubleConf
+      .checkValue(_ >= 1, "must be bigger than or equal to 1")
+      .createWithDefault(1.2)
+
+  val FINAL_WRITE_STAGE_RESOURCE_ISOLATION_ENABLED =
+    buildConf("spark.sql.finalWriteStage.resourceIsolation.enabled")
+      .doc(
+        "When true, make final write stage resource isolation using custom RDD resource profile.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FINAL_WRITE_STAGE_EXECUTOR_CORES =
+    buildConf("spark.sql.finalWriteStage.executorCores")
+      .doc("Specify the executor core request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .intConf
+      .createOptional
+
+  val FINAL_WRITE_STAGE_EXECUTOR_MEMORY =
+    buildConf("spark.sql.finalWriteStage.executorMemory")
+      .doc("Specify the executor on heap memory request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val FINAL_WRITE_STAGE_EXECUTOR_MEMORY_OVERHEAD =
+    buildConf("spark.sql.finalWriteStage.executorMemoryOverhead")
+      .doc("Specify the executor memory overhead request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val FINAL_WRITE_STAGE_EXECUTOR_OFF_HEAP_MEMORY =
+    buildConf("spark.sql.finalWriteStage.executorOffHeapMemory")
+      .doc("Specify the executor off heap memory request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
 }

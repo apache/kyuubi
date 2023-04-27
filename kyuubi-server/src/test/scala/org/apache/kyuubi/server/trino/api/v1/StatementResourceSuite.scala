@@ -17,20 +17,99 @@
 
 package org.apache.kyuubi.server.trino.api.v1
 
-import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
-import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
-import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.{MediaType, Response}
+
+import scala.collection.JavaConverters._
+
+import io.trino.client.{QueryError, QueryResults}
+import io.trino.client.ProtocolHeaders.TRINO_HEADERS
+
+import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, TrinoRestFrontendTestHelper}
+import org.apache.kyuubi.server.trino.api.{Query, TrinoContext}
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
+import org.apache.kyuubi.session.SessionHandle
 
-class StatementResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
+class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHelper {
 
-  override protected val frontendProtocols: Seq[FrontendProtocol] =
-    FrontendProtocols.TRINO :: Nil
+  case class TrinoResponse(
+      response: Option[Response] = None,
+      queryError: Option[QueryError] = None,
+      data: List[List[Any]] = List[List[Any]](),
+      isEnd: Boolean = false)
 
   test("statement test") {
     val response = webTarget.path("v1/statement/test").request().get()
     val result = response.readEntity(classOf[Ok])
     assert(result == new Ok("trino server is running"))
+  }
+
+  test("statement submit for query error") {
+
+    val response = webTarget.path("v1/statement")
+      .request().post(Entity.entity("select a", MediaType.TEXT_PLAIN_TYPE))
+
+    val trinoResponseIter = Iterator.iterate(TrinoResponse(response = Option(response)))(getData)
+    val isErr = trinoResponseIter.takeWhile(_.isEnd == false).exists { t =>
+      t.queryError != None && t.response == None
+    }
+    assert(isErr == true)
+  }
+
+  test("statement submit and get result") {
+    val response = webTarget.path("v1/statement")
+      .request().post(Entity.entity("select 1", MediaType.TEXT_PLAIN_TYPE))
+
+    val trinoResponseIter = Iterator.iterate(TrinoResponse(response = Option(response)))(getData)
+    val dataSet = trinoResponseIter
+      .takeWhile(_.isEnd == false)
+      .map(_.data)
+      .flatten.toList
+    assert(dataSet == List(List(1)))
+  }
+
+  test("query cancel") {
+    val response = webTarget.path("v1/statement")
+      .request().post(Entity.entity("select 1", MediaType.TEXT_PLAIN_TYPE))
+    assert(response.getStatus == 200)
+    val qr = response.readEntity(classOf[QueryResults])
+    val sessionManager = fe.be.sessionManager
+    val sessionHandle =
+      response.getStringHeaders.get(TRINO_HEADERS.responseSetSession).asScala
+        .map(_.split("="))
+        .find {
+          case Array(Query.KYUUBI_SESSION_ID, _) => true
+        }
+        .map {
+          case Array(_, value) => SessionHandle.fromUUID(TrinoContext.urlDecode(value))
+        }.get
+    sessionManager.getSession(sessionHandle)
+
+    val path = qr.getNextUri.getPath
+    val nextResponse = webTarget.path(path).request().header(
+      TRINO_HEADERS.requestSession(),
+      s"${Query.KYUUBI_SESSION_ID}=${TrinoContext.urlEncode(sessionHandle.identifier.toString)}")
+      .delete()
+    assert(nextResponse.getStatus == 204)
+    val exception = intercept[KyuubiSQLException](sessionManager.getSession(sessionHandle))
+    assert(exception.getMessage === s"Invalid $sessionHandle")
+  }
+
+  private def getData(current: TrinoResponse): TrinoResponse = {
+    current.response.map { response =>
+      assert(response.getStatus == 200)
+      val qr = response.readEntity(classOf[QueryResults])
+      val nextData = Option(qr.getData)
+        .map(_.asScala.toList.map(_.asScala.toList))
+        .getOrElse(List[List[Any]]())
+      val nextResponse = Option(qr.getNextUri).map {
+        uri =>
+          val path = uri.getPath
+          val headers = response.getHeaders
+          webTarget.path(path).request().headers(headers).get()
+      }
+      TrinoResponse(nextResponse, Option(qr.getError), nextData)
+    }.getOrElse(TrinoResponse(isEnd = true))
   }
 
 }

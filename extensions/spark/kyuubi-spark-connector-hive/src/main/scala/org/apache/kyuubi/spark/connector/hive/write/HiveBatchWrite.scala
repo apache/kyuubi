@@ -23,12 +23,13 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.spark.internal.Logging
+import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 import org.apache.spark.sql.connector.write.{BatchWrite, DataWriterFactory, PhysicalWriteInfo, WriterCommitMessage}
 import org.apache.spark.sql.execution.command.CommandUtils
-import org.apache.spark.sql.execution.datasources.WriteTaskResult
+import org.apache.spark.sql.execution.datasources.{WriteJobDescription, WriteTaskResult}
 import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hive, toSQLValue, HiveExternalCatalog}
 import org.apache.spark.sql.types.StringType
@@ -47,10 +48,12 @@ class HiveBatchWrite(
     ifPartitionNotExists: Boolean,
     hadoopConf: Configuration,
     fileBatchWrite: FileBatchWrite,
-    externalCatalog: ExternalCatalog) extends BatchWrite with Logging {
+    externalCatalog: ExternalCatalog,
+    description: WriteJobDescription,
+    committer: FileCommitProtocol) extends BatchWrite with Logging {
 
   override def createBatchWriterFactory(info: PhysicalWriteInfo): DataWriterFactory = {
-    fileBatchWrite.createBatchWriterFactory(info)
+    FileWriterFactory(description, committer)
   }
 
   override def commit(messages: Array[WriterCommitMessage]): Unit = {

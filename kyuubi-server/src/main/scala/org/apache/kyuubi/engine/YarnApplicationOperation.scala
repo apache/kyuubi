@@ -32,8 +32,10 @@ import org.apache.kyuubi.util.KyuubiHadoopUtils
 class YarnApplicationOperation extends ApplicationOperation with Logging {
 
   @volatile private var yarnClient: YarnClient = _
+  private var submitTimeout: Long = _
 
   override def initialize(conf: KyuubiConf): Unit = {
+    submitTimeout = conf.get(KyuubiConf.ENGINE_SUBMIT_TIMEOUT)
     val yarnConf = KyuubiHadoopUtils.newYarnConfiguration(conf)
     // YarnClient is thread-safe
     val c = YarnClient.createYarnClient()
@@ -75,13 +77,26 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  override def getApplicationInfoByTag(tag: String): ApplicationInfo = {
+  override def getApplicationInfoByTag(tag: String, submitTime: Option[Long]): ApplicationInfo = {
     if (yarnClient != null) {
       debug(s"Getting application info from Yarn cluster by $tag tag")
       val reports = yarnClient.getApplications(null, null, Set(tag).asJava)
       if (reports.isEmpty) {
         debug(s"Application with tag $tag not found")
-        ApplicationInfo(id = null, name = null, state = ApplicationState.NOT_FOUND)
+        submitTime match {
+          case Some(_submitTime) =>
+            val elapsedTime = System.currentTimeMillis - _submitTime
+            if (elapsedTime > submitTimeout) {
+              error(s"Can't find target yarn application by tag: $tag, " +
+                s"elapsed time: ${elapsedTime}ms exceeds ${submitTimeout}ms.")
+              ApplicationInfo.NOT_FOUND
+            } else {
+              warn("Wait for yarn application to be submitted, " +
+                s"elapsed time: ${elapsedTime}ms, return UNKNOWN status")
+              ApplicationInfo.UNKNOWN
+            }
+          case _ => ApplicationInfo.NOT_FOUND
+        }
       } else {
         val report = reports.get(0)
         val info = ApplicationInfo(

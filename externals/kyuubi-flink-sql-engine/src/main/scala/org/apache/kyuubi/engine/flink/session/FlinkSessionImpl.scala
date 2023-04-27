@@ -19,15 +19,18 @@ package org.apache.kyuubi.engine.flink.session
 
 import scala.util.control.NonFatal
 
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.util.EnvironmentInformation
 import org.apache.flink.table.client.gateway.SqlExecutionException
-import org.apache.flink.table.client.gateway.context.SessionContext
-import org.apache.flink.table.client.gateway.local.LocalExecutor
+import org.apache.flink.table.gateway.api.operation.OperationHandle
+import org.apache.flink.table.gateway.service.context.SessionContext
+import org.apache.flink.table.gateway.service.session.{Session => FSession}
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils
-import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
 class FlinkSessionImpl(
     protocol: TProtocolVersion,
@@ -36,11 +39,15 @@ class FlinkSessionImpl(
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,
-    val executor: LocalExecutor)
+    val fSession: FSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
+  override val handle: SessionHandle =
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
+      .getOrElse(SessionHandle.fromUUID(fSession.getSessionHandle.getIdentifier.toString))
+
   lazy val sessionContext: SessionContext = {
-    FlinkEngineUtils.getSessionContext(executor, handle.identifier.toString)
+    FlinkEngineUtils.getSessionContext(fSession)
   }
 
   private def setModifiableConfig(key: String, value: String): Unit = {
@@ -52,26 +59,33 @@ class FlinkSessionImpl(
   }
 
   override def open(): Unit = {
-    executor.openSession(handle.identifier.toString)
-    normalizedConf.foreach {
-      case ("use:catalog", catalog) =>
-        val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-        try {
-          tableEnv.useCatalog(catalog)
-        } catch {
-          case NonFatal(e) =>
+    val executor = fSession.createExecutor(Configuration.fromMap(fSession.getSessionConfig))
+
+    val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
+      Array("use:catalog", "use:database").contains(k)
+    }
+
+    useCatalogAndDatabaseConf.get("use:catalog").foreach { catalog =>
+      try {
+        executor.executeStatement(OperationHandle.create, s"USE CATALOG $catalog")
+      } catch {
+        case NonFatal(e) =>
+          throw e
+      }
+    }
+
+    useCatalogAndDatabaseConf.get("use:database").foreach { database =>
+      try {
+        executor.executeStatement(OperationHandle.create, s"USE $database")
+      } catch {
+        case NonFatal(e) =>
+          if (database != "default") {
             throw e
-        }
-      case ("use:database", database) =>
-        val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-        try {
-          tableEnv.useDatabase(database)
-        } catch {
-          case NonFatal(e) =>
-            if (database != "default") {
-              throw e
-            }
-        }
+          }
+      }
+    }
+
+    otherConf.foreach {
       case (key, value) => setModifiableConfig(key, value)
     }
     super.open()

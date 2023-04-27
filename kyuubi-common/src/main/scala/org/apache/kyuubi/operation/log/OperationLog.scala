@@ -44,7 +44,7 @@ object OperationLog extends Logging {
     OPERATION_LOG.set(operationLog)
   }
 
-  def getCurrentOperationLog: OperationLog = OPERATION_LOG.get()
+  def getCurrentOperationLog: Option[OperationLog] = Option(OPERATION_LOG.get)
 
   def removeCurrentOperationLog(): Unit = OPERATION_LOG.remove()
 
@@ -195,6 +195,8 @@ class OperationLog(path: Path) {
   }
 
   def close(): Unit = synchronized {
+    if (!initialized) return
+
     closeExtraReaders()
 
     trySafely {

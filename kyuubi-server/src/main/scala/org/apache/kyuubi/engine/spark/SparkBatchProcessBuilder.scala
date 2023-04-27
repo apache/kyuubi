@@ -56,9 +56,7 @@ class SparkBatchProcessBuilder(
       buffer += s"${convertConfigKey(k)}=$v"
     }
 
-    setSparkUserName(proxyUser, buffer)
-    buffer += PROXY_USER
-    buffer += proxyUser
+    setupKerberos(buffer)
 
     assert(mainResource.isDefined)
     buffer += mainResource.get
@@ -77,6 +75,6 @@ class SparkBatchProcessBuilder(
   override protected def module: String = "kyuubi-spark-batch-submit"
 
   override def clusterManager(): Option[String] = {
-    batchConf.get(MASTER_KEY).orElse(defaultMaster)
+    batchConf.get(MASTER_KEY).orElse(super.clusterManager())
   }
 }

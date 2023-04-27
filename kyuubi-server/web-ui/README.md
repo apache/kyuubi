@@ -15,8 +15,15 @@ npm install
 
 ### Development Project
 
-To do this you can change the VITE_APP_DEV_WEB_URL parameter variable as the service url in `.env.development` in the project root directory, such as http://127.0. 0.1:8090
+Notice:
 
+Before you start the Web UI project, please make sure the Kyuubi server has been started.
+
+Kyuubi Web UI will proxy the requests to Kyuubi server,  with the default endpoint path to`http://localhost:10099`. Modify `VITE_APP_DEV_WEB_URL` in `.env.development` for customizing targeted endpoint path.
+
+#### Why proxy to http://localhost:10099
+
+Currently kyuubi server binds on `http://0.0.0.0:10099` in case your are running kyuubi server in MacOS or Windows(If in linux, you should config kyuubi server `kyuubi.frontend.rest.bind.host=0.0.0.0`, or change `VITE_APP_DEV_WEB_URL` in `.env.development`).
 
 ```shell
 npm run dev
@@ -56,3 +63,4 @@ pnpm run build
 # Code Format
 pnpm run prettier
 ```
+

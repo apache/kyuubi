@@ -16,8 +16,7 @@
 # limitations under the License.
 #
 
-# shellcheck disable=SC2071
-if [[ $# < 1 ]] ; then
+if [[ $# -lt 1 ]] ; then
   echo "USAGE: $0 <application_id>"
   exit 1
 fi

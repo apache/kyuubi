@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -25,13 +27,20 @@ public class StatementRequest {
   private String statement;
   private boolean runAsync;
   private Long queryTimeout;
+  private Map<String, String> confOverlay;
 
   public StatementRequest() {}
 
   public StatementRequest(String statement, boolean runAsync, Long queryTimeout) {
+    this(statement, runAsync, queryTimeout, Collections.emptyMap());
+  }
+
+  public StatementRequest(
+      String statement, boolean runAsync, Long queryTimeout, Map<String, String> confOverlay) {
     this.statement = statement;
     this.runAsync = runAsync;
     this.queryTimeout = queryTimeout;
+    this.confOverlay = confOverlay;
   }
 
   public String getStatement() {
@@ -56,6 +65,17 @@ public class StatementRequest {
 
   public void setQueryTimeout(Long queryTimeout) {
     this.queryTimeout = queryTimeout;
+  }
+
+  public Map<String, String> getConfOverlay() {
+    if (confOverlay == null) {
+      return Collections.emptyMap();
+    }
+    return confOverlay;
+  }
+
+  public void setConfOverlay(Map<String, String> confOverlay) {
+    this.confOverlay = confOverlay;
   }
 
   @Override

@@ -172,6 +172,11 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     execPool.getActiveCount
   }
 
+  def getWorkQueueSize: Int = {
+    assert(execPool != null)
+    execPool.getQueue.size()
+  }
+
   private var _confRestrictList: Set[String] = _
   private var _confIgnoreList: Set[String] = _
   private var _batchConfIgnoreList: Set[String] = _
@@ -283,9 +288,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     shutdown = true
     val shutdownTimeout: Long =
       if (isServer) {
-        conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
-      } else {
         conf.get(SERVER_EXEC_POOL_SHUTDOWN_TIMEOUT)
+      } else {
+        conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
       }
 
     ThreadUtils.shutdown(timeoutChecker, Duration(shutdownTimeout, TimeUnit.MILLISECONDS))

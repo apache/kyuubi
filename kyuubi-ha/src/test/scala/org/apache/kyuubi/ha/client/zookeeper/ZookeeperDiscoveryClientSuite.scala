@@ -37,6 +37,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client._
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
+import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider._
 import org.apache.kyuubi.service._
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT
@@ -117,7 +118,7 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
       conf.set(HA_ZK_AUTH_PRINCIPAL.key, principal)
       conf.set(HA_ZK_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
 
-      ZookeeperClientProvider.setUpZooKeeperAuth(conf)
+      setUpZooKeeperAuth(conf)
       val configuration = Configuration.getConfiguration
       val entries = configuration.getAppConfigurationEntry("KyuubiZooKeeperClient")
 
@@ -129,9 +130,9 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
       assert(options("useKeyTab").toString.toBoolean)
 
       conf.set(HA_ZK_AUTH_KEYTAB.key, s"${keytab.getName}")
-      val e = intercept[IOException](ZookeeperClientProvider.setUpZooKeeperAuth(conf))
-      assert(e.getMessage ===
-        s"${HA_ZK_AUTH_KEYTAB.key}: ${ZookeeperClientProvider.getKeyTabFile(conf)} does not exists")
+      val e = intercept[IOException](setUpZooKeeperAuth(conf))
+      assert(
+        e.getMessage === s"${HA_ZK_AUTH_KEYTAB.key}: ${getKeyTabFile(conf).get} does not exists")
     }
   }
 

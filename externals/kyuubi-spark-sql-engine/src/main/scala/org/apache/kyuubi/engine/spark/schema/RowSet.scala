@@ -18,21 +18,23 @@
 package org.apache.kyuubi.engine.spark.schema
 
 import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
-import java.sql.Timestamp
-import java.time._
-import java.util.Date
 
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.engine.spark.schema.SchemaHelper.TIMESTAMP_NTZ
 import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
+
+  def toHiveString(valueAndType: (Any, DataType), nested: Boolean = false): String = {
+    // compatible w/ Spark 3.1 and above
+    val timeFormatters = HiveResult.getTimeFormatters
+    HiveResult.toHiveString(valueAndType, nested, timeFormatters)
+  }
 
   def toTRowSet(
       bytes: Array[Byte],
@@ -58,26 +60,25 @@ object RowSet {
   def toTRowSet(
       rows: Seq[Row],
       schema: StructType,
-      protocolVersion: TProtocolVersion,
-      timeZone: ZoneId): TRowSet = {
+      protocolVersion: TProtocolVersion): TRowSet = {
     if (protocolVersion.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
-      toRowBasedSet(rows, schema, timeZone)
+      toRowBasedSet(rows, schema)
     } else {
-      toColumnBasedSet(rows, schema, timeZone)
+      toColumnBasedSet(rows, schema)
     }
   }
 
-  def toRowBasedSet(rows: Seq[Row], schema: StructType, timeZone: ZoneId): TRowSet = {
-    var i = 0
+  def toRowBasedSet(rows: Seq[Row], schema: StructType): TRowSet = {
     val rowSize = rows.length
     val tRows = new java.util.ArrayList[TRow](rowSize)
+    var i = 0
     while (i < rowSize) {
       val row = rows(i)
       val tRow = new TRow()
       var j = 0
       val columnSize = row.length
       while (j < columnSize) {
-        val columnValue = toTColumnValue(j, row, schema, timeZone)
+        val columnValue = toTColumnValue(j, row, schema)
         tRow.addToColVals(columnValue)
         j += 1
       }
@@ -87,21 +88,21 @@ object RowSet {
     new TRowSet(0, tRows)
   }
 
-  def toColumnBasedSet(rows: Seq[Row], schema: StructType, timeZone: ZoneId): TRowSet = {
+  def toColumnBasedSet(rows: Seq[Row], schema: StructType): TRowSet = {
     val rowSize = rows.length
     val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](rowSize))
     var i = 0
     val columnSize = schema.length
     while (i < columnSize) {
       val field = schema(i)
-      val tColumn = toTColumn(rows, i, field.dataType, timeZone)
+      val tColumn = toTColumn(rows, i, field.dataType)
       tRowSet.addToColumns(tColumn)
       i += 1
     }
     tRowSet
   }
 
-  private def toTColumn(rows: Seq[Row], ordinal: Int, typ: DataType, timeZone: ZoneId): TColumn = {
+  private def toTColumn(rows: Seq[Row], ordinal: Int, typ: DataType): TColumn = {
     val nulls = new java.util.BitSet()
     typ match {
       case BooleanType =>
@@ -151,13 +152,7 @@ object RowSet {
         while (i < rowSize) {
           val row = rows(i)
           nulls.set(i, row.isNullAt(ordinal))
-          val value =
-            if (row.isNullAt(ordinal)) {
-              ""
-            } else {
-              toHiveString((row.get(ordinal), typ), timeZone)
-            }
-          values.add(value)
+          values.add(toHiveString(row.get(ordinal) -> typ))
           i += 1
         }
         TColumn.stringVal(new TStringColumn(values, nulls))
@@ -189,8 +184,7 @@ object RowSet {
   private def toTColumnValue(
       ordinal: Int,
       row: Row,
-      types: StructType,
-      timeZone: ZoneId): TColumnValue = {
+      types: StructType): TColumnValue = {
     types(ordinal).dataType match {
       case BooleanType =>
         val boolValue = new TBoolValue
@@ -238,66 +232,9 @@ object RowSet {
       case _ =>
         val tStrValue = new TStringValue
         if (!row.isNullAt(ordinal)) {
-          tStrValue.setValue(
-            toHiveString((row.get(ordinal), types(ordinal).dataType), timeZone))
+          tStrValue.setValue(toHiveString(row.get(ordinal) -> types(ordinal).dataType))
         }
         TColumnValue.stringVal(tStrValue)
-    }
-  }
-
-  /**
-   * A simpler impl of Spark's toHiveString
-   */
-  def toHiveString(dataWithType: (Any, DataType), timeZone: ZoneId): String = {
-    dataWithType match {
-      case (null, _) =>
-        // Only match nulls in nested type values
-        "null"
-
-      case (d: Date, DateType) =>
-        formatDate(d)
-
-      case (ld: LocalDate, DateType) =>
-        formatLocalDate(ld)
-
-      case (t: Timestamp, TimestampType) =>
-        formatTimestamp(t, Option(timeZone))
-
-      case (t: LocalDateTime, ntz) if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) =>
-        formatLocalDateTime(t)
-
-      case (i: Instant, TimestampType) =>
-        formatInstant(i, Option(timeZone))
-
-      case (bin: Array[Byte], BinaryType) =>
-        new String(bin, StandardCharsets.UTF_8)
-
-      case (decimal: java.math.BigDecimal, DecimalType()) =>
-        decimal.toPlainString
-
-      case (s: String, StringType) =>
-        // Only match string in nested type values
-        "\"" + s + "\""
-
-      case (d: Duration, _) => toDayTimeIntervalString(d)
-
-      case (p: Period, _) => toYearMonthIntervalString(p)
-
-      case (seq: scala.collection.Seq[_], ArrayType(typ, _)) =>
-        seq.map(v => (v, typ)).map(e => toHiveString(e, timeZone)).mkString("[", ",", "]")
-
-      case (m: Map[_, _], MapType(kType, vType, _)) =>
-        m.map { case (key, value) =>
-          toHiveString((key, kType), timeZone) + ":" + toHiveString((value, vType), timeZone)
-        }.toSeq.sorted.mkString("{", ",", "}")
-
-      case (struct: Row, StructType(fields)) =>
-        struct.toSeq.zip(fields).map { case (v, t) =>
-          s""""${t.name}":${toHiveString((v, t.dataType), timeZone)}"""
-        }.mkString("{", ",", "}")
-
-      case (other, _) =>
-        other.toString
     }
   }
 

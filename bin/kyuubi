@@ -30,8 +30,7 @@ function usage() {
   echo "    -h | --help  - Show this help message"
 }
 
-# shellcheck disable=SC2199
-if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
+if [[ "$*" = *--help ]] || [[ "$*" = *-h ]]; then
   usage
   exit 0
 fi
@@ -87,10 +86,18 @@ if [[ -z "$KYUUBI_JAR_DIR" ]]; then
   fi
 fi
 
-if [[ -z ${YARN_CONF_DIR} ]]; then
-  KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}:${HADOOP_CONF_DIR}"
-else
-  KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}:${HADOOP_CONF_DIR}:${YARN_CONF_DIR}"
+## Find the WebUI dist
+if [[ -z "$KYUUBI_WEBUI_DIR" ]]; then
+  KYUUBI_WEBUI_DIR="$KYUUBI_HOME/web-ui"
+  if [[ ! -d ${KYUUBI_WEBUI_DIR} ]]; then
+  echo -e "\nCandidate Kyuubi WebUI dist $KYUUBI_WEBUI_DIR doesn't exist, searching development environment..."
+    KYUUBI_WEBUI_DIR="$KYUUBI_HOME/kyuubi-server/web-ui"
+  fi
+fi
+
+KYUUBI_CLASSPATH="${KYUUBI_CONF_DIR}:${KYUUBI_WEBUI_DIR}:${KYUUBI_JAR_DIR}/*:${HADOOP_CONF_DIR}"
+if [[ -n ${YARN_CONF_DIR} ]]; then
+  KYUUBI_CLASSPATH="${KYUUBI_CLASSPATH}:${YARN_CONF_DIR}"
 fi
 
 cmd="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS"
@@ -148,7 +155,7 @@ function start_kyuubi() {
 
 function run_kyuubi() {
   echo "Starting $CLASS"
-  nice -n "${KYUUBI_NICENESS:-0}" ${cmd}
+  exec nice -n "${KYUUBI_NICENESS:-0}" ${cmd}
 }
 
 function stop_kyuubi() {

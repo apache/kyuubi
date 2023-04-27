@@ -18,14 +18,17 @@
 package org.apache.kyuubi.operation.log
 
 import java.io.CharArrayWriter
+import java.util.concurrent.locks.ReadWriteLock
 
 import scala.collection.JavaConverters._
 
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.{Filter, LogEvent, StringLayout}
-import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAppender, WriterManager}
+import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAppender, RollingFileAppender, WriterManager}
 import org.apache.logging.log4j.core.filter.AbstractFilter
 import org.apache.logging.log4j.core.layout.PatternLayout
+
+import org.apache.kyuubi.reflection.DynFields
 
 class Log4j2DivertAppender(
     name: String,
@@ -52,22 +55,19 @@ class Log4j2DivertAppender(
 
   addFilter(new AbstractFilter() {
     override def filter(event: LogEvent): Filter.Result = {
-      if (OperationLog.getCurrentOperationLog == null) {
-        Filter.Result.DENY
-      } else {
+      if (OperationLog.getCurrentOperationLog.isDefined) {
         Filter.Result.NEUTRAL
+      } else {
+        Filter.Result.DENY
       }
     }
   })
 
-  def initLayout(): StringLayout = {
-    LogManager.getRootLogger.asInstanceOf[org.apache.logging.log4j.core.Logger]
-      .getAppenders.values().asScala
-      .find(ap => ap.isInstanceOf[ConsoleAppender] && ap.getLayout.isInstanceOf[StringLayout])
-      .map(_.getLayout.asInstanceOf[StringLayout])
-      .getOrElse(PatternLayout.newBuilder().withPattern(
-        "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n").build())
-  }
+  private val writeLock = DynFields.builder()
+    .hiddenImpl(classOf[AbstractWriterAppender[_]], "readWriteLock")
+    .build[ReadWriteLock](this)
+    .get()
+    .writeLock
 
   /**
    * Overrides AbstractWriterAppender.append(), which does the real logging. No need
@@ -75,11 +75,15 @@ class Log4j2DivertAppender(
    */
   override def append(event: LogEvent): Unit = {
     super.append(event)
-    // That should've gone into our writer. Notify the LogContext.
-    val logOutput = writer.toString
-    writer.reset()
-    val log = OperationLog.getCurrentOperationLog
-    if (log != null) log.write(logOutput)
+    writeLock.lock()
+    try {
+      // That should've gone into our writer. Notify the LogContext.
+      val logOutput = writer.toString
+      writer.reset()
+      OperationLog.getCurrentOperationLog.foreach(_.write(logOutput))
+    } finally {
+      writeLock.unlock()
+    }
   }
 }
 
@@ -87,7 +91,9 @@ object Log4j2DivertAppender {
   def initLayout(): StringLayout = {
     LogManager.getRootLogger.asInstanceOf[org.apache.logging.log4j.core.Logger]
       .getAppenders.values().asScala
-      .find(ap => ap.isInstanceOf[ConsoleAppender] && ap.getLayout.isInstanceOf[StringLayout])
+      .find(ap =>
+        (ap.isInstanceOf[ConsoleAppender] || ap.isInstanceOf[RollingFileAppender]) &&
+          ap.getLayout.isInstanceOf[StringLayout])
       .map(_.getLayout.asInstanceOf[StringLayout])
       .getOrElse(PatternLayout.newBuilder().withPattern(
         "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n").build())
@@ -95,7 +101,7 @@ object Log4j2DivertAppender {
 
   def initialize(): Unit = {
     val ap = new Log4j2DivertAppender()
-    org.apache.logging.log4j.LogManager.getRootLogger()
+    org.apache.logging.log4j.LogManager.getRootLogger
       .asInstanceOf[org.apache.logging.log4j.core.Logger].addAppender(ap)
     ap.start()
   }

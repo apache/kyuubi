@@ -17,7 +17,7 @@
 
 services:
   minio:
-    image: alekcander/bitnami-minio-multiarch:RELEASE.2022-05-26T05-48-41Z
+    image: bitnami/minio:2023-debian-11
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio_minio
@@ -68,6 +68,7 @@ services:
     ports:
       - 4040-4050:4040-4050
       - 10009:10009
+      - 10099:10099
     volumes:
       - ./conf/core-site.xml:/etc/hadoop/conf/core-site.xml
       - ./conf/hive-site.xml:/etc/hive/conf/hive-site.xml

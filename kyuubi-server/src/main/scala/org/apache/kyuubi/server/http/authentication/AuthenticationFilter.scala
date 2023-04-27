@@ -79,7 +79,6 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
 
   override def init(filterConfig: FilterConfig): Unit = {
     initAuthHandlers()
-    super.init(filterConfig)
   }
 
   private[kyuubi] def getMatchedHandler(authorization: String): Option[AuthenticationHandler] = {

@@ -158,7 +158,8 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
       val exception = intercept[AnalysisException] {
         spark.table("tpch.sf1.nonexistent_table")
       }
-      assert(exception.message === "Table or view not found: tpch.sf1.nonexistent_table")
+      assert(exception.message.contains("Table or view not found")
+        || exception.message.contains("TABLE_OR_VIEW_NOT_FOUND"))
     }
   }
 }

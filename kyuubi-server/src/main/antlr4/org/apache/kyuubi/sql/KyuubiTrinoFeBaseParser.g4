@@ -47,7 +47,25 @@ statement
       SOURCE_DATA_TYPE COMMA IS_AUTOINCREMENT COMMA IS_GENERATEDCOLUMN FROM SYSTEM_JDBC_COLUMNS
       (WHERE tableCatalogFilter? AND? tableSchemaFilter? AND? tableNameFilter? AND? colNameFilter?)?
       ORDER BY TABLE_CAT COMMA TABLE_SCHEM COMMA TABLE_NAME COMMA ORDINAL_POSITION                      #getColumns
+    | SELECT CAST LEFT_PAREN NULL AS VARCHAR RIGHT_PAREN TABLE_CAT COMMA
+      CAST LEFT_PAREN NULL AS VARCHAR RIGHT_PAREN TABLE_SCHEM COMMA
+      CAST LEFT_PAREN NULL AS VARCHAR RIGHT_PAREN TABLE_NAME COMMA
+      CAST LEFT_PAREN NULL AS VARCHAR RIGHT_PAREN COLUMN_NAME COMMA
+      CAST LEFT_PAREN NULL AS SMALLINT RIGHT_PAREN KEY_SEQ COMMA
+      CAST LEFT_PAREN NULL AS VARCHAR RIGHT_PAREN PK_NAME
+      WHERE FALSE                                                                                       #getPrimaryKeys
+    | EXECUTE IDENTIFIER (USING parameterList)?                                                         #execute
+    | PREPARE IDENTIFIER FROM statement                                                                 #prepare
+    | DEALLOCATE PREPARE IDENTIFIER                                                                     #deallocate
     | .*?                                                                                               #passThrough
+    ;
+
+anyStr
+    : ( ~',' )*
+    ;
+
+parameterList
+    : (TINYINT|SMALLINT|INTEGER|BIGINT|DOUBLE|REAL|DECIMAL|DATE|TIME|TIMESTAMP)? anyStr (',' (TINYINT|SMALLINT|INTEGER|BIGINT|DOUBLE|REAL|DECIMAL|DATE|TIME|TIMESTAMP)? anyStr)*
     ;
 
 tableCatalogFilter

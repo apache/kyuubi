@@ -22,9 +22,8 @@ import org.apache.kyuubi.config.KyuubiConf
 
 class InternalSecurityAccessorSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
-  conf.set(
-    KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
-    classOf[UserDefinedEngineSecuritySecretProvider].getCanonicalName)
+    .set(KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER, "simple")
+    .set(KyuubiConf.SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET, "ENGINE____SECRET")
 
   test("test encrypt/decrypt, issue token/auth token") {
     Seq("AES/CBC/PKCS5PADDING", "AES/CTR/NoPadding").foreach { cipher =>
