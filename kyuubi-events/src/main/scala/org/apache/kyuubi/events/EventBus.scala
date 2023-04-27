@@ -70,7 +70,7 @@ object EventBus extends Logging {
   def registerAsync[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus =
     defaultEventBus.registerAsync[T](et)
 
-  def deregisterAll(): Unit = {
+  def deregisterAll(): Unit = synchronized {
     defaultEventBus.deregisterAll()
   }
 
