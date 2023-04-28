@@ -193,5 +193,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
     ServerEventHandlerRegister.registerEventLoggers(conf)
   }
 
-  override protected def stopServer(): Unit = {}
+  override protected def stopServer(): Unit = {
+    EventBus.deregisterAll()
+  }
 }

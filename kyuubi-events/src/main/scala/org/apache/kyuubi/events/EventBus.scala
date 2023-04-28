@@ -40,6 +40,8 @@ sealed trait EventBus {
   def register[T <: KyuubiEvent: ClassTag](eventHandler: EventHandler[T]): EventBus
 
   def registerAsync[T <: KyuubiEvent: ClassTag](eventHandler: EventHandler[T]): EventBus
+
+  def deregisterAll(): Unit = {}
 }
 
 object EventBus extends Logging {
@@ -67,6 +69,10 @@ object EventBus extends Logging {
 
   def registerAsync[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus =
     defaultEventBus.registerAsync[T](et)
+
+  def deregisterAll(): Unit = synchronized {
+    defaultEventBus.deregisterAll()
+  }
 
   private case class EventBusLive() extends EventBus {
     private[this] lazy val eventHandlerRegistry = new Registry
@@ -96,6 +102,11 @@ object EventBus extends Logging {
       asyncEventHandlerRegistry.register(et)
       this
     }
+
+    override def deregisterAll(): Unit = {
+      eventHandlerRegistry.deregisterAll()
+      asyncEventHandlerRegistry.deregisterAll()
+    }
   }
 
   private class Registry {
@@ -121,6 +132,11 @@ object EventBus extends Logging {
         parent <- getAllParentsClass(cls)
       } yield parent
       clazz :: parents
+    }
+
+    def deregisterAll(): Unit = {
+      eventHandlers.values.flatten.foreach(_.close())
+      eventHandlers.clear()
     }
   }
 }

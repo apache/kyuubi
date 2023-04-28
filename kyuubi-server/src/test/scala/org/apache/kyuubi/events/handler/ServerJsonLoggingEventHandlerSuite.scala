@@ -33,6 +33,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi._
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.events.ServerEventHandlerRegister
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.KyuubiServer
@@ -197,6 +198,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
     server.initialize(conf)
     server.start()
     server.stop()
+    ServerEventHandlerRegister.registerEventLoggers(conf) // register event loggers again
 
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val kyuubiServerInfoPath =

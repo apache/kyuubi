@@ -18,5 +18,9 @@
 package org.apache.kyuubi.events
 
 package object handler {
-  type EventHandler[T <: KyuubiEvent] = T => Unit
+  trait EventHandler[T <: KyuubiEvent] extends AutoCloseable {
+    def apply(event: T): Unit
+
+    def close(): Unit = {}
+  }
 }
