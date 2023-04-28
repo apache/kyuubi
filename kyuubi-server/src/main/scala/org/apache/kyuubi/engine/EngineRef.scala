@@ -209,7 +209,7 @@ private[kyuubi] class EngineRef(
       while (engineRef.isEmpty) {
         if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
           exitValue = Some(process.exitValue())
-          if (exitValue.get != 0) {
+          if (exitValue != Some(0)) {
             val error = builder.getError
             MetricsSystem.tracing { ms =>
               ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
@@ -253,6 +253,10 @@ private[kyuubi] class EngineRef(
             builder.getError)
         }
         engineRef = discoveryClient.getEngineByRefId(engineSpace, engineRefId)
+
+        if (engineRef.isEmpty && exitValue == Some(0)) {
+          TimeUnit.SECONDS.sleep(1)
+        }
       }
       engineRef.get
     } finally {
