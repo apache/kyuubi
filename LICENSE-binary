@@ -321,6 +321,9 @@ io.vertx:vertx-grpc
 org.apache.zookeeper:zookeeper
 com.squareup.retrofit2:retrofit
 com.squareup.okhttp3:okhttp
+org.apache.kafka:kafka-clients
+org.lz4:lz4-java
+org.xerial.snappy:snappy-java
 
 BSD
 ------------
@@ -332,6 +335,7 @@ com.thoughtworks.paranamer:paranamer
 dk.brics.automaton:automaton
 com.google.protobuf:protobuf-java-util
 com.google.protobuf:protobuf-java
+com.github.luben:zstd-jni
 
 Eclipse Distribution License - v 1.0
 ------------------------------------

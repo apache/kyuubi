@@ -15,11 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.events
+package org.apache.kyuubi.events.handler
 
-object EventLoggerType extends Enumeration {
+import org.apache.kyuubi.config.KyuubiConf
 
-  type EventLoggerType = Value
+case class ServerKafkaLoggingEventHandler(
+    topic: String,
+    producerConf: Map[String, String],
+    kyuubiConf: KyuubiConf,
+    closeTimeoutInMs: Long)
+  extends KafkaLoggingEventHandler(topic, producerConf, kyuubiConf, closeTimeoutInMs)
 
-  val SPARK, JSON, JDBC, CUSTOM, KAFKA = Value
+object ServerKafkaLoggingEventHandler {
+  val KAFKA_SERVER_EVENT_HANDLER_PREFIX = "kyuubi.backend.server.event.kafka"
 }
