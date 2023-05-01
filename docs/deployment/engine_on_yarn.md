@@ -148,10 +148,10 @@ Since the Flink SQL engine runs inside the JobManager, it's recommended to tune 
 
 The related Flink configurations are listed below (see more details at [Flink Configuration](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/yarn_setup/#flink-configuration)):
 
-|               Name              |                   Default                   | Meaning                                                                          |
-|---------------------------------|---------------------------------------------|----------------------------------------------------------------------------------|
-| yarn.appmaster.vcores           | 1                                           | The number of virtual cores (vcores) used by YARN application master.            |
-| jobmanager.memory.process.size  | (none)                                      | Total size of the JobManager (JobMaster / ResourceManager / Dispatcher) process. |
+|              Name              | Default |                                     Meaning                                      |
+|--------------------------------|---------|----------------------------------------------------------------------------------|
+| yarn.appmaster.vcores          | 1       | The number of virtual cores (vcores) used by YARN application master.            |
+| jobmanager.memory.process.size | (none)  | Total size of the JobManager (JobMaster / ResourceManager / Dispatcher) process. |
 
 ```bash
 
