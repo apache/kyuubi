@@ -127,6 +127,52 @@ When you want to deploy Kyuubi's Flink SQL engines on YARN, you'd better have co
 - An active Object Storage cluster, e.g. [HDFS](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html), S3 and [Minio](https://min.io/) etc.
 - Setup Hadoop client configurations at the machine the Kyuubi server locates
 
+### Flink Deployment Modes
+
+Currently, Flink supports two deployment modes on YARN: [Yarn Application Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/yarn_setup/#yarn-application-mode) and [Yarn Session Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/yarn_setup/#yarn-session-mode).
+
+- Yarn Application Mode: In this mode, Kyuubi will start a dedicated Flink application cluster and run the SQL engine on it.
+- Yarn Session Mode: In this mode, Kyuubi will start the Flink SQL engine locally and connect to a running Flink Yarn session cluster.
+
+As Kyuubi have to know the deployment mode before starting the SQL engine, you have to specify the deployment mode in Kyuubi configuration.
+
+```bash
+flink.execution.target: yarn-application
+```
+
+### Yarn Application Mode
+
+#### Flink Configurations
+
+Since the Flink SQL engine runs inside the JobManager, it's recommended to tune the resource configurations of the JobManager based on your workload.
+
+The related Flink configurations are listed below (see more details at [Flink Configuration](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/yarn_setup/#flink-configuration)):
+
+|               Name               |                   Default                   |                                     Meaning                                      |
+|----------------------------------|---------------------------------------------|----------------------------------------------------------------------------------|
+| yarn.appmaster.vcores            | 1                                           | The number of virtual cores (vcores) used by YARN application master.            |
+| jobmanager.memory.process.size   | (none)                                      | Total size of the JobManager (JobMaster / ResourceManager / Dispatcher) process. |
+| -------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------         |
+
+```bash
+
+#### Environment
+
+Either `HADOOP_CONF_DIR` or `YARN_CONF_DIR` is configured and points to the Hadoop client configurations directory, usually, `$HADOOP_HOME/etc/hadoop`.
+
+You could verify your setup by the following command:
+
+```bash
+# we assume to be in the root directory of 
+# the unzipped Flink distribution
+
+# (0) export HADOOP_CLASSPATH
+export HADOOP_CLASSPATH=`hadoop classpath`
+
+# (1) submit a Flink job and ensure it runs successfully
+./bin/flink run -m yarn-cluster ./examples/streaming/WordCount.jar
+```
+
 ### Yarn Session Mode
 
 #### Flink Configurations
@@ -194,17 +240,13 @@ To use Hadoop vanilla jars, please configure $KYUUBI_HOME/conf/kyuubi-env.sh as 
 $ echo "export FLINK_HADOOP_CLASSPATH=`hadoop classpath`" >> $KYUUBI_HOME/conf/kyuubi-env.sh
 ```
 
-### Deployment Modes Supported by Flink on YARN
-
-For experiment use, we recommend deploying Kyuubi Flink SQL engine in [Session Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#session-mode).
-At present, [Application Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#application-mode) and [Per-Job Mode (deprecated)](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#per-job-mode-deprecated) are not supported for Flink engine.
-
 ### Kerberos
 
-As Kyuubi Flink SQL engine wraps the Flink SQL client that currently does not support [Flink Kerberos Configuration](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/config/#security-kerberos-login-keytab),
-so `security.kerberos.login.keytab` and `security.kerberos.login.principal` should not use now.
+With regard to YARN application mode, Kerberos is supported natively by Flink, see [Flink Kerberos Configuration](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/config/#security-kerberos-login-keytab) for details.
 
-Instead, you can schedule a periodically `kinit` process via `crontab` task on the local machine that hosts Kyuubi server or simply use [Kyuubi Kinit](settings.html#kinit).
+With regard to YARN session mode, `security.kerberos.login.keytab` and `security.kerberos.login.principal` are not effective, as Kyuubi Flink SQL engine mainly relies on Flink SQL client which currently does not support [Flink Kerberos Configuration](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/config/#security-kerberos-login-keytab),
+
+As a workaround, you can schedule a periodically `kinit` process via `crontab` task on the local machine that hosts Kyuubi server or simply use [Kyuubi Kinit](settings.html#kinit).
 
 ## Deploy Kyuubi Hive Engine on Yarn
 
