@@ -280,7 +280,7 @@ $ $HIVE_HOME/bin/beeline -u 'jdbc:hive2://localhost:10000/default'
 0: jdbc:hive2://localhost:10000/default> INSERT INTO TABLE pokes VALUES (1, 'hello');
 ```
 
-If the `Hive SQL` passes and there is a job in YARN Web UI, It indicates the hive environment is normal.
+If the `Hive SQL` passes and there is a job in YARN Web UI, it indicates the hive environment is good.
 
 #### Required Environment Variable
 
