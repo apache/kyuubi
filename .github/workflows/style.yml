@@ -93,7 +93,7 @@ jobs:
       - name: Web UI Style with node
         run: |
           cd ./kyuubi-server/web-ui
-          npm install pnpm@7 -g
+          npm install pnpm@8 -g
           pnpm install
           pnpm run lint
           echo "---------------------------------------Notice------------------------------------"

@@ -207,7 +207,7 @@
         <!-- webui -->
         <webui.skip>true</webui.skip>
         <node.version>v16.19.1</node.version>
-        <pnpm.version>v7.27.1</pnpm.version>
+        <pnpm.version>v8.4.0</pnpm.version>
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.jline.version>2.12</hive.client.jline.version>
