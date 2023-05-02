@@ -131,10 +131,10 @@ When you want to deploy Kyuubi's Flink SQL engines on YARN, you'd better have co
 
 Currently, Flink supports two deployment modes on YARN: [YARN Application Mode](https://nightlies.apache.org/flink/flink-docs-release-1.17/docs/deployment/resource-providers/yarn/#application-mode) and [YARN Session Mode](https://nightlies.apache.org/flink/flink-docs-release-1.17/docs/deployment/resource-providers/yarn/#application-mode).
 
-- YARN Application Mode: In this mode, Kyuubi will start a dedicated Flink application cluster and run the SQL engine on it.
-- YARN Session Mode: In this mode, Kyuubi will start the Flink SQL engine locally and connect to a running Flink YARN session cluster.
+- YARN Application Mode: In this mode, Kyuubi starts a dedicated Flink application cluster and runs the SQL engine on it.
+- YARN Session Mode: In this mode, Kyuubi starts the Flink SQL engine locally and connects to a running Flink YARN session cluster.
 
-As Kyuubi have to know the deployment mode before starting the SQL engine, you have to specify the deployment mode in Kyuubi configuration.
+As Kyuubi has to know the deployment mode before starting the SQL engine, it's required to specify the deployment mode in Kyuubi configuration.
 
 ```bash
 flink.execution.target: yarn-application
@@ -146,12 +146,12 @@ flink.execution.target: yarn-application
 
 Since the Flink SQL engine runs inside the JobManager, it's recommended to tune the resource configurations of the JobManager based on your workload.
 
-The related Flink configurations are listed below (see more details at [Flink Configuration](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/yarn_setup/#flink-configuration)):
+The related Flink configurations are listed below (see more details at [Flink Configuration](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/#yarn)):
 
-|              Name              | Default |                                     Meaning                                      |
-|--------------------------------|---------|----------------------------------------------------------------------------------|
-| yarn.appmaster.vcores          | 1       | The number of virtual cores (vcores) used by YARN application master.            |
-| jobmanager.memory.process.size | (none)  | Total size of the JobManager (JobMaster / ResourceManager / Dispatcher) process. |
+|              Name              | Default | Meaning                                                                                |
+|--------------------------------|---------|----------------------------------------------------------------------------------------|
+| yarn.appmaster.vcores          | 1       | The number of virtual cores (vcores) used by the JobManager (YARN application master). |
+| jobmanager.memory.process.size | (none)  | Total size of the memory of the JobManager process.                                    |
 
 ```bash
 
