@@ -136,7 +136,7 @@ Currently, Flink supports two deployment modes on YARN: [YARN Application Mode](
 
 As Kyuubi has to know the deployment mode before starting the SQL engine, it's required to specify the deployment mode in Kyuubi configuration.
 
-```bash
+```properties
 # candidates: yarn-application, yarn-session
 flink.execution.target=yarn-application
 ```
