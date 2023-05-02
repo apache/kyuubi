@@ -138,7 +138,7 @@ As Kyuubi has to know the deployment mode before starting the SQL engine, it's r
 
 ```bash
 # candidates: yarn-application, yarn-session
-flink.execution.target: yarn-application
+flink.execution.target=yarn-application
 ```
 
 ### YARN Application Mode
