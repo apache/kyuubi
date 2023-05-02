@@ -21,7 +21,7 @@
 
 ### Requirements
 
-When you want to deploy Kyuubi's Spark SQL engines on YARN, you'd better have cognition upon the following things.
+To deploy Kyuubi's Spark SQL engines on YARN, you'd better have cognition upon the following things.
 
 - Knowing the basics about [Running Spark on YARN](https://spark.apache.org/docs/latest/running-on-yarn.html)
 - A binary distribution of Spark which is built with YARN support
@@ -117,7 +117,7 @@ Instead, you can schedule a periodically `kinit` process via `crontab` task on t
 
 ### Requirements
 
-When you want to deploy Kyuubi's Flink SQL engines on YARN, you'd better have cognition upon the following things.
+To deploy Kyuubi's Flink SQL engines on YARN, you'd better have cognition upon the following things.
 
 - Knowing the basics about [Running Flink on YARN](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn)
 - A binary distribution of Flink which is built with YARN support
@@ -251,7 +251,7 @@ As a workaround, you can schedule a periodically `kinit` process via `crontab` t
 
 ### Requirements
 
-When you want to deploy Kyuubi's Hive SQL engines on YARN, you'd better have cognition upon the following things.
+To deploy Kyuubi's Hive SQL engines on YARN, you'd better have cognition upon the following things.
 
 - Knowing the basics about [Running Hive on YARN](https://cwiki.apache.org/confluence/display/Hive/GettingStarted)
 - A binary distribution of Hive
