@@ -41,6 +41,9 @@ trait WithFlinkTestResources {
     GENERATED_UDF_CLASS,
     GENERATED_UDF_CODE)
 
+  protected val savepointDir: File = Utils.createTempDir("savepoints").toFile
+
   protected val testExtraConf: Map[String, String] = Map(
-    "flink.pipeline.name" -> "test-job")
+    "flink.pipeline.name" -> "test-job",
+    "flink.state.savepoints.dir" -> savepointDir.toURI.toString)
 }

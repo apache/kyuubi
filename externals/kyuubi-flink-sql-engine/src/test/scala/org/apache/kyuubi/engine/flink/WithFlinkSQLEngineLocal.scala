@@ -184,6 +184,7 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
     val cfg = new MiniClusterConfiguration.Builder()
       .setConfiguration(flinkConfig)
       .setNumSlotsPerTaskManager(1)
+      .setNumTaskManagers(2)
       .build
     miniCluster = new MiniCluster(cfg)
     miniCluster.start()
