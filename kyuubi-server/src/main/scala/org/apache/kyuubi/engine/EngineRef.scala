@@ -206,40 +206,17 @@ private[kyuubi] class EngineRef(
       builder.validateConf
       val process = builder.start
       var exitValue: Option[Int] = None
+      var lastApplicationInfo: Option[ApplicationInfo] = None
       while (engineRef.isEmpty) {
         if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
           exitValue = Some(process.exitValue())
-          if (exitValue.get != 0) {
+          if (exitValue != Some(0)) {
             val error = builder.getError
             MetricsSystem.tracing { ms =>
               ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
               ms.incCount(MetricRegistry.name(ENGINE_FAIL, error.getClass.getSimpleName))
             }
             throw error
-          }
-        }
-
-        // even the submit process succeeds, the application might meet failure when initializing,
-        // check the engine application state from engine manager and fast fail on engine terminate
-        if (exitValue == Some(0)) {
-          Option(engineManager).foreach { engineMgr =>
-            engineMgr.getApplicationInfo(
-              builder.clusterManager(),
-              engineRefId,
-              Some(started)).foreach { appInfo =>
-              if (ApplicationState.isTerminated(appInfo.state)) {
-                MetricsSystem.tracing { ms =>
-                  ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
-                  ms.incCount(MetricRegistry.name(ENGINE_FAIL, "ENGINE_TERMINATE"))
-                }
-                throw new KyuubiSQLException(
-                  s"""
-                     |The engine application has been terminated. Please check the engine log.
-                     |ApplicationInfo: ${appInfo.toMap.mkString("(\n", ",\n", "\n)")}
-                     |""".stripMargin,
-                  builder.getError)
-              }
-            }
           }
         }
 
@@ -253,6 +230,38 @@ private[kyuubi] class EngineRef(
             builder.getError)
         }
         engineRef = discoveryClient.getEngineByRefId(engineSpace, engineRefId)
+
+        // even the submit process succeeds, the application might meet failure when initializing,
+        // check the engine application state from engine manager and fast fail on engine terminate
+        if (engineRef.isEmpty && exitValue == Some(0)) {
+          Option(engineManager).foreach { engineMgr =>
+            if (lastApplicationInfo.isDefined) {
+              TimeUnit.SECONDS.sleep(1)
+            }
+
+            val applicationInfo = engineMgr.getApplicationInfo(
+              builder.clusterManager(),
+              engineRefId,
+              Some(started))
+
+            applicationInfo.foreach { appInfo =>
+              if (ApplicationState.isTerminated(appInfo.state)) {
+                MetricsSystem.tracing { ms =>
+                  ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
+                  ms.incCount(MetricRegistry.name(ENGINE_FAIL, "ENGINE_TERMINATE"))
+                }
+                throw new KyuubiSQLException(
+                  s"""
+                     |The engine application has been terminated. Please check the engine log.
+                     |ApplicationInfo: ${appInfo.toMap.mkString("(\n", ",\n", "\n)")}
+                     |""".stripMargin,
+                  builder.getError)
+              }
+            }
+
+            lastApplicationInfo = applicationInfo
+          }
+        }
       }
       engineRef.get
     } finally {
