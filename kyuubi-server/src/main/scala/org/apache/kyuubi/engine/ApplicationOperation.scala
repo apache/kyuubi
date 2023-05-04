@@ -37,7 +37,7 @@ trait ApplicationOperation {
    *
    * @param clusterManager the underlying cluster manager or just local instance
    */
-  def isSupported(clusterManager: Option[String]): Boolean
+  def isSupported(clusterManager: Option[String], deployMode: Option[String]): Boolean
 
   /**
    * Kill the app/engine by the unique application tag

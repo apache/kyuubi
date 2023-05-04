@@ -47,7 +47,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
     info(s"Successfully initialized yarn client: ${c.getServiceState}")
   }
 
-  override def isSupported(clusterManager: Option[String]): Boolean = {
+  override def isSupported(clusterManager: Option[String], deployMode: Option[String]): Boolean = {
     yarnClient != null && clusterManager.exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))
   }
 

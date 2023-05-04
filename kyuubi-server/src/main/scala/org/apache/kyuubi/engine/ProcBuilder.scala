@@ -341,6 +341,8 @@ trait ProcBuilder {
 
   def clusterManager(): Option[String] = None
 
+  def deployMode(): Option[String] = None
+
 }
 
 object ProcBuilder extends Logging {

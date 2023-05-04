@@ -242,7 +242,8 @@ private[kyuubi] class EngineRef(
             val applicationInfo = engineMgr.getApplicationInfo(
               builder.clusterManager(),
               engineRefId,
-              Some(started))
+              Some(started),
+              builder.deployMode())
 
             applicationInfo.foreach { appInfo =>
               if (ApplicationState.isTerminated(appInfo.state)) {
@@ -291,7 +292,7 @@ private[kyuubi] class EngineRef(
       try {
         val clusterManager = builder.clusterManager()
         builder.close(true)
-        engineManager.killApplication(clusterManager, engineRefId)
+        engineManager.killApplication(clusterManager, engineRefId, builder.deployMode())
       } catch {
         case e: Exception =>
           warn(s"Error closing engine builder, engineRefId: $engineRefId", e)

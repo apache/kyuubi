@@ -77,4 +77,8 @@ class SparkBatchProcessBuilder(
   override def clusterManager(): Option[String] = {
     batchConf.get(MASTER_KEY).orElse(super.clusterManager())
   }
+
+  override def deployMode(): Option[String] = {
+    batchConf.get(DEPLOY_MODE_KEY).orElse(super.deployMode())
+  }
 }
