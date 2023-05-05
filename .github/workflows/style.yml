@@ -86,15 +86,19 @@ jobs:
           SPOTLESS_BLACK_VERSION=$(build/mvn help:evaluate -Dexpression=spotless.python.black.version -q -DforceStdout)
           pip install black==$SPOTLESS_BLACK_VERSION
           build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - name: setup npm
         uses: actions/setup-node@v3
         with:
           node-version: 18
+          cache: 'pnpm'
+          cache-dependency-path: 'kyuubi-server/web-ui/pnpm-lock.yaml'
       - name: Web UI Style with node
         run: |
           cd ./kyuubi-server/web-ui
-          npm install pnpm@8 -g
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm run lint
           echo "---------------------------------------Notice------------------------------------"
           echo "If this style check fail, you should follow these commands for a tentative fix"
