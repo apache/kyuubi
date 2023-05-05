@@ -228,7 +228,7 @@ object SparkProcessBuilder {
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
   final val INTERNAL_RESOURCE = "spark-internal"
-  final val DEPLOY_MODE_KEY = "spark.deploy.mode"
+  final val DEPLOY_MODE_KEY = "spark.submit.deployMode"
 
   /**
    * The path configs from Spark project that might upload local files:
