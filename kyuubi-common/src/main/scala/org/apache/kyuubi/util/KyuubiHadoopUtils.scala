@@ -36,12 +36,7 @@ import org.apache.kyuubi.config.KyuubiConf
 
 object KyuubiHadoopUtils extends Logging {
 
-  private val subjectField =
-    classOf[UserGroupInformation].getDeclaredField("subject")
-  subjectField.setAccessible(true)
-
-  private val tokenMapField =
-    classOf[Credentials].getDeclaredField("tokenMap")
+  private val tokenMapField = classOf[Credentials].getDeclaredField("tokenMap")
   tokenMapField.setAccessible(true)
 
   def newHadoopConf(
