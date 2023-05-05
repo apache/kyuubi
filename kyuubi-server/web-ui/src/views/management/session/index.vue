@@ -26,17 +26,20 @@
       style="width: 100%">
       <el-table-column prop="user" :label="$t('user')" width="160px" />
       <!-- TODO need jump to engine page -->
-      <el-table-column prop="engineId" :label="$t('engine_ip')" width="160px" />
+      <el-table-column prop="engineId" :label="$t('engine_id')" width="160px" />
       <el-table-column prop="ipAddr" :label="$t('client_ip')" width="160px" />
       <el-table-column
         prop="kyuubiInstance"
         :label="$t('kyuubi_instance')"
         width="180px" />
       <!-- TODO need jump to session page -->
-      <el-table-column
-        prop="identifier"
-        :label="$t('session_id')"
-        width="300px" />
+      <el-table-column :label="$t('session_id')" width="300px">
+        <template #default="scope">
+          <el-link @click="handleSessionDetailJump(scope.row.identifier)">{{
+            scope.row.identifier
+          }}</el-link>
+        </template>
+      </el-table-column>
       <el-table-column :label="$t('create_time')" width="200">
         <template #default="scope">
           {{
@@ -76,6 +79,7 @@
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import { useTable } from '@/views/common/use-table'
+  import { Router, useRouter } from 'vue-router'
   const { t } = useI18n()
   const { tableData, loading, getList: _getList } = useTable()
   const handleDeleteSession = (sessionId: string) => {
@@ -99,6 +103,16 @@
   }
   const getList = () => {
     _getList(getAllSessions)
+  }
+  const router: Router = useRouter()
+
+  function handleSessionDetailJump(sessionId: string) {
+    router.push({
+      path: '/detail/session',
+      query: {
+        sessionId
+      }
+    })
   }
   getList()
 </script>

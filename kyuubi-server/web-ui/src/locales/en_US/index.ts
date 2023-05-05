@@ -35,6 +35,8 @@ export default {
   share_level: 'Share Level',
   version: 'Version',
   engine_ui: 'Engine UI',
+  failure_reason: 'Failure Reason',
+  session_properties: 'Session Properties',
   operation: {
     text: 'Operation',
     delete_confirm: 'Delete Confirm',
