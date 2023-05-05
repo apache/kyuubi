@@ -31,7 +31,7 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
   override def rewriteTarget(request: HttpServletRequest): String = {
     var targetUrl = "/no-ui-error"
     val requestUrl = request.getRequestURI
-    getTargetAddress(request.getRequestURI).foreach(pair => {
+    getTargetAddress(requestUrl).foreach(pair => {
       val subPath = s"/$ENGINE_UI_PROXY_PATH/${pair._1}:${pair._2}/"
 
       val targetPath = requestUrl.substring(subPath.length) match {
