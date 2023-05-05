@@ -49,6 +49,7 @@ abstract class KyuubiSession(
       f
     } catch {
       case t: Throwable =>
+        error(s"Handling $user session[$handle] exception:", t)
         getSessionEvent.foreach { sessionEvent =>
           sessionEvent.exception = Some(t)
           EventBus.post(sessionEvent)

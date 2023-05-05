@@ -171,7 +171,7 @@ class KyuubiSessionImpl(
             case e: Throwable =>
               error(
                 s"Opening engine [${engine.defaultEngineName} $host:$port]" +
-                  s" for $user session failed",
+                  s" for $user session[$handle] failed",
                 e)
               openSessionError = Some(e)
               throw e
