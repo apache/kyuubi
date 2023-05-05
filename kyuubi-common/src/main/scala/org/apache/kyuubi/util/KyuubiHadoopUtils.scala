@@ -26,7 +26,7 @@ import scala.util.{Failure, Success, Try}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier
 import org.apache.hadoop.io.Text
-import org.apache.hadoop.security.{Credentials, SecurityUtil, UserGroupInformation}
+import org.apache.hadoop.security.{Credentials, SecurityUtil}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
 import org.apache.hadoop.yarn.conf.YarnConfiguration
