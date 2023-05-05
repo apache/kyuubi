@@ -364,4 +364,25 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(sessionDataList.isEmpty)
     }
   }
+
+  test("list all type operations under session") {
+    val sessionOpenRequest = new SessionOpenRequest(Map("testConfig" -> "testValue").asJava)
+    val user = "kyuubi".getBytes()
+    val sessionOpenResp = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(
+        AUTHORIZATION_HEADER,
+        s"Basic ${new String(Base64.getEncoder.encode(user), StandardCharsets.UTF_8)}")
+      .post(Entity.entity(sessionOpenRequest, MediaType.APPLICATION_JSON_TYPE))
+
+    val sessionHandle = sessionOpenResp.readEntity(classOf[SessionHandle]).getIdentifier
+
+    // get operations belongs to specified session
+    val response = webTarget.path(s"api/v1/sessions/$sessionHandle/operations")
+      .request().get()
+    assert(200 == response.getStatus)
+    val operations = response.readEntity(new GenericType[Seq[OperationData]]() {})
+    assert(operations.size == 1)
+    assert(sessionHandle.toString.equals(operations.head.getSessionId))
+  }
 }
