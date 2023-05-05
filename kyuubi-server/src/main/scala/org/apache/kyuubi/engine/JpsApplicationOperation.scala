@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine
 
 import java.nio.file.Paths
+import java.util.Locale
 
 import scala.sys.process._
 
@@ -42,8 +43,12 @@ class JpsApplicationOperation extends ApplicationOperation {
   }
 
   override def isSupported(clusterManager: Option[String], deployMode: Option[String]): Boolean = {
-    runner != null && (clusterManager.isEmpty || clusterManager.get == "local" ||
-      deployMode.isEmpty || deployMode.get == "client")
+    runner != null &&
+    (clusterManager.isEmpty ||
+      clusterManager.get.toLowerCase(Locale.ROOT).equals("local") ||
+      deployMode.isEmpty ||
+      (clusterManager.get.toLowerCase(Locale.ROOT).startsWith("k8s") &&
+        deployMode.get.toLowerCase(Locale.ROOT).equals("client")))
   }
 
   private def getEngine(tag: String): Option[String] = {
