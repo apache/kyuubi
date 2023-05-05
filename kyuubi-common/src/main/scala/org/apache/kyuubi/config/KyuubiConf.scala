@@ -188,6 +188,8 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
             s"and may be removed in the future. $comment")
     }
   }
+
+  def isRESTEnabled: Boolean = get(FRONTEND_PROTOCOLS).contains(FrontendProtocols.REST.toString)
 }
 
 /**
