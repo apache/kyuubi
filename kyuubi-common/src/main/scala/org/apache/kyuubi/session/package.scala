@@ -27,4 +27,6 @@ package object session {
   val METACONF_PREFIX = "metaconf:"
 
   val SPARK_PREFIX = "spark."
+  val USE_CATALOG = "use:catalog"
+  val USE_DATABASE = "use:database"
 }

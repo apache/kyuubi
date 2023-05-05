@@ -1861,6 +1861,7 @@ object KyuubiConf {
     .doc("This parameter is introduced as a server-side parameter " +
       "controlling the upper limit of the engine pool.")
     .version("1.4.0")
+    .serverOnly
     .intConf
     .checkValue(s => s > 0 && s < 33, "Invalid engine pool threshold, it should be in [1, 32]")
     .createWithDefault(9)
