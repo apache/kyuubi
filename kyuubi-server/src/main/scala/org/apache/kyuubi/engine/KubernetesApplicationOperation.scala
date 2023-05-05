@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine
 
+import java.util.Locale
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
@@ -74,8 +75,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   override def isSupported(clusterManager: Option[String]): Boolean = {
     // TODO add deploy mode to check whether is supported
-    kubernetesClient != null && clusterManager.nonEmpty &&
-    clusterManager.get.toLowerCase.startsWith("k8s")
+    kubernetesClient != null && clusterManager.exists(_.toLowerCase(Locale.ROOT).startsWith("k8s"))
   }
 
   override def killApplicationByTag(tag: String): KillResponse = {

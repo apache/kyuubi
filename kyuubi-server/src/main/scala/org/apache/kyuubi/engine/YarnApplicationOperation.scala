@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine
 
+import java.util.Locale
+
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.yarn.api.records.{FinalApplicationStatus, YarnApplicationState}
@@ -46,7 +48,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
   }
 
   override def isSupported(clusterManager: Option[String]): Boolean = {
-    yarnClient != null && clusterManager.nonEmpty && "yarn".equalsIgnoreCase(clusterManager.get)
+    yarnClient != null && clusterManager.exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))
   }
 
   override def killApplicationByTag(tag: String): KillResponse = {
