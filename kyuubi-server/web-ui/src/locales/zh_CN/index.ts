@@ -34,6 +34,7 @@ export default {
   engine_type: 'Engine 类型',
   share_level: '共享级别',
   version: '版本',
+  engine_ui: 'Engine UI',
   operation: {
     text: '操作',
     delete_confirm: '确认删除',

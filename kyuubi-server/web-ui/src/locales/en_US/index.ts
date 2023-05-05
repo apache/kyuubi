@@ -34,6 +34,7 @@ export default {
   engine_type: 'Engine Type',
   share_level: 'Share Level',
   version: 'Version',
+  engine_ui: 'Engine UI',
   operation: {
     text: 'Operation',
     delete_confirm: 'Delete Confirm',

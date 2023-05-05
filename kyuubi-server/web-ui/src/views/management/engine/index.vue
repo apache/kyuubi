@@ -81,6 +81,18 @@
       <el-table-column fixed="right" :label="$t('operation.text')" width="120">
         <template #default="scope">
           <el-space wrap>
+            <el-tooltip
+              effect="dark"
+              :content="$t('engine_ui')"
+              placement="top">
+              <el-button
+                type="primary"
+                icon="Link"
+                circle
+                @click="
+                  openEngineUi(scope.row.attributes['kyuubi.engine.url'])
+                " />
+            </el-tooltip>
             <el-popconfirm
               :title="$t('operation.delete_confirm')"
               @confirm="handleDeleteEngine(scope.row)">
@@ -150,6 +162,10 @@
       .finally(() => {
         getList()
       })
+  }
+  function openEngineUi(url: string) {
+    url = (url || '').replaceAll(/http:|https:/gi, '')
+    window.open(`${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${url}/`)
   }
 
   init()
