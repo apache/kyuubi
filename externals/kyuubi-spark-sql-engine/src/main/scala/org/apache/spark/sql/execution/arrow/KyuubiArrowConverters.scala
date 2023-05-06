@@ -18,7 +18,6 @@
 package org.apache.spark.sql.execution.arrow
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import java.lang.{Boolean => JBoolean}
 import java.nio.channels.Channels
 
 import scala.collection.JavaConverters._
@@ -339,9 +338,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       errorOnDuplicatedFieldNames: Boolean): ArrowSchema = {
     toArrowSchemaMethod.invoke[ArrowSchema](
       ArrowUtils,
-      schema,
-      timeZone,
-      new JBoolean(errorOnDuplicatedFieldNames))
+      schema.asInstanceOf[Object],
+      timeZone.asInstanceOf[Object],
+      errorOnDuplicatedFieldNames.asInstanceOf[Object])
   }
 
   // for testing
