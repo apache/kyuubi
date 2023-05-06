@@ -378,8 +378,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val sessionHandle = sessionOpenResp.readEntity(classOf[SessionHandle]).getIdentifier
 
     // get operations belongs to specified session
-    info(s"api/v1/sessions/$sessionHandle/operations")
-    val response = webTarget.path(s"api/v1/sessions/$sessionHandle/operations")
+    val response = webTarget
+      .path(s"api/v1/sessions/${sessionHandle.toString}/operations")
       .request().get()
     assert(200 == response.getStatus)
     val operations = response.readEntity(new GenericType[Seq[OperationData]]() {})
