@@ -21,7 +21,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.engine.KyuubiApplicationManager
@@ -38,8 +37,14 @@ class KyuubiBatchSessionImpl(
     conf: Map[String, String],
     override val sessionManager: KyuubiSessionManager,
     val sessionConf: KyuubiConf,
-    batchRequest: BatchRequest,
-    recoveryMetadata: Option[Metadata] = None)
+    batchType: String,
+    batchName: Option[String],
+    resource: String,
+    className: String,
+    batchConf: Map[String, String],
+    batchArgs: Seq[String],
+    recoveryMetadata: Option[Metadata] = None,
+    shouldRunAsync: Boolean)
   extends KyuubiSession(
     TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
     user,
@@ -68,42 +73,41 @@ class KyuubiBatchSessionImpl(
   override val sessionIdleTimeoutThreshold: Long =
     sessionManager.getConf.get(KyuubiConf.BATCH_SESSION_IDLE_TIMEOUT)
 
-  override val normalizedConf: Map[String, String] = {
-    sessionConf.getBatchConf(batchRequest.getBatchType) ++
-      sessionManager.validateBatchConf(batchRequest.getConf.asScala.toMap)
-  }
+  override val normalizedConf: Map[String, String] =
+    sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(batchConf)
 
-  private val optimizedConf: Map[String, String] = {
+  val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
       user,
       normalizedConf.asJava)
     if (confOverlay != null) {
       val overlayConf = new KyuubiConf(false)
       confOverlay.asScala.foreach { case (k, v) => overlayConf.set(k, v) }
-      normalizedConf ++ overlayConf.getBatchConf(batchRequest.getBatchType)
+      normalizedConf ++ overlayConf.getBatchConf(batchType)
     } else {
       warn(s"the server plugin return null value for user: $user, ignore it")
       normalizedConf
     }
   }
 
-  override lazy val name: Option[String] = Option(batchRequest.getName).orElse(
-    optimizedConf.get(KyuubiConf.SESSION_NAME.key))
+  override lazy val name: Option[String] =
+    batchName.filterNot(_.trim.isEmpty).orElse(optimizedConf.get(KyuubiConf.SESSION_NAME.key))
 
   // whether the resource file is from uploading
-  private[kyuubi] val isResourceUploaded: Boolean = batchRequest.getConf
-    .getOrDefault(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
+  private[kyuubi] val isResourceUploaded: Boolean =
+    batchConf.getOrElse(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
       this,
-      batchRequest.getBatchType,
+      batchType,
       name.orNull,
-      batchRequest.getResource,
-      batchRequest.getClassName,
+      resource,
+      className,
       optimizedConf,
-      batchRequest.getArgs.asScala,
-      recoveryMetadata)
+      batchArgs,
+      recoveryMetadata,
+      shouldRunAsync)
 
   private def waitMetadataRequestsRetryCompletion(): Unit = {
     val batchId = batchJobSubmissionOp.batchId
@@ -127,14 +131,11 @@ class KyuubiBatchSessionImpl(
 
   override def checkSessionAccessPathURIs(): Unit = {
     KyuubiApplicationManager.checkApplicationAccessPaths(
-      batchRequest.getBatchType,
+      batchType,
       optimizedConf,
       sessionManager.getConf)
-    if (batchRequest.getResource != SparkProcessBuilder.INTERNAL_RESOURCE
-      && !isResourceUploaded) {
-      KyuubiApplicationManager.checkApplicationAccessPath(
-        batchRequest.getResource,
-        sessionManager.getConf)
+    if (resource != SparkProcessBuilder.INTERNAL_RESOURCE && !isResourceUploaded) {
+      KyuubiApplicationManager.checkApplicationAccessPath(resource, sessionManager.getConf)
     }
   }
 
@@ -150,13 +151,13 @@ class KyuubiBatchSessionImpl(
         ipAddress = ipAddress,
         kyuubiInstance = connectionUrl,
         state = OperationState.PENDING.toString,
-        resource = batchRequest.getResource,
-        className = batchRequest.getClassName,
+        resource = resource,
+        className = className,
         requestName = name.orNull,
         requestConf = optimizedConf,
-        requestArgs = batchRequest.getArgs.asScala,
+        requestArgs = batchArgs,
         createTime = createTime,
-        engineType = batchRequest.getBatchType,
+        engineType = batchType,
         clusterManager = batchJobSubmissionOp.builder.clusterManager())
 
       // there is a chance that operation failed w/ duplicated key error

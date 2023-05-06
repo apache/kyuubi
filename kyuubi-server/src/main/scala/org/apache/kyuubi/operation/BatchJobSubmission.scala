@@ -58,11 +58,10 @@ class BatchJobSubmission(
     className: String,
     batchConf: Map[String, String],
     batchArgs: Seq[String],
-    recoveryMetadata: Option[Metadata])
+    recoveryMetadata: Option[Metadata],
+    override val shouldRunAsync: Boolean)
   extends KyuubiApplicationOperation(session) {
   import BatchJobSubmission._
-
-  override def shouldRunAsync: Boolean = true
 
   private val _operationLog = OperationLog.createOperationLog(session, getHandle)
 
@@ -131,17 +130,10 @@ class BatchJobSubmission(
     session.sessionConf.get(KyuubiConf.BATCH_APPLICATION_STARVATION_TIMEOUT)
 
   private def updateBatchMetadata(): Unit = {
-    val endTime =
-      if (isTerminalState(state)) {
-        lastAccessTime
-      } else {
-        0L
-      }
+    val endTime = if (isTerminalState(state)) lastAccessTime else 0L
 
-    if (isTerminalState(state)) {
-      if (_applicationInfo.isEmpty) {
-        _applicationInfo = Some(ApplicationInfo.NOT_FOUND)
-      }
+    if (isTerminalState(state) && _applicationInfo.isEmpty) {
+      _applicationInfo = Some(ApplicationInfo.NOT_FOUND)
     }
 
     _applicationInfo.foreach { appInfo =>
@@ -187,27 +179,24 @@ class BatchJobSubmission(
   override protected def runInternal(): Unit = session.handleSessionException {
     val asyncOperation: Runnable = () => {
       try {
-        if (recoveryMetadata.exists(_.peerInstanceClosed)) {
-          setState(OperationState.CANCELED)
-        } else {
-          // If it is in recovery mode, only re-submit batch job if previous state is PENDING and
-          // fail to fetch the status including appId from resource manager. Otherwise, monitor the
-          // submitted batch application.
-          recoveryMetadata.map { metadata =>
-            if (metadata.state == OperationState.PENDING.toString) {
-              _applicationInfo = currentApplicationInfo()
-              applicationId(_applicationInfo) match {
-                case Some(appId) => monitorBatchJob(appId)
-                case None => submitAndMonitorBatchJob()
-              }
-            } else {
-              monitorBatchJob(metadata.engineId)
+        recoveryMetadata match {
+          case Some(metadata) if metadata.peerInstanceClosed =>
+            setState(OperationState.CANCELED)
+          case Some(metadata) if metadata.state == OperationState.PENDING.toString =>
+            // In recovery mode, only submit batch job when previous state is PENDING
+            // and fail to fetch the status including appId from resource manager.
+            // Otherwise, monitor the submitted batch application.
+            _applicationInfo = currentApplicationInfo()
+            applicationId(_applicationInfo) match {
+              case Some(appId) => monitorBatchJob(appId)
+              case None => submitAndMonitorBatchJob()
             }
-          }.getOrElse {
+          case Some(metadata) =>
+            monitorBatchJob(metadata.engineId)
+          case None =>
             submitAndMonitorBatchJob()
-          }
-          setStateIfNotCanceled(OperationState.FINISHED)
         }
+        setStateIfNotCanceled(OperationState.FINISHED)
       } catch {
         onError()
       } finally {
@@ -225,6 +214,7 @@ class BatchJobSubmission(
         updateBatchMetadata()
       }
     }
+    if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
   private def submitAndMonitorBatchJob(): Unit = {
