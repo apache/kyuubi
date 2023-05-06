@@ -317,25 +317,12 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
 
   // the signature of function [[ArrowUtils.toArrowSchema]] is changed in SPARK-41971 (since Spark
   // 3.5)
-  // before Spark 3.5
-  // {{
-  //   def toArrowSchema(schema: StructType, timeZoneId: String): Schema
-  // }}
-  // Spark 3.5
-  // {{
-  //   def toArrowSchema(
-  //      schema: StructType,
-  //      timeZoneId: String,
-  //      errorOnDuplicatedFieldNames: Boolean): Schema
-  // }}
   private lazy val toArrowSchemaMethod = DynMethods.builder("toArrowSchema")
-    // for Spark 3.4 or previous
-    .impl(
+    .impl( // for Spark 3.4 or previous
       "org.apache.spark.sql.util.ArrowUtils",
       classOf[StructType],
       classOf[String])
-    // for Spark 3.5 or later
-    .impl(
+    .impl( // for Spark 3.5 or later
       "org.apache.spark.sql.util.ArrowUtils",
       classOf[StructType],
       classOf[String],
