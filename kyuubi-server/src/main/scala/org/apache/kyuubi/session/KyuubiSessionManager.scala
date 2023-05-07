@@ -124,23 +124,38 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
-  private def createBatchSession(
+  // scalastyle:off
+  def createBatchSession(
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String],
-      batchRequest: BatchRequest,
-      recoveryMetadata: Option[Metadata] = None): KyuubiBatchSessionImpl = {
+      batchType: String,
+      batchName: Option[String],
+      resource: String,
+      className: String,
+      batchConf: Map[String, String],
+      batchArgs: Seq[String],
+      recoveryMetadata: Option[Metadata] = None,
+      shouldRunAsync: Boolean): KyuubiBatchSessionImpl = {
+    // scalastyle:on
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
+    val sessionConf = this.getConf.getUserDefaults(user)
     new KyuubiBatchSessionImpl(
       username,
       password,
       ipAddress,
       conf,
       this,
-      this.getConf.getUserDefaults(user),
-      batchRequest,
-      recoveryMetadata)
+      sessionConf,
+      batchType,
+      batchName,
+      resource,
+      className,
+      batchConf,
+      batchArgs,
+      recoveryMetadata,
+      shouldRunAsync)
   }
 
   private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSessionImpl): SessionHandle = {
@@ -178,8 +193,21 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       password: String,
       ipAddress: String,
       conf: Map[String, String],
-      batchRequest: BatchRequest): SessionHandle = {
-    val batchSession = createBatchSession(user, password, ipAddress, conf, batchRequest)
+      batchRequest: BatchRequest,
+      shouldRunAsync: Boolean = true): SessionHandle = {
+    val batchSession = createBatchSession(
+      user,
+      password,
+      ipAddress,
+      conf,
+      batchRequest.getBatchType,
+      Option(batchRequest.getName),
+      batchRequest.getResource,
+      batchRequest.getClassName,
+      batchRequest.getConf.asScala.toMap,
+      batchRequest.getArgs.asScala,
+      None,
+      shouldRunAsync)
     openBatchSession(batchSession)
   }
 
@@ -246,21 +274,19 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         kyuubiInstance,
         0,
         Int.MaxValue).map { metadata =>
-        val batchRequest = new BatchRequest(
-          metadata.engineType,
-          metadata.resource,
-          metadata.className,
-          metadata.requestName,
-          metadata.requestConf.asJava,
-          metadata.requestArgs.asJava)
-
         createBatchSession(
           metadata.username,
           "anonymous",
           metadata.ipAddress,
           metadata.requestConf,
-          batchRequest,
-          Some(metadata))
+          metadata.engineType,
+          Option(metadata.requestName),
+          metadata.resource,
+          metadata.className,
+          metadata.requestConf,
+          metadata.requestArgs,
+          Some(metadata),
+          shouldRunAsync = true)
       }).getOrElse(Seq.empty)
     }
   }
