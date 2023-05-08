@@ -2008,12 +2008,34 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("file:///tmp/kyuubi/events")
 
+  val SERVER_EVENT_KAFKA_TOPIC: OptionalConfigEntry[String] =
+    buildConf("kyuubi.backend.server.event.kafka.topic")
+      .doc("The topic of server events go for the built-in Kafka logger")
+      .version("1.8.0")
+      .serverOnly
+      .stringConf
+      .createOptional
+
+  val SERVER_EVENT_KAFKA_CLOSE_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.backend.server.event.kafka.close.timeout")
+      .doc("Period to wait for Kafka producer of server event handlers to close.")
+      .version("1.8.0")
+      .serverOnly
+      .timeConf
+      .createWithDefault(Duration.ofMillis(5000).toMillis)
+
   val SERVER_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.backend.server.event.loggers")
       .doc("A comma-separated list of server history loggers, where session/operation etc" +
         " events go.<ul>" +
         s" <li>JSON: the events will be written to the location of" +
         s" ${SERVER_EVENT_JSON_LOG_PATH.key}</li>" +
+        s" <li>KAFKA: the events will be serialized in JSON format" +
+        s" and sent to topic of `${SERVER_EVENT_KAFKA_TOPIC.key}`." +
+        s" Note: For the configs of Kafka producer," +
+        s" please specify them with the prefix: `kyuubi.backend.server.event.kafka.`." +
+        s" For example, `kyuubi.backend.server.event.kafka.bootstrap.servers=127.0.0.1:9092`" +
+        s" </li>" +
         s" <li>JDBC: to be done</li>" +
         s" <li>CUSTOM: User-defined event handlers.</li></ul>" +
         " Note that: Kyuubi supports custom event handlers with the Java SPI." +
@@ -2026,7 +2048,9 @@ object KyuubiConf {
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
       .toSequence()
-      .checkValue(_.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM")), "Unsupported event loggers")
+      .checkValue(
+        _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM", "KAFKA")),
+        "Unsupported event loggers")
       .createWithDefault(Nil)
 
   @deprecated("using kyuubi.engine.spark.event.loggers instead", "1.6.0")
