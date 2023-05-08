@@ -49,7 +49,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kubernetesClient = KubernetesUtils.buildKubernetesClient(conf) match {
       case Some(client) =>
         info(s"Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
-        submitTimeout = conf.get(KyuubiConf.ENGINE_SUBMIT_TIMEOUT)
+        submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
         // Disable resync, see https://github.com/fabric8io/kubernetes-client/discussions/5015
         enginePodInformer = client.pods()
           .withLabel(LABEL_KYUUBI_UNIQUE_KEY)
