@@ -172,7 +172,7 @@
         <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
         <mockito.version>4.6.1</mockito.version>
         <netty.version>4.1.89.Final</netty.version>
-        <openai.java.version>0.11.1</openai.java.version>
+        <openai.java.version>0.12.0</openai.java.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
         <prometheus.version>0.16.0</prometheus.version>
