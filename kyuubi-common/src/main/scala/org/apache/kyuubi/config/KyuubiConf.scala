@@ -2577,6 +2577,18 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT30S")
 
+  val ENGINE_KUBERNETES_SUBMIT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.kubernetes.submit.timeout")
+      .doc("The engine submit timeout for Kubernetes application.")
+      .version("1.7.2")
+      .fallbackConf(ENGINE_SUBMIT_TIMEOUT)
+
+  val ENGINE_YARN_SUBMIT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.yarn.submit.timeout")
+      .doc("The engine submit timeout for YARN application.")
+      .version("1.7.2")
+      .fallbackConf(ENGINE_SUBMIT_TIMEOUT)
+
   /**
    * Holds information about keys that have been deprecated.
    *
