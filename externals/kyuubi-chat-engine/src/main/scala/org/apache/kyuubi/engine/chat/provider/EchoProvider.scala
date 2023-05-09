@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.chat.provider
 
 class EchoProvider extends ChatProvider {
 
-  override def open(sessionId: String): Unit = {}
+  override def open(sessionId: String, user: Option[String]): Unit = {}
 
   override def ask(sessionId: String, q: String): String =
     "This is ChatKyuubi, nice to meet you!"
