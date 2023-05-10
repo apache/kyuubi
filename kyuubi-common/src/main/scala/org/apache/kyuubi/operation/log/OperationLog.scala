@@ -29,7 +29,8 @@ import scala.collection.mutable.ListBuffer
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.operation.OperationHandle
+import org.apache.kyuubi.operation.{IterableFetchIterator, OperationHandle}
+import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -168,6 +169,22 @@ class OperationLog(path: Path) {
     }
 
     toRowSet(logs)
+  }
+
+  def read(order: FetchOrientation, maxRows: Int): TRowSet = synchronized {
+    if (!initialized) return ThriftUtils.newEmptyRowSet
+    if (seekableReader == null) {
+      seekableReader = new SeekableBufferedReader(Seq(path) ++ extraPaths)
+    }
+    val iter: IterableFetchIterator[String] = seekableReader.iterableFetchIterator
+
+    order match {
+      case FETCH_NEXT => iter.fetchNext()
+      case FETCH_PRIOR => iter.fetchNext(); iter.fetchPrior(maxRows)
+      case FETCH_FIRST => iter.fetchAbsolute(0)
+    }
+    val taken = iter.take(maxRows)
+    toRowSet(taken.toSeq.asJava)
   }
 
   def read(from: Int, size: Int): TRowSet = synchronized {

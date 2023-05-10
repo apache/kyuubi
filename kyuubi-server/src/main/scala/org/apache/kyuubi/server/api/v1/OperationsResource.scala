@@ -140,11 +140,13 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   @Path("{operationHandle}/log")
   def getOperationLog(
       @PathParam("operationHandle") operationHandleStr: String,
-      @QueryParam("maxrows") maxRows: Int): OperationLog = {
+      @QueryParam("maxrows") @DefaultValue("100") maxRows: Int,
+      @QueryParam("fetchorientation") @DefaultValue("FETCH_NEXT")
+      fetchOrientation: String): OperationLog = {
     try {
       val rowSet = fe.be.sessionManager.operationManager.getOperationLogRowSet(
         OperationHandle(operationHandleStr),
-        FetchOrientation.FETCH_NEXT,
+        FetchOrientation.withName(fetchOrientation),
         maxRows)
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
       new OperationLog(logRowSet.asJava, logRowSet.size)

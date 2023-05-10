@@ -219,7 +219,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
     val operationLog = operation.getOperationLog
     operationLog match {
-      case Some(log) => log.read(maxRows)
+      case Some(log) => log.read(order, maxRows)
       case None =>
         val remoteHandle = operation.remoteOpHandle()
         val client = operation.client
