@@ -15,10 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.lineage
+package org.apache.kyuubi.plugin.lineage.dispatcher.atlas
 
-object LineageDispatcherType extends Enumeration {
-  type LineageDispatcherType = Value
+import org.apache.spark.sql.execution.QueryExecution
 
-  val SPARK_EVENT, KYUUBI_EVENT, ATLAS = Value
+import org.apache.kyuubi.plugin.lineage.{Lineage, LineageDispatcher}
+
+class AtlasLineageDispatcher extends LineageDispatcher {
+
+  override def send(qe: QueryExecution, lineageOpt: Option[Lineage]): Unit = {
+    lineageOpt.foreach(lineage => {
+      val processEntity = AtlasEntityHelper.processEntity(qe, lineage)
+      AtlasClient.getClient().send(Seq(processEntity))
+    })
+  }
+
+  override def onFailure(qe: QueryExecution, exception: Exception): Unit = {
+    // ignore
+  }
+
 }
