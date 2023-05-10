@@ -336,12 +336,12 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
   private def toArrowSchema(
       schema: StructType,
       timeZone: String,
-      errorOnDuplicatedFieldNames: Boolean): ArrowSchema = {
+      errorOnDuplicatedFieldNames: JBoolean): ArrowSchema = {
     toArrowSchemaMethod.invoke[ArrowSchema](
       ArrowUtils,
       schema,
       timeZone,
-      new JBoolean(errorOnDuplicatedFieldNames))
+      errorOnDuplicatedFieldNames)
   }
 
   // for testing
