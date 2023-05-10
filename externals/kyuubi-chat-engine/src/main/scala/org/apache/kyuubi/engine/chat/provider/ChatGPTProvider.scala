@@ -83,9 +83,10 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
         .model(conf.get(KyuubiConf.ENGINE_CHAT_GPT_MODEL))
         .messages(messages.asScala.toList.asJava)
         .user(sessionUser.orNull)
+        .n(1)
         .build()
-      val responseText = openAiService.createChatCompletion(completionRequest).getChoices.asScala
-        .map(c => c.getMessage.getContent).mkString
+      val responseText = openAiService.createChatCompletion(completionRequest)
+        .getChoices.get(0).getMessage.getContent
       responseText
     } catch {
       case e: Throwable =>
