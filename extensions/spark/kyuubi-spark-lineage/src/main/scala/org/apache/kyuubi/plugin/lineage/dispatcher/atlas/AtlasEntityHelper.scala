@@ -45,8 +45,8 @@ object AtlasEntityHelper {
     entity.setAttribute("sparkPlanDescription", qe.sparkPlan.toString())
 
     // TODO add entity type instead of parsing from string
-    val inputs = lineage.inputTables.map(tableObjectId(_)).asJava
-    val outputs = lineage.outputTables.map(tableObjectId(_)).asJava
+    val inputs = lineage.inputTables.flatMap(tableObjectId(_)).asJava
+    val outputs = lineage.outputTables.flatMap(tableObjectId(_)).asJava
 
     entity.setAttribute("inputs", inputs)
     entity.setAttribute("outputs", outputs)

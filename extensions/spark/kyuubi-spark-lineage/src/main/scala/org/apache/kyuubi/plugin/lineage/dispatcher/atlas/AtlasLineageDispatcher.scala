@@ -24,7 +24,7 @@ import org.apache.kyuubi.plugin.lineage.{Lineage, LineageDispatcher}
 class AtlasLineageDispatcher extends LineageDispatcher {
 
   override def send(qe: QueryExecution, lineageOpt: Option[Lineage]): Unit = {
-    lineageOpt.foreach(lineage => {
+    lineageOpt.filter(l => l.inputTables.nonEmpty || l.outputTables.nonEmpty).foreach(lineage => {
       val processEntity = AtlasEntityHelper.processEntity(qe, lineage)
       AtlasClient.getClient().send(Seq(processEntity))
     })

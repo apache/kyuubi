@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.lineage.dispatcher.atlas
 
 import java.util.Locale
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.atlas.AtlasClientV2
 import org.apache.atlas.model.instance.AtlasEntity
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo
@@ -52,14 +53,26 @@ class AtlasRestClient(conf: AtlasClientConf) extends AtlasClient {
 
 object AtlasClient {
 
-  private lazy val client: AtlasClient = {
-    val clientConf = AtlasClientConf.getConf()
-    clientConf.get(CLIENT_TYPE).toLowerCase(Locale.ROOT) match {
-      case "rest" => new AtlasRestClient(clientConf)
-      case t => throw new RuntimeException(s"Unsupported client type: $t.")
+  @volatile private var client: AtlasClient = _
+
+  def getClient(): AtlasClient = {
+    if (client == null) {
+      AtlasClient.synchronized {
+        if (client == null) {
+          val clientConf = AtlasClientConf.getConf()
+          client = clientConf.get(CLIENT_TYPE).toLowerCase(Locale.ROOT) match {
+            case "rest" => new AtlasRestClient(clientConf)
+            case t => throw new RuntimeException(s"Unsupported client type: $t.")
+          }
+        }
+      }
     }
+    client
   }
 
-  def getClient(): AtlasClient = client
+  @VisibleForTesting
+  private[dispatcher] def setClient(newClient: AtlasClient): Unit = {
+    client = newClient
+  }
 
 }
