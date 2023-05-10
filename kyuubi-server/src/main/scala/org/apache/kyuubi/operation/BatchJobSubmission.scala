@@ -298,7 +298,8 @@ class BatchJobSubmission(
   }
 
   private def updateApplicationInfoMetadataIfNeeded(): Unit = {
-    if (!_applicationInfo.map(_.state).exists(ApplicationState.isTerminated)) {
+    if (applicationId(_applicationInfo).isEmpty ||
+      !_applicationInfo.map(_.state).exists(ApplicationState.isTerminated)) {
       val newApplicationStatus = currentApplicationInfo()
       if (newApplicationStatus.map(_.state) != _applicationInfo.map(_.state)) {
         _applicationInfo = newApplicationStatus
