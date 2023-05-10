@@ -36,7 +36,7 @@ object LineageDispatcher {
     LineageDispatcherType.withName(dispatcherType) match {
       case LineageDispatcherType.SPARK_EVENT => new SparkEventDispatcher()
       case LineageDispatcherType.KYUUBI_EVENT => new KyuubiEventDispatcher()
-      case LineageDispatcherType.KYUUBI_EVENT => new AtlasLineageDispatcher()
+      case LineageDispatcherType.ATLAS => new AtlasLineageDispatcher()
       case _ => throw new UnsupportedOperationException(
           s"Unsupported lineage dispatcher: $dispatcherType.")
     }
