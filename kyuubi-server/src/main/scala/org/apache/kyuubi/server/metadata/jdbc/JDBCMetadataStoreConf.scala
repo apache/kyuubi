@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server.metadata.jdbc
 
-import java.util.{Locale, Properties}
+import java.util.Properties
 
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf, OptionalConfigEntry}
 import org.apache.kyuubi.config.KyuubiConf.buildConf
@@ -46,7 +46,7 @@ object JDBCMetadataStoreConf {
       .version("1.6.0")
       .serverOnly
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
+      .transformToUpperCase
       .createWithDefault("DERBY")
 
   val METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT: ConfigEntry[Boolean] =
