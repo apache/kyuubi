@@ -88,7 +88,7 @@ object AtlasEntityHelper {
   def tableObjectId(tableName: String): Option[AtlasObjectId] = {
     val dbTb = tableName.split('.')
     if (dbTb.length == 2) {
-      val qualifiedName = tableQualifiedName(CLUSTER, dbTb(0), dbTb(1))
+      val qualifiedName = tableQualifiedName(cluster, dbTb(0), dbTb(1))
       // TODO parse datasource type
       Some(new AtlasObjectId(HIVE_TABLE_TYPE, "qualifiedName", qualifiedName))
     } else {
@@ -103,7 +103,7 @@ object AtlasEntityHelper {
   def columnObjectId(columnName: String): Option[AtlasObjectId] = {
     val dbTbCol = columnName.split('.')
     if (dbTbCol.length == 3) {
-      val qualifiedName = columnQualifiedName(CLUSTER, dbTbCol(0), dbTbCol(1), dbTbCol(2))
+      val qualifiedName = columnQualifiedName(cluster, dbTbCol(0), dbTbCol(1), dbTbCol(2))
       // TODO parse datasource type
       Some(new AtlasObjectId(HIVE_COLUMN_TYPE, "qualifiedName", qualifiedName))
     } else {
@@ -125,6 +125,10 @@ object AtlasEntityHelper {
     new AtlasRelatedObjectId(objectId, relationshipType)
   }
 
+  lazy val cluster = AtlasClientConf.getConf().get(AtlasClientConf.CLUSTER_NAME)
+  lazy val columnLineageEnable =
+    AtlasClientConf.getConf().get(AtlasClientConf.COLUMN_LINEAGE_ENABLE).toBoolean
+
   val HIVE_TABLE_TYPE = "hive_table"
   val HIVE_COLUMN_TYPE = "hive_column"
   val PROCESS_TYPE = "spark_process"
@@ -132,6 +136,5 @@ object AtlasEntityHelper {
   val RELATIONSHIP_DATASET_PROCESS_INPUTS = "dataset_process_inputs"
   val RELATIONSHIP_PROCESS_DATASET_OUTPUTS = "process_dataset_outputs"
   val RELATIONSHIP_SPARK_PROCESS_COLUMN_LINEAGE = "spark_process_column_lineages"
-  lazy val CLUSTER = AtlasClientConf.getConf().get(AtlasClientConf.CLUSTER_NAME)
 
 }

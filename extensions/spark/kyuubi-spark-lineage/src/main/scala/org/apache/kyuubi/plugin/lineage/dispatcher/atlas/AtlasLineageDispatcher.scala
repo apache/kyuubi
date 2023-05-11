@@ -21,6 +21,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.execution.QueryExecution
 
 import org.apache.kyuubi.plugin.lineage.{Lineage, LineageDispatcher}
+import org.apache.kyuubi.plugin.lineage.dispatcher.atlas.AtlasEntityHelper.columnLineageEnable
 
 class AtlasLineageDispatcher extends LineageDispatcher with Logging {
 
@@ -28,7 +29,7 @@ class AtlasLineageDispatcher extends LineageDispatcher with Logging {
     try {
       lineageOpt.filter(l => l.inputTables.nonEmpty || l.outputTables.nonEmpty).foreach(lineage => {
         val processEntity = AtlasEntityHelper.processEntity(qe, lineage)
-        val columnLineageEntities = if (!lineage.columnLineage.isEmpty) {
+        val columnLineageEntities = if (!lineage.columnLineage.isEmpty && columnLineageEnable) {
           AtlasEntityHelper.columnLineageEntities(processEntity, lineage)
         } else {
           Seq()
