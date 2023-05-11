@@ -199,10 +199,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         error = Option(pod.getStatus.getReason)))
   }
 
-  private def markApplicationTerminated(pod: Pod): Unit = {
-    cleanupTerminatedAppInfoTrigger.put(
-      pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
-      toApplicationState(pod.getStatus.getPhase))
+  private def markApplicationTerminated(pod: Pod): Unit = synchronized {
+    val key = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
+    if (cleanupTerminatedAppInfoTrigger.getIfPresent(key) == null) {
+      cleanupTerminatedAppInfoTrigger.put(key, toApplicationState(pod.getStatus.getPhase))
+    }
   }
 }
 
