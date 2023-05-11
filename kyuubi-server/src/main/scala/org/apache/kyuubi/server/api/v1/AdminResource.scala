@@ -31,7 +31,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.zookeeper.KeeperException.NoNodeException
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
-import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, ServerData, SessionData}
+import org.apache.kyuubi.client.api.v1.dto.{AdminEngineRequest, Engine, OperationData, ServerData, SessionData}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
@@ -212,14 +212,15 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("type") engineType: String,
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
-      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
+      request: AdminEngineRequest): Response = {
     val userName = if (isAdministrator(fe.getRealUser())) {
       Option(hs2ProxyUser).getOrElse(fe.getRealUser())
     } else {
       fe.getSessionUser(hs2ProxyUser)
     }
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "default")
-    val engineSpace = getEngineSpace(engine)
+    val engineSpace = getEngineSpace(engine, request)
 
     withDiscoveryClient(fe.getConf) { discoveryClient =>
       val engineNodes = discoveryClient.getChildren(engineSpace)
@@ -250,14 +251,15 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("type") engineType: String,
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
-      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
+      request: AdminEngineRequest): Seq[Engine] = {
     val userName = if (isAdministrator(fe.getRealUser())) {
       Option(hs2ProxyUser).getOrElse(fe.getRealUser())
     } else {
       fe.getSessionUser(hs2ProxyUser)
     }
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
-    val engineSpace = getEngineSpace(engine)
+    val engineSpace = getEngineSpace(engine, request)
 
     var engineNodes = ListBuffer[ServiceNodeInfo]()
     Option(subdomain).filter(_.nonEmpty) match {
@@ -353,11 +355,16 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       Collections.emptyMap())
   }
 
-  private def getEngineSpace(engine: Engine): String = {
+  private def getEngineSpace(engine: Engine, request: AdminEngineRequest): String = {
     val serverSpace = fe.getConf.get(HA_NAMESPACE)
+    val configs = fe.getConf.getAll ++ {
+      if (request != null) request.getConfigs.asScala else Map.empty
+    }
     val appUser = engine.getSharelevel match {
       case "GROUP" =>
-        fe.sessionManager.groupProvider.primaryGroup(engine.getUser, fe.getConf.getAll.asJava)
+        fe.sessionManager.groupProvider.primaryGroup(
+          engine.getUser,
+          configs.asJava)
       case _ => engine.getUser
     }
 
