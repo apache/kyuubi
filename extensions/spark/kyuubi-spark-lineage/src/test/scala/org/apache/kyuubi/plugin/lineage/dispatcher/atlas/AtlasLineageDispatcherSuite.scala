@@ -53,6 +53,11 @@ class AtlasLineageDispatcherSuite extends KyuubiFunSuite with SparkListenerExten
       .set(SKIP_PARSING_PERMANENT_VIEW_ENABLED.key, "true")
   }
 
+  override def afterAll(): Unit = {
+    spark.stop()
+    super.afterAll()
+  }
+
   test("altas lineage capture: insert into select sql") {
     val mockAtlasClient = new MockAtlasClient()
     AtlasClient.setClient(mockAtlasClient)
