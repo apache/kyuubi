@@ -220,10 +220,11 @@ Extra works:
 
 Atlas Client configurations (Configure in `atlas-application.properties` or passed in `spark.atlas.` prefix):
 
-| Name                  | Default Value   | Description                                            | Since |
-|-----------------------|-----------------|--------------------------------------------------------|-------|
-| atlas.rest.address    | localhost:21000 | The rest endpoint url for the Atlas server             | 1.8.0 |
-| atlas.client.type     | rest            | The client type (currently only supports rest)         | 1.8.0 |
-| atlas.client.username | None            | The client username                                    | 1.8.0 |
-| atlas.client.password | None            | The client password                                    | 1.8.0 |
-| atlas.cluster.name    | primary         | The cluster name to use in qualifiedName of entities.  | 1.8.0 |
+|         Name          |  Default Value  |                      Description                      | Since |
+|-----------------------|-----------------|-------------------------------------------------------|-------|
+| atlas.rest.address    | localhost:21000 | The rest endpoint url for the Atlas server            | 1.8.0 |
+| atlas.client.type     | rest            | The client type (currently only supports rest)        | 1.8.0 |
+| atlas.client.username | None            | The client username                                   | 1.8.0 |
+| atlas.client.password | None            | The client password                                   | 1.8.0 |
+| atlas.cluster.name    | primary         | The cluster name to use in qualifiedName of entities. | 1.8.0 |
+
