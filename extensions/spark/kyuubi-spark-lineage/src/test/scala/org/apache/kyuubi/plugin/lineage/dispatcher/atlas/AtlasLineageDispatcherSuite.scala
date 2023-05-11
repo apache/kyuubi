@@ -33,7 +33,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.lineage.Lineage
-import org.apache.kyuubi.plugin.lineage.dispatcher.atlas.AtlasEntityHelper.PROCESS_TYPE_STRING
+import org.apache.kyuubi.plugin.lineage.dispatcher.atlas.AtlasEntityHelper.{COLUMN_LINEAGE_TYPE, PROCESS_TYPE}
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
 class AtlasLineageDispatcherSuite extends KyuubiFunSuite with SparkListenerExtensionTest {
@@ -58,25 +58,29 @@ class AtlasLineageDispatcherSuite extends KyuubiFunSuite with SparkListenerExten
     AtlasClient.setClient(mockAtlasClient)
 
     withTable("test_table0") { _ =>
-      spark.sql("create table test_table0(a string, b string)")
-      spark.sql("create table test_table1(a string, b string)")
-      spark.sql("insert into test_table1 select a, b from test_table0").collect()
+      spark.sql("create table test_table0(a string, b int, c int)")
+      spark.sql("create table test_table1(a string, d int)")
+      spark.sql("insert into test_table1 select a, b + c as d from test_table0").collect()
       val expected = Lineage(
         List("default.test_table0"),
         List("default.test_table1"),
         List(
           ("default.test_table1.a", Set("default.test_table0.a")),
-          ("default.test_table1.b", Set("default.test_table0.b"))))
+          ("default.test_table1.d", Set("default.test_table0.b", "default.test_table0.c"))))
       eventually(Timeout(5.seconds)) {
         assert(mockAtlasClient.getEntities != null && mockAtlasClient.getEntities.nonEmpty)
       }
-      checkAtlasLineageEntity(mockAtlasClient.getEntities.head, expected)
+      checkAtlasProcessEntity(mockAtlasClient.getEntities.head, expected)
+      checkAtlasColumnLineageEntities(
+        mockAtlasClient.getEntities.head,
+        mockAtlasClient.getEntities.tail,
+        expected)
     }
 
   }
 
-  def checkAtlasLineageEntity(entity: AtlasEntity, expected: Lineage): Unit = {
-    assert(entity.getTypeName == PROCESS_TYPE_STRING)
+  def checkAtlasProcessEntity(entity: AtlasEntity, expected: Lineage): Unit = {
+    assert(entity.getTypeName == PROCESS_TYPE)
 
     val appId = SparkContextHelper.globalSparkContext.applicationId
     assert(entity.getAttribute("qualifiedName") == appId)
@@ -87,16 +91,47 @@ class AtlasLineageDispatcherSuite extends KyuubiFunSuite with SparkListenerExten
     assert(StringUtils.isNotBlank(entity.getAttribute("details").asInstanceOf[String]))
     assert(StringUtils.isNotBlank(entity.getAttribute("sparkPlanDescription").asInstanceOf[String]))
 
-    val inputs = entity.getAttribute("inputs")
-      .asInstanceOf[util.Collection[AtlasObjectId]].asScala
-      .map(_.getUniqueAttributes.get("qualifiedName"))
-    val outputs = entity.getAttribute("outputs")
-      .asInstanceOf[util.Collection[AtlasObjectId]].asScala
-      .map(_.getUniqueAttributes.get("qualifiedName"))
-    // Configured in atlas-application.properties
-    val cluster = "test"
+    val inputs = entity.getRelationshipAttribute("inputs")
+      .asInstanceOf[util.Collection[AtlasObjectId]].asScala.map(getQualifiedName(_))
+    val outputs = entity.getRelationshipAttribute("outputs")
+      .asInstanceOf[util.Collection[AtlasObjectId]].asScala.map(getQualifiedName(_))
     assertResult(expected.inputTables.map(s => s"$s@$cluster"))(inputs)
     assertResult(expected.outputTables.map(s => s"$s@$cluster"))(outputs)
+  }
+
+  def checkAtlasColumnLineageEntities(
+      processEntity: AtlasEntity,
+      entities: Seq[AtlasEntity],
+      expected: Lineage): Unit = {
+    assert(entities.size == expected.columnLineage.size)
+
+    entities.zip(expected.columnLineage).foreach {
+      case (entity, expectedLineage) =>
+        assert(entity.getTypeName == COLUMN_LINEAGE_TYPE)
+        val expectedQualifiedName =
+          s"${processEntity.getAttribute("qualifiedName")}:${expectedLineage.column}"
+        assert(entity.getAttribute("qualifiedName") == expectedQualifiedName)
+        assert(entity.getAttribute("name") == expectedQualifiedName)
+
+        val inputs = entity.getRelationshipAttribute("inputs")
+          .asInstanceOf[util.Collection[AtlasObjectId]].asScala.map(getQualifiedName(_))
+        assertResult(expectedLineage.originalColumns.map(s => s"$s@$cluster"))(inputs.toSet)
+
+        val outputs = entity.getRelationshipAttribute("outputs")
+          .asInstanceOf[util.Collection[AtlasObjectId]].asScala.map(getQualifiedName(_))
+        assert(outputs.size == 1)
+        assert(s"${expectedLineage.column}@$cluster" == outputs.head)
+
+        assert(getQualifiedName(entity.getRelationshipAttribute("process").asInstanceOf[
+          AtlasObjectId]) == processEntity.getAttribute("qualifiedName"))
+    }
+  }
+
+  // Configured in atlas-application.properties
+  val cluster = "test"
+
+  def getQualifiedName(objId: AtlasObjectId): String = {
+    objId.getUniqueAttributes.get("qualifiedName").asInstanceOf[String]
   }
 
   class MockAtlasClient() extends AtlasClient {

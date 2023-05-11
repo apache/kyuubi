@@ -26,7 +26,12 @@ class AtlasLineageDispatcher extends LineageDispatcher {
   override def send(qe: QueryExecution, lineageOpt: Option[Lineage]): Unit = {
     lineageOpt.filter(l => l.inputTables.nonEmpty || l.outputTables.nonEmpty).foreach(lineage => {
       val processEntity = AtlasEntityHelper.processEntity(qe, lineage)
-      AtlasClient.getClient().send(Seq(processEntity))
+      val columnLineageEntities = if (!lineage.columnLineage.isEmpty) {
+        AtlasEntityHelper.columnLineageEntities(processEntity, lineage)
+      } else {
+        Seq()
+      }
+      AtlasClient.getClient().send(processEntity +: columnLineageEntities)
     })
   }
 

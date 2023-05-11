@@ -19,7 +19,7 @@ package org.apache.kyuubi.plugin.lineage.dispatcher.atlas
 
 import scala.collection.JavaConverters._
 
-import org.apache.atlas.model.instance.{AtlasEntity, AtlasObjectId}
+import org.apache.atlas.model.instance.{AtlasEntity, AtlasObjectId, AtlasRelatedObjectId}
 import org.apache.spark.kyuubi.lineage.SparkContextHelper
 import org.apache.spark.sql.execution.QueryExecution
 
@@ -29,7 +29,7 @@ import org.apache.kyuubi.plugin.lineage.Lineage
 object AtlasEntityHelper {
 
   def processEntity(qe: QueryExecution, lineage: Lineage): AtlasEntity = {
-    val entity = new AtlasEntity(PROCESS_TYPE_STRING)
+    val entity = new AtlasEntity(PROCESS_TYPE)
 
     val appId = SparkContextHelper.globalSparkContext.applicationId
     val appName = SparkContextHelper.globalSparkContext.appName match {
@@ -45,15 +45,46 @@ object AtlasEntityHelper {
     entity.setAttribute("sparkPlanDescription", qe.sparkPlan.toString())
 
     // TODO add entity type instead of parsing from string
-    val inputs = lineage.inputTables.flatMap(tableObjectId(_)).asJava
-    val outputs = lineage.outputTables.flatMap(tableObjectId(_)).asJava
+    val inputs = lineage.inputTables.flatMap(tableObjectId(_)).map { objId =>
+      relatedObjectId(objId, RELATIONSHIP_DATASET_PROCESS_INPUTS)
+    }
+    val outputs = lineage.outputTables.flatMap(tableObjectId(_)).map { objId =>
+      relatedObjectId(objId, RELATIONSHIP_PROCESS_DATASET_OUTPUTS)
+    }
 
-    entity.setAttribute("inputs", inputs)
-    entity.setAttribute("outputs", outputs)
+    entity.setRelationshipAttribute("inputs", inputs.asJava)
+    entity.setRelationshipAttribute("outputs", outputs.asJava)
 
     // TODO support spark_column_lineage
 
     entity
+  }
+
+  def columnLineageEntities(processEntity: AtlasEntity, lineage: Lineage): Seq[AtlasEntity] = {
+    lineage.columnLineage.flatMap(columnLineage => {
+      val inputs = columnLineage.originalColumns.flatMap(columnObjectId(_)).map { objId =>
+        relatedObjectId(objId, RELATIONSHIP_DATASET_PROCESS_INPUTS)
+      }
+      val outputs = Option(columnLineage.column).flatMap(columnObjectId(_)).map { objId =>
+        relatedObjectId(objId, RELATIONSHIP_PROCESS_DATASET_OUTPUTS)
+      }.toSeq
+
+      if (!inputs.isEmpty && !outputs.isEmpty) {
+        val entity = new AtlasEntity(COLUMN_LINEAGE_TYPE)
+        val qualifiedName =
+          s"${processEntity.getAttribute("qualifiedName")}:${columnLineage.column}"
+        entity.setAttribute("qualifiedName", qualifiedName)
+        entity.setAttribute("name", qualifiedName)
+        entity.setRelationshipAttribute("inputs", inputs.asJava)
+        entity.setRelationshipAttribute("outputs", outputs.asJava)
+        entity.setRelationshipAttribute(
+          "process",
+          relatedObjectId(objectId(processEntity), RELATIONSHIP_SPARK_PROCESS_COLUMN_LINEAGE))
+        Some(entity)
+      } else {
+        None
+      }
+    })
   }
 
   def tableObjectId(tableName: String): Option[AtlasObjectId] = {
@@ -61,7 +92,7 @@ object AtlasEntityHelper {
     if (dbTb.length == 2) {
       val qualifiedName = tableQualifiedName(CLUSTER, dbTb(0), dbTb(1))
       // TODO parse datasource type
-      Some(new AtlasObjectId(HIVE_TABLE_TYPE_STRING, "qualifiedName", qualifiedName))
+      Some(new AtlasObjectId(HIVE_TABLE_TYPE, "qualifiedName", qualifiedName))
     } else {
       None
     }
@@ -71,8 +102,38 @@ object AtlasEntityHelper {
     s"${db.toLowerCase}.${table.toLowerCase}@$cluster"
   }
 
-  val HIVE_TABLE_TYPE_STRING = "hive_table"
-  val PROCESS_TYPE_STRING = "spark_process"
+  def columnObjectId(columnName: String): Option[AtlasObjectId] = {
+    val dbTbCol = columnName.split('.')
+    if (dbTbCol.length == 3) {
+      val qualifiedName = columnQualifiedName(CLUSTER, dbTbCol(0), dbTbCol(1), dbTbCol(2))
+      // TODO parse datasource type
+      Some(new AtlasObjectId(HIVE_COLUMN_TYPE, "qualifiedName", qualifiedName))
+    } else {
+      None
+    }
+  }
+
+  def columnQualifiedName(cluster: String, db: String, table: String, column: String): String = {
+    s"${db.toLowerCase}.${table.toLowerCase}.${column.toLowerCase}@$cluster"
+  }
+
+  def objectId(entity: AtlasEntity): AtlasObjectId = {
+    val objId = new AtlasObjectId(entity.getGuid, entity.getTypeName)
+    objId.setUniqueAttributes(Map("qualifiedName" -> entity.getAttribute("qualifiedName")).asJava)
+    objId
+  }
+
+  def relatedObjectId(objectId: AtlasObjectId, relationshipType: String): AtlasRelatedObjectId = {
+    new AtlasRelatedObjectId(objectId, relationshipType)
+  }
+
+  val HIVE_TABLE_TYPE = "hive_table"
+  val HIVE_COLUMN_TYPE = "hive_column"
+  val PROCESS_TYPE = "spark_process"
+  val COLUMN_LINEAGE_TYPE = "spark_column_lineage"
+  val RELATIONSHIP_DATASET_PROCESS_INPUTS = "dataset_process_inputs"
+  val RELATIONSHIP_PROCESS_DATASET_OUTPUTS = "process_dataset_outputs"
+  val RELATIONSHIP_SPARK_PROCESS_COLUMN_LINEAGE = "spark_process_column_lineages"
   lazy val CLUSTER = AtlasClientConf.getConf().get(AtlasClientConf.CLUSTER_NAME)
 
 }
