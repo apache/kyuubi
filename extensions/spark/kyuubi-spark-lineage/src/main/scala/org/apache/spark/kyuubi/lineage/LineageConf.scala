@@ -35,6 +35,7 @@ object LineageConf {
       "`org.apache.kyuubi.plugin.lineage.LineageDispatcher` for dispatching lineage events.<ul>" +
       "<li>SPARK_EVENT: send lineage event to spark event bus</li>" +
       "<li>KYUUBI_EVENT: send lineage event to kyuubi event bus</li>" +
+      "<li>ATLAS: send lineage to apache atlas</li>" +
       "</ul>")
     .version("1.8.0")
     .stringConf

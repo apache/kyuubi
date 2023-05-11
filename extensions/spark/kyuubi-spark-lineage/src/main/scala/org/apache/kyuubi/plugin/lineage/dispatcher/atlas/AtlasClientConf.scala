@@ -51,14 +51,11 @@ object AtlasClientConf {
 
   case class ConfigEntry(key: String, defaultValue: String)
 
-  val ATLAS_SPARK_ENABLED = ConfigEntry("atlas.spark.enabled", "true")
-
   val ATLAS_REST_ENDPOINT = ConfigEntry("atlas.rest.address", "localhost:21000")
 
   val CLIENT_TYPE = ConfigEntry("atlas.client.type", "rest")
   val CLIENT_USERNAME = ConfigEntry("atlas.client.username", null)
   val CLIENT_PASSWORD = ConfigEntry("atlas.client.password", null)
-  val CLIENT_NUM_RETRIES = ConfigEntry("atlas.client.numRetries", "3")
 
   val CLUSTER_NAME = ConfigEntry("atlas.cluster.name", "primary")
 }

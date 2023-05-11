@@ -55,8 +55,6 @@ object AtlasEntityHelper {
     entity.setRelationshipAttribute("inputs", inputs.asJava)
     entity.setRelationshipAttribute("outputs", outputs.asJava)
 
-    // TODO support spark_column_lineage
-
     entity
   }
 
