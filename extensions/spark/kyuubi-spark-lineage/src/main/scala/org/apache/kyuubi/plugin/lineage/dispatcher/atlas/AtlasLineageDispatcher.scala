@@ -17,22 +17,28 @@
 
 package org.apache.kyuubi.plugin.lineage.dispatcher.atlas
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.execution.QueryExecution
 
 import org.apache.kyuubi.plugin.lineage.{Lineage, LineageDispatcher}
 
-class AtlasLineageDispatcher extends LineageDispatcher {
+class AtlasLineageDispatcher extends LineageDispatcher with Logging {
 
   override def send(qe: QueryExecution, lineageOpt: Option[Lineage]): Unit = {
-    lineageOpt.filter(l => l.inputTables.nonEmpty || l.outputTables.nonEmpty).foreach(lineage => {
-      val processEntity = AtlasEntityHelper.processEntity(qe, lineage)
-      val columnLineageEntities = if (!lineage.columnLineage.isEmpty) {
-        AtlasEntityHelper.columnLineageEntities(processEntity, lineage)
-      } else {
-        Seq()
-      }
-      AtlasClient.getClient().send(processEntity +: columnLineageEntities)
-    })
+    try {
+      lineageOpt.filter(l => l.inputTables.nonEmpty || l.outputTables.nonEmpty).foreach(lineage => {
+        val processEntity = AtlasEntityHelper.processEntity(qe, lineage)
+        val columnLineageEntities = if (!lineage.columnLineage.isEmpty) {
+          AtlasEntityHelper.columnLineageEntities(processEntity, lineage)
+        } else {
+          Seq()
+        }
+        AtlasClient.getClient().send(processEntity +: columnLineageEntities)
+      })
+    } catch {
+      case t: Throwable =>
+        logWarning("Send lineage to atlas failed.", t)
+    }
   }
 
   override def onFailure(qe: QueryExecution, exception: Exception): Unit = {

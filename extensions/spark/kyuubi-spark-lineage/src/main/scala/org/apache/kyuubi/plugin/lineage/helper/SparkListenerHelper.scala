@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.lineage.helper
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SPARK_VERSION
 
 object SparkListenerHelper {
@@ -38,4 +39,6 @@ object SparkListenerHelper {
   def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
     SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
   }
+
+  def currentUser: String = UserGroupInformation.getCurrentUser.getShortUserName
 }

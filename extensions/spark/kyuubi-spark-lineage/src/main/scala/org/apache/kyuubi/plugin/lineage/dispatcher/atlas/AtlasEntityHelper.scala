@@ -23,8 +23,8 @@ import org.apache.atlas.model.instance.{AtlasEntity, AtlasObjectId, AtlasRelated
 import org.apache.spark.kyuubi.lineage.SparkContextHelper
 import org.apache.spark.sql.execution.QueryExecution
 
-import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.lineage.Lineage
+import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper
 
 object AtlasEntityHelper {
 
@@ -39,7 +39,7 @@ object AtlasEntityHelper {
 
     entity.setAttribute("qualifiedName", appId)
     entity.setAttribute("name", appName)
-    entity.setAttribute("currUser", Utils.currentUser)
+    entity.setAttribute("currUser", SparkListenerHelper.currentUser)
     entity.setAttribute("executionId", qe.id)
     entity.setAttribute("details", qe.toString())
     entity.setAttribute("sparkPlanDescription", qe.sparkPlan.toString())
