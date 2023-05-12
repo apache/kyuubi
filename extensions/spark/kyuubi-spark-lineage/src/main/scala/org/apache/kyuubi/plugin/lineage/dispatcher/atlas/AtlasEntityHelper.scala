@@ -40,6 +40,7 @@ object AtlasEntityHelper {
     entity.setAttribute("qualifiedName", appId)
     entity.setAttribute("name", appName)
     entity.setAttribute("currUser", SparkListenerHelper.currentUser)
+    SparkListenerHelper.sessionUser.foreach(entity.setAttribute("remoteUser", _))
     entity.setAttribute("executionId", qe.id)
     entity.setAttribute("details", qe.toString())
     entity.setAttribute("sparkPlanDescription", qe.sparkPlan.toString())

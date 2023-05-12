@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.lineage.helper
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SPARK_VERSION
+import org.apache.spark.kyuubi.lineage.SparkContextHelper
 
 object SparkListenerHelper {
 
@@ -41,4 +42,9 @@ object SparkListenerHelper {
   }
 
   def currentUser: String = UserGroupInformation.getCurrentUser.getShortUserName
+
+  def sessionUser: Option[String] =
+    Option(SparkContextHelper.globalSparkContext.getLocalProperty(KYUUBI_SESSION_USER))
+
+  final val KYUUBI_SESSION_USER = "kyuubi.session.user"
 }
