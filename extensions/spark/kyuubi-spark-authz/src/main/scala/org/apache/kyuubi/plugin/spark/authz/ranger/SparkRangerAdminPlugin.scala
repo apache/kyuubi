@@ -79,7 +79,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
       () => {
         if (plugin != null) {
           LOG.info(s"clean up ranger plugin, appId: ${plugin.getAppId}")
-          this.cleanup()
+          plugin.cleanup()
         }
       },
       Integer.MAX_VALUE)
