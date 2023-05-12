@@ -37,7 +37,7 @@ class AtlasRestClient(conf: AtlasClientConf) extends AtlasClient {
     val serverUrl = conf.get(ATLAS_REST_ENDPOINT).split(",")
     val username = conf.get(CLIENT_USERNAME)
     val password = conf.get(CLIENT_PASSWORD)
-    if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+    if (StringUtils.isNoneBlank(username, password)) {
       new AtlasClientV2(serverUrl, Array(username, password))
     } else {
       new AtlasClientV2(serverUrl: _*)
