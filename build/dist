@@ -356,7 +356,11 @@ if [[ "$MAKE_TGZ" == "true" ]]; then
   TARDIR="$KYUUBI_HOME/$TARDIR_NAME"
   rm -rf "$TARDIR"
   cp -R "$DISTDIR" "$TARDIR"
-  tar czf "$TARDIR_NAME.tgz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
+  TAR="tar"
+  if [ "$(uname -s)" = "Darwin" ]; then
+    TAR="tar --no-mac-metadata --no-xattrs --no-fflags"
+  fi
+  $TAR -czf "$TARDIR_NAME.tgz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
   rm -rf "$TARDIR"
   echo "The Kyuubi tarball $TARDIR_NAME.tgz is successfully generated in $KYUUBI_HOME."
 fi
