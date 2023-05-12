@@ -24,11 +24,14 @@ import org.apache.atlas.AtlasClientV2
 import org.apache.atlas.model.instance.AtlasEntity
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo
 import org.apache.commons.lang3.StringUtils
+import org.apache.hadoop.util.ShutdownHookManager
 
 import org.apache.kyuubi.plugin.lineage.dispatcher.atlas.AtlasClientConf._
 
 trait AtlasClient {
   def send(entities: Seq[AtlasEntity]): Unit
+
+  def close(): Unit
 }
 
 class AtlasRestClient(conf: AtlasClientConf) extends AtlasClient {
@@ -49,6 +52,12 @@ class AtlasRestClient(conf: AtlasClientConf) extends AtlasClient {
     entities.foreach(entitiesWithExtInfo.addEntity)
     atlasClient.createEntities(entitiesWithExtInfo)
   }
+
+  override def close(): Unit = {
+    if (atlasClient != null) {
+      atlasClient.close()
+    }
+  }
 }
 
 object AtlasClient {
@@ -64,10 +73,21 @@ object AtlasClient {
             case "rest" => new AtlasRestClient(clientConf)
             case t => throw new RuntimeException(s"Unsupported client type: $t.")
           }
+          registerCleanupShutdownHook(client)
         }
       }
     }
     client
+  }
+
+  private def registerCleanupShutdownHook(client: AtlasClient): Unit = {
+    ShutdownHookManager.get().addShutdownHook(
+      () => {
+        if (client != null) {
+          client.close()
+        }
+      },
+      Integer.MAX_VALUE)
   }
 
   @VisibleForTesting
