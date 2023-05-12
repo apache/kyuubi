@@ -334,7 +334,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
             "connection does not exist"))
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
-        Thread.sleep(1000)    // wait until the async exitReq forced closing the engine
+        Thread.sleep(1000) // wait until the async exitReq forced closing the engine
         assert(session.client.asyncRequestInterrupted)
       }
     }
