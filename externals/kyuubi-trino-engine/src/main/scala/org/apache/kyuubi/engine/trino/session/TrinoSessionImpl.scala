@@ -35,7 +35,7 @@ import org.apache.kyuubi.engine.trino.{TrinoConf, TrinoContext, TrinoStatement}
 import org.apache.kyuubi.engine.trino.event.TrinoSessionEvent
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_CATALOG, USE_DATABASE}
 
 class TrinoSessionImpl(
     protocol: TProtocolVersion,
@@ -59,12 +59,12 @@ class TrinoSessionImpl(
   override def open(): Unit = {
 
     val (useCatalogAndDatabaseConf, _) = normalizedConf.partition { case (k, _) =>
-      Array("use:catalog", "use:database").contains(k)
+      Array(USE_CATALOG, USE_DATABASE).contains(k)
     }
 
     useCatalogAndDatabaseConf.foreach {
-      case ("use:catalog", catalog) => catalogName = catalog
-      case ("use:database", database) => databaseName = database
+      case (USE_CATALOG, catalog) => catalogName = catalog
+      case (USE_DATABASE, database) => databaseName = database
     }
 
     val httpClient = new OkHttpClient.Builder().build()

@@ -64,11 +64,9 @@ class KyuubiSessionImpl(
     }
   }
 
-  // TODO: needs improve the hardcode
   optimizedConf.foreach {
-    case ("use:catalog", _) =>
-    case ("use:database", _) =>
-    case ("kyuubi.engine.pool.size.threshold", _) =>
+    case (USE_CATALOG, _) =>
+    case (USE_DATABASE, _) =>
     case (key, value) => sessionConf.set(key, value)
   }
 

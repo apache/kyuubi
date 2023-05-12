@@ -28,7 +28,7 @@ import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_CATALOG, USE_DATABASE}
 
 class SparkSessionImpl(
     protocol: TProtocolVersion,
@@ -56,10 +56,10 @@ class SparkSessionImpl(
   override def open(): Unit = {
 
     val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
-      Array("use:catalog", "use:database").contains(k)
+      Array(USE_CATALOG, USE_DATABASE).contains(k)
     }
 
-    useCatalogAndDatabaseConf.get("use:catalog").foreach { catalog =>
+    useCatalogAndDatabaseConf.get(USE_CATALOG).foreach { catalog =>
       try {
         SparkCatalogShim().setCurrentCatalog(spark, catalog)
       } catch {
