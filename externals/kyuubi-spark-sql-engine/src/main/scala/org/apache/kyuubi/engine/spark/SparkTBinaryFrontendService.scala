@@ -18,7 +18,9 @@
 package org.apache.kyuubi.engine.spark
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
@@ -30,6 +32,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.reflection.{DynConstructors, DynFields}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
@@ -125,6 +128,20 @@ object SparkTBinaryFrontendService extends Logging {
         s"The number of tokens sent by the server is ${newCreds.numberOfTokens()}. " +
         s"The actual number of updated tokens is ${updateCreds.numberOfTokens()}.")
       SparkContextHelper.updateDelegationTokens(sc, updateCreds)
+    }
+  }
+
+  private def hiveConf(hadoopConf: Configuration): Configuration = {
+    try {
+      val hiveConfClass = "org.apache.hadoop.hive.conf.HiveConf"
+      DynConstructors.builder()
+        .impl(hiveConfClass, classOf[Configuration], classOf[Class[_]])
+        .build[Configuration]()
+        .newInstance(hadoopConf, Class.forName(hiveConfClass))
+    } catch {
+      case e: Throwable =>
+        warn("Fail to create Hive Configuration", e)
+        hadoopConf
     }
   }
 
