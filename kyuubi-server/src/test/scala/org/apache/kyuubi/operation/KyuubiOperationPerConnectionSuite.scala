@@ -317,6 +317,9 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         exitReq.setRunAsync(true)
         client.ExecuteStatement(exitReq)
 
+        session.sessionManager.getConf
+          .set(KyuubiConf.OPERATION_STATUS_UPDATE_INTERVAL, 3000L)
+
         val executeStmtReq = new TExecuteStatementReq()
         executeStmtReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 30000l)")
         executeStmtReq.setSessionHandle(handle)
@@ -332,9 +335,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
             "connection does not exist"))
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
-        eventually(timeout(3.seconds)) {
-          assert(session.client.asyncRequestInterrupted)
-        }
+        assert(session.client.asyncRequestInterrupted)
       }
     }
   }
