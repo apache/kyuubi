@@ -313,7 +313,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         session.client.getEngineAliveProbeProtocol.foreach(_.getTransport.close())
 
         val exitReq = new TExecuteStatementReq()
-        exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 50L)," +
+        exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 1000L)," +
           "java_method('java.lang.System', 'exit', 1)")
         exitReq.setSessionHandle(handle)
         exitReq.setRunAsync(true)
@@ -334,6 +334,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
             "connection does not exist"))
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
+        Thread.sleep(1000)    // wait until the async exitReq forced closing the engine
         assert(session.client.asyncRequestInterrupted)
       }
     }
