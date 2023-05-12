@@ -147,5 +147,7 @@ class AtlasLineageDispatcherSuite extends KyuubiFunSuite with SparkListenerExten
     }
 
     def getEntities: Seq[AtlasEntity] = _entities
+
+    override def close(): Unit = {}
   }
 }
