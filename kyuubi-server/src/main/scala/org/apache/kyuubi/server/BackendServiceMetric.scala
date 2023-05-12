@@ -20,7 +20,7 @@ package org.apache.kyuubi.server
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
-import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
+import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.session.SessionHandle
@@ -206,6 +206,11 @@ trait BackendServiceMetric extends BackendService {
         if (fetchLog) MetricsConstants.BS_FETCH_LOG_ROWS_RATE
         else MetricsConstants.BS_FETCH_RESULT_ROWS_RATE,
         rowsSize))
+
+      sessionManager.operationManager
+        .getOperation(operationHandle)
+        .asInstanceOf[KyuubiOperation]
+        .increaseFetchResultsCount(rowsSize, fetchLog)
 
       rowSet
     }
