@@ -313,7 +313,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         session.client.getEngineAliveProbeProtocol.foreach(_.getTransport.close())
 
         val exitReq = new TExecuteStatementReq()
-        exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 10L)," +
+        exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 1L)," +
           "java_method('java.lang.System', 'exit', 1)")
         exitReq.setSessionHandle(handle)
         exitReq.setRunAsync(true)
