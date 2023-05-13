@@ -34,24 +34,20 @@ class GetSchemas(session: Session, catalogName: String, schema: String)
   extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
-    try {
-      val schemaPattern = toJavaRegex(schema)
-      val catalogManager = sessionContext.getSessionState.catalogManager
-      val schemas = catalogManager.listCatalogs()
-        .filter { c => StringUtils.isEmpty(catalogName) || c == catalogName }
-        .flatMap { c =>
-          val catalog = catalogManager.getCatalog(c).get()
-          filterPattern(catalog.listDatabases().asScala, schemaPattern)
-            .map { d => Row.of(d, c) }
-        }.toArray
-      resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(
-          Column.physical(TABLE_SCHEM, DataTypes.STRING()),
-          Column.physical(TABLE_CATALOG, DataTypes.STRING()))
-        .data(schemas)
-        .build
-    } catch {
-      onError()
-    }
+    val schemaPattern = toJavaRegex(schema)
+    val catalogManager = sessionContext.getSessionState.catalogManager
+    val schemas = catalogManager.listCatalogs()
+      .filter { c => StringUtils.isEmpty(catalogName) || c == catalogName }
+      .flatMap { c =>
+        val catalog = catalogManager.getCatalog(c).get()
+        filterPattern(catalog.listDatabases().asScala, schemaPattern)
+          .map { d => Row.of(d, c) }
+      }.toArray
+    resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(
+        Column.physical(TABLE_SCHEM, DataTypes.STRING()),
+        Column.physical(TABLE_CATALOG, DataTypes.STRING()))
+      .data(schemas)
+      .build
   }
 }

@@ -29,10 +29,8 @@ class SetCurrentCatalog(session: Session, catalog: String)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def runInternal(): Unit = {
-    try {
-      val catalogManager = sessionContext.getSessionState.catalogManager
-      catalogManager.setCurrentCatalog(catalog)
-      setHasResultSet(false)
-    } catch onError()
+    val catalogManager = sessionContext.getSessionState.catalogManager
+    catalogManager.setCurrentCatalog(catalog)
+    setHasResultSet(false)
   }
 }

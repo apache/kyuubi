@@ -86,8 +86,6 @@ class ExecuteStatement(
           Row(List(jdbcStatement.getUpdateCount))))
       }
       setState(OperationState.FINISHED)
-    } catch {
-      onError(true)
     } finally {
       if (jdbcStatement != null) {
         jdbcStatement.closeOnCompletion()

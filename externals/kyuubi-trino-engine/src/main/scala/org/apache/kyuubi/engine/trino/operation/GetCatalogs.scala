@@ -24,14 +24,12 @@ import org.apache.kyuubi.session.Session
 class GetCatalogs(session: Session) extends TrinoOperation(session) {
 
   override protected def runInternal(): Unit = {
-    try {
-      val trinoStatement = TrinoStatement(
-        trinoContext,
-        session.sessionManager.getConf,
-        "SELECT TABLE_CAT FROM system.jdbc.catalogs")
-      schema = trinoStatement.getColumns
-      val resultSet = trinoStatement.execute()
-      iter = new ArrayFetchIterator(resultSet.toArray)
-    } catch onError()
+    val trinoStatement = TrinoStatement(
+      trinoContext,
+      session.sessionManager.getConf,
+      "SELECT TABLE_CAT FROM system.jdbc.catalogs")
+    schema = trinoStatement.getColumns
+    val resultSet = trinoStatement.execute()
+    iter = new ArrayFetchIterator(resultSet.toArray)
   }
 }

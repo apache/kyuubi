@@ -169,11 +169,14 @@ abstract class SparkOperation(session: Session)
     }
   }
 
-  protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {
+  protected def cancelOnError: Boolean = false
+
+  protected def onError(): PartialFunction[Throwable, Unit] = {
     // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
     // could be thrown.
     case e: Throwable =>
-      if (cancel && !spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
+      if (cancelOnError && !spark.sparkContext.isStopped)
+        spark.sparkContext.cancelJobGroup(statementId)
       withLockRequired {
         val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {
@@ -236,32 +239,30 @@ abstract class SparkOperation(session: Session)
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet =
     withLocalProperties {
       var resultRowSet: TRowSet = null
-      try {
-        validateDefaultFetchOrientation(order)
-        assertState(OperationState.FINISHED)
-        setHasResultSet(true)
-        order match {
-          case FETCH_NEXT => iter.fetchNext()
-          case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
-          case FETCH_FIRST => iter.fetchAbsolute(0);
-        }
-        resultRowSet =
-          if (isArrowBasedOperation) {
-            if (iter.hasNext) {
-              val taken = iter.next().asInstanceOf[Array[Byte]]
-              RowSet.toTRowSet(taken, getProtocolVersion)
-            } else {
-              RowSet.emptyTRowSet()
-            }
+      validateDefaultFetchOrientation(order)
+      assertState(OperationState.FINISHED)
+      setHasResultSet(true)
+      order match {
+        case FETCH_NEXT => iter.fetchNext()
+        case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
+        case FETCH_FIRST => iter.fetchAbsolute(0);
+      }
+      resultRowSet =
+        if (isArrowBasedOperation) {
+          if (iter.hasNext) {
+            val taken = iter.next().asInstanceOf[Array[Byte]]
+            RowSet.toTRowSet(taken, getProtocolVersion)
           } else {
-            val taken = iter.take(rowSetSize)
-            RowSet.toTRowSet(
-              taken.toSeq.asInstanceOf[Seq[Row]],
-              resultSchema,
-              getProtocolVersion)
+            RowSet.emptyTRowSet()
           }
-        resultRowSet.setStartRowOffset(iter.getPosition)
-      } catch onError(cancel = true)
+        } else {
+          val taken = iter.take(rowSetSize)
+          RowSet.toTRowSet(
+            taken.toSeq.asInstanceOf[Seq[Row]],
+            resultSchema,
+            getProtocolVersion)
+        }
+      resultRowSet.setStartRowOffset(iter.getPosition)
 
       resultRowSet
     }

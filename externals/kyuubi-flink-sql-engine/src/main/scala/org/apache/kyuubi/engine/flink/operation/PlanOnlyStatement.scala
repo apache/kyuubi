@@ -46,24 +46,20 @@ class PlanOnlyStatement(
   }
 
   override protected def runInternal(): Unit = {
-    try {
-      val operations = executor.getTableEnvironment.getParser.parse(statement)
-      Preconditions.checkArgument(
-        operations.size() == 1,
-        "Plan-only mode supports single statement only",
-        null)
-      val operation = operations.get(0)
-      operation match {
-        case _: SetOperation | _: ResetOperation | _: AddJarOperation | _: RemoveJarOperation |
-            _: ShowJarsOperation =>
-          val resultFetcher = executor.executeStatement(
-            new OperationHandle(getHandle.identifier),
-            statement)
-          resultSet = ResultSetUtil.fromResultFetcher(resultFetcher);
-        case _ => explainOperation(statement)
-      }
-    } catch {
-      onError()
+    val operations = executor.getTableEnvironment.getParser.parse(statement)
+    Preconditions.checkArgument(
+      operations.size() == 1,
+      "Plan-only mode supports single statement only",
+      null)
+    val operation = operations.get(0)
+    operation match {
+      case _: SetOperation | _: ResetOperation | _: AddJarOperation | _: RemoveJarOperation |
+          _: ShowJarsOperation =>
+        val resultFetcher = executor.executeStatement(
+          new OperationHandle(getHandle.identifier),
+          statement)
+        resultSet = ResultSetUtil.fromResultFetcher(resultFetcher);
+      case _ => explainOperation(statement)
     }
   }
 

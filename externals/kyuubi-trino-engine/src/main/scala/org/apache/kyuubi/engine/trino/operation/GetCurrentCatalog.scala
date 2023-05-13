@@ -34,16 +34,14 @@ class GetCurrentCatalog(session: Session)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def runInternal(): Unit = {
-    try {
-      val session = trinoContext.clientSession.get
-      val catalog = session.getCatalog
+    val session = trinoContext.clientSession.get
+    val catalog = session.getCatalog
 
-      val clientTypeSignature = new ClientTypeSignature(
-        VARCHAR,
-        ImmutableList.of(ClientTypeSignatureParameter.ofLong(VARCHAR_UNBOUNDED_LENGTH)))
-      val column = new Column("TABLE_CAT", VARCHAR, clientTypeSignature)
-      schema = List[Column](column)
-      iter = new IterableFetchIterator(List(List(catalog)))
-    } catch onError()
+    val clientTypeSignature = new ClientTypeSignature(
+      VARCHAR,
+      ImmutableList.of(ClientTypeSignatureParameter.ofLong(VARCHAR_UNBOUNDED_LENGTH)))
+    val column = new Column("TABLE_CAT", VARCHAR, clientTypeSignature)
+    schema = List[Column](column)
+    iter = new IterableFetchIterator(List(List(catalog)))
   }
 }

@@ -70,29 +70,25 @@ class GetTables(
   }
 
   override protected def runInternal(): Unit = {
-    try {
-      val schemaPattern = toJavaRegex(schema)
-      val tablePattern = toJavaRegex(tableName)
-      val sparkShim = SparkCatalogShim()
-      val catalogTablesAndViews =
-        sparkShim.getCatalogTablesOrViews(
-          spark,
-          catalog,
-          schemaPattern,
-          tablePattern,
-          tableTypes,
-          ignoreTableProperties)
+    val schemaPattern = toJavaRegex(schema)
+    val tablePattern = toJavaRegex(tableName)
+    val sparkShim = SparkCatalogShim()
+    val catalogTablesAndViews =
+      sparkShim.getCatalogTablesOrViews(
+        spark,
+        catalog,
+        schemaPattern,
+        tablePattern,
+        tableTypes,
+        ignoreTableProperties)
 
-      val allTableAndViews =
-        if (tableTypes.exists("VIEW".equalsIgnoreCase)) {
-          catalogTablesAndViews ++
-            sparkShim.getTempViews(spark, catalog, schemaPattern, tablePattern)
-        } else {
-          catalogTablesAndViews
-        }
-      iter = new IterableFetchIterator(allTableAndViews)
-    } catch {
-      onError()
-    }
+    val allTableAndViews =
+      if (tableTypes.exists("VIEW".equalsIgnoreCase)) {
+        catalogTablesAndViews ++
+          sparkShim.getTempViews(spark, catalog, schemaPattern, tablePattern)
+      } else {
+        catalogTablesAndViews
+      }
+    iter = new IterableFetchIterator(allTableAndViews)
   }
 }

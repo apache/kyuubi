@@ -77,6 +77,8 @@ class ExecutePython(
     OperationLog.removeCurrentOperationLog()
   }
 
+  override protected def cancelOnError: Boolean = true
+
   private def executePython(): Unit = withLocalProperties {
     try {
       setState(OperationState.RUNNING)
@@ -95,8 +97,6 @@ class ExecutePython(
       } else {
         throw KyuubiSQLException(s"Interpret error:\n$statement\n $response")
       }
-    } catch {
-      onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
     }

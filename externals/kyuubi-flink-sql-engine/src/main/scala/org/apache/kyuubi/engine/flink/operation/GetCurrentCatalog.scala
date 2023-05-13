@@ -30,9 +30,7 @@ class GetCurrentCatalog(session: Session) extends FlinkOperation(session) {
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def runInternal(): Unit = {
-    try {
-      val catalog = executor.getCurrentCatalog
-      resultSet = ResultSetUtil.stringListToResultSet(List(catalog), TABLE_CAT)
-    } catch onError()
+    val catalog = executor.getCurrentCatalog
+    resultSet = ResultSetUtil.stringListToResultSet(List(catalog), TABLE_CAT)
   }
 }

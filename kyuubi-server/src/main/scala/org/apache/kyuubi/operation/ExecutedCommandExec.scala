@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.concurrent.RejectedExecutionException
+
 import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
+import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiSessionImpl
@@ -60,10 +63,11 @@ class ExecutedCommandExec(
     try {
       val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
       setBackgroundHandle(opHandle)
-    } catch onError(
-        s"submitting an operation ${command.name()} running" +
+    } catch {
+      case _: RejectedExecutionException =>
+        throw new KyuubiException(s"Error submitting an operation ${command.name()} running" +
           s" on the server in background, request rejected")
-
+    }
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
 

@@ -57,7 +57,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     ThriftUtils.verifyTStatus(tStatus)
   }
 
-  protected def onError(action: String = "operating"): PartialFunction[Throwable, Unit] = {
+  protected def onError(): PartialFunction[Throwable, Unit] = {
     case e: Throwable =>
       withLockRequired {
         if (isTerminalState(state)) {
@@ -73,10 +73,10 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
                   StringUtils.isEmpty(te.getMessage) =>
               // https://issues.apache.org/jira/browse/THRIFT-4858
               KyuubiSQLException(
-                s"Error $action $opType: Socket for ${session.handle} is closed",
+                s"Error operating $opType: Socket for ${session.handle} is closed",
                 e)
             case e =>
-              KyuubiSQLException(s"Error $action $opType: ${Utils.stringifyException(e)}", e)
+              KyuubiSQLException(s"Error operating $opType: ${Utils.stringifyException(e)}", e)
           }
           setOperationException(ke)
           setState(OperationState.ERROR)

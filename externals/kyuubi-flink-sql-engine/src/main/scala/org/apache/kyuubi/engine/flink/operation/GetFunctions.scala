@@ -40,49 +40,45 @@ class GetFunctions(
   extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
-    try {
-      val schemaPattern = toJavaRegex(schemaName)
-      val functionPattern = toJavaRegex(functionName)
-      val functionCatalog = sessionContext.getSessionState.functionCatalog
-      val catalogManager = sessionContext.getSessionState.catalogManager
+    val schemaPattern = toJavaRegex(schemaName)
+    val functionPattern = toJavaRegex(functionName)
+    val functionCatalog = sessionContext.getSessionState.functionCatalog
+    val catalogManager = sessionContext.getSessionState.catalogManager
 
-      val systemFunctions = filterPattern(
-        functionCatalog.getFunctions
-          .diff(functionCatalog.getUserDefinedFunctions),
-        functionPattern)
-        .map { f =>
-          Row.of(null, null, f, null, Integer.valueOf(DatabaseMetaData.functionResultUnknown), null)
-        }.toArray
-      val catalogFunctions = catalogManager.listCatalogs()
-        .filter { c => StringUtils.isEmpty(catalogName) || c == catalogName }
-        .flatMap { c =>
-          val catalog = catalogManager.getCatalog(c).get()
-          filterPattern(catalog.listDatabases().asScala, schemaPattern)
-            .flatMap { d =>
-              filterPattern(catalog.listFunctions(d).asScala, functionPattern)
-                .map { f =>
-                  Row.of(
-                    c,
-                    d,
-                    f,
-                    null,
-                    Integer.valueOf(DatabaseMetaData.functionResultUnknown),
-                    null)
-                }
-            }
-        }.toArray
-      resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(
-          Column.physical(FUNCTION_CAT, DataTypes.STRING()),
-          Column.physical(FUNCTION_SCHEM, DataTypes.STRING()),
-          Column.physical(FUNCTION_NAME, DataTypes.STRING()),
-          Column.physical(REMARKS, DataTypes.STRING()),
-          Column.physical(FUNCTION_TYPE, DataTypes.INT()),
-          Column.physical(SPECIFIC_NAME, DataTypes.STRING()))
-        .data(systemFunctions ++: catalogFunctions)
-        .build
-    } catch {
-      onError()
-    }
+    val systemFunctions = filterPattern(
+      functionCatalog.getFunctions
+        .diff(functionCatalog.getUserDefinedFunctions),
+      functionPattern)
+      .map { f =>
+        Row.of(null, null, f, null, Integer.valueOf(DatabaseMetaData.functionResultUnknown), null)
+      }.toArray
+    val catalogFunctions = catalogManager.listCatalogs()
+      .filter { c => StringUtils.isEmpty(catalogName) || c == catalogName }
+      .flatMap { c =>
+        val catalog = catalogManager.getCatalog(c).get()
+        filterPattern(catalog.listDatabases().asScala, schemaPattern)
+          .flatMap { d =>
+            filterPattern(catalog.listFunctions(d).asScala, functionPattern)
+              .map { f =>
+                Row.of(
+                  c,
+                  d,
+                  f,
+                  null,
+                  Integer.valueOf(DatabaseMetaData.functionResultUnknown),
+                  null)
+              }
+          }
+      }.toArray
+    resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(
+        Column.physical(FUNCTION_CAT, DataTypes.STRING()),
+        Column.physical(FUNCTION_SCHEM, DataTypes.STRING()),
+        Column.physical(FUNCTION_NAME, DataTypes.STRING()),
+        Column.physical(REMARKS, DataTypes.STRING()),
+        Column.physical(FUNCTION_TYPE, DataTypes.INT()),
+        Column.physical(SPECIFIC_NAME, DataTypes.STRING()))
+      .data(systemFunctions ++: catalogFunctions)
+      .build
   }
 }

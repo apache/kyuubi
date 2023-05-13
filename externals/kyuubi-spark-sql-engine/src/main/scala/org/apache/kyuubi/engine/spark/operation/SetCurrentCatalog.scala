@@ -34,9 +34,7 @@ class SetCurrentCatalog(session: Session, catalog: String) extends SparkOperatio
   }
 
   override protected def runInternal(): Unit = {
-    try {
-      SparkCatalogShim().setCurrentCatalog(spark, catalog)
-      setHasResultSet(false)
-    } catch onError()
+    SparkCatalogShim().setCurrentCatalog(spark, catalog)
+    setHasResultSet(false)
   }
 }

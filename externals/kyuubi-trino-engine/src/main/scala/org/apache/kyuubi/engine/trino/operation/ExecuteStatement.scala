@@ -116,8 +116,6 @@ class ExecuteStatement(
           new ArrayFetchIterator(resultSet.toArray)
         }
       setState(OperationState.FINISHED)
-    } catch {
-      onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
     }

@@ -27,8 +27,6 @@ class GetPrimaryKeys(
   extends KyuubiOperation(session) {
 
   override protected def runInternal(): Unit = {
-    try {
-      _remoteOpHandle = client.getPrimaryKeys(catalogName, schemaName, tableName)
-    } catch onError()
+    _remoteOpHandle = client.getPrimaryKeys(catalogName, schemaName, tableName)
   }
 }

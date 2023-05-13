@@ -66,8 +66,6 @@ class ExecuteStatement(
       jobId = FlinkEngineUtils.getResultJobId(resultFetcher)
       resultSet = ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows)
       setState(OperationState.FINISHED)
-    } catch {
-      onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
     }

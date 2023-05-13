@@ -22,8 +22,6 @@ import org.apache.kyuubi.session.Session
 class GetTableTypes(session: Session) extends KyuubiOperation(session) {
 
   override protected def runInternal(): Unit = {
-    try {
-      _remoteOpHandle = client.getTableTypes
-    } catch onError()
+    _remoteOpHandle = client.getTableTypes
   }
 }

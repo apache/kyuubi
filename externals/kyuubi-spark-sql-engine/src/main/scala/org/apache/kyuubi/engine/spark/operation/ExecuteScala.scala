@@ -76,6 +76,8 @@ class ExecuteScala(
     OperationLog.removeCurrentOperationLog()
   }
 
+  override protected def cancelOnError: Boolean = true
+
   private def executeScala(): Unit = withLocalProperties {
     try {
       setState(OperationState.RUNNING)
@@ -122,8 +124,6 @@ class ExecuteScala(
           throw KyuubiSQLException(s"Incomplete code:\n$statement")
       }
       setState(OperationState.FINISHED)
-    } catch {
-      onError(cancel = true)
     } finally {
       repl.clearResult(statementId)
       shutdownTimeoutMonitor()

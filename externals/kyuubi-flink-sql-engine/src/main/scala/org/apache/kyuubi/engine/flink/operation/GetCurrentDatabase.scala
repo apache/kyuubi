@@ -30,9 +30,7 @@ class GetCurrentDatabase(session: Session) extends FlinkOperation(session) {
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def runInternal(): Unit = {
-    try {
-      val database = sessionContext.getSessionState.catalogManager.getCurrentDatabase
-      resultSet = ResultSetUtil.stringListToResultSet(List(database), TABLE_SCHEM)
-    } catch onError()
+    val database = sessionContext.getSessionState.catalogManager.getCurrentDatabase
+    resultSet = ResultSetUtil.stringListToResultSet(List(database), TABLE_SCHEM)
   }
 }

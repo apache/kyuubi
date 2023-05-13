@@ -35,9 +35,7 @@ class SetCurrentDatabase(session: Session, database: String)
   }
 
   override protected def runInternal(): Unit = {
-    try {
-      SparkCatalogShim().setCurrentDatabase(spark, database)
-      setHasResultSet(false)
-    } catch onError()
+    SparkCatalogShim().setCurrentDatabase(spark, database)
+    setHasResultSet(false)
   }
 }

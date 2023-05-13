@@ -111,14 +111,10 @@ class GetColumns(
   }
 
   override protected def runInternal(): Unit = {
-    try {
-      val schemaPattern = toJavaRegex(schemaName)
-      val tablePattern = toJavaRegex(tableName)
-      val columnPattern = toJavaRegex(columnName)
-      iter = new IterableFetchIterator(SparkCatalogShim()
-        .getColumns(spark, catalogName, schemaPattern, tablePattern, columnPattern).toList)
-    } catch {
-      onError()
-    }
+    val schemaPattern = toJavaRegex(schemaName)
+    val tablePattern = toJavaRegex(tableName)
+    val columnPattern = toJavaRegex(columnName)
+    iter = new IterableFetchIterator(SparkCatalogShim()
+      .getColumns(spark, catalogName, schemaPattern, tablePattern, columnPattern).toList)
   }
 }

@@ -37,8 +37,6 @@ class GetCurrentDatabase(session: Session) extends SparkOperation(session) {
   }
 
   override protected def runInternal(): Unit = {
-    try {
-      iter = new IterableFetchIterator(Seq(SparkCatalogShim().getCurrentDatabase(spark)))
-    } catch onError()
+    iter = new IterableFetchIterator(Seq(SparkCatalogShim().getCurrentDatabase(spark)))
   }
 }

@@ -39,69 +39,66 @@ class GetColumns(
   extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
-    try {
+    val catalogName =
+      if (StringUtils.isEmpty(catalogNameOrEmpty)) executor.getCurrentCatalog
+      else catalogNameOrEmpty
 
-      val catalogName =
-        if (StringUtils.isEmpty(catalogNameOrEmpty)) executor.getCurrentCatalog
-        else catalogNameOrEmpty
+    val schemaNameRegex = toJavaRegex(schemaNamePattern)
+    val tableNameRegex = toJavaRegex(tableNamePattern)
+    val columnNameRegex = toJavaRegex(columnNamePattern).r
 
-      val schemaNameRegex = toJavaRegex(schemaNamePattern)
-      val tableNameRegex = toJavaRegex(tableNamePattern)
-      val columnNameRegex = toJavaRegex(columnNamePattern).r
+    val catalogManager = sessionContext.getSessionState.catalogManager
+    val columns = catalogManager.getCatalog(catalogName).asScala.toArray.flatMap { flinkCatalog =>
+      SchemaHelper.getSchemasWithPattern(flinkCatalog, schemaNameRegex)
+        .flatMap { schemaName =>
+          SchemaHelper.getFlinkTablesWithPattern(
+            flinkCatalog,
+            catalogName,
+            schemaName,
+            tableNameRegex)
+            .filter { _._2.isDefined }
+            .flatMap { case (tableName, _) =>
+              val flinkTable = catalogManager.getTable(
+                ObjectIdentifier.of(catalogName, schemaName, tableName)).get()
+              val resolvedSchema = flinkTable.getResolvedSchema
+              resolvedSchema.getColumns.asScala.toArray.zipWithIndex
+                .filter { case (column, _) =>
+                  columnNameRegex.pattern.matcher(column.getName).matches()
+                }
+                .map { case (column, pos) =>
+                  toColumnResult(catalogName, schemaName, tableName, column, pos)
+                }
+            }
+        }
+    }
 
-      val catalogManager = sessionContext.getSessionState.catalogManager
-      val columns = catalogManager.getCatalog(catalogName).asScala.toArray.flatMap { flinkCatalog =>
-        SchemaHelper.getSchemasWithPattern(flinkCatalog, schemaNameRegex)
-          .flatMap { schemaName =>
-            SchemaHelper.getFlinkTablesWithPattern(
-              flinkCatalog,
-              catalogName,
-              schemaName,
-              tableNameRegex)
-              .filter { _._2.isDefined }
-              .flatMap { case (tableName, _) =>
-                val flinkTable = catalogManager.getTable(
-                  ObjectIdentifier.of(catalogName, schemaName, tableName)).get()
-                val resolvedSchema = flinkTable.getResolvedSchema
-                resolvedSchema.getColumns.asScala.toArray.zipWithIndex
-                  .filter { case (column, _) =>
-                    columnNameRegex.pattern.matcher(column.getName).matches()
-                  }
-                  .map { case (column, pos) =>
-                    toColumnResult(catalogName, schemaName, tableName, column, pos)
-                  }
-              }
-          }
-      }
-
-      resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(
-          Column.physical(TABLE_CAT, DataTypes.STRING),
-          Column.physical(TABLE_SCHEM, DataTypes.STRING),
-          Column.physical(TABLE_NAME, DataTypes.STRING),
-          Column.physical(COLUMN_NAME, DataTypes.STRING),
-          Column.physical(DATA_TYPE, DataTypes.INT),
-          Column.physical(TYPE_NAME, DataTypes.STRING),
-          Column.physical(COLUMN_SIZE, DataTypes.INT),
-          Column.physical(BUFFER_LENGTH, DataTypes.TINYINT),
-          Column.physical(DECIMAL_DIGITS, DataTypes.INT),
-          Column.physical(NUM_PREC_RADIX, DataTypes.INT),
-          Column.physical(NULLABLE, DataTypes.INT),
-          Column.physical(REMARKS, DataTypes.STRING),
-          Column.physical(COLUMN_DEF, DataTypes.STRING),
-          Column.physical(SQL_DATA_TYPE, DataTypes.INT),
-          Column.physical(SQL_DATETIME_SUB, DataTypes.INT),
-          Column.physical(CHAR_OCTET_LENGTH, DataTypes.INT),
-          Column.physical(ORDINAL_POSITION, DataTypes.INT),
-          Column.physical(IS_NULLABLE, DataTypes.STRING),
-          Column.physical(SCOPE_CATALOG, DataTypes.STRING),
-          Column.physical(SCOPE_SCHEMA, DataTypes.STRING),
-          Column.physical(SCOPE_TABLE, DataTypes.STRING),
-          Column.physical(SOURCE_DATA_TYPE, DataTypes.SMALLINT),
-          Column.physical(IS_AUTO_INCREMENT, DataTypes.STRING))
-        .data(columns)
-        .build
-    } catch onError()
+    resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(
+        Column.physical(TABLE_CAT, DataTypes.STRING),
+        Column.physical(TABLE_SCHEM, DataTypes.STRING),
+        Column.physical(TABLE_NAME, DataTypes.STRING),
+        Column.physical(COLUMN_NAME, DataTypes.STRING),
+        Column.physical(DATA_TYPE, DataTypes.INT),
+        Column.physical(TYPE_NAME, DataTypes.STRING),
+        Column.physical(COLUMN_SIZE, DataTypes.INT),
+        Column.physical(BUFFER_LENGTH, DataTypes.TINYINT),
+        Column.physical(DECIMAL_DIGITS, DataTypes.INT),
+        Column.physical(NUM_PREC_RADIX, DataTypes.INT),
+        Column.physical(NULLABLE, DataTypes.INT),
+        Column.physical(REMARKS, DataTypes.STRING),
+        Column.physical(COLUMN_DEF, DataTypes.STRING),
+        Column.physical(SQL_DATA_TYPE, DataTypes.INT),
+        Column.physical(SQL_DATETIME_SUB, DataTypes.INT),
+        Column.physical(CHAR_OCTET_LENGTH, DataTypes.INT),
+        Column.physical(ORDINAL_POSITION, DataTypes.INT),
+        Column.physical(IS_NULLABLE, DataTypes.STRING),
+        Column.physical(SCOPE_CATALOG, DataTypes.STRING),
+        Column.physical(SCOPE_SCHEMA, DataTypes.STRING),
+        Column.physical(SCOPE_TABLE, DataTypes.STRING),
+        Column.physical(SOURCE_DATA_TYPE, DataTypes.SMALLINT),
+        Column.physical(IS_AUTO_INCREMENT, DataTypes.STRING))
+      .data(columns)
+      .build
   }
 
   private def toColumnResult(

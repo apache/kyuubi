@@ -61,25 +61,21 @@ class GetFunctions(
   }
 
   override protected def runInternal(): Unit = {
-    try {
-      val schemaPattern = toJavaRegex(schemaName)
-      val functionPattern = toJavaRegex(functionName)
-      val catalog = spark.sessionState.catalog
-      val a: Seq[Row] = catalog.listDatabases(schemaPattern).flatMap { db =>
-        catalog.listFunctions(db, functionPattern).map { case (f, _) =>
-          val info = catalog.lookupFunctionInfo(f)
-          Row(
-            "",
-            info.getDb,
-            info.getName,
-            s"Usage: ${info.getUsage}\nExtended Usage:${info.getExtended}",
-            DatabaseMetaData.functionResultUnknown,
-            info.getClassName)
-        }
+    val schemaPattern = toJavaRegex(schemaName)
+    val functionPattern = toJavaRegex(functionName)
+    val catalog = spark.sessionState.catalog
+    val a: Seq[Row] = catalog.listDatabases(schemaPattern).flatMap { db =>
+      catalog.listFunctions(db, functionPattern).map { case (f, _) =>
+        val info = catalog.lookupFunctionInfo(f)
+        Row(
+          "",
+          info.getDb,
+          info.getName,
+          s"Usage: ${info.getUsage}\nExtended Usage:${info.getExtended}",
+          DatabaseMetaData.functionResultUnknown,
+          info.getClassName)
       }
-      iter = new IterableFetchIterator(a.toList)
-    } catch {
-      onError()
     }
+    iter = new IterableFetchIterator(a.toList)
   }
 }

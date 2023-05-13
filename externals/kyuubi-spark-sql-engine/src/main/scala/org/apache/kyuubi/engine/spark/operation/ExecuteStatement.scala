@@ -75,6 +75,8 @@ class ExecuteStatement(
     resultDF.take(maxRows)
   }
 
+  override protected def cancelOnError: Boolean = true
+
   protected def executeStatement(): Unit = withLocalProperties {
     try {
       setState(OperationState.RUNNING)
@@ -85,8 +87,6 @@ class ExecuteStatement(
       iter = collectAsIterator(result)
       setCompiledStateIfNeeded()
       setState(OperationState.FINISHED)
-    } catch {
-      onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
     }

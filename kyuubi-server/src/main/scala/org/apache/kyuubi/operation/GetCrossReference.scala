@@ -30,14 +30,12 @@ class GetCrossReference(
   extends KyuubiOperation(session) {
 
   override protected def runInternal(): Unit = {
-    try {
-      _remoteOpHandle = client.getCrossReference(
-        primaryCatalog,
-        primarySchema,
-        primaryTable,
-        foreignCatalog,
-        foreignSchema,
-        foreignTable)
-    } catch onError()
+    _remoteOpHandle = client.getCrossReference(
+      primaryCatalog,
+      primarySchema,
+      primaryTable,
+      foreignCatalog,
+      foreignSchema,
+      foreignTable)
   }
 }

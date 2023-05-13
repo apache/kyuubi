@@ -117,7 +117,7 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
 
   override def shouldRunAsync: Boolean = false
 
-  protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {
+  protected def onError(): PartialFunction[Throwable, Unit] = {
     // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
     // could be thrown.
     case e: Throwable =>

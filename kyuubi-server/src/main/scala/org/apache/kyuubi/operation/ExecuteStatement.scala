@@ -17,13 +17,15 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.concurrent.RejectedExecutionException
+
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TOperationState, TProtocolVersion}
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
@@ -163,7 +165,10 @@ class ExecuteStatement(
     try {
       val opHandle = sessionManager.submitBackgroundOperation(asyncOperation)
       setBackgroundHandle(opHandle)
-    } catch onError("submitting query in background, query rejected")
+    } catch {
+      case _: RejectedExecutionException =>
+        throw new KyuubiException("Error submitting query in background, query rejected")
+    }
 
     if (!shouldRunAsync) getBackgroundHandle.get()
   }

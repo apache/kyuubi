@@ -37,55 +37,52 @@ class GetPrimaryKeys(
   extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
-    try {
-      val catalogManager = sessionContext.getSessionState.catalogManager
+    val catalogManager = sessionContext.getSessionState.catalogManager
 
-      val catalogName =
-        if (StringUtils.isEmpty(catalogNameOrEmpty)) catalogManager.getCurrentCatalog
-        else catalogNameOrEmpty
+    val catalogName =
+      if (StringUtils.isEmpty(catalogNameOrEmpty)) catalogManager.getCurrentCatalog
+      else catalogNameOrEmpty
 
-      val schemaName =
-        if (StringUtils.isEmpty(schemaNameOrEmpty)) {
-          if (catalogName != executor.getCurrentCatalog) {
-            catalogManager.getCatalog(catalogName).get().getDefaultDatabase
-          } else {
-            catalogManager.getCurrentDatabase
-          }
-        } else schemaNameOrEmpty
+    val schemaName =
+      if (StringUtils.isEmpty(schemaNameOrEmpty)) {
+        if (catalogName != executor.getCurrentCatalog) {
+          catalogManager.getCatalog(catalogName).get().getDefaultDatabase
+        } else {
+          catalogManager.getCurrentDatabase
+        }
+      } else schemaNameOrEmpty
 
-      val flinkTable = catalogManager
-        .getTable(ObjectIdentifier.of(catalogName, schemaName, tableName))
-        .orElseThrow(() =>
-          new FlinkException(s"Table `$catalogName`.`$schemaName`.`$tableName`` not found."))
+    val flinkTable = catalogManager
+      .getTable(ObjectIdentifier.of(catalogName, schemaName, tableName))
+      .orElseThrow(() =>
+        new FlinkException(s"Table `$catalogName`.`$schemaName`.`$tableName`` not found."))
 
-      val resolvedSchema = flinkTable.getResolvedSchema
-      val primaryKeySchema = resolvedSchema.getPrimaryKey
-      val columns = primaryKeySchema.asScala.map { uniqueConstraint =>
-        uniqueConstraint
-          .getColumns.asScala.toArray.zipWithIndex
-          .map { case (columnName, pos) =>
-            toColumnResult(
-              catalogName,
-              schemaName,
-              tableName,
-              columnName,
-              pos,
-              uniqueConstraint.getName)
-          }
-      }.getOrElse(Array.empty)
+    val resolvedSchema = flinkTable.getResolvedSchema
+    val primaryKeySchema = resolvedSchema.getPrimaryKey
+    val columns = primaryKeySchema.asScala.map { uniqueConstraint =>
+      uniqueConstraint
+        .getColumns.asScala.toArray.zipWithIndex
+        .map { case (columnName, pos) =>
+          toColumnResult(
+            catalogName,
+            schemaName,
+            tableName,
+            columnName,
+            pos,
+            uniqueConstraint.getName)
+        }
+    }.getOrElse(Array.empty)
 
-      resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(
-          Column.physical(TABLE_CAT, DataTypes.STRING),
-          Column.physical(TABLE_SCHEM, DataTypes.STRING),
-          Column.physical(TABLE_NAME, DataTypes.STRING),
-          Column.physical(COLUMN_NAME, DataTypes.STRING),
-          Column.physical(KEY_SEQ, DataTypes.INT),
-          Column.physical(PK_NAME, DataTypes.STRING))
-        .data(columns)
-        .build
-
-    } catch onError()
+    resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(
+        Column.physical(TABLE_CAT, DataTypes.STRING),
+        Column.physical(TABLE_SCHEM, DataTypes.STRING),
+        Column.physical(TABLE_NAME, DataTypes.STRING),
+        Column.physical(COLUMN_NAME, DataTypes.STRING),
+        Column.physical(KEY_SEQ, DataTypes.INT),
+        Column.physical(PK_NAME, DataTypes.STRING))
+      .data(columns)
+      .build
   }
 
   private def toColumnResult(

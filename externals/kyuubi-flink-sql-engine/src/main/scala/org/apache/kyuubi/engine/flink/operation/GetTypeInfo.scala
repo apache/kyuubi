@@ -60,61 +60,57 @@ class GetTypeInfo(session: Session) extends FlinkOperation(session) {
   }
 
   override protected def runInternal(): Unit = {
-    try {
-      val dataTypes: Array[Row] = Array(
-        toRow(LogicalTypeRoot.CHAR.name(), CHAR),
-        toRow(LogicalTypeRoot.VARCHAR.name(), VARCHAR),
-        toRow(LogicalTypeRoot.BOOLEAN.name(), BOOLEAN),
-        toRow(LogicalTypeRoot.BINARY.name(), BINARY),
-        toRow(LogicalTypeRoot.VARBINARY.name(), VARBINARY),
-        toRow(LogicalTypeRoot.DECIMAL.name(), DECIMAL, 38),
-        toRow(LogicalTypeRoot.TINYINT.name(), TINYINT, 3),
-        toRow(LogicalTypeRoot.SMALLINT.name(), SMALLINT, 5),
-        toRow(LogicalTypeRoot.INTEGER.name(), INTEGER, 10),
-        toRow(LogicalTypeRoot.BIGINT.name(), BIGINT, 19),
-        toRow(LogicalTypeRoot.FLOAT.name(), FLOAT, 7),
-        toRow(LogicalTypeRoot.DOUBLE.name(), DOUBLE, 15),
-        toRow(LogicalTypeRoot.DATE.name(), DATE),
-        toRow(LogicalTypeRoot.TIME_WITHOUT_TIME_ZONE.name(), TIME),
-        toRow(LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE.name(), TIMESTAMP),
-        toRow(LogicalTypeRoot.TIMESTAMP_WITH_TIME_ZONE.name(), TIMESTAMP_WITH_TIMEZONE),
-        toRow(LogicalTypeRoot.TIMESTAMP_WITH_LOCAL_TIME_ZONE.name(), TIMESTAMP_WITH_TIMEZONE),
-        toRow(LogicalTypeRoot.INTERVAL_YEAR_MONTH.name(), OTHER),
-        toRow(LogicalTypeRoot.INTERVAL_DAY_TIME.name(), OTHER),
-        toRow(LogicalTypeRoot.ARRAY.name(), ARRAY),
-        toRow(LogicalTypeRoot.MULTISET.name(), JAVA_OBJECT),
-        toRow(LogicalTypeRoot.MAP.name(), JAVA_OBJECT),
-        toRow(LogicalTypeRoot.ROW.name(), JAVA_OBJECT),
-        toRow(LogicalTypeRoot.DISTINCT_TYPE.name(), OTHER),
-        toRow(LogicalTypeRoot.STRUCTURED_TYPE.name(), OTHER),
-        toRow(LogicalTypeRoot.NULL.name(), NULL),
-        toRow(LogicalTypeRoot.RAW.name(), OTHER),
-        toRow(LogicalTypeRoot.SYMBOL.name(), OTHER),
-        toRow(LogicalTypeRoot.UNRESOLVED.name(), OTHER))
-      resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(
-          Column.physical(TYPE_NAME, DataTypes.STRING()),
-          Column.physical(DATA_TYPE, DataTypes.INT()),
-          Column.physical(PRECISION, DataTypes.INT()),
-          Column.physical("LITERAL_PREFIX", DataTypes.STRING()),
-          Column.physical("LITERAL_SUFFIX", DataTypes.STRING()),
-          Column.physical("CREATE_PARAMS", DataTypes.STRING()),
-          Column.physical(NULLABLE, DataTypes.SMALLINT()),
-          Column.physical(CASE_SENSITIVE, DataTypes.BOOLEAN()),
-          Column.physical(SEARCHABLE, DataTypes.SMALLINT()),
-          Column.physical("UNSIGNED_ATTRIBUTE", DataTypes.BOOLEAN()),
-          Column.physical("FIXED_PREC_SCALE", DataTypes.BOOLEAN()),
-          Column.physical("AUTO_INCREMENT", DataTypes.BOOLEAN()),
-          Column.physical("LOCAL_TYPE_NAME", DataTypes.STRING()),
-          Column.physical("MINIMUM_SCALE", DataTypes.SMALLINT()),
-          Column.physical("MAXIMUM_SCALE", DataTypes.SMALLINT()),
-          Column.physical(SQL_DATA_TYPE, DataTypes.INT()),
-          Column.physical(SQL_DATETIME_SUB, DataTypes.INT()),
-          Column.physical(NUM_PREC_RADIX, DataTypes.INT()))
-        .data(dataTypes)
-        .build
-    } catch {
-      onError()
-    }
+    val dataTypes: Array[Row] = Array(
+      toRow(LogicalTypeRoot.CHAR.name(), CHAR),
+      toRow(LogicalTypeRoot.VARCHAR.name(), VARCHAR),
+      toRow(LogicalTypeRoot.BOOLEAN.name(), BOOLEAN),
+      toRow(LogicalTypeRoot.BINARY.name(), BINARY),
+      toRow(LogicalTypeRoot.VARBINARY.name(), VARBINARY),
+      toRow(LogicalTypeRoot.DECIMAL.name(), DECIMAL, 38),
+      toRow(LogicalTypeRoot.TINYINT.name(), TINYINT, 3),
+      toRow(LogicalTypeRoot.SMALLINT.name(), SMALLINT, 5),
+      toRow(LogicalTypeRoot.INTEGER.name(), INTEGER, 10),
+      toRow(LogicalTypeRoot.BIGINT.name(), BIGINT, 19),
+      toRow(LogicalTypeRoot.FLOAT.name(), FLOAT, 7),
+      toRow(LogicalTypeRoot.DOUBLE.name(), DOUBLE, 15),
+      toRow(LogicalTypeRoot.DATE.name(), DATE),
+      toRow(LogicalTypeRoot.TIME_WITHOUT_TIME_ZONE.name(), TIME),
+      toRow(LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE.name(), TIMESTAMP),
+      toRow(LogicalTypeRoot.TIMESTAMP_WITH_TIME_ZONE.name(), TIMESTAMP_WITH_TIMEZONE),
+      toRow(LogicalTypeRoot.TIMESTAMP_WITH_LOCAL_TIME_ZONE.name(), TIMESTAMP_WITH_TIMEZONE),
+      toRow(LogicalTypeRoot.INTERVAL_YEAR_MONTH.name(), OTHER),
+      toRow(LogicalTypeRoot.INTERVAL_DAY_TIME.name(), OTHER),
+      toRow(LogicalTypeRoot.ARRAY.name(), ARRAY),
+      toRow(LogicalTypeRoot.MULTISET.name(), JAVA_OBJECT),
+      toRow(LogicalTypeRoot.MAP.name(), JAVA_OBJECT),
+      toRow(LogicalTypeRoot.ROW.name(), JAVA_OBJECT),
+      toRow(LogicalTypeRoot.DISTINCT_TYPE.name(), OTHER),
+      toRow(LogicalTypeRoot.STRUCTURED_TYPE.name(), OTHER),
+      toRow(LogicalTypeRoot.NULL.name(), NULL),
+      toRow(LogicalTypeRoot.RAW.name(), OTHER),
+      toRow(LogicalTypeRoot.SYMBOL.name(), OTHER),
+      toRow(LogicalTypeRoot.UNRESOLVED.name(), OTHER))
+    resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(
+        Column.physical(TYPE_NAME, DataTypes.STRING()),
+        Column.physical(DATA_TYPE, DataTypes.INT()),
+        Column.physical(PRECISION, DataTypes.INT()),
+        Column.physical("LITERAL_PREFIX", DataTypes.STRING()),
+        Column.physical("LITERAL_SUFFIX", DataTypes.STRING()),
+        Column.physical("CREATE_PARAMS", DataTypes.STRING()),
+        Column.physical(NULLABLE, DataTypes.SMALLINT()),
+        Column.physical(CASE_SENSITIVE, DataTypes.BOOLEAN()),
+        Column.physical(SEARCHABLE, DataTypes.SMALLINT()),
+        Column.physical("UNSIGNED_ATTRIBUTE", DataTypes.BOOLEAN()),
+        Column.physical("FIXED_PREC_SCALE", DataTypes.BOOLEAN()),
+        Column.physical("AUTO_INCREMENT", DataTypes.BOOLEAN()),
+        Column.physical("LOCAL_TYPE_NAME", DataTypes.STRING()),
+        Column.physical("MINIMUM_SCALE", DataTypes.SMALLINT()),
+        Column.physical("MAXIMUM_SCALE", DataTypes.SMALLINT()),
+        Column.physical(SQL_DATA_TYPE, DataTypes.INT()),
+        Column.physical(SQL_DATETIME_SUB, DataTypes.INT()),
+        Column.physical(NUM_PREC_RADIX, DataTypes.INT()))
+      .data(dataTypes)
+      .build
   }
 }

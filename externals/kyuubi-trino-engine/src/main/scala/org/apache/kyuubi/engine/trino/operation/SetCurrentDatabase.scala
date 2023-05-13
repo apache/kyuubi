@@ -30,12 +30,10 @@ class SetCurrentDatabase(session: Session, database: String)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def runInternal(): Unit = {
-    try {
-      val session = trinoContext.clientSession.get
-      var builder = ClientSession.builder(session)
-      builder = builder.withSchema(database)
-      trinoContext.clientSession.set(builder.build())
-      setHasResultSet(false)
-    } catch onError()
+    val session = trinoContext.clientSession.get
+    var builder = ClientSession.builder(session)
+    builder = builder.withSchema(database)
+    trinoContext.clientSession.set(builder.build())
+    setHasResultSet(false)
   }
 }

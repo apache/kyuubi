@@ -197,8 +197,6 @@ class BatchJobSubmission(
             submitAndMonitorBatchJob()
         }
         setStateIfNotCanceled(OperationState.FINISHED)
-      } catch {
-        onError()
       } finally {
         updateBatchMetadata()
       }

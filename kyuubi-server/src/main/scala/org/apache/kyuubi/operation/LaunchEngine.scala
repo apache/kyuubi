@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.concurrent.RejectedExecutionException
+
+import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiSessionImpl
@@ -56,16 +59,17 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
   override protected def runInternal(): Unit = session.handleSessionException {
     val asyncOperation: Runnable = () => {
       setState(OperationState.RUNNING)
-      try {
-        session.openEngineSession(getOperationLog)
-        setState(OperationState.FINISHED)
-      } catch onError()
+      session.openEngineSession(getOperationLog)
+      setState(OperationState.FINISHED)
     }
     try {
       val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
       setBackgroundHandle(opHandle)
-    } catch onError("submitting open engine operation in background, request rejected")
-
+    } catch {
+      case _: RejectedExecutionException =>
+        throw new KyuubiException(
+          "Error submitting open engine operation in background, request rejected")
+    }
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
 

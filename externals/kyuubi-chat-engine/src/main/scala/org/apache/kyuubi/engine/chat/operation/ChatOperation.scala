@@ -58,7 +58,7 @@ abstract class ChatOperation(session: Session) extends AbstractOperation(session
     cleanup(OperationState.CLOSED)
   }
 
-  protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {
+  protected def onError(): PartialFunction[Throwable, Unit] = {
     // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
     // could be thrown.
     case e: Throwable =>

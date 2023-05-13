@@ -25,14 +25,12 @@ class GetTableTypes(session: Session)
   extends TrinoOperation(session) {
 
   override protected def runInternal(): Unit = {
-    try {
-      val trinoStatement = TrinoStatement(
-        trinoContext,
-        session.sessionManager.getConf,
-        "SELECT TABLE_TYPE FROM system.jdbc.table_types")
-      schema = trinoStatement.getColumns
-      val resultSet = trinoStatement.execute()
-      iter = new ArrayFetchIterator(resultSet.toArray)
-    } catch onError()
+    val trinoStatement = TrinoStatement(
+      trinoContext,
+      session.sessionManager.getConf,
+      "SELECT TABLE_TYPE FROM system.jdbc.table_types")
+    schema = trinoStatement.getColumns
+    val resultSet = trinoStatement.execute()
+    iter = new ArrayFetchIterator(resultSet.toArray)
   }
 }

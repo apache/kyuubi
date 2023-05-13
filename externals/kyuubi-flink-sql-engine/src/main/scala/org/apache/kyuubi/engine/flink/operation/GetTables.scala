@@ -36,57 +36,55 @@ class GetTables(
   extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
-    try {
-      val catalogManager = sessionContext.getSessionState.catalogManager
+    val catalogManager = sessionContext.getSessionState.catalogManager
 
-      val catalogName =
-        if (StringUtils.isEmpty(catalogNameOrEmpty)) catalogManager.getCurrentCatalog
-        else catalogNameOrEmpty
+    val catalogName =
+      if (StringUtils.isEmpty(catalogNameOrEmpty)) catalogManager.getCurrentCatalog
+      else catalogNameOrEmpty
 
-      val schemaNameRegex = toJavaRegex(schemaNamePattern)
-      val tableNameRegex = toJavaRegex(tableNamePattern)
+    val schemaNameRegex = toJavaRegex(schemaNamePattern)
+    val tableNameRegex = toJavaRegex(tableNamePattern)
 
-      val tables = catalogManager.getCatalog(catalogName).asScala.toArray.flatMap { flinkCatalog =>
-        SchemaHelper.getSchemasWithPattern(flinkCatalog, schemaNameRegex)
-          .flatMap { schemaName =>
-            SchemaHelper.getFlinkTablesWithPattern(
-              flinkCatalog,
-              catalogName,
-              schemaName,
-              tableNameRegex)
-              .filter {
-                case (_, None) => false
-                case (_, Some(flinkTable)) => tableTypes.contains(flinkTable.getTableKind.name)
-              }.map { case (tableName, flinkTable) =>
-                Row.of(
-                  catalogName,
-                  schemaName,
-                  tableName,
-                  flinkTable.map(_.getTableKind.name).getOrElse(""),
-                  flinkTable.map(_.getComment).getOrElse(""),
-                  null,
-                  null,
-                  null,
-                  null,
-                  null)
-              }
-          }
-      }
+    val tables = catalogManager.getCatalog(catalogName).asScala.toArray.flatMap { flinkCatalog =>
+      SchemaHelper.getSchemasWithPattern(flinkCatalog, schemaNameRegex)
+        .flatMap { schemaName =>
+          SchemaHelper.getFlinkTablesWithPattern(
+            flinkCatalog,
+            catalogName,
+            schemaName,
+            tableNameRegex)
+            .filter {
+              case (_, None) => false
+              case (_, Some(flinkTable)) => tableTypes.contains(flinkTable.getTableKind.name)
+            }.map { case (tableName, flinkTable) =>
+              Row.of(
+                catalogName,
+                schemaName,
+                tableName,
+                flinkTable.map(_.getTableKind.name).getOrElse(""),
+                flinkTable.map(_.getComment).getOrElse(""),
+                null,
+                null,
+                null,
+                null,
+                null)
+            }
+        }
+    }
 
-      resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(
-          Column.physical(TABLE_CAT, DataTypes.STRING),
-          Column.physical(TABLE_SCHEM, DataTypes.STRING),
-          Column.physical(TABLE_NAME, DataTypes.STRING),
-          Column.physical(TABLE_TYPE, DataTypes.STRING),
-          Column.physical(REMARKS, DataTypes.STRING),
-          Column.physical(TYPE_CAT, DataTypes.STRING),
-          Column.physical(TYPE_SCHEM, DataTypes.STRING),
-          Column.physical(TYPE_NAME, DataTypes.STRING),
-          Column.physical(SELF_REFERENCING_COL_NAME, DataTypes.STRING),
-          Column.physical(REF_GENERATION, DataTypes.STRING))
-        .data(tables)
-        .build
-    } catch onError()
+    resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(
+        Column.physical(TABLE_CAT, DataTypes.STRING),
+        Column.physical(TABLE_SCHEM, DataTypes.STRING),
+        Column.physical(TABLE_NAME, DataTypes.STRING),
+        Column.physical(TABLE_TYPE, DataTypes.STRING),
+        Column.physical(REMARKS, DataTypes.STRING),
+        Column.physical(TYPE_CAT, DataTypes.STRING),
+        Column.physical(TYPE_SCHEM, DataTypes.STRING),
+        Column.physical(TYPE_NAME, DataTypes.STRING),
+        Column.physical(SELF_REFERENCING_COL_NAME, DataTypes.STRING),
+        Column.physical(REF_GENERATION, DataTypes.STRING))
+      .data(tables)
+      .build
   }
 }

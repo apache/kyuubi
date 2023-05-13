@@ -57,8 +57,6 @@ class ExecuteStatement(
       iter = new ArrayFetchIterator(Array(Array(reply)))
 
       setState(OperationState.FINISHED)
-    } catch {
-      onError(true)
     } finally {
       shutdownTimeoutMonitor()
     }

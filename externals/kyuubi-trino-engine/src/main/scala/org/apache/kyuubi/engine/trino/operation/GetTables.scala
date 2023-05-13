@@ -65,12 +65,10 @@ class GetTables(
       query.append(filters.mkString(" AND "))
     }
 
-    try {
-      val trinoStatement =
-        TrinoStatement(trinoContext, session.sessionManager.getConf, query.toString)
-      schema = trinoStatement.getColumns
-      val resultSet = trinoStatement.execute()
-      iter = new ArrayFetchIterator(resultSet.toArray)
-    } catch onError()
+    val trinoStatement =
+      TrinoStatement(trinoContext, session.sessionManager.getConf, query.toString)
+    schema = trinoStatement.getColumns
+    val resultSet = trinoStatement.execute()
+    iter = new ArrayFetchIterator(resultSet.toArray)
   }
 }
