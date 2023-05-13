@@ -23,10 +23,6 @@ import org.apache.kyuubi.Logging
 
 class KyuubiUncaughtExceptionHandler extends UncaughtExceptionHandler with Logging {
   override def uncaughtException(t: Thread, e: Throwable): Unit = {
-    error(s"Exception in thread ${t.getName}", e)
+    error(s"Uncaught exception in thread ${t.getName}", e)
   }
-}
-
-object KyuubiUncaughtExceptionHandler {
-  Thread.setDefaultUncaughtExceptionHandler(new KyuubiUncaughtExceptionHandler())
 }
