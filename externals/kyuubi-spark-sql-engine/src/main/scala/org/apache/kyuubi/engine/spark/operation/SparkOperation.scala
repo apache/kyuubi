@@ -240,30 +240,32 @@ abstract class SparkOperation(session: Session)
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet =
     withLocalProperties {
       var resultRowSet: TRowSet = null
-      validateDefaultFetchOrientation(order)
-      assertState(OperationState.FINISHED)
-      setHasResultSet(true)
-      order match {
-        case FETCH_NEXT => iter.fetchNext()
-        case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
-        case FETCH_FIRST => iter.fetchAbsolute(0);
-      }
-      resultRowSet =
-        if (isArrowBasedOperation) {
-          if (iter.hasNext) {
-            val taken = iter.next().asInstanceOf[Array[Byte]]
-            RowSet.toTRowSet(taken, getProtocolVersion)
-          } else {
-            RowSet.emptyTRowSet()
-          }
-        } else {
-          val taken = iter.take(rowSetSize)
-          RowSet.toTRowSet(
-            taken.toSeq.asInstanceOf[Seq[Row]],
-            resultSchema,
-            getProtocolVersion)
+      try {
+        validateDefaultFetchOrientation(order)
+        assertState(OperationState.FINISHED)
+        setHasResultSet(true)
+        order match {
+          case FETCH_NEXT => iter.fetchNext()
+          case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
+          case FETCH_FIRST => iter.fetchAbsolute(0);
         }
-      resultRowSet.setStartRowOffset(iter.getPosition)
+        resultRowSet =
+          if (isArrowBasedOperation) {
+            if (iter.hasNext) {
+              val taken = iter.next().asInstanceOf[Array[Byte]]
+              RowSet.toTRowSet(taken, getProtocolVersion)
+            } else {
+              RowSet.emptyTRowSet()
+            }
+          } else {
+            val taken = iter.take(rowSetSize)
+            RowSet.toTRowSet(
+              taken.toSeq.asInstanceOf[Seq[Row]],
+              resultSchema,
+              getProtocolVersion)
+          }
+        resultRowSet.setStartRowOffset(iter.getPosition)
+      } catch onError()
 
       resultRowSet
     }
