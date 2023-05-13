@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.io.{BufferedReader, File, FileOutputStream, FilenameFilter, InputStreamReader, PrintWriter}
+import java.io.{BufferedReader, File, FilenameFilter, FileOutputStream, InputStreamReader, PrintWriter}
 import java.lang.ProcessBuilder.Redirect
 import java.net.URI
 import java.nio.file.{Files, Path, Paths}
@@ -25,7 +25,9 @@ import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import javax.ws.rs.core.UriBuilder
+
 import scala.collection.JavaConverters._
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.lang3.StringUtils
@@ -33,6 +35,7 @@ import org.apache.spark.SparkFiles
 import org.apache.spark.api.python.KyuubiPythonGatewayServer
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
+
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
