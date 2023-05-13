@@ -17,15 +17,12 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.{Future, RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
-
 import scala.collection.JavaConverters._
-
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TProgressUpdateResp, TProtocolVersion, TRowSet, TStatus, TStatusCode}
-
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
@@ -174,7 +171,12 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
           r.run()
         } catch onError()
     }
-    session.sessionManager.submitBackgroundOperation(onErrorRunnable)
+    try {
+      session.sessionManager.submitBackgroundOperation(onErrorRunnable)
+    } catch {
+      case e: RejectedExecutionException =>
+        throw new KyuubiException(s"Error submitting $opType in background, request rejected", e)
+    }
   }
 
   override def run(): Unit = {

@@ -204,11 +204,6 @@ class BatchJobSubmission(
     try {
       val opHandle = submitInBackground(asyncOperation)
       setBackgroundHandle(opHandle)
-    } catch {
-      case e: RejectedExecutionException =>
-        throw new KyuubiException(
-          "Error submitting batch job submission operation in background, request rejected",
-          e)
     } finally {
       if (isTerminalState(state)) {
         updateBatchMetadata()

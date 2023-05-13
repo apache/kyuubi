@@ -58,16 +58,9 @@ class ExecutedCommandExec(
       command.run(session)
       setState(OperationState.FINISHED)
     }
-    try {
-      val opHandle = submitInBackground(asyncOperation)
-      setBackgroundHandle(opHandle)
-    } catch {
-      case e: RejectedExecutionException =>
-        throw new KyuubiException(
-          s"Error submitting an operation ${command.name()} running" +
-            s" on the server in background, request rejected",
-          e)
-    }
+    val opHandle = submitInBackground(asyncOperation)
+    setBackgroundHandle(opHandle)
+
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
 

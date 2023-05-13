@@ -139,17 +139,8 @@ class ExecuteScala(
       }
     }
 
-    try {
-      val backgroundHandle = submitInBackground(asyncOperation)
-      setBackgroundHandle(backgroundHandle)
-    } catch {
-      case rejected: RejectedExecutionException =>
-        setState(OperationState.ERROR)
-        val ke =
-          KyuubiSQLException("Error submitting scala in background", rejected)
-        setOperationException(ke)
-        throw ke
-    }
+    val backgroundHandle = submitInBackground(asyncOperation)
+    setBackgroundHandle(backgroundHandle)
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
 }

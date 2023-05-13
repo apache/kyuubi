@@ -158,13 +158,8 @@ class ExecuteStatement(
   override protected def runInternal(): Unit = {
     executeStatement()
     val asyncOperation: Runnable = () => waitStatementComplete()
-    try {
-      val opHandle = submitInBackground(asyncOperation)
-      setBackgroundHandle(opHandle)
-    } catch {
-      case e: RejectedExecutionException =>
-        throw new KyuubiException("Error submitting query in background, query rejected", e)
-    }
+    val opHandle = submitInBackground(asyncOperation)
+    setBackgroundHandle(opHandle)
 
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
