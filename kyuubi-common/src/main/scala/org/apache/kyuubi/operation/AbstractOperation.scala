@@ -165,10 +165,19 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   protected def afterRun(): Unit
 
+  protected def onError(cancel: Boolean): PartialFunction[Throwable, Unit]
+
   override def run(): Unit = {
-    beforeRun()
+    try {
+      beforeRun()
+    } catch {
+      onError(true)
+    }
+
     try {
       runInternal()
+    } catch {
+      onError(true)
     } finally {
       afterRun()
     }
