@@ -172,35 +172,29 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
   }
 
   protected def submitInBackground(r: Runnable): Future[_] = {
-    val onErrorRunnable = new Runnable {
+    val catchErrorRunnable = new Runnable {
       override def run(): Unit =
         try {
           r.run()
         } catch onError()
     }
     try {
-      session.sessionManager.submitBackgroundOperation(onErrorRunnable)
+      session.sessionManager.submitBackgroundOperation(catchErrorRunnable)
     } catch {
       case e: RejectedExecutionException =>
         throw new KyuubiException(s"Error submitting $opType in background, request rejected", e)
     }
   }
 
-  override def run(): Unit = {
+  override def run(): Unit =
     try {
       beforeRun()
-    } catch {
-      onError()
-    }
-
-    try {
-      runInternal()
-    } catch {
-      onError()
-    } finally {
-      afterRun()
-    }
-  }
+      try {
+        runInternal()
+      } finally {
+        afterRun()
+      }
+    } catch onError()
 
   override def cancel(): Unit
 
