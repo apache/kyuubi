@@ -35,18 +35,14 @@ class ExecuteStatement(
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
-    if (shouldRunAsync) {
-      val asyncOperation = new Runnable {
-        override def run(): Unit = {
-          executeStatement()
-        }
+    val asyncOperation = new Runnable {
+      override def run(): Unit = {
+        executeStatement()
       }
-      val chatSessionManager = session.sessionManager
-      val backgroundHandle = chatSessionManager.submitBackgroundOperation(asyncOperation)
-      setBackgroundHandle(backgroundHandle)
-    } else {
-      executeStatement()
     }
+    val backgroundHandle = submitBackgroundOperation(asyncOperation)
+    setBackgroundHandle(backgroundHandle)
+    if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
   private def executeStatement(): Unit = {

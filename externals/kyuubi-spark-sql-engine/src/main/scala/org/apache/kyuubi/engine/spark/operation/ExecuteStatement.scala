@@ -75,7 +75,7 @@ class ExecuteStatement(
     resultDF.take(maxRows)
   }
 
-  override protected def cancelOnError: Boolean = true
+  override protected def cancelJobGroupOnError: Boolean = true
 
   protected def executeStatement(): Unit = withLocalProperties {
     try {
@@ -94,29 +94,25 @@ class ExecuteStatement(
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
-    if (shouldRunAsync) {
-      val asyncOperation = new Runnable {
-        override def run(): Unit = {
-          OperationLog.setCurrentOperationLog(operationLog)
-          executeStatement()
-        }
+    val asyncOperation = new Runnable {
+      override def run(): Unit = {
+        OperationLog.setCurrentOperationLog(operationLog)
+        executeStatement()
       }
-
-      try {
-        val sparkSQLSessionManager = session.sessionManager
-        val backgroundHandle = sparkSQLSessionManager.submitBackgroundOperation(asyncOperation)
-        setBackgroundHandle(backgroundHandle)
-      } catch {
-        case rejected: RejectedExecutionException =>
-          setState(OperationState.ERROR)
-          val ke =
-            KyuubiSQLException("Error submitting query in background, query rejected", rejected)
-          setOperationException(ke)
-          throw ke
-      }
-    } else {
-      executeStatement()
     }
+
+    try {
+      val backgroundHandle = submitBackgroundOperation(asyncOperation)
+      setBackgroundHandle(backgroundHandle)
+    } catch {
+      case rejected: RejectedExecutionException =>
+        setState(OperationState.ERROR)
+        val ke =
+          KyuubiSQLException("Error submitting query in background, query rejected", rejected)
+        setOperationException(ke)
+        throw ke
+    }
+    if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
   def setCompiledStateIfNeeded(): Unit = synchronized {

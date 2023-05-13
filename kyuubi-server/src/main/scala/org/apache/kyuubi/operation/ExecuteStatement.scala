@@ -61,18 +61,15 @@ class ExecuteStatement(
   }
 
   private def executeStatement(): Unit = {
-    try {
-      // We need to avoid executing query in sync mode, because there is no heartbeat mechanism
-      // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
-      // engine crash without response before socket read timeout.
-      _remoteOpHandle =
-        client.executeStatement(statement, confOverlay ++ operationHandleConf, true, queryTimeout)
-      setHasResultSet(_remoteOpHandle.isHasResultSet)
-    } catch onError()
+    // We need to avoid executing query in sync mode, because there is no heartbeat mechanism
+    // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
+    // engine crash without response before socket read timeout.
+    _remoteOpHandle =
+      client.executeStatement(statement, confOverlay ++ operationHandleConf, true, queryTimeout)
+    setHasResultSet(_remoteOpHandle.isHasResultSet)
   }
 
-  private def waitStatementComplete(): Unit =
-    try {
+  private def waitStatementComplete(): Unit = {
       setState(OperationState.RUNNING)
       var statusResp: TGetOperationStatusResp = null
 
@@ -144,7 +141,7 @@ class ExecuteStatement(
       }
       // see if anymore log could be fetched
       fetchQueryLog()
-    } catch onError()
+    }
 
   private def fetchQueryLog(): Unit = {
     getOperationLog.foreach { logger =>
@@ -160,14 +157,13 @@ class ExecuteStatement(
 
   override protected def runInternal(): Unit = {
     executeStatement()
-    val sessionManager = session.sessionManager
     val asyncOperation: Runnable = () => waitStatementComplete()
     try {
-      val opHandle = sessionManager.submitBackgroundOperation(asyncOperation)
+      val opHandle = submitBackgroundOperation(asyncOperation)
       setBackgroundHandle(opHandle)
     } catch {
-      case _: RejectedExecutionException =>
-        throw new KyuubiException("Error submitting query in background, query rejected")
+      case e: RejectedExecutionException =>
+        throw new KyuubiException("Error submitting query in background, query rejected", e)
     }
 
     if (!shouldRunAsync) getBackgroundHandle.get()

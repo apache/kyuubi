@@ -77,7 +77,7 @@ class ExecutePython(
     OperationLog.removeCurrentOperationLog()
   }
 
-  override protected def cancelOnError: Boolean = true
+  override protected def cancelJobGroupOnError: Boolean = true
 
   private def executePython(): Unit = withLocalProperties {
     try {
@@ -104,29 +104,26 @@ class ExecutePython(
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
-    if (shouldRunAsync) {
-      val asyncOperation = new Runnable {
-        override def run(): Unit = {
-          OperationLog.setCurrentOperationLog(operationLog)
-          executePython()
-        }
-      }
 
-      try {
-        val sparkSQLSessionManager = session.sessionManager
-        val backgroundHandle = sparkSQLSessionManager.submitBackgroundOperation(asyncOperation)
-        setBackgroundHandle(backgroundHandle)
-      } catch {
-        case rejected: RejectedExecutionException =>
-          setState(OperationState.ERROR)
-          val ke =
-            KyuubiSQLException("Error submitting python in background", rejected)
-          setOperationException(ke)
-          throw ke
+    val asyncOperation = new Runnable {
+      override def run(): Unit = {
+        OperationLog.setCurrentOperationLog(operationLog)
+        executePython()
       }
-    } else {
-      executePython()
     }
+
+    try {
+      val backgroundHandle = submitBackgroundOperation(asyncOperation)
+      setBackgroundHandle(backgroundHandle)
+    } catch {
+      case rejected: RejectedExecutionException =>
+        setState(OperationState.ERROR)
+        val ke =
+          KyuubiSQLException("Error submitting python in background", rejected)
+        setOperationException(ke)
+        throw ke
+    }
+    if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
   override def setSparkLocalProperty: (String, String) => Unit =

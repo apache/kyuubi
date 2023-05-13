@@ -57,29 +57,26 @@ class ExecuteStatement(
     val trinoStatement =
       TrinoStatement(trinoContext, session.sessionManager.getConf, statement, getOperationLog)
     trino = trinoStatement.getTrinoClient
-    if (shouldRunAsync) {
-      val asyncOperation = new Runnable {
-        override def run(): Unit = {
-          OperationLog.setCurrentOperationLog(operationLog)
-          executeStatement(trinoStatement)
-        }
-      }
 
-      try {
-        val trinoSessionManager = session.sessionManager
-        val backgroundHandle = trinoSessionManager.submitBackgroundOperation(asyncOperation)
-        setBackgroundHandle(backgroundHandle)
-      } catch {
-        case rejected: RejectedExecutionException =>
-          setState(OperationState.ERROR)
-          val ke =
-            KyuubiSQLException("Error submitting query in background, query rejected", rejected)
-          setOperationException(ke)
-          throw ke
+    val asyncOperation = new Runnable {
+      override def run(): Unit = {
+        OperationLog.setCurrentOperationLog(operationLog)
+        executeStatement(trinoStatement)
       }
-    } else {
-      executeStatement(trinoStatement)
     }
+
+    try {
+      val backgroundHandle = submitBackgroundOperation(asyncOperation)
+      setBackgroundHandle(backgroundHandle)
+    } catch {
+      case rejected: RejectedExecutionException =>
+        setState(OperationState.ERROR)
+        val ke =
+          KyuubiSQLException("Error submitting query in background, query rejected", rejected)
+        setOperationException(ke)
+        throw ke
+    }
+    if (!shouldRunAsync)  getBackgroundHandle.get()
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {

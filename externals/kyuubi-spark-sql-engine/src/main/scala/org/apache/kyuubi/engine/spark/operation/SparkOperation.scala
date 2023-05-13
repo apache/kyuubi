@@ -169,14 +169,15 @@ abstract class SparkOperation(session: Session)
     }
   }
 
-  protected def cancelOnError: Boolean = false
+  protected def cancelJobGroupOnError: Boolean = false
 
   protected def onError(): PartialFunction[Throwable, Unit] = {
     // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
     // could be thrown.
     case e: Throwable =>
-      if (cancelOnError && !spark.sparkContext.isStopped)
+      if (cancelJobGroupOnError && !spark.sparkContext.isStopped) {
         spark.sparkContext.cancelJobGroup(statementId)
+      }
       withLockRequired {
         val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {

@@ -55,18 +55,16 @@ class ExecutedCommandExec(
   override protected def runInternal(): Unit = session.handleSessionException {
     val asyncOperation: Runnable = () => {
       setState(OperationState.RUNNING)
-      try {
-        command.run(session)
-        setState(OperationState.FINISHED)
-      } catch onError()
+      command.run(session)
+      setState(OperationState.FINISHED)
     }
     try {
-      val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
+      val opHandle = submitBackgroundOperation(asyncOperation)
       setBackgroundHandle(opHandle)
     } catch {
-      case _: RejectedExecutionException =>
+      case e: RejectedExecutionException =>
         throw new KyuubiException(s"Error submitting an operation ${command.name()} running" +
-          s" on the server in background, request rejected")
+          s" on the server in background, request rejected", e)
     }
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
