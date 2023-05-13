@@ -76,7 +76,7 @@ class ExecuteStatement(
         setOperationException(ke)
         throw ke
     }
-    if (!shouldRunAsync)  getBackgroundHandle.get()
+    if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {

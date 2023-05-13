@@ -70,78 +70,78 @@ class ExecuteStatement(
   }
 
   private def waitStatementComplete(): Unit = {
-      setState(OperationState.RUNNING)
-      var statusResp: TGetOperationStatusResp = null
+    setState(OperationState.RUNNING)
+    var statusResp: TGetOperationStatusResp = null
 
-      // initialize operation status
-      while (statusResp == null) {
-        statusResp = client.getOperationStatus(_remoteOpHandle)
-      }
-
-      var isComplete = false
-      var lastState: TOperationState = null
-      var lastStateUpdateTime: Long = 0L
-      val stateUpdateInterval =
-        session.sessionManager.getConf.get(KyuubiConf.OPERATION_STATUS_UPDATE_INTERVAL)
-      while (!isComplete) {
-        fetchQueryLog()
-        verifyTStatus(statusResp.getStatus)
-        if (statusResp.getProgressUpdateResponse != null) {
-          setOperationJobProgress(statusResp.getProgressUpdateResponse)
-        }
-        val remoteState = statusResp.getOperationState
-        if (lastState != remoteState ||
-          System.currentTimeMillis() - lastStateUpdateTime > stateUpdateInterval) {
-          lastStateUpdateTime = System.currentTimeMillis()
-          info(s"Query[$statementId] in ${remoteState.name()}")
-        }
-        lastState = remoteState
-        isComplete = true
-        remoteState match {
-          case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
-            isComplete = false
-            statusResp = client.getOperationStatus(_remoteOpHandle)
-
-          case FINISHED_STATE =>
-            setState(OperationState.FINISHED)
-
-          case CLOSED_STATE =>
-            setState(OperationState.CLOSED)
-
-          case CANCELED_STATE =>
-            setState(OperationState.CANCELED)
-
-          case TIMEDOUT_STATE
-              // Clients less than version 2.1 have no HIVE-4924 Patch,
-              // no queryTimeout parameter and no TIMEOUT status.
-              // When the server enables kyuubi.operation.query.timeout,
-              // this will cause the client of the lower version to get stuck.
-              // Check thrift protocol version <= HIVE_CLI_SERVICE_PROTOCOL_V8(Hive 2.1.0),
-              // convert TIMEDOUT_STATE to CANCELED.
-              if getProtocolVersion.getValue <=
-                TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8.getValue =>
-            setState(OperationState.CANCELED)
-
-          case TIMEDOUT_STATE =>
-            setState(OperationState.TIMEOUT)
-
-          case ERROR_STATE =>
-            throw KyuubiSQLException(statusResp.getErrorMessage)
-
-          case UKNOWN_STATE =>
-            throw KyuubiSQLException(s"UNKNOWN STATE for $statement")
-        }
-        sendCredentialsIfNeeded()
-      }
-      MetricsSystem.tracing { ms =>
-        val execTime = System.currentTimeMillis() - startTime
-        ms.updateHistogram(
-          MetricRegistry.name(MetricsConstants.OPERATION_EXEC_TIME, opType),
-          execTime)
-      }
-      // see if anymore log could be fetched
-      fetchQueryLog()
+    // initialize operation status
+    while (statusResp == null) {
+      statusResp = client.getOperationStatus(_remoteOpHandle)
     }
+
+    var isComplete = false
+    var lastState: TOperationState = null
+    var lastStateUpdateTime: Long = 0L
+    val stateUpdateInterval =
+      session.sessionManager.getConf.get(KyuubiConf.OPERATION_STATUS_UPDATE_INTERVAL)
+    while (!isComplete) {
+      fetchQueryLog()
+      verifyTStatus(statusResp.getStatus)
+      if (statusResp.getProgressUpdateResponse != null) {
+        setOperationJobProgress(statusResp.getProgressUpdateResponse)
+      }
+      val remoteState = statusResp.getOperationState
+      if (lastState != remoteState ||
+        System.currentTimeMillis() - lastStateUpdateTime > stateUpdateInterval) {
+        lastStateUpdateTime = System.currentTimeMillis()
+        info(s"Query[$statementId] in ${remoteState.name()}")
+      }
+      lastState = remoteState
+      isComplete = true
+      remoteState match {
+        case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
+          isComplete = false
+          statusResp = client.getOperationStatus(_remoteOpHandle)
+
+        case FINISHED_STATE =>
+          setState(OperationState.FINISHED)
+
+        case CLOSED_STATE =>
+          setState(OperationState.CLOSED)
+
+        case CANCELED_STATE =>
+          setState(OperationState.CANCELED)
+
+        case TIMEDOUT_STATE
+            // Clients less than version 2.1 have no HIVE-4924 Patch,
+            // no queryTimeout parameter and no TIMEOUT status.
+            // When the server enables kyuubi.operation.query.timeout,
+            // this will cause the client of the lower version to get stuck.
+            // Check thrift protocol version <= HIVE_CLI_SERVICE_PROTOCOL_V8(Hive 2.1.0),
+            // convert TIMEDOUT_STATE to CANCELED.
+            if getProtocolVersion.getValue <=
+              TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8.getValue =>
+          setState(OperationState.CANCELED)
+
+        case TIMEDOUT_STATE =>
+          setState(OperationState.TIMEOUT)
+
+        case ERROR_STATE =>
+          throw KyuubiSQLException(statusResp.getErrorMessage)
+
+        case UKNOWN_STATE =>
+          throw KyuubiSQLException(s"UNKNOWN STATE for $statement")
+      }
+      sendCredentialsIfNeeded()
+    }
+    MetricsSystem.tracing { ms =>
+      val execTime = System.currentTimeMillis() - startTime
+      ms.updateHistogram(
+        MetricRegistry.name(MetricsConstants.OPERATION_EXEC_TIME, opType),
+        execTime)
+    }
+    // see if anymore log could be fetched
+    fetchQueryLog()
+  }
 
   private def fetchQueryLog(): Unit = {
     getOperationLog.foreach { logger =>

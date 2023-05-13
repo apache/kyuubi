@@ -46,7 +46,7 @@ class ExecuteStatement(
     }
     val backgroundHandle = submitBackgroundOperation(asyncOperation)
     setBackgroundHandle(backgroundHandle)
-    if (!shouldRunAsync)  getBackgroundHandle.get()
+    if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
   private def executeStatement(): Unit = {

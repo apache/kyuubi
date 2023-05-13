@@ -63,8 +63,10 @@ class ExecutedCommandExec(
       setBackgroundHandle(opHandle)
     } catch {
       case e: RejectedExecutionException =>
-        throw new KyuubiException(s"Error submitting an operation ${command.name()} running" +
-          s" on the server in background, request rejected", e)
+        throw new KyuubiException(
+          s"Error submitting an operation ${command.name()} running" +
+            s" on the server in background, request rejected",
+          e)
     }
     if (!shouldRunAsync) getBackgroundHandle.get()
   }

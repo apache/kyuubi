@@ -21,9 +21,11 @@ import java.io.IOException
 import java.nio.file.{Files, Paths}
 import java.util.Locale
 import java.util.concurrent.{RejectedExecutionException, TimeUnit}
+
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift._
+
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState, KillResponse, ProcBuilder}
@@ -31,7 +33,7 @@ import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState, RUNNING, isTerminal}
+import org.apache.kyuubi.operation.OperationState.{isTerminal, CANCELED, OperationState, RUNNING}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
@@ -175,7 +177,8 @@ class BatchJobSubmission(
   }
 
   override protected def runInternal(): Unit = session.handleSessionException {
-    val asyncOperation: Runnable = () => try {
+    val asyncOperation: Runnable = () =>
+      try {
         recoveryMetadata match {
           case Some(metadata) if metadata.peerInstanceClosed =>
             setState(OperationState.CANCELED)
@@ -204,7 +207,8 @@ class BatchJobSubmission(
     } catch {
       case e: RejectedExecutionException =>
         throw new KyuubiException(
-          "Error submitting batch job submission operation in background, request rejected", e)
+          "Error submitting batch job submission operation in background, request rejected",
+          e)
     } finally {
       if (isTerminalState(state)) {
         updateBatchMetadata()

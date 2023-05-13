@@ -68,7 +68,8 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     } catch {
       case e: RejectedExecutionException =>
         throw new KyuubiException(
-          "Error submitting open engine operation in background, request rejected", e)
+          "Error submitting open engine operation in background, request rejected",
+          e)
     }
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
