@@ -165,7 +165,11 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   protected def afterRun(): Unit
 
-  protected def onError(): PartialFunction[Throwable, Unit]
+  protected def onError(): PartialFunction[Throwable, Unit] = {
+    case ke: KyuubiSQLException => throw ke
+    case kse: KyuubiException => throw kse
+    case e: Throwable => throw new KyuubiException("Error:", e)
+  }
 
   protected def submitInBackground(r: Runnable): Future[_] = {
     val onErrorRunnable = new Runnable {

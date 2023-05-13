@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.trino.operation
 
-import java.util.concurrent.RejectedExecutionException
-
 import org.apache.hive.service.rpc.thrift.TRowSet
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}

@@ -57,7 +57,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     ThriftUtils.verifyTStatus(tStatus)
   }
 
-  protected def onError(): PartialFunction[Throwable, Unit] = {
+  override protected def onError(): PartialFunction[Throwable, Unit] = {
     case e: Throwable =>
       withLockRequired {
         if (isTerminalState(state)) {

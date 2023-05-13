@@ -53,10 +53,7 @@ class NoopOperation(session: Session, shouldFail: Boolean = false)
 
   override def cancel(): Unit = {
     setState(OperationState.CANCELED)
-  }
 
-  override protected def onError(): PartialFunction[Throwable, Unit] = {
-    case e: Throwable => throw e
   }
 
   override def close(): Unit = {

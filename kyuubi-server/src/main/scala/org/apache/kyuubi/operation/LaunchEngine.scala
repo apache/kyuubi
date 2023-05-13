@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.concurrent.RejectedExecutionException
-
-import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiSessionImpl

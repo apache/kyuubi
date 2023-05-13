@@ -21,7 +21,6 @@ import java.io.{BufferedReader, File, FilenameFilter, FileOutputStream, InputStr
 import java.lang.ProcessBuilder.Redirect
 import java.net.URI
 import java.nio.file.{Files, Path, Paths}
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import javax.ws.rs.core.UriBuilder

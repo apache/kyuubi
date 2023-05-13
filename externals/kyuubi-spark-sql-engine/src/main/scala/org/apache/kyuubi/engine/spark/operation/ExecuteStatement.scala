@@ -17,15 +17,13 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.concurrent.RejectedExecutionException
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}

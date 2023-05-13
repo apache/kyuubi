@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import java.io.IOException
 import java.nio.file.{Files, Paths}
 import java.util.Locale
-import java.util.concurrent.{RejectedExecutionException, TimeUnit}
+import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting

@@ -17,11 +17,8 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.concurrent.RejectedExecutionException
-
 import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
-import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiSessionImpl
