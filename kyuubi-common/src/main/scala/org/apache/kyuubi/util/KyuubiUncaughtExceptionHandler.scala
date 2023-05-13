@@ -17,14 +17,16 @@
 
 package org.apache.kyuubi.util
 
-import java.util.concurrent.ThreadFactory
+import java.lang.Thread.UncaughtExceptionHandler
 
-class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
-  override def newThread(r: Runnable): Thread = {
-    val t = new Thread(r)
-    t.setName(name + ": Thread-" + t.getId)
-    t.setDaemon(daemon)
-    t.setUncaughtExceptionHandler(new KyuubiUncaughtExceptionHandler())
-    t
+import org.apache.kyuubi.Logging
+
+class KyuubiUncaughtExceptionHandler extends UncaughtExceptionHandler with Logging {
+  override def uncaughtException(t: Thread, e: Throwable): Unit = {
+    error(s"Exception in thread ${t.getName}", e)
   }
+}
+
+object KyuubiUncaughtExceptionHandler {
+  Thread.setDefaultUncaughtExceptionHandler(new KyuubiUncaughtExceptionHandler())
 }
