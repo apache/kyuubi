@@ -202,7 +202,7 @@ class BatchJobSubmission(
       }
 
     try {
-      val opHandle = submitBackgroundOperation(asyncOperation)
+      val opHandle = submitInBackground(asyncOperation)
       setBackgroundHandle(opHandle)
     } catch {
       case e: RejectedExecutionException =>

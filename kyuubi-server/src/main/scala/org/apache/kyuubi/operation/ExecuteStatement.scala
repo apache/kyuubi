@@ -159,7 +159,7 @@ class ExecuteStatement(
     executeStatement()
     val asyncOperation: Runnable = () => waitStatementComplete()
     try {
-      val opHandle = submitBackgroundOperation(asyncOperation)
+      val opHandle = submitInBackground(asyncOperation)
       setBackgroundHandle(opHandle)
     } catch {
       case e: RejectedExecutionException =>

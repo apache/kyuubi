@@ -40,7 +40,7 @@ class ExecuteStatement(
         executeStatement()
       }
     }
-    val backgroundHandle = submitBackgroundOperation(asyncOperation)
+    val backgroundHandle = submitInBackground(asyncOperation)
     setBackgroundHandle(backgroundHandle)
     if (!shouldRunAsync) getBackgroundHandle.get()
   }

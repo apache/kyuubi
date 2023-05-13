@@ -66,7 +66,7 @@ class ExecuteStatement(
     }
 
     try {
-      val backgroundHandle = submitBackgroundOperation(asyncOperation)
+      val backgroundHandle = submitInBackground(asyncOperation)
       setBackgroundHandle(backgroundHandle)
     } catch {
       case rejected: RejectedExecutionException =>

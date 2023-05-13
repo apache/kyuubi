@@ -63,7 +63,7 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
       setState(OperationState.FINISHED)
     }
     try {
-      val opHandle = submitBackgroundOperation(asyncOperation)
+      val opHandle = submitInBackground(asyncOperation)
       setBackgroundHandle(opHandle)
     } catch {
       case e: RejectedExecutionException =>

@@ -167,7 +167,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   protected def onError(): PartialFunction[Throwable, Unit]
 
-  protected def submitBackgroundOperation(r: Runnable): Future[_] = {
+  protected def submitInBackground(r: Runnable): Future[_] = {
     val onErrorRunnable = new Runnable {
       override def run(): Unit =
         try {
