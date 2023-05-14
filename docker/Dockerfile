@@ -50,11 +50,29 @@ ENV KYUUBI_WORK_DIR_ROOT ${KYUUBI_HOME}/work
 RUN set -ex && \
     sed -i 's/http:\/\/deb.\(.*\)/https:\/\/deb.\1/g' /etc/apt/sources.list && \
     apt-get update && \
-    apt-get install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
+    apt-get install -y bash tini libc6 libpam-modules krb5-user libnss3 procps supervisor && \
     ln -snf /bin/bash /bin/sh && \
     useradd -u ${kyuubi_uid} -g root kyuubi -d /home/kyuubi -m && \
     mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
-    rm -rf /var/cache/apt/*
+    rm -rf /var/cache/apt/* && rm -rf /var/lib/apt/lists/*
+
+COPY <<"EOF" /etc/supervisor/conf.d/supervisord.conf
+[supervisord]
+nodaemon = true
+logfile = /var/log/supervisor/supervisord.log
+pidfile = /var/run/supervisord.pid
+childlogdir = /var/log/supervisor
+EOF
+
+# stop the supervisord once kyuubi process is stopped, see details at
+# https://github.com/Supervisor/supervisor/issues/712
+COPY <<"EOF" /etc/supervisor/conf.d/kyuubi.conf
+[program:kyuubi]
+command = bash -c "${KYUUBI_HOME}/bin/kyuubi run && kill -s SIGINT `cat supervisord.pid`"
+stopasgroup = true
+user=${kyuubi_uid}
+directory=${KYUUBI_HOME}
+EOF
 
 COPY LICENSE NOTICE RELEASE ${KYUUBI_HOME}/
 COPY bin ${KYUUBI_HOME}/bin
@@ -68,6 +86,4 @@ RUN chown -R kyuubi:root ${KYUUBI_HOME} && \
     chmod ug+rw -R ${KYUUBI_HOME} && \
     chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT}
 
-CMD [ "./bin/kyuubi", "run" ]
-
-USER ${kyuubi_uid}
+CMD ["/usr/bin/supervisord"]
