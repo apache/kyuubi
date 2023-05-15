@@ -215,7 +215,7 @@ The lineage entities can be ingested into [Apache Atlas](https://atlas.apache.or
 
 Extra works:
 
-+ The least transitive dependencies needed, which are under `./extensions/spark/kyuubi-spark-authz/target/scala-${scala.binary.version}/jars`
++ The least transitive dependencies needed, which are under `./extensions/spark/kyuubi-spark-lineage/target/scala-${scala.binary.version}/jars`
 + Use `spark.files` to specify the `atlas-application.properties` configuration file for Atlas
 
 Atlas Client configurations (Configure in `atlas-application.properties` or passed in `spark.atlas.` prefix):
