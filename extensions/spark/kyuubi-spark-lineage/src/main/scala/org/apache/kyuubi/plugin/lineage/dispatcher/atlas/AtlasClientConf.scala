@@ -49,7 +49,7 @@ object AtlasClientConf {
 
   case class ConfigEntry(key: String, defaultValue: String)
 
-  val ATLAS_REST_ENDPOINT = ConfigEntry("atlas.rest.address", "localhost:21000")
+  val ATLAS_REST_ENDPOINT = ConfigEntry("atlas.rest.address", "http://localhost:21000")
 
   val CLIENT_TYPE = ConfigEntry("atlas.client.type", "rest")
   val CLIENT_USERNAME = ConfigEntry("atlas.client.username", null)
