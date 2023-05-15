@@ -82,7 +82,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     var appState: String = null
     var appDiagnostic: String = null
 
-    if (batchAppStatus.nonEmpty) {
+    if (!OperationState.isTerminal(batchOpStatus.state) && batchAppStatus.nonEmpty) {
       appId = batchAppStatus.get.id
       appUrl = batchAppStatus.get.url.orNull
       appState = batchAppStatus.get.state.toString

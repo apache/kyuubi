@@ -65,28 +65,29 @@ class PlanOnlyStatement(
     super.beforeRun()
   }
 
-  override protected def runInternal(): Unit = withLocalProperties {
+  override protected def runInternal(): Unit =
     try {
-      SQLConf.withExistingConf(spark.sessionState.conf) {
-        val parsed = spark.sessionState.sqlParser.parsePlan(statement)
+      withLocalProperties {
+        SQLConf.withExistingConf(spark.sessionState.conf) {
+          val parsed = spark.sessionState.sqlParser.parsePlan(statement)
 
-        parsed match {
-          case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
-            result = spark.sql(statement)
-            iter = new ArrayFetchIterator(result.collect())
+          parsed match {
+            case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
+              result = spark.sql(statement)
+              iter = new ArrayFetchIterator(result.collect())
 
-          case plan => style match {
-              case PlainStyle => explainWithPlainStyle(plan)
-              case JsonStyle => explainWithJsonStyle(plan)
-              case UnknownStyle => unknownStyleError(style)
-              case other => throw notSupportedStyleError(other, "Spark SQL")
-            }
+            case plan => style match {
+                case PlainStyle => explainWithPlainStyle(plan)
+                case JsonStyle => explainWithJsonStyle(plan)
+                case UnknownStyle => unknownStyleError(style)
+                case other => throw notSupportedStyleError(other, "Spark SQL")
+              }
+          }
         }
       }
     } catch {
       onError()
     }
-  }
 
   private def explainWithPlainStyle(plan: LogicalPlan): Unit = {
     mode match {

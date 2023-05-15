@@ -26,7 +26,7 @@ import scala.util.{Failure, Success, Try}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier
 import org.apache.hadoop.io.Text
-import org.apache.hadoop.security.{Credentials, SecurityUtil, UserGroupInformation}
+import org.apache.hadoop.security.{Credentials, SecurityUtil}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -36,12 +36,7 @@ import org.apache.kyuubi.config.KyuubiConf
 
 object KyuubiHadoopUtils extends Logging {
 
-  private val subjectField =
-    classOf[UserGroupInformation].getDeclaredField("subject")
-  subjectField.setAccessible(true)
-
-  private val tokenMapField =
-    classOf[Credentials].getDeclaredField("tokenMap")
+  private val tokenMapField = classOf[Credentials].getDeclaredField("tokenMap")
   tokenMapField.setAccessible(true)
 
   def newHadoopConf(

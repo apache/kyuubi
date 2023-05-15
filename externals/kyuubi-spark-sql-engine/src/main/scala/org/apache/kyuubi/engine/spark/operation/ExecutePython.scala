@@ -77,30 +77,31 @@ class ExecutePython(
     OperationLog.removeCurrentOperationLog()
   }
 
-  private def executePython(): Unit = withLocalProperties {
+  private def executePython(): Unit =
     try {
-      setState(OperationState.RUNNING)
-      info(diagnostics)
-      addOperationListener()
-      val response = worker.runCode(statement)
-      val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
-      if (PythonResponse.OK_STATUS.equalsIgnoreCase(status)) {
-        val output = response.map(_.content.getOutput()).getOrElse("")
-        val ename = response.map(_.content.getEname()).getOrElse("")
-        val evalue = response.map(_.content.getEvalue()).getOrElse("")
-        val traceback = response.map(_.content.getTraceback()).getOrElse(Seq.empty)
-        iter =
-          new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, traceback)))
-        setState(OperationState.FINISHED)
-      } else {
-        throw KyuubiSQLException(s"Interpret error:\n$statement\n $response")
+      withLocalProperties {
+        setState(OperationState.RUNNING)
+        info(diagnostics)
+        addOperationListener()
+        val response = worker.runCode(statement)
+        val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
+        if (PythonResponse.OK_STATUS.equalsIgnoreCase(status)) {
+          val output = response.map(_.content.getOutput()).getOrElse("")
+          val ename = response.map(_.content.getEname()).getOrElse("")
+          val evalue = response.map(_.content.getEvalue()).getOrElse("")
+          val traceback = response.map(_.content.getTraceback()).getOrElse(Seq.empty)
+          iter =
+            new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, traceback)))
+          setState(OperationState.FINISHED)
+        } else {
+          throw KyuubiSQLException(s"Interpret error:\n$statement\n $response")
+        }
       }
     } catch {
       onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
     }
-  }
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)

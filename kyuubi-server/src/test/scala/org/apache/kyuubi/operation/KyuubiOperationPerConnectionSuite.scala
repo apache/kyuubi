@@ -34,7 +34,7 @@ import org.apache.kyuubi.jdbc.KyuubiHiveDriver
 import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiSQLException}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.plugin.SessionConfAdvisor
-import org.apache.kyuubi.session.{KyuubiSessionManager, SessionType}
+import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
 
 /**
  * UT with Connection level engine shared cost much time, only run basic jdbc tests.
@@ -289,6 +289,55 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         "SELECT raise_error('client should catch this exception');")
       val e = intercept[KyuubiSQLException](resultSet.next())
       assert(e.getMessage.contains("client should catch this exception"))
+    }
+  }
+
+  test("support to interrupt the thrift request if remote engine is broken") {
+    withSessionConf(Map(
+      KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
+      KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "1000",
+      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "1000"))(Map.empty)(
+      Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val preReq = new TExecuteStatementReq()
+        preReq.setStatement("select engine_name()")
+        preReq.setSessionHandle(handle)
+        preReq.setRunAsync(false)
+        client.ExecuteStatement(preReq)
+
+        val sessionHandle = SessionHandle(handle)
+        val session = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+          .getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
+
+        val exitReq = new TExecuteStatementReq()
+        exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 1000L)," +
+          "java_method('java.lang.System', 'exit', 1)")
+        exitReq.setSessionHandle(handle)
+        exitReq.setRunAsync(true)
+        client.ExecuteStatement(exitReq)
+
+        session.sessionManager.getConf
+          .set(KyuubiConf.OPERATION_STATUS_UPDATE_INTERVAL, 3000L)
+
+        val executeStmtReq = new TExecuteStatementReq()
+        executeStmtReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 30000l)")
+        executeStmtReq.setSessionHandle(handle)
+        executeStmtReq.setRunAsync(false)
+        val startTime = System.currentTimeMillis()
+        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+        assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+        assert(executeStmtResp.getStatus.getErrorMessage.contains(
+          "java.net.SocketException") ||
+          executeStmtResp.getStatus.getErrorMessage.contains(
+            "org.apache.thrift.transport.TTransportException") ||
+          executeStmtResp.getStatus.getErrorMessage.contains(
+            "connection does not exist"))
+        val elapsedTime = System.currentTimeMillis() - startTime
+        assert(elapsedTime < 20 * 1000)
+        eventually(timeout(3.seconds)) {
+          assert(session.client.asyncRequestInterrupted)
+        }
+      }
     }
   }
 }

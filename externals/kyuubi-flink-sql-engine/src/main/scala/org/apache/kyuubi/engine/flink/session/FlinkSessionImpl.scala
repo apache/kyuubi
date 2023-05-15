@@ -30,7 +30,7 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtoco
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_CATALOG, USE_DATABASE}
 
 class FlinkSessionImpl(
     protocol: TProtocolVersion,
@@ -62,10 +62,10 @@ class FlinkSessionImpl(
     val executor = fSession.createExecutor(Configuration.fromMap(fSession.getSessionConfig))
 
     val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
-      Array("use:catalog", "use:database").contains(k)
+      Array(USE_CATALOG, USE_DATABASE).contains(k)
     }
 
-    useCatalogAndDatabaseConf.get("use:catalog").foreach { catalog =>
+    useCatalogAndDatabaseConf.get(USE_CATALOG).foreach { catalog =>
       try {
         executor.executeStatement(OperationHandle.create, s"USE CATALOG $catalog")
       } catch {
