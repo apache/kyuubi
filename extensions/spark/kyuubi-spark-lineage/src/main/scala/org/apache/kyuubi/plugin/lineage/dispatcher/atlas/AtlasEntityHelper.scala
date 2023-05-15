@@ -33,7 +33,7 @@ object AtlasEntityHelper {
 
     val appId = SparkContextHelper.globalSparkContext.applicationId
     val appName = SparkContextHelper.globalSparkContext.appName match {
-      case "Spark shell" => s"Spark Job + $appId"
+      case "Spark shell" => s"Spark Job $appId"
       case default => s"$default $appId"
     }
 
