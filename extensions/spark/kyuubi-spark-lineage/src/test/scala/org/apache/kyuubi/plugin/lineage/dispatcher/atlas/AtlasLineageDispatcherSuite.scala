@@ -123,7 +123,7 @@ class AtlasLineageDispatcherSuite extends KyuubiFunSuite with SparkListenerExten
         assertResult(expectedLineage.originalColumns.map(s => s"$s@$cluster"))(inputs.toSet)
 
         val outputs = entity.getRelationshipAttribute("outputs")
-          .asInstanceOf[util.Collection[AtlasObjectId]].asScala.map(getQualifiedName(_))
+          .asInstanceOf[util.Collection[AtlasObjectId]].asScala.map(getQualifiedName)
         assert(outputs.size == 1)
         assert(s"${expectedLineage.column}@$cluster" == outputs.head)
 
