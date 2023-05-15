@@ -61,14 +61,14 @@ object AtlasEntityHelper {
 
   def columnLineageEntities(processEntity: AtlasEntity, lineage: Lineage): Seq[AtlasEntity] = {
     lineage.columnLineage.flatMap(columnLineage => {
-      val inputs = columnLineage.originalColumns.flatMap(columnObjectId(_)).map { objId =>
+      val inputs = columnLineage.originalColumns.flatMap(columnObjectId).map { objId =>
         relatedObjectId(objId, RELATIONSHIP_DATASET_PROCESS_INPUTS)
       }
-      val outputs = Option(columnLineage.column).flatMap(columnObjectId(_)).map { objId =>
+      val outputs = Option(columnLineage.column).flatMap(columnObjectId).map { objId =>
         relatedObjectId(objId, RELATIONSHIP_PROCESS_DATASET_OUTPUTS)
       }.toSeq
 
-      if (!inputs.isEmpty && !outputs.isEmpty) {
+      if (inputs.nonEmpty && outputs.nonEmpty) {
         val entity = new AtlasEntity(COLUMN_LINEAGE_TYPE)
         val qualifiedName =
           s"${processEntity.getAttribute("qualifiedName")}:${columnLineage.column}"
@@ -127,8 +127,8 @@ object AtlasEntityHelper {
   }
 
   lazy val cluster = AtlasClientConf.getConf().get(AtlasClientConf.CLUSTER_NAME)
-  lazy val columnLineageEnable =
-    AtlasClientConf.getConf().get(AtlasClientConf.COLUMN_LINEAGE_ENABLE).toBoolean
+  lazy val columnLineageEnabled =
+    AtlasClientConf.getConf().get(AtlasClientConf.COLUMN_LINEAGE_ENABLED).toBoolean
 
   val HIVE_TABLE_TYPE = "hive_table"
   val HIVE_COLUMN_TYPE = "hive_column"

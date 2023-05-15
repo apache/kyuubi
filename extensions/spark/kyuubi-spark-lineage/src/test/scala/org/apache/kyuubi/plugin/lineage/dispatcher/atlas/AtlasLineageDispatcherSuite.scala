@@ -132,15 +132,15 @@ class AtlasLineageDispatcherSuite extends KyuubiFunSuite with SparkListenerExten
     }
   }
 
-  // Configured in atlas-application.properties
-  val cluster = "test"
+  // Pre-set cluster name for testing in `test/resources/atlas-application.properties`
+  private val cluster = "test"
 
   def getQualifiedName(objId: AtlasObjectId): String = {
     objId.getUniqueAttributes.get("qualifiedName").asInstanceOf[String]
   }
 
   class MockAtlasClient() extends AtlasClient {
-    private var _entities: Seq[AtlasEntity] = null
+    private var _entities: Seq[AtlasEntity] = _
 
     override def send(entities: Seq[AtlasEntity]): Unit = {
       _entities = entities

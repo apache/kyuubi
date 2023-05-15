@@ -57,5 +57,5 @@ object AtlasClientConf {
 
   val CLUSTER_NAME = ConfigEntry("atlas.cluster.name", "primary")
 
-  val COLUMN_LINEAGE_ENABLE = ConfigEntry("atlas.column.lineage.enable", "true")
+  val COLUMN_LINEAGE_ENABLED = ConfigEntry("atlas.column.lineage.enabled", "true")
 }
