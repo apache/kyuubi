@@ -101,7 +101,7 @@ class BatchJobSubmission(
     }
   }
 
-  override protected def currentApplicationInfo(): Option[ApplicationInfo] = {
+  override def currentApplicationInfo(): Option[ApplicationInfo] = {
     if (isTerminal(state) && _applicationInfo.map(_.state).exists(ApplicationState.isTerminated)) {
       return _applicationInfo
     }
@@ -269,6 +269,7 @@ class BatchJobSubmission(
       }
     } finally {
       builder.close()
+      updateApplicationInfoMetadataIfNeeded()
       cleanupUploadedResourceIfNeeded()
     }
   }
