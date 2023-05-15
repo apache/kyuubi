@@ -97,9 +97,9 @@ class AtlasLineageDispatcherSuite extends KyuubiFunSuite with SparkListenerExten
     assert(StringUtils.isNotBlank(entity.getAttribute("sparkPlanDescription").asInstanceOf[String]))
 
     val inputs = entity.getRelationshipAttribute("inputs")
-      .asInstanceOf[util.Collection[AtlasObjectId]].asScala.map(getQualifiedName(_))
+      .asInstanceOf[util.Collection[AtlasObjectId]].asScala.map(getQualifiedName)
     val outputs = entity.getRelationshipAttribute("outputs")
-      .asInstanceOf[util.Collection[AtlasObjectId]].asScala.map(getQualifiedName(_))
+      .asInstanceOf[util.Collection[AtlasObjectId]].asScala.map(getQualifiedName)
     assertResult(expected.inputTables.map(s => s"$s@$cluster"))(inputs)
     assertResult(expected.outputTables.map(s => s"$s@$cluster"))(outputs)
   }
