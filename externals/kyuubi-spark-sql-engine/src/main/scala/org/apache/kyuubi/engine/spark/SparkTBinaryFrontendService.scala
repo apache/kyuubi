@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
@@ -29,6 +30,7 @@ import org.apache.spark.kyuubi.SparkContextHelper
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.reflection.DynConstructors
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
@@ -101,6 +103,8 @@ class SparkTBinaryFrontendService(
 object SparkTBinaryFrontendService extends Logging {
 
   val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
+  val HIVE_CONF_CLASSNAME = "org.apache.hadoop.hive.conf.HiveConf"
+  @volatile private var _hiveConf: Configuration = _
 
   private[spark] def renewDelegationToken(sc: SparkContext, delegationToken: String): Unit = {
     val newCreds = KyuubiHadoopUtils.decodeCredentials(delegationToken)
@@ -124,7 +128,7 @@ object SparkTBinaryFrontendService extends Logging {
       newTokens: Map[Text, Token[_ <: TokenIdentifier]],
       oldCreds: Credentials,
       updateCreds: Credentials): Unit = {
-    val metastoreUris = sc.hadoopConfiguration.getTrimmed("hive.metastore.uris", "")
+    val metastoreUris = hiveConf(sc.hadoopConfiguration).getTrimmed("hive.metastore.uris", "")
 
     // `HiveMetaStoreClient` selects the first token whose service is "" and kind is
     // "HIVE_DELEGATION_TOKEN" to authenticate.
@@ -194,5 +198,26 @@ object SparkTBinaryFrontendService extends Logging {
     } else {
       1
     }
+  }
+
+  private[kyuubi] def hiveConf(hadoopConf: Configuration): Configuration = {
+    if (_hiveConf == null) {
+      synchronized {
+        if (_hiveConf == null) {
+          _hiveConf =
+            try {
+              DynConstructors.builder()
+                .impl(HIVE_CONF_CLASSNAME, classOf[Configuration], classOf[Class[_]])
+                .build[Configuration]()
+                .newInstance(hadoopConf, Class.forName(HIVE_CONF_CLASSNAME))
+            } catch {
+              case e: Throwable =>
+                warn("Fail to create Hive Configuration", e)
+                hadoopConf
+            }
+        }
+      }
+    }
+    _hiveConf
   }
 }
