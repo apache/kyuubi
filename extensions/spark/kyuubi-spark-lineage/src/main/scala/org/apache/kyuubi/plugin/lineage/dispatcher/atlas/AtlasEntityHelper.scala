@@ -49,7 +49,7 @@ object AtlasEntityHelper {
     val inputs = lineage.inputTables.flatMap(tableObjectId(_)).map { objId =>
       relatedObjectId(objId, RELATIONSHIP_DATASET_PROCESS_INPUTS)
     }
-    val outputs = lineage.outputTables.flatMap(tableObjectId(_)).map { objId =>
+    val outputs = lineage.outputTables.flatMap(tableObjectId).map { objId =>
       relatedObjectId(objId, RELATIONSHIP_PROCESS_DATASET_OUTPUTS)
     }
 
