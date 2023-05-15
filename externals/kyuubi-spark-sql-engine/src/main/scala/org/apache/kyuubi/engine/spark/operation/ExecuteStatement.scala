@@ -74,22 +74,23 @@ class ExecuteStatement(
     resultDF.take(maxRows)
   }
 
-  protected def executeStatement(): Unit = withLocalProperties {
+  protected def executeStatement(): Unit =
     try {
-      setState(OperationState.RUNNING)
-      info(diagnostics)
-      Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-      addOperationListener()
-      result = spark.sql(statement)
-      iter = collectAsIterator(result)
-      setCompiledStateIfNeeded()
-      setState(OperationState.FINISHED)
+      withLocalProperties {
+        setState(OperationState.RUNNING)
+        info(diagnostics)
+        Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+        addOperationListener()
+        result = spark.sql(statement)
+        iter = collectAsIterator(result)
+        setCompiledStateIfNeeded()
+        setState(OperationState.FINISHED)
+      }
     } catch {
       onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
     }
-  }
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
