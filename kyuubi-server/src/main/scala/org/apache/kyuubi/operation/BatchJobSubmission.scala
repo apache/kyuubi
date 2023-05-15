@@ -102,7 +102,9 @@ class BatchJobSubmission(
   }
 
   override protected def currentApplicationInfo(): Option[ApplicationInfo] = {
-    if (isTerminal(state) && _applicationInfo.nonEmpty) return _applicationInfo
+    if (isTerminal(state) && _applicationInfo.map(_.state).exists(ApplicationState.isTerminated)) {
+      return _applicationInfo
+    }
     val applicationInfo =
       applicationManager.getApplicationInfo(
         builder.clusterManager(),
