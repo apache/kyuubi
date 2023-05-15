@@ -29,10 +29,10 @@ class AtlasLineageDispatcher extends LineageDispatcher with Logging {
     try {
       lineageOpt.filter(l => l.inputTables.nonEmpty || l.outputTables.nonEmpty).foreach(lineage => {
         val processEntity = AtlasEntityHelper.processEntity(qe, lineage)
-        val columnLineageEntities = if (!lineage.columnLineage.isEmpty && columnLineageEnable) {
+        val columnLineageEntities = if (lineage.columnLineage.nonEmpty && columnLineageEnable) {
           AtlasEntityHelper.columnLineageEntities(processEntity, lineage)
         } else {
-          Seq()
+          Seq.empty
         }
         AtlasClient.getClient().send(processEntity +: columnLineageEntities)
       })
