@@ -47,11 +47,14 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
     info(s"Successfully initialized yarn client: ${c.getServiceState}")
   }
 
-  override def isSupported(clusterManager: Option[String]): Boolean = {
-    yarnClient != null && clusterManager.exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))
+  override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
+    yarnClient != null && appMgrInfo.resourceManager.exists(
+      _.toLowerCase(Locale.ROOT).startsWith("yarn"))
   }
 
-  override def killApplicationByTag(tag: String): KillResponse = {
+  override def killApplicationByTag(
+      appMgrInfo: ApplicationManagerInfo,
+      tag: String): KillResponse = {
     if (yarnClient != null) {
       try {
         val reports = yarnClient.getApplications(null, null, Set(tag).asJava)

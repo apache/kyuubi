@@ -183,26 +183,32 @@ class SparkProcessBuilder(
 
   override def shortName: String = "spark"
 
-  protected lazy val defaultMaster: Option[String] = {
+  protected lazy val defaultsConf: Map[String, String] = {
     val confDir = env.getOrElse(SPARK_CONF_DIR, s"$sparkHome${File.separator}conf")
-    val defaults =
-      try {
-        val confFile = new File(s"$confDir${File.separator}$SPARK_CONF_FILE_NAME")
-        if (confFile.exists()) {
-          Utils.getPropertiesFromFile(Some(confFile))
-        } else {
-          Map.empty[String, String]
-        }
-      } catch {
-        case _: Exception =>
-          warn(s"Failed to load spark configurations from $confDir")
-          Map.empty[String, String]
+    try {
+      val confFile = new File(s"$confDir${File.separator}$SPARK_CONF_FILE_NAME")
+      if (confFile.exists()) {
+        Utils.getPropertiesFromFile(Some(confFile))
+      } else {
+        Map.empty[String, String]
       }
-    defaults.get(MASTER_KEY)
+    } catch {
+      case _: Exception =>
+        warn(s"Failed to load spark configurations from $confDir")
+        Map.empty[String, String]
+    }
   }
 
   override def clusterManager(): Option[String] = {
-    conf.getOption(MASTER_KEY).orElse(defaultMaster)
+    conf.getOption(MASTER_KEY).orElse(defaultsConf.get(MASTER_KEY))
+  }
+
+  override def kubernetesContext(): Option[String] = {
+    conf.getOption(KUBERNETES_CONTEXT_KEY).orElse(defaultsConf.get(KUBERNETES_CONTEXT_KEY))
+  }
+
+  override def kubernetesNamespace(): Option[String] = {
+    conf.getOption(KUBERNETES_NAMESPACE_KEY).orElse(defaultsConf.get(KUBERNETES_NAMESPACE_KEY))
   }
 
   override def validateConf: Unit = Validator.validateConf(conf)
@@ -224,6 +230,8 @@ object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
+  final val KUBERNETES_CONTEXT_KEY = "spark.kubernetes.context"
+  final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
   final val INTERNAL_RESOURCE = "spark-internal"
 
   /**

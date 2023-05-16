@@ -35,13 +35,14 @@ trait ApplicationOperation {
   /**
    * Called before other method to do a quick skip
    *
-   * @param clusterManager the underlying cluster manager or just local instance
+   * @param appMgrInfo the application manager information
    */
-  def isSupported(clusterManager: Option[String]): Boolean
+  def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean
 
   /**
    * Kill the app/engine by the unique application tag
    *
+   * @param appMgrInfo the application manager information
    * @param tag the unique application tag for engine instance.
    *            For example,
    *            if the Hadoop Yarn is used, for spark applications,
@@ -50,7 +51,7 @@ trait ApplicationOperation {
    *
    * @note For implementations, please suppress exceptions and always return KillResponse
    */
-  def killApplicationByTag(tag: String): KillResponse
+  def killApplicationByTag(appMgrInfo: ApplicationManagerInfo, tag: String): KillResponse
 
   /**
    * Get the engine/application status by the unique application tag
@@ -107,4 +108,24 @@ object ApplicationInfo {
 
 object ApplicationOperation {
   val NOT_FOUND = "APPLICATION_NOT_FOUND"
+}
+
+case class KubernetesInfo(context: String, namespace: String)
+
+case class ApplicationManagerInfo(
+    resourceManager: Option[String],
+    kubernetesInfo: Option[KubernetesInfo] = None)
+
+object ApplicationManagerInfo {
+  def apply(
+      resourceManager: Option[String],
+      kubernetesContext: Option[String],
+      kubernetesNamespace: Option[String]): ApplicationManagerInfo = {
+    val kubernetesInfo = if (kubernetesContext.isDefined && kubernetesNamespace.isDefined) {
+      Some(KubernetesInfo(kubernetesContext.get, kubernetesNamespace.get))
+    } else {
+      None
+    }
+    new ApplicationManagerInfo(resourceManager, kubernetesInfo)
+  }
 }

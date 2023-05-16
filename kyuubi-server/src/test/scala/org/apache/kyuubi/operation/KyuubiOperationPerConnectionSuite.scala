@@ -29,7 +29,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{KYUUBI_VERSION, WithKyuubiServer}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
-import org.apache.kyuubi.engine.ApplicationState
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState}
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
 import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiSQLException}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
@@ -233,9 +233,11 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         }
         val engineId = sessionManager.allSessions().head.handle.identifier.toString
         // kill the engine application and wait the engine terminate
-        sessionManager.applicationManager.killApplication(None, engineId)
+        sessionManager.applicationManager.killApplication(ApplicationManagerInfo(None), engineId)
         eventually(timeout(30.seconds), interval(100.milliseconds)) {
-          assert(sessionManager.applicationManager.getApplicationInfo(None, engineId)
+          assert(sessionManager.applicationManager.getApplicationInfo(
+            ApplicationManagerInfo(None),
+            engineId)
             .exists(_.state == ApplicationState.NOT_FOUND))
         }
         assert(!conn.isValid(3000))

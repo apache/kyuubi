@@ -134,6 +134,26 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     getAllWithPrefix(s"$KYUUBI_BATCH_CONF_PREFIX.$normalizedBatchType", "")
   }
 
+  /** Get the kubernetes conf for specified kubernetes context and namespace. */
+  def getKubernetesConf(context: String, namespace: String): KyuubiConf = {
+    val contextConf =
+      getAllWithPrefix(s"$KYUUBI_KUBERNETES_CONF_PREFIX.$context", "").map { case (suffix, value) =>
+        s"$KYUUBI_KUBERNETES_CONF_PREFIX.$suffix" -> value
+      }
+    val contextNamespaceConf =
+      getAllWithPrefix(s"$KYUUBI_KUBERNETES_CONF_PREFIX.$context.$namespace", "").map {
+        case (suffix, value) =>
+          s"$KYUUBI_KUBERNETES_CONF_PREFIX.$suffix" -> value
+      }
+    val conf = this.clone
+    (contextConf ++ contextNamespaceConf).map { case (key, value) =>
+      conf.set(key, value)
+    }
+    conf.set(KUBERNETES_CONTEXT, context)
+    conf.set(KUBERNETES_NAMESPACE, namespace)
+    conf
+  }
+
   /**
    * Retrieve key-value pairs from [[KyuubiConf]] starting with `dropped.remainder`, and put them to
    * the result map with the `dropped` of key being dropped.
@@ -207,6 +227,7 @@ object KyuubiConf {
   final val KYUUBI_HOME = "KYUUBI_HOME"
   final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv"
   final val KYUUBI_BATCH_CONF_PREFIX = "kyuubi.batchConf"
+  final val KYUUBI_KUBERNETES_CONF_PREFIX = "kyuubi.kubernetes"
   final val USER_DEFAULTS_CONF_QUOTE = "___"
 
   private[this] val kyuubiConfEntriesUpdateLock = new Object
@@ -1106,12 +1127,28 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val KUBERNETES_CONTEXT_LIST: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.kubernetes.context.list")
+      .doc("The supported kubernetes context list.")
+      .version("1.8.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
   val KUBERNETES_NAMESPACE: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.namespace")
       .doc("The namespace that will be used for running the kyuubi pods and find engines.")
       .version("1.7.0")
       .stringConf
       .createWithDefault("default")
+
+  val KUBERNETES_NAMESPACE_LIST: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.kubernetes.namespace.list")
+      .doc("The supported kubernetes namespace list.")
+      .version("1.8.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
 
   val KUBERNETES_MASTER: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.master.address")

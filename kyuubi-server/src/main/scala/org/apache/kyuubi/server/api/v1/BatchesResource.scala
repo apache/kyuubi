@@ -40,7 +40,7 @@ import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
-import org.apache.kyuubi.engine.{ApplicationInfo, KillResponse, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, KillResponse, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
@@ -289,7 +289,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             case e: KyuubiRestException =>
               error(s"Error redirecting get batch[$batchId] to ${metadata.kyuubiInstance}", e)
               val batchAppStatus = sessionManager.applicationManager.getApplicationInfo(
-                metadata.clusterManager,
+                ApplicationManagerInfo(
+                  metadata.clusterManager,
+                  metadata.kubernetesContext,
+                  metadata.kubernetesNamespace),
                 batchId,
                 // prevent that the batch be marked as terminated if application state is NOT_FOUND
                 Some(metadata.engineOpenTime).filter(_ > 0).orElse(Some(System.currentTimeMillis)))
@@ -407,9 +410,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       }
     }
 
-    def forceKill(clusterManager: Option[String], batchId: String): KillResponse = {
+    def forceKill(appMgrInfo: ApplicationManagerInfo, batchId: String): KillResponse = {
       val (killed, message) = sessionManager.applicationManager
-        .killApplication(clusterManager, batchId)
+        .killApplication(appMgrInfo, batchId)
       info(s"Mark batch[$batchId] closed by ${fe.connectionUrl}")
       sessionManager.updateMetadata(Metadata(identifier = batchId, peerInstanceClosed = true))
       (killed, message)
@@ -426,6 +429,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
         checkPermission(userName, metadata.username)
+        val appMgrInfo = ApplicationManagerInfo(
+          metadata.clusterManager,
+          metadata.kubernetesContext,
+          metadata.kubernetesNamespace)
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
         } else if (metadata.kyuubiInstance != fe.connectionUrl) {
@@ -436,12 +443,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           } catch {
             case e: KyuubiRestException =>
               error(s"Error redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}", e)
-              val (killed, msg) = forceKill(metadata.clusterManager, batchId)
+              val (killed, msg) = forceKill(appMgrInfo, batchId)
               new CloseBatchResponse(killed, if (killed) msg else Utils.stringifyException(e))
           }
         } else { // should not happen, but handle this for safe
           warn(s"Something wrong on deleting batch[$batchId], try forcibly killing application")
-          val (killed, msg) = forceKill(metadata.clusterManager, batchId)
+          val (killed, msg) = forceKill(appMgrInfo, batchId)
           new CloseBatchResponse(killed, msg)
         }
       }.getOrElse {

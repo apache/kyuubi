@@ -29,7 +29,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
-import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationOperation, KubernetesApplicationOperation}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationOperation, KubernetesApplicationOperation, KubernetesInfo}
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, NOT_FOUND, RUNNING}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
@@ -43,6 +43,10 @@ abstract class SparkOnKubernetesSuiteBase
   private val apiServerAddress = {
     MiniKube.getKubernetesClient.getMasterUrl.toString
   }
+
+  protected val appMgrInfo = ApplicationManagerInfo(
+    Some(s"k8s://$apiServerAddress"),
+    Some(KubernetesInfo("minikube", "default")))
 
   protected def sparkOnK8sConf: KyuubiConf = {
     // TODO Support more Spark version
@@ -156,14 +160,16 @@ class KyuubiOperationKubernetesClusterClientModeSuite
       assert(state.state == RUNNING)
     }
 
-    val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    val killResponse = k8sOperation.killApplicationByTag(
+      appMgrInfo, sessionHandle.identifier.toString)
     assert(killResponse._1)
     assert(killResponse._2 startsWith "Succeeded to terminate:")
 
     val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
     assert(appInfo == ApplicationInfo(null, null, NOT_FOUND))
 
-    val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    val failKillResponse = k8sOperation.killApplicationByTag(
+      appMgrInfo, sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
     assert(failKillResponse._2 === ApplicationOperation.NOT_FOUND)
   }
@@ -217,7 +223,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       assert(appInfo.name.startsWith(driverPodNamePrefix))
     }
 
-    val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    val killResponse = k8sOperation.killApplicationByTag(
+      appMgrInfo, sessionHandle.identifier.toString)
     assert(killResponse._1)
     assert(killResponse._2 endsWith "is completed")
     assert(killResponse._2 contains sessionHandle.identifier.toString)
@@ -229,7 +236,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       assert(appInfo.state == FAILED || appInfo.state == NOT_FOUND)
     }
 
-    val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    val failKillResponse = k8sOperation.killApplicationByTag(
+      appMgrInfo, sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
   }
 }
