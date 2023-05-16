@@ -43,6 +43,7 @@ import org.apache.kyuubi.session.KyuubiSession
  * @param sessionUser the authenticated client user
  * @param sessionType the type of the parent session
  * @param kyuubiInstance the parent session connection url
+ * @param metrics the operation metrics
  */
 case class KyuubiOperationEvent private (
     statementId: String,
@@ -58,7 +59,8 @@ case class KyuubiOperationEvent private (
     sessionId: String,
     sessionUser: String,
     sessionType: String,
-    kyuubiInstance: String) extends KyuubiEvent {
+    kyuubiInstance: String,
+    metrics: Map[String, String]) extends KyuubiEvent {
 
   // operation events are partitioned by the date when the corresponding operations are
   // created.
@@ -88,6 +90,7 @@ object KyuubiOperationEvent {
       session.handle.identifier.toString,
       session.user,
       session.sessionType.toString,
-      session.connectionUrl)
+      session.connectionUrl,
+      operation.metrics)
   }
 }
