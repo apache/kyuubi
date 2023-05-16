@@ -29,7 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
 import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
-import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionImpl, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
 import org.apache.kyuubi.zookeeper.ZookeeperConf
 
 class KyuubiOperationPerUserSuite
@@ -341,18 +341,19 @@ class KyuubiOperationPerUserSuite
   }
 
   test("support to expose kyuubi operation metrics") {
-    val key = "kyuubi.unique.id"
-    val uuid = UUID.randomUUID().toString
-    withSessionConf()(Map.empty)(Map(key -> uuid)) {
+    withSessionConf()(Map.empty)(Map.empty) {
       withJdbcStatement() { statement =>
-        val res = statement.executeQuery("set spark.app.name")
+        val uuid = UUID.randomUUID().toString
+        val query = s"select '$uuid'"
+        val res = statement.executeQuery(query)
         assert(res.next())
         assert(!res.next())
 
         val operationMetrics =
           server.backendService.sessionManager.operationManager.allOperations()
-            .filter(_.getSession.asInstanceOf[KyuubiSession].normalizedConf.get(key) == Some(uuid))
-            .head.asInstanceOf[KyuubiOperation].metrics
+            .map(_.asInstanceOf[KyuubiOperation])
+            .filter(_.statement == query)
+            .head.metrics
         assert(operationMetrics.get("fetchResultsCount") == Some("1"))
         assert(operationMetrics.get("fetchLogCount") == Some("0"))
       }
