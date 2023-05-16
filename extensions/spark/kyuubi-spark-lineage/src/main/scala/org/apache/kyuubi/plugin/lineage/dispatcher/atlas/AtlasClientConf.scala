@@ -57,5 +57,5 @@ object AtlasClientConf {
 
   val CLUSTER_NAME = ConfigEntry("atlas.cluster.name", "primary")
 
-  val COLUMN_LINEAGE_ENABLED = ConfigEntry("atlas.column.lineage.enabled", "true")
+  val COLUMN_LINEAGE_ENABLED = ConfigEntry("atlas.hook.spark.column.lineage.enabled", "true")
 }
