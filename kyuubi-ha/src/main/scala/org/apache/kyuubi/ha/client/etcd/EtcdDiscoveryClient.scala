@@ -74,10 +74,10 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     } else {
       val caPath = conf.getOption(HA_ETCD_SSL_CA_PATH.key).getOrElse(
         throw new IllegalArgumentException(s"${HA_ETCD_SSL_CA_PATH.key} is not defined"))
-      val crtPath = conf.getOption(HA_ETCD_SSL_CLINET_CRT_PATH.key).getOrElse(
-        throw new IllegalArgumentException(s"${HA_ETCD_SSL_CLINET_CRT_PATH.key} is not defined"))
-      val keyPath = conf.getOption(HA_ETCD_SSL_CLINET_KEY_PATH.key).getOrElse(
-        throw new IllegalArgumentException(s"${HA_ETCD_SSL_CLINET_KEY_PATH.key} is not defined"))
+      val crtPath = conf.getOption(HA_ETCD_SSL_CLIENT_CRT_PATH.key).getOrElse(
+        throw new IllegalArgumentException(s"${HA_ETCD_SSL_CLIENT_CRT_PATH.key} is not defined"))
+      val keyPath = conf.getOption(HA_ETCD_SSL_CLIENT_KEY_PATH.key).getOrElse(
+        throw new IllegalArgumentException(s"${HA_ETCD_SSL_CLIENT_KEY_PATH.key} is not defined"))
 
       val context = GrpcSslContexts.forClient()
         .trustManager(new File(caPath))
