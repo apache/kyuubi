@@ -207,10 +207,15 @@ trait BackendServiceMetric extends BackendService {
         else MetricsConstants.BS_FETCH_RESULT_ROWS_RATE,
         rowsSize))
 
-      sessionManager.operationManager
+      val operation = sessionManager.operationManager
         .getOperation(operationHandle)
         .asInstanceOf[KyuubiOperation]
-        .increaseFetchResultsCount(rowsSize, fetchLog)
+
+      if (fetchLog) {
+        operation.increaseFetchLogCount(rowsSize)
+      } else {
+        operation.increaseFetchResultsCount(rowsSize)
+      }
 
       rowSet
     }

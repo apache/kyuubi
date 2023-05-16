@@ -56,8 +56,12 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
   @volatile protected var _fetchLogCount = 0L
   @volatile protected var _fetchResultsCount = 0L
 
-  protected[kyuubi] def increaseFetchResultsCount(count: Int, fetchLog: Boolean): Unit = {
-    if (fetchLog) _fetchLogCount += count else _fetchResultsCount += count
+  protected[kyuubi] def increaseFetchLogCount(count: Int): Unit = {
+    _fetchLogCount += count
+  }
+
+  protected[kyuubi] def increaseFetchResultsCount(count: Int): Unit = {
+    _fetchResultsCount += count
   }
 
   def metrics: Map[String, String] = Map(
