@@ -53,6 +53,21 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   def remoteOpHandle(): TOperationHandle = _remoteOpHandle
 
+  @volatile protected var _fetchLogCount = 0L
+  @volatile protected var _fetchResultsCount = 0L
+
+  protected[kyuubi] def increaseFetchLogCount(count: Int): Unit = {
+    _fetchLogCount += count
+  }
+
+  protected[kyuubi] def increaseFetchResultsCount(count: Int): Unit = {
+    _fetchResultsCount += count
+  }
+
+  def metrics: Map[String, String] = Map(
+    "fetchLogCount" -> _fetchLogCount.toString,
+    "fetchResultsCount" -> _fetchResultsCount.toString)
+
   protected def verifyTStatus(tStatus: TStatus): Unit = {
     ThriftUtils.verifyTStatus(tStatus)
   }

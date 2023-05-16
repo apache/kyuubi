@@ -339,4 +339,24 @@ class KyuubiOperationPerUserSuite
       }
     }
   }
+
+  test("support to expose kyuubi operation metrics") {
+    withSessionConf()(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val uuid = UUID.randomUUID().toString
+        val query = s"select '$uuid'"
+        val res = statement.executeQuery(query)
+        assert(res.next())
+        assert(!res.next())
+
+        val operationMetrics =
+          server.backendService.sessionManager.operationManager.allOperations()
+            .map(_.asInstanceOf[KyuubiOperation])
+            .filter(_.statement == query)
+            .head.metrics
+        assert(operationMetrics.get("fetchResultsCount") == Some("1"))
+        assert(operationMetrics.get("fetchLogCount") == Some("0"))
+      }
+    }
+  }
 }
