@@ -162,7 +162,7 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     assert(batch.getBatchType === "SPARK")
 
     // get batch log
-    eventually(timeout(1.minutes), interval(100.milliseconds)) {
+    eventually(timeout(1.minutes)) {
       val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
       assert(log.getRowCount == 1)
     }
