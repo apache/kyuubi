@@ -37,7 +37,8 @@ class AdminListEngineCommand(cliConfig: CliConfig) extends AdminCtlCommand[Seq[E
         normalizedCliConfig.engineOpts.engineType,
         normalizedCliConfig.engineOpts.engineShareLevel,
         normalizedCliConfig.engineOpts.engineSubdomain,
-        normalizedCliConfig.commonOpts.hs2ProxyUser).asScala
+        normalizedCliConfig.commonOpts.hs2ProxyUser,
+        normalizedCliConfig.engineOpts.engineGroupName).asScala
     }
   }
 

@@ -355,29 +355,30 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "org.apache.kyuubi.server.api.v1.SimpleGroupProvider")
-    conf.set("kyuubi.test.group.name", "second")
+    conf.set("kyuubi.engine.group.name", "second")
+
+    val groupProvider = PluginLoader.loadGroupProvider(conf)
 
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(conf.clone, Utils.currentUser, groupProvider, id, null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
-      fe.asInstanceOf[KyuubiRestFrontendService].sessionManager.groupProvider.primaryGroup(
+      groupProvider.primaryGroup(
         Utils.currentUser,
         conf.getAll.asJava),
       "default")
 
     withDiscoveryClient(conf) { client =>
       engine.getOrCreate(client)
-
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("sharelevel", "GROUP")
         .queryParam("type", "spark_sql")
+        .queryParam("kyuubi.engine.group.name", "second")
         .request(MediaType.APPLICATION_JSON_TYPE)
-        .property("kyuubi.test.group.name", "second")
         .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
         .delete()
 
@@ -527,14 +528,16 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "org.apache.kyuubi.server.api.v1.SimpleGroupProvider")
-    conf.set("kyuubi.test.group.name", "second")
+    conf.set("kyuubi.engine.group.name", "second")
+
+    val groupProvider = PluginLoader.loadGroupProvider(conf)
 
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(conf.clone, Utils.currentUser, groupProvider, id, null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
-      fe.asInstanceOf[KyuubiRestFrontendService].sessionManager.groupProvider.primaryGroup(
+      groupProvider.primaryGroup(
         Utils.currentUser,
         conf.getAll.asJava),
       "")
@@ -547,8 +550,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("type", "spark_sql")
+        .queryParam("sharelevel", "GROUP")
+        .queryParam("groupname", "second")
         .request(MediaType.APPLICATION_JSON_TYPE)
-        .property("kyuubi.test.group.name", "second")
         .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
         .get
 
@@ -675,7 +679,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 class SimpleGroupProvider extends GroupProvider {
 
   override def primaryGroup(user: String, sessionConf: ju.Map[String, String]): String = {
-    val key = "kyuubi.test.group.name"
+    val key = "kyuubi.engine.group.name"
     if (sessionConf.containsKey(key)) {
       sessionConf.get(key)
     } else {

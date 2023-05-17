@@ -213,14 +213,14 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
-      configs: Map[String, String]): Response = {
+      @QueryParam("groupname") groupName: String): Response = {
     val userName = if (isAdministrator(fe.getRealUser())) {
       Option(hs2ProxyUser).getOrElse(fe.getRealUser())
     } else {
       fe.getSessionUser(hs2ProxyUser)
     }
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "default")
-    val engineSpace = getEngineSpace(engine, configs)
+    val engineSpace = getEngineSpace(engine, groupName)
 
     withDiscoveryClient(fe.getConf) { discoveryClient =>
       val engineNodes = discoveryClient.getChildren(engineSpace)
@@ -252,14 +252,14 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
-      configs: Map[String, String]): Seq[Engine] = {
+      @QueryParam("groupname") groupName: String): Seq[Engine] = {
     val userName = if (isAdministrator(fe.getRealUser())) {
       Option(hs2ProxyUser).getOrElse(fe.getRealUser())
     } else {
       fe.getSessionUser(hs2ProxyUser)
     }
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
-    val engineSpace = getEngineSpace(engine, configs)
+    val engineSpace = getEngineSpace(engine, groupName)
 
     var engineNodes = ListBuffer[ServiceNodeInfo]()
     Option(subdomain).filter(_.nonEmpty) match {
@@ -355,10 +355,10 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       Collections.emptyMap())
   }
 
-  private def getEngineSpace(engine: Engine, configs: Map[String, String]): String = {
+  private def getEngineSpace(engine: Engine, groupName: String): String = {
     val serverSpace = fe.getConf.get(HA_NAMESPACE)
     val allConfigs = fe.getConf.getAll ++ {
-      if (configs != null) configs else Map.empty
+      if (groupName != null) Map("kyuubi.engine.group.name" -> groupName) else Map.empty
     }
     val appUser = engine.getSharelevel match {
       case "GROUP" =>

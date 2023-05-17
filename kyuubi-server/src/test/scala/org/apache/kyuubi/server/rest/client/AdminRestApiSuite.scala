@@ -72,7 +72,7 @@ class AdminRestApiSuite extends RestClientTestHelper {
         .build()
 
     val adminRestApi = new AdminRestApi(basicKyuubiRestClient)
-    var engines = adminRestApi.listEngines("spark_sql", "user", "default", "").asScala
+    var engines = adminRestApi.listEngines("spark_sql", "user", "default", "", null).asScala
     assert(engines.size == 1)
     assert(engines(0).getUser == user)
     assert(engines(0).getVersion == KYUUBI_VERSION)
@@ -82,10 +82,10 @@ class AdminRestApiSuite extends RestClientTestHelper {
     assert(engines(0).getNamespace == engineSpace)
     assert(engines(0).getAttributes.get(KyuubiReservedKeys.KYUUBI_ENGINE_ID).startsWith("local-"))
 
-    val result = adminRestApi.deleteEngine("spark_sql", "user", "default", "")
+    val result = adminRestApi.deleteEngine("spark_sql", "user", "default", "", null)
     assert(result == s"Engine ${engineSpace} is deleted successfully.")
 
-    engines = adminRestApi.listEngines("spark_sql", "user", "default", "").asScala
+    engines = adminRestApi.listEngines("spark_sql", "user", "default", "", null).asScala
     assert(engines.size == 0)
   }
 

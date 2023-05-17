@@ -34,7 +34,8 @@ class AdminDeleteEngineCommand(cliConfig: CliConfig) extends AdminCtlCommand[Str
         normalizedCliConfig.engineOpts.engineType,
         normalizedCliConfig.engineOpts.engineShareLevel,
         normalizedCliConfig.engineOpts.engineSubdomain,
-        normalizedCliConfig.commonOpts.hs2ProxyUser)
+        normalizedCliConfig.commonOpts.hs2ProxyUser,
+        normalizedCliConfig.engineOpts.engineGroupName)
     }
   }
 

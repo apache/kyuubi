@@ -52,22 +52,32 @@ public class AdminRestApi {
   }
 
   public String deleteEngine(
-      String engineType, String shareLevel, String subdomain, String hs2ProxyUser) {
+      String engineType,
+      String shareLevel,
+      String subdomain,
+      String hs2ProxyUser,
+      String groupName) {
     Map<String, Object> params = new HashMap<>();
     params.put("type", engineType);
     params.put("sharelevel", shareLevel);
     params.put("subdomain", subdomain);
     params.put("hive.server2.proxy.user", hs2ProxyUser);
+    params.put("groupname", groupName);
     return this.getClient().delete(API_BASE_PATH + "/engine", params, client.getAuthHeader());
   }
 
   public List<Engine> listEngines(
-      String engineType, String shareLevel, String subdomain, String hs2ProxyUser) {
+      String engineType,
+      String shareLevel,
+      String subdomain,
+      String hs2ProxyUser,
+      String groupName) {
     Map<String, Object> params = new HashMap<>();
     params.put("type", engineType);
     params.put("sharelevel", shareLevel);
     params.put("subdomain", subdomain);
     params.put("hive.server2.proxy.user", hs2ProxyUser);
+    params.put("groupname", groupName);
     Engine[] result =
         this.getClient()
             .get(API_BASE_PATH + "/engine", params, Engine[].class, client.getAuthHeader());
