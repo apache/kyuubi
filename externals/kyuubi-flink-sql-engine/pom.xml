@@ -186,20 +186,15 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
-                            <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
-                            <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
                             <include>com.fasterxml.jackson.core:*</include>
                             <include>com.fasterxml.jackson.module:*</include>
                             <include>com.google.guava:failureaccess</include>
                             <include>com.google.guava:guava</include>
                             <include>commons-codec:commons-codec</include>
                             <include>org.apache.commons:commons-lang3</include>
-                            <include>org.apache.curator:curator-client</include>
-                            <include>org.apache.curator:curator-framework</include>
-                            <include>org.apache.curator:curator-recipes</include>
                             <include>org.apache.hive:hive-service-rpc</include>
                             <include>org.apache.thrift:*</include>
-                            <include>org.apache.zookeeper:*</include>
+                            <include>org.apache.kyuubi:*</include>
                         </includes>
                     </artifactSet>
                     <filters>
@@ -226,13 +221,6 @@
                             <shadedPattern>${kyuubi.shade.packageName}.com.fasterxml.jackson</shadedPattern>
                             <includes>
                                 <include>com.fasterxml.jackson.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.curator</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.curator</shadedPattern>
-                            <includes>
-                                <include>org.apache.curator.**</include>
                             </includes>
                         </relocation>
                         <relocation>
@@ -276,20 +264,6 @@
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.thrift</shadedPattern>
                             <includes>
                                 <include>org.apache.thrift.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.jute</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.jute</shadedPattern>
-                            <includes>
-                                <include>org.apache.jute.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.zookeeper</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.zookeeper</shadedPattern>
-                            <includes>
-                                <include>org.apache.zookeeper.**</include>
                             </includes>
                         </relocation>
                     </relocations>

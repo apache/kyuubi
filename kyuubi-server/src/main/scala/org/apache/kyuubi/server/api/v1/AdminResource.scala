@@ -28,7 +28,6 @@ import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
-import org.apache.zookeeper.KeeperException.NoNodeException
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, ServerData, SessionData}
@@ -41,6 +40,7 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
+import org.apache.kyuubi.shaded.zookeeper.KeeperException.NoNodeException
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))

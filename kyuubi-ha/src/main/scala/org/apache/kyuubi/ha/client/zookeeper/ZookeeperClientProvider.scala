@@ -24,8 +24,6 @@ import javax.security.auth.login.Configuration
 import scala.util.Random
 
 import com.google.common.annotations.VisibleForTesting
-import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
-import org.apache.curator.retry._
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.Logging
@@ -34,6 +32,8 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{AuthTypes, RetryPolicies}
 import org.apache.kyuubi.ha.client.RetryPolicies._
 import org.apache.kyuubi.reflection.DynConstructors
+import org.apache.kyuubi.shaded.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
+import org.apache.kyuubi.shaded.curator.retry._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 object ZookeeperClientProvider extends Logging {

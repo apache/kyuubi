@@ -25,9 +25,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
+import org.apache.kyuubi.shaded.curator.framework.CuratorFrameworkFactory;
+import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry;
 
 class ZooKeeperHiveClientHelper {
   // Pattern for key1=value1;key2=value2
