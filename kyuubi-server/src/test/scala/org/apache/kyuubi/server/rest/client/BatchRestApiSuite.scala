@@ -69,7 +69,7 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     assert(batch.getBatchType === "SPARK")
 
     // get batch log
-    eventually(timeout(1.minutes)) { // check batch status first
+    eventually(timeout(30.seconds)) { // check batch status first
       val b = batchRestApi.getBatchById(batchId)
       assert(b.getAppState == "FINISHED" || b.getAppState == "RUNNING")
     }
