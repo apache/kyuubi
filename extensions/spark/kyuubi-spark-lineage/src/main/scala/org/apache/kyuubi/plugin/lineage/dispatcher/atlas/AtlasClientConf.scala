@@ -21,8 +21,6 @@ import org.apache.atlas.ApplicationProperties
 import org.apache.commons.configuration.Configuration
 import org.apache.spark.kyuubi.lineage.SparkContextHelper
 
-import org.apache.kyuubi.plugin.lineage.dispatcher.atlas.AtlasClientConf.ConfigEntry
-
 class AtlasClientConf(configuration: Configuration) {
 
   def get(entry: ConfigEntry): String = {
@@ -46,8 +44,6 @@ object AtlasClientConf {
   }
 
   def getConf(): AtlasClientConf = clientConf
-
-  case class ConfigEntry(key: String, defaultValue: String)
 
   val ATLAS_REST_ENDPOINT = ConfigEntry("atlas.rest.address", "http://localhost:21000")
 

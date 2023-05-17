@@ -26,8 +26,19 @@ import org.apache.spark.sql.execution.QueryExecution
 import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper
 
+/**
+ * The helpers for Atlas spark entities from Lineage.
+ * The Atlas spark models refer to :
+ *    https://github.com/apache/atlas/blob/master/addons/models/1000-Hadoop/1100-spark_model.json
+ */
 object AtlasEntityHelper {
 
+  /**
+   * Generate `spark_process` Atlas Entity from Lineage.
+   * @param qe
+   * @param lineage
+   * @return
+   */
   def processEntity(qe: QueryExecution, lineage: Lineage): AtlasEntity = {
     val entity = new AtlasEntity(PROCESS_TYPE)
 
@@ -59,6 +70,12 @@ object AtlasEntityHelper {
     entity
   }
 
+  /**
+   * Generate `spark_column_lineage` Atlas Entity from Lineage.
+   * @param processEntity
+   * @param lineage
+   * @return
+   */
   def columnLineageEntities(processEntity: AtlasEntity, lineage: Lineage): Seq[AtlasEntity] = {
     lineage.columnLineage.flatMap(columnLineage => {
       val inputs = columnLineage.originalColumns.flatMap(columnObjectId).map { objId =>

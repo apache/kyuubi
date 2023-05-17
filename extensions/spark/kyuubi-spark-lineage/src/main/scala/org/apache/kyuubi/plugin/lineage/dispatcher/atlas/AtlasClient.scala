@@ -28,10 +28,8 @@ import org.apache.hadoop.util.ShutdownHookManager
 
 import org.apache.kyuubi.plugin.lineage.dispatcher.atlas.AtlasClientConf._
 
-trait AtlasClient {
+trait AtlasClient extends AutoCloseable {
   def send(entities: Seq[AtlasEntity]): Unit
-
-  def close(): Unit
 }
 
 class AtlasRestClient(conf: AtlasClientConf) extends AtlasClient {
@@ -71,7 +69,7 @@ object AtlasClient {
           val clientConf = AtlasClientConf.getConf()
           client = clientConf.get(CLIENT_TYPE).toLowerCase(Locale.ROOT) match {
             case "rest" => new AtlasRestClient(clientConf)
-            case t => throw new RuntimeException(s"Unsupported client type: $t.")
+            case unknown => throw new RuntimeException(s"Unsupported client type: $unknown.")
           }
           registerCleanupShutdownHook(client)
         }
@@ -81,7 +79,7 @@ object AtlasClient {
   }
 
   private def registerCleanupShutdownHook(client: AtlasClient): Unit = {
-    ShutdownHookManager.get().addShutdownHook(
+    ShutdownHookManager.get.addShutdownHook(
       () => {
         if (client != null) {
           client.close()
