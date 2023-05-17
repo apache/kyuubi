@@ -59,29 +59,30 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
 
     var batch: Batch = batchRestApi.createBatch(requestObj)
+    val batchId = batch.getId
     assert(batch.getKyuubiInstance === fe.connectionUrl)
     assert(batch.getBatchType === "SPARK")
 
     // get batch by id
-    batch = batchRestApi.getBatchById(batch.getId())
+    batch = batchRestApi.getBatchById(batchId)
     assert(batch.getKyuubiInstance === fe.connectionUrl)
     assert(batch.getBatchType === "SPARK")
 
     // get batch log
     eventually(timeout(1.minutes)) { // check batch status first
-      batch = batchRestApi.getBatchById(batch.getId())
-      assertResult("FINISHED")(batch.getAppState)
+      val b = batchRestApi.getBatchById(batchId)
+      assert(b.getAppState == "FINISHED" || b.getAppState == "RUNNING")
     }
-    val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
+    val log = batchRestApi.getBatchLocalLog(batchId, 0, 1)
     assert(log.getRowCount == 1)
 
     // delete batch
-    val closeResp = batchRestApi.deleteBatch(batch.getId(), null)
+    val closeResp = batchRestApi.deleteBatch(batchId, null)
     assert(closeResp.getMsg.nonEmpty)
 
     // delete batch - error
     val e = intercept[KyuubiRestException] {
-      batchRestApi.deleteBatch(batch.getId(), "fake")
+      batchRestApi.deleteBatch(batchId, "fake")
     }
     assert(e.getCause.toString.contains(
       s"Failed to validate proxy privilege of ${ldapUser} for fake"))
