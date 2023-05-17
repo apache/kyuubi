@@ -114,6 +114,7 @@ class KyuubiSessionImpl(
     super.open()
 
     runOperation(launchEngineOp)
+    engineLastAlive = System.currentTimeMillis()
   }
 
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit =
@@ -281,6 +282,29 @@ class KyuubiSessionImpl(
           command)
         runOperation(operation)
       case _ => super.executeStatement(statement, confOverlay, runAsync, queryTimeout)
+    }
+  }
+
+  private var engineLastAlive: Long = _
+  val engineAliveTimeout = sessionConf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
+
+  def checkEngineAlive(): Boolean = {
+    try {
+      getInfo(TGetInfoType.CLI_DBMS_VER)
+      engineLastAlive = System.currentTimeMillis()
+      true
+    } catch {
+      case e: Throwable =>
+        warn(s"The engineRef[${engine.getEngineRefId}] alive probe fails", e)
+        val now = System.currentTimeMillis()
+        if (now - engineLastAlive > engineAliveTimeout) {
+          error(s"Mark the engineRef[${engine.getEngineRefId}] not alive " +
+            s"with no recent alive probe" +
+            s" success: ${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms")
+          false
+        } else {
+          true
+        }
     }
   }
 }

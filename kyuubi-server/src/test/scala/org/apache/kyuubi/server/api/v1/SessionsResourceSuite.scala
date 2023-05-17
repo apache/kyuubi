@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 import java.util
 import java.util.{Base64, Collections}
 import javax.ws.rs.client.Entity
@@ -29,7 +30,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto
-import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.client.api.v1.dto.{SessionData, _}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
 import org.apache.kyuubi.engine.ShareLevel
@@ -299,6 +300,67 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       // will meet json parse exception with response.readEntity(classOf[KyuubiSessionEvent])
       val sessionEvent = response.readEntity(classOf[String])
       assert(sessionEvent.contains("The last 10 line(s) of log are:"))
+    }
+  }
+
+  test("fix kyuubi session leak caused by engine stop") {
+    // clean up all sessions
+    var response = webTarget.path("api/v1/sessions").request().get()
+    val sessionDataList = response.readEntity(new GenericType[List[SessionData]]() {})
+    sessionDataList.foreach(sessionData => {
+      response = webTarget.path(s"api/v1/sessions/${sessionData.getIdentifier}")
+        .request().delete()
+      assert(200 == response.getStatus)
+    })
+
+    // open a session
+    val requestObj = new SessionOpenRequest(Map(
+      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> Duration.ofSeconds(10).toMillis.toString).asJava)
+    response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    val sessionHandle = response.readEntity(classOf[SessionHandle]).getIdentifier
+    val pathPrefix = s"api/v1/sessions/$sessionHandle"
+
+    response = webTarget.path("api/v1/sessions/count").request().get()
+    val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
+    assert(openedSessionCount.getOpenSessionCount == 1)
+
+    var statementReq = new StatementRequest(
+      "spark.sql(\"show tables\")",
+      true,
+      3000,
+      Collections.singletonMap(KyuubiConf.OPERATION_LANGUAGE.key, "SCALA"))
+    response = webTarget
+      .path(s"$pathPrefix/operations/statement").request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    var operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle !== null)
+    assert(openedSessionCount.getOpenSessionCount == 1)
+
+    statementReq = new StatementRequest(
+      "spark.close()",
+      true,
+      3000,
+      Collections.singletonMap(KyuubiConf.OPERATION_LANGUAGE.key, "SCALA"))
+    response = webTarget
+      .path(s"$pathPrefix/operations/statement").request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle !== null)
+
+    // Because the engine has stopped (due to spark.close), the Spark session is closed.
+    // Therefore, the Kyuubi session count should be 0.
+    eventually(timeout(30.seconds), interval(1000.milliseconds)) {
+      var response = webTarget.path("api/v1/sessions/count").request().get()
+      val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
+      assert(openedSessionCount.getOpenSessionCount == 0)
+
+      response = webTarget.path("api/v1/sessions").request().get()
+      val sessionDataList = response.readEntity(new GenericType[List[SessionData]]() {})
+      assert(sessionDataList.isEmpty)
     }
   }
 }
