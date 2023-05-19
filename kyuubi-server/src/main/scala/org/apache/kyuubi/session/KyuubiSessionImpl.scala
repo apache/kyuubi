@@ -161,7 +161,7 @@ class KyuubiSessionImpl(
           } catch {
             case e: org.apache.thrift.transport.TTransportException
                 if attempt < maxAttempts && e.getCause.isInstanceOf[java.net.ConnectException] &&
-                  e.getCause.getMessage.contains("Connection refused (Connection refused)") =>
+                  e.getCause.getMessage.contains("Connection refused") =>
               warn(
                 s"Failed to open [${engine.defaultEngineName} $host:$port] after" +
                   s" $attempt/$maxAttempts times, retrying",
