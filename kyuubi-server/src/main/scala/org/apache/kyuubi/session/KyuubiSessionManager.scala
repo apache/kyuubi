@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.util.{Map => JMap}
+
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
@@ -54,7 +56,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     if (conf.isRESTEnabled) Some(new MetadataManager()) else None
 
   // lazy is required for plugins since the conf is null when this class initialization
-  lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
+  lazy val sessionConfAdvisors: Seq[SessionConfAdvisor] = PluginLoader.loadSessionConfAdvisors(conf)
   lazy val groupProvider: GroupProvider = PluginLoader.loadGroupProvider(conf)
 
   private var limiter: Option[SessionLimiter] = None
@@ -68,6 +70,31 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     metadataManager.foreach(addService)
     initSessionLimiter(conf)
     super.initialize(conf)
+  }
+
+  private[kyuubi] def getSessionConfOverlay(
+      user: String,
+      sessionConf: Map[String, String]): JMap[String, String] = {
+    var baseConf = sessionConf
+    var confOverlay: JMap[String, String] = null
+    sessionConfAdvisors.foreach { sessionConfAdvisor =>
+      val subConfOverlay = sessionConfAdvisor.getConfOverlay(
+        user,
+        baseConf.asJava
+      )
+      if (subConfOverlay != null) {
+        baseConf = baseConf ++ subConfOverlay.asScala
+        if (confOverlay == null) {
+          confOverlay = subConfOverlay
+        } else {
+          confOverlay = (confOverlay.asScala ++ subConfOverlay.asScala).asJava
+        }
+      } else {
+        warn(s"the server plugin[${sessionConfAdvisor.getClass.getSimpleName}]" +
+          s" return null value for user: $user, ignore it")
+      }
+    }
+    confOverlay
   }
 
   override protected def createSession(

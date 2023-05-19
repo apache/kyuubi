@@ -2282,7 +2282,7 @@ object KyuubiConf {
       .checkValues(OperationLanguages.values.map(_.toString))
       .createWithDefault(OperationLanguages.SQL.toString)
 
-  val SESSION_CONF_ADVISOR: OptionalConfigEntry[String] =
+  val SESSION_CONF_ADVISOR: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.conf.advisor")
       .doc("A config advisor plugin for Kyuubi Server. This plugin can provide some custom " +
         "configs for different users or session configs and overwrite the session configs before " +
@@ -2290,7 +2290,8 @@ object KyuubiConf {
         "`org.apache.kyuubi.plugin.SessionConfAdvisor` which has a zero-arg constructor.")
       .version("1.5.0")
       .stringConf
-      .createOptional
+      .toSequence()
+      .createWithDefault(Nil)
 
   val GROUP_PROVIDER: ConfigEntry[String] =
     buildConf("kyuubi.session.group.provider")
