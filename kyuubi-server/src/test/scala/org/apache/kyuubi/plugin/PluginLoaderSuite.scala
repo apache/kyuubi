@@ -98,9 +98,21 @@ class PluginLoaderSuite extends KyuubiFunSuite {
 
   test("support to config multiple session conf advisors") {
     val conf = new KyuubiConf(false)
-    conf.set(KyuubiConf.SESSION_CONF_ADVISOR_LIST,
+    conf.set(
+      KyuubiConf.SESSION_CONF_ADVISOR_LIST,
       Seq(classOf[FileSessionConfAdvisor].getName, classOf[DefaultSessionConfAdvisor].getName))
     assert(PluginLoader.loadSessionConfAdvisors(conf).size == 2)
+
+    conf.set(KyuubiConf.SESSION_CONF_ADVISOR, classOf[FileSessionConfAdvisor].getName)
+    assert(PluginLoader.loadSessionConfAdvisors(conf).size == 2)
+
+    conf.unset(KyuubiConf.SESSION_CONF_ADVISOR_LIST)
+    assert(PluginLoader.loadSessionConfAdvisors(conf).size == 1)
+    assert(PluginLoader.loadSessionConfAdvisors(conf).head.isInstanceOf[FileSessionConfAdvisor])
+
+    conf.unset(KyuubiConf.SESSION_CONF_ADVISOR)
+    assert(PluginLoader.loadSessionConfAdvisors(conf).size == 1)
+    assert(PluginLoader.loadSessionConfAdvisors(conf).head.isInstanceOf[DefaultSessionConfAdvisor])
   }
 }
 
