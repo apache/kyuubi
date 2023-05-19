@@ -23,6 +23,14 @@ import org.apache.kyuubi.service.ServiceState._
 
 class KyuubiServerSuite extends KyuubiFunSuite {
 
+  test("assert false") {
+    assert(false)
+  }
+
+  test("assert exception false") {
+    throw new Exception("exception false")
+  }
+
   test("kyuubi server basic") {
     val server = new KyuubiServer()
     server.stop()
