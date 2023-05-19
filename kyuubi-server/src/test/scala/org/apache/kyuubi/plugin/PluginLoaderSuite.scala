@@ -95,6 +95,13 @@ class PluginLoaderSuite extends KyuubiFunSuite {
     assert(groupProvider.primaryGroup(user, Map.empty[String, String].asJava) === user)
     assert(groupProvider.groups(user, Map.empty[String, String].asJava) === Array(user))
   }
+
+  test("support to config multiple session conf advisors") {
+    val conf = new KyuubiConf(false)
+    conf.set(KyuubiConf.SESSION_CONF_ADVISOR_LIST,
+      Seq(classOf[FileSessionConfAdvisor].getName, classOf[DefaultSessionConfAdvisor].getName))
+    assert(PluginLoader.loadSessionConfAdvisors(conf).size == 2)
+  }
 }
 
 class InvalidSessionConfAdvisor
