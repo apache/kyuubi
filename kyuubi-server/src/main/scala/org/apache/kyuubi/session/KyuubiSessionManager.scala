@@ -77,11 +77,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       sessionConf: Map[String, String]): JMap[String, String] = {
     var baseConf = sessionConf
     var confOverlay: JMap[String, String] = null
-    sessionConfAdvisors.foreach { sessionConfAdvisor =>
-      val subConfOverlay = sessionConfAdvisor.getConfOverlay(
+    sessionConfAdvisors.foreach { advisor =>
+      val subConfOverlay = advisor.getConfOverlay(
         user,
-        baseConf.asJava
-      )
+        baseConf.asJava)
       if (subConfOverlay != null) {
         baseConf = baseConf ++ subConfOverlay.asScala
         if (confOverlay == null) {
@@ -90,7 +89,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           confOverlay = (confOverlay.asScala ++ subConfOverlay.asScala).asJava
         }
       } else {
-        warn(s"the server plugin[${sessionConfAdvisor.getClass.getSimpleName}]" +
+        warn(s"the server plugin[${advisor.getClass.getSimpleName}]" +
           s" return null value for user: $user, ignore it")
       }
     }

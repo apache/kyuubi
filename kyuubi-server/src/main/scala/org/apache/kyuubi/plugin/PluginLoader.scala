@@ -31,8 +31,7 @@ private[kyuubi] object PluginLoader {
     }
     advisorClassList.map { advisorClass =>
       try {
-        Class.forName(advisorClass).getConstructor().newInstance()
-          .asInstanceOf[SessionConfAdvisor]
+        Class.forName(advisorClass).getConstructor().newInstance().asInstanceOf[SessionConfAdvisor]
       } catch {
         case _: ClassCastException =>
           throw new KyuubiException(
