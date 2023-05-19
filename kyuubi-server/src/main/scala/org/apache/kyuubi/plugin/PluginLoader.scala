@@ -25,7 +25,12 @@ import org.apache.kyuubi.config.KyuubiConf
 private[kyuubi] object PluginLoader {
 
   def loadSessionConfAdvisors(conf: KyuubiConf): Seq[SessionConfAdvisor] = {
-    val advisorClassList = conf.get(KyuubiConf.SESSION_CONF_ADVISOR)
+    val advisorClassList = if (conf.get(KyuubiConf.SESSION_CONF_ADVISOR_LIST).nonEmpty) {
+      conf.get(KyuubiConf.SESSION_CONF_ADVISOR_LIST)
+    } else {
+      conf.get(KyuubiConf.SESSION_CONF_ADVISOR).toSeq
+    }
+
     if (advisorClassList.isEmpty) {
       return Seq(new DefaultSessionConfAdvisor())
     }

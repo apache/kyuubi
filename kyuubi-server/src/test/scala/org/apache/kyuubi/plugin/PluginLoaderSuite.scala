@@ -27,17 +27,17 @@ class PluginLoaderSuite extends KyuubiFunSuite {
 
   test("SessionConfAdvisor - wrong class") {
     val conf = new KyuubiConf(false)
-    assert(PluginLoader.loadSessionConfAdvisor(conf).isInstanceOf[DefaultSessionConfAdvisor])
+    assert(PluginLoader.loadSessionConfAdvisors(conf).head.isInstanceOf[DefaultSessionConfAdvisor])
 
     conf.set(KyuubiConf.SESSION_CONF_ADVISOR, classOf[InvalidSessionConfAdvisor].getName)
     val msg1 = intercept[KyuubiException] {
-      PluginLoader.loadSessionConfAdvisor(conf)
+      PluginLoader.loadSessionConfAdvisors(conf)
     }.getMessage
     assert(msg1.contains(s"is not a child of '${classOf[SessionConfAdvisor].getName}'"))
 
     conf.set(KyuubiConf.SESSION_CONF_ADVISOR, "non.exists")
     val msg2 = intercept[IllegalArgumentException] {
-      PluginLoader.loadSessionConfAdvisor(conf)
+      PluginLoader.loadSessionConfAdvisors(conf)
     }.getMessage
     assert(msg2.startsWith("Error while instantiating 'non.exists'"))
   }
@@ -45,7 +45,7 @@ class PluginLoaderSuite extends KyuubiFunSuite {
   test("FileSessionConfAdvisor") {
     val conf = new KyuubiConf(false)
     conf.set(KyuubiConf.SESSION_CONF_ADVISOR, classOf[FileSessionConfAdvisor].getName)
-    val advisor = PluginLoader.loadSessionConfAdvisor(conf)
+    val advisor = PluginLoader.loadSessionConfAdvisors(conf).head
     val emptyConfig = advisor.getConfOverlay("chris", conf.getAll.asJava)
     assert(emptyConfig.isEmpty)
 
