@@ -102,6 +102,10 @@ jobs:
           fi
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
+      - name: Show failed tests
+        if: failure()
+        run: |
+          cat ./TestSuite.txt
       - name: Code coverage
         if: |
           matrix.java == 8 &&
@@ -119,6 +123,7 @@ jobs:
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
             **/kyuubi-spark-batch-submit.log*
+            **/TestSuite.txt
 
   authz:
     name: Kyuubi-AuthZ and Spark Test
