@@ -273,7 +273,8 @@
             --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
             --add-opens=java.base/sun.security.x509=ALL-UNNAMED
             --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
-            -Djdk.reflect.useDirectMethodHandle=false</extraJavaTestArgs>
+            -Djdk.reflect.useDirectMethodHandle=false
+            -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
     </properties>
 
     <dependencyManagement>
@@ -1679,7 +1680,7 @@
                     <configuration>
                         <skipTests>true</skipTests>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-                        <argLine>${extraJavaTestArgs} -Dio.netty.tryReflectionSetAccessible=true</argLine>
+                        <argLine>${extraJavaTestArgs}</argLine>
                     </configuration>
                 </plugin>
                 <!-- enable scalatest -->
@@ -1691,7 +1692,7 @@
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
                         <filereports>TestSuite.txt</filereports>
-                        <argLine>${extraJavaTestArgs} -Dio.netty.tryReflectionSetAccessible=true</argLine>
+                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
