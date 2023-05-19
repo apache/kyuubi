@@ -23,6 +23,7 @@ import scala.collection.JavaConverters.mapAsJavaMap
 import org.apache.flink.table.gateway.api.session.SessionEnvironment
 import org.apache.flink.table.gateway.rest.util.SqlGatewayRestAPIVersion
 import org.apache.flink.table.gateway.service.context.DefaultContext
+import org.apache.flink.table.gateway.service.session.{Session => FSession}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
@@ -68,6 +69,12 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
         flinkInternalSession)
       session
     }
+  }
+
+  override def getSessionOption(sessionHandle: SessionHandle): Option[Session] = {
+    val session = super.getSessionOption(sessionHandle)
+    session.get.asInstanceOf[FSession].touch()
+    session
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
