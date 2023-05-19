@@ -73,7 +73,7 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
 
   override def getSessionOption(sessionHandle: SessionHandle): Option[Session] = {
     val session = super.getSessionOption(sessionHandle)
-    session.get.asInstanceOf[FSession].touch()
+    session.foreach(s => s.asInstanceOf[FSession].touch())
     session
   }
 
