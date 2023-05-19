@@ -21,7 +21,8 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.session.{FileSessionConfAdvisor, HadoopGroupProvider}
+import org.apache.kyuubi.operation.TestSessionConfAdvisor
+import org.apache.kyuubi.session.{FileSessionConfAdvisor, HadoopGroupProvider, KyuubiSessionManager}
 
 class PluginLoaderSuite extends KyuubiFunSuite {
 
@@ -100,8 +101,19 @@ class PluginLoaderSuite extends KyuubiFunSuite {
     val conf = new KyuubiConf(false)
     conf.set(
       KyuubiConf.SESSION_CONF_ADVISOR_LIST,
-      Seq(classOf[FileSessionConfAdvisor].getName, classOf[DefaultSessionConfAdvisor].getName))
+      Seq(classOf[FileSessionConfAdvisor].getName, classOf[TestSessionConfAdvisor].getName))
     assert(PluginLoader.loadSessionConfAdvisors(conf).size == 2)
+
+    val sessionManager = new KyuubiSessionManager()
+    sessionManager.initialize(conf)
+    val clusterAConf = sessionManager.getSessionConfOverlay(
+      "chris",
+      Map(KyuubiConf.SESSION_CONF_PROFILE.key -> "cluster-a"))
+    assert(clusterAConf.get("kyuubi.ha.namespace") == "kyuubi-ns-a")
+    assert(clusterAConf.get("kyuubi.zk.ha.namespace") == null)
+    assert(clusterAConf.get("spark.k3") == "v3")
+    assert(clusterAConf.get("spark.k4") == "v4")
+    assert(clusterAConf.size() == 7)
 
     conf.set(KyuubiConf.SESSION_CONF_ADVISOR, classOf[FileSessionConfAdvisor].getName)
     assert(PluginLoader.loadSessionConfAdvisors(conf).size == 2)

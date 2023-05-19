@@ -2285,7 +2285,7 @@ object KyuubiConf {
   val SESSION_CONF_ADVISOR_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.conf.advisor.list")
       .doc("A comma separated string of config advisor plugins for Kyuubi Server, which will be" +
-        " invoked to get session confOverlay one by one.")
+        " invoked to get session conf overlay one by one.")
       .version("1.8.0")
       .stringConf
       .toSequence()
