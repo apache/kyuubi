@@ -39,7 +39,7 @@ Using multiple Kyuubi service units with load balancing instead of a single unit
 - High concurrency
   - By adding or removing Kyuubi server instances can easily scale up or down to meet the need of client requests.
 - Upgrade smoothly
-  - Kyuubi server supports stop gracefully. We could delete a `k.i.` but not stop it immediately.
+  - Kyuubi server supports stopping gracefully. We could delete a `k.i.` but not stop it immediately.
     In this case, the `k.i.` will not take any new connection request but only operation requests from existing connections.
     After all connection are released, it stops then.
   - The dependencies of Kyuubi engines are free to change, such as bump up versions, modify configurations, add external jars, relocate to another engine home. Everything will be reloaded during start and stop.
