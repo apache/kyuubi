@@ -25,11 +25,13 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
+import org.apache.kyuubi.tags.IcebergTest
 
 /**
  * Tests for RangerSparkExtensionSuite
  * on Iceberg catalog with DataSource V2 API.
  */
+@IcebergTest
 class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =

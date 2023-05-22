@@ -22,7 +22,9 @@ import org.scalatest.Outcome
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
+import org.apache.kyuubi.tags.IcebergTest
 
+@IcebergTest
 class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
