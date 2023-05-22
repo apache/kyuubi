@@ -19,6 +19,8 @@ package org.apache.kyuubi.spark.connector.common
 
 import org.apache.spark.SPARK_VERSION
 
+import org.apache.kyuubi.util.SemanticVersion
+
 object SparkUtils {
 
   def isSparkVersionAtMost(targetVersionString: String): Boolean = {

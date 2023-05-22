@@ -40,7 +40,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{SparkSQLEngine, WithSparkSQLEngine}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.SparkDataTypeTests
-import org.apache.kyuubi.reflection.DynFields
+import org.apache.kyuubi.util.reflect.DynFields
 
 class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTypeTests
   with SparkMetricsTestUtils {

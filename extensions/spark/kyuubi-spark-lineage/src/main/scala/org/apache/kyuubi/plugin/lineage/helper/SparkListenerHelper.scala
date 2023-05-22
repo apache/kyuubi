@@ -19,6 +19,8 @@ package org.apache.kyuubi.plugin.lineage.helper
 
 import org.apache.spark.SPARK_VERSION
 
+import org.apache.kyuubi.util.SemanticVersion
+
 object SparkListenerHelper {
 
   lazy val sparkMajorMinorVersion: (Int, Int) = {

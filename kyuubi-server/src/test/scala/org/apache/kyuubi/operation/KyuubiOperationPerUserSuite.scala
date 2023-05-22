@@ -26,10 +26,10 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
-import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
+import org.apache.kyuubi.util.SemanticVersion
 import org.apache.kyuubi.zookeeper.ZookeeperConf
 
 class KyuubiOperationPerUserSuite

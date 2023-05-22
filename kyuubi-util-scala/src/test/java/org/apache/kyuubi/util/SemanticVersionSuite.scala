@@ -15,12 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.util
+// scalastyle:off
+import org.scalatest.funsuite.AnyFunSuite
+// scalastyle:on
 
-import org.apache.kyuubi.KyuubiFunSuite
-
-class SemanticVersionSuite extends KyuubiFunSuite {
-
+// scalastyle:off
+class SemanticVersionSuite extends AnyFunSuite {
+// scalastyle:on
   test("parse normal version") {
     val version = SemanticVersion("1.12.4")
     assert(version.majorVersion === 1)

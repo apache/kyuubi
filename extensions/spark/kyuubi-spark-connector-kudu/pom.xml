@@ -157,6 +157,7 @@
                     <artifactSet>
                         <includes>
                             <include>org.apache.kudu:kudu-client</include>
+                            <include>org.apache.kyuubi:*</include>
                             <include>com.stumbleupon:async</include>
                         </includes>
                     </artifactSet>

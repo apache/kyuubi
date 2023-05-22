@@ -148,7 +148,7 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
-                            <include>org.apache.kyuubi:kyuubi-extension-spark-common_${scala.binary.version}</include>
+                            <include>org.apache.kyuubi:*</include>
                         </includes>
                     </artifactSet>
                 </configuration>

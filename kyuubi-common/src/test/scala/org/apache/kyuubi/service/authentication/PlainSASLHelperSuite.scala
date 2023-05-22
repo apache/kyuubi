@@ -23,9 +23,9 @@ import org.apache.thrift.transport.{TSaslServerTransport, TSocket}
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.service.{NoopTBinaryFrontendServer, TBinaryFrontendService}
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
+import org.apache.kyuubi.util.SemanticVersion
 
 class PlainSASLHelperSuite extends KyuubiFunSuite {
 

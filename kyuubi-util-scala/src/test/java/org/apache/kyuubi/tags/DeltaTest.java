@@ -15,23 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.util
+package org.apache.kyuubi.tags;
 
-import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.scalatest.TagAnnotation;
 
-trait SparkVersionUtil {
-  this: HiveJDBCTestHelper =>
-
-  protected lazy val SPARK_ENGINE_RUNTIME_VERSION = sparkEngineMajorMinorVersion
-
-  def sparkEngineMajorMinorVersion: SemanticVersion = {
-    var sparkRuntimeVer = ""
-    withJdbcStatement() { stmt =>
-      val result = stmt.executeQuery("SELECT version()")
-      assert(result.next())
-      sparkRuntimeVer = result.getString(1)
-      assert(!result.next())
-    }
-    SemanticVersion(sparkRuntimeVer)
-  }
-}
+@TagAnnotation
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.TYPE})
+public @interface DeltaTest {}
