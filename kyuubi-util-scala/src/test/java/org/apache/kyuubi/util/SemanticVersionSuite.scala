@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.util
 
-import org.apache.kyuubi.KyuubiFunSuite
-
-class SemanticVersionSuite extends KyuubiFunSuite {
+class SemanticVersionSuite extends Fun {
 
   test("parse normal version") {
     val version = SemanticVersion("1.12.4")
