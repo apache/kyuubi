@@ -18,7 +18,6 @@
 package org.apache.kyuubi.util
 
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.util.SemanticVersion
 
 trait SparkVersionUtil {
   this: HiveJDBCTestHelper =>
