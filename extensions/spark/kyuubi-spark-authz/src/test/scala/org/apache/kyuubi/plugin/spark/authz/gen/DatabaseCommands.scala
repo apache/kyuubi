@@ -58,9 +58,10 @@ object DatabaseCommands {
         "namespace",
         classOf[StringSeqDatabaseExtractor],
         catalogDesc = Some(CatalogDesc()))
+    val databaseDesc3 = DatabaseDesc("name", classOf[ResolvedNamespaceDatabaseExtractor])
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
-      Seq(databaseDesc1, databaseDesc2),
+      Seq(databaseDesc1, databaseDesc2, databaseDesc3),
       CREATEDATABASE)
   }
 
@@ -110,7 +111,12 @@ object DatabaseCommands {
           fieldName = "catalogName",
           fieldExtractor = classOf[StringOptionCatalogExtractor])),
         isInput = true)
-    DatabaseCommandSpec(cmd, Seq(databaseDesc1, databaseDesc2), SWITCHDATABASE)
+    val databaseDesc3 =
+      DatabaseDesc(
+        "child",
+        classOf[ResolvedNamespaceDatabaseExtractor],
+        isInput = true)
+    DatabaseCommandSpec(cmd, Seq(databaseDesc1, databaseDesc2, databaseDesc3), SWITCHDATABASE)
   }
 
   val SetNamespace = {
