@@ -33,6 +33,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
+import org.apache.kyuubi.util.SemanticVersion
 
 private[authz] object AuthZUtils {
 

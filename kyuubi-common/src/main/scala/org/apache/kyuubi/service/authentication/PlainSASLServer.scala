@@ -23,7 +23,7 @@ import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, Pa
 import javax.security.sasl.{AuthorizeCallback, SaslException, SaslServer, SaslServerFactory}
 
 import org.apache.kyuubi.KYUUBI_VERSION
-import org.apache.kyuubi.engine.SemanticVersion
+import org.apache.kyuubi.util.SemanticVersion
 
 class PlainSASLServer(
     handler: CallbackHandler,

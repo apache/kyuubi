@@ -38,7 +38,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.ArrowUtils
 import org.apache.spark.util.Utils
 
-import org.apache.kyuubi.reflection.DynMethods
+import org.apache.kyuubi.util.reflect.DynMethods
 
 object KyuubiArrowConverters extends SQLConfHelper with Logging {
 

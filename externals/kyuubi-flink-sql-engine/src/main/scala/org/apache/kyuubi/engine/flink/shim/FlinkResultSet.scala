@@ -24,7 +24,7 @@ import org.apache.flink.table.data.RowData
 import org.apache.flink.table.gateway.api.results.ResultSet.ResultType
 
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils
-import org.apache.kyuubi.reflection.DynMethods
+import org.apache.kyuubi.util.reflect.DynMethods
 
 class FlinkResultSet(resultSet: AnyRef) {
 

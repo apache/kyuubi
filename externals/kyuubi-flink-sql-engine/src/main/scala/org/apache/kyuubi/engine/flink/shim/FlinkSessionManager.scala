@@ -22,7 +22,7 @@ import org.apache.flink.table.gateway.service.context.DefaultContext
 import org.apache.flink.table.gateway.service.session.Session
 
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils
-import org.apache.kyuubi.reflection.{DynConstructors, DynMethods}
+import org.apache.kyuubi.util.reflect.{DynConstructors, DynMethods}
 
 class FlinkSessionManager(engineContext: DefaultContext) {
 

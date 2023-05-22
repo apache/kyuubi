@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.kyuubi.reflection;
+package org.apache.kyuubi.util.reflect;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

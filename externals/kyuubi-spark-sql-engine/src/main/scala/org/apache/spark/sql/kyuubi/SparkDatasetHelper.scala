@@ -35,7 +35,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.schema.RowSet
-import org.apache.kyuubi.reflection.DynMethods
+import org.apache.kyuubi.util.reflect.DynMethods
 
 object SparkDatasetHelper extends Logging {
 

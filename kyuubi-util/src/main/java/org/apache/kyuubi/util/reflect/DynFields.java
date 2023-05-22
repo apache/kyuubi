@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.kyuubi.reflection;
+package org.apache.kyuubi.util.reflect;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -25,7 +25,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Copied from iceberg-common */
 public class DynFields {
@@ -66,11 +65,8 @@ public class DynFields {
 
     @Override
     public String toString() {
-      return new ToStringBuilder(this)
-          .append("class", field.getDeclaringClass().toString())
-          .append("name", name)
-          .append("type", field.getType())
-          .toString();
+      return String.format(
+          "DynFields{class=%s,name=%s,type=%s}", field.getDeclaringClass(), name, field.getType());
     }
 
     /**
