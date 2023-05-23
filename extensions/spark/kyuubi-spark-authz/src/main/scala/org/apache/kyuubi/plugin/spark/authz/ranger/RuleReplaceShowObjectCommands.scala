@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.command.{RunnableCommand, ShowColumnsComma
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, ObjectFilterPlaceHolder, WithInternalChildren}
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
@@ -48,7 +49,7 @@ class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
 case class FilteredShowTablesCommand(delegated: RunnableCommand)
   extends FilteredShowObjectCommand(delegated) {
 
-  var isExtended: Boolean = AuthZUtils.getFieldVal(delegated, "isExtended").asInstanceOf[Boolean]
+  private val isExtended = getFieldVal[Boolean](delegated, "isExtended")
 
   override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)
