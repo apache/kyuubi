@@ -32,7 +32,6 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 trait SparkSessionProvider {
   protected val catalogImpl: String
   protected def format: String = if (catalogImpl == "hive") "hive" else "parquet"
-  protected val isSparkV2: Boolean = isSparkVersionAtMost("2.4")
   protected val isSparkV31OrGreater: Boolean = isSparkVersionAtLeast("3.1")
   protected val isSparkV32OrGreater: Boolean = isSparkVersionAtLeast("3.2")
   protected val isSparkV33OrGreater: Boolean = isSparkVersionAtLeast("3.3")
