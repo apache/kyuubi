@@ -366,7 +366,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.catalog.isEmpty)
-    assert(po.dbname === (if (isSparkV2) null else defaultDb))
+    assert(po.dbname === defaultDb)
     assert(po.objectName === "AlterViewAsCommand")
     checkTableOwner(po)
     assert(po.columns.isEmpty)
@@ -522,7 +522,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.catalog.isEmpty)
-    assert(po.dbname === (if (isSparkV2) null else defaultDb))
+    assert(po.dbname === defaultDb)
     assert(po.objectName === "CreateViewCommand")
     assert(po.columns.isEmpty)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
@@ -542,7 +542,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.catalog.isEmpty)
-      assert(po.dbname === (if (isSparkV2) null else defaultDb))
+      assert(po.dbname === defaultDb)
       assert(po.objectName === tableName)
       assert(po.columns.isEmpty)
       val accessType = ranger.AccessType(po, operationType, isInput = false)
@@ -957,7 +957,6 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("Query: CTE") {
-    assume(!isSparkV2)
     checkColumns(
       s"""
          |with t(c) as (select coalesce(max(key), pid, 1) from $reusedPartTable group by pid)
@@ -1229,7 +1228,6 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("AlterTableChangeColumnCommand") {
-    assume(!isSparkV2)
     val plan = sql(s"ALTER TABLE $reusedTable" +
       s" ALTER COLUMN value COMMENT 'alter column'").queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
@@ -1297,7 +1295,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.catalog.isEmpty)
-    assert(po.dbname === (if (isSparkV2) null else defaultDb))
+    assert(po.dbname === defaultDb)
     assert(po.objectName === "CreateDataSourceTableAsSelectCommand")
     if (catalogImpl == "hive") {
       assert(po.columns === Seq("key", "value"))
@@ -1311,10 +1309,9 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
 class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
-  override protected val catalogImpl: String = if (isSparkV2) "in-memory" else "hive"
+  override protected val catalogImpl: String = "hive"
 
   test("AlterTableSerDePropertiesCommand") {
-    assume(!isSparkV2)
     withTable("AlterTableSerDePropertiesCommand") { t =>
       sql(s"CREATE TABLE $t (key int, pid int) USING hive PARTITIONED BY (pid)")
       sql(s"ALTER TABLE $t ADD IF NOT EXISTS PARTITION (pid=1)")
@@ -1339,7 +1336,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("CreateTableCommand") {
-    assume(!isSparkV2)
     withTable("CreateTableCommand") { _ =>
       val plan = sql(s"CREATE TABLE CreateTableCommand(a int, b string) USING hive")
         .queryExecution.analyzed
@@ -1360,7 +1356,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("CreateHiveTableAsSelectCommand") {
-    assume(!isSparkV2)
     val plan = sql(s"CREATE TABLE CreateHiveTableAsSelectCommand USING hive" +
       s" AS SELECT key, value FROM $reusedTable")
       .queryExecution.analyzed
@@ -1391,7 +1386,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("LoadDataCommand") {
-    assume(!isSparkV2)
     val dataPath = getClass.getClassLoader.getResource("data.txt").getPath
     val tableName = reusedDb + "." + "LoadDataToTable"
     withTable(tableName) { _ =>
@@ -1421,7 +1415,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("InsertIntoDatasourceDirCommand") {
-    assume(!isSparkV2)
     val tableDirectory = getClass.getResource("/").getPath + "table_directory"
     val directory = File(tableDirectory).createDirectory()
     val plan = sql(
@@ -1447,7 +1440,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("InsertIntoDataSourceCommand") {
-    assume(!isSparkV2)
     val tableName = "InsertIntoDataSourceTable"
     withTable(tableName) { _ =>
       // sql(s"CREATE TABLE $tableName (a int, b string) USING parquet")
@@ -1506,7 +1498,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("InsertIntoHadoopFsRelationCommand") {
-    assume(!isSparkV2)
     val tableName = "InsertIntoHadoopFsRelationTable"
     withTable(tableName) { _ =>
       sql(s"CREATE TABLE $tableName (a int, b string) USING parquet")
@@ -1548,7 +1539,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("InsertIntoDataSourceDirCommand") {
-    assume(!isSparkV2)
     val tableDirectory = getClass.getResource("/").getPath + "table_directory"
     val directory = File(tableDirectory).createDirectory()
     val plan = sql(
@@ -1574,7 +1564,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("InsertIntoHiveDirCommand") {
-    assume(!isSparkV2)
     val tableDirectory = getClass.getResource("/").getPath + "table_directory"
     val directory = File(tableDirectory).createDirectory()
     val plan = sql(
@@ -1600,7 +1589,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("InsertIntoHiveTableCommand") {
-    assume(!isSparkV2)
     val tableName = "InsertIntoHiveTable"
     withTable(tableName) { _ =>
       sql(s"CREATE TABLE $tableName (a int, b string) USING hive")
@@ -1630,7 +1618,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("ShowCreateTableAsSerdeCommand") {
-    assume(!isSparkV2)
     withTable("ShowCreateTableAsSerdeCommand") { t =>
       sql(s"CREATE TABLE $t (key int, pid int) USING hive PARTITIONED BY (pid)")
       val plan = sql(s"SHOW CREATE TABLE $t AS SERDE").queryExecution.analyzed
@@ -1652,7 +1639,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("OptimizedCreateHiveTableAsSelectCommand") {
-    assume(!isSparkV2)
     val plan = sql(
       s"CREATE TABLE OptimizedCreateHiveTableAsSelectCommand STORED AS parquet AS SELECT 1 as a")
       .queryExecution.analyzed
