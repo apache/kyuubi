@@ -138,7 +138,8 @@
         <flexmark.version>0.62.2</flexmark.version>
         <flink.version>1.17.1</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
-        <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
+        <!-- remove rc suffix once 1.17.1 is released -->
+        <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}-rc1</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <grpc.version>1.48.0</grpc.version>
@@ -2190,6 +2191,7 @@
             <id>flink-1.16</id>
             <properties>
                 <flink.version>1.16.1</flink.version>
+                <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
             </properties>
         </profile>
 
