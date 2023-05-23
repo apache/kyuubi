@@ -34,7 +34,7 @@ import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessio
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll {

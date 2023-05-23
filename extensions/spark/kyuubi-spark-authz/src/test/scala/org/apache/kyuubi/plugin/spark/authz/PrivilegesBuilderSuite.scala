@@ -630,7 +630,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("RefreshFunctionCommand") {
-    assume(AuthZUtils.isSparkVersionAtLeast("3.1"))
+    assume(isSparkV31OrGreater)
     sql(s"CREATE FUNCTION RefreshFunctionCommand AS '${getClass.getCanonicalName}'")
     val plan = sql("REFRESH FUNCTION RefreshFunctionCommand")
       .queryExecution.analyzed

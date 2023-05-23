@@ -109,7 +109,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
       } else if (result.getMaskTypeDef != null) {
         result.getMaskTypeDef.getName match {
           case "MASK" => regexp_replace(col)
-          case "MASK_SHOW_FIRST_4" if isSparkVersionAtLeast("3.1") =>
+          case "MASK_SHOW_FIRST_4" if isSparkV31OrGreater =>
             regexp_replace(col, hasLen = true)
           case "MASK_SHOW_FIRST_4" =>
             val right = regexp_replace(s"substr($col, 5)")

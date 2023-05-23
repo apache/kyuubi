@@ -119,7 +119,7 @@ private[authz] object AuthZUtils {
 
   def hasResolvedPermanentView(plan: LogicalPlan): Boolean = {
     plan match {
-      case view: View if view.resolved && isSparkVersionAtLeast("3.1.0") =>
+      case view: View if view.resolved && isSparkV31OrGreater =>
         !getFieldVal[Boolean](view, "isTempView")
       case _ =>
         false

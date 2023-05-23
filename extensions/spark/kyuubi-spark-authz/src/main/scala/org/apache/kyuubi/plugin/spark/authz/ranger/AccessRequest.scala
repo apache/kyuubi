@@ -27,7 +27,7 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{invoke, invokeAs}
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
 
