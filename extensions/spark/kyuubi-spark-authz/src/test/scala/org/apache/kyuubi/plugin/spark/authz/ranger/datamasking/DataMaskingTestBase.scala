@@ -30,6 +30,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 /**
  * Base trait for data masking tests, derivative classes shall name themselves following:

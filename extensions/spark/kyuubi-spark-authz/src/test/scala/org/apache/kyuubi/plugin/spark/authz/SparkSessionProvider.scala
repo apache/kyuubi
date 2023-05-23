@@ -28,14 +28,10 @@ import org.scalatest.Assertions.convertToEqualizer
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-
 trait SparkSessionProvider {
   protected val catalogImpl: String
   protected def format: String = if (catalogImpl == "hive") "hive" else "parquet"
   protected val isSparkV2: Boolean = isSparkVersionAtMost("2.4")
-  protected val isSparkV31OrGreater: Boolean = isSparkVersionAtLeast("3.1")
-  protected val isSparkV32OrGreater: Boolean = isSparkVersionAtLeast("3.2")
-  protected val isSparkV33OrGreater: Boolean = isSparkVersionAtLeast("3.3")
 
   protected val extension: SparkSessionExtensions => Unit = _ => Unit
   protected val sqlExtensions: String = ""
