@@ -119,7 +119,7 @@ private[authz] object AuthZUtils {
 
   def hasResolvedPermanentView(plan: LogicalPlan): Boolean = {
     plan match {
-      case view: View if view.resolved && isSparkVersionAtLeast("3.1.0") =>
+      case view: View if view.resolved && isSparkV31OrGreater =>
         !getFieldVal[Boolean](view, "isTempView")
       case _ =>
         false
@@ -136,30 +136,18 @@ private[authz] object AuthZUtils {
     }
   }
 
+  private lazy val sparkSemanticVersion: SemanticVersion = SemanticVersion(SPARK_VERSION)
+  lazy val isSparkV31OrGreater: Boolean = isSparkVersionAtLeast("3.1")
+  lazy val isSparkV32OrGreater: Boolean = isSparkVersionAtLeast("3.2")
+  lazy val isSparkV33OrGreater: Boolean = isSparkVersionAtLeast("3.3")
+
   def isSparkVersionAtMost(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionAtMost(targetVersionString)
+    sparkSemanticVersion.isVersionAtMost(targetVersionString)
   }
 
   def isSparkVersionAtLeast(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionAtLeast(targetVersionString)
+    sparkSemanticVersion.isVersionAtLeast(targetVersionString)
   }
-
-  def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
-  }
-
-  /**
-   * check if spark version satisfied
-   * first param is option of supported most  spark version,
-   * and secont param is option of supported least spark version
-   *
-   * @return
-   */
-  def passSparkVersionCheck: (Option[String], Option[String]) => Boolean =
-    (mostSparkVersion, leastSparkVersion) => {
-      mostSparkVersion.forall(isSparkVersionAtMost) &&
-      leastSparkVersion.forall(isSparkVersionAtLeast)
-    }
 
   def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {

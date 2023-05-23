@@ -26,6 +26,7 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 import org.apache.kyuubi.plugin.spark.authz.serde.{Database, DB_COMMAND_SPECS}
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 

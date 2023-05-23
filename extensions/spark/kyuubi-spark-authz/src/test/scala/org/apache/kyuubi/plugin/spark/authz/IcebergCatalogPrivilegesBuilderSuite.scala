@@ -22,6 +22,7 @@ import org.scalatest.Outcome
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.IcebergTest
 
 @IcebergTest
