@@ -23,8 +23,6 @@ import java.security.interfaces.ECPublicKey
 import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 
-import scala.util.{Failure, Success, Try}
-
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.ranger.plugin.service.RangerBasePlugin
@@ -34,66 +32,9 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
 import org.apache.kyuubi.util.SemanticVersion
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 private[authz] object AuthZUtils {
-
-  /**
-   * fixme error handling need improve here
-   */
-  def getFieldVal[T](o: Any, name: String): T = {
-    Try {
-      val field = o.getClass.getDeclaredField(name)
-      field.setAccessible(true)
-      field.get(o)
-    } match {
-      case Success(value) => value.asInstanceOf[T]
-      case Failure(e) =>
-        val candidates = o.getClass.getDeclaredFields.map(_.getName).mkString("[", ",", "]")
-        throw new RuntimeException(s"$name not in ${o.getClass} $candidates", e)
-    }
-  }
-
-  def getFieldValOpt[T](o: Any, name: String): Option[T] = Try(getFieldVal[T](o, name)).toOption
-
-  def invoke(
-      obj: AnyRef,
-      methodName: String,
-      args: (Class[_], AnyRef)*): AnyRef = {
-    try {
-      val (types, values) = args.unzip
-      val method = obj.getClass.getMethod(methodName, types: _*)
-      method.setAccessible(true)
-      method.invoke(obj, values: _*)
-    } catch {
-      case e: NoSuchMethodException =>
-        val candidates = obj.getClass.getMethods.map(_.getName).mkString("[", ",", "]")
-        throw new RuntimeException(s"$methodName not in ${obj.getClass} $candidates", e)
-    }
-  }
-
-  def invokeAs[T](
-      obj: AnyRef,
-      methodName: String,
-      args: (Class[_], AnyRef)*): T = {
-    invoke(obj, methodName, args: _*).asInstanceOf[T]
-  }
-
-  def invokeStatic(
-      obj: Class[_],
-      methodName: String,
-      args: (Class[_], AnyRef)*): AnyRef = {
-    val (types, values) = args.unzip
-    val method = obj.getMethod(methodName, types: _*)
-    method.setAccessible(true)
-    method.invoke(obj, values: _*)
-  }
-
-  def invokeStaticAs[T](
-      obj: Class[_],
-      methodName: String,
-      args: (Class[_], AnyRef)*): T = {
-    invokeStatic(obj, methodName, args: _*).asInstanceOf[T]
-  }
 
   /**
    * Get the active session user

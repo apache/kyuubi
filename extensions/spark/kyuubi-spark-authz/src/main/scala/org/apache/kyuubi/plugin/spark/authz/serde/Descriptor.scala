@@ -34,7 +34,7 @@ import org.apache.kyuubi.plugin.spark.authz.serde.QueryExtractor.queryExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.TableExtractor.tableExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.TableType.TableType
 import org.apache.kyuubi.plugin.spark.authz.serde.TableTypeExtractor.tableTypeExtractors
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 /**
  * A database object(such as database, table, function) descriptor describes its name and getter
