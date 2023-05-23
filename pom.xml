@@ -2158,12 +2158,6 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
                 <module>extensions/spark/kyuubi-spark-connector-kudu</module>
             </modules>
-            <repositories>
-                <repository>
-                    <id>staging-repo</id>
-                    <url>https://oss.sonatype.org/content/repositories/iodelta-1080/</url>
-                </repository>
-            </repositories>
             <properties>
                 <delta.version>2.4.0rc1</delta.version>
                 <spark.version>3.4.0</spark.version>
@@ -2171,6 +2165,12 @@
                 <spark.binary.version>3.3</spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
             </properties>
+            <repositories>
+                <repository>
+                    <id>staging-repo</id>
+                    <url>https://oss.sonatype.org/content/repositories/iodelta-1080/</url>
+                </repository>
+            </repositories>
         </profile>
 
         <profile>
