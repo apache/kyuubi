@@ -21,6 +21,19 @@ import scala.util.{Failure, Success, Try}
 
 object ReflectUtils {
 
+  /**
+   * Determines whether the provided class is loadable
+   * @param className the class name
+   * @param cl the class loader
+   * @return is the class name loadable with the class loader
+   */
+  def isClassLoadable(
+      className: String,
+      cl: ClassLoader = Thread.currentThread().getContextClassLoader): Boolean =
+    Try {
+      DynClasses.builder().loader(cl).impl(className).buildChecked()
+    }.isSuccess
+
   def getFieldVal[T](target: Any, fieldName: String): T =
     Try {
       DynFields.builder().hiddenImpl(target.getClass, fieldName).build[T]().get(target)
