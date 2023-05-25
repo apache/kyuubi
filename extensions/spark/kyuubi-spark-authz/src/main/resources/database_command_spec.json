@@ -51,6 +51,11 @@
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace",
   "databaseDescs" : [ {
     "fieldName" : "child",
+    "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : true
+  }, {
+    "fieldName" : "child",
     "fieldExtractor" : "ResolvedDBObjectNameDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : true
@@ -61,11 +66,6 @@
       "fieldName" : "catalogName",
       "fieldExtractor" : "StringOptionCatalogExtractor"
     },
-    "isInput" : true
-  }, {
-    "fieldName" : "child",
-    "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
-    "catalogDesc" : null,
     "isInput" : true
   } ],
   "opType" : "SWITCHDATABASE"
