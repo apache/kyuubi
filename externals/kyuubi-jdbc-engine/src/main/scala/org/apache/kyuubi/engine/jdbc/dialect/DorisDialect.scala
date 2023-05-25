@@ -162,4 +162,9 @@ class DorisDialect extends JdbcDialect {
   override def name(): String = {
     "doris"
   }
+
+  override def initializationSQLs(): Seq[String] = {
+    Seq("SHOW DATABASES")
+  }
+
 }

@@ -65,6 +65,8 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
 
   def getSchemaHelper(): SchemaHelper
 
+  def initializationSQLs(): Seq[String]
+
 }
 
 object JdbcDialects extends Logging {
