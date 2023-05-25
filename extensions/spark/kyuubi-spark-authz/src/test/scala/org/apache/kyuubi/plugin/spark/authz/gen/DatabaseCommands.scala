@@ -98,12 +98,12 @@ object DatabaseCommands {
 
   val SetCatalogAndNamespace = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace"
-    val databaseDesc1 =
+    val resolvedDbObjectDatabaseDesc =
       DatabaseDesc(
         "child",
         classOf[ResolvedDBObjectNameDatabaseExtractor],
         isInput = true)
-    val databaseDesc2 =
+    val stringSeqOptionDatabaseDesc =
       DatabaseDesc(
         "namespace",
         classOf[StringSeqOptionDatabaseExtractor],
@@ -111,12 +111,15 @@ object DatabaseCommands {
           fieldName = "catalogName",
           fieldExtractor = classOf[StringOptionCatalogExtractor])),
         isInput = true)
-    val databaseDesc3 =
+    val resolvedNamespaceDatabaseDesc =
       DatabaseDesc(
         "child",
         classOf[ResolvedNamespaceDatabaseExtractor],
         isInput = true)
-    DatabaseCommandSpec(cmd, Seq(databaseDesc1, databaseDesc2, databaseDesc3), SWITCHDATABASE)
+    DatabaseCommandSpec(
+      cmd,
+      Seq(resolvedNamespaceDatabaseDesc, resolvedDbObjectDatabaseDesc, stringSeqOptionDatabaseDesc),
+      SWITCHDATABASE)
   }
 
   val SetNamespace = {
