@@ -387,8 +387,8 @@ object KyuubiConf {
         "</ul>")
       .version("1.4.0")
       .stringConf
+      .transformToUpperCase
       .toSequence()
-      .transform(_.map(_.toUpperCase(Locale.ROOT)))
       .checkValue(
         _.forall(FrontendProtocols.values.map(_.toString).contains),
         s"the frontend protocol should be one or more of ${FrontendProtocols.values.mkString(",")}")
@@ -764,8 +764,8 @@ object KyuubiConf {
     .version("1.0.0")
     .serverOnly
     .stringConf
+    .transformToUpperCase
     .toSequence()
-    .transform(_.map(_.toUpperCase(Locale.ROOT)))
     .checkValue(
       _.forall(AuthTypes.values.map(_.toString).contains),
       s"the authentication type should be one or more of ${AuthTypes.values.mkString(",")}")
@@ -1001,7 +1001,7 @@ object KyuubiConf {
     .serverOnly
     .stringConf
     .checkValues(SaslQOP.values.map(_.toString))
-    .transform(_.toLowerCase(Locale.ROOT))
+    .transformToLowerCase
     .createWithDefault(SaslQOP.AUTH.toString)
 
   val FRONTEND_REST_BIND_HOST: ConfigEntry[Option[String]] =
@@ -1733,7 +1733,7 @@ object KyuubiConf {
       .version("1.7.0")
       .stringConf
       .checkValues(Set("arrow", "thrift"))
-      .transform(_.toLowerCase(Locale.ROOT))
+      .transformToLowerCase
       .createWithDefault("thrift")
 
   val ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING: ConfigEntry[Boolean] =
@@ -1758,7 +1758,7 @@ object KyuubiConf {
       .doc(s"(deprecated) - Using kyuubi.engine.share.level instead")
       .version("1.0.0")
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
+      .transformToUpperCase
       .checkValues(ShareLevel.values.map(_.toString))
       .createWithDefault(ShareLevel.USER.toString)
 
@@ -1773,7 +1773,7 @@ object KyuubiConf {
       .doc("(deprecated) - Using kyuubi.engine.share.level.subdomain instead")
       .version("1.2.0")
       .stringConf
-      .transform(_.toLowerCase(Locale.ROOT))
+      .transformToLowerCase
       .checkValue(validZookeeperSubPath.matcher(_).matches(), "must be valid zookeeper sub path.")
       .createOptional
 
@@ -1839,7 +1839,7 @@ object KyuubiConf {
       "</ul>")
     .version("1.4.0")
     .stringConf
-    .transform(_.toUpperCase(Locale.ROOT))
+    .transformToUpperCase
     .checkValues(EngineType.values.map(_.toString))
     .createWithDefault(EngineType.SPARK_SQL.toString)
 
@@ -1886,7 +1886,7 @@ object KyuubiConf {
         "</ul>")
       .version("1.7.0")
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
+      .transformToUpperCase
       .checkValues(Set("RANDOM", "POLLING"))
       .createWithDefault("RANDOM")
 
@@ -2047,7 +2047,7 @@ object KyuubiConf {
       .version("1.4.0")
       .serverOnly
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
+      .transformToUpperCase
       .toSequence()
       .checkValue(
         _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM", "KAFKA")),
@@ -2071,7 +2071,7 @@ object KyuubiConf {
         " which has a zero-arg constructor.")
       .version("1.3.0")
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
+      .transformToUpperCase
       .toSequence()
       .checkValue(
         _.toSet.subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM")),
@@ -2204,7 +2204,7 @@ object KyuubiConf {
         "'physical', and 'execution', other engines do not support planOnly currently.")
       .version("1.4.0")
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
+      .transformToUpperCase
       .checkValue(
         mode =>
           Set(
@@ -2227,7 +2227,7 @@ object KyuubiConf {
         "of the Spark engine")
       .version("1.7.0")
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
+      .transformToUpperCase
       .checkValue(
         mode => Set("PLAIN", "JSON").contains(mode),
         "Invalid value for 'kyuubi.operation.plan.only.output.style'. Valid values are " +
@@ -2278,7 +2278,7 @@ object KyuubiConf {
         "</ul>")
       .version("1.5.0")
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
+      .transformToUpperCase
       .checkValues(OperationLanguages.values.map(_.toString))
       .createWithDefault(OperationLanguages.SQL.toString)
 
@@ -2838,7 +2838,7 @@ object KyuubiConf {
         " <li>CUSTOM: to be done.</li></ul>")
       .version("1.7.0")
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
+      .transformToUpperCase
       .toSequence()
       .checkValue(
         _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM")),
@@ -2855,7 +2855,7 @@ object KyuubiConf {
         " <li>CUSTOM: to be done.</li></ul>")
       .version("1.7.0")
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
+      .transformToUpperCase
       .toSequence()
       .checkValue(
         _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM")),
