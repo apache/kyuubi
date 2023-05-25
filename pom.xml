@@ -157,7 +157,7 @@
         <hive.archive.download.skip>false</hive.archive.download.skip>
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
-        <iceberg.version>1.2.0</iceberg.version>
+        <iceberg.version>1.3.0</iceberg.version>
         <jackson.version>2.15.0</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
@@ -2165,9 +2165,8 @@
             <properties>
                 <delta.version>2.4.0</delta.version>
                 <spark.version>3.4.0</spark.version>
-                <!-- FIXME: used for constructing Iceberg artifact name, correct it once Iceberg supports Spark 3.4 -->
-                <spark.binary.version>3.3</spark.binary.version>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
+                <spark.binary.version>3.4</spark.binary.version>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
