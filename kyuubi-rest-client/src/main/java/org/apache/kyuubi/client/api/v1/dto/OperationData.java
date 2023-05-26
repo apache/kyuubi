@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -33,6 +34,7 @@ public class OperationData {
   private String sessionUser;
   private String sessionType;
   private String kyuubiInstance;
+  private Map<String, String> metrics;
 
   public OperationData() {}
 
@@ -47,7 +49,8 @@ public class OperationData {
       String sessionId,
       String sessionUser,
       String sessionType,
-      String kyuubiInstance) {
+      String kyuubiInstance,
+      Map<String, String> metrics) {
     this.identifier = identifier;
     this.statement = statement;
     this.state = state;
@@ -59,6 +62,7 @@ public class OperationData {
     this.sessionUser = sessionUser;
     this.sessionType = sessionType;
     this.kyuubiInstance = kyuubiInstance;
+    this.metrics = metrics;
   }
 
   public String getIdentifier() {
@@ -149,11 +153,19 @@ public class OperationData {
     this.kyuubiInstance = kyuubiInstance;
   }
 
+  public Map<String, String> getMetrics() {
+    return metrics;
+  }
+
+  public void setMetrics(Map<String, String> metrics) {
+    this.metrics = metrics;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    SessionData that = (SessionData) o;
+    OperationData that = (OperationData) o;
     return Objects.equals(getIdentifier(), that.getIdentifier());
   }
 
