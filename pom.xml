@@ -2159,18 +2159,12 @@
                 <module>extensions/spark/kyuubi-spark-connector-kudu</module>
             </modules>
             <properties>
-                <delta.version>2.4.0rc1</delta.version>
+                <delta.version>2.4.0</delta.version>
                 <spark.version>3.4.0</spark.version>
                 <!-- FIXME: used for constructing Iceberg artifact name, correct it once Iceberg supports Spark 3.4 -->
                 <spark.binary.version>3.3</spark.binary.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
             </properties>
-            <repositories>
-                <repository>
-                    <id>staging-repo</id>
-                    <url>https://oss.sonatype.org/content/repositories/iodelta-1080/</url>
-                </repository>
-            </repositories>
         </profile>
 
         <profile>
