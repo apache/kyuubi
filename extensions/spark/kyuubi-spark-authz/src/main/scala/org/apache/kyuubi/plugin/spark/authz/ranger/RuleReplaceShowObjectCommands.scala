@@ -33,9 +33,6 @@ class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
     case r: RunnableCommand if r.nodeName == "ShowTablesCommand" => FilteredShowTablesCommand(r)
     case n: LogicalPlan if n.nodeName == "ShowTables" =>
       ObjectFilterPlaceHolder(n)
-    // show databases in spark2.4.x
-    case r: RunnableCommand if r.nodeName == "ShowDatabasesCommand" =>
-      FilteredShowDatabasesCommand(r)
     case n: LogicalPlan if n.nodeName == "ShowNamespaces" =>
       ObjectFilterPlaceHolder(n)
     case r: RunnableCommand if r.nodeName == "ShowFunctionsCommand" =>
@@ -59,18 +56,6 @@ case class FilteredShowTablesCommand(delegated: RunnableCommand)
     val resource = AccessResource(objectType, database, table, null)
     val accessType = if (isExtended) AccessType.SELECT else AccessType.USE
     val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, accessType)
-    val result = SparkRangerAdminPlugin.isAccessAllowed(request)
-    result != null && result.getIsAllowed
-  }
-}
-
-case class FilteredShowDatabasesCommand(delegated: RunnableCommand)
-  extends FilteredShowObjectCommand(delegated) {
-
-  override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
-    val database = r.getString(0)
-    val resource = AccessResource(ObjectType.DATABASE, database, null, null)
-    val request = AccessRequest(resource, ugi, OperationType.SHOWDATABASES, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
