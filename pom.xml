@@ -138,8 +138,7 @@
         <flexmark.version>0.62.2</flexmark.version>
         <flink.version>1.17.1</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
-        <!-- switch to the official dist once 1.17.1 is released -->
-        <flink.archive.mirror>https://dist.apache.org/repos/dist/dev/flink/flink-1.17.1-rc1/</flink.archive.mirror>
+        <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <grpc.version>1.48.0</grpc.version>
@@ -1500,17 +1499,6 @@
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
-
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>Apache Staging Repository</id>
-            <url>https://repository.apache.org/content/repositories/orgapacheflink-1635</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -2202,7 +2190,6 @@
             <id>flink-1.16</id>
             <properties>
                 <flink.version>1.16.1</flink.version>
-                <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
             </properties>
         </profile>
 
@@ -2210,7 +2197,6 @@
             <id>flink-1.17</id>
             <properties>
                 <flink.version>1.17.1</flink.version>
-                <flink.archive.mirror>https://dist.apache.org/repos/dist/dev/flink/flink-1.17.1-rc1/</flink.archive.mirror>
             </properties>
         </profile>
 
