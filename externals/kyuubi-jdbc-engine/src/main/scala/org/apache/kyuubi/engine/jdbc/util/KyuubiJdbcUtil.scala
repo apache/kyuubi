@@ -18,7 +18,9 @@
 package org.apache.kyuubi.engine.jdbc.util
 
 import java.sql.{Connection, Statement}
+
 import scala.util.{Failure, Success, Try}
+
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
