@@ -22,14 +22,16 @@ import java.util.UUID
 import scala.collection.JavaConverters.asScalaBufferConverter
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
+import org.mockito.Mockito.lenient
+import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.kyuubi.{KYUUBI_VERSION, RestClientTestHelper}
 import org.apache.kyuubi.client.{AdminRestApi, KyuubiRestClient}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.engine.EngineRef
 import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceDiscovery}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
-import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.plugin.PluginLoader
 
 class AdminRestApiSuite extends RestClientTestHelper {
@@ -147,5 +149,26 @@ class AdminRestApiSuite extends RestClientTestHelper {
     operations = adminRestApi.listOperations().asScala
     assert(!operations.map(op => op.getIdentifier).contains(operation.identifier.toString))
 
+  }
+
+  test("list server") {
+    val spnegoKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
+        .spnegoHost("localhost")
+        .build()
+    val adminRestApi = new AdminRestApi(spnegoKyuubiRestClient)
+
+    // Mock Kyuubi Server
+    val serverDiscovery = mock[ServiceDiscovery]
+    lenient.when(serverDiscovery.fe).thenReturn(fe)
+    val namespace = conf.get(HighAvailabilityConf.HA_NAMESPACE)
+    withDiscoveryClient(conf) { client =>
+      client.registerService(conf, namespace, serverDiscovery)
+
+      val servers = adminRestApi.listServers().asScala
+      assert(servers.nonEmpty)
+      assert(servers.map(s => s.getInstance()).contains(server.frontendServices.last.connectionUrl))
+    }
   }
 }

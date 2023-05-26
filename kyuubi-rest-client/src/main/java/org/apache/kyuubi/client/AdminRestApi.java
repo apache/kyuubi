@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.kyuubi.client.api.v1.dto.Engine;
 import org.apache.kyuubi.client.api.v1.dto.OperationData;
+import org.apache.kyuubi.client.api.v1.dto.ServerData;
 import org.apache.kyuubi.client.api.v1.dto.SessionData;
 
 public class AdminRestApi {
@@ -97,6 +98,13 @@ public class AdminRestApi {
   public String closeOperation(String operationHandleStr) {
     String url = String.format("%s/operations/%s", API_BASE_PATH, operationHandleStr);
     return this.getClient().delete(url, null, client.getAuthHeader());
+  }
+
+  public List<ServerData> listServers() {
+    ServerData[] result =
+        this.getClient()
+            .get(API_BASE_PATH + "/server", null, ServerData[].class, client.getAuthHeader());
+    return Arrays.asList(result);
   }
 
   private IRestClient getClient() {
