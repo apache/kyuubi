@@ -151,8 +151,4 @@ class PhoenixDialect extends JdbcDialect {
     "phoenix"
   }
 
-  override def initializationSQLs(): Seq[String] = {
-    Seq("SELECT 1")
-  }
-
 }
