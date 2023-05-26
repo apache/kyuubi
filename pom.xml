@@ -2163,7 +2163,7 @@
                 <spark.version>3.4.0</spark.version>
                 <!-- FIXME: used for constructing Iceberg artifact name, correct it once Iceberg supports Spark 3.4 -->
                 <spark.binary.version>3.3</spark.binary.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
