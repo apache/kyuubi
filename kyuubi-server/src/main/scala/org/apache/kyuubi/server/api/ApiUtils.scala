@@ -57,7 +57,8 @@ object ApiUtils {
       opEvent.sessionId,
       opEvent.sessionUser,
       opEvent.sessionType,
-      operation.getSession.asInstanceOf[KyuubiSession].connectionUrl)
+      operation.getSession.asInstanceOf[KyuubiSession].connectionUrl,
+      operation.metrics.asJava)
   }
 
   def serverData(nodeInfo: ServiceNodeInfo): ServerData = {
