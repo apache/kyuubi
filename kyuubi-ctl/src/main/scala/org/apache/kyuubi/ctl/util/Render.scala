@@ -52,7 +52,7 @@ private[ctl] object Render {
       Array(
         server.getNamespace,
         server.getInstance,
-        server.getAttributes.asScala.map(kv => kv._1 + "=" + kv._2).mkString("\n"),
+        server.getAttributes.asScala.map { case (k, v) => s"$k=$v" }.mkString("\n"),
         server.getStatus)
     }.toArray
     Tabulator.format(title, header, rows)
