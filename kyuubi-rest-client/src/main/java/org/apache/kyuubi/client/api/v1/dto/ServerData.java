@@ -29,6 +29,8 @@ public class ServerData {
   private Map<String, String> attributes;
   private String status;
 
+  public ServerData() {}
+
   public ServerData(
       String nodeName,
       String namespace,

@@ -19,13 +19,16 @@ package org.apache.kyuubi.server.rest.client
 
 import java.util.UUID
 
+import org.mockito.Mockito.lenient
+import org.scalatestplus.mockito.MockitoSugar.mock
+
 import org.apache.kyuubi.{KYUUBI_VERSION, RestClientTestHelper}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ctl.{CtlConf, TestPrematureExit}
 import org.apache.kyuubi.engine.EngineRef
 import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceDiscovery}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
-import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.plugin.PluginLoader
 
 class AdminCtlSuite extends RestClientTestHelper with TestPrematureExit {
@@ -101,5 +104,18 @@ class AdminCtlSuite extends RestClientTestHelper with TestPrematureExit {
     testPrematureExitForAdminControlCli(
       args,
       "Engine Node List (total 0)")
+  }
+
+  test("list server") {
+    // Mock Kyuubi Server
+    val serverDiscovery = mock[ServiceDiscovery]
+    lenient.when(serverDiscovery.fe).thenReturn(fe)
+    val namespace = conf.get(HighAvailabilityConf.HA_NAMESPACE)
+    withDiscoveryClient(conf) { client =>
+      client.registerService(conf, namespace, serverDiscovery)
+
+      val args = Array("list", "server", "--authSchema", "spnego")
+      testPrematureExitForAdminControlCli(args, "Server Node List (total 1)")
+    }
   }
 }
