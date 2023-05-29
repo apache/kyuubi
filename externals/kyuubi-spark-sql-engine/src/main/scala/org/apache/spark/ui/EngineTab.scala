@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.events.EngineEventsStore
 import org.apache.kyuubi.service.ServiceState
-import org.apache.kyuubi.util.ClassUtils
+import org.apache.kyuubi.util.reflect.DynClasses
 
 /**
  * Note that [[SparkUITab]] is private for Spark
@@ -62,8 +62,13 @@ case class EngineTab(
 
   sparkUI.foreach { ui =>
     try {
-      // Spark shade the jetty package so here we use reflection
-      val sparkServletContextHandlerClz = loadSparkServletContextHandler
+      // [KYUUBI #3627]: the official spark release uses the shaded and relocated jetty classes,
+      // but if we use sbt to build for testing, e.g. docker image, it still uses the vanilla
+      // jetty classes.
+      val sparkServletContextHandlerClz = DynClasses.builder()
+        .impl("org.sparkproject.jetty.servlet.ServletContextHandler")
+        .impl("org.eclipse.jetty.servlet.ServletContextHandler")
+        .build()
       val attachHandlerMethod = Class.forName("org.apache.spark.ui.SparkUI")
         .getMethod("attachHandler", sparkServletContextHandlerClz)
       val createRedirectHandlerMethod = Class.forName("org.apache.spark.ui.JettyUtils")
@@ -103,18 +108,6 @@ case class EngineTab(
       "Failed to attach handler using SparkUI, please check the Spark version. " +
         s"So the config '${KyuubiConf.ENGINE_UI_STOP_ENABLED.key}' does not work.",
       cause)
-  }
-
-  private def loadSparkServletContextHandler: Class[_] = {
-    // [KYUUBI #3627]: the official spark release uses the shaded and relocated jetty classes,
-    // but if use sbt to build for testing, e.g. docker image, it still uses vanilla jetty classes.
-    val shaded = "org.sparkproject.jetty.servlet.ServletContextHandler"
-    val vanilla = "org.eclipse.jetty.servlet.ServletContextHandler"
-    if (ClassUtils.classIsLoadable(shaded)) {
-      Class.forName(shaded)
-    } else {
-      Class.forName(vanilla)
-    }
   }
 
   def handleKillRequest(request: HttpServletRequest): Unit = {
