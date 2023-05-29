@@ -16,13 +16,14 @@
  */
 package org.apache.kyuubi.util.reflect
 
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 class ReflectUtilsSuite extends AnyFunSuite {
   // scalastyle:on
 
   test("check class loadable") {
-    assert(ReflectUtils.isClassLoadable("org.apache.kyuubi.util.reflect.ReflectUtilsSuite"))
-    assert(!ReflectUtils.isClassLoadable("org.apache.kyuubi.NonExistClass"))
+    assert(isClassLoadable(getClass.getName))
+    assert(!isClassLoadable("org.apache.kyuubi.NonExistClass"))
   }
 }
