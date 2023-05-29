@@ -553,7 +553,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       classOf[TaskContext])
     .build()
 
-  // for testing
   def fromBatchIterator(
       arrowBatchIter: Iterator[Array[Byte]],
       schema: StructType,
@@ -562,13 +561,22 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       context: TaskContext): Iterator[InternalRow] = {
     val className = "org.apache.spark.sql.execution.arrow.ArrowConverters$"
     val instance = DynFields.builder().impl(className, "MODULE$").build[Object]().get(null)
-    fromBatchIteratorMethod.invoke[Iterator[InternalRow]](
-      instance,
-      arrowBatchIter,
-      schema,
-      timeZoneId,
-      errorOnDuplicatedFieldNames,
-      context)
+    if (SPARK_ENGINE_RUNTIME_VERSION >= "3.5") {
+      fromBatchIteratorMethod.invoke[Iterator[InternalRow]](
+        instance,
+        arrowBatchIter,
+        schema,
+        timeZoneId,
+        errorOnDuplicatedFieldNames,
+        context)
+    } else {
+      fromBatchIteratorMethod.invoke[Iterator[InternalRow]](
+        instance,
+        arrowBatchIter,
+        schema,
+        timeZoneId,
+        context)
+    }
   }
 
   class JobCountListener extends SparkListener {
