@@ -344,15 +344,6 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       errorOnDuplicatedFieldNames)
   }
 
-  // for testing
-  def fromBatchIterator(
-      arrowBatchIter: Iterator[Array[Byte]],
-      schema: StructType,
-      timeZoneId: String,
-      context: TaskContext): Iterator[InternalRow] = {
-    ArrowConverters.fromBatchIterator(arrowBatchIter, schema, timeZoneId, context)
-  }
-
   // IpcOption.DEFAULT was introduced in ARROW-11081(ARROW-4.0.0), add this for adapt Spark-3.1/3.2
   final private val ARROW_IPC_OPTION_DEFAULT = new IpcOption()
 }
