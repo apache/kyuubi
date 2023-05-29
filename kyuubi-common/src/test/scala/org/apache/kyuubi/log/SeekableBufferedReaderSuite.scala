@@ -95,13 +95,6 @@ class SeekableBufferedReaderSuite extends KyuubiFunSuite {
     reader.close()
   }
 
-  test("test SeekableBufferedReader iterableFetchIterator") {
-    val reader = new SeekableBufferedReader(f1 :: Nil)
-    val fetchIter = reader.iterableFetchIterator
-    iteratorTest(fetchIter)
-    reader.close()
-  }
-
   // borrow the test cases from FetchIteratorSuite
   private def iteratorTest(fetchIter: FetchIterator[String]): Unit = {
     fetchIter.fetchNext()

@@ -29,8 +29,8 @@ import scala.collection.mutable.ListBuffer
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationHandle}
-import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
+import org.apache.kyuubi.operation.OperationHandle
+import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FetchOrientation}
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -87,7 +87,7 @@ object OperationLog extends Logging {
 class OperationLog(path: Path) {
 
   private lazy val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
-  private lazy val reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
+  private  var reader: BufferedReader = _
 
   @volatile private var initialized: Boolean = false
 
@@ -95,6 +95,14 @@ class OperationLog(path: Path) {
   private lazy val extraReaders: ListBuffer[BufferedReader] = ListBuffer()
   private var lastSeekReadPos = 0
   private var seekableReader: SeekableBufferedReader = _
+  private val lock: AnyRef = new Object()
+
+  def getReader(): BufferedReader = {
+    if (reader == null) {
+      reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
+    }
+    reader
+  }
 
   def addExtraLog(path: Path): Unit = synchronized {
     try {
@@ -134,8 +142,10 @@ class OperationLog(path: Path) {
       var line: String = reader.readLine()
       while ((i < lastRows || maxRows <= 0) && line != null) {
         logs.add(line)
-        line = reader.readLine()
         i += 1
+        if(i < lastRows || maxRows <= 0) {
+          line = reader.readLine()
+        }
       }
       (logs, i)
     } catch {
@@ -153,14 +163,25 @@ class OperationLog(path: Path) {
     tRow
   }
 
+  def read(maxRows: Int): TRowSet = synchronized {
+    read(FETCH_NEXT, maxRows)
+  }
+
   /**
    * Read to log file line by line
    *
    * @param maxRows maximum result number can reach
+   * @param order   the  fetch orientation of the result, can be FETCH_NEXT, FETCH_FIRST
    */
-  def read(maxRows: Int): TRowSet = synchronized {
+  def read(order: FetchOrientation = FETCH_NEXT, maxRows: Int): TRowSet = synchronized {
     if (!initialized) return ThriftUtils.newEmptyRowSet
-    val (logs, lines) = readLogs(reader, maxRows, maxRows)
+    if (order != FETCH_NEXT && order != FETCH_FIRST) {
+      throw KyuubiSQLException(s"$order in operation log is not supported")
+    }
+    if (order == FETCH_FIRST) {
+      resetReader()
+    }
+    val (logs, lines) = readLogs(getReader(), maxRows, maxRows)
     var lastRows = maxRows - lines
     for (extraReader <- extraReaders if lastRows > 0 || maxRows <= 0) {
       val (extraLogs, extraRows) = readLogs(extraReader, lastRows, maxRows)
@@ -171,20 +192,18 @@ class OperationLog(path: Path) {
     toRowSet(logs)
   }
 
-  def read(order: FetchOrientation, maxRows: Int): TRowSet = synchronized {
-    if (!initialized) return ThriftUtils.newEmptyRowSet
-    if (seekableReader == null) {
-      seekableReader = new SeekableBufferedReader(Seq(path) ++ extraPaths)
+  private def  resetReader(): Unit = {
+    lock.synchronized {
+        trySafely {
+          reader.close()
+        }
+        reader = null
+        closeExtraReaders()
+        extraReaders.clear()
+        extraPaths.foreach(
+          path => extraReaders += Files.newBufferedReader(path, StandardCharsets.UTF_8)
+        )
     }
-    val iter: IterableFetchIterator[String] = seekableReader.iterableFetchIterator
-
-    order match {
-      case FETCH_NEXT => iter.fetchNext()
-      case FETCH_PRIOR => iter.fetchNext(); iter.fetchPrior(maxRows)
-      case FETCH_FIRST => iter.fetchAbsolute(0)
-    }
-    val taken = iter.take(maxRows)
-    toRowSet(taken.toSeq.asJava)
   }
 
   def read(from: Int, size: Int): TRowSet = synchronized {

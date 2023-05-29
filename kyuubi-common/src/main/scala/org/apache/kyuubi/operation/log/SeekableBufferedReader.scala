@@ -21,8 +21,6 @@ import java.io.{BufferedReader, Closeable, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-import org.apache.kyuubi.operation.IterableFetchIterator
-
 /**
  * A seekable buffer reader, if the previous file path lines do not satisfy the limit size
  * the reader will fetch line from next file path.
@@ -32,7 +30,7 @@ import org.apache.kyuubi.operation.IterableFetchIterator
  */
 class SeekableBufferedReader(paths: Seq[Path]) extends Closeable {
 
-  private var bufferedReaders: Seq[BufferedReader] = paths.map { path =>
+  private val bufferedReaders: Seq[BufferedReader] = paths.map { path =>
     Files.newBufferedReader(path, StandardCharsets.UTF_8)
   }
 
@@ -81,40 +79,6 @@ class SeekableBufferedReader(paths: Seq[Path]) extends Closeable {
       }
     }
   }
-
-  private def generateIterator: Iterator[String] = {
-    new Iterator[String] {
-      private var numLines = 0L
-      currentValue = null
-
-      if (linePos > 0L) {
-        close()
-        linePos = 0L
-        readerIndex = 0
-        bufferedReaders = paths.map { path =>
-          Files.newBufferedReader(path, StandardCharsets.UTF_8)
-        }
-        currentReader = bufferedReaders.head
-        currentValue = null
-      }
-
-      override def hasNext: Boolean = {
-        nextLine()
-        numLines += 1
-        currentValue != null
-      }
-
-      override def next(): String = {
-        currentValue
-      }
-
-    }
-  }
-
-  lazy val iterableFetchIterator: IterableFetchIterator[String] =
-    new IterableFetchIterator[String](new Iterable[String] {
-      override def iterator: Iterator[String] = generateIterator
-    })
 
   override def close(): Unit = {
     bufferedReaders.foreach(_.close())
