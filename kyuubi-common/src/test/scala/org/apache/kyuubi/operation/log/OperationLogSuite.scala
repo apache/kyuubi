@@ -318,4 +318,32 @@ class OperationLogSuite extends KyuubiFunSuite {
     log.close()
     session.close()
   }
+
+  test("test operationLog multiple read with missing line ") {
+    val file = Utils.createTempDir().resolve("f")
+    val writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)
+    try {
+      0.until(10).foreach(x => writer.write(s"$x\n"))
+      writer.flush()
+      writer.close()
+
+      val log = new OperationLog(file)
+      // The operation log file is created externally and should be initialized actively.
+      log.initOperationLogIfNecessary()
+
+      def compareResult(rows: TRowSet, expected: Seq[String]): Unit = {
+        val res = rows.getColumns.get(0).getStringVal.getValues.asScala
+        assert(res.size == expected.size)
+        res.zip(expected).foreach { case (l, r) =>
+          assert(l == r)
+        }
+      }
+      compareResult(log.read(2), Seq("0", "1"))
+      compareResult(log.read(3), Seq("2", "3", "4"))
+      compareResult(log.read(10), Seq("5", "6", "7", "8", "9"))
+    } finally {
+      Utils.deleteDirectoryRecursively(file.toFile)
+    }
+  }
+
 }

@@ -133,8 +133,10 @@ class OperationLog(path: Path) {
       var line: String = reader.readLine()
       while ((i < lastRows || maxRows <= 0) && line != null) {
         logs.add(line)
-        line = reader.readLine()
         i += 1
+        if(i < lastRows || maxRows <= 0) {
+          line = reader.readLine()
+        }
       }
       (logs, i)
     } catch {
