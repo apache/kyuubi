@@ -17,22 +17,24 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.lang.{Boolean => JBoolean}
 import java.sql.Statement
 import java.util.{Locale, Set => JSet}
 
-import org.apache.spark.KyuubiSparkContextHelper
+import org.apache.spark.{KyuubiSparkContextHelper, TaskContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.{QueryTest, Row, SparkSession}
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.plans.logical.Project
 import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, QueryExecution, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
-import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.exchange.Exchange
 import org.apache.spark.sql.execution.joins.{BroadcastHashJoinExec, SortMergeJoinExec}
 import org.apache.spark.sql.execution.metric.SparkMetricsTestUtils
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.QueryExecutionListener
 
 import org.apache.kyuubi.KyuubiException
@@ -40,7 +42,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{SparkSQLEngine, WithSparkSQLEngine}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.SparkDataTypeTests
-import org.apache.kyuubi.util.reflect.DynFields
+import org.apache.kyuubi.util.reflect.{DynFields, DynMethods}
 
 class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTypeTests
   with SparkMetricsTestUtils {
@@ -156,10 +158,11 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
 
     def runAndCheck(sparkPlan: SparkPlan, expectSize: Int): Unit = {
       val arrowBinary = SparkDatasetHelper.executeArrowBatchCollect(sparkPlan)
-      val rows = KyuubiArrowConverters.fromBatchIterator(
+      val rows = fromBatchIterator(
         arrowBinary.iterator,
         sparkPlan.schema,
         "",
+        true,
         KyuubiSparkContextHelper.dummyTaskContext())
       assert(rows.size == expectSize)
     }
@@ -530,6 +533,50 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       .build[JSet[String]](SQLConf)
       .get()
     staticConfKeys.contains(key)
+  }
+
+  // the signature of function [[ArrowConverters.fromBatchIterator]] is changed in SPARK-43528
+  // (since Spark 3.5)
+  private lazy val fromBatchIteratorMethod = DynMethods.builder("fromBatchIterator")
+    .hiddenImpl( // for Spark 3.4 or previous
+      "org.apache.spark.sql.execution.arrow.ArrowConverters$",
+      classOf[Iterator[Array[Byte]]],
+      classOf[StructType],
+      classOf[String],
+      classOf[TaskContext])
+    .hiddenImpl( // for Spark 3.5 or later
+      "org.apache.spark.sql.execution.arrow.ArrowConverters$",
+      classOf[Iterator[Array[Byte]]],
+      classOf[StructType],
+      classOf[String],
+      classOf[Boolean],
+      classOf[TaskContext])
+    .build()
+
+  def fromBatchIterator(
+      arrowBatchIter: Iterator[Array[Byte]],
+      schema: StructType,
+      timeZoneId: String,
+      errorOnDuplicatedFieldNames: JBoolean,
+      context: TaskContext): Iterator[InternalRow] = {
+    val className = "org.apache.spark.sql.execution.arrow.ArrowConverters$"
+    val instance = DynFields.builder().impl(className, "MODULE$").build[Object]().get(null)
+    if (SPARK_ENGINE_RUNTIME_VERSION >= "3.5") {
+      fromBatchIteratorMethod.invoke[Iterator[InternalRow]](
+        instance,
+        arrowBatchIter,
+        schema,
+        timeZoneId,
+        errorOnDuplicatedFieldNames,
+        context)
+    } else {
+      fromBatchIteratorMethod.invoke[Iterator[InternalRow]](
+        instance,
+        arrowBatchIter,
+        schema,
+        timeZoneId,
+        context)
+    }
   }
 
   class JobCountListener extends SparkListener {
