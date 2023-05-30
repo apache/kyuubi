@@ -65,7 +65,7 @@ object ReflectUtils {
     invoke(target, methodName, args: _*).asInstanceOf[T]
 
   def loadClassFromServiceLoader[T](cl: ClassLoader = Thread.currentThread().getContextClassLoader)(
-      implicit ct: ClassTag[T]): Iterator[T] = {
-    ServiceLoader.load(ct.runtimeClass, cl).iterator().asScala.map(_.asInstanceOf[T])
-  }
+      implicit ct: ClassTag[T]): Iterator[T] =
+    ServiceLoader.load(ct.runtimeClass, cl).iterator().asScala
+      .map(_.asInstanceOf[T])
 }
