@@ -60,7 +60,7 @@ trait SparkSessionProvider {
       // Ensure HiveExternalCatalog.client.userName is defaultTableOwner
       UserGroupInformation.createRemoteUser(defaultTableOwner).doAs(
         new PrivilegedExceptionAction[Unit] {
-          override def run(): Unit = ret.catalog.listDatabases()
+          override def run(): Unit = ret.sql("show databases").collect()
         })
     }
     ret
