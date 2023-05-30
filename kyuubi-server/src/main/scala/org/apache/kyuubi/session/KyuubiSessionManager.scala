@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
@@ -348,7 +347,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   private def startEngineAliveChecker(): Unit = {
-    val interval = Duration.ofSeconds(5).toMillis
+    val interval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL)
     val checkTask = new Runnable {
       override def run(): Unit = {
         for (session <- allSessions) {

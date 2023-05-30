@@ -173,8 +173,10 @@ class SessionRestApiSuite extends RestClientTestHelper {
       sessions.foreach(session => sessionRestApi.closeSession(session.getIdentifier))
 
       // open new session
-      val sessionOpenRequest = new SessionOpenRequest(
-        Map("kyuubi.session.engine.alive.timeout" -> "10000").asJava)
+      val sessionOpenRequest = new SessionOpenRequest(Map(
+        KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
+        KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "5000",
+        KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "3000").asJava)
       val sessionHandle = sessionRestApi.openSession(sessionOpenRequest)
 
       // get open session count

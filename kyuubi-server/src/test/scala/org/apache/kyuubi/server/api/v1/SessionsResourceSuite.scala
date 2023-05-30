@@ -18,7 +18,6 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.nio.charset.StandardCharsets
-import java.time.Duration
 import java.util
 import java.util.{Base64, Collections}
 import javax.ws.rs.client.Entity
@@ -315,7 +314,9 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     // open a session
     val requestObj = new SessionOpenRequest(Map(
-      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> Duration.ofSeconds(10).toMillis.toString).asJava)
+      KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
+      KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "5000",
+      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "3000").asJava)
     response = webTarget.path("api/v1/sessions")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
