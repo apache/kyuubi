@@ -17,7 +17,6 @@
 package org.apache.kyuubi.engine.jdbc.connection
 
 import java.sql.{Connection, DriverManager}
-import java.util.ServiceLoader
 
 import scala.collection.mutable.ArrayBuffer
 

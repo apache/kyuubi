@@ -20,9 +20,8 @@ package org.apache.kyuubi.engine
 import java.io.File
 import java.net.{URI, URISyntaxException}
 import java.nio.file.{Files, Path}
-import java.util.{Locale, ServiceLoader}
+import java.util.Locale
 
-import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import org.apache.kyuubi.{KyuubiException, Utils}

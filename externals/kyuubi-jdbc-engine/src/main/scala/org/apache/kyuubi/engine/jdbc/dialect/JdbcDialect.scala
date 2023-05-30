@@ -18,9 +18,6 @@ package org.apache.kyuubi.engine.jdbc.dialect
 
 import java.sql.{Connection, Statement}
 import java.util
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
