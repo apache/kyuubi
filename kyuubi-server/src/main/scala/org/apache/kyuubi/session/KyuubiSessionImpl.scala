@@ -312,9 +312,11 @@ class KyuubiSessionImpl(
             + s" surpassing the maximum failure count of $engineAliveMaxFailCount.")
           false
         } else {
-          warn(s"The engineRef[${engine.getEngineRefId}] alive probe fails," +
-            s"${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms," +
-            s" and has failed $engineAliveFailCount times ", e)
+          warn(
+            s"The engineRef[${engine.getEngineRefId}] alive probe fails," +
+              s"${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms," +
+              s" and has failed $engineAliveFailCount times ",
+            e)
           true
         }
     }
