@@ -134,7 +134,7 @@ class OperationLog(path: Path) {
       while ((i < lastRows || maxRows <= 0) && line != null) {
         logs.add(line)
         i += 1
-        if(i < lastRows || maxRows <= 0) {
+        if (i < lastRows || maxRows <= 0) {
           line = reader.readLine()
         }
       }
