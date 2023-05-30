@@ -33,8 +33,8 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
-import org.apache.kyuubi.plugin.spark.authz.util.AssertionUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.util.AssertionUtils._
 
 abstract class PrivilegesBuilderSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
