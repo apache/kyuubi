@@ -70,7 +70,11 @@ abstract class AbstractConnectionProvider extends Logging {
   }
 
   def loadProviders(): Seq[JdbcConnectionProvider] =
-    loadClassFromServiceLoader[JdbcConnectionProvider]().toSeq
+    loadClassFromServiceLoader[JdbcConnectionProvider]()
+      .map { provider =>
+        info(s"Loaded provider: $provider")
+        provider
+      }.toSeq
 }
 
 object ConnectionProvider extends AbstractConnectionProvider
