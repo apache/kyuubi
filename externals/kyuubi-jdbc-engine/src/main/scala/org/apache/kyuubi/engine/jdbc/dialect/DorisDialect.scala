@@ -162,5 +162,4 @@ class DorisDialect extends JdbcDialect {
   override def name(): String = {
     "doris"
   }
-
 }

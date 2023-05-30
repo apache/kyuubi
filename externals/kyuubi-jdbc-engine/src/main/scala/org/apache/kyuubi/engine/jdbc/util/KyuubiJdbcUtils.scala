@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.jdbc.util
 
+import java.sql.Connection
+
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
@@ -25,15 +27,25 @@ import org.apache.kyuubi.util.JdbcUtils
 
 object KyuubiJdbcUtils extends Logging {
 
-  def initializeJdbcSession(kyuubiConf: KyuubiConf): Unit = {
+  def initializeJdbcSession(kyuubiConf: KyuubiConf, initializationSQLs: Seq[String]): Unit = {
+    JdbcUtils.withCloseable(ConnectionProvider.create(kyuubiConf)) { connection =>
+      initializeJdbcSession(kyuubiConf, connection, initializationSQLs)
+    }
+  }
+
+  def initializeJdbcSession(
+      kyuubiConf: KyuubiConf,
+      connection: Connection,
+      initializationSQLs: Seq[String]): Unit = {
+    if (initializationSQLs == null || initializationSQLs.isEmpty) {
+      return
+    }
     try {
       val dialect: JdbcDialect = JdbcDialects.get(kyuubiConf)
-      JdbcUtils.withCloseable(ConnectionProvider.create(kyuubiConf)) { connection =>
-        JdbcUtils.withCloseable(dialect.createStatement(connection, 100)) { statement =>
-          dialect.initializationSQLs().foreach { sql =>
-            debug(s"Execute initialization sql: $sql")
-            statement.execute(sql)
-          }
+      JdbcUtils.withCloseable(dialect.createStatement(connection)) { statement =>
+        initializationSQLs.foreach { sql =>
+          debug(s"Execute initialization sql: $sql")
+          statement.execute(sql)
         }
       }
     } catch {
@@ -42,5 +54,4 @@ object KyuubiJdbcUtils extends Logging {
         throw KyuubiSQLException(e)
     }
   }
-
 }

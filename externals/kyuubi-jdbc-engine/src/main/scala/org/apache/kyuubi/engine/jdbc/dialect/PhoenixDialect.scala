@@ -150,5 +150,4 @@ class PhoenixDialect extends JdbcDialect {
   override def name(): String = {
     "phoenix"
   }
-
 }
