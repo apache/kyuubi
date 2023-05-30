@@ -35,8 +35,12 @@ object FunctionCommands {
       "functionName",
       classOf[StringFunctionExtractor],
       Some(databaseDesc),
-      Some(functionTypeDesc))
-    FunctionCommandSpec(cmd, Seq(functionDesc), CREATEFUNCTION)
+      functionTypeDesc = Some(functionTypeDesc))
+    val functionIdentifierDesc = FunctionDesc(
+      "identifier",
+      classOf[FunctionIdentifierFunctionExtractor],
+      functionTypeDesc = Some(functionTypeDesc))
+    FunctionCommandSpec(cmd, Seq(functionIdentifierDesc, functionDesc), CREATEFUNCTION)
   }
 
   val DescribeFunction = {
