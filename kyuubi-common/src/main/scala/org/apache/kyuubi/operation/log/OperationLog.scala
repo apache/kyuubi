@@ -130,12 +130,14 @@ class OperationLog(path: Path) {
     val logs = new JArrayList[String]
     var i = 0
     try {
-      var line: String = reader.readLine()
-      while ((i < lastRows || maxRows <= 0) && line != null) {
-        logs.add(line)
+      var line: String = null
+      do {
         line = reader.readLine()
-        i += 1
-      }
+        if (line != null) {
+          logs.add(line)
+          i += 1
+        }
+      } while ((i < lastRows || maxRows <= 0) && line != null)
       (logs, i)
     } catch {
       case e: IOException =>
