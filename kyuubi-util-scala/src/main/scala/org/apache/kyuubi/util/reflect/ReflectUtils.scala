@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.util.reflect
 
-import scala.util.{Failure, Success, Try}
+import java.util.ServiceLoader
 
+import scala.collection.JavaConverters._
+import scala.reflect.ClassTag
+import scala.util.{Failure, Success, Try}
 object ReflectUtils {
 
   /**
@@ -60,4 +63,9 @@ object ReflectUtils {
 
   def invokeAs[T](target: AnyRef, methodName: String, args: (Class[_], AnyRef)*): T =
     invoke(target, methodName, args: _*).asInstanceOf[T]
+
+  def loadClassFromServiceLoader[T](cl: ClassLoader = Thread.currentThread().getContextClassLoader)(
+      implicit ct: ClassTag[T]): Iterator[T] = {
+    ServiceLoader.load(ct.runtimeClass, cl).iterator().asScala.map(_.asInstanceOf[T])
+  }
 }

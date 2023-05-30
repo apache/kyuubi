@@ -24,6 +24,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PROVIDER, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DRIVER_CLASS}
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 abstract class AbstractConnectionProvider extends Logging {
   protected val providers = loadProviders()
@@ -70,12 +71,8 @@ abstract class AbstractConnectionProvider extends Logging {
   }
 
   def loadProviders(): Seq[JdbcConnectionProvider] = {
-    val loader = ServiceLoader.load(
-      classOf[JdbcConnectionProvider],
-      Thread.currentThread().getContextClassLoader)
     val providers = ArrayBuffer[JdbcConnectionProvider]()
-
-    val iterator = loader.iterator()
+    val iterator = loadClassFromServiceLoader[JdbcConnectionProvider]()
     while (iterator.hasNext) {
       try {
         val provider = iterator.next()
