@@ -25,6 +25,12 @@ case class ObjectFilterPlaceHolder(child: LogicalPlan) extends UnaryNode
 
   override def output: Seq[Attribute] = child.output
 
-  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
-    this
+  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = {
+    // `FilterDataSourceV2Strategy` requires child.nodename not changed
+    if (child.nodeName == newChild.nodeName) {
+      copy(newChild)
+    } else {
+      this
+    }
+  }
 }
