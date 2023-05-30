@@ -18,9 +18,13 @@
 package org.apache.kyuubi.plugin.spark.authz.util
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Statistics}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
-case class ObjectFilterPlaceHolder(child: LogicalPlan) extends LeafNode {
+case class ObjectFilterPlaceHolder(child: LogicalPlan) extends UnaryNode
+  with WithInternalChild {
+
   override def output: Seq[Attribute] = child.output
-  override def computeStats(): Statistics = child.stats
+
+  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
+    this
 }
