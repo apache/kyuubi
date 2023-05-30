@@ -171,10 +171,14 @@ class ResolvedDbObjectNameTableExtractor extends TableExtractor {
  */
 class ResolvedIdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val catalogVal = invoke(v1, "catalog")
-    val catalog = new CatalogPluginCatalogExtractor().apply(catalogVal)
-    val identifier = invoke(v1, "identifier")
-    val maybeTable = new IdentifierTableExtractor().apply(spark, identifier)
-    maybeTable.map(_.copy(catalog = catalog))
+    v1.getClass.getName match {
+      case "org.apache.spark.sql.catalyst.analysis.ResolvedIdentifier" =>
+        val catalogVal = invoke(v1, "catalog")
+        val catalog = new CatalogPluginCatalogExtractor().apply(catalogVal)
+        val identifier = invoke(v1, "identifier")
+        val maybeTable = new IdentifierTableExtractor().apply(spark, identifier)
+        maybeTable.map(_.copy(catalog = catalog))
+      case _ => None
+    }
   }
 }

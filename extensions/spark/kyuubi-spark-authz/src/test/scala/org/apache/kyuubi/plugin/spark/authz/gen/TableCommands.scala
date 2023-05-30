@@ -446,8 +446,7 @@ object TableCommands {
 
   val DropTableV2 = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.DropTable"
-    val tableDesc1 = resolvedTableDesc
-    TableCommandSpec(cmd, Seq(tableDesc1), DROPTABLE)
+    TableCommandSpec(cmd, Seq(resolvedIdentifierTableDesc, resolvedTableDesc), DROPTABLE)
   }
 
   val MergeIntoTable = {
