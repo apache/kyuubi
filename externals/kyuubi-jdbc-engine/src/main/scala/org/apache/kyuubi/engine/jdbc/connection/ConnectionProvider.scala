@@ -69,23 +69,8 @@ abstract class AbstractConnectionProvider extends Logging {
     selectedProvider.getConnection(kyuubiConf)
   }
 
-  def loadProviders(): Seq[JdbcConnectionProvider] = {
-    val providers = ArrayBuffer[JdbcConnectionProvider]()
-    val iterator = loadClassFromServiceLoader[JdbcConnectionProvider]()
-    while (iterator.hasNext) {
-      try {
-        val provider = iterator.next()
-        info(s"Loaded provider: $provider")
-        providers += provider
-      } catch {
-        case t: Throwable =>
-          warn(s"Loaded of the provider failed with the exception", t)
-      }
-    }
-
-    // TODO support disable provider
-    providers
-  }
+  def loadProviders(): Seq[JdbcConnectionProvider] =
+    loadClassFromServiceLoader[JdbcConnectionProvider]().toSeq
 }
 
 object ConnectionProvider extends AbstractConnectionProvider
