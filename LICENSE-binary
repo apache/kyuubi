@@ -212,9 +212,6 @@ com.google.android:annotations
 commons-lang:commons-lang
 commons-logging:commons-logging
 org.apache.commons:commons-lang3
-org.apache.curator:curator-client
-org.apache.curator:curator-framework
-org.apache.curator:curator-recipes
 org.apache.derby:derby
 com.google.errorprone:error_prone_annotations
 net.jodah:failsafe
@@ -318,7 +315,6 @@ io.swagger.core.v3:swagger-jaxrs2
 io.swagger.core.v3:swagger-models
 io.vertx:vertx-core
 io.vertx:vertx-grpc
-org.apache.zookeeper:zookeeper
 com.squareup.retrofit2:retrofit
 com.squareup.okhttp3:okhttp
 org.apache.kafka:kafka-clients

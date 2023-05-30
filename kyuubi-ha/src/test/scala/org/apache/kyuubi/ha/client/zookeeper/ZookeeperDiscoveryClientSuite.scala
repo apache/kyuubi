@@ -25,11 +25,7 @@ import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
-import org.apache.curator.framework.CuratorFrameworkFactory
-import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.hadoop.util.StringUtils
-import org.apache.zookeeper.ZooDefs
-import org.apache.zookeeper.data.ACL
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
@@ -39,6 +35,10 @@ import org.apache.kyuubi.ha.client._
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider._
 import org.apache.kyuubi.service._
+import org.apache.kyuubi.shaded.curator.framework.CuratorFrameworkFactory
+import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry
+import org.apache.kyuubi.shaded.zookeeper.ZooDefs
+import org.apache.kyuubi.shaded.zookeeper.data.ACL
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT
 

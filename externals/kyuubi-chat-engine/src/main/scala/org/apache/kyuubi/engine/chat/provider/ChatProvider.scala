@@ -24,7 +24,7 @@ import com.fasterxml.jackson.module.scala.{ClassTagExtensions, DefaultScalaModul
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.reflection.DynConstructors
+import org.apache.kyuubi.util.reflect.DynConstructors
 
 trait ChatProvider {
 

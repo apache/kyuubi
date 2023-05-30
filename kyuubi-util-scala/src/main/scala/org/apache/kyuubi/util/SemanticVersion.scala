@@ -15,13 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.spark.connector.common
+package org.apache.kyuubi.util
 
 /**
- * Encapsulate a component Spark version for the convenience of version checks.
- * Copy from org.apache.kyuubi.engine.ComponentVersion
+ * Encapsulate a component version for the convenience of version checks.
  */
 case class SemanticVersion(majorVersion: Int, minorVersion: Int) {
+
+  def <=(targetVersionString: String): Boolean = isVersionAtMost(targetVersionString)
+
+  def >=(targetVersionString: String): Boolean = isVersionAtLeast(targetVersionString)
+
+  def >(targetVersionString: String): Boolean = !isVersionAtMost(targetVersionString)
+
+  def <(targetVersionString: String): Boolean = !isVersionAtLeast(targetVersionString)
 
   def isVersionAtMost(targetVersionString: String): Boolean = {
     this.compareVersion(

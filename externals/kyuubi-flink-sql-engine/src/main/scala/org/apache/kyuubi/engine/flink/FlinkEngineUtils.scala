@@ -40,8 +40,8 @@ import org.apache.flink.table.gateway.service.session.Session
 import org.apache.flink.util.JarUtils
 
 import org.apache.kyuubi.{KyuubiException, Logging}
-import org.apache.kyuubi.engine.SemanticVersion
-import org.apache.kyuubi.reflection.{DynConstructors, DynFields, DynMethods}
+import org.apache.kyuubi.util.SemanticVersion
+import org.apache.kyuubi.util.reflect.{DynConstructors, DynFields, DynMethods}
 
 object FlinkEngineUtils extends Logging {
 

@@ -68,8 +68,10 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     assert(batch.getBatchType === "SPARK")
 
     // get batch log
-    val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
-    assert(log.getRowCount == 1)
+    eventually(timeout(1.minutes)) {
+      val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
+      assert(log.getRowCount == 1)
+    }
 
     // delete batch
     val closeResp = batchRestApi.deleteBatch(batch.getId(), null)
@@ -162,8 +164,10 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     assert(batch.getBatchType === "SPARK")
 
     // get batch log
-    val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
-    assert(log.getRowCount == 1)
+    eventually(timeout(1.minutes)) {
+      val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
+      assert(log.getRowCount == 1)
+    }
 
     // delete batch
     val closeResp = batchRestApi.deleteBatch(batch.getId(), proxyUser)

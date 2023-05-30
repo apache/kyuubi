@@ -30,6 +30,8 @@ object TableCommands {
   val resolvedTableDesc = TableDesc("child", classOf[ResolvedTableTableExtractor])
   val resolvedDbObjectNameDesc =
     TableDesc("child", classOf[ResolvedDbObjectNameTableExtractor])
+  val resolvedIdentifierTableDesc =
+    TableDesc("child", classOf[ResolvedIdentifierTableExtractor])
   val overwriteActionTypeDesc =
     ActionTypeDesc("overwrite", classOf[OverwriteOrInsertActionTypeExtractor])
   val queryQueryDesc = QueryDesc("query")
@@ -205,7 +207,10 @@ object TableCommands {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
-    TableCommandSpec(cmd, Seq(tableDesc, resolvedDbObjectNameDesc), CREATETABLE)
+    TableCommandSpec(
+      cmd,
+      Seq(resolvedIdentifierTableDesc, tableDesc, resolvedDbObjectNameDesc),
+      CREATETABLE)
   }
 
   val CreateV2Table = {
@@ -225,7 +230,10 @@ object TableCommands {
       catalogDesc = Some(CatalogDesc()))
     TableCommandSpec(
       cmd,
-      Seq(tableDesc, resolvedDbObjectNameDesc.copy(fieldName = "left")),
+      Seq(
+        resolvedIdentifierTableDesc.copy(fieldName = "left"),
+        tableDesc,
+        resolvedDbObjectNameDesc.copy(fieldName = "left")),
       CREATETABLE_AS_SELECT,
       Seq(queryQueryDesc))
   }
@@ -438,8 +446,7 @@ object TableCommands {
 
   val DropTableV2 = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.DropTable"
-    val tableDesc1 = resolvedTableDesc
-    TableCommandSpec(cmd, Seq(tableDesc1), DROPTABLE)
+    TableCommandSpec(cmd, Seq(resolvedIdentifierTableDesc, resolvedTableDesc), DROPTABLE)
   }
 
   val MergeIntoTable = {

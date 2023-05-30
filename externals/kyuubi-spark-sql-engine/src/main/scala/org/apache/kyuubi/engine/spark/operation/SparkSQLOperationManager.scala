@@ -106,18 +106,18 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
                     opHandle)
               }
             case mode =>
-              new PlanOnlyStatement(session, statement, mode)
+              new PlanOnlyStatement(session, statement, mode, opHandle)
           }
         case OperationLanguages.SCALA =>
           val repl = sessionToRepl.getOrElseUpdate(session.handle, KyuubiSparkILoop(spark))
-          new ExecuteScala(session, repl, statement, runAsync, queryTimeout)
+          new ExecuteScala(session, repl, statement, runAsync, queryTimeout, opHandle)
         case OperationLanguages.PYTHON =>
           try {
             ExecutePython.init()
             val worker = sessionToPythonProcess.getOrElseUpdate(
               session.handle,
               ExecutePython.createSessionPythonWorker(spark, session))
-            new ExecutePython(session, statement, runAsync, queryTimeout, worker)
+            new ExecutePython(session, statement, runAsync, queryTimeout, worker, opHandle)
           } catch {
             case e: Throwable =>
               spark.conf.set(OPERATION_LANGUAGE.key, OperationLanguages.SQL.toString)

@@ -26,7 +26,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.kvstore.KVIndex
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.engine.SemanticVersion
+import org.apache.kyuubi.util.SemanticVersion
 
 object KyuubiSparkUtil extends Logging {
 

@@ -28,7 +28,7 @@ import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAp
 import org.apache.logging.log4j.core.filter.AbstractFilter
 import org.apache.logging.log4j.core.layout.PatternLayout
 
-import org.apache.kyuubi.reflection.DynFields
+import org.apache.kyuubi.util.reflect.DynFields
 
 class Log4j2DivertAppender(
     name: String,

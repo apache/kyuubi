@@ -64,11 +64,9 @@ class KyuubiSessionImpl(
     }
   }
 
-  // TODO: needs improve the hardcode
   optimizedConf.foreach {
-    case ("use:catalog", _) =>
-    case ("use:database", _) =>
-    case ("kyuubi.engine.pool.size.threshold", _) =>
+    case (USE_CATALOG, _) =>
+    case (USE_DATABASE, _) =>
     case (key, value) => sessionConf.set(key, value)
   }
 
@@ -161,7 +159,7 @@ class KyuubiSessionImpl(
           } catch {
             case e: org.apache.thrift.transport.TTransportException
                 if attempt < maxAttempts && e.getCause.isInstanceOf[java.net.ConnectException] &&
-                  e.getCause.getMessage.contains("Connection refused (Connection refused)") =>
+                  e.getCause.getMessage.contains("Connection refused") =>
               warn(
                 s"Failed to open [${engine.defaultEngineName} $host:$port] after" +
                   s" $attempt/$maxAttempts times, retrying",

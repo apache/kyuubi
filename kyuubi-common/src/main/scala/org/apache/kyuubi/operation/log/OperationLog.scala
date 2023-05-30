@@ -139,14 +139,14 @@ class OperationLog(path: Path) {
     val logs = new JArrayList[String]
     var i = 0
     try {
-      var line: String = reader.readLine()
-      while ((i < lastRows || maxRows <= 0) && line != null) {
-        logs.add(line)
-        i += 1
-        if(i < lastRows || maxRows <= 0) {
-          line = reader.readLine()
+      var line: String = null
+      do {
+        line = reader.readLine()
+        if (line != null) {
+          logs.add(line)
+          i += 1
         }
-      }
+      } while ((i < lastRows || maxRows <= 0) && line != null)
       (logs, i)
     } catch {
       case e: IOException =>

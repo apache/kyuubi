@@ -41,22 +41,6 @@ rbac:
       resources: ["pods"]
       verbs: ["create", "list", "delete"]
 
-probe:
-  liveness:
-    enabled: true
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 2
-    failureThreshold: 10
-    successThreshold: 1
-  readiness:
-    enabled: true
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 2
-    failureThreshold: 10
-    successThreshold: 1
-
 server:
   # Thrift Binary protocol (HiveServer2 compatible)
   thriftBinary:
@@ -161,6 +145,24 @@ resources: {}
   # requests:
   #   cpu: 2
   #   memory: 4Gi
+
+# Liveness probe
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 10
+  successThreshold: 1
+
+# Readiness probe
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 10
+  successThreshold: 1
 
 # Constrain Kyuubi server pods to specific nodes
 nodeSelector: {}

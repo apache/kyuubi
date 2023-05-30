@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.ha.client.zookeeper
 
-import org.apache.curator.framework.api.ACLProvider
-import org.apache.zookeeper.ZooDefs
-import org.apache.zookeeper.data.ACL
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
+import org.apache.kyuubi.shaded.curator.framework.api.ACLProvider
+import org.apache.kyuubi.shaded.zookeeper.ZooDefs
+import org.apache.kyuubi.shaded.zookeeper.data.ACL
 
 class ZookeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
 

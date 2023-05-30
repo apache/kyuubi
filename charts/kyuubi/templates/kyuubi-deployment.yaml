@@ -65,25 +65,25 @@ spec:
               containerPort: {{ $frontend.port }}
             {{- end }}
             {{- end }}
-          {{- if .Values.probe.liveness.enabled }}
+          {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             exec:
               command: ["/bin/bash", "-c", "bin/kyuubi status"]
-            initialDelaySeconds: {{ .Values.probe.liveness.initialDelaySeconds }}
-            periodSeconds: {{ .Values.probe.liveness.periodSeconds }}
-            timeoutSeconds: {{ .Values.probe.liveness.timeoutSeconds }}
-            failureThreshold: {{ .Values.probe.liveness.failureThreshold }}
-            successThreshold: {{ .Values.probe.liveness.successThreshold }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
           {{- end }}
-          {{- if .Values.probe.readiness.enabled }}
+          {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
             exec:
               command: ["/bin/bash", "-c", "$KYUUBI_HOME/bin/kyuubi status"]
-            initialDelaySeconds: {{ .Values.probe.readiness.initialDelaySeconds }}
-            periodSeconds: {{ .Values.probe.readiness.periodSeconds }}
-            timeoutSeconds: {{ .Values.probe.readiness.timeoutSeconds }}
-            failureThreshold: {{ .Values.probe.readiness.failureThreshold }}
-            successThreshold: {{ .Values.probe.readiness.successThreshold }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
           {{- end }}
           {{- with .Values.resources }}
           resources: {{- toYaml . | nindent 12 }}

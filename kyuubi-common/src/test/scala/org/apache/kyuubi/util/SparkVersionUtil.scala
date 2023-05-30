@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.util
 
-import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 trait SparkVersionUtil {

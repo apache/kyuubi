@@ -108,6 +108,15 @@
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateTable",
   "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
     "fieldName" : "tableName",
     "fieldExtractor" : "IdentifierTableExtractor",
     "columnDesc" : null,
@@ -134,6 +143,15 @@
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateTableAsSelect",
   "tableDescs" : [ {
+    "fieldName" : "left",
+    "fieldExtractor" : "ResolvedIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
     "fieldName" : "tableName",
     "fieldExtractor" : "IdentifierTableExtractor",
     "columnDesc" : null,
@@ -264,6 +282,15 @@
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropTable",
   "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedTableTableExtractor",
     "columnDesc" : null,
@@ -432,6 +459,15 @@
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceTable",
   "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
     "fieldName" : "tableName",
     "fieldExtractor" : "IdentifierTableExtractor",
     "columnDesc" : null,
@@ -458,6 +494,15 @@
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceTableAsSelect",
   "tableDescs" : [ {
+    "fieldName" : "left",
+    "fieldExtractor" : "ResolvedIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
     "fieldName" : "tableName",
     "fieldExtractor" : "IdentifierTableExtractor",
     "columnDesc" : null,

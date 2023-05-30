@@ -25,6 +25,7 @@ runs:
       with:
         path: build/apache-maven-*
         key: setup-maven-${{ hashFiles('pom.xml') }}
+        restore-keys: setup-maven-
     - name: Install Maven
       shell: bash
       run: build/mvn -v

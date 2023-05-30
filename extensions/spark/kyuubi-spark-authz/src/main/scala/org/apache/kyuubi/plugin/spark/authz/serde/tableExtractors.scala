@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 /**
  * A trait for extracting database and table as string tuple
@@ -162,5 +163,18 @@ class ResolvedDbObjectNameTableExtractor extends TableExtractor {
     val namespace = nameParts.init.toArray
     val table = nameParts.last
     Some(Table(catalog, Some(quote(namespace)), table, None))
+  }
+}
+
+/**
+ * org.apache.spark.sql.catalyst.analysis.ResolvedIdentifier
+ */
+class ResolvedIdentifierTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val catalogVal = invoke(v1, "catalog")
+    val catalog = new CatalogPluginCatalogExtractor().apply(catalogVal)
+    val identifier = invoke(v1, "identifier")
+    val maybeTable = new IdentifierTableExtractor().apply(spark, identifier)
+    maybeTable.map(_.copy(catalog = catalog))
   }
 }

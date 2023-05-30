@@ -20,11 +20,10 @@ package org.apache.kyuubi.zookeeper
 import java.io.File
 import java.net.InetSocketAddress
 
-import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
-
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.{AbstractService, ServiceState}
+import org.apache.kyuubi.shaded.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 import org.apache.kyuubi.zookeeper.ZookeeperConf._
 
 class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {

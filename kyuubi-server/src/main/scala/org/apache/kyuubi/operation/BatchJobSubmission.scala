@@ -101,8 +101,10 @@ class BatchJobSubmission(
     }
   }
 
-  override protected def currentApplicationInfo(): Option[ApplicationInfo] = {
-    if (isTerminal(state) && _applicationInfo.nonEmpty) return _applicationInfo
+  override def currentApplicationInfo(): Option[ApplicationInfo] = {
+    if (isTerminal(state) && _applicationInfo.map(_.state).exists(ApplicationState.isTerminated)) {
+      return _applicationInfo
+    }
     val applicationInfo =
       applicationManager.getApplicationInfo(
         builder.clusterManager(),
@@ -267,6 +269,7 @@ class BatchJobSubmission(
       }
     } finally {
       builder.close()
+      updateApplicationInfoMetadataIfNeeded()
       cleanupUploadedResourceIfNeeded()
     }
   }
@@ -298,11 +301,14 @@ class BatchJobSubmission(
   }
 
   private def updateApplicationInfoMetadataIfNeeded(): Unit = {
-    val newApplicationStatus = currentApplicationInfo()
-    if (newApplicationStatus.map(_.state) != _applicationInfo.map(_.state)) {
-      _applicationInfo = newApplicationStatus
-      updateBatchMetadata()
-      info(s"Batch report for $batchId, ${_applicationInfo}")
+    if (applicationId(_applicationInfo).isEmpty ||
+      !_applicationInfo.map(_.state).exists(ApplicationState.isTerminated)) {
+      val newApplicationStatus = currentApplicationInfo()
+      if (newApplicationStatus.map(_.state) != _applicationInfo.map(_.state)) {
+        _applicationInfo = newApplicationStatus
+        updateBatchMetadata()
+        info(s"Batch report for $batchId, ${_applicationInfo}")
+      }
     }
   }
 

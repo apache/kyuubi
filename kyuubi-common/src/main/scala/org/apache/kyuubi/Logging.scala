@@ -23,7 +23,7 @@ import org.apache.logging.log4j.core.config.DefaultConfiguration
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.bridge.SLF4JBridgeHandler
 
-import org.apache.kyuubi.util.ClassUtils
+import org.apache.kyuubi.util.reflect.ReflectUtils
 
 /**
  * Simple version of logging adopted from Apache Spark.
@@ -148,7 +148,7 @@ object Logging {
       isInterpreter: Boolean,
       loggerName: String,
       logger: => Logger): Unit = {
-    if (ClassUtils.classIsLoadable("org.slf4j.bridge.SLF4JBridgeHandler")) {
+    if (ReflectUtils.isClassLoadable("org.slf4j.bridge.SLF4JBridgeHandler")) {
       // Handles configuring the JUL -> SLF4J bridge
       SLF4JBridgeHandler.removeHandlersForRootLogger()
       SLF4JBridgeHandler.install()
