@@ -23,7 +23,7 @@ import java.security.PrivilegedExceptionAction
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, Row, SparkSession, SparkSessionExtensions}
-import org.scalatest.Assertions.convertToEqualizer
+import org.scalatest.Assertions._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
