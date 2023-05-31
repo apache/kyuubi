@@ -24,7 +24,8 @@ import org.apache.kyuubi.plugin.spark.authz.util.ObjectFilterPlaceHolder
 
 class FilterDataSourceV2Strategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    // Before Spark 3.2, `ColumnPruning` rule will set `ObjectFilterPlaceHolder#child` to `Project`
+    // For Spark 3.2 and below, `ColumnPruning` rule will set `ObjectFilterPlaceHolder#child` to
+    // `Project`
     case ObjectFilterPlaceHolder(Project(_, child)) if child.nodeName == "ShowNamespaces" =>
       spark.sessionState.planner.plan(child)
         .map(FilteredShowNamespaceExec(_, spark.sparkContext)).toSeq
