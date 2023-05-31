@@ -33,11 +33,15 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
     getTargetAddress(requestUrl).foreach {
       case (host, port) =>
         val subPath = s"/$ENGINE_UI_PROXY_PATH/$host:$port/"
-        val targetPath = requestUrl.substring(subPath.length)
+        val targetPath = requestUrl.substring(subPath.length) match {
+          case "" => "jobs/"
+          case path => path
+        }
+
         targetUrl =
           s"http://${host}:${port}/${targetPath}"
     }
-    info(s"rewrite $requestUrl => $targetUrl")
+    debug(s"rewrite $requestUrl => $targetUrl")
     targetUrl
   }
 
