@@ -29,8 +29,8 @@ import scala.collection.mutable.ListBuffer
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FetchOrientation}
+import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -87,7 +87,7 @@ object OperationLog extends Logging {
 class OperationLog(path: Path) {
 
   private lazy val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
-  private  var reader: BufferedReader = _
+  private var reader: BufferedReader = _
 
   @volatile private var initialized: Boolean = false
 
@@ -196,19 +196,18 @@ class OperationLog(path: Path) {
     toRowSet(logs)
   }
 
-  private def  resetReader(): Unit = {
+  private def resetReader(): Unit = {
     lock.synchronized {
-        trySafely {
-          if (reader != null) {
-            reader.close()
-          }
+      trySafely {
+        if (reader != null) {
+          reader.close()
         }
-        reader = null
-        closeExtraReaders()
-        extraReaders.clear()
-        extraPaths.foreach(
-          path => extraReaders += Files.newBufferedReader(path, StandardCharsets.UTF_8)
-        )
+      }
+      reader = null
+      closeExtraReaders()
+      extraReaders.clear()
+      extraPaths.foreach(path =>
+        extraReaders += Files.newBufferedReader(path, StandardCharsets.UTF_8))
     }
   }
 

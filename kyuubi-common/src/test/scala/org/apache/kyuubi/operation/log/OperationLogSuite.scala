@@ -263,15 +263,15 @@ class OperationLogSuite extends KyuubiFunSuite {
       // The operation log file is created externally and should be initialized actively.
       log.initOperationLogIfNecessary()
 
-      compareResult(log.read(FetchOrientation.FETCH_NEXT, 10),
+      compareResult(
+        log.read(FetchOrientation.FETCH_NEXT, 10),
         Seq("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
-      compareResult(log.read(FetchOrientation.FETCH_NEXT, 5),
-        Seq("10", "11", "12", "13", "14"))
+      compareResult(log.read(FetchOrientation.FETCH_NEXT, 5), Seq("10", "11", "12", "13", "14"))
       compareResult(log.read(FetchOrientation.FETCH_FIRST, 5), Seq("0", "1", "2", "3", "4"))
-      compareResult(log.read(FetchOrientation.FETCH_NEXT, 10),
+      compareResult(
+        log.read(FetchOrientation.FETCH_NEXT, 10),
         Seq("5", "6", "7", "8", "9", "10", "11", "12", "13", "14"))
-      compareResult(log.read(FetchOrientation.FETCH_NEXT, 10),
-        Seq("15", "16", "17", "18", "19"))
+      compareResult(log.read(FetchOrientation.FETCH_NEXT, 10), Seq("15", "16", "17", "18", "19"))
     } finally {
       Utils.deleteDirectoryRecursively(file.toFile)
       Utils.deleteDirectoryRecursively(file2.toFile)
