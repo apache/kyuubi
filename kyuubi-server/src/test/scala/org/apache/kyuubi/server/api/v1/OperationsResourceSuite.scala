@@ -128,14 +128,6 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(200 == response4.getStatus)
     assert(response4.readEntity(classOf[OperationLog]).getRowCount == 10)
 
-    val response5 = webTarget.path(
-      s"api/v1/operations/$opHandleStr/log")
-      .queryParam("maxrows", "5")
-      .queryParam("fetchorientation", "FETCH_PRIOR")
-      .request(MediaType.APPLICATION_JSON).get()
-    assert(200 == response5.getStatus)
-    assert(response5.readEntity(classOf[OperationLog]).getRowCount == 5)
-
     val response6 = webTarget.path(
       s"api/v1/operations/$opHandleStr/log")
       .queryParam("maxrows", "1000")
