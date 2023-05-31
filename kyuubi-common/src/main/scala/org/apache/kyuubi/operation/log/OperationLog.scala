@@ -99,7 +99,9 @@ class OperationLog(path: Path) {
 
   def getReader(): BufferedReader = {
     if (reader == null) {
-      reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
+      try {
+        reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
+      } catch handleFileNotFound
     }
     reader
   }
@@ -147,13 +149,15 @@ class OperationLog(path: Path) {
           i += 1
         }
       } while ((i < lastRows || maxRows <= 0) && line != null)
-      (logs, i)
-    } catch {
-      case e: IOException =>
-        val absPath = path.toAbsolutePath
-        val opHandle = absPath.getFileName
-        throw KyuubiSQLException(s"Operation[$opHandle] log file $absPath is not found", e)
-    }
+    } catch handleFileNotFound
+    (logs, i)
+  }
+
+  private def handleFileNotFound: PartialFunction[Throwable, Unit] = {
+    case e: IOException =>
+      val absPath = path.toAbsolutePath
+      val opHandle = absPath.getFileName
+      throw KyuubiSQLException(s"Operation[$opHandle] log file $absPath is not found", e)
   }
 
   private def toRowSet(logs: JList[String]): TRowSet = {
@@ -195,7 +199,9 @@ class OperationLog(path: Path) {
   private def  resetReader(): Unit = {
     lock.synchronized {
         trySafely {
-          reader.close()
+          if (reader != null) {
+            reader.close()
+          }
         }
         reader = null
         closeExtraReaders()
@@ -236,7 +242,9 @@ class OperationLog(path: Path) {
     closeExtraReaders()
 
     trySafely {
-      reader.close()
+      if (reader != null) {
+        reader.close()
+      }
     }
     trySafely {
       writer.close()

@@ -239,11 +239,16 @@ class OperationLogSuite extends KyuubiFunSuite {
 
   test("test fetchOrientation read") {
     val file = Utils.createTempDir().resolve("f")
+    val file2 = Utils.createTempDir().resolve("extra")
     val writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)
+    val writer2 = Files.newBufferedWriter(file2, StandardCharsets.UTF_8)
     try {
       0.until(10).foreach(x => writer.write(s"$x\n"))
       writer.flush()
       writer.close()
+      10.until(20).foreach(x => writer2.write(s"$x\n"))
+      writer2.flush()
+      writer2.close()
 
       def compareResult(rows: TRowSet, expected: Seq[String]): Unit = {
         val res = rows.getColumns.get(0).getStringVal.getValues.asScala
@@ -254,17 +259,22 @@ class OperationLogSuite extends KyuubiFunSuite {
       }
 
       val log = new OperationLog(file)
+      log.addExtraLog(file2)
       // The operation log file is created externally and should be initialized actively.
       log.initOperationLogIfNecessary()
 
       compareResult(log.read(FetchOrientation.FETCH_NEXT, 10),
         Seq("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
-      compareResult(log.read(FetchOrientation.FETCH_FIRST, 2), Seq("0", "1"))
-      compareResult(log.read(FetchOrientation.FETCH_NEXT, 3), Seq("2", "3", "4"))
-      compareResult(log.read(FetchOrientation.FETCH_NEXT, 5), Seq("5", "6", "7", "8", "9"))
-      compareResult(log.read(FetchOrientation.FETCH_NEXT, 5), Seq())
+      compareResult(log.read(FetchOrientation.FETCH_NEXT, 5),
+        Seq("10", "11", "12", "13", "14"))
+      compareResult(log.read(FetchOrientation.FETCH_FIRST, 5), Seq("0", "1", "2", "3", "4"))
+      compareResult(log.read(FetchOrientation.FETCH_NEXT, 10),
+        Seq("5", "6", "7", "8", "9", "10", "11", "12", "13", "14"))
+      compareResult(log.read(FetchOrientation.FETCH_NEXT, 10),
+        Seq("15", "16", "17", "18", "19"))
     } finally {
       Utils.deleteDirectoryRecursively(file.toFile)
+      Utils.deleteDirectoryRecursively(file2.toFile)
     }
   }
 
