@@ -317,7 +317,7 @@ object HadoopCredentialsManager extends Logging {
     val providers = mutable.ArrayBuffer[HadoopDelegationTokenProvider]()
 
     val iterator =
-      loadClassFromServiceLoader[HadoopDelegationTokenProvider](Utils.getContextOrKyuubiClassLoader)
+      loadFromServiceLoader[HadoopDelegationTokenProvider](Utils.getContextOrKyuubiClassLoader)
     while (iterator.hasNext) {
       try {
         providers += iterator.next

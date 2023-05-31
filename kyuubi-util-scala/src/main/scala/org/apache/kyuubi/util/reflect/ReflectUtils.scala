@@ -64,7 +64,17 @@ object ReflectUtils {
   def invokeAs[T](target: AnyRef, methodName: String, args: (Class[_], AnyRef)*): T =
     invoke(target, methodName, args: _*).asInstanceOf[T]
 
-  def loadClassFromServiceLoader[T](cl: ClassLoader = Thread.currentThread().getContextClassLoader)(
+  /**
+   * Creates a iterator for with a new service loader for the given service type and class
+   * loader.
+   *
+   * @param cl The class loader to be used to load provider-configuration files
+   *           and provider classes
+   * @param ct class tag of the generics class type
+   * @tparam T the class of the service type
+   * @return
+   */
+  def loadFromServiceLoader[T](cl: ClassLoader = Thread.currentThread().getContextClassLoader)(
       implicit ct: ClassTag[T]): Iterator[T] =
     ServiceLoader.load(ct.runtimeClass, cl).iterator().asScala.map(_.asInstanceOf[T])
 }

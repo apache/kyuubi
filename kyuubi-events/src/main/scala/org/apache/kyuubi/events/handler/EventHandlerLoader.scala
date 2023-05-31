@@ -26,7 +26,7 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
 object EventHandlerLoader extends Logging {
 
   def loadCustom(kyuubiConf: KyuubiConf): Seq[EventHandler[KyuubiEvent]] = {
-    loadClassFromServiceLoader[CustomEventHandlerProvider](Utils.getContextOrKyuubiClassLoader)
+    loadFromServiceLoader[CustomEventHandlerProvider](Utils.getContextOrKyuubiClassLoader)
       .map { provider =>
         Try {
           provider.create(kyuubiConf)

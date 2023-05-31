@@ -36,7 +36,7 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
 
   // TODO: maybe add a configuration is better
   private val operations =
-    loadClassFromServiceLoader[ApplicationOperation](Utils.getContextOrKyuubiClassLoader).toSeq
+    loadFromServiceLoader[ApplicationOperation](Utils.getContextOrKyuubiClassLoader).toSeq
 
   override def initialize(conf: KyuubiConf): Unit = {
     operations.foreach { op =>

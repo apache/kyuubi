@@ -33,7 +33,7 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class JpsApplicationOperationSuite extends KyuubiFunSuite {
-  private val jps = loadClassFromServiceLoader[ApplicationOperation]()
+  private val jps = loadFromServiceLoader[ApplicationOperation]()
     .find(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation]))
     .get
   jps.initialize(null)

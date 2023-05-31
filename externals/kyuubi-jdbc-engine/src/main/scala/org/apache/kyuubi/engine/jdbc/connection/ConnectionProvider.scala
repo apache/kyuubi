@@ -18,8 +18,6 @@ package org.apache.kyuubi.engine.jdbc.connection
 
 import java.sql.{Connection, DriverManager}
 
-import scala.collection.mutable.ArrayBuffer
-
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PROVIDER, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DRIVER_CLASS}
@@ -70,7 +68,7 @@ abstract class AbstractConnectionProvider extends Logging {
   }
 
   def loadProviders(): Seq[JdbcConnectionProvider] =
-    loadClassFromServiceLoader[JdbcConnectionProvider]()
+    loadFromServiceLoader[JdbcConnectionProvider]()
       .map { provider =>
         info(s"Loaded provider: $provider")
         provider

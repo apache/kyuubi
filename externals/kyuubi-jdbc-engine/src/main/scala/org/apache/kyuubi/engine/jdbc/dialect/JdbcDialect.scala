@@ -73,7 +73,7 @@ object JdbcDialects extends Logging {
       assert(url.length > 5 && url.substring(5).contains(":"))
       url.substring(5, url.indexOf(":", 5))
     }
-    loadClassFromServiceLoader[JdbcDialect]()
+    loadFromServiceLoader[JdbcDialect]()
       .filter(_.name().equalsIgnoreCase(shortName)).toList match {
       case Nil =>
         throw new KyuubiException(s"Don't find jdbc dialect implement for jdbc engine: $shortName.")
