@@ -102,8 +102,6 @@ jobs:
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
           if [[ "${{ matrix.spark }}" == "3.4" ]]; then
-            # FIXME: Spark 3.4 supports authz plugin
-            TEST_MODULES="$TEST_MODULES,!extensions/spark/kyuubi-spark-authz"
             # FIXME: Spark 3.4 supports lineage plugin
             TEST_MODULES="$TEST_MODULES,!extensions/spark/kyuubi-spark-lineage"
           fi
