@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 import com.fasterxml.jackson.core.`type`.TypeReference
@@ -28,16 +25,14 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.{OperationType, QUERY}
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 package object serde {
 
   final val mapper = JsonMapper.builder().addModule(DefaultScalaModule).build()
 
-  def loadExtractorsToMap[T <: Extractor](implicit ct: ClassTag[T]): Map[String, T] = {
-    ServiceLoader.load(ct.runtimeClass).iterator().asScala
-      .map { case e: Extractor => (e.key, e.asInstanceOf[T]) }
-      .toMap
-  }
+  def loadExtractorsToMap[T <: Extractor](implicit ct: ClassTag[T]): Map[String, T] =
+    loadFromServiceLoader[T]()(ct).map { e: T => (e.key, e) }.toMap
 
   final lazy val DB_COMMAND_SPECS: Map[String, DatabaseCommandSpec] = {
     val is = getClass.getClassLoader.getResourceAsStream("database_command_spec.json")

@@ -19,9 +19,8 @@ package org.apache.kyuubi.engine
 
 import java.lang.management.ManagementFactory
 import java.time.Duration
-import java.util.{ServiceLoader, UUID}
+import java.util.UUID
 
-import scala.collection.JavaConverters._
 import scala.sys.process._
 
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -31,11 +30,11 @@ import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SESSION_IDLE_TIMEOUT
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class JpsApplicationOperationSuite extends KyuubiFunSuite {
-  private val operations = ServiceLoader.load(classOf[ApplicationOperation])
-    .asScala.filter(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation]))
-  private val jps = operations.head
+  private val jps = loadFromServiceLoader[ApplicationOperation]()
+    .find(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation])).get
   jps.initialize(null)
 
   test("JpsApplicationOperation with jstat") {

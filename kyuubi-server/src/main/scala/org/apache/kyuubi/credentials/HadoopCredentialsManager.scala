@@ -17,13 +17,11 @@
 
 package org.apache.kyuubi.credentials
 
-import java.util.ServiceLoader
 import java.util.concurrent._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.concurrent.Future
-import scala.concurrent.Promise
+import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
@@ -35,6 +33,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 /**
  * [[HadoopCredentialsManager]] manages and renews delegation tokens, which are used by SQL engines
@@ -315,13 +314,10 @@ object HadoopCredentialsManager extends Logging {
   private val providerEnabledConfig = "kyuubi.credentials.%s.enabled"
 
   def loadProviders(kyuubiConf: KyuubiConf): Map[String, HadoopDelegationTokenProvider] = {
-    val loader =
-      ServiceLoader.load(
-        classOf[HadoopDelegationTokenProvider],
-        Utils.getContextOrKyuubiClassLoader)
     val providers = mutable.ArrayBuffer[HadoopDelegationTokenProvider]()
 
-    val iterator = loader.iterator
+    val iterator =
+      loadFromServiceLoader[HadoopDelegationTokenProvider](Utils.getContextOrKyuubiClassLoader)
     while (iterator.hasNext) {
       try {
         providers += iterator.next
