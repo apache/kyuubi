@@ -11,7 +11,7 @@
     "lint": "eslint --ext .ts,vue --ignore-path .gitignore .",
     "lint-fix": "eslint --fix --ext .ts,vue --ignore-path .gitignore .",
     "prettier": "prettier --write \"src/**/*.{vue,ts,tsx}\"",
-    "test": "vitest",
+    "test": "vitest --mode development",
     "coverage": "vitest run --coverage"
   },
   "dependencies": {

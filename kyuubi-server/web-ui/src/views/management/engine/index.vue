@@ -163,12 +163,21 @@
         getList()
       })
   }
-  function openEngineUi(url: string) {
+
+  function getProxyEngineUi(url: string): string {
     url = (url || '').replaceAll(/http:|https:/gi, '')
-    window.open(`${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${url}/`)
+    return `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${url}/`
+  }
+
+  function openEngineUi(url: string) {
+    window.open(getProxyEngineUi(url))
   }
 
   init()
+  // export for test
+  defineExpose({
+    getProxyEngineUi
+  })
 </script>
 
 <style scoped lang="scss">
