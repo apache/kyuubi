@@ -34,8 +34,7 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class JpsApplicationOperationSuite extends KyuubiFunSuite {
   private val jps = loadFromServiceLoader[ApplicationOperation]()
-    .find(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation]))
-    .get
+    .find(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation])).get
   jps.initialize(null)
 
   test("JpsApplicationOperation with jstat") {
