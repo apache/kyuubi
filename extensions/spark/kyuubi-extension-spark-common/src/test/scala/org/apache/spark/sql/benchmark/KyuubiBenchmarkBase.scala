@@ -22,6 +22,7 @@ import java.io.{File, FileOutputStream, OutputStream}
 import scala.collection.JavaConverters._
 
 import com.google.common.reflect.ClassPath
+import org.scalatest.Assertions._
 
 trait KyuubiBenchmarkBase {
   var output: Option[OutputStream] = None
