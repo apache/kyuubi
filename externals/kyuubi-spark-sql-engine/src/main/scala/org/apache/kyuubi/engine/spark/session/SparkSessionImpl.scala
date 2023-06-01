@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.session
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
@@ -28,7 +29,7 @@ import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_CATALOG, USE_DATABASE}
+import org.apache.kyuubi.session._
 
 class SparkSessionImpl(
     protocol: TProtocolVersion,
@@ -73,8 +74,8 @@ class SparkSessionImpl(
         SparkCatalogShim().setCurrentDatabase(spark, database)
       } catch {
         case e
-            if database == "default" && e.getMessage != null &&
-              e.getMessage.contains("not found") =>
+            if database == "default" &&
+              StringUtils.containsAny(e.getMessage, "not found", "SCHEMA_NOT_FOUND") =>
       }
     }
 
