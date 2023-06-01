@@ -269,7 +269,6 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
           (SELECT b.value1 FROM default.unmasked b)
       ) c order by value1
       """
-    doAs(bob, sql(s).show)
     checkAnswer(bob, s, Seq(Row("1"), Row("2"), Row("3"), Row("4"), Row("5"), Row(md5Hex("1"))))
   }
 
