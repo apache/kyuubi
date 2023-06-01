@@ -74,7 +74,7 @@ class SparkSessionImpl(
       } catch {
         case e
             if database == "default" && e.getMessage != null &&
-              e.getMessage.contains("not found") =>
+              (e.getMessage.contains("not found") || e.getMessage.contains("SCHEMA_NOT_FOUND")) =>
       }
     }
 
