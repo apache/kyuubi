@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import javax.ws.rs._
+import javax.ws.rs.{BadRequestException, _}
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
@@ -144,6 +144,9 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       @QueryParam("fetchorientation") @DefaultValue("FETCH_NEXT")
       fetchOrientation: String): OperationLog = {
     try {
+      if (fetchOrientation != "FETCH_NEXT" && fetchOrientation != "FETCH_FIRST") {
+        throw new BadRequestException(s"$fetchOrientation in operation log is not supported")
+      }
       val rowSet = fe.be.sessionManager.operationManager.getOperationLogRowSet(
         OperationHandle(operationHandleStr),
         FetchOrientation.withName(fetchOrientation),
@@ -151,6 +154,8 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
       new OperationLog(logRowSet.asJava, logRowSet.size)
     } catch {
+      case e: BadRequestException =>
+        throw e
       case NonFatal(e) =>
         val errorMsg = s"Error getting operation log for operation handle $operationHandleStr"
         error(errorMsg, e)
