@@ -81,6 +81,9 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       }
       Response.ok().build()
     } catch {
+      case e: KyuubiSQLException =>
+        error(e.getMessage, e)
+        throw e
       case NonFatal(e) =>
         val errorMsg =
           s"Error applying ${request.getAction} for operation handle $operationHandleStr"
