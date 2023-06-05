@@ -69,7 +69,7 @@ class BackendServiceMetricSuite extends WithKyuubiServer with HiveJDBCTestHelper
       assert(
         timer2.get(MetricsConstants.BS_OPEN_SESSION).get("count").asInt() == 1)
       assert(
-        timer2.get(MetricsConstants.BS_OPEN_SESSION).get("min").asInt() > 0)
+        timer2.get(MetricsConstants.BS_OPEN_SESSION).get("min").asDouble() > 0)
       val execStatementNode2 = timer2.get(MetricsConstants.BS_EXECUTE_STATEMENT)
       assert(execStatementNode2.get("count").asInt() == 3)
       assert(
