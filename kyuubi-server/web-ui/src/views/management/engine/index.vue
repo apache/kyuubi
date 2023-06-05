@@ -83,14 +83,14 @@
           <el-space wrap>
             <el-tooltip
               effect="dark"
-              :content="$t('engine_ui')"
+              :content="$t('engine_ui') + ': ' + scope.row.attributes['kyuubi.engine.url']"
               placement="top">
               <el-button
                 type="primary"
                 icon="Link"
                 circle
                 @click="
-                  openEngineUi(scope.row.attributes['kyuubi.engine.url'])
+                  openEngineUI(scope.row.attributes['kyuubi.engine.url'])
                 " />
             </el-tooltip>
             <el-popconfirm
@@ -164,19 +164,19 @@
       })
   }
 
-  function getProxyEngineUi(url: string): string {
+  function getProxyEngineUI(url: string): string {
     url = (url || '').replaceAll(/http:|https:/gi, '')
     return `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${url}/`
   }
 
-  function openEngineUi(url: string) {
-    window.open(getProxyEngineUi(url))
+  function openEngineUI(url: string) {
+    window.open(getProxyEngineUI(url))
   }
 
   init()
   // export for test
   defineExpose({
-    getProxyEngineUi
+    getProxyEngineUI
   })
 </script>
 

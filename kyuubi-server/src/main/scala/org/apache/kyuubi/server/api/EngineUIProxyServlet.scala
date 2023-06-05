@@ -17,58 +17,48 @@
 
 package org.apache.kyuubi.server.api
 
+import java.net.URL
 import javax.servlet.http.HttpServletRequest
 
 import org.eclipse.jetty.client.api.Request
 import org.eclipse.jetty.proxy.ProxyServlet
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.server.api.EngineUIProxyServlet.{CONTEXT_HEADER_KEY, ENGINE_UI_PROXY_PATH}
 
 private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
 
   override def rewriteTarget(request: HttpServletRequest): String = {
-    var targetUrl = "/no-ui-error"
-    val requestUrl = request.getRequestURI
-    getTargetAddress(requestUrl).foreach {
-      case (host, port) =>
-        val subPath = s"/$ENGINE_UI_PROXY_PATH/$host:$port/"
-        val targetPath = requestUrl.substring(subPath.length) match {
-          case "" => "jobs/"
-          case path => path
-        }
-
-        targetUrl =
-          s"http://${host}:${port}/${targetPath}"
+    val requestURL = request.getRequestURL
+    val requestURI = request.getRequestURI
+    var targetURL = "/no-ui-error"
+    extractTargetAddress(requestURI).foreach { case (host, port) =>
+      val targetURI = requestURI.stripPrefix(s"/engine-ui/$host:$port") match {
+        // for some reason, the proxy can not handle redirect well, as a workaround,
+        // we simulate the Spark UI redirection behavior and forcibly rewrite the
+        // empty URI to the Spark Jobs page.
+        case "" | "/" => "/jobs/"
+        case path => path
+      }
+      targetURL = new URL("http", host, port, targetURI).toString
     }
-    debug(s"rewrite $requestUrl => $targetUrl")
-    targetUrl
+    debug(s"rewrite $requestURL => $targetURL")
+    targetURL
   }
 
   override def addXForwardedHeaders(
       clientRequest: HttpServletRequest,
       proxyRequest: Request): Unit = {
-    val addressPair = getTargetAddress(clientRequest.getRequestURI)
-    addressPair.foreach { case (host, port) =>
-      proxyRequest.header(CONTEXT_HEADER_KEY, s"/engine-ui/$host:$port")
+    val requestURI = clientRequest.getRequestURI
+    extractTargetAddress(requestURI).foreach { case (host, port) =>
+      proxyRequest.header("X-Forwarded-Context", s"/engine-ui/$host:$port")
     }
     super.addXForwardedHeaders(clientRequest, proxyRequest)
   }
 
-  private def getTargetAddress(uri: String): Option[(String, Int)] = {
-    val url = uri.split("/")
-    if (url.length < 3) {
-      return None
+  private val r = "^/engine-ui/([^/:]+):(\\d+)/?.*".r
+  private def extractTargetAddress(requestURI: String): Option[(String, Int)] =
+    requestURI match {
+      case r(host, port) => Some(host -> port.toInt)
+      case _ => None
     }
-    val addressPair = url(2).split(":")
-    if (addressPair.length != 2) {
-      return None
-    }
-    Some((addressPair(0), addressPair(1).toInt))
-  }
-}
-
-object EngineUIProxyServlet {
-  final private val CONTEXT_HEADER_KEY = "X-Forwarded-Context"
-  final val ENGINE_UI_PROXY_PATH = "engine-ui"
 }
