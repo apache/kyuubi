@@ -28,6 +28,7 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -185,6 +186,8 @@ class ArrowBasedExecuteStatement(
     incrementalCollect,
     handle) {
 
+  checkUseLargeVarType()
+
   override protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
     toArrowBatchLocalIterator(convertComplexType(resultDF))
   }
@@ -203,5 +206,18 @@ class ArrowBasedExecuteStatement(
 
   private def convertComplexType(df: DataFrame): DataFrame = {
     convertTopLevelComplexTypeToHiveString(df, timestampAsString)
+  }
+
+  def checkUseLargeVarType(): Unit = {
+    // TODO: largeVarType support, see SPARK-39979.
+    val useLargeVarType = session.asInstanceOf[SparkSessionImpl].spark
+      .conf
+      .get("spark.sql.execution.arrow.useLargeVarType", "false")
+      .toBoolean
+    if (useLargeVarType) {
+      throw new KyuubiSQLException(
+        "`spark.sql.execution.arrow.useLargeVarType = true` not support now.",
+        null)
+    }
   }
 }
