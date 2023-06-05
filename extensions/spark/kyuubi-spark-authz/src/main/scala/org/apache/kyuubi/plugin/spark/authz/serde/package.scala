@@ -115,7 +115,7 @@ package object serde {
       case c if classOf[ActionTypeExtractor].isAssignableFrom(c) => actionTypeExtractors
       case _ => throw new IllegalArgumentException(s"Unknown extractor type: $ct")
     }
-    extractors(Option(extractorKey).getOrElse(extractorClass.getSimpleName)).asInstanceOf[T]
+    extractors(extractorKey).asInstanceOf[T]
   }
 
   def lookupExtractor[T <: Extractor](implicit ct: ClassTag[T]): T =
