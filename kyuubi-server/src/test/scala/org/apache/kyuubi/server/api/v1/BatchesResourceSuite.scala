@@ -21,7 +21,7 @@ import java.net.InetAddress
 import java.nio.file.Paths
 import java.util.{Base64, UUID}
 import javax.ws.rs.client.Entity
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -114,14 +114,18 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     assert(404 == getBatchResponse.getStatus)
 
     // get batch log
-    var logResponse = webTarget.path(s"api/v1/batches/${batch.getId()}/localLog")
-      .queryParam("from", "0")
-      .queryParam("size", "1")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .get()
-    var log = logResponse.readEntity(classOf[OperationLog])
+    var logResponse: Response = null
+    var log: OperationLog = null
+    eventually(timeout(10.seconds), interval(1.seconds)) {
+      logResponse = webTarget.path(s"api/v1/batches/${batch.getId()}/localLog")
+        .queryParam("from", "0")
+        .queryParam("size", "1")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .get()
+      log = logResponse.readEntity(classOf[OperationLog])
+      assert(log.getRowCount == 1)
+    }
     val head = log.getLogRowSet.asScala.head
-    assert(log.getRowCount == 1)
 
     val logs = new ArrayBuffer[String]
     logs.append(head)
