@@ -64,7 +64,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       "slice",
       0,
       Long.MaxValue)
-    val arrowSchema = toArrowSchema(schema, timeZoneId, true)
+    val arrowSchema = toArrowSchema(schema, timeZoneId, true, false)
     vectorSchemaRoot = VectorSchemaRoot.create(arrowSchema, sliceAllocator)
     try {
       val recordBatch = MessageSerializer.deserializeRecordBatch(
@@ -242,7 +242,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       context: TaskContext)
     extends Iterator[Array[Byte]] {
 
-    protected val arrowSchema = toArrowSchema(schema, timeZoneId, true)
+    protected val arrowSchema = toArrowSchema(schema, timeZoneId, true, false)
     private val allocator =
       ArrowUtils.rootAllocator.newChildAllocator(
         s"to${this.getClass.getSimpleName}",
@@ -327,6 +327,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       "org.apache.spark.sql.util.ArrowUtils",
       classOf[StructType],
       classOf[String],
+      classOf[Boolean],
       classOf[Boolean])
     .build()
 
@@ -336,12 +337,14 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
   private def toArrowSchema(
       schema: StructType,
       timeZone: String,
-      errorOnDuplicatedFieldNames: JBoolean): ArrowSchema = {
+      errorOnDuplicatedFieldNames: JBoolean,
+      largeVarTypes: JBoolean): ArrowSchema = {
     toArrowSchemaMethod.invoke[ArrowSchema](
       ArrowUtils,
       schema,
       timeZone,
-      errorOnDuplicatedFieldNames)
+      errorOnDuplicatedFieldNames,
+      largeVarTypes)
   }
 
   // IpcOption.DEFAULT was introduced in ARROW-11081(ARROW-4.0.0), add this for adapt Spark-3.1/3.2
