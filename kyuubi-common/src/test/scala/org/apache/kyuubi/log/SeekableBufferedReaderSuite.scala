@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
-import org.apache.kyuubi.operation.FetchIterator
 import org.apache.kyuubi.operation.log.SeekableBufferedReader
 
 class SeekableBufferedReaderSuite extends KyuubiFunSuite {
@@ -93,80 +92,6 @@ class SeekableBufferedReaderSuite extends KyuubiFunSuite {
     res = reader.readLine(11, 1).toSeq
     assert(res.isEmpty)
     reader.close()
-  }
-
-  // borrow the test cases from FetchIteratorSuite
-  private def iteratorTest(fetchIter: FetchIterator[String]): Unit = {
-    fetchIter.fetchNext()
-    assert(fetchIter.getFetchStart == 0)
-    assert(fetchIter.getPosition == 0)
-    assertResult(0 until 2)(getRows(fetchIter, 2))
-    assert(fetchIter.getFetchStart == 0)
-    assert(fetchIter.getPosition == 2)
-
-    fetchIter.fetchNext()
-    assert(fetchIter.getFetchStart == 2)
-    assert(fetchIter.getPosition == 2)
-    assertResult(2 until 3)(getRows(fetchIter, 1))
-    assert(fetchIter.getFetchStart == 2)
-    assert(fetchIter.getPosition == 3)
-
-    fetchIter.fetchPrior(2)
-    assert(fetchIter.getFetchStart == 0)
-    assert(fetchIter.getPosition == 0)
-    assertResult(0 until 3)(getRows(fetchIter, 3))
-    assert(fetchIter.getFetchStart == 0)
-    assert(fetchIter.getPosition == 3)
-
-    fetchIter.fetchNext()
-    assert(fetchIter.getFetchStart == 3)
-    assert(fetchIter.getPosition == 3)
-    assertResult(3 until 8)(getRows(fetchIter, 5))
-    assert(fetchIter.getFetchStart == 3)
-    assert(fetchIter.getPosition == 8)
-
-    fetchIter.fetchPrior(2)
-    assert(fetchIter.getFetchStart == 1)
-    assert(fetchIter.getPosition == 1)
-    assertResult(1 until 4)(getRows(fetchIter, 3))
-    assert(fetchIter.getFetchStart == 1)
-    assert(fetchIter.getPosition == 4)
-
-    fetchIter.fetchNext()
-    assert(fetchIter.getFetchStart == 4)
-    assert(fetchIter.getPosition == 4)
-    assertResult(4 until 10)(getRows(fetchIter, 10))
-    assert(fetchIter.getFetchStart == 4)
-    assert(fetchIter.getPosition == 10)
-
-    fetchIter.fetchNext()
-    assert(fetchIter.getFetchStart == 10)
-    assert(fetchIter.getPosition == 10)
-    assertResult(Seq.empty[Int])(getRows(fetchIter, 10))
-    assert(fetchIter.getFetchStart == 10)
-    assert(fetchIter.getPosition == 10)
-
-    fetchIter.fetchPrior(20)
-    assert(fetchIter.getFetchStart == 0)
-    assert(fetchIter.getPosition == 0)
-    assertResult(0 until 3)(getRows(fetchIter, 3))
-    assert(fetchIter.getFetchStart == 0)
-    assert(fetchIter.getPosition == 3)
-
-    fetchIter.fetchAbsolute(0)
-    fetchIter.fetchNext()
-    assert(fetchIter.getFetchStart == 0)
-    assert(fetchIter.getPosition == 0)
-    assertResult(0 until 10)(getRows(fetchIter, 10))
-    assert(fetchIter.getFetchStart == 0)
-    assert(fetchIter.getPosition == 10)
-    fetchIter.fetchNext()
-    assert(fetchIter.getFetchStart == 10)
-
-  }
-
-  private def getRows(fetchIter: FetchIterator[String], maxRowCount: Int): Seq[Int] = {
-    for (_ <- 0 until maxRowCount if fetchIter.hasNext) yield fetchIter.next().toInt
   }
 
   test("three files") {
