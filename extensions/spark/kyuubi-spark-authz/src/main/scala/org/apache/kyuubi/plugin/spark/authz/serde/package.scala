@@ -92,9 +92,6 @@ package object serde {
       .getOrElse(QUERY)
   }
 
-  def getExtractor[T <: Extractor](implicit ct: ClassTag[T]): T =
-    getExtractor[T](extractorKey = null)(ct)
-
   /**
    * get extractor instance by extractor class name
    * @param extractorKey explicitly load extractor by its simple class name.
@@ -103,7 +100,7 @@ package object serde {
    * @tparam T extractor class type
    * @return
    */
-  def getExtractor[T <: Extractor](extractorKey: String = null)(
+  def lookupExtractor[T <: Extractor](extractorKey: String = null)(
       implicit ct: ClassTag[T]): T = {
     val extractorClass = ct.runtimeClass
     val extractors: Map[String, Extractor] = extractorClass match {
@@ -120,4 +117,7 @@ package object serde {
     }
     extractors(Option(extractorKey).getOrElse(extractorClass.getSimpleName)).asInstanceOf[T]
   }
+
+  def lookupExtractor[T <: Extractor](implicit ct: ClassTag[T]): T =
+    lookupExtractor[T](ct.runtimeClass.getSimpleName)(ct)
 }
