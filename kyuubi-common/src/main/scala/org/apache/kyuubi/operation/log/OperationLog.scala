@@ -95,7 +95,6 @@ class OperationLog(path: Path) {
   private lazy val extraReaders: ListBuffer[BufferedReader] = ListBuffer()
   private var lastSeekReadPos = 0
   private var seekableReader: SeekableBufferedReader = _
-  private val lock: AnyRef = new Object()
 
   def getReader(): BufferedReader = {
     if (reader == null) {
@@ -197,18 +196,16 @@ class OperationLog(path: Path) {
   }
 
   private def resetReader(): Unit = {
-    lock.synchronized {
-      trySafely {
-        if (reader != null) {
-          reader.close()
-        }
+    trySafely {
+      if (reader != null) {
+        reader.close()
       }
-      reader = null
-      closeExtraReaders()
-      extraReaders.clear()
-      extraPaths.foreach(path =>
-        extraReaders += Files.newBufferedReader(path, StandardCharsets.UTF_8))
     }
+    reader = null
+    closeExtraReaders()
+    extraReaders.clear()
+    extraPaths.foreach(path =>
+      extraReaders += Files.newBufferedReader(path, StandardCharsets.UTF_8))
   }
 
   def read(from: Int, size: Int): TRowSet = synchronized {
