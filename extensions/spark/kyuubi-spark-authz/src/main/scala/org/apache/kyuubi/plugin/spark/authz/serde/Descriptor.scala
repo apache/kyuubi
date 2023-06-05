@@ -73,7 +73,7 @@ case class ColumnDesc(
     fieldExtractor: String) extends Descriptor {
   override def extract(v: AnyRef): Seq[String] = {
     val columnsVal = invoke(v, fieldName)
-    val columnExtractor = lookupExtractor[ColumnExtractor](fieldExtractor)
+    val columnExtractor = lookupExtractor[ColumnExtractor](Some(fieldExtractor))
     columnExtractor(columnsVal)
   }
 }
@@ -92,7 +92,7 @@ case class DatabaseDesc(
     isInput: Boolean = false) extends Descriptor {
   override def extract(v: AnyRef): Database = {
     val databaseVal = invoke(v, fieldName)
-    val databaseExtractor = lookupExtractor[DatabaseExtractor](fieldExtractor)
+    val databaseExtractor = lookupExtractor[DatabaseExtractor](Some(fieldExtractor))
     val db = databaseExtractor(databaseVal)
     if (db.catalog.isEmpty && catalogDesc.nonEmpty) {
       val maybeCatalog = catalogDesc.get.extract(v)
@@ -120,7 +120,7 @@ case class FunctionTypeDesc(
 
   def extract(v: AnyRef, spark: SparkSession): FunctionType = {
     val functionTypeVal = invoke(v, fieldName)
-    val functionTypeExtractor = lookupExtractor[FunctionTypeExtractor](fieldExtractor)
+    val functionTypeExtractor = lookupExtractor[FunctionTypeExtractor](Some(fieldExtractor))
     functionTypeExtractor(functionTypeVal, spark)
   }
 
@@ -146,7 +146,7 @@ case class FunctionDesc(
     isInput: Boolean = false) extends Descriptor {
   override def extract(v: AnyRef): Function = {
     val functionVal = invoke(v, fieldName)
-    val functionExtractor = lookupExtractor[FunctionExtractor](fieldExtractor)
+    val functionExtractor = lookupExtractor[FunctionExtractor](Some(fieldExtractor))
     var function = functionExtractor(functionVal)
     if (function.database.isEmpty) {
       val maybeDatabase = databaseDesc.map(_.extract(v))
@@ -171,7 +171,7 @@ case class QueryDesc(
     fieldExtractor: String = "LogicalPlanQueryExtractor") extends Descriptor {
   override def extract(v: AnyRef): Option[LogicalPlan] = {
     val queryVal = invoke(v, fieldName)
-    val queryExtractor = lookupExtractor[QueryExtractor](fieldExtractor)
+    val queryExtractor = lookupExtractor[QueryExtractor](Some(fieldExtractor))
     queryExtractor(queryVal)
   }
 }
@@ -193,7 +193,7 @@ case class TableTypeDesc(
 
   def extract(v: AnyRef, spark: SparkSession): TableType = {
     val tableTypeVal = invoke(v, fieldName)
-    val tableTypeExtractor = lookupExtractor[TableTypeExtractor](fieldExtractor)
+    val tableTypeExtractor = lookupExtractor[TableTypeExtractor](Some(fieldExtractor))
     tableTypeExtractor(tableTypeVal, spark)
   }
 
@@ -231,7 +231,7 @@ case class TableDesc(
 
   def extract(v: AnyRef, spark: SparkSession): Option[Table] = {
     val tableVal = invoke(v, fieldName)
-    val tableExtractor = lookupExtractor[TableExtractor](fieldExtractor)
+    val tableExtractor = lookupExtractor[TableExtractor](Some(fieldExtractor))
     val maybeTable = tableExtractor(spark, tableVal)
     maybeTable.map { t =>
       if (t.catalog.isEmpty && catalogDesc.nonEmpty) {
@@ -258,7 +258,7 @@ case class ActionTypeDesc(
   override def extract(v: AnyRef): PrivilegeObjectActionType = {
     actionType.map(PrivilegeObjectActionType.withName).getOrElse {
       val actionTypeVal = invoke(v, fieldName)
-      val actionTypeExtractor = lookupExtractor[ActionTypeExtractor](fieldExtractor)
+      val actionTypeExtractor = lookupExtractor[ActionTypeExtractor](Some(fieldExtractor))
       actionTypeExtractor(actionTypeVal)
     }
   }
@@ -275,7 +275,7 @@ case class CatalogDesc(
     fieldExtractor: String = "CatalogPluginCatalogExtractor") extends Descriptor {
   override def extract(v: AnyRef): Option[String] = {
     val catalogVal = invoke(v, fieldName)
-    val catalogExtractor = lookupExtractor[CatalogExtractor](fieldExtractor)
+    val catalogExtractor = lookupExtractor[CatalogExtractor](Some(fieldExtractor))
     catalogExtractor(catalogVal)
   }
 }
@@ -294,7 +294,7 @@ case class ScanDesc(
     } else {
       invoke(v, fieldName)
     }
-    val tableExtractor = lookupExtractor[TableExtractor](fieldExtractor)
+    val tableExtractor = lookupExtractor[TableExtractor](Some(fieldExtractor))
     val maybeTable = tableExtractor(spark, tableVal)
     maybeTable.map { t =>
       if (t.catalog.isEmpty && catalogDesc.nonEmpty) {
