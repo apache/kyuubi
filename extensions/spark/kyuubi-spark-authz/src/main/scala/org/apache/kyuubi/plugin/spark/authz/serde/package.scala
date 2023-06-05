@@ -100,7 +100,7 @@ package object serde {
    * @tparam T extractor class type
    * @return
    */
-  def lookupExtractor[T <: Extractor](extractorKey: String = null)(
+  def lookupExtractor[T <: Extractor](extractorKey: String)(
       implicit ct: ClassTag[T]): T = {
     val extractorClass = ct.runtimeClass
     val extractors: Map[String, Extractor] = extractorClass match {
