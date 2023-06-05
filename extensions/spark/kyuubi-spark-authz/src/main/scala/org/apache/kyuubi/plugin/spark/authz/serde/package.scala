@@ -100,7 +100,7 @@ package object serde {
    * @tparam T extractor class type
    * @return
    */
-  def lookupExtractor[T <: Extractor](extractorKey: Option[String] = None)(
+  def lookupExtractor[T <: Extractor](extractorKey: String = null)(
       implicit ct: ClassTag[T]): T = {
     val extractorClass = ct.runtimeClass
     val extractors: Map[String, Extractor] = extractorClass match {
@@ -115,9 +115,9 @@ package object serde {
       case c if classOf[ActionTypeExtractor].isAssignableFrom(c) => actionTypeExtractors
       case _ => throw new IllegalArgumentException(s"Unknown extractor type: $ct")
     }
-    extractors(extractorKey.getOrElse(extractorClass.getSimpleName)).asInstanceOf[T]
+    extractors(Option(extractorKey).getOrElse(extractorClass.getSimpleName)).asInstanceOf[T]
   }
 
   def lookupExtractor[T <: Extractor](implicit ct: ClassTag[T]): T =
-    lookupExtractor[T](Some(ct.runtimeClass.getSimpleName))(ct)
+    lookupExtractor[T](ct.runtimeClass.getSimpleName)(ct)
 }
