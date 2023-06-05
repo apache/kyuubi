@@ -53,9 +53,9 @@ class TempMarkerFunctionTypeExtractor extends FunctionTypeExtractor {
  */
 class ExpressionInfoFunctionTypeExtractor extends FunctionTypeExtractor {
   override def apply(v1: AnyRef, spark: SparkSession): FunctionType = {
-    val function = new ExpressionInfoFunctionExtractor().apply(v1)
+    val function = lookupExtractor[ExpressionInfoFunctionExtractor].apply(v1)
     val fi = FunctionIdentifier(function.functionName, function.database)
-    new FunctionIdentifierFunctionTypeExtractor().apply(fi, spark)
+    lookupExtractor[FunctionIdentifierFunctionTypeExtractor].apply(fi, spark)
   }
 }
 

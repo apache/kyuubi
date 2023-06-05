@@ -43,7 +43,7 @@ class CatalogPluginOptionCatalogExtractor extends CatalogExtractor {
   override def apply(v1: AnyRef): Option[String] = {
     v1 match {
       case Some(catalogPlugin: AnyRef) =>
-        new CatalogPluginCatalogExtractor().apply(catalogPlugin)
+        lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin)
       case _ => None
     }
   }

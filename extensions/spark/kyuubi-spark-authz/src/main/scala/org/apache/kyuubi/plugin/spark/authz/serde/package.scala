@@ -25,6 +25,15 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.{OperationType, QUERY}
+import org.apache.kyuubi.plugin.spark.authz.serde.ActionTypeExtractor.actionTypeExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.CatalogExtractor.catalogExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.ColumnExtractor.columnExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.DatabaseExtractor.dbExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.FunctionExtractor.functionExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.FunctionTypeExtractor.functionTypeExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.QueryExtractor.queryExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.TableExtractor.tableExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.TableTypeExtractor.tableTypeExtractors
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 package object serde {
@@ -82,4 +91,33 @@ package object serde {
       .map(s => s.operationType)
       .getOrElse(QUERY)
   }
+
+  /**
+   * get extractor instance by extractor class name
+   * @param extractorKey explicitly load extractor by its simple class name.
+   *                           null by default means get extractor by extractor class.
+   * @param ct class tag of extractor class type
+   * @tparam T extractor class type
+   * @return
+   */
+  def lookupExtractor[T <: Extractor](extractorKey: String)(
+      implicit ct: ClassTag[T]): T = {
+    val extractorClass = ct.runtimeClass
+    val extractors: Map[String, Extractor] = extractorClass match {
+      case c if classOf[CatalogExtractor].isAssignableFrom(c) => catalogExtractors
+      case c if classOf[DatabaseExtractor].isAssignableFrom(c) => dbExtractors
+      case c if classOf[TableExtractor].isAssignableFrom(c) => tableExtractors
+      case c if classOf[TableTypeExtractor].isAssignableFrom(c) => tableTypeExtractors
+      case c if classOf[ColumnExtractor].isAssignableFrom(c) => columnExtractors
+      case c if classOf[QueryExtractor].isAssignableFrom(c) => queryExtractors
+      case c if classOf[FunctionExtractor].isAssignableFrom(c) => functionExtractors
+      case c if classOf[FunctionTypeExtractor].isAssignableFrom(c) => functionTypeExtractors
+      case c if classOf[ActionTypeExtractor].isAssignableFrom(c) => actionTypeExtractors
+      case _ => throw new IllegalArgumentException(s"Unknown extractor type: $ct")
+    }
+    extractors(extractorKey).asInstanceOf[T]
+  }
+
+  def lookupExtractor[T <: Extractor](implicit ct: ClassTag[T]): T =
+    lookupExtractor[T](ct.runtimeClass.getSimpleName)(ct)
 }
