@@ -33,11 +33,9 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object KyuubiHadoopUtils extends Logging {
-
-  private val tokenMapField = classOf[Credentials].getDeclaredField("tokenMap")
-  tokenMapField.setAccessible(true)
 
   def newHadoopConf(
       conf: KyuubiConf,
@@ -76,12 +74,8 @@ object KyuubiHadoopUtils extends Logging {
    * Get [[Credentials#tokenMap]] by reflection as [[Credentials#getTokenMap]] is not present before
    * Hadoop 3.2.1.
    */
-  def getTokenMap(credentials: Credentials): Map[Text, Token[_ <: TokenIdentifier]] = {
-    tokenMapField.get(credentials)
-      .asInstanceOf[JMap[Text, Token[_ <: TokenIdentifier]]]
-      .asScala
-      .toMap
-  }
+  def getTokenMap(credentials: Credentials): Map[Text, Token[_ <: TokenIdentifier]] =
+    getField[JMap[Text, Token[_ <: TokenIdentifier]]](credentials, "tokenMap").asScala.toMap
 
   def getTokenIssueDate(token: Token[_ <: TokenIdentifier]): Option[Long] = {
     token.decodeIdentifier() match {

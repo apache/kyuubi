@@ -34,18 +34,18 @@ trait RangerConfigProvider {
    *         org.apache.ranger.authorization.hadoop.config.RangerConfiguration
    *         for Ranger 2.0 and below
    */
-  def getRangerConf: Configuration = {
+  val getRangerConf: Configuration = {
     if (isRanger21orGreater) {
       // for Ranger 2.1+
       DynMethods.builder("getConfig")
         .impl("org.apache.ranger.plugin.service.RangerBasePlugin")
-        .build()
-        .invoke[Configuration](this)
+        .buildChecked(this)
+        .invoke[Configuration]()
     } else {
       // for Ranger 2.0 and below
       DynMethods.builder("getInstance")
         .impl("org.apache.ranger.authorization.hadoop.config.RangerConfiguration")
-        .buildStatic()
+        .buildStaticChecked()
         .invoke[Configuration]()
     }
   }

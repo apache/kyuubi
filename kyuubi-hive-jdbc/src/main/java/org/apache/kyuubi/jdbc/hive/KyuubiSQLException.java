@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.hive.service.rpc.thrift.TStatus;
+import org.apache.kyuubi.util.reflect.DynConstructors;
 
 public class KyuubiSQLException extends SQLException {
 
@@ -186,7 +187,10 @@ public class KyuubiSQLException extends SQLException {
 
   private static Throwable newInstance(String className, String message) {
     try {
-      return (Throwable) Class.forName(className).getConstructor(String.class).newInstance(message);
+      return DynConstructors.builder()
+          .impl(className, String.class)
+          .<Throwable>buildChecked()
+          .newInstance(message);
     } catch (Exception e) {
       return new RuntimeException(className + ":" + message);
     }

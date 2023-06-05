@@ -18,7 +18,7 @@
 package org.apache.kyuubi.plugin.lineage.helper
 
 import scala.collection.immutable.ListMap
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
@@ -38,6 +38,7 @@ import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, Data
 
 import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 trait LineageParser {
   def sparkSession: SparkSession
@@ -189,7 +190,7 @@ trait LineageParser {
     plan match {
       // For command
       case p if p.nodeName == "CommandResult" =>
-        val commandPlan = getPlanField[LogicalPlan]("commandLogicalPlan", plan)
+        val commandPlan = getField[LogicalPlan](plan, "commandLogicalPlan")
         extractColumnsLineage(commandPlan, parentColumnsLineage)
       case p if p.nodeName == "AlterViewAsCommand" =>
         val query =
@@ -198,22 +199,22 @@ trait LineageParser {
           } else {
             getQuery(plan)
           }
-        val view = getPlanField[TableIdentifier]("name", plan).unquotedString
+        val view = getField[TableIdentifier](plan, "name").unquotedString
         extractColumnsLineage(query, parentColumnsLineage).map { case (k, v) =>
           k.withName(s"$view.${k.name}") -> v
         }
 
       case p
           if p.nodeName == "CreateViewCommand"
-            && getPlanField[ViewType]("viewType", plan) == PersistedView =>
-        val view = getPlanField[TableIdentifier]("name", plan).unquotedString
+            && getField[ViewType](plan, "viewType") == PersistedView =>
+        val view = getField[TableIdentifier](plan, "name").unquotedString
         val outputCols =
-          getPlanField[Seq[(String, Option[String])]]("userSpecifiedColumns", plan).map(_._1)
+          getField[Seq[(String, Option[String])]](plan, "userSpecifiedColumns").map(_._1)
         val query =
           if (isSparkVersionAtMost("3.1")) {
-            sparkSession.sessionState.analyzer.execute(getPlanField[LogicalPlan]("child", plan))
+            sparkSession.sessionState.analyzer.execute(getField[LogicalPlan](plan, "child"))
           } else {
-            getPlanField[LogicalPlan]("plan", plan)
+            getField[LogicalPlan](plan, "plan")
           }
 
         extractColumnsLineage(query, parentColumnsLineage).zipWithIndex.map {
@@ -222,7 +223,7 @@ trait LineageParser {
         }
 
       case p if p.nodeName == "CreateDataSourceTableAsSelectCommand" =>
-        val table = getPlanField[CatalogTable]("table", plan).qualifiedName
+        val table = getField[CatalogTable](plan, "table").qualifiedName
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
@@ -230,7 +231,7 @@ trait LineageParser {
       case p
           if p.nodeName == "CreateHiveTableAsSelectCommand" ||
             p.nodeName == "OptimizedCreateHiveTableAsSelectCommand" =>
-        val table = getPlanField[CatalogTable]("tableDesc", plan).qualifiedName
+        val table = getField[CatalogTable](plan, "tableDesc").qualifiedName
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
@@ -241,15 +242,15 @@ trait LineageParser {
         val (table, namespace, catalog) =
           if (isSparkVersionAtMost("3.2")) {
             (
-              getPlanField[Identifier]("tableName", plan).name,
-              getPlanField[Identifier]("tableName", plan).namespace.mkString("."),
-              getPlanField[TableCatalog]("catalog", plan).name())
+              getField[Identifier](plan, "tableName").name,
+              getField[Identifier](plan, "tableName").namespace.mkString("."),
+              getField[TableCatalog](plan, "catalog").name())
           } else {
             (
-              getPlanMethod[Identifier]("tableName", plan).name(),
-              getPlanMethod[Identifier]("tableName", plan).namespace().mkString("."),
-              getCurrentPlanField[CatalogPlugin](
-                getPlanMethod[LogicalPlan]("left", plan),
+              invokeAs[Identifier](plan, "tableName").name(),
+              invokeAs[Identifier](plan, "tableName").namespace().mkString("."),
+              getField[CatalogPlugin](
+                invokeAs[LogicalPlan](plan, "left"),
                 "catalog").name())
           }
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map { case (k, v) =>
@@ -257,7 +258,7 @@ trait LineageParser {
         }
 
       case p if p.nodeName == "InsertIntoDataSourceCommand" =>
-        val logicalRelation = getPlanField[LogicalRelation]("logicalRelation", plan)
+        val logicalRelation = getField[LogicalRelation](plan, "logicalRelation")
         val table = logicalRelation.catalogTable.map(_.qualifiedName).getOrElse("")
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map {
           case (k, v) if table.nonEmpty =>
@@ -266,8 +267,8 @@ trait LineageParser {
 
       case p if p.nodeName == "InsertIntoHadoopFsRelationCommand" =>
         val table =
-          getPlanField[Option[CatalogTable]]("catalogTable", plan).map(_.qualifiedName).getOrElse(
-            "")
+          getField[Option[CatalogTable]](plan, "catalogTable").map(_.qualifiedName)
+            .getOrElse("")
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map {
           case (k, v) if table.nonEmpty =>
             k.withName(s"$table.${k.name}") -> v
@@ -277,15 +278,15 @@ trait LineageParser {
           if p.nodeName == "InsertIntoDataSourceDirCommand" ||
             p.nodeName == "InsertIntoHiveDirCommand" =>
         val dir =
-          getPlanField[CatalogStorageFormat]("storage", plan).locationUri.map(_.toString).getOrElse(
-            "")
+          getField[CatalogStorageFormat](plan, "storage").locationUri.map(_.toString)
+            .getOrElse("")
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map {
           case (k, v) if dir.nonEmpty =>
             k.withName(s"`$dir`.${k.name}") -> v
         }
 
       case p if p.nodeName == "InsertIntoHiveTable" =>
-        val table = getPlanField[CatalogTable]("table", plan).qualifiedName
+        val table = getField[CatalogTable](plan, "table").qualifiedName
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
@@ -297,14 +298,14 @@ trait LineageParser {
           if p.nodeName == "AppendData"
             || p.nodeName == "OverwriteByExpression"
             || p.nodeName == "OverwritePartitionsDynamic" =>
-        val table = getPlanField[NamedRelation]("table", plan).name
+        val table = getField[NamedRelation](plan, "table").name
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
 
       case p if p.nodeName == "MergeIntoTable" =>
-        val matchedActions = getPlanField[Seq[MergeAction]]("matchedActions", plan)
-        val notMatchedActions = getPlanField[Seq[MergeAction]]("notMatchedActions", plan)
+        val matchedActions = getField[Seq[MergeAction]](plan, "matchedActions")
+        val notMatchedActions = getField[Seq[MergeAction]](plan, "notMatchedActions")
         val allAssignments = (matchedActions ++ notMatchedActions).collect {
           case UpdateAction(_, assignments) => assignments
           case InsertAction(_, assignments) => assignments
@@ -314,8 +315,8 @@ trait LineageParser {
             assignment.key.asInstanceOf[Attribute],
             assignment.value.references)
         }: _*)
-        val targetTable = getPlanField[LogicalPlan]("targetTable", plan)
-        val sourceTable = getPlanField[LogicalPlan]("sourceTable", plan)
+        val targetTable = getField[LogicalPlan](plan, "targetTable")
+        val sourceTable = getField[LogicalPlan](plan, "sourceTable")
         val targetColumnsLineage = extractColumnsLineage(
           targetTable,
           nextColumnsLlineage.map { case (k, _) => (k, AttributeSet(k)) })
@@ -474,47 +475,7 @@ trait LineageParser {
     }
   }
 
-  private def getPlanField[T](field: String, plan: LogicalPlan): T = {
-    getFieldVal[T](plan, field)
-  }
-
-  private def getCurrentPlanField[T](curPlan: LogicalPlan, field: String): T = {
-    getFieldVal[T](curPlan, field)
-  }
-
-  private def getPlanMethod[T](name: String, plan: LogicalPlan): T = {
-    getMethod[T](plan, name)
-  }
-
-  private def getQuery(plan: LogicalPlan): LogicalPlan = {
-    getPlanField[LogicalPlan]("query", plan)
-  }
-
-  private def getFieldVal[T](o: Any, name: String): T = {
-    Try {
-      val field = o.getClass.getDeclaredField(name)
-      field.setAccessible(true)
-      field.get(o)
-    } match {
-      case Success(value) => value.asInstanceOf[T]
-      case Failure(e) =>
-        val candidates = o.getClass.getDeclaredFields.map(_.getName).mkString("[", ",", "]")
-        throw new RuntimeException(s"$name not in $candidates", e)
-    }
-  }
-
-  private def getMethod[T](o: Any, name: String): T = {
-    Try {
-      val method = o.getClass.getDeclaredMethod(name)
-      method.invoke(o)
-    } match {
-      case Success(value) => value.asInstanceOf[T]
-      case Failure(e) =>
-        val candidates = o.getClass.getDeclaredMethods.map(_.getName).mkString("[", ",", "]")
-        throw new RuntimeException(s"$name not in $candidates", e)
-    }
-  }
-
+  private def getQuery(plan: LogicalPlan): LogicalPlan = getField[LogicalPlan](plan, "query")
 }
 
 case class SparkSQLLineageParseHelper(sparkSession: SparkSession) extends LineageParser

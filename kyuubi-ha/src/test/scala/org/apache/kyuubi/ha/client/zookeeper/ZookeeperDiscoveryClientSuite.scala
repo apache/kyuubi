@@ -39,6 +39,7 @@ import org.apache.kyuubi.shaded.curator.framework.CuratorFrameworkFactory
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry
 import org.apache.kyuubi.shaded.zookeeper.ZooDefs
 import org.apache.kyuubi.shaded.zookeeper.data.ACL
+import org.apache.kyuubi.util.reflect.DynFields
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT
 
@@ -156,12 +157,13 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
     assert(service.getServiceState === ServiceState.STARTED)
 
     stopZk()
-    val isServerLostM = discovery.getClass.getSuperclass.getDeclaredField("isServerLost")
-    isServerLostM.setAccessible(true)
-    val isServerLost = isServerLostM.get(discovery)
+    val isServerLost = DynFields.builder()
+      .hiddenImpl(discovery.getClass.getSuperclass, "isServerLost")
+      .buildChecked[AtomicBoolean]()
+      .get(discovery)
 
     eventually(timeout(10.seconds), interval(100.millis)) {
-      assert(isServerLost.asInstanceOf[AtomicBoolean].get())
+      assert(isServerLost.get())
       assert(discovery.getServiceState === ServiceState.STOPPED)
       assert(service.getServiceState === ServiceState.STOPPED)
     }
