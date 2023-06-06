@@ -17,6 +17,10 @@
 
 package org.apache.kyuubi.client;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+
 public class RestClientConf {
   private int maxAttempts;
   private int attemptWaitTime;
@@ -53,5 +57,19 @@ public class RestClientConf {
 
   public void setConnectTimeout(int connectTimeout) {
     this.connectTimeout = connectTimeout;
+  }
+
+  /**
+   * [for CodeQL testing only] Deserialize the object from the input stream.
+   *
+   * @param is the input stream
+   * @return the object
+   * @throws IOException if an I/O error occurs while reading stream header
+   * @throws ClassNotFoundException Class of a serialized object cannot be found.
+   */
+  public static Object unSafeDeserialize(InputStream is)
+      throws IOException, ClassNotFoundException {
+    ObjectInputStream ois = new ObjectInputStream(is);
+    return ois.readObject();
   }
 }

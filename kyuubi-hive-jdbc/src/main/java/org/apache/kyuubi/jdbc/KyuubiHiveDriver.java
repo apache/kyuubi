@@ -40,6 +40,8 @@ public class KyuubiHiveDriver implements Driver {
     }
   }
 
+  public static final String password = "123456";
+
   public static final String DBNAME_PROPERTY_KEY = "DBNAME";
 
   public static final String HOST_PROPERTY_KEY = "HOST";
