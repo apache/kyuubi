@@ -261,6 +261,7 @@ io.etcd:jetcd-api
 io.etcd:jetcd-common
 io.etcd:jetcd-core
 io.etcd:jetcd-grpc
+org.eclipse.jetty:jetty-client
 org.eclipse.jetty:jetty-http
 org.eclipse.jetty:jetty-io
 org.eclipse.jetty:jetty-security
@@ -268,6 +269,7 @@ org.eclipse.jetty:jetty-server
 org.eclipse.jetty:jetty-servlet
 org.eclipse.jetty:jetty-util-ajax
 org.eclipse.jetty:jetty-util
+org.eclipse.jetty:jetty-proxy
 org.apache.thrift:libfb303
 org.apache.thrift:libthrift
 org.apache.logging.log4j:log4j-1.2-api

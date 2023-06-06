@@ -90,6 +90,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))
 
+    val proxyHandler = ApiRootResource.getEngineUIProxyHandler(this)
+    server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(proxyHandler))
+
     server.addStaticHandler("org/apache/kyuubi/ui/static", "/static/")
     server.addRedirectHandler("/", "/static/")
     server.addRedirectHandler("/static", "/static/")

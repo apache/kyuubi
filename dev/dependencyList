@@ -95,8 +95,10 @@ jetcd-api/0.7.3//jetcd-api-0.7.3.jar
 jetcd-common/0.7.3//jetcd-common-0.7.3.jar
 jetcd-core/0.7.3//jetcd-core-0.7.3.jar
 jetcd-grpc/0.7.3//jetcd-grpc-0.7.3.jar
+jetty-client/9.4.51.v20230217//jetty-client-9.4.51.v20230217.jar
 jetty-http/9.4.51.v20230217//jetty-http-9.4.51.v20230217.jar
 jetty-io/9.4.51.v20230217//jetty-io-9.4.51.v20230217.jar
+jetty-proxy/9.4.51.v20230217//jetty-proxy-9.4.51.v20230217.jar
 jetty-security/9.4.51.v20230217//jetty-security-9.4.51.v20230217.jar
 jetty-server/9.4.51.v20230217//jetty-server-9.4.51.v20230217.jar
 jetty-servlet/9.4.51.v20230217//jetty-servlet-9.4.51.v20230217.jar
