@@ -83,7 +83,11 @@
           <el-space wrap>
             <el-tooltip
               effect="dark"
-              :content="$t('engine_ui') + ': ' + scope.row.attributes['kyuubi.engine.url']"
+              :content="
+                $t('engine_ui') +
+                ': ' +
+                scope.row.attributes['kyuubi.engine.url']
+              "
               placement="top">
               <el-button
                 type="primary"

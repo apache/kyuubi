@@ -50,6 +50,7 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
       proxyRequest: Request): Unit = {
     val requestURI = clientRequest.getRequestURI
     extractTargetAddress(requestURI).foreach { case (host, port) =>
+      // SPARK-24209: Knox uses X-Forwarded-Context to notify the application the base path
       proxyRequest.header("X-Forwarded-Context", s"/engine-ui/$host:$port")
     }
     super.addXForwardedHeaders(clientRequest, proxyRequest)
