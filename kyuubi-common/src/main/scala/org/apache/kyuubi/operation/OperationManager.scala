@@ -146,7 +146,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       order: FetchOrientation,
       maxRows: Int): TRowSet = {
     val operationLog = getOperation(opHandle).getOperationLog
-    operationLog.map(_.read(maxRows)).getOrElse {
+    operationLog.map(_.read(order, maxRows)).getOrElse {
       throw KyuubiSQLException(s"$opHandle failed to generate operation log")
     }
   }
