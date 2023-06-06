@@ -185,6 +185,7 @@ The lineage dispatchers are used to dispatch lineage events, configured via `spa
 <ul>
   <li>SPARK_EVENT (by default): send lineage event to spark event bus</li>
   <li>KYUUBI_EVENT: send lineage event to kyuubi event bus</li>
+  <li>ATLAS: send lineage to apache atlas</li>
 </ul>
 
 #### Get Lineage Events from SparkListener
@@ -207,3 +208,24 @@ spark.sparkContext.addSparkListener(new SparkListener {
 #### Get Lineage Events from Kyuubi EventHandler
 
 When using the `KYUUBI_EVENT` dispatcher, the lineage events will be sent to the Kyuubi `EventBus`. Refer to [Kyuubi Event Handler](../../server/events) to handle kyuubi events.
+
+#### Ingest Lineage Entities to Apache Atlas
+
+The lineage entities can be ingested into [Apache Atlas](https://atlas.apache.org/) using the `ATLAS` dispatcher.
+
+Extra works:
+
++ The least transitive dependencies needed, which are under `./extensions/spark/kyuubi-spark-lineage/target/scala-${scala.binary.version}/jars`
++ Use `spark.files` to specify the `atlas-application.properties` configuration file for Atlas
+
+Atlas Client configurations (Configure in `atlas-application.properties` or passed in `spark.atlas.` prefix):
+
+|                  Name                   |     Default Value      |                      Description                      | Since |
+|-----------------------------------------|------------------------|-------------------------------------------------------|-------|
+| atlas.rest.address                      | http://localhost:21000 | The rest endpoint url for the Atlas server            | 1.8.0 |
+| atlas.client.type                       | rest                   | The client type (currently only supports rest)        | 1.8.0 |
+| atlas.client.username                   | none                   | The client username                                   | 1.8.0 |
+| atlas.client.password                   | none                   | The client password                                   | 1.8.0 |
+| atlas.cluster.name                      | primary                | The cluster name to use in qualifiedName of entities. | 1.8.0 |
+| atlas.hook.spark.column.lineage.enabled | true                   | Whether to ingest column lineages to Atlas.           | 1.8.0 |
+
