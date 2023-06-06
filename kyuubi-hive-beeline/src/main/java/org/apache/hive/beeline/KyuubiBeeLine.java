@@ -118,7 +118,7 @@ public class KyuubiBeeLine extends BeeLine {
       Options options =
           DynFields.builder()
               .hiddenImpl(BeeLine.class, "options")
-              .<Options>buildChecked(this)
+              .<Options>buildStaticChecked()
               .get();
 
       beelineParser = new BeelineParser();
