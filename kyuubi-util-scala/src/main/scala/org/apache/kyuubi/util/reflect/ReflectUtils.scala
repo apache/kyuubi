@@ -21,7 +21,7 @@ import java.util.ServiceLoader
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 object ReflectUtils {
 
   /**
