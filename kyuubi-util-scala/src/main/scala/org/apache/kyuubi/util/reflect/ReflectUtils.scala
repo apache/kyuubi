@@ -63,7 +63,7 @@ object ReflectUtils {
   /**
    * Invoke a method with the given name and arguments on the given target object.
    * @param target the target object
-   * @param methodName the method name
+   * @param methodName the method name from declared field names
    * @param args pairs of class and values for the arguments
    * @tparam T the expected return class type,
    *           returning type Nothing if it's not provided or inferable
@@ -72,20 +72,19 @@ object ReflectUtils {
   def invokeAs[T](target: AnyRef, methodName: String, args: (Class[_], AnyRef)*): T = {
     val targetClass = target.getClass
     val argClasses = args.map(_._1)
-    Try {
+    try {
       DynMethods.builder(methodName)
         .hiddenImpl(targetClass, argClasses: _*)
         .buildChecked(target)
         .invoke[T](args.map(_._2): _*)
-    } match {
-      case Success(value) => value
-      case Failure(t) =>
-        val candidates = targetClass.getMethods.map(_.getName).sorted
+    } catch {
+      case e: Exception =>
+        val candidates = targetClass.getDeclaredMethods.map(_.getName).sorted
         val argClassesNames = argClasses.map(_.getClass.getName)
         throw new RuntimeException(
           s"Method $methodName (${argClassesNames.mkString(",")})" +
             s" not found in $targetClass [${candidates.mkString(",")}]",
-          t)
+          e)
     }
   }
 
