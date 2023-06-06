@@ -39,7 +39,7 @@ test('proxy ui', async () => {
       plugins: [i18n, mockRouter, getStore(), ElementPlus]
     }
   })
-  expect(wrapper.vm.getProxyEngineUi('host:ip')).toEqual(
+  expect(wrapper.vm.getProxyEngineUI('host:ip')).toEqual(
     `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/host:ip/`
   )
 })
