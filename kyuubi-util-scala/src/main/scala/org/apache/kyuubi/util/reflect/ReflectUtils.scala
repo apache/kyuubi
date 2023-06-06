@@ -21,7 +21,7 @@ import java.util.ServiceLoader
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 object ReflectUtils {
 
   /**
@@ -37,32 +37,56 @@ object ReflectUtils {
       DynClasses.builder().loader(cl).impl(className).buildChecked()
     }.isSuccess
 
-  def getFieldVal[T](target: Any, fieldName: String): T =
-    Try {
-      DynFields.builder().hiddenImpl(target.getClass, fieldName).build[T]().get(target)
-    } match {
-      case Success(value) => value
-      case Failure(e) =>
-        val candidates = target.getClass.getDeclaredFields.map(_.getName).mkString("[", ",", "]")
-        throw new RuntimeException(s"$fieldName not in ${target.getClass} $candidates", e)
-    }
-
-  def getFieldValOpt[T](target: Any, name: String): Option[T] =
-    Try(getFieldVal[T](target, name)).toOption
-
-  def invoke(target: AnyRef, methodName: String, args: (Class[_], AnyRef)*): AnyRef =
+  /**
+   * get the field value of the given object
+   * @param target the target object
+   * @param fieldName the field name from declared field names
+   * @tparam T the expected return class type
+   * @return
+   */
+  def getField[T](target: Any, fieldName: String): T = {
+    val targetClass = target.getClass
     try {
-      val (types, values) = args.unzip
-      DynMethods.builder(methodName).hiddenImpl(target.getClass, types: _*).build()
-        .invoke(target, values: _*)
+      DynFields.builder()
+        .hiddenImpl(targetClass, fieldName)
+        .buildChecked[T](target)
+        .get()
     } catch {
-      case e: NoSuchMethodException =>
-        val candidates = target.getClass.getMethods.map(_.getName).mkString("[", ",", "]")
-        throw new RuntimeException(s"$methodName not in ${target.getClass} $candidates", e)
+      case e: Exception =>
+        val candidates = targetClass.getDeclaredFields.map(_.getName).sorted
+        throw new RuntimeException(
+          s"Field $fieldName not in $targetClass [${candidates.mkString(",")}]",
+          e)
     }
+  }
 
-  def invokeAs[T](target: AnyRef, methodName: String, args: (Class[_], AnyRef)*): T =
-    invoke(target, methodName, args: _*).asInstanceOf[T]
+  /**
+   * Invoke a method with the given name and arguments on the given target object.
+   * @param target the target object
+   * @param methodName the method name from declared field names
+   * @param args pairs of class and values for the arguments
+   * @tparam T the expected return class type,
+   *           returning type Nothing if it's not provided or inferable
+   * @return
+   */
+  def invokeAs[T](target: AnyRef, methodName: String, args: (Class[_], AnyRef)*): T = {
+    val targetClass = target.getClass
+    val argClasses = args.map(_._1)
+    try {
+      DynMethods.builder(methodName)
+        .hiddenImpl(targetClass, argClasses: _*)
+        .buildChecked(target)
+        .invoke[T](args.map(_._2): _*)
+    } catch {
+      case e: Exception =>
+        val candidates = targetClass.getDeclaredMethods.map(_.getName).sorted
+        val argClassesNames = argClasses.map(_.getClass.getName)
+        throw new RuntimeException(
+          s"Method $methodName (${argClassesNames.mkString(",")})" +
+            s" not found in $targetClass [${candidates.mkString(",")}]",
+          e)
+    }
+  }
 
   /**
    * Creates a iterator for with a new service loader for the given service type and class

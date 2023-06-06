@@ -21,6 +21,7 @@ import scala.util.control.NonFatal
 
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.util.reflect.DynConstructors
 
 private[kyuubi] object PluginLoader {
 
@@ -31,8 +32,7 @@ private[kyuubi] object PluginLoader {
     }
 
     try {
-      Class.forName(advisorClass.get).getConstructor().newInstance()
-        .asInstanceOf[SessionConfAdvisor]
+      DynConstructors.builder.impl(advisorClass.get).buildChecked[SessionConfAdvisor].newInstance()
     } catch {
       case _: ClassCastException =>
         throw new KyuubiException(
@@ -45,8 +45,7 @@ private[kyuubi] object PluginLoader {
   def loadGroupProvider(conf: KyuubiConf): GroupProvider = {
     val groupProviderClass = conf.get(KyuubiConf.GROUP_PROVIDER)
     try {
-      Class.forName(groupProviderClass).getConstructor().newInstance()
-        .asInstanceOf[GroupProvider]
+      DynConstructors.builder().impl(groupProviderClass).buildChecked[GroupProvider]().newInstance()
     } catch {
       case _: ClassCastException =>
         throw new KyuubiException(

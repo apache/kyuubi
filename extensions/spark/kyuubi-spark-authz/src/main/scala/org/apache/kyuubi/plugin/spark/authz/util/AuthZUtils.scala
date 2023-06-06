@@ -32,6 +32,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
 import org.apache.kyuubi.util.SemanticVersion
+import org.apache.kyuubi.util.reflect.DynConstructors
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 private[authz] object AuthZUtils {
@@ -61,7 +62,7 @@ private[authz] object AuthZUtils {
   def hasResolvedPermanentView(plan: LogicalPlan): Boolean = {
     plan match {
       case view: View if view.resolved && isSparkV31OrGreater =>
-        !getFieldVal[Boolean](view, "isTempView")
+        !getField[Boolean](view, "isTempView")
       case _ =>
         false
     }
@@ -69,7 +70,12 @@ private[authz] object AuthZUtils {
 
   lazy val isRanger21orGreater: Boolean = {
     try {
-      classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
+      DynConstructors.builder().impl(
+        classOf[RangerBasePlugin],
+        classOf[String],
+        classOf[String],
+        classOf[String])
+        .buildChecked[RangerBasePlugin]()
       true
     } catch {
       case _: NoSuchMethodException =>

@@ -46,7 +46,7 @@ class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
 case class FilteredShowTablesCommand(delegated: RunnableCommand)
   extends FilteredShowObjectCommand(delegated) {
 
-  private val isExtended = getFieldVal[Boolean](delegated, "isExtended")
+  private val isExtended = getField[Boolean](delegated, "isExtended")
 
   override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)

@@ -458,7 +458,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         admin, {
           val hiveTableRelation = sql(s"SELECT * FROM $table")
             .queryExecution.optimizedPlan.collectLeaves().head.asInstanceOf[HiveTableRelation]
-          assert(getFieldVal[Option[Statistics]](hiveTableRelation, "tableStats").nonEmpty)
+          assert(getField[Option[Statistics]](hiveTableRelation, "tableStats").nonEmpty)
         })
     }
   }

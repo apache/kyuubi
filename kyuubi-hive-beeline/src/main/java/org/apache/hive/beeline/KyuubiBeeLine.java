@@ -19,8 +19,6 @@ package org.apache.hive.beeline;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.sql.Driver;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,12 +27,15 @@ import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.kyuubi.util.reflect.DynConstructors;
+import org.apache.kyuubi.util.reflect.DynFields;
+import org.apache.kyuubi.util.reflect.DynMethods;
 
 public class KyuubiBeeLine extends BeeLine {
   public static final String KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER =
       "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
   protected KyuubiCommands commands = new KyuubiCommands(this);
-  private Driver defaultDriver = null;
+  private Driver defaultDriver;
 
   public KyuubiBeeLine() {
     this(true);
@@ -44,20 +45,16 @@ public class KyuubiBeeLine extends BeeLine {
   public KyuubiBeeLine(boolean isBeeLine) {
     super(isBeeLine);
     try {
-      Field commandsField = BeeLine.class.getDeclaredField("commands");
-      commandsField.setAccessible(true);
-      commandsField.set(this, commands);
+      DynFields.builder().hiddenImpl(BeeLine.class, "commands").buildChecked(this).set(commands);
     } catch (Throwable t) {
       throw new ExceptionInInitializerError("Failed to inject kyuubi commands");
     }
     try {
       defaultDriver =
-          (Driver)
-              Class.forName(
-                      KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER,
-                      true,
-                      Thread.currentThread().getContextClassLoader())
-                  .newInstance();
+          DynConstructors.builder()
+              .impl(KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER)
+              .<Driver>buildChecked()
+              .newInstance();
     } catch (Throwable t) {
       throw new ExceptionInInitializerError(KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER + "-missing");
     }
@@ -115,25 +112,26 @@ public class KyuubiBeeLine extends BeeLine {
     BeelineParser beelineParser;
     boolean connSuccessful;
     boolean exit;
-    Field exitField;
+    DynFields.BoundField<Boolean> exitField;
 
     try {
-      Field optionsField = BeeLine.class.getDeclaredField("options");
-      optionsField.setAccessible(true);
-      Options options = (Options) optionsField.get(this);
+      Options options =
+          DynFields.builder()
+              .hiddenImpl(BeeLine.class, "options")
+              .<Options>buildStaticChecked()
+              .get();
 
       beelineParser = new BeelineParser();
       cl = beelineParser.parse(options, args);
 
-      Method connectUsingArgsMethod =
-          BeeLine.class.getDeclaredMethod(
-              "connectUsingArgs", BeelineParser.class, CommandLine.class);
-      connectUsingArgsMethod.setAccessible(true);
-      connSuccessful = (boolean) connectUsingArgsMethod.invoke(this, beelineParser, cl);
+      connSuccessful =
+          DynMethods.builder("connectUsingArgs")
+              .hiddenImpl(BeeLine.class, BeelineParser.class, CommandLine.class)
+              .buildChecked(this)
+              .invoke(beelineParser, cl);
 
-      exitField = BeeLine.class.getDeclaredField("exit");
-      exitField.setAccessible(true);
-      exit = (boolean) exitField.get(this);
+      exitField = DynFields.builder().hiddenImpl(BeeLine.class, "exit").buildChecked(this);
+      exit = exitField.get();
 
     } catch (ParseException e1) {
       output(e1.getMessage());
@@ -149,10 +147,11 @@ public class KyuubiBeeLine extends BeeLine {
     // no-op if the file is not present
     if (!connSuccessful && !exit) {
       try {
-        Method defaultBeelineConnectMethod =
-            BeeLine.class.getDeclaredMethod("defaultBeelineConnect", CommandLine.class);
-        defaultBeelineConnectMethod.setAccessible(true);
-        connSuccessful = (boolean) defaultBeelineConnectMethod.invoke(this, cl);
+        connSuccessful =
+            DynMethods.builder("defaultBeelineConnect")
+                .hiddenImpl(BeeLine.class, CommandLine.class)
+                .buildChecked(this)
+                .invoke(beelineParser, cl);
 
       } catch (Exception t) {
         error(t.getMessage());
@@ -184,7 +183,7 @@ public class KyuubiBeeLine extends BeeLine {
       }
       try {
         exit = true;
-        exitField.set(this, exit);
+        exitField.set(exit);
       } catch (Exception e) {
         error(e.getMessage());
         return 1;

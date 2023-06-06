@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.events.EngineEventsStore
 import org.apache.kyuubi.service.ServiceState
-import org.apache.kyuubi.util.reflect.DynClasses
+import org.apache.kyuubi.util.reflect.{DynClasses, DynMethods}
 
 /**
  * Note that [[SparkUITab]] is private for Spark
@@ -68,30 +68,29 @@ case class EngineTab(
       val sparkServletContextHandlerClz = DynClasses.builder()
         .impl("org.sparkproject.jetty.servlet.ServletContextHandler")
         .impl("org.eclipse.jetty.servlet.ServletContextHandler")
-        .build()
-      val attachHandlerMethod = Class.forName("org.apache.spark.ui.SparkUI")
-        .getMethod("attachHandler", sparkServletContextHandlerClz)
-      val createRedirectHandlerMethod = Class.forName("org.apache.spark.ui.JettyUtils")
-        .getMethod(
-          "createRedirectHandler",
+        .buildChecked()
+      val attachHandlerMethod = DynMethods.builder("attachHandler")
+        .impl("org.apache.spark.ui.SparkUI", sparkServletContextHandlerClz)
+        .buildChecked(ui)
+      val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
+        .impl(
+          "org.apache.spark.ui.JettyUtils",
           classOf[String],
           classOf[String],
-          classOf[(HttpServletRequest) => Unit],
+          classOf[HttpServletRequest => Unit],
           classOf[String],
           classOf[Set[String]])
+        .buildStaticChecked()
 
       attachHandlerMethod
         .invoke(
-          ui,
           createRedirectHandlerMethod
-            .invoke(null, "/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST")))
+            .invoke("/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST")))
 
       attachHandlerMethod
         .invoke(
-          ui,
           createRedirectHandlerMethod
             .invoke(
-              null,
               "/kyuubi/gracefulstop",
               "/kyuubi",
               handleGracefulKillRequest _,

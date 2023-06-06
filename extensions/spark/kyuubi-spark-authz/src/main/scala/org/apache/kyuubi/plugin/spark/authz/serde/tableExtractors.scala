@@ -47,7 +47,7 @@ object TableExtractor {
    */
   def getOwner(v: AnyRef): Option[String] = {
     // org.apache.spark.sql.connector.catalog.Table
-    val table = invoke(v, "table")
+    val table = invokeAs[AnyRef](v, "table")
     val properties = invokeAs[JMap[String, String]](table, "properties").asScala
     properties.get("owner")
   }
@@ -97,9 +97,9 @@ class CatalogTableOptionTableExtractor extends TableExtractor {
  */
 class ResolvedTableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val catalogVal = invoke(v1, "catalog")
+    val catalogVal = invokeAs[AnyRef](v1, "catalog")
     val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
-    val identifier = invoke(v1, "identifier")
+    val identifier = invokeAs[AnyRef](v1, "identifier")
     val maybeTable = lookupExtractor[IdentifierTableExtractor].apply(spark, identifier)
     val maybeOwner = TableExtractor.getOwner(v1)
     maybeTable.map(_.copy(catalog = catalog, owner = maybeOwner))
@@ -157,7 +157,7 @@ class LogicalRelationTableExtractor extends TableExtractor {
  */
 class ResolvedDbObjectNameTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val catalogVal = invoke(v1, "catalog")
+    val catalogVal = invokeAs[AnyRef](v1, "catalog")
     val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
     val nameParts = invokeAs[Seq[String]](v1, "nameParts")
     val namespace = nameParts.init.toArray
@@ -173,9 +173,9 @@ class ResolvedIdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     v1.getClass.getName match {
       case "org.apache.spark.sql.catalyst.analysis.ResolvedIdentifier" =>
-        val catalogVal = invoke(v1, "catalog")
+        val catalogVal = invokeAs[AnyRef](v1, "catalog")
         val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
-        val identifier = invoke(v1, "identifier")
+        val identifier = invokeAs[AnyRef](v1, "identifier")
         val maybeTable = lookupExtractor[IdentifierTableExtractor].apply(spark, identifier)
         maybeTable.map(_.copy(catalog = catalog))
       case _ => None

@@ -16,24 +16,25 @@
  */
 package org.apache.kyuubi.engine.jdbc.connection
 
-import java.sql.{Connection, DriverManager}
+import java.sql.{Connection, Driver, DriverManager}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PROVIDER, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DRIVER_CLASS}
+import org.apache.kyuubi.util.reflect.DynClasses
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 abstract class AbstractConnectionProvider extends Logging {
   protected val providers = loadProviders()
 
   def getProviderClass(kyuubiConf: KyuubiConf): String = {
-    val specifiedDriverClass = kyuubiConf.get(ENGINE_JDBC_DRIVER_CLASS)
-    specifiedDriverClass.foreach(Class.forName)
-
-    specifiedDriverClass.getOrElse {
+    val driverClass: Class[_ <: Driver] = Option(
+      DynClasses.builder().impl(kyuubiConf.get(ENGINE_JDBC_DRIVER_CLASS).get)
+        .orNull().build[Driver]()).getOrElse {
       val url = kyuubiConf.get(ENGINE_JDBC_CONNECTION_URL).get
-      DriverManager.getDriver(url).getClass.getCanonicalName
+      DriverManager.getDriver(url).getClass
     }
+    driverClass.getCanonicalName
   }
 
   def create(kyuubiConf: KyuubiConf): Connection = {
