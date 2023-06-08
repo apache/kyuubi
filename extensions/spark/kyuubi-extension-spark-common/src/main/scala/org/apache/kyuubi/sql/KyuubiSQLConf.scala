@@ -34,7 +34,9 @@ object KyuubiSQLConf {
     buildConf("spark.sql.optimizer.insertRepartitionNum")
       .doc(s"The partition number if ${INSERT_REPARTITION_BEFORE_WRITE.key} is enabled. " +
         s"If AQE is disabled, the default value is ${SQLConf.SHUFFLE_PARTITIONS.key}. " +
-        "If AQE is enabled, the default value is none that means depend on AQE.")
+        "If AQE is enabled, the default value is none that means depend on AQE." +
+        "This config is used by Spark 3.1.x only."
+      )
       .version("1.2.0")
       .intConf
       .createOptional
