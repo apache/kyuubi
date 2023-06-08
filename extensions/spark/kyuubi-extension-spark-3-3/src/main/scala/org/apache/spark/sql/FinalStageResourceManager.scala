@@ -170,7 +170,7 @@ case class FinalStageResourceManager(session: SparkSession)
 
     // Evict the rest executors according to the shuffle block size
     executorToBlockSize.toSeq.sortBy(_._2).foreach { case (id, _) =>
-      if (executorIdsToKill.length < expectedNumExecutorToKill) {
+      if (executorIdsToKill.length < expectedNumExecutorToKill && existedExecutors.contains(id)) {
         executorIdsToKill.append(id)
       }
     }
