@@ -104,33 +104,38 @@ object AtlasEntityHelper {
   }
 
   def tableObjectId(tableName: String): Option[AtlasObjectId] = {
-    val dbTb = tableName.split('.')
-    if (dbTb.length == 2) {
-      val qualifiedName = tableQualifiedName(cluster, dbTb(0), dbTb(1))
-      // TODO parse datasource type
-      Some(new AtlasObjectId(HIVE_TABLE_TYPE, "qualifiedName", qualifiedName))
-    } else {
-      None
+    tableName.split('.') match {
+      case Array(catalog, db, table) =>
+        val qualifiedName = tableQualifiedName(cluster, catalog, db, table)
+        // TODO parse datasource type
+        Some(new AtlasObjectId(HIVE_TABLE_TYPE, "qualifiedName", qualifiedName))
+      case _ =>
+        None
     }
   }
 
-  def tableQualifiedName(cluster: String, db: String, table: String): String = {
-    s"${db.toLowerCase}.${table.toLowerCase}@$cluster"
+  def tableQualifiedName(cluster: String, catalog: String, db: String, table: String): String = {
+    s"${catalog.toLowerCase}.${db.toLowerCase}.${table.toLowerCase}@$cluster"
   }
 
   def columnObjectId(columnName: String): Option[AtlasObjectId] = {
-    val dbTbCol = columnName.split('.')
-    if (dbTbCol.length == 3) {
-      val qualifiedName = columnQualifiedName(cluster, dbTbCol(0), dbTbCol(1), dbTbCol(2))
-      // TODO parse datasource type
-      Some(new AtlasObjectId(HIVE_COLUMN_TYPE, "qualifiedName", qualifiedName))
-    } else {
-      None
+    columnName.split('.') match {
+      case Array(catalog, db, table, column) =>
+        val qualifiedName = columnQualifiedName(cluster, catalog, db, table, column)
+        // TODO parse datasource type
+        Some(new AtlasObjectId(HIVE_COLUMN_TYPE, "qualifiedName", qualifiedName))
+      case _ =>
+        None
     }
   }
 
-  def columnQualifiedName(cluster: String, db: String, table: String, column: String): String = {
-    s"${db.toLowerCase}.${table.toLowerCase}.${column.toLowerCase}@$cluster"
+  def columnQualifiedName(
+      cluster: String,
+      catalog: String,
+      db: String,
+      table: String,
+      column: String): String = {
+    s"${catalog.toLowerCase}.${db.toLowerCase}.${table.toLowerCase}.${column.toLowerCase}@$cluster"
   }
 
   def objectId(entity: AtlasEntity): AtlasObjectId = {
