@@ -22,9 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.kyuubi.client.exception.RetryableKyuubiRestException;
 import org.slf4j.Logger;
