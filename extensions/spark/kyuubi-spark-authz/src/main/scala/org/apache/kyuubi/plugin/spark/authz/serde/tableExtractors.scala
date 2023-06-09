@@ -51,6 +51,21 @@ object TableExtractor {
     val properties = invokeAs[JMap[String, String]](table, "properties").asScala
     properties.get("owner")
   }
+
+  def getOwner(spark: SparkSession, catalogName: String, tableIdent: AnyRef): Option[String] = {
+    try {
+      val catalogManager = invokeAs[AnyRef](spark.sessionState, "catalogManager")
+      val catalog = invokeAs[AnyRef](catalogManager, "catalog", (classOf[String], catalogName))
+      val table = invokeAs[AnyRef](
+        catalog,
+        "loadTable",
+        (Class.forName("org.apache.spark.sql.connector.catalog.Identifier"), tableIdent))
+      getOwner(table)
+    } catch {
+      // Exception may occur due to invalid reflection or table not found
+      case _: Exception => None
+    }
+  }
 }
 
 /**
@@ -177,7 +192,8 @@ class ResolvedIdentifierTableExtractor extends TableExtractor {
         val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
         val identifier = invokeAs[AnyRef](v1, "identifier")
         val maybeTable = lookupExtractor[IdentifierTableExtractor].apply(spark, identifier)
-        maybeTable.map(_.copy(catalog = catalog))
+        val owner = catalog.flatMap(name => TableExtractor.getOwner(spark, name, identifier))
+        maybeTable.map(_.copy(catalog = catalog, owner = owner))
       case _ => None
     }
   }
