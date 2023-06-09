@@ -357,7 +357,7 @@ public class KyuubiCommands extends Commands {
    */
   private void addCmdPart(List<String> cmdList, StringBuilder command, String cmdpart) {
     if (cmdpart.endsWith("\\")) {
-      command.append(cmdpart.substring(0, cmdpart.length() - 1)).append(";");
+      command.append(cmdpart, 0, cmdpart.length() - 1).append(";");
       return;
     } else {
       command.append(cmdpart);
