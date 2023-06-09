@@ -348,19 +348,19 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   private def startEngineAliveChecker(): Unit = {
     val interval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL)
-    val checkTask = new Runnable {
-      override def run(): Unit = {
-        for (session <- allSessions) {
-          if (!session.asInstanceOf[KyuubiSessionImpl].checkEngineAlive()) {
-            try {
-              closeSession(session.handle)
-            } catch {
-              case e: KyuubiSQLException =>
-                warn(s"Error closing session ${session.handle}", e)
-            }
+    val checkTask: Runnable = () => {
+      allSessions.foreach(session => {
+        if (!session.asInstanceOf[KyuubiSessionImpl].checkEngineAlive()) {
+          try {
+            closeSession(session.handle)
+            logger.info(s"The session ${session.handle} has been closed " +
+              s"due to engine unresponsiveness (checked by the engine alive checker).")
+          } catch {
+            case e: KyuubiSQLException =>
+              warn(s"Error closing session ${session.handle}", e)
           }
         }
-      }
+      })
     }
     engineAliveChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
   }
