@@ -25,7 +25,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
@@ -53,12 +52,18 @@ object TableExtractor {
     properties.get("owner")
   }
 
-  def getOwner(spark: SparkSession, catalogName: String, tableIdent: Identifier): Option[String] = {
-    spark.sessionState.catalogManager.catalog(catalogName) match {
-      case catalog: TableCatalog =>
-        getOwner(catalog.loadTable(tableIdent))
-      case _ =>
-        None
+  def getOwner(spark: SparkSession, catalogName: String, tableIdent: AnyRef): Option[String] = {
+    try {
+      val catalogManager = invokeAs[AnyRef](spark.sessionState, "catalogManager")
+      val catalog = invokeAs[AnyRef](catalogManager, "catalog", (classOf[String], catalogName))
+      val table = invokeAs[AnyRef](
+        catalog,
+        "loadTable",
+        (Class.forName("org.apache.spark.sql.connector.catalog.Identifier"), tableIdent))
+      getOwner(table)
+    } catch {
+      // Exception may occur due to invalid reflection or table not found
+      case _: Exception => None
     }
   }
 }
@@ -185,7 +190,7 @@ class ResolvedIdentifierTableExtractor extends TableExtractor {
       case "org.apache.spark.sql.catalyst.analysis.ResolvedIdentifier" =>
         val catalogVal = invokeAs[AnyRef](v1, "catalog")
         val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
-        val identifier = invokeAs[Identifier](v1, "identifier")
+        val identifier = invokeAs[AnyRef](v1, "identifier")
         val maybeTable = lookupExtractor[IdentifierTableExtractor].apply(spark, identifier)
         val owner = catalog.flatMap(name => TableExtractor.getOwner(spark, name, identifier))
         maybeTable.map(_.copy(catalog = catalog, owner = owner))
