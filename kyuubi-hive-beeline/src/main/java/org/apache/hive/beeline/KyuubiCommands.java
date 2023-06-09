@@ -422,6 +422,7 @@ public class KyuubiCommands extends Commands {
     return null;
   }
 
+  @Override
   public boolean connect(Properties props) throws IOException {
     String url =
         getProperty(
@@ -507,7 +508,6 @@ public class KyuubiCommands extends Commands {
 
   @Override
   public String handleMultiLineCmd(String line) throws IOException {
-    int[] startQuote = {-1};
     Character mask =
         (System.getProperty("jline.terminal", "").equals("jline.UnsupportedTerminal"))
             ? null

@@ -228,8 +228,9 @@ public class ColumnBuffer extends AbstractList<Object> {
         return stringVars.get(index);
       case BINARY_TYPE:
         return binaryVars.get(index).array();
+      default:
+        return null;
     }
-    return null;
   }
 
   @Override

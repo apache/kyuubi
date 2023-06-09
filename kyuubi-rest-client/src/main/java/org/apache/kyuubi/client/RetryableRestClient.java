@@ -23,6 +23,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.kyuubi.client.exception.RetryableKyuubiRestException;
 import org.slf4j.Logger;
@@ -44,7 +46,7 @@ public class RetryableRestClient implements InvocationHandler {
   private RetryableRestClient(List<String> uris, RestClientConf conf) {
     this.conf = conf;
     this.uris = uris;
-    this.currentUriIndex = new Random(System.currentTimeMillis()).nextInt(uris.size());
+    this.currentUriIndex = ThreadLocalRandom.current().nextInt(uris.size());
     newRestClient();
   }
 

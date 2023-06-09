@@ -174,8 +174,7 @@ public class KyuubiBeeLine extends BeeLine {
       return 1;
     }
     if (!commands.isEmpty()) {
-      for (Iterator<String> i = commands.iterator(); i.hasNext(); ) {
-        String command = i.next().toString();
+      for (String command : commands) {
         debug(loc("executing-command", command));
         if (!dispatch(command)) {
           code++;
