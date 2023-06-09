@@ -349,7 +349,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private def startEngineAliveChecker(): Unit = {
     val interval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL)
     val checkTask: Runnable = () => {
-      allSessions.foreach(session => {
+      allSessions.foreach { session =>
         if (!session.asInstanceOf[KyuubiSessionImpl].checkEngineAlive()) {
           try {
             closeSession(session.handle)
@@ -360,7 +360,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
               warn(s"Error closing session ${session.handle}", e)
           }
         }
-      })
+      }
     }
     engineAliveChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
   }
