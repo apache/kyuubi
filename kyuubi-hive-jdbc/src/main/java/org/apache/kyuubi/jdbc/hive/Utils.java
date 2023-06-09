@@ -126,7 +126,7 @@ public class Utils {
           break;
       }
     }
-    parts.add(sql.substring(off, sql.length()));
+    parts.add(sql.substring(off));
     return parts;
   }
 
