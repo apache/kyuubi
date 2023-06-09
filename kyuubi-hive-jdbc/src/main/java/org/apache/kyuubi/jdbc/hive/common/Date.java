@@ -65,6 +65,7 @@ public class Date implements Comparable<Date> {
     return localDate.format(PRINT_FORMATTER);
   }
 
+  @Override
   public int hashCode() {
     return localDate.hashCode();
   }
@@ -164,6 +165,7 @@ public class Date implements Comparable<Date> {
   }
 
   /** Return a copy of this object. */
+  @Override
   public Object clone() {
     // LocalDateTime is immutable.
     return new Date(this.localDate);

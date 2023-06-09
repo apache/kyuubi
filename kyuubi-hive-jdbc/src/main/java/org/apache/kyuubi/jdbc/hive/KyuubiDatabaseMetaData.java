@@ -531,7 +531,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
   @Override
   public String getProcedureTerm() throws SQLException {
-    return new String("UDF");
+    return "UDF";
   }
 
   @Override

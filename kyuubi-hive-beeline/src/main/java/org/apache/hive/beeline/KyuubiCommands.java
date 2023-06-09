@@ -357,7 +357,7 @@ public class KyuubiCommands extends Commands {
    */
   private void addCmdPart(List<String> cmdList, StringBuilder command, String cmdpart) {
     if (cmdpart.endsWith("\\")) {
-      command.append(cmdpart.substring(0, cmdpart.length() - 1)).append(";");
+      command.append(cmdpart, 0, cmdpart.length() - 1).append(";");
       return;
     } else {
       command.append(cmdpart);
@@ -422,6 +422,7 @@ public class KyuubiCommands extends Commands {
     return null;
   }
 
+  @Override
   public boolean connect(Properties props) throws IOException {
     String url =
         getProperty(
@@ -507,7 +508,6 @@ public class KyuubiCommands extends Commands {
 
   @Override
   public String handleMultiLineCmd(String line) throws IOException {
-    int[] startQuote = {-1};
     Character mask =
         (System.getProperty("jline.terminal", "").equals("jline.UnsupportedTerminal"))
             ? null

@@ -114,7 +114,7 @@ public class RestClient implements IRestClient {
               contentBody = new FileBody((File) payload);
               break;
             default:
-              throw new RuntimeException("Unsupported multi part type:" + multiPart);
+              throw new RuntimeException("Unsupported multi part type:" + multiPart.getType());
           }
           entityBuilder.addPart(s, contentBody);
         });
