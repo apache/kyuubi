@@ -114,6 +114,7 @@ class KyuubiSessionImpl(
     super.open()
 
     runOperation(launchEngineOp)
+    engineLastAlive = System.currentTimeMillis()
   }
 
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit =
@@ -281,6 +282,43 @@ class KyuubiSessionImpl(
           command)
         runOperation(operation)
       case _ => super.executeStatement(statement, confOverlay, runAsync, queryTimeout)
+    }
+  }
+
+  @volatile private var engineLastAlive: Long = _
+  val engineAliveTimeout = sessionConf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
+  val aliveProbeEnabled = sessionConf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
+  var engineAliveMaxFailCount = 3
+  var engineAliveFailCount = 0
+
+  def checkEngineAlive(): Boolean = {
+    try {
+      if (!aliveProbeEnabled) return true
+      getInfo(TGetInfoType.CLI_DBMS_VER)
+      engineLastAlive = System.currentTimeMillis()
+      engineAliveFailCount = 0
+      true
+    } catch {
+      case e: Throwable =>
+        val now = System.currentTimeMillis()
+        engineAliveFailCount = engineAliveFailCount + 1
+        if (now - engineLastAlive > engineAliveTimeout &&
+          engineAliveFailCount >= engineAliveMaxFailCount) {
+          error(s"The engineRef[${engine.getEngineRefId}] is marked as not alive "
+            + s"due to a lack of recent successful alive probes. "
+            + s"The time since last successful probe: "
+            + s"${now - engineLastAlive} ms exceeds the timeout of $engineAliveTimeout ms. "
+            + s"The engine has failed $engineAliveFailCount times, "
+            + s"surpassing the maximum failure count of $engineAliveMaxFailCount.")
+          false
+        } else {
+          warn(
+            s"The engineRef[${engine.getEngineRefId}] alive probe fails, " +
+              s"${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms, " +
+              s"and has failed $engineAliveFailCount times.",
+            e)
+          true
+        }
     }
   }
 }
