@@ -182,7 +182,11 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   override def getResultSetMetadata: TGetResultSetMetadataResp
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet
+  def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet
+
+  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = withLockRequired {
+    getNextRowSetInternal(order, rowSetSize)
+  }
 
   /**
    * convert SQL 'like' pattern to a Java regular expression.
