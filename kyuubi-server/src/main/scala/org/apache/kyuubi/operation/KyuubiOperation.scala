@@ -161,7 +161,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     }
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)

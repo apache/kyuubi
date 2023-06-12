@@ -233,7 +233,7 @@ abstract class SparkOperation(session: Session)
     resp
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     var resultRowSet: TRowSet = null
     try {
       withLocalProperties {
