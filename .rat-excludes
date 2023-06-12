@@ -50,6 +50,7 @@ build/scala-*/**
 **/metadata-store-schema*.sql
 **/*.derby.sql
 **/*.mysql.sql
+**/*.sqlite.sql
 **/node/**
 **/web-ui/dist/**
 **/pnpm-lock.yaml

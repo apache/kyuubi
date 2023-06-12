@@ -198,6 +198,7 @@
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
+        <sqlite.version>3.42.0.0</sqlite.version>
         <swagger.version>2.2.1</swagger.version>
         <swagger-ui.version>4.9.1</swagger-ui.version>
         <testcontainers-scala.version>0.40.12</testcontainers-scala.version>
@@ -1449,6 +1450,12 @@
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
                 <version>${derby.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.xerial</groupId>
+                <artifactId>sqlite-jdbc</artifactId>
+                <version>${sqlite.version}</version>
             </dependency>
 
             <dependency>
