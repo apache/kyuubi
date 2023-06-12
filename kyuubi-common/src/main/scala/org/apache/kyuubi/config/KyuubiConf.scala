@@ -2585,6 +2585,24 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_JDBC_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.jdbc.initialize.sql")
+      .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
+        "engine before queries. i.e. use `SELECT 1` to eagerly active JDBCClient.")
+      .version("1.8.0")
+      .stringConf
+      .toSequence(";")
+      .createWithDefaultString("SELECT 1")
+
+  val ENGINE_JDBC_SESSION_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.jdbc.session.initialize.sql")
+      .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
+        "engine session before queries.")
+      .version("1.8.0")
+      .stringConf
+      .toSequence(";")
+      .createWithDefault(Nil)
+
   val ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.operation.convert.catalog.database.enabled")
       .doc("When set to true, The engine converts the JDBC methods of set/get Catalog " +
