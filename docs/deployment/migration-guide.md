@@ -19,7 +19,7 @@
 
 ## Upgrading from Kyuubi 1.7 to 1.8
 
-* Since Kyuubi 1.8, SQLite is added and becomes the default data type of Kyuubi metastore, Derby is deprecated.
+* Since Kyuubi 1.8, SQLite is added and becomes the default database type of Kyuubi metastore, as Derby has been deprecated.
   Both of Derby and SQLite are mainly for test purpose, and they're not supposed to use in production
   To restore previous behavior, set `kyuubi.metadata.store.jdbc.database.type=DERBY` and
   `kyuubi.metadata.store.jdbc.url=jdbc:derby:memory:kyuubi_state_store_db;create=true`.
