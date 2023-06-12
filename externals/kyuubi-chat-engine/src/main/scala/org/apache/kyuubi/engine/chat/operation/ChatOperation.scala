@@ -31,7 +31,7 @@ abstract class ChatOperation(session: Session) extends AbstractOperation(session
 
   protected lazy val conf: KyuubiConf = session.sessionManager.getConf
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)

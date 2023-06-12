@@ -54,7 +54,7 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
     resp
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)

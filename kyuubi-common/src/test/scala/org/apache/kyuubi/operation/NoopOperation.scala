@@ -76,7 +76,7 @@ class NoopOperation(session: Session, shouldFail: Boolean = false)
     resp
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     val col = TColumn.stringVal(new TStringColumn(Seq(opType).asJava, ByteBuffer.allocate(0)))
     val tRowSet = ThriftUtils.newEmptyRowSet
     tRowSet.addToColumns(col)
