@@ -75,7 +75,11 @@ class SparkSessionImpl(
       } catch {
         case e
             if database == "default" &&
-              StringUtils.containsAny(e.getMessage, "not found", "SCHEMA_NOT_FOUND") =>
+              StringUtils.containsAny(
+                e.getMessage,
+                "not found",
+                "SCHEMA_NOT_FOUND",
+                "is not authorized to perform: glue:GetDatabase") =>
       }
     }
 
