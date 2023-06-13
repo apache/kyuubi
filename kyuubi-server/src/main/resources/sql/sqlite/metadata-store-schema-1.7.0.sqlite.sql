@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS metadata(
     peer_instance_closed boolean default '0' -- closed by peer kyuubi instance
 );
 
-CREATE UNIQUE INDEX metadata_unique_identifier_index ON metadata(identifier);
+CREATE UNIQUE INDEX IF NOT EXISTS metadata_unique_identifier_index ON metadata(identifier);
 
-CREATE INDEX metadata_user_name_index ON metadata(user_name);
+CREATE INDEX IF NOT EXISTS metadata_user_name_index ON metadata(user_name);
 
-CREATE INDEX metadata_engine_type_index ON metadata(engine_type);
+CREATE INDEX IF NOT EXISTS metadata_engine_type_index ON metadata(engine_type);

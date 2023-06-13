@@ -1820,6 +1820,7 @@
                                 <directory>${project.basedir}</directory>
                                 <includes>
                                     <include>**/*.log</include>
+                                    <include>**/*.db</include>
                                 </includes>
                             </fileset>
                             <fileset>

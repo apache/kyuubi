@@ -69,14 +69,14 @@ object JDBCMetadataStoreConf {
 
   val METADATA_STORE_JDBC_URL: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.url")
-      .doc("The JDBC url for server JDBC metadata store. By default, it is a DERBY in-memory" +
+      .doc("The JDBC url for server JDBC metadata store. By default, it is a SQLite" +
         " database url, and the state information is not shared across kyuubi instances. To" +
         " enable high availability for multiple kyuubi instances," +
         " please specify a production JDBC url.")
       .version("1.6.0")
       .serverOnly
       .stringConf
-      .createWithDefault("jdbc:sqlite:memory:kyuubi_state_store.db")
+      .createWithDefault("jdbc:sqlite:kyuubi_state_store.db")
 
   val METADATA_STORE_JDBC_USER: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.user")
