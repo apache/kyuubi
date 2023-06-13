@@ -82,12 +82,14 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
   private def initSchema(): Unit = {
     getInitSchema(dbType).foreach { schema =>
-      val ddlStatements = schema.trim.split(";")
+      val ddlStatements = schema.trim.split(";").map(_.trim)
       JdbcUtils.withConnection { connection =>
         Utils.tryLogNonFatalError {
           ddlStatements.foreach { ddlStatement =>
             execute(connection, ddlStatement)
-            info(s"Execute init schema ddl: $ddlStatement successfully.")
+            info(s"""Execute init schema ddl successfully.
+                    |$ddlStatement
+                    |""".stripMargin)
           }
         }
       }
