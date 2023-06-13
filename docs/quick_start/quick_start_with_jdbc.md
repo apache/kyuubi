@@ -80,7 +80,7 @@ public class KyuubiJDBCDemo {
     String clientPrincipal = args[0]; // Kerberos principal
     String clientKeytab = args[1];    // Keytab file location
     String serverPrincipal = arg[2];  // Kerberos principal used by Kyuubi Server
-    String kyuubiJdbcUrl = String.format(kyuubiJdbcUrl, clientPrincipal, clientKeytab, serverPrincipal);
+    String kyuubiJdbcUrl = String.format(kyuubiJdbcUrlTemplate, clientPrincipal, clientKeytab, serverPrincipal);
     try (Connection conn = DriverManager.getConnection(kyuubiJdbcUrl)) {
       try (Statement stmt = conn.createStatement()) {
         try (ResultSet rs = st.executeQuery("show databases")) {
