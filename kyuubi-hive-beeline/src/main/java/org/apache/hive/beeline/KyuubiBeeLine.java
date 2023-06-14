@@ -163,6 +163,7 @@ public class KyuubiBeeLine extends BeeLine {
       }
     }
 
+    // see HIVE-19048 : InitScript errors are ignored
     if (exit) {
       return 1;
     }
@@ -199,6 +200,7 @@ public class KyuubiBeeLine extends BeeLine {
     return code;
   }
 
+  // see HIVE-19048 : Initscript errors are ignored
   @Override
   int runInit() {
     String[] initFiles = getOpts().getInitFiles();
