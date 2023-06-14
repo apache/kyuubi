@@ -494,9 +494,9 @@ public class KyuubiCommands extends Commands {
       // see HIVE-19048 : Initscript errors are ignored
       int initScriptExecutionResult = beeLine.runInit();
 
-      //if execution of the init script(s) return anything other than ERRNO_OK from beeline
-      //exit beeline with error unless --force is set
-      if(initScriptExecutionResult != 0 && !beeLine.getOpts().getForce()) {
+      // if execution of the init script(s) return anything other than ERRNO_OK from beeline
+      // exit beeline with error unless --force is set
+      if (initScriptExecutionResult != 0 && !beeLine.getOpts().getForce()) {
         return beeLine.error("init script execution failed.");
       }
 
