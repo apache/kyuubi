@@ -21,8 +21,8 @@ Kyuubi MetaStore Upgrade HowTo
 This document describes how to upgrade the schema of a SQLite backed
 Kyuubi MetaStore instance from one release version of Kyuubi to another
 release version of Kyuubi. For example, by following the steps listed
-below it is possible to upgrade a Kyuubi 1.6.0 MetaStore schema to a
-Kyuubi 1.7.0 MetaStore schema. Before attempting this project we
+below it is possible to upgrade a Kyuubi 1.8.0 MetaStore schema to a
+Kyuubi 1.9.0 MetaStore schema. Before attempting this project we
 strongly recommend that you read through all of the steps in this
 document and familiarize yourself with the required tools.
 
@@ -60,14 +60,14 @@ MetaStore Upgrade Steps
    be resolved manually or the upgrade scripts will fail to complete.
 
 5) You are now ready to run the schema upgrade scripts. If you are
-   upgrading from Kyuubi 1.6.0 to Kyuubi 1.7.0 you need to run the
-   upgrade-1.6.0-to-1.7.0.sqlite.sql script, but if you are upgrading
-   from 1.6.0 to 1.8.0 you will need to run the 1.6.0 to 1.7.0 upgrade
-   script followed by the 1.7.0 to 1.8.0 upgrade script.
+   upgrading from Kyuubi 1.8.0 to Kyuubi 1.9.0 you need to run the
+   upgrade-1.8.0-to-1.9.0.sqlite.sql script, but if you are upgrading
+   from 1.8.0 to 2.0.0 you will need to run the 1.8.0 to 1.9.0 upgrade
+   script followed by the 1.9.0 to 2.0.0 upgrade script.
 
    % sqlite3 <metastore_db_name>.db
-   sqlite> .read  upgrade-1.6.0-to-1.7.0.sqlite.sql
-   sqlite> .read  upgrade-1.7.0-to-1.8.0.sqlite.sql
+   sqlite> .read  upgrade-1.8.0-to-1.9.0.sqlite.sql
+   sqlite> .read  upgrade-1.9.0-to-2.0.0.sqlite.sql
 
    These scripts should run to completion without any errors. If you
    do encounter errors you need to analyze the cause and attempt to
@@ -77,6 +77,6 @@ MetaStore Upgrade Steps
    upgraded schema against the official schema for your particular
    version of Kyuubi. This is accomplished by repeating steps (3) and
    (4), but this time comparing against the official version of the
-   upgraded schema, e.g. if you upgraded the schema to Kyuubi 1.7.0 then
+   upgraded schema, e.g. if you upgraded the schema to Kyuubi 1.9.0 then
    you will want to compare your schema dump against the contents of
-   metadata-store-schema-1.7.0.sqlite.sql
+   metadata-store-schema-1.9.0.sqlite.sql
