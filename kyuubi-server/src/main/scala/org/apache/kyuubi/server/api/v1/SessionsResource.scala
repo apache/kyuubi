@@ -27,13 +27,14 @@ import scala.util.control.NonFatal
 import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
-import org.apache.kyuubi.operation.OperationHandle
+import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 
@@ -410,6 +411,33 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting cross reference"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      array = new ArraySchema(schema = new Schema(implementation =
+        classOf[OperationData])))),
+    description =
+      "get the list of all type operations belong to session")
+  @GET
+  @Path("{sessionHandle}/operations")
+  def getOperation(@PathParam("sessionHandle") sessionHandleStr: String): Seq[OperationData] = {
+    try {
+      fe.be.sessionManager.operationManager.allOperations().map { operation =>
+        if (StringUtils.equalsIgnoreCase(
+            operation.getSession.handle.identifier.toString,
+            sessionHandleStr)) {
+          ApiUtils.operationData(operation.asInstanceOf[KyuubiOperation])
+        }
+      }.toSeq.asInstanceOf[Seq[OperationData]]
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting the list of all type operations belong to session"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }

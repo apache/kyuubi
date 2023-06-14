@@ -35,6 +35,8 @@ export default {
   share_level: '共享级别',
   version: '版本',
   engine_ui: 'Engine UI',
+  failure_reason: '失败原因',
+  session_properties: 'Session 参数',
   operation: {
     text: '操作',
     delete_confirm: '确认删除',
