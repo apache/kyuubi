@@ -64,7 +64,7 @@ If password is provided for connection, make sure the `auth` param set to either
 
 ```python
 # open connection
-conn = hive.Connection(host=kyuubi_host,port=10009, 
-user='user', password='password', auth='CUSTOM')
+conn = hive.Connection(host=kyuubi_host, port=10009, 
+                       username='user', password='password', auth='CUSTOM')
 ```
 
