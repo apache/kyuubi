@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
@@ -115,7 +115,7 @@ class GetColumns(
       val schemaPattern = toJavaRegex(schemaName)
       val tablePattern = toJavaRegex(tableName)
       val columnPattern = toJavaRegex(columnName)
-      iter = new IterableFetchIterator(SparkCatalogShim()
+      iter = new IterableFetchIterator(SparkCatalogUtils
         .getColumns(spark, catalogName, schemaPattern, tablePattern, columnPattern).toList)
     } catch {
       onError()

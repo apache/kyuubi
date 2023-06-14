@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_OPERATION_HANDLE_KEY
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.{NoneMode, Operation, OperationHandle, OperationManager, PlanOnlyMode}
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
@@ -179,7 +179,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       tableTypes: java.util.List[String]): Operation = {
     val tTypes =
       if (tableTypes == null || tableTypes.isEmpty) {
-        SparkCatalogShim.sparkTableTypes
+        SparkCatalogUtils.sparkTableTypes
       } else {
         tableTypes.asScala.toSet
       }

@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
@@ -38,7 +38,8 @@ class GetCurrentCatalog(session: Session) extends SparkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {
-      iter = new IterableFetchIterator(Seq(SparkCatalogShim().getCurrentCatalog(spark)))
+      val currentCatalogName = spark.sessionState.catalogManager.currentCatalog.name()
+      iter = new IterableFetchIterator(Seq(Row(currentCatalogName)))
     } catch onError()
   }
 }
