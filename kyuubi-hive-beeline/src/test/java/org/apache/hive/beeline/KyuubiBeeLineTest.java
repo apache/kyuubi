@@ -19,6 +19,7 @@
 package org.apache.hive.beeline;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -64,16 +65,27 @@ public class KyuubiBeeLineTest {
     String[] args1 = {"-h"};
     kyuubiBeeLine.initArgs(args1);
     String output = printStream.getOutput();
-    assert output.contains("--python-mode=[true/false]      Execute python code/script.");
-    printStream.reset();
+    assert output.contains("--python-mode                   Execute python code/script.");
   }
 
   @Test
   public void testKyuubiBeeLinePythonMode() {
     KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
-    String[] args = {"-u", "badUrl", "--python-mode=true"};
-    kyuubiBeeLine.initArgs(args);
-    assertEquals(kyuubiBeeLine.isPythonMode(), true);
+    String[] args1 = {"-u", "badUrl", "--python-mode"};
+    kyuubiBeeLine.initArgs(args1);
+    assertTrue(kyuubiBeeLine.isPythonMode());
+    kyuubiBeeLine.setPythonMode(false);
+
+    String[] args2 = {"--python-mode", "-u", "badUrl", "-f", "test.sql"};
+    kyuubiBeeLine.initArgs(args2);
+    assertTrue(kyuubiBeeLine.isPythonMode());
+    assert kyuubiBeeLine.getOpts().getScriptFile().equals("test.sql");
+    kyuubiBeeLine.setPythonMode(false);
+
+    String[] args3 = {"-u", "badUrl"};
+    kyuubiBeeLine.initArgs(args3);
+    assertTrue(!kyuubiBeeLine.isPythonMode());
+    kyuubiBeeLine.setPythonMode(false);
   }
 
   static class BufferPrintStream extends PrintStream {
@@ -107,10 +119,6 @@ public class KyuubiBeeLineTest {
 
     public String getOutput() {
       return stringBuilder.toString();
-    }
-
-    public void reset() {
-      stringBuilder = new StringBuilder();
     }
   }
 }

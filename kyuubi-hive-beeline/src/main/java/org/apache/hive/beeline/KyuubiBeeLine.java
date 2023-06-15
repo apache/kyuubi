@@ -69,7 +69,7 @@ public class KyuubiBeeLine extends BeeLine {
   void usage() {
     super.usage();
     output("Usage: java \" + KyuubiBeeLine.class.getCanonicalName()");
-    output("   --python-mode=[true/false]      Execute python code/script.");
+    output("   --python-mode                   Execute python code/script.");
   }
 
   public boolean isPythonMode() {
@@ -147,13 +147,9 @@ public class KyuubiBeeLine extends BeeLine {
             @Override
             protected void processOption(String arg, ListIterator iter) throws ParseException {
               if (PYTHON_MODE_PREFIX.equals(arg)) {
-                String stripped = arg.substring(2, arg.length());
-                String[] parts = split(stripped, "=");
-                String value = parts.length >= 2 ? parts[1] : "true";
-                pythonMode = Boolean.parseBoolean(value);
-              } else {
-                super.processOption(arg, iter);
+                pythonMode = true;
               }
+              super.processOption(arg, iter);
             }
           };
       cl = beelineParser.parse(options, args);
