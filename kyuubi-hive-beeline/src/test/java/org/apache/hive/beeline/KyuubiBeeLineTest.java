@@ -29,4 +29,22 @@ public class KyuubiBeeLineTest {
     int result = kyuubiBeeLine.initArgs(new String[0]);
     assertEquals(0, result);
   }
+
+  @Test
+  public void testKyuubiBeelineExitCodeWithoutConnection() {
+    KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
+    String scriptFile = getClass().getClassLoader().getResource("test.sql").getFile();
+
+    String[] args1 = {"-u", "badUrl", "-e", "show tables"};
+    int result1 = kyuubiBeeLine.initArgs(args1);
+    assertEquals(1, result1);
+
+    String[] args2 = {"-u", "badUrl", "-f", scriptFile};
+    int result2 = kyuubiBeeLine.initArgs(args2);
+    assertEquals(1, result2);
+
+    String[] args3 = {"-u", "badUrl", "-i", scriptFile};
+    int result3 = kyuubiBeeLine.initArgs(args3);
+    assertEquals(1, result3);
+  }
 }

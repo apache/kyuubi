@@ -36,6 +36,11 @@ public class KyuubiBeeLine extends BeeLine {
   protected KyuubiCommands commands = new KyuubiCommands(this);
   private Driver defaultDriver;
 
+  // copied from org.apache.hive.beeline.BeeLine
+  private static final int ERRNO_OK = 0;
+  private static final int ERRNO_ARGS = 1;
+  private static final int ERRNO_OTHER = 2;
+
   public KyuubiBeeLine() {
     this(true);
   }
@@ -158,6 +163,11 @@ public class KyuubiBeeLine extends BeeLine {
       }
     }
 
+    // see HIVE-19048 : InitScript errors are ignored
+    if (exit) {
+      return 1;
+    }
+
     int code = 0;
     if (cl.getOptionValues('e') != null) {
       commands = Arrays.asList(cl.getOptionValues('e'));
@@ -188,5 +198,54 @@ public class KyuubiBeeLine extends BeeLine {
       }
     }
     return code;
+  }
+
+  // see HIVE-19048 : Initscript errors are ignored
+  @Override
+  int runInit() {
+    String[] initFiles = getOpts().getInitFiles();
+
+    // executionResult will be ERRNO_OK only if all initFiles execute successfully
+    int executionResult = ERRNO_OK;
+    boolean exitOnError = !getOpts().getForce();
+    DynFields.BoundField<Boolean> exitField = null;
+
+    if (initFiles != null && initFiles.length != 0) {
+      for (String initFile : initFiles) {
+        info("Running init script " + initFile);
+        try {
+          int currentResult;
+          try {
+            currentResult =
+                DynMethods.builder("executeFile")
+                    .hiddenImpl(BeeLine.class, String.class)
+                    .buildChecked(this)
+                    .invoke(initFile);
+            exitField = DynFields.builder().hiddenImpl(BeeLine.class, "exit").buildChecked(this);
+          } catch (Exception t) {
+            error(t.getMessage());
+            currentResult = ERRNO_OTHER;
+          }
+
+          if (currentResult != ERRNO_OK) {
+            executionResult = currentResult;
+
+            if (exitOnError) {
+              return executionResult;
+            }
+          }
+        } finally {
+          // exit beeline if there is initScript failure and --force is not set
+          boolean exit = exitOnError && executionResult != ERRNO_OK;
+          try {
+            exitField.set(exit);
+          } catch (Exception t) {
+            error(t.getMessage());
+            return ERRNO_OTHER;
+          }
+        }
+      }
+    }
+    return executionResult;
   }
 }
