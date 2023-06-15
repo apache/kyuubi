@@ -76,7 +76,7 @@ public class KyuubiBeeLineTest {
     assertTrue(kyuubiBeeLine.isPythonMode());
     kyuubiBeeLine.setPythonMode(false);
 
-    String[] args2 = {"--python-mode", "-u", "badUrl", "-f", "test.sql"};
+    String[] args2 = {"--python-mode", "-f", "test.sql"};
     kyuubiBeeLine.initArgs(args2);
     assertTrue(kyuubiBeeLine.isPythonMode());
     assert kyuubiBeeLine.getOpts().getScriptFile().equals("test.sql");

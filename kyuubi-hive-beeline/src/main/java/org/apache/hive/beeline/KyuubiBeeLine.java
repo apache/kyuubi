@@ -182,7 +182,7 @@ public class KyuubiBeeLine extends BeeLine {
             DynMethods.builder("defaultBeelineConnect")
                 .hiddenImpl(BeeLine.class, CommandLine.class)
                 .buildChecked(this)
-                .invoke(beelineParser, cl);
+                .invoke(cl);
 
       } catch (Exception t) {
         error(t.getMessage());
