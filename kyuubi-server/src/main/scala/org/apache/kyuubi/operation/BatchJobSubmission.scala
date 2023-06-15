@@ -36,7 +36,7 @@ import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.{isTerminal, CANCELED, OperationState, RUNNING}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.session.KyuubiBatchSessionImpl
+import org.apache.kyuubi.session.KyuubiBatchSession
 
 /**
  * The state of batch operation is special. In general, the lifecycle of state is:
@@ -51,7 +51,7 @@ import org.apache.kyuubi.session.KyuubiBatchSessionImpl
  * user close the batch session that means the final status is CANCELED.
  */
 class BatchJobSubmission(
-    session: KyuubiBatchSessionImpl,
+    session: KyuubiBatchSession,
     val batchType: String,
     val batchName: String,
     resource: String,
