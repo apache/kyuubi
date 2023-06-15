@@ -39,9 +39,6 @@ public class KyuubiBeeLine extends BeeLine {
   private static final int ERRNO_ARGS = 1;
   private static final int ERRNO_OTHER = 2;
 
-  private static final ResourceBundle beelineResourceBundle =
-      ResourceBundle.getBundle(BeeLine.class.getSimpleName());
-  private static final ResourceBundle kyuubiResourceBundle = new KyuubiBeelineResourceBundle();
   private static final String PYTHON_MODE_PREFIX = "--python-mode";
   private boolean pythonMode = false;
 
@@ -54,10 +51,6 @@ public class KyuubiBeeLine extends BeeLine {
     super(isBeeLine);
     try {
       DynFields.builder().hiddenImpl(BeeLine.class, "commands").buildChecked(this).set(commands);
-      DynFields.builder()
-          .hiddenImpl(BeeLine.class, "resourceBundle")
-          .buildStaticChecked()
-          .set(kyuubiResourceBundle);
     } catch (Throwable t) {
       throw new ExceptionInInitializerError("Failed to inject kyuubi commands");
     }
@@ -70,6 +63,13 @@ public class KyuubiBeeLine extends BeeLine {
     } catch (Throwable t) {
       throw new ExceptionInInitializerError(KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER + "-missing");
     }
+  }
+
+  @Override
+  void usage() {
+    super.usage();
+    output("Usage: java \" + KyuubiBeeLine.class.getCanonicalName()");
+    output("   --python-mode=[true/false]      Execute python code/script.");
   }
 
   public boolean isPythonMode() {
@@ -277,34 +277,5 @@ public class KyuubiBeeLine extends BeeLine {
       }
     }
     return executionResult;
-  }
-
-  static class KyuubiBeelineResourceBundle extends ListResourceBundle {
-    static String CMD_USAGE = "cmd-usage";
-
-    private Object[][] contents = new Object[beelineResourceBundle.keySet().size()][];
-
-    public KyuubiBeelineResourceBundle() {
-      int i = 0;
-      for (String key : beelineResourceBundle.keySet()) {
-        String value = beelineResourceBundle.getString(key);
-        if (key.equals(CMD_USAGE)) {
-          StringBuilder stringBuilder = new StringBuilder();
-          stringBuilder.append(value).append("\n");
-          stringBuilder
-              .append("Usage: java " + KyuubiBeeLine.class.getCanonicalName())
-              .append("\n");
-          stringBuilder.append("   --python-mode=[true/false]      Execute python code/script.");
-          value = stringBuilder.toString();
-        }
-        contents[i] = new Object[] {key, value};
-        i++;
-      }
-    }
-
-    @Override
-    protected Object[][] getContents() {
-      return contents;
-    }
   }
 }
