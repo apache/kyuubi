@@ -79,12 +79,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       val name = Option(batchOp.batchName).getOrElse(appInfo.name)
       (name, appInfo.id, appInfo.url.orNull, appInfo.state.toString, appInfo.error.orNull)
     }.getOrElse {
-      val name = batchOp.batchName
       sessionManager.getBatchMetadata(batchOp.batchId) match {
         case Some(batch) =>
-          (name, batch.engineId, batch.engineUrl, batch.engineState, batch.engineError.orNull)
+          val diagnostic = batch.engineError.orNull
+          (batchOp.batchName, batch.engineId, batch.engineUrl, batch.engineState, diagnostic)
         case None =>
-          (name, null, null, null, null)
+          (batchOp.batchName, null, null, null, null)
       }
     }
 
