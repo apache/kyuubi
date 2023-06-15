@@ -38,7 +38,7 @@ import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.client.util.BatchUtils._
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.engine.{ApplicationInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
@@ -54,19 +54,14 @@ import org.apache.kyuubi.util.JdbcUtils
 private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private val internalRestClients = new ConcurrentHashMap[String, InternalRestClient]()
   private lazy val internalSocketTimeout =
-    fe.getConf.get(KyuubiConf.BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT)
+    fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT).toInt
   private lazy val internalConnectTimeout =
-    fe.getConf.get(KyuubiConf.BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT)
+    fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT).toInt
 
   private def getInternalRestClient(kyuubiInstance: String): InternalRestClient = {
     internalRestClients.computeIfAbsent(
       kyuubiInstance,
-      kyuubiInstance => {
-        new InternalRestClient(
-          kyuubiInstance,
-          internalSocketTimeout.toInt,
-          internalConnectTimeout.toInt)
-      })
+      k => new InternalRestClient(k, internalSocketTimeout, internalConnectTimeout))
   }
 
   private def sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
@@ -178,8 +173,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @FormDataParam("resourceFile") resourceFileInputStream: InputStream,
       @FormDataParam("resourceFile") resourceFileMetadata: FormDataContentDisposition): Batch = {
     require(
-      fe.getConf.get(KyuubiConf.BATCH_RESOURCE_UPLOAD_ENABLED),
-      "Batch resource upload function is not enabled.")
+      fe.getConf.get(BATCH_RESOURCE_UPLOAD_ENABLED),
+      "Batch resource upload function is disabled.")
     require(
       batchRequest != null,
       "batchRequest is required and please check the content type" +
