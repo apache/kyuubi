@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>29</version>
+        <version>30</version>
     </parent>
 
     <groupId>org.apache.kyuubi</groupId>
@@ -229,7 +229,6 @@
         <maven.plugin.enforcer.mojo.rules.version>1.6.1</maven.plugin.enforcer.mojo.rules.version>
         <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
         <maven.plugin.scala.version>4.8.0</maven.plugin.scala.version>
-        <maven.plugin.surefire.version>3.0.0-M8</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.2.0</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
@@ -1694,7 +1693,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven.plugin.surefire.version}</version>
                     <configuration>
                         <skipTests>true</skipTests>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
