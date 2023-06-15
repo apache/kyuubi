@@ -74,25 +74,19 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private def buildBatch(session: KyuubiBatchSession): Batch = {
     val batchOp = session.batchJobSubmissionOp
     val batchOpStatus = batchOp.getStatus
-    val batchAppStatus = batchOp.getApplicationInfo
 
-    val name = Option(batchOp.batchName).getOrElse(batchAppStatus.map(_.name).orNull)
-    var appId: String = null
-    var appUrl: String = null
-    var appState: String = null
-    var appDiagnostic: String = null
-
-    if (!OperationState.isTerminal(batchOpStatus.state) && batchAppStatus.nonEmpty) {
-      appId = batchAppStatus.get.id
-      appUrl = batchAppStatus.get.url.orNull
-      appState = batchAppStatus.get.state.toString
-      appDiagnostic = batchAppStatus.get.error.orNull
-    } else {
-      val metadata = sessionManager.getBatchMetadata(batchOp.batchId).get
-      appId = metadata.engineId
-      appUrl = metadata.engineUrl
-      appState = metadata.engineState
-      appDiagnostic = metadata.engineError.orNull
+    val (name, appId, appUrl, appState, appDiagnostic) = batchOp.getApplicationInfo match {
+      case Some(appInfo) =>
+        val name = Option(batchOp.batchName).getOrElse(appInfo.name)
+        (name, appInfo.id, appInfo.url.orNull, appInfo.state.toString, appInfo.error.orNull)
+      case None =>
+        val name = batchOp.batchName
+        sessionManager.getBatchMetadata(batchOp.batchId) match {
+          case Some(batch) =>
+            (name, batch.engineId, batch.engineUrl, batch.engineState, batch.engineError.orNull)
+          case None =>
+            (name, null, null, null, null)
+        }
     }
 
     new Batch(
