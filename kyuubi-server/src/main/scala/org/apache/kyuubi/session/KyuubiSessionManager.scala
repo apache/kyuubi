@@ -237,7 +237,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def getBatchFromMetadataStore(batchId: String): Option[Batch] = {
-    metadataManager.flatMap(mm => Option(mm.getBatch(batchId)))
+    metadataManager.flatMap(mm => mm.getBatch(batchId))
   }
 
   def getBatchesFromMetadataStore(

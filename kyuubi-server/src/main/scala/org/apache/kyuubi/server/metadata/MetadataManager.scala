@@ -124,8 +124,8 @@ class MetadataManager extends AbstractService("MetadataManager") {
     }
   }
 
-  def getBatch(batchId: String): Batch = {
-    getBatchSessionMetadata(batchId).map(buildBatch).orNull
+  def getBatch(batchId: String): Option[Batch] = {
+    getBatchSessionMetadata(batchId).map(buildBatch)
   }
 
   def getBatchSessionMetadata(batchId: String): Option[Metadata] = {
