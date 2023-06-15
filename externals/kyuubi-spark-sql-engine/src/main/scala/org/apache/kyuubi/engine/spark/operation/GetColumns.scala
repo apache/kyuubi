@@ -116,7 +116,7 @@ class GetColumns(
       val tablePattern = toJavaRegex(tableName)
       val columnPattern = toJavaRegex(columnName)
       iter = new IterableFetchIterator(SparkCatalogUtils
-        .getColumns(spark, catalogName, schemaPattern, tablePattern, columnPattern).toList)
+        .getColumns(spark, catalogName, schemaPattern, tablePattern, columnPattern))
     } catch {
       onError()
     }

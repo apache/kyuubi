@@ -33,7 +33,7 @@ class GetCatalogs(session: Session) extends SparkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {
-      iter = new IterableFetchIterator(SparkCatalogUtils.getCatalogs(spark).toList)
+      iter = new IterableFetchIterator(SparkCatalogUtils.getCatalogs(spark))
     } catch onError()
   }
 }
