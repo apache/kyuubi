@@ -148,8 +148,9 @@ public class KyuubiBeeLine extends BeeLine {
             protected void processOption(String arg, ListIterator iter) throws ParseException {
               if (PYTHON_MODE_PREFIX.equals(arg)) {
                 pythonMode = true;
+              } else {
+                super.processOption(arg, iter);
               }
-              super.processOption(arg, iter);
             }
           };
       cl = beelineParser.parse(options, args);
