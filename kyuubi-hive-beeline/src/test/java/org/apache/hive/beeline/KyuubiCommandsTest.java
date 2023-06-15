@@ -34,6 +34,7 @@ public class KyuubiCommandsTest {
     Mockito.when(reader.readLine()).thenReturn(pythonSnippets);
 
     KyuubiBeeLine beeline = new KyuubiBeeLine();
+    beeline.setPythonMode(true);
     beeline.setConsoleReader(reader);
     KyuubiCommands commands = new KyuubiCommands(beeline);
     String line = commands.handleMultiLineCmd(pythonSnippets);
@@ -41,5 +42,22 @@ public class KyuubiCommandsTest {
     List<String> cmdList = commands.getCmdList(line, false);
     assertEquals(cmdList.size(), 1);
     assertEquals(cmdList.get(0), pythonSnippets);
+  }
+
+  @Test
+  public void testHandleMultiLineCmd() throws IOException {
+    ConsoleReader reader = Mockito.mock(ConsoleReader.class);
+    String snippets = "select 1;--comments1\nselect 2;--comments2";
+    Mockito.when(reader.readLine()).thenReturn(snippets);
+
+    KyuubiBeeLine beeline = new KyuubiBeeLine();
+    beeline.setConsoleReader(reader);
+    beeline.setPythonMode(false);
+    KyuubiCommands commands = new KyuubiCommands(beeline);
+    String line = commands.handleMultiLineCmd(snippets);
+    List<String> cmdList = commands.getCmdList(line, false);
+    assertEquals(cmdList.size(), 2);
+    assertEquals(cmdList.get(0), "select 1");
+    assertEquals(cmdList.get(1), "\nselect 2");
   }
 }

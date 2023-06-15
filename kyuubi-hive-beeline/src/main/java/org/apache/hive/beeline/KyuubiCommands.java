@@ -24,6 +24,7 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
+import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.Utils;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
@@ -522,6 +523,10 @@ public class KyuubiCommands extends Commands {
             ? null
             : jline.console.ConsoleReader.NULL_MASK;
 
+    int[] startQuote = {-1};
+    if (!beeLine.isPythonMode()) {
+      line = HiveStringUtils.removeComments(line, startQuote);
+    }
     while (isMultiLine(line) && beeLine.getOpts().isAllowMultiLineCommand()) {
       StringBuilder prompt = new StringBuilder(beeLine.getPrompt());
       if (!beeLine.getOpts().isSilent()) {
@@ -546,6 +551,9 @@ public class KyuubiCommands extends Commands {
 
       if (extra == null) { // it happens when using -f and the line of cmds does not end with ;
         break;
+      }
+      if (!beeLine.isPythonMode()) {
+        extra = HiveStringUtils.removeComments(extra, startQuote);
       }
       if (!extra.isEmpty()) {
         line += "\n" + extra;

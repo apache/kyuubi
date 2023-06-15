@@ -19,10 +19,10 @@ package org.apache.hive.beeline;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.sql.Driver;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -41,6 +41,12 @@ public class KyuubiBeeLine extends BeeLine {
   private static final int ERRNO_ARGS = 1;
   private static final int ERRNO_OTHER = 2;
 
+  private static final ResourceBundle beelineResourceBundle =
+      ResourceBundle.getBundle(BeeLine.class.getSimpleName());
+  private static final ResourceBundle kyuubiResourceBundle = new KyuubiBeelineResourceBundle();
+  private static final String PYTHON_MODE_PREFIX = "--python-mode";
+  private boolean pythonMode = false;
+
   public KyuubiBeeLine() {
     this(true);
   }
@@ -50,6 +56,13 @@ public class KyuubiBeeLine extends BeeLine {
     super(isBeeLine);
     try {
       DynFields.builder().hiddenImpl(BeeLine.class, "commands").buildChecked(this).set(commands);
+
+      Field resourceBundleField = BeeLine.class.getDeclaredField("resourceBundle");
+      resourceBundleField.setAccessible(true);
+      Field modifiers = Field.class.getDeclaredField("modifiers");
+      modifiers.setAccessible(true);
+      modifiers.setInt(resourceBundleField, resourceBundleField.getModifiers() & ~Modifier.FINAL);
+      resourceBundleField.set(null, kyuubiResourceBundle);
     } catch (Throwable t) {
       throw new ExceptionInInitializerError("Failed to inject kyuubi commands");
     }
@@ -62,6 +75,15 @@ public class KyuubiBeeLine extends BeeLine {
     } catch (Throwable t) {
       throw new ExceptionInInitializerError(KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER + "-missing");
     }
+  }
+
+  public boolean isPythonMode() {
+    return pythonMode;
+  }
+
+  // Visible for testing
+  public void setPythonMode(boolean pythonMode) {
+    this.pythonMode = pythonMode;
   }
 
   /** Starts the program. */
@@ -125,7 +147,20 @@ public class KyuubiBeeLine extends BeeLine {
               .<Options>buildStaticChecked()
               .get();
 
-      beelineParser = new BeelineParser();
+      beelineParser =
+          new BeelineParser() {
+            @Override
+            protected void processOption(String arg, ListIterator iter) throws ParseException {
+              if (PYTHON_MODE_PREFIX.equals(arg)) {
+                String stripped = arg.substring(2, arg.length());
+                String[] parts = split(stripped, "=");
+                String value = parts.length >= 2 ? parts[1] : "true";
+                pythonMode = Boolean.parseBoolean(value);
+              } else {
+                super.processOption(arg, iter);
+              }
+            }
+          };
       cl = beelineParser.parse(options, args);
 
       connSuccessful =
@@ -247,5 +282,35 @@ public class KyuubiBeeLine extends BeeLine {
       }
     }
     return executionResult;
+  }
+
+  static class KyuubiBeelineResourceBundle extends ListResourceBundle {
+    static String CMD_USAGE = "cmd-usage";
+
+    private Object[][] contents = new Object[beelineResourceBundle.keySet().size()][];
+
+    public KyuubiBeelineResourceBundle() {
+      int i = 0;
+      for (String key : beelineResourceBundle.keySet()) {
+        String value = beelineResourceBundle.getString(key);
+        if (key.equals(CMD_USAGE)) {
+          StringBuilder stringBuilder = new StringBuilder();
+          stringBuilder.append(value).append("\n");
+          stringBuilder
+              .append("Usage: java " + KyuubiBeeLine.class.getCanonicalName())
+              .append("\n");
+          stringBuilder.append(
+              "   --python-mode=[true/false]                      Execute python code/script.");
+          value = stringBuilder.toString();
+        }
+        contents[i] = new Object[] {key, value};
+        i++;
+      }
+    }
+
+    @Override
+    protected Object[][] getContents() {
+      return contents;
+    }
   }
 }
