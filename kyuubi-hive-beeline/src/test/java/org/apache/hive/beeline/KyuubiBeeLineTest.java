@@ -20,6 +20,10 @@ package org.apache.hive.beeline;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import org.apache.kyuubi.util.reflect.DynFields;
 import org.junit.Test;
 
 public class KyuubiBeeLineTest {
@@ -50,8 +54,63 @@ public class KyuubiBeeLineTest {
 
   @Test
   public void testKyuubiBeeLineCmdUsage() {
+    BufferPrintStream printStream = new BufferPrintStream();
+
     KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
+    DynFields.builder()
+        .hiddenImpl(BeeLine.class, "outputStream")
+        .build(kyuubiBeeLine)
+        .set(printStream);
     String[] args1 = {"-h"};
     kyuubiBeeLine.initArgs(args1);
+    String output = printStream.getOutput();
+    assert output.contains("--python-mode=[true/false]      Execute python code/script.");
+    printStream.reset();
+  }
+
+  @Test
+  public void testKyuubiBeeLinePythonMode() {
+    KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
+    String[] args = {"-u", "badUrl", "--python-mode=true"};
+    kyuubiBeeLine.initArgs(args);
+    assertEquals(kyuubiBeeLine.isPythonMode(), true);
+  }
+
+  static class BufferPrintStream extends PrintStream {
+    public StringBuilder stringBuilder = new StringBuilder();
+
+    static OutputStream noOpOutputStream =
+        new OutputStream() {
+          @Override
+          public void write(int b) throws IOException {
+            // do nothing
+          }
+        };
+
+    public BufferPrintStream() {
+      super(noOpOutputStream);
+    }
+
+    public BufferPrintStream(OutputStream outputStream) {
+      super(noOpOutputStream);
+    }
+
+    @Override
+    public void println(String x) {
+      stringBuilder.append(x).append("\n");
+    }
+
+    @Override
+    public void print(String x) {
+      stringBuilder.append(x);
+    }
+
+    public String getOutput() {
+      return stringBuilder.toString();
+    }
+
+    public void reset() {
+      stringBuilder = new StringBuilder();
+    }
   }
 }

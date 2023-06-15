@@ -294,8 +294,7 @@ public class KyuubiBeeLine extends BeeLine {
           stringBuilder
               .append("Usage: java " + KyuubiBeeLine.class.getCanonicalName())
               .append("\n");
-          stringBuilder.append(
-              "   --python-mode=[true/false]      Execute python code/script.");
+          stringBuilder.append("   --python-mode=[true/false]      Execute python code/script.");
           value = stringBuilder.toString();
         }
         contents[i] = new Object[] {key, value};
