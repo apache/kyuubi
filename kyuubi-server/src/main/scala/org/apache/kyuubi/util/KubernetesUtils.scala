@@ -102,7 +102,7 @@ object KubernetesUtils extends Logging {
   implicit private class OptionConfigurableConfigBuilder(val configBuilder: ConfigBuilder)
     extends AnyVal {
 
-    def withOption[T](option: Option[T])(configurator: ((T, ConfigBuilder) => ConfigBuilder))
+    def withOption[T](option: Option[T])(configurator: (T, ConfigBuilder) => ConfigBuilder)
         : ConfigBuilder = {
       option.map { opt =>
         configurator(opt, configBuilder)

@@ -79,9 +79,7 @@ class PlainSASLServerSuite extends KyuubiFunSuite {
       "NONE",
       "KYUUBI",
       map,
-      new CallbackHandler {
-        override def handle(callbacks: Array[Callback]): Unit = {}
-      })
+      _ => {})
     val e6 = intercept[SaslException](server2.evaluateResponse(res4.map(_.toByte)))
     assert(e6.getMessage === "Error validating the login")
     assert(e6.getCause.getMessage === "Authentication failed")

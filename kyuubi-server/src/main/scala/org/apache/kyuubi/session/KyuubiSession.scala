@@ -36,9 +36,9 @@ abstract class KyuubiSession(
 
   val sessionType: SessionType
 
-  val connectionUrl = conf.get(KYUUBI_SESSION_CONNECTION_URL_KEY).getOrElse("")
+  val connectionUrl = conf.getOrElse(KYUUBI_SESSION_CONNECTION_URL_KEY, "")
 
-  val realUser = conf.get(KYUUBI_SESSION_REAL_USER_KEY).getOrElse(user)
+  val realUser = conf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
 
   def getSessionEvent: Option[KyuubiSessionEvent]
 

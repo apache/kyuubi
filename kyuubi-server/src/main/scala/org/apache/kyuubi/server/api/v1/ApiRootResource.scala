@@ -86,8 +86,8 @@ private[server] object ApiRootResource {
   def getEngineUIProxyHandler(fe: KyuubiRestFrontendService): ServletContextHandler = {
     val proxyServlet = new EngineUIProxyServlet()
     val holder = new ServletHolder(proxyServlet)
-    val proxyHandler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
-    proxyHandler.setContextPath("/engine-ui");
+    val proxyHandler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
+    proxyHandler.setContextPath("/engine-ui")
     proxyHandler.addServlet(holder, "/*")
     proxyHandler
   }

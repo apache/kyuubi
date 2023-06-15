@@ -31,7 +31,7 @@ import org.apache.spark.sql.internal.SQLConf
 // scalastyle:on line.size.limit
 class FilePartitionReader[T](readers: Iterator[HivePartitionedFileReader[T]])
   extends PartitionReader[T] with Logging {
-  private var currentReader: HivePartitionedFileReader[T] = null
+  private var currentReader: HivePartitionedFileReader[T] = _
 
   private val sqlConf = SQLConf.get
   private def ignoreMissingFiles = sqlConf.ignoreMissingFiles

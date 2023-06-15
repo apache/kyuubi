@@ -53,9 +53,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "get the list of all live sessions")
   @GET
   def sessions(): Seq[SessionData] = {
-    sessionManager.allSessions().map { case session =>
-      ApiUtils.sessionData(session.asInstanceOf[KyuubiSession])
-    }.toSeq
+    sessionManager.allSessions()
+      .map(session => ApiUtils.sessionData(session.asInstanceOf[KyuubiSession])).toSeq
   }
 
   @ApiResponse(
@@ -86,7 +85,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
             .startTime(event.startTime)
             .endTime(event.endTime)
             .totalOperations(event.totalOperations)
-            .exception(event.exception.getOrElse(null))
+            .exception(event.exception.orNull)
             .build).get
     } catch {
       case NonFatal(e) =>

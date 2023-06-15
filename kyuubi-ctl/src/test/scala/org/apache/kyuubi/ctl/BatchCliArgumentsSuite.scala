@@ -84,7 +84,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       "-f",
       batchYamlFile)
     val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliConfig.batchOpts.waitCompletion == true)
+    assert(opArgs.cliConfig.batchOpts.waitCompletion)
   }
 
   test("submit batch without waitForCompletion") {
@@ -96,7 +96,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       "--waitCompletion",
       "false")
     val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliConfig.batchOpts.waitCompletion == false)
+    assert(!opArgs.cliConfig.batchOpts.waitCompletion)
   }
 
   test("get/delete batch") {

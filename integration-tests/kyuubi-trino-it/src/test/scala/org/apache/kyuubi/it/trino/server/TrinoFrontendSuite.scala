@@ -73,7 +73,7 @@ class TrinoFrontendSuite extends WithKyuubiServer with SparkMetadataTests {
         statement.execute("SELECT 1")
       }
     } catch {
-      case NonFatal(e) =>
+      case NonFatal(_) =>
     }
   }
 }

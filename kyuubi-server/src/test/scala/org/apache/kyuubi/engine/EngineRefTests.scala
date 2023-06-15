@@ -220,7 +220,7 @@ trait EngineRefTests extends KyuubiFunSuite {
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
     conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
     conf.set(ENGINE_POOL_SELECT_POLICY, "POLLING")
-    (0 until (10)).foreach { i =>
+    (0 until 10).foreach { i =>
       val engine7 = new EngineRef(conf, user, PluginLoader.loadGroupProvider(conf), id, null)
       val engineNumber = Integer.parseInt(engine7.subdomain.substring(pool_name.length + 1))
       assert(engineNumber == (i % conf.get(ENGINE_POOL_SIZE)))
@@ -285,7 +285,7 @@ trait EngineRefTests extends KyuubiFunSuite {
     val times = new Array[Long](3)
     val executor = Executors.newFixedThreadPool(3)
     try {
-      (0 until (3)).foreach { i =>
+      (0 until 3).foreach { i =>
         val cloned = conf.clone
         executor.execute(() => {
           DiscoveryClientProvider.withDiscoveryClient(cloned) { client =>

@@ -151,7 +151,7 @@ private[kyuubi] case class ConfigBuilder(key: String) {
       }
     }
 
-    new TypedConfigBuilder(this, regexFromString(_, this.key), _.toString)
+    TypedConfigBuilder(this, regexFromString(_, this.key), _.toString)
   }
 }
 

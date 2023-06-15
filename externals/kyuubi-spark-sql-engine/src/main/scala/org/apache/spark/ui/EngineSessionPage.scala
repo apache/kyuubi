@@ -42,7 +42,7 @@ case class EngineSessionPage(parent: EngineTab)
     require(parameterId != null && parameterId.nonEmpty, "Missing id parameter")
 
     val content = store.synchronized { // make sure all parts in this page are consistent
-      val sessionStat = store.getSession(parameterId).getOrElse(null)
+      val sessionStat = store.getSession(parameterId).orNull
       require(sessionStat != null, "Invalid sessionID[" + parameterId + "]")
 
       val redactionPattern = parent.sparkUI match {
@@ -51,7 +51,7 @@ case class EngineSessionPage(parent: EngineTab)
       }
 
       val sessionPropertiesTable =
-        if (sessionStat.conf != null && !sessionStat.conf.isEmpty) {
+        if (sessionStat.conf != null && sessionStat.conf.nonEmpty) {
           val table = UIUtils.listingTable(
             propertyHeader,
             propertyRow,

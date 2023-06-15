@@ -34,5 +34,5 @@ class KyuubiOperationThriftHttpPerUserSuite extends KyuubiOperationPerUserSuite 
     s"jdbc:hive2://${server.frontendServices.head.connectionUrl}/;transportMode=http;" +
       s"httpPath=cliservice;"
 
-  override protected lazy val httpMode = true;
+  override protected lazy val httpMode = true
 }

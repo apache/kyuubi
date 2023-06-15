@@ -128,7 +128,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     val n = collectLimitExec.limit
     val schema = collectLimitExec.schema
     if (n == 0) {
-      return new Array[Batch](0)
+      new Array[Batch](0)
     } else {
       val limitScaleUpFactor = Math.max(conf.limitScaleUpFactor, 2)
       // TODO: refactor and reuse the code from RDD's take()
@@ -156,7 +156,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
         }
 
         val partsToScan =
-          partsScanned.until(math.min(partsScanned + numPartsToTry, totalParts).toInt)
+          partsScanned.until(math.min(partsScanned + numPartsToTry, totalParts))
 
         // TODO: SparkPlan.session introduced in SPARK-35798, replace with SparkPlan.session once we
         // drop Spark-3.1.x support.

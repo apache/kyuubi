@@ -376,7 +376,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     assert(response6.getStatus == 200)
     val getBatchListResponse6 = response6.readEntity(classOf[GetBatchesResponse])
     assert(getBatchListResponse6.getTotal == 1)
-    sessionManager.allSessions().map(_.close())
+    sessionManager.allSessions().foreach(_.close())
 
     val queryCreateTime = System.currentTimeMillis()
     val response7 = webTarget.path("api/v1/batches")

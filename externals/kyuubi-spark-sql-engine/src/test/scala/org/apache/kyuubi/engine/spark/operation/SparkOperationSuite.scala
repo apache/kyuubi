@@ -306,28 +306,28 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       val tFetchResultsReq1 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
       val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq1)
       assert(tFetchResultsResp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0).getI64Val.getValues.asScala
       assertResult(Seq(0L))(idSeq1)
 
       // fetch next from first row
       val tFetchResultsReq2 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
       val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
       assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0).getI64Val.getValues.asScala
       assertResult(Seq(1L))(idSeq2)
 
       // fetch prior from second row, expected got first row
       val tFetchResultsReq3 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_PRIOR, 1)
       val tFetchResultsResp3 = client.FetchResults(tFetchResultsReq3)
       assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq3 = tFetchResultsResp3.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      val idSeq3 = tFetchResultsResp3.getResults.getColumns.get(0).getI64Val.getValues.asScala
       assertResult(Seq(0L))(idSeq3)
 
       // fetch first
       val tFetchResultsReq4 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_FIRST, 3)
       val tFetchResultsResp4 = client.FetchResults(tFetchResultsReq4)
       assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq4 = tFetchResultsResp4.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      val idSeq4 = tFetchResultsResp4.getResults.getColumns.get(0).getI64Val.getValues.asScala
       assertResult(Seq(0L, 1L))(idSeq4)
     }
   }
@@ -349,7 +349,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
         val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq1)
         assert(tFetchResultsResp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0)
-          .getI64Val.getValues.asScala.toSeq
+          .getI64Val.getValues.asScala
         assertResult(Seq(0L))(idSeq1)
 
         // fetch next from first row
@@ -357,7 +357,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
         val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
         assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0)
-          .getI64Val.getValues.asScala.toSeq
+          .getI64Val.getValues.asScala
         assertResult(Seq(1L))(idSeq2)
 
         // fetch prior from second row, expected got first row
@@ -365,7 +365,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
         val tFetchResultsResp3 = client.FetchResults(tFetchResultsReq3)
         assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         val idSeq3 = tFetchResultsResp3.getResults.getColumns.get(0)
-          .getI64Val.getValues.asScala.toSeq
+          .getI64Val.getValues.asScala
         assertResult(Seq(0L))(idSeq3)
 
         // fetch first
@@ -373,7 +373,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
         val tFetchResultsResp4 = client.FetchResults(tFetchResultsReq4)
         assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         val idSeq4 = tFetchResultsResp4.getResults.getColumns.get(0)
-          .getI64Val.getValues.asScala.toSeq
+          .getI64Val.getValues.asScala
         assertResult(Seq(0L, 1L))(idSeq4)
       }
     }

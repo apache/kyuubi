@@ -54,7 +54,7 @@ class TPCHQuerySuite extends KyuubiFunSuite {
   val queries: Set[String] = (1 to 22).map(i => s"q$i").toSet
 
   test("run query on tiny") {
-    val viewSuffix = "view";
+    val viewSuffix = "view"
     val sparkConf = new SparkConf().setMaster("local[*]")
       .set("spark.ui.enabled", "false")
       .set("spark.sql.catalogImplementation", "in-memory")
