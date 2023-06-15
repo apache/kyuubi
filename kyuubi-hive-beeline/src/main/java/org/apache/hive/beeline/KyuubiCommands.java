@@ -45,9 +45,14 @@ public class KyuubiCommands extends Commands {
     return execute(line, false, false);
   }
 
+  /** For python mode, keep it as it is. */
+  private String trimForNonPythonMode(String line) {
+    return beeLine.isPythonMode() ? line : line.trim();
+  }
+
   /** Extract and clean up the first command in the input. */
   private String getFirstCmd(String cmd, int length) {
-    return cmd.substring(length).trim();
+    return trimForNonPythonMode(cmd.substring(length));
   }
 
   private String[] tokenizeCmd(String cmd) {
@@ -97,7 +102,7 @@ public class KyuubiCommands extends Commands {
       }
       String[] cmds = lines.split(beeLine.getOpts().getDelimiter());
       for (String c : cmds) {
-        c = c.trim();
+        c = trimForNonPythonMode(c);
         if (!executeInternal(c, false)) {
           return false;
         }
@@ -261,10 +266,10 @@ public class KyuubiCommands extends Commands {
       beeLine.handleException(e);
     }
 
-    line = line.trim();
+    line = trimForNonPythonMode(line);
     List<String> cmdList = getCmdList(line, entireLineAsCommand);
     for (int i = 0; i < cmdList.size(); i++) {
-      String sql = cmdList.get(i).trim();
+      String sql = trimForNonPythonMode(cmdList.get(i));
       if (sql.length() != 0) {
         if (!executeInternal(sql, call)) {
           return false;
@@ -565,13 +570,13 @@ public class KyuubiCommands extends Commands {
   // console. Used in handleMultiLineCmd method assumes line would never be null when this method is
   // called
   private boolean isMultiLine(String line) {
-    line = line.trim();
+    line = trimForNonPythonMode(line);
     if (line.endsWith(beeLine.getOpts().getDelimiter()) || beeLine.isComment(line)) {
       return false;
     }
     // handles the case like line = show tables; --test comment
     List<String> cmds = getCmdList(line, false);
-    return cmds.isEmpty() || !cmds.get(cmds.size() - 1).trim().startsWith("--");
+    return cmds.isEmpty() || !trimForNonPythonMode(cmds.get(cmds.size() - 1)).startsWith("--");
   }
 
   static class KyuubiLogRunnable implements Runnable {
