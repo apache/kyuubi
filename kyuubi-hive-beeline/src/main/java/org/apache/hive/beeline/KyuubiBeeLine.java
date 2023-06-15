@@ -19,8 +19,6 @@ package org.apache.hive.beeline;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.sql.Driver;
 import java.util.*;
 import org.apache.commons.cli.CommandLine;
@@ -56,13 +54,10 @@ public class KyuubiBeeLine extends BeeLine {
     super(isBeeLine);
     try {
       DynFields.builder().hiddenImpl(BeeLine.class, "commands").buildChecked(this).set(commands);
-
-      Field resourceBundleField = BeeLine.class.getDeclaredField("resourceBundle");
-      resourceBundleField.setAccessible(true);
-      Field modifiers = Field.class.getDeclaredField("modifiers");
-      modifiers.setAccessible(true);
-      modifiers.setInt(resourceBundleField, resourceBundleField.getModifiers() & ~Modifier.FINAL);
-      resourceBundleField.set(null, kyuubiResourceBundle);
+      DynFields.builder()
+          .hiddenImpl(BeeLine.class, "resourceBundle")
+          .buildStaticChecked()
+          .set(kyuubiResourceBundle);
     } catch (Throwable t) {
       throw new ExceptionInInitializerError("Failed to inject kyuubi commands");
     }
@@ -300,7 +295,7 @@ public class KyuubiBeeLine extends BeeLine {
               .append("Usage: java " + KyuubiBeeLine.class.getCanonicalName())
               .append("\n");
           stringBuilder.append(
-              "   --python-mode=[true/false]                      Execute python code/script.");
+              "   --python-mode=[true/false]      Execute python code/script.");
           value = stringBuilder.toString();
         }
         contents[i] = new Object[] {key, value};

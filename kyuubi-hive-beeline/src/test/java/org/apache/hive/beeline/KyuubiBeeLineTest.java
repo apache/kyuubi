@@ -47,4 +47,11 @@ public class KyuubiBeeLineTest {
     int result3 = kyuubiBeeLine.initArgs(args3);
     assertEquals(1, result3);
   }
+
+  @Test
+  public void testKyuubiBeeLineCmdUsage() {
+    KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
+    String[] args1 = {"-h"};
+    kyuubiBeeLine.initArgs(args1);
+  }
 }

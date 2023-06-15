@@ -421,6 +421,15 @@ public class DynFields {
     @Override
     public Void run() {
       hidden.setAccessible(true);
+      if (Modifier.isFinal(hidden.getModifiers())) {
+        try {
+          Field modifiers = Field.class.getDeclaredField("modifiers");
+          modifiers.setAccessible(true);
+          modifiers.setInt(hidden, hidden.getModifiers() & ~Modifier.FINAL);
+        } catch (Exception t) {
+          throw new RuntimeException("Cannot change the modifiers of " + hidden);
+        }
+      }
       return null;
     }
   }
