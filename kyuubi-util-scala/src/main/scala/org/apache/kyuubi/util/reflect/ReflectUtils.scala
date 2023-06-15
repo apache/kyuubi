@@ -20,8 +20,10 @@ package org.apache.kyuubi.util.reflect
 import java.util.ServiceLoader
 
 import scala.collection.JavaConverters._
+import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.util.Try
+
 object ReflectUtils {
 
   /**
@@ -44,18 +46,24 @@ object ReflectUtils {
    * @tparam T the expected return class type
    * @return
    */
-  def getField[T](target: Any, fieldName: String): T = {
-    val targetClass = target.getClass
+  def getField[T](target: AnyRef, fieldName: String): T = {
+    val (clz, obj) = getTargetClass(target)
     try {
-      DynFields.builder()
-        .hiddenImpl(targetClass, fieldName)
-        .buildChecked[T](target)
-        .get()
+      val field = DynFields.builder
+        .hiddenImpl(clz, fieldName)
+        .impl(clz, fieldName)
+        .build[T]
+      if (field.isStatic) {
+        field.asStatic.get
+      } else {
+        field.bind(obj).get
+      }
     } catch {
       case e: Exception =>
-        val candidates = targetClass.getDeclaredFields.map(_.getName).sorted
+        val candidates =
+          (clz.getDeclaredFields ++ clz.getFields).map(_.getName).distinct.sorted
         throw new RuntimeException(
-          s"Field $fieldName not in $targetClass [${candidates.mkString(",")}]",
+          s"Field $fieldName not in $clz [${candidates.mkString(",")}]",
           e)
     }
   }
@@ -70,20 +78,26 @@ object ReflectUtils {
    * @return
    */
   def invokeAs[T](target: AnyRef, methodName: String, args: (Class[_], AnyRef)*): T = {
-    val targetClass = target.getClass
+    val (clz, obj) = getTargetClass(target)
     val argClasses = args.map(_._1)
     try {
-      DynMethods.builder(methodName)
-        .hiddenImpl(targetClass, argClasses: _*)
-        .buildChecked(target)
-        .invoke[T](args.map(_._2): _*)
+      val method = DynMethods.builder(methodName)
+        .hiddenImpl(clz, argClasses: _*)
+        .impl(clz, argClasses: _*)
+        .buildChecked
+      if (method.isStatic) {
+        method.asStatic.invoke[T](args.map(_._2): _*)
+      } else {
+        method.bind(obj).invoke[T](args.map(_._2): _*)
+      }
     } catch {
       case e: Exception =>
-        val candidates = targetClass.getDeclaredMethods.map(_.getName).sorted
+        val candidates =
+          (clz.getDeclaredMethods ++ clz.getMethods).map(_.getName).distinct.sorted
         val argClassesNames = argClasses.map(_.getClass.getName)
         throw new RuntimeException(
-          s"Method $methodName (${argClassesNames.mkString(",")})" +
-            s" not found in $targetClass [${candidates.mkString(",")}]",
+          s"Method $methodName(${argClassesNames.mkString(",")})" +
+            s" not found in $clz [${candidates.mkString(",")}]",
           e)
     }
   }
@@ -101,4 +115,12 @@ object ReflectUtils {
   def loadFromServiceLoader[T](cl: ClassLoader = Thread.currentThread().getContextClassLoader)(
       implicit ct: ClassTag[T]): Iterator[T] =
     ServiceLoader.load(ct.runtimeClass, cl).iterator().asScala.map(_.asInstanceOf[T])
+
+  private def getTargetClass(target: AnyRef): (Class[_], AnyRef) = target match {
+    case clz: Class[_] => (clz, None)
+    case clzName: String => (DynClasses.builder.impl(clzName).buildChecked, None)
+    case (clz: Class[_], o: AnyRef) => (clz, o)
+    case (clzName: String, o: AnyRef) => (DynClasses.builder.impl(clzName).buildChecked, o)
+    case o => (o.getClass, o)
+  }
 }

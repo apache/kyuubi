@@ -27,8 +27,7 @@ import org.apache.spark.sql.types.StructField
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.spark.schema.SchemaHelper
-import org.apache.kyuubi.util.reflect.DynMethods
-import org.apache.kyuubi.util.reflect.ReflectUtils.{getField, invokeAs}
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 /**
  * A shim that defines the interface interact with Spark's catalogs
@@ -56,8 +55,7 @@ object SparkCatalogUtils extends Logging {
     val sessionCatalog = invokeAs[AnyRef](catalogMgr, "v2SessionCatalog")
     val defaultCatalog = catalogMgr.currentCatalog
 
-    val defaults = Seq(sessionCatalog, defaultCatalog).distinct.map(catalog =>
-      DynMethods.builder("name").impl(catalog.getClass).buildChecked(catalog).invoke[String]())
+    val defaults = Seq(sessionCatalog, defaultCatalog).distinct.map(invokeAs[String](_, "name"))
     val catalogs = getField[scala.collection.Map[String, _]](catalogMgr, "catalogs")
     (catalogs.keys ++: defaults).distinct.map(Row(_))
   }
