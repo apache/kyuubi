@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils.quoteIfNeeded
 import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_SCHEM
@@ -38,7 +39,9 @@ class GetCurrentDatabase(session: Session) extends SparkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {
-      iter = new IterableFetchIterator(Seq(SparkCatalogShim().getCurrentDatabase(spark)))
+      val currentDatabaseName =
+        spark.sessionState.catalogManager.currentNamespace.map(quoteIfNeeded).mkString(".")
+      iter = new IterableFetchIterator(Seq(Row(currentDatabaseName)))
     } catch onError()
   }
 }

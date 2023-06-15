@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 import org.apache.kyuubi.session.Session
@@ -33,7 +33,7 @@ class GetCatalogs(session: Session) extends SparkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {
-      iter = new IterableFetchIterator(SparkCatalogShim().getCatalogs(spark).toList)
+      iter = new IterableFetchIterator(SparkCatalogUtils.getCatalogs(spark))
     } catch onError()
   }
 }

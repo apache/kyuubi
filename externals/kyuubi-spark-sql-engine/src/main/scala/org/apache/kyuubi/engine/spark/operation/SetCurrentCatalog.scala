@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -35,7 +35,7 @@ class SetCurrentCatalog(session: Session, catalog: String) extends SparkOperatio
 
   override protected def runInternal(): Unit = {
     try {
-      SparkCatalogShim().setCurrentCatalog(spark, catalog)
+      SparkCatalogUtils.setCurrentCatalog(spark, catalog)
       setHasResultSet(false)
     } catch onError()
   }
