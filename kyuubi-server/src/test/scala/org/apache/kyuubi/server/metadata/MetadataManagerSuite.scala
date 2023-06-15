@@ -66,7 +66,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       retryRef.addRetryingMetadataRequest(UpdateMetadata(metadataToUpdate))
       eventually(timeout(3.seconds)) {
         assert(retryRef.hasRemainingRequests())
-        assert(metadataManager.getBatch(metadata.identifier).getState === "PENDING")
+        assert(metadataManager.getBatch(metadata.identifier).map(_.getState).contains("PENDING"))
       }
 
       val metadata2 = metadata.copy(identifier = UUID.randomUUID().toString)
@@ -84,7 +84,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
 
       eventually(timeout(3.seconds)) {
         assert(!retryRef2.hasRemainingRequests())
-        assert(metadataManager.getBatch(metadata2.identifier).getState === "RUNNING")
+        assert(metadataManager.getBatch(metadata2.identifier).map(_.getState).contains("RUNNING"))
       }
 
       metadataManager.identifierRequestsAsyncRetryRefs.clear()

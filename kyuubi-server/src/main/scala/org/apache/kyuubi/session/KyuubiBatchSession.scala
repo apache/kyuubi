@@ -30,7 +30,7 @@ import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.SessionType.SessionType
 
-class KyuubiBatchSessionImpl(
+class KyuubiBatchSession(
     user: String,
     password: String,
     ipAddress: String,

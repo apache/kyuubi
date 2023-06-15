@@ -31,7 +31,7 @@ import org.apache.kyuubi.engine.ApplicationState._
 import org.apache.kyuubi.operation.{FetchOrientation, HiveJDBCTestHelper, OperationState}
 import org.apache.kyuubi.operation.OperationState.ERROR
 import org.apache.kyuubi.server.MiniYarnService
-import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
+import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager}
 
 /**
  * To developers:
@@ -119,7 +119,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       batchRequest.getConf.asScala.toMap,
       batchRequest)
 
-    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSession]
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
@@ -130,8 +130,8 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
 
     eventually(timeout(10.seconds)) {
       val metadata = session.sessionManager.getBatchMetadata(session.handle.identifier.toString)
-      assert(metadata.state === "RUNNING")
-      assert(metadata.engineId.startsWith("application_"))
+      assert(metadata.map(_.state).contains("RUNNING"))
+      assert(metadata.map(_.engineId).get.startsWith("application_"))
     }
 
     val killResponse = yarnOperation.killApplicationByTag(sessionHandle.identifier.toString)
@@ -179,7 +179,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       batchRequest.getConf.asScala.toMap,
       batchRequest)
 
-    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSession]
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {

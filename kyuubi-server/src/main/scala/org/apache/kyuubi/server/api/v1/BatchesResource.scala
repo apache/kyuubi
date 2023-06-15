@@ -38,7 +38,7 @@ import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.client.util.BatchUtils._
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.engine.{ApplicationInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
@@ -46,7 +46,7 @@ import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle}
 import org.apache.kyuubi.util.JdbcUtils
 
 @Tag(name = "Batch")
@@ -54,45 +54,33 @@ import org.apache.kyuubi.util.JdbcUtils
 private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private val internalRestClients = new ConcurrentHashMap[String, InternalRestClient]()
   private lazy val internalSocketTimeout =
-    fe.getConf.get(KyuubiConf.BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT)
+    fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT).toInt
   private lazy val internalConnectTimeout =
-    fe.getConf.get(KyuubiConf.BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT)
+    fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT).toInt
 
   private def getInternalRestClient(kyuubiInstance: String): InternalRestClient = {
     internalRestClients.computeIfAbsent(
       kyuubiInstance,
-      kyuubiInstance => {
-        new InternalRestClient(
-          kyuubiInstance,
-          internalSocketTimeout.toInt,
-          internalConnectTimeout.toInt)
-      })
+      k => new InternalRestClient(k, internalSocketTimeout, internalConnectTimeout))
   }
 
   private def sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
-  private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
+  private def buildBatch(session: KyuubiBatchSession): Batch = {
     val batchOp = session.batchJobSubmissionOp
     val batchOpStatus = batchOp.getStatus
-    val batchAppStatus = batchOp.getApplicationInfo
 
-    val name = Option(batchOp.batchName).getOrElse(batchAppStatus.map(_.name).orNull)
-    var appId: String = null
-    var appUrl: String = null
-    var appState: String = null
-    var appDiagnostic: String = null
-
-    if (!OperationState.isTerminal(batchOpStatus.state) && batchAppStatus.nonEmpty) {
-      appId = batchAppStatus.get.id
-      appUrl = batchAppStatus.get.url.orNull
-      appState = batchAppStatus.get.state.toString
-      appDiagnostic = batchAppStatus.get.error.orNull
-    } else {
-      val metadata = sessionManager.getBatchMetadata(batchOp.batchId)
-      appId = metadata.engineId
-      appUrl = metadata.engineUrl
-      appState = metadata.engineState
-      appDiagnostic = metadata.engineError.orNull
+    val (name, appId, appUrl, appState, appDiagnostic) = batchOp.getApplicationInfo.map { appInfo =>
+      val name = Option(batchOp.batchName).getOrElse(appInfo.name)
+      (name, appInfo.id, appInfo.url.orNull, appInfo.state.toString, appInfo.error.orNull)
+    }.getOrElse {
+      sessionManager.getBatchMetadata(batchOp.batchId) match {
+        case Some(batch) =>
+          val diagnostic = batch.engineError.orNull
+          (batchOp.batchName, batch.engineId, batch.engineUrl, batch.engineState, diagnostic)
+        case None =>
+          (batchOp.batchName, null, null, null, null)
+      }
     }
 
     new Batch(
@@ -185,8 +173,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @FormDataParam("resourceFile") resourceFileInputStream: InputStream,
       @FormDataParam("resourceFile") resourceFileMetadata: FormDataContentDisposition): Batch = {
     require(
-      fe.getConf.get(KyuubiConf.BATCH_RESOURCE_UPLOAD_ENABLED),
-      "Batch resource upload function is not enabled.")
+      fe.getConf.get(BATCH_RESOURCE_UPLOAD_ENABLED),
+      "Batch resource upload function is disabled.")
     require(
       batchRequest != null,
       "batchRequest is required and please check the content type" +
@@ -228,7 +216,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
 
     userProvidedBatchId.flatMap { batchId =>
-      Option(sessionManager.getBatchFromMetadataStore(batchId))
+      sessionManager.getBatchFromMetadataStore(batchId)
     } match {
       case Some(batch) =>
         markDuplicated(batch)
@@ -254,11 +242,17 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             request)
         } match {
           case Success(sessionHandle) =>
-            buildBatch(sessionManager.getBatchSessionImpl(sessionHandle))
+            sessionManager.getBatchSession(sessionHandle) match {
+              case Some(batchSession) => buildBatch(batchSession)
+              case None => throw new IllegalStateException(
+                  s"can not find batch $batchId from metadata store")
+            }
           case Failure(cause) if JdbcUtils.isDuplicatedKeyDBErr(cause) =>
-            val batch = sessionManager.getBatchFromMetadataStore(batchId)
-            assert(batch != null, s"can not find duplicated batch $batchId from metadata store")
-            markDuplicated(batch)
+            sessionManager.getBatchFromMetadataStore(batchId) match {
+              case Some(batch) => markDuplicated(batch)
+              case None => throw new IllegalStateException(
+                  s"can not find duplicated batch $batchId from metadata store")
+            }
         }
     }
   }
@@ -280,10 +274,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   def batchInfo(@PathParam("batchId") batchId: String): Batch = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val sessionHandle = formatSessionHandle(batchId)
-    Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
+    sessionManager.getBatchSession(sessionHandle).map { batchSession =>
       buildBatch(batchSession)
     }.getOrElse {
-      Option(sessionManager.getBatchMetadata(batchId)).map { metadata =>
+      sessionManager.getBatchMetadata(batchId).map { metadata =>
         if (OperationState.isTerminal(OperationState.withName(metadata.state)) ||
           metadata.kyuubiInstance == fe.connectionUrl) {
           MetadataManager.buildBatch(metadata)
@@ -359,7 +353,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @QueryParam("size") @DefaultValue("100") size: Int): OperationLog = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val sessionHandle = formatSessionHandle(batchId)
-    Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
+    sessionManager.getBatchSession(sessionHandle).map { batchSession =>
       try {
         val submissionOp = batchSession.batchJobSubmissionOp
         val rowSet = submissionOp.getOperationLogRowSet(FetchOrientation.FETCH_NEXT, from, size)
@@ -379,7 +373,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           throw new NotFoundException(errorMsg)
       }
     }.getOrElse {
-      Option(sessionManager.getBatchMetadata(batchId)).map { metadata =>
+      sessionManager.getBatchMetadata(batchId).map { metadata =>
         if (fe.connectionUrl != metadata.kyuubiInstance) {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           internalRestClient.getBatchLocalLog(userName, batchId, from, size)
@@ -408,7 +402,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
     val userName = fe.getSessionUser(hs2ProxyUser)
 
-    Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
+    sessionManager.getBatchSession(sessionHandle).map { batchSession =>
       if (userName != batchSession.user) {
         throw new WebApplicationException(
           s"$userName is not allowed to close the session belong to ${batchSession.user}",
@@ -418,7 +412,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       val (success, msg) = batchSession.batchJobSubmissionOp.getKillMessage
       new CloseBatchResponse(success, msg)
     }.getOrElse {
-      Option(sessionManager.getBatchMetadata(batchId)).map { metadata =>
+      sessionManager.getBatchMetadata(batchId).map { metadata =>
         if (userName != metadata.username) {
           throw new WebApplicationException(
             s"$userName is not allowed to close the session belong to ${metadata.username}",

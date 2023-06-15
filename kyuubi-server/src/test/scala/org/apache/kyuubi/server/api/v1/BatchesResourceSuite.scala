@@ -46,7 +46,7 @@ import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
+import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper with BatchTestHelper {
   override protected lazy val conf: KyuubiConf = KyuubiConf()
@@ -464,8 +464,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     sessionManager.insertMetadata(batchMetadata)
     sessionManager.insertMetadata(batchMetadata2)
 
-    assert(sessionManager.getBatchFromMetadataStore(batchId1).getState.equals("PENDING"))
-    assert(sessionManager.getBatchFromMetadataStore(batchId2).getState.equals("PENDING"))
+    assert(sessionManager.getBatchFromMetadataStore(batchId1).map(_.getState).contains("PENDING"))
+    assert(sessionManager.getBatchFromMetadataStore(batchId2).map(_.getState).contains("PENDING"))
 
     val sparkBatchProcessBuilder = new SparkBatchProcessBuilder(
       "kyuubi",
@@ -501,8 +501,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
 
     val sessionHandle1 = SessionHandle.fromUUID(batchId1)
     val sessionHandle2 = SessionHandle.fromUUID(batchId2)
-    val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSessionImpl]
-    val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSessionImpl]
+    val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSession]
+    val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSession]
     assert(session1.createTime === batchMetadata.createTime)
     assert(session2.createTime === batchMetadata2.createTime)
 
@@ -638,8 +638,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     val batch = response.readEntity(classOf[Batch])
-    val batchSession = sessionManager.getBatchSessionImpl(SessionHandle.fromUUID(batch.getId))
-    assert(batchSession.ipAddress === realClientIp)
+    val batchSession = sessionManager.getBatchSession(SessionHandle.fromUUID(batch.getId))
+    assert(batchSession.map(_.ipAddress).contains(realClientIp))
   }
 
   test("expose the metrics with operation type and current state") {
@@ -708,6 +708,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     val sessionHandleRegex = "\\[[\\S]*\\]".r
     val batchId = sessionHandleRegex.findFirstMatchIn(e.getMessage).get.group(0)
       .replaceAll("\\[", "").replaceAll("\\]", "")
-    assert(sessionManager.getBatchMetadata(batchId).state == "CANCELED")
+    assert(sessionManager.getBatchMetadata(batchId).map(_.state).contains("CANCELED"))
   }
 }

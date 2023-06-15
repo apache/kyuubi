@@ -123,7 +123,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
           sessionManager.getPeerInstanceClosedBatchSessions(connectionUrl).foreach { batch =>
             Utils.tryLogNonFatalError {
               val sessionHandle = SessionHandle.fromUUID(batch.identifier)
-              Option(sessionManager.getBatchSessionImpl(sessionHandle)).foreach(_.close())
+              sessionManager.getBatchSession(sessionHandle).foreach(_.close())
             }
           }
         } catch {
