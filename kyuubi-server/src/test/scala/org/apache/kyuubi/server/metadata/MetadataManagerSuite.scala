@@ -84,7 +84,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
 
       eventually(timeout(3.seconds)) {
         assert(!retryRef2.hasRemainingRequests())
-        assert(metadataManager.getBatch(metadata2.identifier).map(_.getState).contains("PENDING"))
+        assert(metadataManager.getBatch(metadata2.identifier).map(_.getState).contains("RUNNING"))
       }
 
       metadataManager.identifierRequestsAsyncRetryRefs.clear()
