@@ -145,6 +145,7 @@ public class KyuubiBeeLine extends BeeLine {
 
       beelineParser =
           new BeelineParser() {
+            @SuppressWarnings("rawtypes")
             @Override
             protected void processOption(String arg, ListIterator iter) throws ParseException {
               if (PYTHON_MODE_PREFIX.equals(arg)) {
