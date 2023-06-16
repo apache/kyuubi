@@ -42,7 +42,7 @@ class ReflectUtilsSuite extends AnyFunSuite {
     assertResult("method4")(invokeAs[String](obj2, "method4"))
   }
 
-  test("check invokeAs on object / static class") {
+  test("check invokeAs on object and static class") {
     assertResult("method5")(invokeAs[String](ObjectA, "method5"))
     assertResult("method6")(invokeAs[String](ObjectA, "method6"))
     assertResult("method5")(invokeAs[String]("org.apache.kyuubi.util.reflect.ObjectA", "method5"))
@@ -62,7 +62,7 @@ class ReflectUtilsSuite extends AnyFunSuite {
     assertResult("field4")(getField[String](obj2, "field4"))
   }
 
-  test("check getField on object / static class") {
+  test("check getField on object and static class") {
     assertResult("field5")(getField[String](ObjectA, "field5"))
     assertResult("field6")(getField[String](ObjectA, "field6"))
   }
