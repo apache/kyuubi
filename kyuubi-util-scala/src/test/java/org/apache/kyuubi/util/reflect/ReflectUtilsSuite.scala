@@ -56,6 +56,8 @@ class ReflectUtilsSuite extends AnyFunSuite {
 
   test("check getField on subclass") {
     assertResult("field0")(getField[String]((classOf[ClassA], obj2), "field0"))
+    assertResult("field1")(getField[String]((classOf[ClassA], obj2), "field1"))
+    assertResult("field2")(getField[String]((classOf[ClassA], obj2), "field2"))
     assertResult("field3")(getField[String](obj2, "field3"))
     assertResult("field4")(getField[String](obj2, "field4"))
   }
