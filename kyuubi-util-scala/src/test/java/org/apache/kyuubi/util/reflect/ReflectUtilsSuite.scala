@@ -16,10 +16,10 @@
  */
 package org.apache.kyuubi.util.reflect
 
-import org.apache.kyuubi.util.reflect.ReflectUtils._
+import org.scalatest.funsuite.AnyFunSuite
 
 // scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 class ReflectUtilsSuite extends AnyFunSuite {
   // scalastyle:on
 
@@ -69,18 +69,16 @@ class ReflectUtilsSuite extends AnyFunSuite {
 class ClassA(val field0: String = "field0") {
   val field1 = "field1"
   private val field2 = "field2"
-  def method1(): String = {
-    "method1"
-  }
-  private def method2(): String = {
-    "method2"
-  }
+
+  def method1(): String = "method1"
+  private def method2(): String = "method2"
 }
+
 class ClassB extends ClassA {
   val field3 = "field3"
   private val field4 = "field4"
-  def method3(): String = "method3"
 
+  def method3(): String = "method3"
   private def method4(): String = "method4"
 }
 
