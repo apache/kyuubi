@@ -128,13 +128,13 @@ object FlinkEngineUtils extends Logging {
         .newInstance(flinkConf, commandLines)
         .asInstanceOf[DefaultContext]
     } else if (FlinkEngineUtils.isFlinkVersionEqualTo("1.17")) {
-      invokeAs[DefaultContext](
+      invokeStaticAs[DefaultContext](
         classOf[DefaultContext],
         "load",
         (classOf[Configuration], flinkConf),
         (classOf[JList[URL]], dependencies),
-        (classOf[Boolean], JBoolean.TRUE),
-        (classOf[Boolean], JBoolean.FALSE))
+        (classOf[JBoolean], JBoolean.TRUE),
+        (classOf[JBoolean], JBoolean.FALSE))
     } else {
       throw new KyuubiException(
         s"Flink version ${EnvironmentInformation.getVersion} are not supported currently.")
