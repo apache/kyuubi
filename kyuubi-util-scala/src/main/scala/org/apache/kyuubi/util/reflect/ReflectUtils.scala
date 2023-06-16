@@ -70,8 +70,8 @@ object ReflectUtils {
 
   /**
    * Invoke a method with the given name and arguments on the given target object.
-   * @param target the target object, or tuple of (class, object)
-   * @param methodName the method name from declared or inherited field names
+   * @param target the target object
+   * @param methodName the method name from declared field names
    * @param args pairs of class and values for the arguments
    * @tparam T the expected return class type,
    *           returning type Nothing if it's not provided or inferable
@@ -81,42 +81,15 @@ object ReflectUtils {
     val (clz, obj) = getTargetClass(target)
     val argClasses = args.map(_._1)
     try {
-      DynMethods.builder(methodName)
+      val method = DynMethods.builder(methodName)
         .hiddenImpl(clz, argClasses: _*)
         .impl(clz, argClasses: _*)
-        .buildChecked(obj)
-        .invoke[T](args.map(_._2): _*)
-    } catch {
-      case e: Exception =>
-        val candidates =
-          (clz.getDeclaredMethods ++ clz.getMethods).map(_.getName).distinct.sorted
-        val argClassesNames = argClasses.map(_.getClass.getName)
-        throw new RuntimeException(
-          s"Method $methodName(${argClassesNames.mkString(",")})" +
-            s" not found in $clz [${candidates.mkString(",")}]",
-          e)
-    }
-  }
-
-  /**
-   * Invoke a static method with the given name and arguments on the given target class.
-   *
-   * @param target     the target class or class name
-   * @param methodName the static method name
-   * @param args       pairs of class and values for the arguments
-   * @tparam T the expected return class type,
-   *           returning type Nothing if it's not provided or inferable
-   * @return
-   */
-  def invokeStaticAs[T](target: AnyRef, methodName: String, args: (Class[_], AnyRef)*): T = {
-    val clz = getTargetClass(target)._1
-    val argClasses = args.map(_._1)
-    try {
-      DynMethods.builder(methodName)
-        .hiddenImpl(clz, argClasses: _*)
-        .impl(clz, argClasses: _*)
-        .buildStaticChecked()
-        .invoke[T](args.map(_._2): _*)
+        .buildChecked
+      if (method.isStatic) {
+        method.asStatic.invoke[T](args.map(_._2): _*)
+      } else {
+        method.bind(obj).invoke[T](args.map(_._2): _*)
+      }
     } catch {
       case e: Exception =>
         val candidates =

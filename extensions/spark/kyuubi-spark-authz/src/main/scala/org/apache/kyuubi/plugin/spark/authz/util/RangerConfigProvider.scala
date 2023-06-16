@@ -40,9 +40,7 @@ trait RangerConfigProvider {
       invokeAs(this, "getConfig")
     } else {
       // for Ranger 2.0 and below
-      invokeStaticAs(
-        "org.apache.ranger.authorization.hadoop.config.RangerConfiguration",
-        "getInstance")
+      invokeAs("org.apache.ranger.authorization.hadoop.config.RangerConfiguration", "getInstance")
     }
   }
 }
