@@ -36,6 +36,7 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.schema.RowSet
 import org.apache.kyuubi.util.reflect.DynMethods
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object SparkDatasetHelper extends Logging {
 
@@ -236,15 +237,9 @@ object SparkDatasetHelper extends Logging {
   private def withFinalPlanUpdate[T](
       adaptiveSparkPlanExec: AdaptiveSparkPlanExec,
       fun: SparkPlan => T): T = {
-    val getFinalPhysicalPlan = DynMethods.builder("getFinalPhysicalPlan")
-      .hiddenImpl(adaptiveSparkPlanExec.getClass)
-      .build()
-    val plan = getFinalPhysicalPlan.invoke[SparkPlan](adaptiveSparkPlanExec)
+    val plan = invokeAs[SparkPlan](adaptiveSparkPlanExec, "getFinalPhysicalPlan")
     val result = fun(plan)
-    val finalPlanUpdate = DynMethods.builder("finalPlanUpdate")
-      .hiddenImpl(adaptiveSparkPlanExec.getClass)
-      .build()
-    finalPlanUpdate.invoke[Unit](adaptiveSparkPlanExec)
+    invokeAs[Unit](adaptiveSparkPlanExec, "finalPlanUpdate")
     result
   }
 

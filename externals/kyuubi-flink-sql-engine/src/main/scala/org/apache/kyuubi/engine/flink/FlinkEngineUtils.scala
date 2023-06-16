@@ -41,7 +41,8 @@ import org.apache.flink.util.JarUtils
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.util.SemanticVersion
-import org.apache.kyuubi.util.reflect.{DynConstructors, DynFields, DynMethods}
+import org.apache.kyuubi.util.reflect._
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object FlinkEngineUtils extends Logging {
 
@@ -127,43 +128,27 @@ object FlinkEngineUtils extends Logging {
         .newInstance(flinkConf, commandLines)
         .asInstanceOf[DefaultContext]
     } else if (FlinkEngineUtils.isFlinkVersionEqualTo("1.17")) {
-      DynMethods.builder("load")
-        .impl(
-          classOf[DefaultContext],
-          classOf[Configuration],
-          classOf[JList[URL]],
-          classOf[Boolean],
-          classOf[Boolean])
-        .buildStatic()
-        .invoke[DefaultContext](
-          flinkConf,
-          dependencies,
-          new JBoolean(true),
-          new JBoolean(false))
+      invokeAs[DefaultContext](
+        classOf[DefaultContext],
+        "load",
+        (classOf[Configuration], flinkConf),
+        (classOf[JList[URL]], dependencies),
+        (classOf[Boolean], JBoolean.TRUE),
+        (classOf[Boolean], JBoolean.FALSE))
     } else {
       throw new KyuubiException(
         s"Flink version ${EnvironmentInformation.getVersion} are not supported currently.")
     }
   }
 
-  def getSessionContext(session: Session): SessionContext = {
-    DynFields.builder()
-      .hiddenImpl(classOf[Session], "sessionContext")
-      .build()
-      .get(session)
-      .asInstanceOf[SessionContext]
-  }
+  def getSessionContext(session: Session): SessionContext = getField(session, "sessionContext")
 
   def getResultJobId(resultFetch: ResultFetcher): Option[JobID] = {
     if (FlinkEngineUtils.isFlinkVersionAtMost("1.16")) {
       return None
     }
     try {
-      Option(DynFields.builder()
-        .hiddenImpl(classOf[ResultFetcher], "jobID")
-        .build()
-        .get(resultFetch)
-        .asInstanceOf[JobID])
+      Option(getField[JobID](resultFetch, "jobID"))
     } catch {
       case _: NullPointerException => None
       case e: Throwable =>

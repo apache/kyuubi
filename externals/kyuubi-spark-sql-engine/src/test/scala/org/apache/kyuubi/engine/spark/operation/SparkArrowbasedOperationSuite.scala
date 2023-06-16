@@ -43,6 +43,7 @@ import org.apache.kyuubi.engine.spark.{SparkSQLEngine, WithSparkSQLEngine}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.SparkDataTypeTests
 import org.apache.kyuubi.util.reflect.{DynFields, DynMethods}
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTypeTests
   with SparkMetricsTestUtils {
@@ -527,13 +528,8 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
    * TODO: Once we drop support for Spark 3.1.x, we can directly call
    * [[SQLConf.isStaticConfigKey()]].
    */
-  private def isStaticConfigKey(key: String): Boolean = {
-    val staticConfKeys = DynFields.builder()
-      .hiddenImpl(SQLConf.getClass, "staticConfKeys")
-      .build[JSet[String]](SQLConf)
-      .get()
-    staticConfKeys.contains(key)
-  }
+  private def isStaticConfigKey(key: String): Boolean =
+    getField[JSet[String]]((SQLConf.getClass, SQLConf), "staticConfKeys").contains(key)
 
   // the signature of function [[ArrowConverters.fromBatchIterator]] is changed in SPARK-43528
   // (since Spark 3.5)

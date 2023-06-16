@@ -22,7 +22,8 @@ import org.apache.flink.table.gateway.service.context.DefaultContext
 import org.apache.flink.table.gateway.service.session.Session
 
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils
-import org.apache.kyuubi.util.reflect.{DynConstructors, DynMethods}
+import org.apache.kyuubi.util.reflect._
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class FlinkSessionManager(engineContext: DefaultContext) {
 
@@ -42,89 +43,16 @@ class FlinkSessionManager(engineContext: DefaultContext) {
     }
   }
 
-  def start(): Unit = {
-    if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
-      DynMethods.builder("start")
-        .impl("org.apache.flink.table.gateway.service.session.SessionManager")
-        .build()
-        .invoke(sessionManager)
-    } else {
-      DynMethods.builder("start")
-        .impl("org.apache.flink.table.gateway.service.session.SessionManagerImpl")
-        .build()
-        .invoke(sessionManager)
-    }
-  }
+  def start(): Unit = invokeAs(sessionManager, "start")
 
-  def stop(): Unit = {
-    if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
-      DynMethods.builder("stop")
-        .impl("org.apache.flink.table.gateway.service.session.SessionManager")
-        .build()
-        .invoke(sessionManager)
-    } else {
-      DynMethods.builder("stop")
-        .impl("org.apache.flink.table.gateway.service.session.SessionManagerImpl")
-        .build()
-        .invoke(sessionManager)
-    }
-  }
+  def stop(): Unit = invokeAs(sessionManager, "stop")
 
-  def getSession(sessionHandle: SessionHandle): Session = {
-    if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
-      DynMethods.builder("getSession")
-        .impl(
-          "org.apache.flink.table.gateway.service.session.SessionManager",
-          classOf[SessionHandle])
-        .build()
-        .invoke(sessionManager, sessionHandle)
-        .asInstanceOf[Session]
-    } else {
-      DynMethods.builder("getSession")
-        .impl(
-          "org.apache.flink.table.gateway.service.session.SessionManagerImpl",
-          classOf[SessionHandle])
-        .build()
-        .invoke(sessionManager, sessionHandle)
-        .asInstanceOf[Session]
-    }
-  }
+  def getSession(sessionHandle: SessionHandle): Session =
+    invokeAs(sessionManager, "getSession", (classOf[SessionHandle], sessionHandle))
 
-  def openSession(environment: SessionEnvironment): Session = {
-    if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
-      DynMethods.builder("openSession")
-        .impl(
-          "org.apache.flink.table.gateway.service.session.SessionManager",
-          classOf[SessionEnvironment])
-        .build()
-        .invoke(sessionManager, environment)
-        .asInstanceOf[Session]
-    } else {
-      DynMethods.builder("openSession")
-        .impl(
-          "org.apache.flink.table.gateway.service.session.SessionManagerImpl",
-          classOf[SessionEnvironment])
-        .build()
-        .invoke(sessionManager, environment)
-        .asInstanceOf[Session]
-    }
-  }
+  def openSession(environment: SessionEnvironment): Session =
+    invokeAs(sessionManager, "openSession", (classOf[SessionEnvironment], environment))
 
-  def closeSession(sessionHandle: SessionHandle): Unit = {
-    if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
-      DynMethods.builder("closeSession")
-        .impl(
-          "org.apache.flink.table.gateway.service.session.SessionManager",
-          classOf[SessionHandle])
-        .build()
-        .invoke(sessionManager, sessionHandle)
-    } else {
-      DynMethods.builder("closeSession")
-        .impl(
-          "org.apache.flink.table.gateway.service.session.SessionManagerImpl",
-          classOf[SessionHandle])
-        .build()
-        .invoke(sessionManager, sessionHandle)
-    }
-  }
+  def closeSession(sessionHandle: SessionHandle): Unit =
+    invokeAs(sessionManager, "closeSession", (classOf[SessionHandle], sessionHandle))
 }

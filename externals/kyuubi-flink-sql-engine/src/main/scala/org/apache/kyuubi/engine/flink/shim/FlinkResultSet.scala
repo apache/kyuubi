@@ -23,56 +23,13 @@ import java.util
 import org.apache.flink.table.data.RowData
 import org.apache.flink.table.gateway.api.results.ResultSet.ResultType
 
-import org.apache.kyuubi.engine.flink.FlinkEngineUtils
-import org.apache.kyuubi.util.reflect.DynMethods
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class FlinkResultSet(resultSet: AnyRef) {
 
-  def getData: util.List[RowData] = {
-    if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
-      DynMethods.builder("getData")
-        .impl("org.apache.flink.table.gateway.api.results.ResultSet")
-        .build()
-        .invoke(resultSet)
-        .asInstanceOf[util.List[RowData]]
-    } else {
-      DynMethods.builder("getData")
-        .impl("org.apache.flink.table.gateway.api.results.ResultSetImpl")
-        .build()
-        .invoke(resultSet)
-        .asInstanceOf[util.List[RowData]]
-    }
-  }
+  def getData: util.List[RowData] = invokeAs(resultSet, "getData")
 
-  def getNextToken: JLong = {
-    if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
-      DynMethods.builder("getNextToken")
-        .impl("org.apache.flink.table.gateway.api.results.ResultSet")
-        .build()
-        .invoke(resultSet)
-        .asInstanceOf[JLong]
-    } else {
-      DynMethods.builder("getNextToken")
-        .impl("org.apache.flink.table.gateway.api.results.ResultSetImpl")
-        .build()
-        .invoke(resultSet)
-        .asInstanceOf[JLong]
-    }
-  }
+  def getNextToken: JLong = invokeAs(resultSet, "getNextToken")
 
-  def getResultType: ResultType = {
-    if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
-      DynMethods.builder("getResultType")
-        .impl("org.apache.flink.table.gateway.api.results.ResultSet")
-        .build()
-        .invoke(resultSet)
-        .asInstanceOf[ResultType]
-    } else {
-      DynMethods.builder("getResultType")
-        .impl("org.apache.flink.table.gateway.api.results.ResultSetImpl")
-        .build()
-        .invoke(resultSet)
-        .asInstanceOf[ResultType]
-    }
-  }
+  def getResultType: ResultType = invokeAs(resultSet, "getResultType")
 }
