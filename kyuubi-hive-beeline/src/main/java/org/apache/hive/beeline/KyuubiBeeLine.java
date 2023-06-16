@@ -22,10 +22,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.Driver;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -40,6 +37,9 @@ public class KyuubiBeeLine extends BeeLine {
   private static final int ERRNO_OK = 0;
   private static final int ERRNO_ARGS = 1;
   private static final int ERRNO_OTHER = 2;
+
+  private static final String PYTHON_MODE_PREFIX = "--python-mode";
+  private boolean pythonMode = false;
 
   public KyuubiBeeLine() {
     this(true);
@@ -66,6 +66,22 @@ public class KyuubiBeeLine extends BeeLine {
     } catch (Throwable t) {
       throw new ExceptionInInitializerError(KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER + "-missing");
     }
+  }
+
+  @Override
+  void usage() {
+    super.usage();
+    output("Usage: java \" + KyuubiBeeLine.class.getCanonicalName()");
+    output("   --python-mode                   Execute python code/script.");
+  }
+
+  public boolean isPythonMode() {
+    return pythonMode;
+  }
+
+  // Visible for testing
+  public void setPythonMode(boolean pythonMode) {
+    this.pythonMode = pythonMode;
   }
 
   /** Starts the program. */
@@ -127,7 +143,17 @@ public class KyuubiBeeLine extends BeeLine {
       optionsField.setAccessible(true);
       Options options = (Options) optionsField.get(this);
 
-      beelineParser = new BeelineParser();
+      beelineParser =
+          new BeelineParser() {
+            @Override
+            protected void processOption(String arg, ListIterator iter) throws ParseException {
+              if (PYTHON_MODE_PREFIX.equals(arg)) {
+                pythonMode = true;
+              } else {
+                super.processOption(arg, iter);
+              }
+            }
+          };
       cl = beelineParser.parse(options, args);
 
       Method connectUsingArgsMethod =

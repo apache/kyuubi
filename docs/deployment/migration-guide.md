@@ -17,6 +17,10 @@
 
 # Kyuubi Migration Guide
 
+## Upgrading from Kyuubi 1.7.1 to 1.7.2
+
+* Since Kyuubi 1.7.2, for Kyuubi BeeLine, please use `--python-mode` option to run python code or script.
+
 ## Upgrading from Kyuubi 1.7.0 to 1.7.1
 
 * Since Kyuubi 1.7.1, `protocolVersion` is removed from the request parameters of the REST API `Open(create) a session`. All removed or unknown parameters will be silently ignored and affects nothing.
