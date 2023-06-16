@@ -46,7 +46,7 @@ trait RunnableCommand extends KyuubiTreeNode {
     }
     val taken = iter.take(rowSetSize)
     val resultRowSet = RowSetHelper.toTRowSet(
-      taken.toList.asInstanceOf[List[Row]],
+      taken.toList,
       resultSchema,
       protocolVersion)
     resultRowSet.setStartRowOffset(iter.getPosition)

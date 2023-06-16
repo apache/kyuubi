@@ -165,17 +165,15 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
         val config = KyuubiConf().set(KyuubiConf.ENGINE_LOG_TIMEOUT, 20000L)
         (1 to 10).foreach { _ =>
-          pool.execute(new Runnable {
-            override def run(): Unit = {
-              val pb = new FakeSparkProcessBuilder(config) {
-                override val workingDir: Path = fakeWorkDir
-              }
-              try {
-                val p = pb.start
-                p.waitFor()
-              } finally {
-                pb.close()
-              }
+          pool.execute(() => {
+            val pb = new FakeSparkProcessBuilder(config) {
+              override val workingDir: Path = fakeWorkDir
+            }
+            try {
+              val p = pb.start
+              p.waitFor()
+            } finally {
+              pb.close()
             }
           })
         }

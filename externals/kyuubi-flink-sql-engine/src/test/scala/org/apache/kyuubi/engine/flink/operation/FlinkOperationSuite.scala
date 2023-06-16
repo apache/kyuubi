@@ -1035,7 +1035,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       assert(metadata.getColumnType(1) === java.sql.Types.VARCHAR)
       assert(resultSet.next())
       assert(resultSet.getString(1).length == 32)
-    };
+    }
   }
 
   test("execute statement - streaming insert into") {

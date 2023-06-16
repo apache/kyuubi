@@ -136,12 +136,8 @@ class SparkProgressMonitor(spark: SparkSession, jobGroup: String) {
       trimmedVName = s.substring(0, COLUMN_1_WIDTH - 2)
       trimmedVName += ".."
     } else trimmedVName += " "
-    val result = new StringBuilder(trimmedVName)
     val toFill = (spaceRemaining * percent).toInt
-    for (i <- 0 until toFill) {
-      result.append(".")
-    }
-    result.toString
+    s"$trimmedVName${"." * toFill}"
   }
 
   private def getCompletedStages: Int = {

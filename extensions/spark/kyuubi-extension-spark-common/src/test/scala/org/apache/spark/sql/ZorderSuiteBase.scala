@@ -245,20 +245,22 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
       resHasSort: Boolean): Unit = {
     def checkSort(plan: LogicalPlan): Unit = {
       assert(plan.isInstanceOf[Sort] === resHasSort)
-      if (plan.isInstanceOf[Sort]) {
-        val colArr = cols.split(",")
-        val refs =
-          if (colArr.length == 1) {
-            plan.asInstanceOf[Sort].order.head
-              .child.asInstanceOf[AttributeReference] :: Nil
-          } else {
-            plan.asInstanceOf[Sort].order.head
-              .child.asInstanceOf[Zorder].children.map(_.references.head)
+      plan match {
+        case sort: Sort =>
+          val colArr = cols.split(",")
+          val refs =
+            if (colArr.length == 1) {
+              sort.order.head
+                .child.asInstanceOf[AttributeReference] :: Nil
+            } else {
+              sort.order.head
+                .child.asInstanceOf[Zorder].children.map(_.references.head)
+            }
+          assert(refs.size === colArr.size)
+          refs.zip(colArr).foreach { case (ref, col) =>
+            assert(ref.name === col.trim)
           }
-        assert(refs.size === colArr.size)
-        refs.zip(colArr).foreach { case (ref, col) =>
-          assert(ref.name === col.trim)
-        }
+        case _ =>
       }
     }
 

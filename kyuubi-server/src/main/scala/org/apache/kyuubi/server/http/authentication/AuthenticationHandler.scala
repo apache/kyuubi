@@ -46,14 +46,14 @@ trait AuthenticationHandler {
   /**
    * Destroys the authentication handler instance.
    * <p>
-   * This method is invoked by the {@link AuthenticationFilter# destroy} method.
+   * This method is invoked by the [[AuthenticationFilter.destroy]] method.
    */
   def destroy(): Unit
 
   /**
    * Performs an authentication step for the given HTTP client request.
    * <p>
-   * This method is invoked by the {@link AuthenticationFilter} only if the HTTP client request is
+   * This method is invoked by the [[AuthenticationFilter]] only if the HTTP client request is
    * not yet authenticated.
    * <p>
    * Depending upon the authentication mechanism being implemented, a particular HTTP client may

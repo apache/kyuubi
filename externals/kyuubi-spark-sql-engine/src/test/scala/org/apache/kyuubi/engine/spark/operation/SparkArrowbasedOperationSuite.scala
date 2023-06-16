@@ -583,7 +583,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   }
 
   class SQLMetricsListener extends QueryExecutionListener {
-    var queryExecution: QueryExecution = null
+    var queryExecution: QueryExecution = _
     override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
       queryExecution = qe
     }

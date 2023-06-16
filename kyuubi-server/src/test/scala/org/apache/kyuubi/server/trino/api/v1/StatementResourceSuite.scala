@@ -51,9 +51,9 @@ class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHe
 
     val trinoResponseIter = Iterator.iterate(TrinoResponse(response = Option(response)))(getData)
     val isErr = trinoResponseIter.takeWhile(_.isEnd == false).exists { t =>
-      t.queryError != None && t.response == None
+      t.queryError.isDefined && t.response.isEmpty
     }
-    assert(isErr == true)
+    assert(isErr)
   }
 
   test("statement submit and get result") {
@@ -61,10 +61,7 @@ class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHe
       .request().post(Entity.entity("select 1", MediaType.TEXT_PLAIN_TYPE))
 
     val trinoResponseIter = Iterator.iterate(TrinoResponse(response = Option(response)))(getData)
-    val dataSet = trinoResponseIter
-      .takeWhile(_.isEnd == false)
-      .map(_.data)
-      .flatten.toList
+    val dataSet = trinoResponseIter.takeWhile(_.isEnd == false).flatMap(_.data).toList
     assert(dataSet == List(List(1)))
   }
 

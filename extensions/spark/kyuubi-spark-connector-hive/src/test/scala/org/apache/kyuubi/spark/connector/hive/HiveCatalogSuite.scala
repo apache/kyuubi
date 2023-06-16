@@ -95,7 +95,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
   }
 
   test("get catalog name") {
-    withSparkSession() { spark =>
+    withSparkSession() { _ =>
       val catalog = new HiveTableCatalog
       val catalogName = "hive"
       catalog.initialize(catalogName, CaseInsensitiveStringMap.empty())

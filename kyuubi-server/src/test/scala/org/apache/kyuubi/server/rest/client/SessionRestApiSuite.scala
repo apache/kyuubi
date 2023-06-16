@@ -28,7 +28,6 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 
 import org.apache.kyuubi.RestClientTestHelper
 import org.apache.kyuubi.client.{KyuubiRestClient, SessionRestApi}
-import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiConf
@@ -73,7 +72,7 @@ class SessionRestApiSuite extends RestClientTestHelper {
 
       // get session event
       val kyuubiEvent = sessionRestApi.getSessionEvent(
-        sessionHandle.getIdentifier.toString).asInstanceOf[dto.KyuubiSessionEvent]
+        sessionHandle.getIdentifier.toString)
       assert(kyuubiEvent.getConf.get("testConfig").equals("testValue"))
       assert(kyuubiEvent.getSessionType.equals(SessionType.INTERACTIVE.toString))
     }
@@ -169,7 +168,7 @@ class SessionRestApiSuite extends RestClientTestHelper {
   test("fix kyuubi session leak caused by engine stop") {
     withSessionRestApi { sessionRestApi =>
       // close all sessions
-      var sessions = sessionRestApi.listSessions().asScala
+      val sessions = sessionRestApi.listSessions().asScala
       sessions.foreach(session => sessionRestApi.closeSession(session.getIdentifier))
 
       // open new session

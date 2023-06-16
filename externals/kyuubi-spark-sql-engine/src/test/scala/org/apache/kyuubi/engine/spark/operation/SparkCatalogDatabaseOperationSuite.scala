@@ -61,7 +61,7 @@ class DummyCatalog extends CatalogPlugin {
     _name = name
   }
 
-  private var _name: String = null
+  private var _name: String = _
 
   override def name(): String = _name
 

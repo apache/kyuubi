@@ -91,7 +91,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
           TrinoContext.buildTrinoResponse(qr, query.context)
         case ExecuteForPreparing(statementId, parameters) =>
           val parametersMap = new util.HashMap[Integer, String]()
-          for (i <- 0 until parameters.size) {
+          for (i <- parameters.indices) {
             parametersMap.put(i + 1, parameters(i))
           }
           trinoContext.preparedStatement.get(statementId).map { originSql =>

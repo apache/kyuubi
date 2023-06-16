@@ -51,8 +51,8 @@ class TrinoSessionImpl(
 
   var trinoContext: TrinoContext = _
   private var clientSession: ClientSession = _
-  private var catalogName: String = null
-  private var databaseName: String = null
+  private var catalogName: String = _
+  private var databaseName: String = _
 
   private val sessionEvent = TrinoSessionEvent(this)
 

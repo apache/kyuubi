@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.result;
+package org.apache.kyuubi.engine.flink.result
 
 import scala.collection.convert.ImplicitConversions._
 import scala.collection.mutable.ListBuffer

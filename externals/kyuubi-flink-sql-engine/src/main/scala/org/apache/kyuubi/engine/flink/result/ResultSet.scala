@@ -69,7 +69,7 @@ object ResultSet {
       .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
       .columns(Column.physical("result", DataTypes.STRING()))
       .data(data)
-      .build;
+      .build
   }
 
   def builder: Builder = new ResultSet.Builder

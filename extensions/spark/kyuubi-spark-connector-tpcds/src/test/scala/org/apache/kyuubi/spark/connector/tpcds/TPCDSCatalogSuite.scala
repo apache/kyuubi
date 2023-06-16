@@ -35,7 +35,7 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
       .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
       .set("spark.sql.cbo.enabled", "true")
       .set("spark.sql.cbo.planStats.enabled", "true")
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { _ =>
       val catalog = new TPCDSCatalog
       val catalogName = "test"
       catalog.initialize(catalogName, CaseInsensitiveStringMap.empty())

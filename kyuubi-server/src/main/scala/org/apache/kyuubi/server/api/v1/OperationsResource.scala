@@ -109,7 +109,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
           var scale = 0
           if (tPrimitiveTypeEntry.getTypeQualifiers != null) {
             val qualifiers = tPrimitiveTypeEntry.getTypeQualifiers.getQualifiers
-            val defaultValue = TTypeQualifierValue.i32Value(0);
+            val defaultValue = TTypeQualifierValue.i32Value(0)
             precision = qualifiers.getOrDefault("precision", defaultValue).getI32Value
             scale = qualifiers.getOrDefault("scale", defaultValue).getI32Value
           }

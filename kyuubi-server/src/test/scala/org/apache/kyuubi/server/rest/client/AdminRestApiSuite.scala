@@ -88,7 +88,7 @@ class AdminRestApiSuite extends RestClientTestHelper {
     assert(result == s"Engine ${engineSpace} is deleted successfully.")
 
     engines = adminRestApi.listEngines("spark_sql", "user", "default", "").asScala
-    assert(engines.size == 0)
+    assert(engines.isEmpty)
   }
 
   test("list/close session") {
