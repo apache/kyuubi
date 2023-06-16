@@ -19,7 +19,12 @@
 package org.apache.hive.beeline;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import org.apache.kyuubi.util.reflect.DynFields;
 import org.junit.Test;
 
 public class KyuubiBeeLineTest {
@@ -46,5 +51,74 @@ public class KyuubiBeeLineTest {
     String[] args3 = {"-u", "badUrl", "-i", scriptFile};
     int result3 = kyuubiBeeLine.initArgs(args3);
     assertEquals(1, result3);
+  }
+
+  @Test
+  public void testKyuubiBeeLineCmdUsage() {
+    BufferPrintStream printStream = new BufferPrintStream();
+
+    KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
+    DynFields.builder()
+        .hiddenImpl(BeeLine.class, "outputStream")
+        .build(kyuubiBeeLine)
+        .set(printStream);
+    String[] args1 = {"-h"};
+    kyuubiBeeLine.initArgs(args1);
+    String output = printStream.getOutput();
+    assert output.contains("--python-mode                   Execute python code/script.");
+  }
+
+  @Test
+  public void testKyuubiBeeLinePythonMode() {
+    KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
+    String[] args1 = {"-u", "badUrl", "--python-mode"};
+    kyuubiBeeLine.initArgs(args1);
+    assertTrue(kyuubiBeeLine.isPythonMode());
+    kyuubiBeeLine.setPythonMode(false);
+
+    String[] args2 = {"--python-mode", "-f", "test.sql"};
+    kyuubiBeeLine.initArgs(args2);
+    assertTrue(kyuubiBeeLine.isPythonMode());
+    assert kyuubiBeeLine.getOpts().getScriptFile().equals("test.sql");
+    kyuubiBeeLine.setPythonMode(false);
+
+    String[] args3 = {"-u", "badUrl"};
+    kyuubiBeeLine.initArgs(args3);
+    assertTrue(!kyuubiBeeLine.isPythonMode());
+    kyuubiBeeLine.setPythonMode(false);
+  }
+
+  static class BufferPrintStream extends PrintStream {
+    public StringBuilder stringBuilder = new StringBuilder();
+
+    static OutputStream noOpOutputStream =
+        new OutputStream() {
+          @Override
+          public void write(int b) throws IOException {
+            // do nothing
+          }
+        };
+
+    public BufferPrintStream() {
+      super(noOpOutputStream);
+    }
+
+    public BufferPrintStream(OutputStream outputStream) {
+      super(noOpOutputStream);
+    }
+
+    @Override
+    public void println(String x) {
+      stringBuilder.append(x).append("\n");
+    }
+
+    @Override
+    public void print(String x) {
+      stringBuilder.append(x);
+    }
+
+    public String getOutput() {
+      return stringBuilder.toString();
+    }
   }
 }
