@@ -88,6 +88,19 @@ public class KyuubiBeeLineTest {
     kyuubiBeeLine.setPythonMode(false);
   }
 
+  @Test
+  public void testKyuubiBeelineComment() {
+    KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
+    int result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment show database;"});
+    assertEquals(0, result);
+    result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment\n show database;"});
+    assertEquals(1, result);
+    result =
+        kyuubiBeeLine.initArgsFromCliVars(
+            new String[] {"-e", "--comment line 1 \n    --comment line 2 \n show database;"});
+    assertEquals(1, result);
+  }
+
   static class BufferPrintStream extends PrintStream {
     public StringBuilder stringBuilder = new StringBuilder();
 

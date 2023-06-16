@@ -527,9 +527,8 @@ public class KyuubiCommands extends Commands {
             ? null
             : jline.console.ConsoleReader.NULL_MASK;
 
-    int[] startQuote = {-1};
     if (!beeLine.isPythonMode()) {
-      line = HiveStringUtils.removeComments(line, startQuote);
+      line = HiveStringUtils.removeComments(line);
     }
     while (isMultiLine(line) && beeLine.getOpts().isAllowMultiLineCommand()) {
       StringBuilder prompt = new StringBuilder(beeLine.getPrompt());
@@ -557,7 +556,7 @@ public class KyuubiCommands extends Commands {
         break;
       }
       if (!beeLine.isPythonMode()) {
-        extra = HiveStringUtils.removeComments(extra, startQuote);
+        extra = HiveStringUtils.removeComments(extra);
       }
       if (!extra.isEmpty()) {
         line += "\n" + extra;

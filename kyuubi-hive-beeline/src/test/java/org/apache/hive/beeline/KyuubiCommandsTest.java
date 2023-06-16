@@ -59,5 +59,13 @@ public class KyuubiCommandsTest {
     assertEquals(cmdList.size(), 2);
     assertEquals(cmdList.get(0), "select 1");
     assertEquals(cmdList.get(1), "\nselect 2");
+
+    // see HIVE-15820: comment at the head of beeline -e
+    snippets = "--comments1\nselect 2;--comments2";
+    Mockito.when(reader.readLine()).thenReturn(snippets);
+    line = commands.handleMultiLineCmd(snippets);
+    cmdList = commands.getCmdList(line, false);
+    assertEquals(cmdList.size(), 1);
+    assertEquals(cmdList.get(0), "select 2");
   }
 }
