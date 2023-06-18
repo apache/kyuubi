@@ -26,7 +26,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
-import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.metric.{SQLMetric, SQLMetrics}
@@ -35,6 +34,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.schema.RowSet
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils.quoteIfNeeded
 import org.apache.kyuubi.util.reflect.DynMethods
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
@@ -131,18 +131,6 @@ object SparkDatasetHelper extends Logging {
       case StructField(name, _, _, _) => quotedCol(name)
     }
     df.select(cols: _*)
-  }
-
-  /**
-   * Fork from Apache Spark-3.3.1 org.apache.spark.sql.catalyst.util.quoteIfNeeded to adapt to
-   * Spark-3.1.x
-   */
-  private def quoteIfNeeded(part: String): String = {
-    if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
-      part
-    } else {
-      s"`${part.replace("`", "``")}`"
-    }
   }
 
   private lazy val maxBatchSize: Long = {
