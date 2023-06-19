@@ -124,7 +124,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
         val resp = client.OpenSession(req)
         val handle = resp.getSessionHandle
         assert(handle != null)
-        assert(resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
+        assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
 
         req.setConfiguration(Map("kyuubi.test.should.fail" -> "true").asJava)
         val resp1 = client.OpenSession(req)
@@ -528,7 +528,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       val cancelOpReq = new TCancelOperationReq(resp.getOperationHandle)
       val cancelOpResp = client.CancelOperation(cancelOpReq)
       assert(cancelOpResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      assert(sessionManager.getOpenSessionCount == 1)
+      assert(sessionManager.getOpenSessionCount === 1)
       assert(session.lastIdleTime === 0)
       eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
         assert(lastAccessTime < session.lastAccessTime)
@@ -562,7 +562,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       Map(
         "session.engine.spark.main.resource" -> "org.apahce.kyuubi.test",
         "session.check.interval" -> "10000"))
-    assert(conf.size == 1)
-    assert(conf("session.check.interval") == "10000")
+    assert(conf.size === 1)
+    assert(conf("session.check.interval") === "10000")
   }
 }
