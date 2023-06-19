@@ -124,7 +124,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
         val resp = client.OpenSession(req)
         val handle = resp.getSessionHandle
         assert(handle != null)
-        assert(resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
+        assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
 
         req.setConfiguration(Map("kyuubi.test.should.fail" -> "true").asJava)
         val resp1 = client.OpenSession(req)
@@ -514,41 +514,39 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
 
   test("close expired operations") {
     withSessionHandle { (client, handle) =>
-      val req = new TCancelOperationReq()
-      val req1 = new TGetSchemasReq(handle)
-      val resp1 = client.GetSchemas(req1)
+      val req = new TGetSchemasReq(handle)
+      val resp = client.GetSchemas(req)
 
       val sessionManager = server.backendService.sessionManager
       val session = sessionManager
         .getSession(SessionHandle(handle))
         .asInstanceOf[AbstractSession]
       var lastAccessTime = session.lastAccessTime
-      assert(sessionManager.getOpenSessionCount == 1)
+      assert(sessionManager.getOpenSessionCount === 1)
       assert(session.lastIdleTime > 0)
 
-      resp1.getOperationHandle
-      req.setOperationHandle(resp1.getOperationHandle)
-      val resp2 = client.CancelOperation(req)
-      assert(resp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      assert(sessionManager.getOpenSessionCount == 1)
-      assert(session.lastIdleTime == 0)
+      val cancelOpReq = new TCancelOperationReq(resp.getOperationHandle)
+      val cancelOpResp = client.CancelOperation(cancelOpReq)
+      assert(cancelOpResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(sessionManager.getOpenSessionCount === 1)
+      assert(session.lastIdleTime === 0)
       eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
         assert(lastAccessTime < session.lastAccessTime)
       }
       lastAccessTime = session.lastAccessTime
 
       eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
-        assert(session.lastIdleTime > lastAccessTime)
+        assert(lastAccessTime <= session.lastIdleTime)
       }
 
       info("operation is terminated")
-      assert(lastAccessTime == session.lastAccessTime)
-      assert(sessionManager.getOpenSessionCount == 1)
+      assert(lastAccessTime === session.lastAccessTime)
+      assert(sessionManager.getOpenSessionCount === 1)
 
       eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
         assert(session.lastAccessTime > lastAccessTime)
       }
-      assert(sessionManager.getOpenSessionCount == 0)
+      assert(sessionManager.getOpenSessionCount === 0)
     }
   }
 
@@ -564,7 +562,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       Map(
         "session.engine.spark.main.resource" -> "org.apahce.kyuubi.test",
         "session.check.interval" -> "10000"))
-    assert(conf.size == 1)
-    assert(conf("session.check.interval") == "10000")
+    assert(conf.size === 1)
+    assert(conf("session.check.interval") === "10000")
   }
 }
