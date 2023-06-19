@@ -42,7 +42,7 @@ private[api] trait ApiRequestContext {
 @Provider
 class RestExceptionMapper extends ExceptionMapper[Exception] with Logging {
   override def toResponse(exception: Exception): Response = {
-    warn("Error occurs on accessing REST API.", exception)
+    warn("Error occurs on accessing Trino API.", exception)
     exception match {
       case e: WebApplicationException =>
         Response.status(e.getResponse.getStatus)
