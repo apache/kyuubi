@@ -25,6 +25,7 @@ import javax.ws.rs.ext.{ExceptionMapper, Provider}
 
 import org.eclipse.jetty.server.handler.ContextHandler
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.server.KyuubiTrinoFrontendService
 
 private[api] trait ApiRequestContext {
@@ -39,18 +40,19 @@ private[api] trait ApiRequestContext {
 }
 
 @Provider
-class RestExceptionMapper extends ExceptionMapper[Exception] {
+class RestExceptionMapper extends ExceptionMapper[Exception] with Logging {
   override def toResponse(exception: Exception): Response = {
+    warn("Error occurs on accessing Trino API.", exception)
     exception match {
       case e: WebApplicationException =>
         Response.status(e.getResponse.getStatus)
-          .`type`(e.getResponse.getMediaType)
-          .entity(e.getMessage)
+          .`type`(MediaType.APPLICATION_JSON)
+          .entity(Map("message" -> e.getMessage))
           .build()
       case e =>
         Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .`type`(MediaType.APPLICATION_JSON)
-          .entity(e.getMessage)
+          .entity(Map("message" -> e.getMessage))
           .build()
     }
   }
