@@ -167,7 +167,7 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
       }
       op(tempPyFile.getPath)
     } finally {
-      Files.delete(tempPyFile.toPath)
+      Files.deleteIfExists(tempPyFile.toPath)
     }
   }
 }
