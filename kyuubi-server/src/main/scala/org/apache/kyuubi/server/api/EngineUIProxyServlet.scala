@@ -30,6 +30,7 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
   override def rewriteTarget(request: HttpServletRequest): String = {
     val requestURL = request.getRequestURL
     val requestURI = request.getRequestURI
+    val queryString = getQueryString(request)
     var targetURL = "/no-ui-error"
     extractTargetAddress(requestURI).foreach { case (host, port) =>
       val targetURI = requestURI.stripPrefix(s"/engine-ui/$host:$port") match {
@@ -37,7 +38,7 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
         // we simulate the Spark UI redirection behavior and forcibly rewrite the
         // empty URI to the Spark Jobs page.
         case "" | "/" => "/jobs/"
-        case path => path
+        case path => path + queryString
       }
       targetURL = new URL("http", host, port, targetURI).toString
     }
@@ -62,4 +63,16 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
       case r(host, port) => Some(host -> port.toInt)
       case _ => None
     }
+
+  def getQueryString(request: HttpServletRequest): String = {
+    val result = new StringBuilder()
+    val queryString = request.getQueryString()
+    if (queryString != null && queryString.length() > 0) {
+      info(queryString)
+      result.append("?")
+      result.append(queryString)
+    }
+    result.toString()
+  }
+
 }
