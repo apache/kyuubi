@@ -110,11 +110,11 @@ object ApplicationOperation {
   val NOT_FOUND = "APPLICATION_NOT_FOUND"
 }
 
-case class KubernetesInfo(context: String, namespace: String)
+case class KubernetesInfo(context: Option[String] = None, namespace: Option[String] = None)
 
 case class ApplicationManagerInfo(
     resourceManager: Option[String],
-    kubernetesInfo: Option[KubernetesInfo] = None)
+    kubernetesInfo: KubernetesInfo = KubernetesInfo())
 
 object ApplicationManagerInfo {
   final val DEFAULT_KUBERNETES_NAMESPACE = "default"
@@ -123,13 +123,8 @@ object ApplicationManagerInfo {
       resourceManager: Option[String],
       kubernetesContext: Option[String],
       kubernetesNamespace: Option[String]): ApplicationManagerInfo = {
-    val kubernetesInfo = if (kubernetesContext.isDefined) {
-      Some(KubernetesInfo(
-        kubernetesContext.get,
-        kubernetesNamespace.getOrElse(DEFAULT_KUBERNETES_NAMESPACE)))
-    } else {
-      None
-    }
-    new ApplicationManagerInfo(resourceManager, kubernetesInfo)
+    new ApplicationManagerInfo(
+      resourceManager,
+      KubernetesInfo(kubernetesContext, kubernetesNamespace))
   }
 }

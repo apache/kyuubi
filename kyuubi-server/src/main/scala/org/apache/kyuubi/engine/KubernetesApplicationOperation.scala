@@ -52,11 +52,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   // key is kyuubi_unique_key
   private var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
 
-  private def getKubernetesInfo(appMgrInfo: ApplicationManagerInfo): KubernetesInfo = {
-    appMgrInfo.kubernetesInfo.getOrElse(
-      throw new KyuubiException(s"Kubernetes info missed in $appMgrInfo"))
-  }
-
   private def getOrCreateKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
     val context = kubernetesInfo.context
     val namespace = kubernetesInfo.namespace
@@ -130,7 +125,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     if (kyuubiConf == null) {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
     }
-    val kubernetesInfo = getKubernetesInfo(appMgrInfo)
+    val kubernetesInfo = appMgrInfo.kubernetesInfo
     val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
     debug(s"[$kubernetesInfo] Deleting application info from Kubernetes cluster by $tag tag")
     try {

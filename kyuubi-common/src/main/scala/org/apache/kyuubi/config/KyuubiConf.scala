@@ -135,22 +135,27 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   /** Get the kubernetes conf for specified kubernetes context and namespace. */
-  def getKubernetesConf(context: String, namespace: String): KyuubiConf = {
-    val contextConf =
-      getAllWithPrefix(s"$KYUUBI_KUBERNETES_CONF_PREFIX.$context", "").map { case (suffix, value) =>
-        s"$KYUUBI_KUBERNETES_CONF_PREFIX.$suffix" -> value
-      }
-    val contextNamespaceConf =
-      getAllWithPrefix(s"$KYUUBI_KUBERNETES_CONF_PREFIX.$context.$namespace", "").map {
-        case (suffix, value) =>
-          s"$KYUUBI_KUBERNETES_CONF_PREFIX.$suffix" -> value
-      }
+  def getKubernetesConf(context: Option[String], namespace: Option[String]): KyuubiConf = {
     val conf = this.clone
-    (contextConf ++ contextNamespaceConf).map { case (key, value) =>
-      conf.set(key, value)
+    context.foreach { c =>
+      val contextConf =
+        getAllWithPrefix(s"$KYUUBI_KUBERNETES_CONF_PREFIX.$c", "").map { case (suffix, value) =>
+          s"$KYUUBI_KUBERNETES_CONF_PREFIX.$suffix" -> value
+        }
+      val contextNamespaceConf = namespace.map { ns =>
+        getAllWithPrefix(s"$KYUUBI_KUBERNETES_CONF_PREFIX.$c.$ns", "").map {
+          case (suffix, value) =>
+            s"$KYUUBI_KUBERNETES_CONF_PREFIX.$suffix" -> value
+        }
+      }.getOrElse(Map.empty)
+
+      (contextConf ++ contextNamespaceConf).map { case (key, value) =>
+        conf.set(key, value)
+      }
+      conf.set(KUBERNETES_CONTEXT, c)
+      namespace.foreach(ns => conf.set(KUBERNETES_NAMESPACE, ns))
+      conf
     }
-    conf.set(KUBERNETES_CONTEXT, context)
-    conf.set(KUBERNETES_NAMESPACE, namespace)
     conf
   }
 
