@@ -61,12 +61,12 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     val context = kubernetesInfo.context
     val namespace = kubernetesInfo.namespace
 
-    if (!supportedContexts.contains(context)) {
+    if (supportedContexts.nonEmpty && !supportedContexts.contains(context)) {
       throw new KyuubiException(
         s"Kubernetes context $context is not in the support list[$supportedContexts]")
     }
 
-    if (!supportedNamespaces.contains(namespace)) {
+    if (supportedNamespaces.nonEmpty && !supportedNamespaces.contains(namespace)) {
       throw new KyuubiException(
         s"Kubernetes namespace $namespace is not in the support list[$supportedNamespaces]")
     }

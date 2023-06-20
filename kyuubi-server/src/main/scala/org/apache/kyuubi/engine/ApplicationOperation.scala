@@ -117,12 +117,16 @@ case class ApplicationManagerInfo(
     kubernetesInfo: Option[KubernetesInfo] = None)
 
 object ApplicationManagerInfo {
+  final val DEFAULT_KUBERNETES_NAMESPACE = "default"
+
   def apply(
       resourceManager: Option[String],
       kubernetesContext: Option[String],
       kubernetesNamespace: Option[String]): ApplicationManagerInfo = {
-    val kubernetesInfo = if (kubernetesContext.isDefined && kubernetesNamespace.isDefined) {
-      Some(KubernetesInfo(kubernetesContext.get, kubernetesNamespace.get))
+    val kubernetesInfo = if (kubernetesContext.isDefined) {
+      Some(KubernetesInfo(
+        kubernetesContext.get,
+        kubernetesNamespace.getOrElse(DEFAULT_KUBERNETES_NAMESPACE)))
     } else {
       None
     }

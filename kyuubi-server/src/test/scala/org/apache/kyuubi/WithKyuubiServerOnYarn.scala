@@ -142,7 +142,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     assert(killResponse._2 startsWith "Succeeded to terminate:")
 
     val appInfo =
-      yarnOperation.getApplicationInfoByTag(appMgrInfo, sessionHandle.identifier.toString)
+      yarnOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
 
     assert(appInfo.state === KILLED)
 
