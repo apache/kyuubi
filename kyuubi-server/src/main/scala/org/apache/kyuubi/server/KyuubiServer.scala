@@ -164,8 +164,6 @@ class KyuubiServer(name: String) extends Serverable(name) {
     }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    initLoggerEventHandler(conf)
-
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
 
@@ -176,6 +174,8 @@ class KyuubiServer(name: String) extends Serverable(name) {
       addService(new MetricsSystem)
     }
     super.initialize(conf)
+
+    initLoggerEventHandler(conf)
   }
 
   override def start(): Unit = {
