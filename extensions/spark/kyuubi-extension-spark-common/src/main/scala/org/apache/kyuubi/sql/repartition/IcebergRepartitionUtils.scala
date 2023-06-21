@@ -60,9 +60,9 @@ object IcebergRepartitionUtils {
       case icebergTable
           if IcebergSparkTableClass.get.isInstance(table) =>
         val properties = invokeAs[JMap[String, String]](icebergTable, "properties")
-        // skipping repartitioning for Iceberg table with distribution and ordering
         val isUseTableDistributionAndOrdering =
           "true".equalsIgnoreCase(properties.get("use-table-distribution-and-ordering"))
+        // skipping repartitioning for Iceberg table with distribution and ordering
         !isUseTableDistributionAndOrdering
       case _ => false
     }
