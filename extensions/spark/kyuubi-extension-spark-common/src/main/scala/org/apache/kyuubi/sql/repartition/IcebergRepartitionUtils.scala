@@ -17,11 +17,13 @@
 
 package org.apache.kyuubi.sql.repartition
 
+import java.util.{Map => JMap}
+
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-import org.apache.kyuubi.util.reflect.ReflectUtils.{invokeAs, isClassLoadable}
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object IcebergRepartitionUtils {
   private lazy val isIcebergSupported =
@@ -36,19 +38,25 @@ object IcebergRepartitionUtils {
       try {
         // [[org.apache.iceberg.spark.source.SparkTable]]
         val destIcebergTable = invokeAs[AnyRef](table, "table")
-        val partitionCols = invokeAs[Array[AnyRef]](destIcebergTable, "partitioning")
-        if (partitionCols.isEmpty) {
-          // use first column of output as repartition column for non-partitioned table
-          query.output.headOption.map(Seq(_))
+        val properties = invokeAs[JMap[String, String]](destIcebergTable, "properties")
+        if ("true".equalsIgnoreCase(properties.get("use-table-distribution-and-ordering"))) {
+          // skipping repartitioning for Iceberg table with distribution and ordering
+          None
         } else {
-          val partitionNames = partitionCols.map(p => {
-            val ref = invokeAs[AnyRef](p, "ref")
-            val refName = invokeAs[Iterable[String]](ref, "parts").mkString(".")
-            refName
-          })
-          val dynamicPartitionColumns =
-            query.output.attrs.filter(attr => partitionNames.contains(attr.name))
-          Some(dynamicPartitionColumns)
+          val partitionCols = invokeAs[Array[AnyRef]](destIcebergTable, "partitioning")
+          if (partitionCols.isEmpty) {
+            // use first column of output as repartition column for non-partitioned table
+            query.output.headOption.map(Seq(_))
+          } else {
+            val partitionNames = partitionCols.map(p => {
+              val ref = invokeAs[AnyRef](p, "ref")
+              val refName = invokeAs[Iterable[String]](ref, "parts").mkString(".")
+              refName
+            })
+            val dynamicPartitionColumns =
+              query.output.attrs.filter(attr => partitionNames.contains(attr.name))
+            Some(dynamicPartitionColumns)
+          }
         }
       } catch {
         case _: Exception => None
