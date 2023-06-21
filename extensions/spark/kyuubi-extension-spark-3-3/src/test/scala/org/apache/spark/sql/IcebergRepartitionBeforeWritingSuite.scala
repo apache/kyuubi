@@ -22,7 +22,7 @@ import org.apache.spark.util.Utils
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
-class IcebergInsertShuffleNodeBeforeJoinSuite extends KyuubiSparkSQLExtensionTest {
+class IcebergRepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
   val catalog = "catalog2"
   override def sparkConf(): SparkConf = {
     val conf = super.sparkConf()
