@@ -37,7 +37,7 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
         // for some reason, the proxy can not handle redirect well, as a workaround,
         // we simulate the Spark UI redirection behavior and forcibly rewrite the
         // empty URI to the Spark Jobs page.
-        case "" | "/" => "/jobs/"
+        case "" | "/" => "/jobs/" + queryString
         case path => path + queryString
       }
       targetURL = new URL("http", host, port, targetURI).toString
