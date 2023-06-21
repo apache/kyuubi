@@ -23,11 +23,14 @@ import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
+import org.apache.kyuubi.util.reflect.DynClasses
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object IcebergRepartitionUtils {
-  private lazy val isIcebergSupported =
-    isClassLoadable("org.apache.iceberg.spark.SparkCatalog")
+  private lazy val isIcebergSupported = IcebergSparkTableClass.isDefined
+
+  private lazy val IcebergSparkTableClass: Option[Class[_]] =
+    Option(DynClasses.builder().impl("org.apache.iceberg.spark.source.SparkTable").orNull().build())
 
   def getDynamicPartitionColsFromIcebergTable(
       table: NamedRelation,
@@ -38,9 +41,7 @@ object IcebergRepartitionUtils {
       try {
         // [[org.apache.iceberg.spark.source.SparkTable]]
         val destIcebergTable = invokeAs[AnyRef](table, "table")
-        val properties = invokeAs[JMap[String, String]](destIcebergTable, "properties")
-        if ("true".equalsIgnoreCase(properties.get("use-table-distribution-and-ordering"))) {
-          // skipping repartitioning for Iceberg table with distribution and ordering
+        if (shouldApplyToIcebergTable(destIcebergTable)) {
           None
         } else {
           val partitionCols = invokeAs[Array[AnyRef]](destIcebergTable, "partitioning")
@@ -48,8 +49,8 @@ object IcebergRepartitionUtils {
             // use first column of output as repartition column for non-partitioned table
             query.output.headOption.map(Seq(_))
           } else {
-            val partitionNames = partitionCols.map(p => {
-              val ref = invokeAs[AnyRef](p, "ref")
+            val partitionNames = partitionCols.map(col => {
+              val ref = invokeAs[AnyRef](col, "ref")
               val refName = invokeAs[Iterable[String]](ref, "parts").mkString(".")
               refName
             })
@@ -61,6 +62,19 @@ object IcebergRepartitionUtils {
       } catch {
         case _: Exception => None
       }
+    }
+  }
+
+  private def shouldApplyToIcebergTable(table: AnyRef): Boolean = {
+    table match {
+      case icebergTable
+          if IcebergSparkTableClass.isDefined && IcebergSparkTableClass.get.isInstance(table) =>
+        val properties = invokeAs[JMap[String, String]](icebergTable, "properties")
+        // skipping repartitioning for Iceberg table with distribution and ordering
+        val isUseTableDistributionAndOrdering =
+          "true".equalsIgnoreCase(properties.get("use-table-distribution-and-ordering"))
+        isUseTableDistributionAndOrdering
+      case _ => false
     }
   }
 }
