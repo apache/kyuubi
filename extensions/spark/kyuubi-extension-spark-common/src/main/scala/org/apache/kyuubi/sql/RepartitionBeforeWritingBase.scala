@@ -37,6 +37,9 @@ trait RepartitionBuilder extends Rule[LogicalPlan] with RepartitionBeforeWriteHe
  * For datasource table, there two commands can write data to table
  * 1. InsertIntoHadoopFsRelationCommand
  * 2. CreateDataSourceTableAsSelectCommand
+ * 3. AppendData (for Iceberg tables)
+ * 4. OverwritePartitionsDynamic (for Iceberg tables)
+ * 5. OverwriteByExpression (for Iceberg tables)
  * This rule add a repartition node between write and query
  */
 abstract class RepartitionBeforeWritingDatasourceBase extends RepartitionBuilder {
