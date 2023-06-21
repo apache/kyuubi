@@ -57,8 +57,7 @@ object IcebergRepartitionUtils {
 
   private def shouldApplyToIcebergTable(table: AnyRef): Boolean = {
     table match {
-      case icebergTable
-          if IcebergSparkTableClass.get.isInstance(table) =>
+      case icebergTable if IcebergSparkTableClass.get.isInstance(table) =>
         val properties = invokeAs[JMap[String, String]](icebergTable, "properties")
         val isUseTableDistributionAndOrdering =
           "true".equalsIgnoreCase(properties.get("use-table-distribution-and-ordering"))
