@@ -47,7 +47,7 @@ object ReflectUtils {
   def loadClassOpt[T](
       className: String,
       cl: ClassLoader = Thread.currentThread().getContextClassLoader): Option[Class[_ <: T]] = Try {
-    DynClasses.builder().loader(cl).impl(className).buildChecked()
+    DynClasses.builder().loader(cl).impl(className).buildChecked[T]()
   } match {
     case Success(clazz) => Some(clazz)
     case _ => None
