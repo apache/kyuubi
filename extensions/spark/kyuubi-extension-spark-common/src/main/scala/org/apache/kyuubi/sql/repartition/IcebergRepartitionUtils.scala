@@ -38,12 +38,9 @@ object IcebergRepartitionUtils {
     if (!isIcebergSupported) {
       None
     } else {
-      try {
-        // [[org.apache.iceberg.spark.source.SparkTable]]
-        val destIcebergTable = invokeAs[AnyRef](table, "table")
-        if (shouldApplyToIcebergTable(destIcebergTable)) {
-          None
-        } else {
+      invokeAsOpt[AnyRef](table, "table") match {
+        case Some(destIcebergTable) if shouldApplyToIcebergTable(destIcebergTable) =>
+          // destIcebergTable: org.apache.iceberg.spark.source.SparkTable
           val partitionCols = invokeAs[Array[AnyRef]](destIcebergTable, "partitioning")
           val partitionColNames = partitionCols.map(col => {
             val ref = invokeAs[AnyRef](col, "ref")
@@ -53,9 +50,7 @@ object IcebergRepartitionUtils {
           val dynamicPartitionColumns =
             query.output.attrs.filter(attr => partitionColNames.contains(attr.name))
           Some(dynamicPartitionColumns)
-        }
-      } catch {
-        case _: Exception => None
+        case _ => None
       }
     }
   }
@@ -68,7 +63,7 @@ object IcebergRepartitionUtils {
         // skipping repartitioning for Iceberg table with distribution and ordering
         val isUseTableDistributionAndOrdering =
           "true".equalsIgnoreCase(properties.get("use-table-distribution-and-ordering"))
-        isUseTableDistributionAndOrdering
+        !isUseTableDistributionAndOrdering
       case _ => false
     }
   }

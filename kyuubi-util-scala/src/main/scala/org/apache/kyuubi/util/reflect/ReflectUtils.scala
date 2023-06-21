@@ -22,7 +22,7 @@ import java.util.ServiceLoader
 import scala.collection.JavaConverters._
 import scala.language.existentials
 import scala.reflect.ClassTag
-import scala.util.Try
+import scala.util._
 
 object ReflectUtils {
 
@@ -99,6 +99,15 @@ object ReflectUtils {
           s"Method $methodName(${argClassesNames.mkString(",")})" +
             s" not found in $clz [${candidates.mkString(",")}]",
           e)
+    }
+  }
+
+  def invokeAsOpt[T](target: AnyRef, methodName: String, args: (Class[_], AnyRef)*): Option[T] = {
+    Try {
+      invokeAs[T](target, methodName, args: _*)
+    } match {
+      case Success(value) => Some(value)
+      case _ => None
     }
   }
 
