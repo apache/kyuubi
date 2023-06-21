@@ -116,7 +116,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
     // TODO add deploy mode to check whether is supported
-    appMgrInfo.resourceManager.exists(_.toLowerCase(Locale.ROOT).startsWith("k8s"))
+    kyuubiConf != null &&
+      appMgrInfo.resourceManager.exists(_.toLowerCase(Locale.ROOT).startsWith("k8s"))
   }
 
   override def killApplicationByTag(
