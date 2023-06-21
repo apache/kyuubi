@@ -38,7 +38,8 @@ object IcebergRepartitionUtils {
         val destIcebergTable = invokeAs[AnyRef](table, "table")
         val partitionCols = invokeAs[Array[AnyRef]](destIcebergTable, "partitioning")
         if (partitionCols.isEmpty) {
-          None
+          // use first column of output as repartition column for non-partitioned table
+          query.output.headOption.map(Seq(_))
         } else {
           val partitionNames = partitionCols.map(p => {
             val ref = invokeAs[AnyRef](p, "ref")

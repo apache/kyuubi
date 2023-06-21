@@ -62,7 +62,7 @@ class IcebergRepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
     }
 
     withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true") {
-      Seq("USING ICEBERG", "").foreach { storage =>
+      Seq("USING ICEBERG").foreach { storage =>
         withTable("tmp1", "tmp2") {
           sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
           sql(s"CREATE TABLE tmp2 (c1 int) $storage PARTITIONED BY (c2 string)")
@@ -82,24 +82,29 @@ class IcebergRepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
             2)
         }
 
-//        withTable("tmp1") {
-//          sql(s"CREATE TABLE tmp1 (c1 int) $storage")
-//          check(
-//             sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1),(2),(3) AS t(c1)")
-//          )
-//        }
+        withTable("tmp1") {
+          sql(s"CREATE TABLE tmp1 (c1 int) $storage")
+          check(
+            sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1),(2),(3) AS t(c1)"))
+        }
 
-//        withTable("tmp1", "tmp2") {
-//          sql(s"CREATE TABLE tmp1 (c1 int) $storage")
-//          sql(s"CREATE TABLE tmp2 (c1 int) $storage")
-//          check(
-//            sql(
-//              """FROM VALUES(1),(2),(3)
-//                |INSERT OVERWRITE TABLE tmp1 SELECT *
-//                |INSERT OVERWRITE TABLE tmp2 SELECT *
-//                |""".stripMargin),
-//            2)
-//        }
+        withTable("tmp1") {
+          sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
+          check(
+            sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1,'a'),(2,'b'),(3,'c') AS t(c1,c2)"))
+        }
+
+        withTable("tmp1", "tmp2") {
+          sql(s"CREATE TABLE tmp1 (c1 int) $storage")
+          sql(s"CREATE TABLE tmp2 (c1 int) $storage")
+          check(
+            sql(
+              """FROM VALUES(1),(2),(3)
+                |INSERT OVERWRITE TABLE tmp1 SELECT *
+                |INSERT OVERWRITE TABLE tmp2 SELECT *
+                |""".stripMargin),
+            2)
+        }
       }
 
     }

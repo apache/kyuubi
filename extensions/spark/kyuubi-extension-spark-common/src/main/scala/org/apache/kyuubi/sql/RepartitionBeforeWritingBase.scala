@@ -76,13 +76,13 @@ abstract class RepartitionBeforeWritingDatasourceBase extends RepartitionBuilder
         case None => o
       }
 
-//    case a @ AppendData(table, query, _, _, _)
-//        if query.resolved && canInsertRepartitionByExpression(query) =>
-//      getDynamicPartitionColsFromIcebergTable(table, query) match {
-//        case Some(dynamicPartitionColumns) =>
-//          a.copy(query = buildRepartition(dynamicPartitionColumns, query))
-//        case None => a
-//      }
+    case a @ AppendData(table, query, _, _, _)
+        if query.resolved && canInsertRepartitionByExpression(query) =>
+      getDynamicPartitionColsFromIcebergTable(table, query) match {
+        case Some(dynamicPartitionColumns) =>
+          a.copy(query = buildRepartition(dynamicPartitionColumns, query))
+        case None => a
+      }
 
     case u @ Union(children, _, _) =>
       u.copy(children = children.map(addRepartition))
