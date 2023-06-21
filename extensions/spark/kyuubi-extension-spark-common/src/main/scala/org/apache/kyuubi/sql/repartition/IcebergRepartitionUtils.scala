@@ -25,13 +25,13 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.expressions.{NamedReference, Transform}
 
-import org.apache.kyuubi.util.reflect.DynClasses
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object IcebergRepartitionUtils {
-  private lazy val isIcebergSupported = IcebergSparkTableClass.isDefined
-  private lazy val IcebergSparkTableClass: Option[Class[_ <: Table]] =
-    Option(DynClasses.builder().impl("org.apache.iceberg.spark.source.SparkTable").orNull().build())
+  private lazy val maybeIcebergSparkTableClass =
+    loadClassOpt[Table]("org.apache.iceberg.spark.source.SparkTable")
+
+  private lazy val isIcebergSupported = maybeIcebergSparkTableClass.isDefined
 
   def getDynamicPartitionColsFromIcebergTable(
       table: NamedRelation,
@@ -55,7 +55,7 @@ object IcebergRepartitionUtils {
   }
 
   private def isIcebergSparkTable(table: Table) =
-    IcebergSparkTableClass.isDefined && IcebergSparkTableClass.get.isInstance(table)
+    maybeIcebergSparkTableClass.isDefined && maybeIcebergSparkTableClass.get.isInstance(table)
 
   private def shouldApplyToIcebergTable(table: Table): Boolean = {
     table match {

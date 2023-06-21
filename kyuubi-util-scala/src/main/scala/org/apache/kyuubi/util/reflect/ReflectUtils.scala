@@ -35,9 +35,23 @@ object ReflectUtils {
   def isClassLoadable(
       className: String,
       cl: ClassLoader = Thread.currentThread().getContextClassLoader): Boolean =
-    Try {
-      DynClasses.builder().loader(cl).impl(className).buildChecked()
-    }.isSuccess
+    loadClassOpt(className, cl).isDefined
+
+  /**
+   * Load the class with the given name
+   * @param className the class name
+   * @param cl the class loader
+   * @tparam T the expected return parent class type
+   * @return
+   */
+  def loadClassOpt[T](
+      className: String,
+      cl: ClassLoader = Thread.currentThread().getContextClassLoader): Option[Class[_ <: T]] = Try {
+    DynClasses.builder().loader(cl).impl(className).buildChecked()
+  } match {
+    case Success(clazz) => Some(clazz)
+    case _ => None
+  }
 
   /**
    * get the field value of the given object
