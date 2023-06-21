@@ -37,22 +37,22 @@ object IcebergRepartitionUtils {
       table: NamedRelation,
       query: LogicalPlan): Option[Seq[Attribute]] = {
     if (!isIcebergSupported) {
-      None
-    } else {
-      invokeAsOpt[Table](table, "table") match {
-        case Some(destIcebergTable) if shouldApplyToIcebergTable(destIcebergTable) =>
-          // destIcebergTable: org.apache.iceberg.spark.source.SparkTable
-          val partitionCols = invokeAs[Array[AnyRef]](destIcebergTable, "partitioning")
-          val partitionColNames = partitionCols.map(col => {
-            val ref = invokeAs[AnyRef](col, "ref")
-            val refName = invokeAs[Iterable[String]](ref, "parts").mkString(".")
-            refName
-          })
-          val dynamicPartitionColumns =
-            query.output.attrs.filter(attr => partitionColNames.contains(attr.name))
-          Some(dynamicPartitionColumns)
-        case _ => None
-      }
+      return None
+    }
+
+    invokeAsOpt[Table](table, "table") match {
+      case Some(destIcebergTable) if shouldApplyToIcebergTable(destIcebergTable) =>
+        // destIcebergTable: org.apache.iceberg.spark.source.SparkTable
+        val partitionCols = invokeAs[Array[AnyRef]](destIcebergTable, "partitioning")
+        val partitionColNames = partitionCols.map(col => {
+          val ref = invokeAs[AnyRef](col, "ref")
+          val refName = invokeAs[Iterable[String]](ref, "parts").mkString(".")
+          refName
+        })
+        val dynamicPartitionColumns =
+          query.output.attrs.filter(attr => partitionColNames.contains(attr.name))
+        Some(dynamicPartitionColumns)
+      case _ => None
     }
   }
 
