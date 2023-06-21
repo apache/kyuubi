@@ -45,19 +45,14 @@ object IcebergRepartitionUtils {
           None
         } else {
           val partitionCols = invokeAs[Array[AnyRef]](destIcebergTable, "partitioning")
-          if (partitionCols.isEmpty) {
-            // use first column of output as repartition column for non-partitioned table
-            query.output.headOption.map(Seq(_))
-          } else {
-            val partitionNames = partitionCols.map(col => {
-              val ref = invokeAs[AnyRef](col, "ref")
-              val refName = invokeAs[Iterable[String]](ref, "parts").mkString(".")
-              refName
-            })
-            val dynamicPartitionColumns =
-              query.output.attrs.filter(attr => partitionNames.contains(attr.name))
-            Some(dynamicPartitionColumns)
-          }
+          val partitionColNames = partitionCols.map(col => {
+            val ref = invokeAs[AnyRef](col, "ref")
+            val refName = invokeAs[Iterable[String]](ref, "parts").mkString(".")
+            refName
+          })
+          val dynamicPartitionColumns =
+            query.output.attrs.filter(attr => partitionColNames.contains(attr.name))
+          Some(dynamicPartitionColumns)
         }
       } catch {
         case _: Exception => None
