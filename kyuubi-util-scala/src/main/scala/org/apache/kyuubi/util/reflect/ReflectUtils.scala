@@ -34,9 +34,8 @@ object ReflectUtils {
    */
   def isClassLoadable(
       className: String,
-      cl: ClassLoader = Thread.currentThread().getContextClassLoader): Boolean = {
+      cl: ClassLoader = Thread.currentThread().getContextClassLoader): Boolean =
     loadClassOpt[Object](className, cl).isDefined
-  }
 
   /**
    * Load the class with the given name
