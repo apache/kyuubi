@@ -33,13 +33,14 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
     val queryString = getQueryString(request)
     var targetURL = "/no-ui-error"
     extractTargetAddress(requestURI).foreach { case (host, port) =>
-      val targetURI = requestURI.stripPrefix(s"/engine-ui/$host:$port") match {
-        // for some reason, the proxy can not handle redirect well, as a workaround,
-        // we simulate the Spark UI redirection behavior and forcibly rewrite the
-        // empty URI to the Spark Jobs page.
-        case "" | "/" => "/jobs/" + queryString
-        case path => path + queryString
-      }
+      val targetURI =
+        (requestURI.stripPrefix(s"/engine-ui/$host:$port") match {
+          // for some reason, the proxy can not handle redirect well, as a workaround,
+          // we simulate the Spark UI redirection behavior and forcibly rewrite the
+          // empty URI to the Spark Jobs page.
+          case "" | "/" => "/jobs/"
+          case path => path
+        }) + queryString
       targetURL = new URL("http", host, port, targetURI).toString
     }
     debug(s"rewrite $requestURL => $targetURL")
