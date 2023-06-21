@@ -22,6 +22,7 @@ import java.util.{Map => JMap}
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.connector.catalog.Table
 
 import org.apache.kyuubi.util.reflect.DynClasses
 import org.apache.kyuubi.util.reflect.ReflectUtils._
@@ -38,7 +39,7 @@ object IcebergRepartitionUtils {
     if (!isIcebergSupported) {
       None
     } else {
-      invokeAsOpt[AnyRef](table, "table") match {
+      invokeAsOpt[Table](table, "table") match {
         case Some(destIcebergTable) if shouldApplyToIcebergTable(destIcebergTable) =>
           // destIcebergTable: org.apache.iceberg.spark.source.SparkTable
           val partitionCols = invokeAs[Array[AnyRef]](destIcebergTable, "partitioning")
@@ -55,9 +56,12 @@ object IcebergRepartitionUtils {
     }
   }
 
-  private def shouldApplyToIcebergTable(table: AnyRef): Boolean = {
+  private def isIcebergSparkTable(table: Table) =
+    IcebergSparkTableClass.isDefined && IcebergSparkTableClass.get.isInstance(table)
+
+  private def shouldApplyToIcebergTable(table: Table): Boolean = {
     table match {
-      case icebergTable if IcebergSparkTableClass.get.isInstance(table) =>
+      case icebergTable if isIcebergSparkTable(icebergTable) =>
         val properties = invokeAs[JMap[String, String]](icebergTable, "properties")
         val isUseTableDistributionAndOrdering =
           "true".equalsIgnoreCase(properties.get("use-table-distribution-and-ordering"))
