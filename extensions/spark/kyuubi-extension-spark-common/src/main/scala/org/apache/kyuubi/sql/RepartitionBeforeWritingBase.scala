@@ -25,6 +25,8 @@ import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationComm
 import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable, OptimizedCreateHiveTableAsSelectCommand}
 import org.apache.spark.sql.internal.StaticSQLConf
 
+import org.apache.kyuubi.sql.repartition.IcebergRepartitionUtils.getDynamicPartitionColsFromIcebergTable
+
 trait RepartitionBuilder extends Rule[LogicalPlan] with RepartitionBeforeWriteHelper {
   def buildRepartition(
       dynamicPartitionColumns: Seq[Attribute],
@@ -58,6 +60,29 @@ abstract class RepartitionBeforeWritingDatasourceBase extends RepartitionBuilder
       val dynamicPartitionColumns =
         query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
       c.copy(query = buildRepartition(dynamicPartitionColumns, query))
+
+    case o @ OverwritePartitionsDynamic(table, query, _, _, _) =>
+      getDynamicPartitionColsFromIcebergTable(table, query) match {
+        case Some(dynamicPartitionColumns) =>
+          o.copy(query = buildRepartition(dynamicPartitionColumns, query))
+        case None => o
+      }
+
+    case o @ OverwriteByExpression(table, _, query, _, _, _)
+        if query.resolved && canInsertRepartitionByExpression(query) =>
+      getDynamicPartitionColsFromIcebergTable(table, query) match {
+        case Some(dynamicPartitionColumns) =>
+          o.copy(query = buildRepartition(dynamicPartitionColumns, query))
+        case None => o
+      }
+
+//    case a @ AppendData(table, query, _, _, _)
+//        if query.resolved && canInsertRepartitionByExpression(query) =>
+//      getDynamicPartitionColsFromIcebergTable(table, query) match {
+//        case Some(dynamicPartitionColumns) =>
+//          a.copy(query = buildRepartition(dynamicPartitionColumns, query))
+//        case None => a
+//      }
 
     case u @ Union(children, _, _) =>
       u.copy(children = children.map(addRepartition))
