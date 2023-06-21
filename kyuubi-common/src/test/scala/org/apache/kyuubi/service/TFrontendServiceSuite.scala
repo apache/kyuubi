@@ -543,7 +543,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
         assert(session.lastAccessTime > lastAccessTime)
       }
-      info("operation is terminated")
+      info("session is terminated")
       assert(sessionManager.getOpenSessionCount === 0)
     }
   }
