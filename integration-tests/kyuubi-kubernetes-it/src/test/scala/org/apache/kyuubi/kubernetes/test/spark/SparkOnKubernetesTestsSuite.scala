@@ -153,7 +153,9 @@ class KyuubiOperationKubernetesClusterClientModeSuite
       batchRequest)
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val state = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+      val state = k8sOperation.getApplicationInfoByTag(
+        appMgrInfo,
+        sessionHandle.identifier.toString)
       assert(state.id != null)
       assert(state.name != null)
       assert(state.state == RUNNING)
@@ -165,7 +167,9 @@ class KyuubiOperationKubernetesClusterClientModeSuite
     assert(killResponse._1)
     assert(killResponse._2 startsWith "Succeeded to terminate:")
 
-    val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+    val appInfo = k8sOperation.getApplicationInfoByTag(
+      appMgrInfo,
+      sessionHandle.identifier.toString)
     assert(appInfo == ApplicationInfo(null, null, NOT_FOUND))
 
     val failKillResponse = k8sOperation.killApplicationByTag(
@@ -219,7 +223,9 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     // wait for driver pod start
     eventually(timeout(3.minutes), interval(5.second)) {
       // trigger k8sOperation init here
-      val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+      val appInfo = k8sOperation.getApplicationInfoByTag(
+        appMgrInfo,
+        sessionHandle.identifier.toString)
       assert(appInfo.state == RUNNING)
       assert(appInfo.name.startsWith(driverPodNamePrefix))
     }
@@ -232,7 +238,9 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     assert(killResponse._2 contains sessionHandle.identifier.toString)
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+      val appInfo = k8sOperation.getApplicationInfoByTag(
+        appMgrInfo,
+        sessionHandle.identifier.toString)
       // We may kill engine start but not ready
       // An EOF Error occurred when the driver was starting
       assert(appInfo.state == FAILED || appInfo.state == NOT_FOUND)

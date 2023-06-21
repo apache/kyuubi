@@ -52,7 +52,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     }.start()
 
     eventually(Timeout(10.seconds)) {
-      val desc1 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
+      val desc1 = jps.getApplicationInfoByTag(ApplicationManagerInfo(None), "sun.tools.jstat.Jstat")
       assert(desc1.id != null)
       assert(desc1.name != null)
       assert(desc1.state == ApplicationState.RUNNING)
@@ -61,7 +61,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     jps.killApplicationByTag(ApplicationManagerInfo(None), "sun.tools.jstat.Jstat")
 
     eventually(Timeout(10.seconds)) {
-      val desc2 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
+      val desc2 = jps.getApplicationInfoByTag(ApplicationManagerInfo(None), "sun.tools.jstat.Jstat")
       assert(desc2.id == null)
       assert(desc2.name == null)
       assert(desc2.state == ApplicationState.NOT_FOUND)
@@ -80,7 +80,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
 
     assert(jps.isSupported(ApplicationManagerInfo(builder.clusterManager())))
     eventually(Timeout(10.seconds)) {
-      val desc1 = jps.getApplicationInfoByTag(id)
+      val desc1 = jps.getApplicationInfoByTag(ApplicationManagerInfo(None), id)
       assert(desc1.id != null)
       assert(desc1.name != null)
       assert(desc1.state == ApplicationState.RUNNING)
@@ -90,7 +90,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     }
 
     eventually(Timeout(10.seconds)) {
-      val desc2 = jps.getApplicationInfoByTag(id)
+      val desc2 = jps.getApplicationInfoByTag(ApplicationManagerInfo(None), id)
       assert(desc2.id == null)
       assert(desc2.name == null)
       assert(desc2.state == ApplicationState.NOT_FOUND)

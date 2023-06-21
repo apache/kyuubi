@@ -86,7 +86,7 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
       submitTime: Option[Long] = None): Option[ApplicationInfo] = {
     val operation = operations.find(_.isSupported(appMgrInfo))
     operation match {
-      case Some(op) => Some(op.getApplicationInfoByTag(tag, submitTime))
+      case Some(op) => Some(op.getApplicationInfoByTag(appMgrInfo, tag, submitTime))
       case None => None
     }
   }
