@@ -29,8 +29,7 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object IcebergRepartitionUtils {
   private lazy val isIcebergSupported = IcebergSparkTableClass.isDefined
-
-  private lazy val IcebergSparkTableClass: Option[Class[_]] =
+  private lazy val IcebergSparkTableClass: Option[Class[_ <: Table]] =
     Option(DynClasses.builder().impl("org.apache.iceberg.spark.source.SparkTable").orNull().build())
 
   def getDynamicPartitionColsFromIcebergTable(
