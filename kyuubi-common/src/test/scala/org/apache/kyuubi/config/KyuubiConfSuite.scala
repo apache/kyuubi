@@ -213,10 +213,12 @@ class KyuubiConfSuite extends KyuubiFunSuite {
 
     val kubernetesConf1 = kyuubiConf.getKubernetesConf(Some("28"), Some("ns1"))
     assert(kubernetesConf1.get(KyuubiConf.KUBERNETES_MASTER) == "k8s://master")
-    assert(kubernetesConf1.get(KyuubiConf.KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE) == "/var/run/secrets/kubernetes.io/token.ns1")
+    assert(kubernetesConf1.get(KyuubiConf.KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE) ==
+      "/var/run/secrets/kubernetes.io/token.ns1")
 
     val kubernetesConf2 = kyuubiConf.getKubernetesConf(Some("28"), Some("ns2"))
     assert(kubernetesConf2.get(KyuubiConf.KUBERNETES_MASTER) == "k8s://master")
-    assert(kubernetesConf2.get(KyuubiConf.KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE) == "/var/run/secrets/kubernetes.io/token.ns2")
+    assert(kubernetesConf2.get(KyuubiConf.KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE) ==
+      "/var/run/secrets/kubernetes.io/token.ns2")
   }
 }
