@@ -56,11 +56,15 @@ trait ApplicationOperation {
   /**
    * Get the engine/application status by the unique application tag
    *
+   * @param appMgrInfo the application manager information
    * @param tag the unique application tag for engine instance.
    * @param submitTime engine submit to resourceManager time
    * @return [[ApplicationInfo]]
    */
-  def getApplicationInfoByTag(tag: String, submitTime: Option[Long] = None): ApplicationInfo
+  def getApplicationInfoByTag(
+      appMgrInfo: ApplicationManagerInfo,
+      tag: String,
+      submitTime: Option[Long] = None): ApplicationInfo
 }
 
 object ApplicationState extends Enumeration {

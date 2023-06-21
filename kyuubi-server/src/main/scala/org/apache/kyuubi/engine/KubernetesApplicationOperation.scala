@@ -117,7 +117,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
     // TODO add deploy mode to check whether is supported
     kyuubiConf != null &&
-      appMgrInfo.resourceManager.exists(_.toLowerCase(Locale.ROOT).startsWith("k8s"))
+    appMgrInfo.resourceManager.exists(_.toLowerCase(Locale.ROOT).startsWith("k8s"))
   }
 
   override def killApplicationByTag(
@@ -151,12 +151,17 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  override def getApplicationInfoByTag(tag: String, submitTime: Option[Long]): ApplicationInfo = {
+  override def getApplicationInfoByTag(
+      appMgrInfo: ApplicationManagerInfo,
+      tag: String,
+      submitTime: Option[Long]): ApplicationInfo = {
     if (kyuubiConf == null) {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
     }
     debug(s"Getting application info from Kubernetes cluster by $tag tag")
     try {
+      // need to initialize the kubernetes client if not exists
+      getOrCreateKubernetesClient(appMgrInfo.kubernetesInfo)
       val appInfo = appInfoStore.getOrDefault(tag, ApplicationInfo.NOT_FOUND)
       (appInfo.state, submitTime) match {
         // Kyuubi should wait second if pod is not be created
