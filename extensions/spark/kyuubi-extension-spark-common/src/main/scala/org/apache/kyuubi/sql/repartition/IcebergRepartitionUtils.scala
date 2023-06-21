@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Table
+import org.apache.spark.sql.connector.expressions.{NamedReference, Transform}
 
 import org.apache.kyuubi.util.reflect.DynClasses
 import org.apache.kyuubi.util.reflect.ReflectUtils._
@@ -41,12 +42,10 @@ object IcebergRepartitionUtils {
 
     invokeAsOpt[Table](table, "table") match {
       case Some(destIcebergTable) if shouldApplyToIcebergTable(destIcebergTable) =>
-        // destIcebergTable: org.apache.iceberg.spark.source.SparkTable
-        val partitionCols = invokeAs[Array[AnyRef]](destIcebergTable, "partitioning")
+        val partitionCols = invokeAs[Array[_ <: Transform]](destIcebergTable, "partitioning")
         val partitionColNames = partitionCols.map(col => {
-          val ref = invokeAs[AnyRef](col, "ref")
-          val refName = invokeAs[Iterable[String]](ref, "parts").mkString(".")
-          refName
+          val ref = invokeAs[NamedReference](col, "ref")
+          ref.fieldNames().mkString(".")
         })
         val dynamicPartitionColumns =
           query.output.attrs.filter(attr => partitionColNames.contains(attr.name))
