@@ -19,9 +19,12 @@ package org.apache.kyuubi.engine.spark
 
 import java.io.{File, IOException}
 import java.nio.file.Paths
+
 import scala.collection.mutable.ArrayBuffer
+
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.security.UserGroupInformation
+
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
@@ -200,8 +203,7 @@ class SparkProcessBuilder(
     ApplicationManagerInfo(
       clusterManager(),
       kubernetesContext(),
-      kubernetesNamespace()
-    )
+      kubernetesNamespace())
   }
 
   override def clusterManager(): Option[String] = {
