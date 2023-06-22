@@ -19,15 +19,12 @@ package org.apache.kyuubi.engine.spark
 
 import java.io.{File, IOException}
 import java.nio.file.Paths
-
 import scala.collection.mutable.ArrayBuffer
-
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.security.UserGroupInformation
-
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
@@ -199,15 +196,23 @@ class SparkProcessBuilder(
     }
   }
 
+  override def appMgrInfo(): ApplicationManagerInfo = {
+    ApplicationManagerInfo(
+      clusterManager(),
+      kubernetesContext(),
+      kubernetesNamespace()
+    )
+  }
+
   override def clusterManager(): Option[String] = {
     conf.getOption(MASTER_KEY).orElse(defaultsConf.get(MASTER_KEY))
   }
 
-  override def kubernetesContext(): Option[String] = {
+  def kubernetesContext(): Option[String] = {
     conf.getOption(KUBERNETES_CONTEXT_KEY).orElse(defaultsConf.get(KUBERNETES_CONTEXT_KEY))
   }
 
-  override def kubernetesNamespace(): Option[String] = {
+  def kubernetesNamespace(): Option[String] = {
     conf.getOption(KUBERNETES_NAMESPACE_KEY).orElse(defaultsConf.get(KUBERNETES_NAMESPACE_KEY))
   }
 

@@ -29,7 +29,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
 import org.apache.kyuubi.operation.log.OperationLog
 
@@ -71,6 +71,10 @@ class FlinkProcessBuilder(
       case Some("yarn-application") => Some("yarn")
       case _ => None
     }
+  }
+
+  override def appMgrInfo(): ApplicationManagerInfo = {
+    ApplicationManagerInfo(clusterManager())
   }
 
   override protected val commands: Array[String] = {

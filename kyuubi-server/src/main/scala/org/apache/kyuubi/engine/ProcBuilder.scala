@@ -341,12 +341,7 @@ trait ProcBuilder {
 
   def clusterManager(): Option[String] = None
 
-  def kubernetesContext(): Option[String] = None
-
-  def kubernetesNamespace(): Option[String] = None
-
-  def appMgrInfo(): ApplicationManagerInfo =
-    ApplicationManagerInfo(clusterManager(), kubernetesContext(), kubernetesNamespace())
+  def appMgrInfo(): ApplicationManagerInfo = ApplicationManagerInfo(None)
 }
 
 object ProcBuilder extends Logging {
