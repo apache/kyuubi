@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.operation.log.OperationLog
 
 class SparkBatchProcessBuilder(

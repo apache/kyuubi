@@ -289,10 +289,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             case e: KyuubiRestException =>
               error(s"Error redirecting get batch[$batchId] to ${metadata.kyuubiInstance}", e)
               val batchAppStatus = sessionManager.applicationManager.getApplicationInfo(
-                ApplicationManagerInfo(
-                  metadata.clusterManager,
-                  metadata.kubernetesContext,
-                  metadata.kubernetesNamespace),
+                metadata.appMgrInfo,
                 batchId,
                 // prevent that the batch be marked as terminated if application state is NOT_FOUND
                 Some(metadata.engineOpenTime).filter(_ > 0).orElse(Some(System.currentTimeMillis)))
@@ -429,10 +426,6 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
         checkPermission(userName, metadata.username)
-        val appMgrInfo = ApplicationManagerInfo(
-          metadata.clusterManager,
-          metadata.kubernetesContext,
-          metadata.kubernetesNamespace)
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
         } else if (metadata.kyuubiInstance != fe.connectionUrl) {
@@ -443,12 +436,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           } catch {
             case e: KyuubiRestException =>
               error(s"Error redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}", e)
-              val (killed, msg) = forceKill(appMgrInfo, batchId)
+              val (killed, msg) = forceKill(metadata.appMgrInfo, batchId)
               new CloseBatchResponse(killed, if (killed) msg else Utils.stringifyException(e))
           }
         } else { // should not happen, but handle this for safe
           warn(s"Something wrong on deleting batch[$batchId], try forcibly killing application")
-          val (killed, msg) = forceKill(appMgrInfo, batchId)
+          val (killed, msg) = forceKill(metadata.appMgrInfo, batchId)
           new CloseBatchResponse(killed, msg)
         }
       }.getOrElse {

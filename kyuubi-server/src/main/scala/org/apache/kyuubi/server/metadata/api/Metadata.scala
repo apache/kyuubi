@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.server.metadata.api
 
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.ApplicationManagerInfo
 import org.apache.kyuubi.session.SessionType.SessionType
 
 /**
@@ -41,8 +43,6 @@ import org.apache.kyuubi.session.SessionType.SessionType
  * @param createTime the create time.
  * @param engineType the engine type.
  * @param clusterManager the engine cluster manager.
- * @param kubernetesContext the kubernetes context
- * @param kubernetesNamespace the kubernetes namespace
  * @param engineOpenTime the engine open time
  * @param engineId the engine id.
  * @param engineName the engine name.
@@ -68,8 +68,6 @@ case class Metadata(
     createTime: Long = 0L,
     engineType: String = null,
     clusterManager: Option[String] = None,
-    kubernetesContext: Option[String] = None,
-    kubernetesNamespace: Option[String] = None,
     engineOpenTime: Long = 0L,
     engineId: String = null,
     engineName: String = null,
@@ -77,4 +75,11 @@ case class Metadata(
     engineState: String = null,
     engineError: Option[String] = None,
     endTime: Long = 0L,
-    peerInstanceClosed: Boolean = false)
+    peerInstanceClosed: Boolean = false) {
+  def appMgrInfo: ApplicationManagerInfo = {
+    ApplicationManagerInfo(
+      clusterManager,
+      requestConf.get(KyuubiConf.KUBERNETES_CONTEXT.key),
+      requestConf.get(KyuubiConf.KUBERNETES_NAMESPACE.key))
+  }
+}
