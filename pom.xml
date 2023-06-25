@@ -282,8 +282,7 @@
             --add-opens=java.base/sun.security.x509=ALL-UNNAMED
             --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
             -Djdk.reflect.useDirectMethodHandle=false
-            -Dio.netty.tryReflectionSetAccessible=true
-        </extraJavaTestArgs>
+            -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
         <debugArgLine>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</debugArgLine>
     </properties>
 
@@ -1723,13 +1722,11 @@
                             <log4j2.configurationFile>src/test/resources/log4j2-test.xml</log4j2.configurationFile>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>1g</spark.driver.memory>
-                            <kyuubi.metrics.json.location>${project.build.directory}/metrics
-                            </kyuubi.metrics.json.location>
+                            <kyuubi.metrics.json.location>${project.build.directory}/metrics</kyuubi.metrics.json.location>
                             <kyuubi.frontend.bind.host>localhost</kyuubi.frontend.bind.host>
                             <sun.security.krb5.debug>false</sun.security.krb5.debug>
                             <kyuubi.operation.log.dir.root>target/server_operation_logs</kyuubi.operation.log.dir.root>
-                            <kyuubi.engine.operation.log.dir.root>target/engine_operation_logs
-                            </kyuubi.engine.operation.log.dir.root>
+                            <kyuubi.engine.operation.log.dir.root>target/engine_operation_logs</kyuubi.engine.operation.log.dir.root>
                         </systemProperties>
                         <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>
                         <tagsToInclude>${maven.plugin.scalatest.include.tags}</tagsToInclude>
@@ -2186,8 +2183,7 @@
                 <delta.version>2.4.0</delta.version>
                 <spark.version>3.4.1</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest
-                </maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
@@ -2195,9 +2191,7 @@
             <id>spark-master</id>
             <properties>
                 <spark.version>3.5.0-SNAPSHOT</spark.version>
-                <maven.plugin.scalatest.exclude.tags>
-                    org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PySparkTest
-                </maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <repositories>
                 <repository>
