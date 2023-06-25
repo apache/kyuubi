@@ -66,14 +66,7 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
     }
 
   def getQueryString(request: HttpServletRequest): String = {
-    val result = new StringBuilder()
-    val queryString = request.getQueryString()
-    if (queryString != null && queryString.length() > 0) {
-      info(queryString)
-      result.append("?")
-      result.append(queryString)
-    }
-    result.toString()
+    val queryString = request.getQueryString
+    if (StringUtils.isNotEmpty(queryString)) s"?$queryString" else ""
   }
-
 }
