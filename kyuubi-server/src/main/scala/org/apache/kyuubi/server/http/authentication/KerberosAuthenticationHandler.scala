@@ -46,7 +46,7 @@ class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
   override val authScheme: AuthScheme = AuthSchemes.NEGOTIATE
 
   override def authenticationSupported: Boolean = {
-    !keytab.isEmpty && !principal.isEmpty
+    keytab.nonEmpty && principal.nonEmpty
   }
 
   override def init(conf: KyuubiConf): Unit = {
@@ -141,7 +141,7 @@ class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
         GSSCredential.ACCEPT_ONLY)
       gssContext = gssManager.createContext(gssCreds)
       val serverToken = gssContext.acceptSecContext(clientToken, 0, clientToken.length)
-      if (serverToken != null && serverToken.length > 0) {
+      if (serverToken != null && serverToken.nonEmpty) {
         val authenticate = Base64.getEncoder.encodeToString(serverToken)
         response.setHeader(WWW_AUTHENTICATE, s"$NEGOTIATE $authenticate")
       }

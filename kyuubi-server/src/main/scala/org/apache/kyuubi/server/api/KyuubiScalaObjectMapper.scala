@@ -19,11 +19,13 @@ package org.apache.kyuubi.server.api
 
 import javax.ws.rs.ext.ContextResolver
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
 class KyuubiScalaObjectMapper extends ContextResolver[ObjectMapper] {
-  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
+  private val mapper = new ObjectMapper()
+    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    .registerModule(DefaultScalaModule)
 
   override def getContext(aClass: Class[_]): ObjectMapper = mapper
 }

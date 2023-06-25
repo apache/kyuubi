@@ -17,6 +17,8 @@
 Kyuubi Spark AuthZ Plugin
 =========================
 
+.. versionadded:: 1.6.0
+
 .. toctree::
     :maxdepth: 2
 

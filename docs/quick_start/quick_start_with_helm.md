@@ -1,106 +1,120 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
+# Getting Started with Helm
 
-# Getting Started With Kyuubi on kubernetes
+## Running Kyuubi with Helm
 
-## Running kyuubi with helm
+[Helm](https://helm.sh/) is the package manager for Kubernetes, it can be used to find, share, and use software built for Kubernetes.
 
-[Helm](https://helm.sh/) is the package manager for Kubernetes，it can be used to find, share, and use software built for Kubernetes.
+### Install Helm
 
-### Get helm and Install
-
-Please go to [Install Helm](https://helm.sh/docs/intro/install/) page to get and install an appropriate release version for yourself.
+Please go to [Installing Helm](https://helm.sh/docs/intro/install/) page to get and install an appropriate release version for yourself.
 
 ### Get Kyuubi Started
 
-#### [Optional] Create namespace on kubernetes
-```bash
-create ns kyuubi
+#### Install the chart
+
+```shell
+helm install kyuubi ${KYUUBI_HOME}/charts/kyuubi -n kyuubi --create-namespace
 ```
 
-#### Get kyuubi started
-```bash
-helm install kyuubi-helm ${KYUUBI_HOME}/docker/helm -n ${namespace_name}
-```
-It will print variables and the way to get kyuubi expose ip and port.
-```bash
-NAME: kyuubi-helm
-LAST DEPLOYED: Wed Oct 20 15:22:47 2021
+It will print release info with notes, including the ways to get Kyuubi accessed within Kubernetes cluster and exposed externally depending on the configuration provided.
+
+```shell
+NAME: kyuubi
+LAST DEPLOYED: Sat Feb 11 20:59:00 2023
 NAMESPACE: kyuubi
 STATUS: deployed
 REVISION: 1
 TEST SUITE: None
 NOTES:
-Get kyuubi expose URL by running these commands:
-  export NODE_PORT=$(kubectl get --namespace kyuubi -o jsonpath="{.spec.ports[0].nodePort}" services kyuubi-svc)
-  export NODE_IP=$(kubectl get nodes --namespace kyuubi -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo $NODE_IP:$NODE_PORT
+The chart has been installed!
+
+In order to check the release status, use:
+  helm status kyuubi -n kyuubi
+    or for more detailed info
+  helm get all kyuubi -n kyuubi
+
+************************
+******* Services *******
+************************
+THRIFT_BINARY:
+- To access kyuubi-thrift-binary service within the cluster, use the following URL:
+    kyuubi-thrift-binary.kyuubi.svc.cluster.local
+- To access kyuubi-thrift-binary service from outside the cluster for debugging, run the following command:
+    kubectl port-forward svc/kyuubi-thrift-binary 10009:10009 -n kyuubi
+  and use 127.0.0.1:10009
 ```
 
-#### Using hive beeline  
-[Using Hive Beeline](./quick_start.html#using-hive-beeline) to opening a connection.
+#### Uninstall the chart
 
-#### Remove kyuubi
-```bash
-helm uninstall kyuubi-helm -n ${namespace_name}
+```shell
+helm uninstall kyuubi -n kyuubi
 ```
 
-#### Edit server config
+#### Configure chart release
 
-Modify `values.yaml` under `${KYUUBI_HOME}/docker/helm`:
+Specify configuration properties using `--set` flag.
+For example, to install the chart with `replicaCount` set to `1`, use the following command:
+
+```shell
+helm install kyuubi ${KYUUBI_HOME}/charts/kyuubi -n kyuubi --create-namespace --set replicaCount=1
+```
+
+Also, custom values file can be used to override default property values. For example, create `myvalues.yaml` to specify `replicaCount` and `resources`:
+
 ```yaml
-# Kyuubi server numbers
-replicaCount: 2
+replicaCount: 1
 
-image:
-  repository: apache/kyuubi
-  pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "master-snapshot"
-
-server:
-  bind:
-    host: 0.0.0.0
-    port: 10009
-  conf:
-    mountPath: /opt/kyuubi/conf
-
-service:
-  type: NodePort
-  # The default port limit of kubernetes is 30000-32767
-  # to change:
-  #   vim kube-apiserver.yaml (usually under path: /etc/kubernetes/manifests/)
-  #   add or change line 'service-node-port-range=1-32767' under kube-apiserver
-  port: 30009
+resources:
+  requests:
+    cpu: 2
+    memory: 4Gi
+  limits:
+    cpu: 4
+    memory: 10Gi
 ```
 
-#### Get server log  
-List all server pods:
-```bash
-kubectl get po -n ${namespace_name}
+and use it to override default chart values with `-f` flag:
+
+```shell
+helm install kyuubi ${KYUUBI_HOME}/charts/kyuubi -n kyuubi --create-namespace -f myvalues.yaml
 ```
-The server pods will print:
-```text
-NAME                             READY   STATUS    RESTARTS   AGE
-kyuubi-server-585d8944c5-m7j5s   1/1     Running   0          30m
-kyuubi-server-32sdsa1245-2d2sj   1/1     Running   0          30m
+
+#### Access logs
+
+List all pods in the release namespace:
+
+```shell
+kubectl get pod -n kyuubi
 ```
-then, use pod name to get logs:
-```bash
-kubectl -n ${namespace_name} logs kyuubi-server-585d8944c5-m7j5s
+
+Find Kyuubi pods:
+
+```shell
+NAME                      READY   STATUS    RESTARTS   AGE
+kyuubi-5b6d496c98-kbhws   1/1     Running   0          38m
+kyuubi-5b6d496c98-lqldk   1/1     Running   0          38m
 ```
+
+Then, use pod name to get logs:
+
+```shell
+kubectl logs kyuubi-5b6d496c98-kbhws -n kyuubi
+```
+

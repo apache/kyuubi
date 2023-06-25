@@ -1,24 +1,23 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Monitoring Kyuubi - Logging System
 
-Kyuubi uses [Apache Log4j](https://logging.apache.org/) for logging.
+Kyuubi uses [Apache Log4j2](https://logging.apache.org/log4j/2.x/) for logging since version v1.5.0. For versions v1.4.1 and below, it uses [Apache Log4j](https://logging.apache.org).
 
 In general, there are mainly three components in the Kyuubi architecture that will produce component-oriented logs to help you trace breadcrumbs for SQL workloads against Kyuubi.
 
@@ -38,14 +37,14 @@ Logs of Kyuubi Server show us the activities of the server instance including ho
 
 #### Basic Configurations
 
-You can configure it by adding a `log4j.properties` file in the `$KYUUBI_HOME/conf` directory.
-One way to start is to make a copy of the existing `log4j.properties.template` located there.
+You can configure it by adding a `log4j2.xml` file in the `$KYUUBI_HOME/conf` directory.
+One way to start is to make a copy of the existing `log4j2.xml.template` located there.
 
 For example,
 
 ```shell
 # cd $KYUUBI_HOME
-cp conf/log4j.properties.template conf/log4j.properties
+cp conf/log4j2.xml.template conf/log4j2.xml
 ```
 
 With or without the above step, by default the server logging will redirect the logs to a file named `kyuubi-${env:USER}-org.apache.kyuubi.server.KyuubiServer-${env:HOSTNAME}.out` under the directory of `$KYUUBI_HOME/logs`.
@@ -105,20 +104,28 @@ Starting org.apache.kyuubi.server.KyuubiServer, logging to /Users/kentyao/tmp/ky
 
 `KYUUBI_MAX_LOG_FILES` controls how many log files will be remained after a Kyuubi server reboots.
 
-#### Custom Log4j Settings
+#### Custom Log4j2 Settings
 
-Taking control of `$KYUUBI_HOME/conf/log4j.properties` will also give us the ability of customizing server logging as we want.
+Taking control of `$KYUUBI_HOME/conf/log4j2.xml` will also give us the ability of customizing server logging as we want.
 
 For example, we can disable the console appender and enable the file appender like,
 
-```properties
-log4j.rootCategory=INFO, FA
-log4j.appender.FA=org.apache.log4j.FileAppender
-log4j.appender.FA.append=false
-log4j.appender.FA.file=log/dummy.log
-log4j.appender.FA.layout=org.apache.log4j.PatternLayout
-log4j.appender.FA.layout.ConversionPattern=%d{HH:mm:ss.SSS} %t %p %c{2}: %m%n
-log4j.appender.FA.Threshold=DEBUG
+```xml
+<Configuration status="INFO">
+  <Appenders>
+    <File name="fa" fileName="log/dummy.log">
+      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c: %m%n"/>
+      <Filters>
+        <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
+      </Filters>
+    </File>
+  </Appenders>
+  <Loggers>
+    <Root level="INFO">
+      <AppenderRef ref="fa"/>
+    </Root>
+  </Loggers>
+</Configuration>
 ```
 
 Then everything goes to `log/dummy.log`.
@@ -251,10 +258,12 @@ You will both get the final results and the corresponding operation logs telling
 +-------------------------------------------------+--------------------+
 1 row selected (0.341 seconds)
 ```
+
 ## Further Readings
 
 - [Monitoring Kyuubi - Events System](events.md)
 - [Monitoring Kyuubi - Server Metrics](metrics.md)
 - [Trouble Shooting](trouble_shooting.md)
 - Spark Online Documentation
-    - [Monitoring and Instrumentation](http://spark.apache.org/docs/latest/monitoring.html)
+  - [Monitoring and Instrumentation](https://spark.apache.org/docs/latest/monitoring.html)
+

@@ -23,7 +23,7 @@ class GetSchemas(
     session: Session,
     catalogName: String,
     schemaName: String)
-  extends KyuubiOperation(OperationType.GET_SCHEMAS, session) {
+  extends KyuubiOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

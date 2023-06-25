@@ -16,7 +16,7 @@
  */
 package org.apache.kyuubi.engine.jdbc.operation
 
-import org.apache.hive.service.rpc.thrift.TRowSet
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -24,11 +24,9 @@ import org.apache.kyuubi.engine.jdbc.dialect.{JdbcDialect, JdbcDialects}
 import org.apache.kyuubi.engine.jdbc.schema.{Row, Schema}
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.session.Session
 
-abstract class JdbcOperation(opType: OperationType, session: Session)
-  extends AbstractOperation(opType, session) {
+abstract class JdbcOperation(session: Session) extends AbstractOperation(session) {
 
   protected var schema: Schema = _
 
@@ -38,7 +36,7 @@ abstract class JdbcOperation(opType: OperationType, session: Session)
 
   protected lazy val dialect: JdbcDialect = JdbcDialects.get(conf)
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
@@ -56,8 +54,6 @@ abstract class JdbcOperation(opType: OperationType, session: Session)
     resultRowSet
   }
 
-  protected def toTRowSet(taken: Iterator[Row]): TRowSet
-
   override def cancel(): Unit = {
     cleanup(OperationState.CANCELED)
   }
@@ -70,7 +66,7 @@ abstract class JdbcOperation(opType: OperationType, session: Session)
     // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
     // could be thrown.
     case e: Throwable =>
-      state.synchronized {
+      withLockRequired {
         val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {
           val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")
@@ -88,4 +84,30 @@ abstract class JdbcOperation(opType: OperationType, session: Session)
         }
       }
   }
+
+  override protected def beforeRun(): Unit = {
+    setState(OperationState.PENDING)
+    setHasResultSet(true)
+  }
+
+  override protected def afterRun(): Unit = {}
+
+  protected def toTRowSet(taken: Iterator[Row]): TRowSet = {
+    val rowSetHelper = dialect.getRowSetHelper()
+    rowSetHelper.toTRowSet(
+      taken.toList.map(_.values),
+      schema.columns,
+      getProtocolVersion)
+  }
+
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
+    val schemaHelper = dialect.getSchemaHelper()
+    val tTableSchema = schemaHelper.toTTTableSchema(schema.columns)
+    val resp = new TGetResultSetMetadataResp
+    resp.setSchema(tTableSchema)
+    resp.setStatus(OK_STATUS)
+    resp
+  }
+
+  override def shouldRunAsync: Boolean = false
 }

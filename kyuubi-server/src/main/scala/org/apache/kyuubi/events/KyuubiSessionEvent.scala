@@ -18,7 +18,6 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.session.KyuubiSession
 
 /**
@@ -30,13 +29,15 @@ import org.apache.kyuubi.session.KyuubiSession
  * @param clientIP client ip address
  * @param serverIP A unique Kyuubi server id, e.g. kyuubi server ip address and port,
  *                 it is useful if has multi-instance Kyuubi Server
- * @param remoteSessionId remote engine session id
- * @param startTime session create time
  * @param conf session config
+ * @param eventTime the time when the event made
+ * @param startTime session create time
+ * @param remoteSessionId remote engine session id
+ * @param engineId engine id. For engine on yarn, it is applicationId.
  * @param openedTime session opened time
  * @param endTime session end time
  * @param totalOperations how many queries and meta calls
- * @param engineId engine id. For engine on yarn, it is applicationId.
+ * @param exception the session exception, such as the exception that occur when opening session
  */
 case class KyuubiSessionEvent(
     sessionId: String,
@@ -47,29 +48,30 @@ case class KyuubiSessionEvent(
     clientIP: String,
     serverIP: String,
     conf: Map[String, String],
+    eventTime: Long,
     startTime: Long,
     var remoteSessionId: String = "",
     var engineId: String = "",
     var openedTime: Long = -1L,
     var endTime: Long = -1L,
-    var totalOperations: Int = 0) extends KyuubiEvent {
+    var totalOperations: Int = 0,
+    var exception: Option[Throwable] = None) extends KyuubiEvent {
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 }
 
 object KyuubiSessionEvent {
   def apply(session: KyuubiSession): KyuubiSessionEvent = {
-    assert(KyuubiServer.kyuubiServer != null)
-    val serverIP = KyuubiServer.kyuubiServer.frontendServices.head.connectionUrl
     KyuubiSessionEvent(
-      session.handle.toString,
+      session.handle.identifier.toString,
       session.protocol.getValue,
       session.sessionType.toString,
       session.name.getOrElse(""),
       session.user,
       session.ipAddress,
-      serverIP,
+      session.connectionUrl,
       session.conf,
+      System.currentTimeMillis(),
       session.createTime)
   }
 }

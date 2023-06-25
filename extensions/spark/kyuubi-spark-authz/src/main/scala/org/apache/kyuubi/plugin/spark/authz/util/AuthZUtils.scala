@@ -17,41 +17,25 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
-import scala.util.{Failure, Success, Try}
+import java.nio.charset.StandardCharsets
+import java.security.{KeyFactory, PublicKey, Signature}
+import java.security.interfaces.ECPublicKey
+import java.security.spec.X509EncodedKeySpec
+import java.util.Base64
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.SPARK_VERSION
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.ranger.plugin.service.RangerBasePlugin
+import org.apache.spark.{SPARK_VERSION, SparkContext}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
+
+import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
+import org.apache.kyuubi.util.SemanticVersion
+import org.apache.kyuubi.util.reflect.DynConstructors
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 private[authz] object AuthZUtils {
-
-  /**
-   * fixme error handling need improve here
-   */
-  def getFieldVal[T](o: Any, name: String): T = {
-    Try {
-      val field = o.getClass.getDeclaredField(name)
-      field.setAccessible(true)
-      field.get(o)
-    } match {
-      case Success(value) => value.asInstanceOf[T]
-      case Failure(e) =>
-        val candidates = o.getClass.getDeclaredFields.map(_.getName).mkString("[", ",", "]")
-        throw new RuntimeException(s"$name not in $candidates", e)
-    }
-  }
-
-  def invoke(
-      obj: AnyRef,
-      methodName: String,
-      args: (Class[_], AnyRef)*): AnyRef = {
-    val (types, values) = args.unzip
-    val method = obj.getClass.getDeclaredMethod(methodName, types: _*)
-    method.setAccessible(true)
-    method.invoke(obj, values: _*)
-  }
 
   /**
    * Get the active session user
@@ -59,8 +43,15 @@ private[authz] object AuthZUtils {
    * @return the user name
    */
   def getAuthzUgi(spark: SparkContext): UserGroupInformation = {
+    val isSessionUserVerifyEnabled =
+      spark.getConf.getBoolean(s"spark.$KYUUBI_SESSION_USER_SIGN_ENABLED", defaultValue = false)
+
     // kyuubi.session.user is only used by kyuubi
-    val user = spark.getLocalProperty("kyuubi.session.user")
+    val user = spark.getLocalProperty(KYUUBI_SESSION_USER)
+    if (isSessionUserVerifyEnabled) {
+      verifyKyuubiSessionUser(spark, user)
+    }
+
     if (user != null && user != UserGroupInformation.getCurrentUser.getShortUserName) {
       UserGroupInformation.createRemoteUser(user)
     } else {
@@ -68,74 +59,86 @@ private[authz] object AuthZUtils {
     }
   }
 
-  def hasResolvedHiveTable(plan: LogicalPlan): Boolean = {
-    plan.nodeName == "HiveTableRelation" && plan.resolved
-  }
-
-  def getHiveTable(plan: LogicalPlan): CatalogTable = {
-    getFieldVal[CatalogTable](plan, "tableMeta")
-  }
-
-  def hasResolvedDatasourceTable(plan: LogicalPlan): Boolean = {
-    plan.nodeName == "LogicalRelation" && plan.resolved
-  }
-
-  def getDatasourceTable(plan: LogicalPlan): Option[CatalogTable] = {
-    getFieldVal[Option[CatalogTable]](plan, "catalogTable")
-  }
-
-  /**
-   * Given a Kyuubi/Spark/Hive version string,
-   * return the (major version number, minor version number).
-   * E.g., for 2.0.1-SNAPSHOT, return (2, 0).
-   */
-  def majorMinorVersion(version: String): (Int, Int) = {
-    """^(\d+)\.(\d+)(\..*)?$""".r.findFirstMatchIn(version) match {
-      case Some(m) =>
-        (m.group(1).toInt, m.group(2).toInt)
-      case None =>
-        throw new IllegalArgumentException(s"Tried to parse '$version' as a project" +
-          s" version string, but it could not find the major and minor version numbers.")
+  def hasResolvedPermanentView(plan: LogicalPlan): Boolean = {
+    plan match {
+      case view: View if view.resolved && isSparkV31OrGreater =>
+        !getField[Boolean](view, "isTempView")
+      case _ =>
+        false
     }
   }
 
-  /**
-   * Given a Kyuubi/Spark/Hive version string, return the major version number.
-   * E.g., for 2.0.1-SNAPSHOT, return 2.
-   */
-  def majorVersion(version: String): Int = majorMinorVersion(version)._1
-
-  /**
-   * Given a Kyuubi/Spark/Hive version string, return the minor version number.
-   * E.g., for 2.0.1-SNAPSHOT, return 0.
-   */
-  def minorVersion(version: String): Int = majorMinorVersion(version)._2
-
-  def isSparkVersionAtMost(ver: String): Boolean = {
-    val runtimeMajor = majorVersion(SPARK_VERSION)
-    val targetMajor = majorVersion(ver)
-    (runtimeMajor < targetMajor) || {
-      val runtimeMinor = minorVersion(SPARK_VERSION)
-      val targetMinor = minorVersion(ver)
-      runtimeMajor == targetMajor && runtimeMinor <= targetMinor
+  lazy val isRanger21orGreater: Boolean = {
+    try {
+      DynConstructors.builder().impl(
+        classOf[RangerBasePlugin],
+        classOf[String],
+        classOf[String],
+        classOf[String])
+        .buildChecked[RangerBasePlugin]()
+      true
+    } catch {
+      case _: NoSuchMethodException =>
+        false
     }
   }
 
-  def isSparkVersionAtLeast(ver: String): Boolean = {
-    val runtimeMajor = majorVersion(SPARK_VERSION)
-    val targetMajor = majorVersion(ver)
-    (runtimeMajor > targetMajor) || {
-      val runtimeMinor = minorVersion(SPARK_VERSION)
-      val targetMinor = minorVersion(ver)
-      runtimeMajor == targetMajor && runtimeMinor >= targetMinor
+  private lazy val sparkSemanticVersion: SemanticVersion = SemanticVersion(SPARK_VERSION)
+  lazy val isSparkV31OrGreater: Boolean = isSparkVersionAtLeast("3.1")
+  lazy val isSparkV32OrGreater: Boolean = isSparkVersionAtLeast("3.2")
+  lazy val isSparkV33OrGreater: Boolean = isSparkVersionAtLeast("3.3")
+
+  def isSparkVersionAtMost(targetVersionString: String): Boolean = {
+    sparkSemanticVersion.isVersionAtMost(targetVersionString)
+  }
+
+  def isSparkVersionAtLeast(targetVersionString: String): Boolean = {
+    sparkSemanticVersion.isVersionAtLeast(targetVersionString)
+  }
+
+  def quoteIfNeeded(part: String): String = {
+    if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
+      part
+    } else {
+      s"`${part.replace("`", "``")}`"
     }
   }
 
-  def isSparkVersionEqualTo(ver: String): Boolean = {
-    val runtimeMajor = majorVersion(SPARK_VERSION)
-    val targetMajor = majorVersion(ver)
-    val runtimeMinor = minorVersion(SPARK_VERSION)
-    val targetMinor = minorVersion(ver)
-    runtimeMajor == targetMajor && runtimeMinor == targetMinor
+  def quote(parts: Seq[String]): String = {
+    parts.map(quoteIfNeeded).mkString(".")
+  }
+
+  private def verifyKyuubiSessionUser(spark: SparkContext, user: String): Unit = {
+    def illegalAccessWithUnverifiedUser = {
+      throw new AccessControlException(s"Invalid user identifier [$user]")
+    }
+
+    try {
+      val userPubKeyBase64 = spark.getLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY)
+      val userSignBase64 = spark.getLocalProperty(KYUUBI_SESSION_USER_SIGN)
+      if (StringUtils.isAnyBlank(user, userPubKeyBase64, userSignBase64)) {
+        illegalAccessWithUnverifiedUser
+      }
+      if (!verifySignWithECDSA(user, userSignBase64, userPubKeyBase64)) {
+        illegalAccessWithUnverifiedUser
+      }
+    } catch {
+      case _: Exception =>
+        illegalAccessWithUnverifiedUser
+    }
+  }
+
+  private def verifySignWithECDSA(
+      plainText: String,
+      signatureBase64: String,
+      publicKeyBase64: String): Boolean = {
+    val pubKeyBytes = Base64.getDecoder.decode(publicKeyBase64)
+    val publicKey: PublicKey = KeyFactory.getInstance("EC")
+      .generatePublic(new X509EncodedKeySpec(pubKeyBytes)).asInstanceOf[ECPublicKey]
+    val publicSignature = Signature.getInstance("SHA256withECDSA")
+    publicSignature.initVerify(publicKey)
+    publicSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
+    val signatureBytes = Base64.getDecoder.decode(signatureBase64)
+    publicSignature.verify(signatureBytes)
   }
 }

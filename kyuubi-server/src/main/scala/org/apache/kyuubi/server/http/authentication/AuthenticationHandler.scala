@@ -46,14 +46,14 @@ trait AuthenticationHandler {
   /**
    * Destroys the authentication handler instance.
    * <p>
-   * This method is invoked by the {@link AuthenticationFilter# destroy} method.
+   * This method is invoked by the [[AuthenticationFilter.destroy]] method.
    */
   def destroy(): Unit
 
   /**
    * Performs an authentication step for the given HTTP client request.
    * <p>
-   * This method is invoked by the {@link AuthenticationFilter} only if the HTTP client request is
+   * This method is invoked by the [[AuthenticationFilter]] only if the HTTP client request is
    * not yet authenticated.
    * <p>
    * Depending upon the authentication mechanism being implemented, a particular HTTP client may
@@ -97,7 +97,11 @@ trait AuthenticationHandler {
       throw new AuthenticationException("Authorization header received from the client is empty.")
     }
 
-    val authorization = authHeader.substring(authScheme.toString.length).trim
+    var authorization = authHeader.substring(authScheme.toString.length).trim
+    // For thrift http spnego authorization, its format is 'NEGOTIATE : $token', see HIVE-26353
+    if (authorization.startsWith(":")) {
+      authorization = authorization.stripPrefix(":").trim
+    }
     // Authorization header must have a payload
     if (authorization == null || authorization.isEmpty()) {
       throw new AuthenticationException(

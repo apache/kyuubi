@@ -22,22 +22,17 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.List;
-import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
-import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
-import org.apache.hadoop.hive.common.type.TimestampTZUtil;
-import org.apache.hadoop.hive.serde2.thrift.Type;
-import org.apache.hive.service.cli.TableSchema;
+import org.apache.hive.service.rpc.thrift.TTableSchema;
+import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSet;
+import org.apache.kyuubi.jdbc.hive.common.HiveIntervalDayTime;
+import org.apache.kyuubi.jdbc.hive.common.HiveIntervalYearMonth;
+import org.apache.kyuubi.jdbc.hive.common.TimestampTZUtil;
 
 /** Data independent base class which implements the common part of all Kyuubi result sets. */
+@SuppressWarnings("deprecation")
 public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   protected Statement statement = null;
@@ -46,10 +41,10 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
   protected Object[] row;
   protected List<String> columnNames;
   protected List<String> normalizedColumnNames;
-  protected List<String> columnTypes;
+  protected List<TTypeId> columnTypes;
   protected List<JdbcColumnAttributes> columnAttributes;
 
-  private TableSchema schema;
+  private TTableSchema schema;
 
   @Override
   public int findColumn(String columnName) throws SQLException {
@@ -65,7 +60,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       }
     }
     if (!findColumn) {
-      throw new SQLException("Could not find " + columnName + " in " + normalizedColumnNames);
+      throw new KyuubiSQLException("Could not find " + columnName + " in " + normalizedColumnNames);
     } else {
       return columnIndex;
     }
@@ -79,7 +74,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       return (BigDecimal) val;
     }
 
-    throw new SQLException("Illegal conversion");
+    throw new KyuubiSQLException("Illegal conversion");
   }
 
   @Override
@@ -112,7 +107,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       String str = (String) obj;
       return new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
     }
-    throw new SQLException("Illegal conversion to binary stream from column " + columnIndex);
+    throw new KyuubiSQLException("Illegal conversion to binary stream from column " + columnIndex);
   }
 
   @Override
@@ -132,7 +127,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     } else if (obj instanceof String) {
       return !obj.equals("0");
     }
-    throw new SQLException("Cannot convert column " + columnIndex + " to boolean");
+    throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to boolean");
   }
 
   @Override
@@ -148,7 +143,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     } else if (obj == null) {
       return 0;
     }
-    throw new SQLException("Cannot convert column " + columnIndex + " to byte");
+    throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to byte");
   }
 
   @Override
@@ -175,10 +170,11 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
         return Date.valueOf((String) obj);
       }
     } catch (Exception e) {
-      throw new SQLException("Cannot convert column " + columnIndex + " to date: " + e, e);
+      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to date: " + e, e);
     }
     // If we fell through to here this is not a valid type conversion
-    throw new SQLException("Cannot convert column " + columnIndex + " to date: Illegal conversion");
+    throw new KyuubiSQLException(
+        "Cannot convert column " + columnIndex + " to date: Illegal conversion");
   }
 
   @Override
@@ -199,7 +195,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       }
       throw new Exception("Illegal conversion");
     } catch (Exception e) {
-      throw new SQLException("Cannot convert column " + columnIndex + " to double: " + e, e);
+      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to double: " + e, e);
     }
   }
 
@@ -226,7 +222,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       }
       throw new Exception("Illegal conversion");
     } catch (Exception e) {
-      throw new SQLException("Cannot convert column " + columnIndex + " to float: " + e, e);
+      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to float: " + e, e);
     }
   }
 
@@ -248,7 +244,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       }
       throw new Exception("Illegal conversion");
     } catch (Exception e) {
-      throw new SQLException("Cannot convert column " + columnIndex + " to integer" + e, e);
+      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to integer" + e, e);
     }
   }
 
@@ -270,7 +266,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       }
       throw new Exception("Illegal conversion");
     } catch (Exception e) {
-      throw new SQLException("Cannot convert column " + columnIndex + " to long: " + e, e);
+      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to long: " + e, e);
     }
   }
 
@@ -286,15 +282,15 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   private Object getColumnValue(int columnIndex) throws SQLException {
     if (row == null) {
-      throw new SQLException("No row found.");
+      throw new KyuubiSQLException("No row found.");
     }
     if (row.length == 0) {
-      throw new SQLException("RowSet does not contain any columns!");
+      throw new KyuubiSQLException("RowSet does not contain any columns!");
     }
     if (columnIndex > row.length) {
-      throw new SQLException("Invalid columnIndex: " + columnIndex);
+      throw new KyuubiSQLException("Invalid columnIndex: " + columnIndex);
     }
-    Type columnType = getSchema().getColumnDescriptorAt(columnIndex - 1).getType();
+    TTypeId columnType = columnTypes.get(columnIndex - 1);
 
     try {
       Object evaluated = evaluate(columnType, row[columnIndex - 1]);
@@ -302,15 +298,15 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       return evaluated;
     } catch (Exception e) {
       e.printStackTrace();
-      throw new SQLException("Unrecognized column type:" + columnType, e);
+      throw new KyuubiSQLException("Unrecognized column type:" + columnType, e);
     }
   }
 
-  private Object evaluate(Type type, Object value) {
+  private Object evaluate(TTypeId columnType, Object value) {
     if (value == null) {
       return null;
     }
-    switch (type) {
+    switch (columnType) {
       case BINARY_TYPE:
         if (value instanceof String) {
           return ((String) value).getBytes();
@@ -361,7 +357,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       }
       throw new Exception("Illegal conversion");
     } catch (Exception e) {
-      throw new SQLException("Cannot convert column " + columnIndex + " to short: " + e, e);
+      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to short: " + e, e);
     }
   }
 
@@ -408,7 +404,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     if (obj instanceof String) {
       return Timestamp.valueOf((String) obj);
     }
-    throw new SQLException("Illegal conversion");
+    throw new KyuubiSQLException("Illegal conversion");
   }
 
   @Override
@@ -451,11 +447,11 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     return wasNull;
   }
 
-  protected void setSchema(TableSchema schema) {
+  protected void setSchema(TTableSchema schema) {
     this.schema = schema;
   }
 
-  protected TableSchema getSchema() {
+  protected TTableSchema getSchema() {
     return schema;
   }
 }

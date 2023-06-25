@@ -19,31 +19,37 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 
-import org.apache.kyuubi.plugin.spark.authz.{ObjectType, _}
+import org.apache.kyuubi.plugin.spark.authz._
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
+import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization._
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-
 class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    RuleAuthorization.checkPrivileges(spark, plan)
-    plan
+    plan match {
+      case plan if isAuthChecked(plan) => plan // do nothing if checked privileges already.
+      case p => checkPrivileges(spark, p)
+    }
   }
 }
 
 object RuleAuthorization {
 
-  def checkPrivileges(spark: SparkSession, plan: LogicalPlan): Unit = {
+  val KYUUBI_AUTHZ_TAG = TreeNodeTag[Boolean]("__KYUUBI_AUTHZ_TAG")
+
+  private def checkPrivileges(spark: SparkSession, plan: LogicalPlan): LogicalPlan = {
     val auditHandler = new SparkRangerAuditHandler
     val ugi = getAuthzUgi(spark.sparkContext)
-    val opType = OperationType(plan.nodeName)
-    val (inputs, outputs) = PrivilegesBuilder.build(plan)
+    val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
     val requests = new ArrayBuffer[AccessRequest]()
     if (inputs.isEmpty && opType == OperationType.SHOWDATABASES) {
-      val resource = AccessResource(DATABASE, null)
+      val resource = AccessResource(DATABASE, null, None)
       requests += AccessRequest(resource, ugi, opType, AccessType.USE)
     }
 
@@ -61,26 +67,43 @@ object RuleAuthorization {
     addAccessRequest(inputs, isInput = true)
     addAccessRequest(outputs, isInput = false)
 
-    requests.foreach { request =>
+    val requestArrays = requests.map { request =>
       val resource = request.getResource.asInstanceOf[AccessResource]
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
-          resource.getColumns.foreach { col =>
-            val cr = AccessResource(COLUMN, resource.getDatabase, resource.getTable, col)
-            val req = AccessRequest(cr, ugi, opType, request.accessType)
-            verify(req, auditHandler)
+          resource.getColumns.map { col =>
+            val cr =
+              AccessResource(
+                COLUMN,
+                resource.getDatabase,
+                resource.getTable,
+                col,
+                Option(resource.getOwnerUser),
+                resource.catalog)
+            AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
           }
-        case _ => verify(request, auditHandler)
+        case _ => Seq(request)
       }
+    }
+
+    if (authorizeInSingleCall) {
+      verify(requestArrays.flatten, auditHandler)
+    } else {
+      requestArrays.flatten.foreach { req =>
+        verify(Seq(req), auditHandler)
+      }
+    }
+    markAuthChecked(plan)
+  }
+
+  private def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
+    plan.transformUp { case p =>
+      p.setTagValue(KYUUBI_AUTHZ_TAG, true)
+      p
     }
   }
 
-  private def verify(req: AccessRequest, auditHandler: SparkRangerAuditHandler): Unit = {
-    val ret = SparkRangerAdminPlugin.isAccessAllowed(req, auditHandler)
-    if (ret != null && !ret.getIsAllowed) {
-      throw new RuntimeException(
-        s"Permission denied: user [${req.getUser}] does not have [${req.getAccessType}] privilege" +
-          s" on [${req.getResource.getAsString}]")
-    }
+  private def isAuthChecked(plan: LogicalPlan): Boolean = {
+    plan.find(_.getTagValue(KYUUBI_AUTHZ_TAG).contains(true)).nonEmpty
   }
 }

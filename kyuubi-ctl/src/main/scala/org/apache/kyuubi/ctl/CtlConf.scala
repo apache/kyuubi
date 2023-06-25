@@ -19,16 +19,15 @@ package org.apache.kyuubi.ctl
 
 import java.time.Duration
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.{ConfigEntry, OptionalConfigEntry}
+import org.apache.kyuubi.config.KyuubiConf.buildConf
 
 object CtlConf {
-
-  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
   val CTL_REST_CLIENT_BASE_URL: OptionalConfigEntry[String] =
     buildConf("kyuubi.ctl.rest.base.url")
       .doc("The REST API base URL, " +
-        "which contains the scheme (http:// or https://), host name, port number")
+        "which contains the scheme (http:// or https://), hostname, port number")
       .version("1.6.0")
       .stringConf
       .createOptional
@@ -47,17 +46,49 @@ object CtlConf {
       .stringConf
       .createOptional
 
-  val CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS =
+  val CTL_REST_CLIENT_CONNECT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.ctl.rest.connect.timeout")
+      .doc("The timeout[ms] for establishing the connection with the kyuubi server. " +
+        "A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.6.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofSeconds(30).toMillis)
+
+  val CTL_REST_CLIENT_SOCKET_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.ctl.rest.socket.timeout")
+      .doc("The timeout[ms] for waiting for data packets after connection is established. " +
+        "A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.6.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofSeconds(120).toMillis)
+
+  val CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS: ConfigEntry[Int] =
     buildConf("kyuubi.ctl.rest.request.max.attempts")
       .doc("The max attempts number for ctl rest request.")
       .version("1.6.0")
       .intConf
       .createWithDefault(3)
 
-  val CTL_REST_CLIENT_REQUEST_ATTEMPT_WAIT =
+  val CTL_REST_CLIENT_REQUEST_ATTEMPT_WAIT: ConfigEntry[Long] =
     buildConf("kyuubi.ctl.rest.request.attempt.wait")
       .doc("How long to wait between attempts of ctl rest request.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(3).toMillis)
+
+  val CTL_BATCH_LOG_QUERY_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.ctl.batch.log.query.interval")
+      .doc("The interval for fetching batch logs.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(3).toMillis)
+
+  val CTL_BATCH_LOG_ON_FAILURE_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.ctl.batch.log.on.failure.timeout")
+      .doc("The timeout for fetching remaining batch logs if the batch failed.")
+      .version("1.6.1")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(10).toMillis)
 }

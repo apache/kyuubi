@@ -21,9 +21,11 @@ import java.util.HashMap
 
 import scala.collection.JavaConverters._
 
+import org.apache.hive.common.util.HiveVersionInfo
 import org.apache.hive.service.cli.session.HiveSession
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.hive.events.HiveSessionEvent
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
@@ -33,7 +35,6 @@ class HiveSessionImpl(
     protocol: TProtocolVersion,
     user: String,
     password: String,
-    serverIpAddress: String,
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,
@@ -42,8 +43,6 @@ class HiveSessionImpl(
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   private val sessionEvent = HiveSessionEvent(this)
-
-  def serverIpAddress(): String = serverIpAddress
 
   override def open(): Unit = {
     val confClone = new HashMap[String, String]()
@@ -55,6 +54,19 @@ class HiveSessionImpl(
   override protected def runOperation(operation: Operation): OperationHandle = {
     sessionEvent.totalOperations += 1
     super.runOperation(operation)
+  }
+
+  override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
+    infoType match {
+      case TGetInfoType.CLI_SERVER_NAME => TGetInfoValue.stringValue("Hive")
+      case TGetInfoType.CLI_DBMS_NAME => TGetInfoValue.stringValue("Apache Hive")
+      case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(HiveVersionInfo.getVersion)
+      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
+      case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
+          TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
+          TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(128)
+      case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
+    }
   }
 
   override def close(): Unit = {

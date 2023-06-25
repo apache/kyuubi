@@ -21,8 +21,7 @@ import java.io.IOException
 
 import io.trino.client.Column
 import io.trino.client.StatementClient
-import org.apache.hive.service.rpc.thrift.TRowSet
-import org.apache.hive.service.rpc.thrift.TTableSchema
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils
@@ -34,12 +33,10 @@ import org.apache.kyuubi.operation.AbstractOperation
 import org.apache.kyuubi.operation.FetchIterator
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
-abstract class TrinoOperation(opType: OperationType, session: Session)
-  extends AbstractOperation(opType, session) {
+abstract class TrinoOperation(session: Session) extends AbstractOperation(session) {
 
   protected val trinoContext: TrinoContext = session.asInstanceOf[TrinoSessionImpl].trinoContext
 
@@ -49,9 +46,15 @@ abstract class TrinoOperation(opType: OperationType, session: Session)
 
   protected var iter: FetchIterator[List[Any]] = _
 
-  override def getResultSetSchema: TTableSchema = SchemaHelper.toTTableSchema(schema)
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
+    val tTableSchema = SchemaHelper.toTTableSchema(schema)
+    val resp = new TGetResultSetMetadataResp
+    resp.setSchema(tTableSchema)
+    resp.setStatus(OK_STATUS)
+    resp
+  }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
@@ -72,7 +75,7 @@ abstract class TrinoOperation(opType: OperationType, session: Session)
   }
 
   override protected def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }
@@ -105,7 +108,7 @@ abstract class TrinoOperation(opType: OperationType, session: Session)
     // could be thrown.
     case e: Throwable =>
       if (cancel && trino.isRunning) trino.cancelLeafStage()
-      state.synchronized {
+      withLockRequired {
         val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {
           val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")

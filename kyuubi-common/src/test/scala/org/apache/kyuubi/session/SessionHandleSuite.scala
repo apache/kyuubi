@@ -17,20 +17,12 @@
 
 package org.apache.kyuubi.session
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.KyuubiFunSuite
 
 class SessionHandleSuite extends KyuubiFunSuite {
   test("SessionHandle") {
-    val h1 = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val h1 = SessionHandle()
     val t1 = h1.toTSessionHandle
-    TProtocolVersion.values().foreach { proto =>
-      assert(h1 === SessionHandle(t1, proto))
-    }
-    TProtocolVersion.values().foreach { proto =>
-      assert(h1 === SessionHandle(h1.identifier, proto))
-    }
     assert(h1 === SessionHandle(t1))
   }
 }

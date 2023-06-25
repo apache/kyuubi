@@ -24,7 +24,7 @@ class GetPrimaryKeys(
     catalogName: String,
     schemaName: String,
     tableName: String)
-  extends KyuubiOperation(OperationType.GET_FUNCTIONS, session) {
+  extends KyuubiOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

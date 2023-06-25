@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.ha.client
 
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.kyuubi.Logging
@@ -34,6 +35,7 @@ abstract class ServiceDiscovery(
     name: String,
     val fe: FrontendService) extends AbstractService(name) {
 
+  protected val gracefulShutdownLatch = new CountDownLatch(1)
   protected val isServerLost = new AtomicBoolean(false)
 
   /**
@@ -58,6 +60,7 @@ abstract class ServiceDiscovery(
 
   override def start(): Unit = {
     discoveryClient.registerService(conf, namespace, this)
+    info(s"Registered $name in namespace ${_namespace}.")
     super.start()
   }
 
@@ -68,6 +71,7 @@ abstract class ServiceDiscovery(
       Thread.sleep(1000 * 60)
     }
     isServerLost.set(isLost)
+    gracefulShutdownLatch.countDown()
     fe.serverable.stop()
   }
 }

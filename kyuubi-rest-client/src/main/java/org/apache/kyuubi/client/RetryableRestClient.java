@@ -22,32 +22,33 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.kyuubi.client.exception.KyuubiRetryableException;
+import org.apache.kyuubi.client.exception.RetryableKyuubiRestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A retryable rest client that catches the {@link KyuubiRetryableException} which is thrown by
+ * A retryable rest client that catches the {@link RetryableKyuubiRestException} which is thrown by
  * underlying rest client and use a new server uri to the next attempt.
  */
 public class RetryableRestClient implements InvocationHandler {
 
-  private Logger LOG = LoggerFactory.getLogger(RetryableRestClient.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RetryableRestClient.class);
 
   private final RestClientConf conf;
   private final List<String> uris;
   private int currentUriIndex;
-  private IRestClient restClient;
+  private volatile IRestClient restClient;
 
   private RetryableRestClient(List<String> uris, RestClientConf conf) {
     this.conf = conf;
     this.uris = uris;
-    this.currentUriIndex = new Random(System.currentTimeMillis()).nextInt(uris.size());
+    this.currentUriIndex = ThreadLocalRandom.current().nextInt(uris.size());
     newRestClient();
   }
 
+  @SuppressWarnings("rawtypes")
   public static IRestClient getRestClient(List<String> uris, RestClientConf conf) {
     RetryableRestClient client = new RetryableRestClient(uris, conf);
     return (IRestClient)
@@ -74,7 +75,7 @@ public class RetryableRestClient implements InvocationHandler {
   }
 
   @Override
-  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+  public synchronized Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     int retryTimes = 0;
     while (true) {
       try {
@@ -83,7 +84,7 @@ public class RetryableRestClient implements InvocationHandler {
       } catch (InvocationTargetException e) {
         if (e.getCause() == null) {
           throw e;
-        } else if (e.getCause() instanceof KyuubiRetryableException) {
+        } else if (e.getCause() instanceof RetryableKyuubiRestException) {
           // the remote server has some issues or the client machine has some issues
           retryTimes++;
           if (retryTimes <= conf.getMaxAttempts()) {

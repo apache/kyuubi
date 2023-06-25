@@ -17,26 +17,51 @@
 
 package org.apache.kyuubi.operation.thrift.http
 
-import org.scalactic.source.Position
-import org.scalatest.Tag
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
 import org.apache.kyuubi.operation.KyuubiOperationKerberosAndPlainAuthSuite
+import org.apache.kyuubi.service.authentication.UserDefineAuthenticationProviderImpl
 
 class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
   extends KyuubiOperationKerberosAndPlainAuthSuite {
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    Thread.sleep(3000)
+  }
+
   override protected val frontendProtocols: Seq[KyuubiConf.FrontendProtocols.Value] =
     FrontendProtocols.THRIFT_HTTP :: Nil
+
+  override protected def kerberosTgtJdbcUrl: String =
+    jdbcUrl.stripSuffix(";") + s";principal=$testSpnegoPrincipal"
+
+  override protected def kerberosTgtJdbcUrlUsingAlias: String =
+    jdbcUrl.stripSuffix(";") + s";kyuubiServerPrincipal=$testSpnegoPrincipal"
+
+  override protected lazy val conf: KyuubiConf = {
+    val config = new Configuration()
+    val authType = "hadoop.security.authentication"
+    config.set(authType, "KERBEROS")
+    System.setProperty("java.security.krb5.conf", krb5ConfPath)
+    UserGroupInformation.setConfiguration(config)
+    assert(UserGroupInformation.isSecurityEnabled)
+
+    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "LDAP", "CUSTOM"))
+      .set(KyuubiConf.SERVER_KEYTAB, testKeytab)
+      .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_BASE_DN, ldapBaseDn.head)
+      .set(
+        KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
+        classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
+      .set(KyuubiConf.SERVER_SPNEGO_KEYTAB, testKeytab)
+      .set(KyuubiConf.SERVER_SPNEGO_PRINCIPAL, testSpnegoPrincipal)
+  }
 
   override protected def getJdbcUrl: String =
     s"jdbc:hive2://${server.frontendServices.head.connectionUrl}/default;transportMode=http;" +
       s"httpPath=cliservice"
-
-  override protected def test(testName: String, testTags: Tag*)(testFun: => Any)(implicit
-      pos: Position): Unit = {
-    if (!testName.equals("test with KERBEROS authentication")) {
-      super.test(testName, testTags: _*)(testFun)(pos)
-    }
-  }
 }

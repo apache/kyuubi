@@ -17,24 +17,23 @@
 
 package org.apache.kyuubi.server
 
-import java.net.InetAddress
-
 import scala.util.Properties
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols, SERVER_EVENT_JSON_LOG_PATH, SERVER_EVENT_LOGGERS}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols}
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
-import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent, KyuubiServerInfoEvent}
-import org.apache.kyuubi.events.handler.ServerJsonLoggingEventHandler
+import org.apache.kyuubi.events.{EventBus, KyuubiServerInfoEvent, ServerEventHandlerRegister}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.AuthTypes
-import org.apache.kyuubi.ha.client.ServiceDiscovery
+import org.apache.kyuubi.ha.client.{AuthTypes, ServiceDiscovery}
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
+import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf
 import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable, ServiceState}
+import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
@@ -84,7 +83,7 @@ object KyuubiServer extends Logging {
         |                /\___/
         |                \/__/
        """.stripMargin)
-    info(s"Version: $KYUUBI_VERSION, Revision: $REVISION, Branch: $BRANCH," +
+    info(s"Version: $KYUUBI_VERSION, Revision: $REVISION ($REVISION_TIME), Branch: $BRANCH," +
       s" Java: $JAVA_COMPILE_VERSION, Scala: $SCALA_COMPILE_VERSION," +
       s" Spark: $SPARK_COMPILE_VERSION, Hadoop: $HADOOP_COMPILE_VERSION," +
       s" Hive: $HIVE_COMPILE_VERSION, Flink: $FLINK_COMPILE_VERSION," +
@@ -92,6 +91,9 @@ object KyuubiServer extends Logging {
     info(s"Using Scala ${Properties.versionString}, ${Properties.javaVmName}," +
       s" ${Properties.javaVersion}")
     SignalRegister.registerLogger(logger)
+
+    // register conf entries
+    JDBCMetadataStoreConf
     val conf = new KyuubiConf().loadFileDefaults()
     UserGroupInformation.setConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
     startServer(conf)
@@ -104,6 +106,36 @@ object KyuubiServer extends Logging {
   private[kyuubi] def reloadHadoopConf(): Unit = synchronized {
     val _hadoopConf = KyuubiHadoopUtils.newHadoopConf(new KyuubiConf().loadFileDefaults())
     hadoopConf = _hadoopConf
+  }
+
+  private[kyuubi] def refreshUserDefaultsConf(): Unit = kyuubiServer.conf.synchronized {
+    val existedUserDefaults = kyuubiServer.conf.getAllUserDefaults
+    val refreshedUserDefaults = KyuubiConf().loadFileDefaults().getAllUserDefaults
+    var (unsetCount, updatedCount, addedCount) = (0, 0, 0)
+    for ((k, _) <- existedUserDefaults if !refreshedUserDefaults.contains(k)) {
+      kyuubiServer.conf.unset(k)
+      unsetCount = unsetCount + 1
+    }
+    for ((k, v) <- refreshedUserDefaults) {
+      if (existedUserDefaults.contains(k)) {
+        if (!StringUtils.equals(existedUserDefaults.get(k).orNull, v)) {
+          updatedCount = updatedCount + 1
+        }
+      } else {
+        addedCount = addedCount + 1
+      }
+      kyuubiServer.conf.set(k, v)
+    }
+    info(s"Refreshed user defaults configs with changes of " +
+      s"unset: $unsetCount, updated: $updatedCount, added: $addedCount")
+  }
+
+  private[kyuubi] def refreshUnlimitedUsers(): Unit = synchronized {
+    val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val existingUnlimitedUsers = sessionMgr.getUnlimitedUsers()
+    sessionMgr.refreshUnlimitedUsers(KyuubiConf().loadFileDefaults())
+    val refreshedUnlimitedUsers = sessionMgr.getUnlimitedUsers()
+    info(s"Refreshed unlimited users from $existingUnlimitedUsers to $refreshedUnlimitedUsers")
   }
 }
 
@@ -124,20 +156,26 @@ class KyuubiServer(name: String) extends Serverable(name) {
       case MYSQL =>
         warn("MYSQL frontend protocol is experimental.")
         new KyuubiMySQLFrontendService(this)
+      case TRINO =>
+        warn("Trino frontend protocol is experimental.")
+        new KyuubiTrinoFrontendService(this)
       case other =>
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
     }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    initLoggerEventHandler(conf)
-
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
+
+    val periodicGCService = new PeriodicGCService
+    addService(periodicGCService)
 
     if (conf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)
     }
     super.initialize(conf)
+
+    initLoggerEventHandler(conf)
   }
 
   override def start(): Unit = {
@@ -152,26 +190,10 @@ class KyuubiServer(name: String) extends Serverable(name) {
   }
 
   private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
-    val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-    conf.get(SERVER_EVENT_LOGGERS)
-      .map(EventLoggerType.withName)
-      .foreach {
-        case EventLoggerType.JSON =>
-          val hostName = InetAddress.getLocalHost.getCanonicalHostName
-          val handler = ServerJsonLoggingEventHandler(
-            s"server-$hostName",
-            SERVER_EVENT_JSON_LOG_PATH,
-            hadoopConf,
-            conf)
-
-          // register JsonLogger as a event handler for default event bus
-          EventBus.register[KyuubiEvent](handler)
-        case logger =>
-          // TODO: Add more implementations
-          throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
-      }
-
+    ServerEventHandlerRegister.registerEventLoggers(conf)
   }
 
-  override protected def stopServer(): Unit = {}
+  override protected def stopServer(): Unit = {
+    EventBus.deregisterAll()
+  }
 }

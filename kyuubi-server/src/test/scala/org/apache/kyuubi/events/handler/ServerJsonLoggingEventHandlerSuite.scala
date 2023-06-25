@@ -21,20 +21,27 @@ import java.net.InetAddress
 import java.nio.file.Paths
 import java.util.UUID
 
+import scala.collection.JavaConverters._
 import scala.util.matching.Regex
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TStatusCode}
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi._
+import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.events.ServerEventHandlerRegister
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.service.ServiceState
+import org.apache.kyuubi.session.{KyuubiSessionManager, SessionType}
 
-class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCTestHelper {
+class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCTestHelper
+  with BatchTestHelper {
 
   private val engineLogRoot = "file://" + Utils.createTempDir().toString
   private val serverLogRoot = "file://" + Utils.createTempDir().toString
@@ -47,7 +54,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
     KyuubiConf()
       .set(KyuubiConf.SERVER_EVENT_LOGGERS, Seq("JSON"))
       .set(KyuubiConf.SERVER_EVENT_JSON_LOG_PATH, serverLogRoot)
-      .set(KyuubiConf.ENGINE_EVENT_LOGGERS, Seq("JSON"))
+      .set(KyuubiConf.ENGINE_SPARK_EVENT_LOGGERS, Seq("JSON"))
       .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, engineLogRoot)
   }
 
@@ -114,6 +121,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         assert(res.getString("remoteSessionId") == "")
         assert(res.getLong("startTime") > 0)
         assert(res.getInt("totalOperations") == 0)
+        assert(res.getString("sessionType") === SessionType.INTERACTIVE.toString)
         assert(res.next())
         assert(res.getInt("totalOperations") == 0)
         assert(res.getString("sessionId") == sid)
@@ -121,13 +129,38 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         assert(res.getLong("openedTime") > 0)
         assert(res.next())
         assert(res.getInt("totalOperations") == 1)
+        assert(res.getString("sessionType") === SessionType.INTERACTIVE.toString)
         assert(res.getLong("endTime") > 0)
         assert(!res.next())
       }
     }
+
+    val batchRequest = newSparkBatchRequest()
+    val sessionMgr = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val batchSessionHandle = sessionMgr.openBatchSession(
+      Utils.currentUser,
+      "kyuubi",
+      "127.0.0.1",
+      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
+      batchRequest)
+    withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery(
+          s"SELECT * FROM `json`.`$serverSessionEventPath` " +
+            s"where sessionName = '${sparkBatchTestAppName}' order by totalOperations")
+        assert(res.next())
+        assert(res.getString("user") == Utils.currentUser)
+        assert(res.getString("sessionName") == sparkBatchTestAppName)
+        assert(res.getString("sessionId") === batchSessionHandle.identifier.toString)
+        assert(res.getString("remoteSessionId") == "")
+        assert(res.getLong("startTime") > 0)
+        assert(res.getInt("totalOperations") == 0)
+        assert(res.getString("sessionType") === SessionType.BATCH.toString)
+      }
+    }
   }
 
-  test("engine session id is not same with server session id") {
+  test("engine session id is same with server session id") {
     val name = UUID.randomUUID().toString
     withSessionConf()(Map.empty)(Map(KyuubiConf.SESSION_NAME.key -> name)) {
       withJdbcStatement() { statement =>
@@ -151,7 +184,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         val res2 = statement.executeQuery(
           s"SELECT * FROM `json`.`$engineSessionEventPath` " +
             s"where sessionId = '$serverSessionId' limit 1")
-        assert(!res2.next())
+        assert(res2.next())
       }
     }
   }
@@ -165,6 +198,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
     server.initialize(conf)
     server.start()
     server.stop()
+    ServerEventHandlerRegister.registerEventLoggers(conf) // register event loggers again
 
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val kyuubiServerInfoPath =
@@ -225,6 +259,38 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         matchEnv.foreach {
           case pattern(usr) => assert(usr == sys.env(USER))
         }
+      }
+    }
+  }
+
+  test("open session exception") {
+    val name = UUID.randomUUID().toString
+    withSessionConf(Map(
+      "spark.driver.memory" -> "abc",
+      KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION",
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false",
+      KyuubiConf.SESSION_NAME.key -> name))()() {
+      withThriftClient { client =>
+        val req = new TOpenSessionReq()
+        req.setUsername(Utils.currentUser)
+        req.setPassword("anonymous")
+        req.setConfiguration(sessionConfigs.asJava)
+        val resp = client.OpenSession(req)
+        assert(resp.getSessionHandle === null)
+        assert(resp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      }
+    }
+
+    eventually(timeout(2.minutes), interval(10.seconds)) {
+      val serverSessionEventPath =
+        Paths.get(serverLogRoot, "kyuubi_session", s"day=$currentDate")
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery(
+          s"SELECT * FROM `json`.`$serverSessionEventPath` " +
+            s"where sessionName = '$name' and exception is not null limit 1")
+        assert(res.next())
+        val exception = res.getObject("exception")
+        assert(exception.toString.contains("Invalid maximum heap size: -Xmxabc"))
       }
     }
   }

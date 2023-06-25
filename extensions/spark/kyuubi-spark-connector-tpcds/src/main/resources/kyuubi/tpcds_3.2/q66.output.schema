@@ -1,0 +1,18 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+w_warehouse_name STRING,w_warehouse_sq_ft INT,w_city STRING,w_county STRING,w_state STRING,w_country STRING,ship_carriers STRING NOT NULL,year INT,jan_sales DECIMAL(38,2),feb_sales DECIMAL(38,2),mar_sales DECIMAL(38,2),apr_sales DECIMAL(38,2),may_sales DECIMAL(38,2),jun_sales DECIMAL(38,2),jul_sales DECIMAL(38,2),aug_sales DECIMAL(38,2),sep_sales DECIMAL(38,2),oct_sales DECIMAL(38,2),nov_sales DECIMAL(38,2),dec_sales DECIMAL(38,2),jan_sales_per_sq_foot DECIMAL(38,12),feb_sales_per_sq_foot DECIMAL(38,12),mar_sales_per_sq_foot DECIMAL(38,12),apr_sales_per_sq_foot DECIMAL(38,12),may_sales_per_sq_foot DECIMAL(38,12),jun_sales_per_sq_foot DECIMAL(38,12),jul_sales_per_sq_foot DECIMAL(38,12),aug_sales_per_sq_foot DECIMAL(38,12),sep_sales_per_sq_foot DECIMAL(38,12),oct_sales_per_sq_foot DECIMAL(38,12),nov_sales_per_sq_foot DECIMAL(38,12),dec_sales_per_sq_foot DECIMAL(38,12),jan_net DECIMAL(38,2),feb_net DECIMAL(38,2),mar_net DECIMAL(38,2),apr_net DECIMAL(38,2),may_net DECIMAL(38,2),jun_net DECIMAL(38,2),jul_net DECIMAL(38,2),aug_net DECIMAL(38,2),sep_net DECIMAL(38,2),oct_net DECIMAL(38,2),nov_net DECIMAL(38,2),dec_net DECIMAL(38,2)

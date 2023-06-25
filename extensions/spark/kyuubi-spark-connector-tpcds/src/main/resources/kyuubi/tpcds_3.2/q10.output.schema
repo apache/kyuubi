@@ -1,0 +1,18 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+cd_gender STRING,cd_marital_status STRING,cd_education_status STRING,cnt1 BIGINT NOT NULL,cd_purchase_estimate INT,cnt2 BIGINT NOT NULL,cd_credit_rating STRING,cnt3 BIGINT NOT NULL,cd_dep_count INT,cnt4 BIGINT NOT NULL,cd_dep_employed_count INT,cnt5 BIGINT NOT NULL,cd_dep_college_count INT,cnt6 BIGINT NOT NULL

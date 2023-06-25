@@ -18,16 +18,20 @@
 package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class ExecPoolStatistic {
   private int execPoolSize;
   private int execPoolActiveCount;
+  private int execPoolWorkQueueSize;
 
   public ExecPoolStatistic() {}
 
-  public ExecPoolStatistic(int execPoolSize, int execPoolActiveCount) {
+  public ExecPoolStatistic(int execPoolSize, int execPoolActiveCount, int execPoolWorkQueueSize) {
     this.execPoolSize = execPoolSize;
     this.execPoolActiveCount = execPoolActiveCount;
+    this.execPoolWorkQueueSize = execPoolWorkQueueSize;
   }
 
   public int getExecPoolSize() {
@@ -46,17 +50,31 @@ public class ExecPoolStatistic {
     this.execPoolActiveCount = execPoolActiveCount;
   }
 
+  public int getExecPoolWorkQueueSize() {
+    return execPoolWorkQueueSize;
+  }
+
+  public void setExecPoolWorkQueueSize(int execPoolWorkQueueSize) {
+    this.execPoolWorkQueueSize = execPoolWorkQueueSize;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     ExecPoolStatistic that = (ExecPoolStatistic) o;
     return getExecPoolSize() == that.getExecPoolSize()
-        && getExecPoolActiveCount() == that.getExecPoolActiveCount();
+        && getExecPoolActiveCount() == that.getExecPoolActiveCount()
+        && getExecPoolWorkQueueSize() == that.getExecPoolWorkQueueSize();
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getExecPoolSize(), getExecPoolActiveCount());
+    return Objects.hash(getExecPoolSize(), getExecPoolActiveCount(), getExecPoolWorkQueueSize());
+  }
+
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

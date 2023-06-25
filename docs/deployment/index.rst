@@ -29,6 +29,7 @@ Basics
     kyuubi_on_kubernetes
     hive_metastore
     high_availability_guide
+    migration-guide
 
 Configurations
 --------------

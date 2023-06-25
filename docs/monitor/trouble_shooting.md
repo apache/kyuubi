@@ -1,25 +1,26 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Trouble Shooting
 
 ## Common Issues
+
 ### java.lang.UnsupportedClassVersionError .. Unsupported major.minor version 52.0
+
 ```
 Exception in thread "main" java.lang.UnsupportedClassVersionError: org/apache/kyuubi/server/KyuubiServer : Unsupported major.minor version 52.0
 	at java.lang.ClassLoader.defineClass1(Native Method)
@@ -87,9 +88,7 @@ To fix this problem you should export `HADOOP_CONF_DIR` to the folder that conta
 echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> conf/kyuubi-env.sh
 ```
 
-
 ### javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)];
-
 
 ### org.apache.hadoop.security.AccessControlException: Permission denied: user=hzyanqin, access=WRITE, inode="/user":hdfs:hdfs:drwxr-xr-x
 
@@ -167,7 +166,6 @@ The user do not have permission to create to Hadoop home dir, which is `/user/hz
 
 To fix this problem you need to create this directory first and grant ACL permission for `hzyanqin`.
 
-
 ### org.apache.thrift.TApplicationException: Invalid method name: 'get_table_req'
 
 ```
@@ -198,7 +196,6 @@ This error means that you are using incompatible version of Hive metastore clien
 To fix this problem you could use a compatible version of Hive client by configuring
 `spark.sql.hive.metastore.jars` and `spark.sql.hive.metastore.version` at Spark side.
 
-
 ### hive.server2.thrift.max.worker.threads
 
 ```
@@ -209,6 +206,7 @@ Error: org.apache.thrift.transport.TTransportException (state=08S01,code=0)
 In Kyuubi, we should increase `kyuubi.frontend.min.worker.threads` instead of `hive.server2.thrift.max.worker.threads`
 
 ### Failed to create function using jar
+
 `CREATE TEMPORARY FUNCTION TEST AS 'com.netease.UDFTest' using jar 'hdfs:///tmp/udf.jar'`
 
 ```
@@ -248,7 +246,9 @@ If you get this exception when creating a function, you can check your JDK versi
 You should update JDK to JDK1.8.0_121 and later, since JDK1.8.0_121 fix a security issue [Additional access restrictions for URLClassLoader.newInstance](https://www.oracle.com/java/technologies/javase/8u121-relnotes.html).
 
 ### Failed to start Spark 3.1 with error msg 'Cannot modify the value of a Spark config'
+
 Here is the error message
+
 ```
 Caused by: org.apache.spark.sql.AnalysisException: Cannot modify the value of a Spark config: spark.yarn.queue
 	at org.apache.spark.sql.RuntimeConfig.requireNonStaticConf(RuntimeConfig.scala:156)

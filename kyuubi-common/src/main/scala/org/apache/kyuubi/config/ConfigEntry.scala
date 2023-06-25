@@ -19,12 +19,14 @@ package org.apache.kyuubi.config
 
 trait ConfigEntry[T] {
   def key: String
+  def alternatives: List[String]
   def valueConverter: String => T
   def strConverter: T => String
   def doc: String
   def version: String
   def typ: String
   def internal: Boolean
+  def serverOnly: Boolean
 
   def defaultValStr: String
   def defaultVal: Option[T]
@@ -34,7 +36,7 @@ trait ConfigEntry[T] {
   }
 
   final protected def readString(provider: ConfigProvider): Option[String] = {
-    provider.get(key)
+    alternatives.foldLeft(provider.get(key))((res, nextKey) => res.orElse(provider.get(nextKey)))
   }
 
   def readFrom(conf: ConfigProvider): T
@@ -44,12 +46,14 @@ trait ConfigEntry[T] {
 
 class OptionalConfigEntry[T](
     _key: String,
+    _alternatives: List[String],
     rawValueConverter: String => T,
     rawStrConverter: T => String,
     _doc: String,
     _version: String,
     _type: String,
-    _internal: Boolean) extends ConfigEntry[Option[T]] {
+    _internal: Boolean,
+    _serverOnly: Boolean) extends ConfigEntry[Option[T]] {
   override def valueConverter: String => Option[T] = {
     s => Option(rawValueConverter(s))
   }
@@ -70,6 +74,8 @@ class OptionalConfigEntry[T](
 
   override def key: String = _key
 
+  override def alternatives: List[String] = _alternatives
+
   override def doc: String = _doc
 
   override def version: String = _version
@@ -77,17 +83,21 @@ class OptionalConfigEntry[T](
   override def typ: String = _type
 
   override def internal: Boolean = _internal
+
+  override def serverOnly: Boolean = _serverOnly
 }
 
 class ConfigEntryWithDefault[T](
     _key: String,
+    _alternatives: List[String],
     _defaultVal: T,
     _valueConverter: String => T,
     _strConverter: T => String,
     _doc: String,
     _version: String,
     _type: String,
-    _internal: Boolean) extends ConfigEntry[T] {
+    _internal: Boolean,
+    _serverOnly: Boolean) extends ConfigEntry[T] {
   override def defaultValStr: String = strConverter(_defaultVal)
 
   override def defaultVal: Option[T] = Option(_defaultVal)
@@ -97,6 +107,8 @@ class ConfigEntryWithDefault[T](
   }
 
   override def key: String = _key
+
+  override def alternatives: List[String] = _alternatives
 
   override def valueConverter: String => T = _valueConverter
 
@@ -109,17 +121,21 @@ class ConfigEntryWithDefault[T](
   override def typ: String = _type
 
   override def internal: Boolean = _internal
+
+  override def serverOnly: Boolean = _serverOnly
 }
 
 class ConfigEntryWithDefaultString[T](
     _key: String,
+    _alternatives: List[String],
     _defaultVal: String,
     _valueConverter: String => T,
     _strConverter: T => String,
     _doc: String,
     _version: String,
     _type: String,
-    _internal: Boolean) extends ConfigEntry[T] {
+    _internal: Boolean,
+    _serverOnly: Boolean) extends ConfigEntry[T] {
   override def defaultValStr: String = _defaultVal
 
   override def defaultVal: Option[T] = Some(valueConverter(_defaultVal))
@@ -131,6 +147,8 @@ class ConfigEntryWithDefaultString[T](
 
   override def key: String = _key
 
+  override def alternatives: List[String] = _alternatives
+
   override def valueConverter: String => T = _valueConverter
 
   override def strConverter: T => String = _strConverter
@@ -142,13 +160,17 @@ class ConfigEntryWithDefaultString[T](
   override def typ: String = _type
 
   override def internal: Boolean = _internal
+
+  override def serverOnly: Boolean = _serverOnly
 }
 
 class ConfigEntryFallback[T](
     _key: String,
+    _alternatives: List[String],
     _doc: String,
     _version: String,
     _internal: Boolean,
+    _serverOnly: Boolean,
     fallback: ConfigEntry[T]) extends ConfigEntry[T] {
   override def defaultValStr: String = fallback.defaultValStr
 
@@ -159,6 +181,8 @@ class ConfigEntryFallback[T](
   }
 
   override def key: String = _key
+
+  override def alternatives: List[String] = _alternatives
 
   override def valueConverter: String => T = fallback.valueConverter
 
@@ -171,6 +195,8 @@ class ConfigEntryFallback[T](
   override def typ: String = fallback.typ
 
   override def internal: Boolean = _internal
+
+  override def serverOnly: Boolean = _serverOnly
 }
 
 object ConfigEntry {

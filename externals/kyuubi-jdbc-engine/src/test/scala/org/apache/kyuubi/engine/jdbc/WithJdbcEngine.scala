@@ -55,6 +55,6 @@ trait WithJdbcEngine extends KyuubiFunSuite {
     connectionUrl = engine.frontendServices.head.connectionUrl
   }
 
-  protected def getJdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
+  protected def jdbcConnectionUrl: String = s"jdbc:hive2://$connectionUrl/;"
 
 }

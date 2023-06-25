@@ -1,19 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # The TTL Of Kyuubi Engines
 
@@ -26,7 +26,6 @@ To better improve the overall resource utilization of the cluster,
 
 - The time to wait for the resource to be allocated, such as the scheduling delay, the start/stop cost.
   - A longer time-to-live(TTL) for allocated resources can significantly reduce such time costs within an application.
-
 - The time being idle of the resource.
   - A shorter time to live for allocated resources can make all resources in rapid turnarounds across applications.
 
@@ -45,7 +44,7 @@ To better improve the overall resource utilization of the cluster,
 
 ### Engine TTL
 
-| Key                                          | Default                                                                        | Meaning                                                                                                                                                                                                       | Type                                    | Since                                |
+|                     Key                      |                                    Default                                     |                                                                                                    Meaning                                                                                                    |                  Type                   |                Since                 |
 |----------------------------------------------|--------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------|--------------------------------------|
 | kyuubi\.session\.engine<br>\.check\.interval | <div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT5M</div>  | <div style='width: 170pt;word-wrap: break-word;white-space: normal'>The check interval for engine timeout</div>                                                                                               | <div style='width: 30pt'>duration</div> | <div style='width: 20pt'>1.0.0</div> |
 | kyuubi\.session\.engine<br>\.idle\.timeout   | <div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT30M</div> | <div style='width: 170pt;word-wrap: break-word;white-space: normal'>engine timeout, the engine will self-terminate when it's not accessed for this duration. 0 or negative means not to self-terminate.</div> | <div style='width: 30pt'>duration</div> | <div style='width: 20pt'>1.0.0</div> |

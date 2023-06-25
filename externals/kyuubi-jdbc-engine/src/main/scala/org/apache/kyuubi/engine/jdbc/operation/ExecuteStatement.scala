@@ -18,13 +18,12 @@ package org.apache.kyuubi.engine.jdbc.operation
 
 import java.sql.{Connection, Statement, Types}
 
-import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
-
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.ResultSetWrapper
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState}
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
@@ -33,7 +32,10 @@ class ExecuteStatement(
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean)
-  extends JdbcOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
+  extends JdbcOperation(session) with Logging {
+
+  private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
@@ -92,25 +94,5 @@ class ExecuteStatement(
       }
       shutdownTimeoutMonitor()
     }
-  }
-
-  override protected def beforeRun(): Unit = {
-    setState(OperationState.PENDING)
-    setHasResultSet(true)
-  }
-
-  override protected def afterRun(): Unit = {}
-
-  override protected def toTRowSet(taken: Iterator[Row]): TRowSet = {
-    val rowSetHelper = dialect.getRowSetHelper()
-    rowSetHelper.toTRowSet(
-      taken.toList.map(_.values),
-      schema.columns,
-      getProtocolVersion)
-  }
-
-  override def getResultSetSchema: TTableSchema = {
-    val schemaHelper = dialect.getSchemaHelper()
-    schemaHelper.toTTTableSchema(schema.columns)
   }
 }

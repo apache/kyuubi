@@ -1,0 +1,150 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+dn: dc=ad,dc=example,dc=com
+dc: ad
+objectClass: top
+objectClass: domain
+
+dn: ou=Engineering,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: Engineering
+
+dn: ou=Management,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: Management
+
+dn: ou=Administration,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: Administration
+
+dn: ou=Teams,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: Teams
+
+dn: ou=Resources,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: Resources
+
+dn: cn=Team 1,ou=Teams,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: groupOfNames
+objectClass: microsoftSecurityPrincipal
+sAMAccountName: team1
+cn: Team 1
+member: sAMAccountName=engineer1,ou=Engineering,dc=ad,dc=example,dc=com
+member: sAMAccountName=manager1,ou=Management,dc=ad,dc=example,dc=com
+
+dn: cn=Team 2,ou=Teams,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: groupOfNames
+objectClass: microsoftSecurityPrincipal
+sAMAccountName: team2
+cn: Team 2
+member: sAMAccountName=engineer2,ou=Engineering,dc=ad,dc=example,dc=com
+member: sAMAccountName=manager2,ou=Management,dc=ad,dc=example,dc=com
+
+dn: cn=Resource 1,ou=Resources,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: groupOfNames
+objectClass: microsoftSecurityPrincipal
+sAMAccountName: resource1
+cn: Resource 1
+member: sAMAccountName=engineer1,ou=Engineering,dc=ad,dc=example,dc=com
+
+dn: cn=Resource 2,ou=Resources,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: groupOfNames
+objectClass: microsoftSecurityPrincipal
+sAMAccountName: resource2
+cn: Resource 2
+member: sAMAccountName=engineer2,ou=Engineering,dc=ad,dc=example,dc=com
+
+dn: cn=Admins,ou=Administration,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: groupOfUniqueNames
+objectClass: microsoftSecurityPrincipal
+sAMAccountName: admins
+cn: Admins
+uniqueMember: sAMAccountName=admin1,ou=Administration,dc=ad,dc=example,dc=com
+
+dn: sAMAccountName=engineer1,ou=Engineering,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: microsoftSecurityPrincipal
+sAMAccountName: engineer1
+cn: Engineer 1
+sn: Surname 1
+userPassword: engineer1-password
+memberOf: cn=Team 1,ou=Teams,dc=ad,dc=example,dc=com
+memberOf: cn=Resource 1,ou=Resources,dc=ad,dc=example,dc=com
+
+dn: sAMAccountName=engineer2,ou=Engineering,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: microsoftSecurityPrincipal
+sAMAccountName: engineer2
+cn: Engineer 2
+sn: Surname 2
+userPassword: engineer2-password
+memberOf: cn=Team 2,ou=Teams,dc=ad,dc=example,dc=com
+memberOf: cn=Resource 2,ou=Resources,dc=ad,dc=example,dc=com
+
+dn: sAMAccountName=manager1,ou=Management,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: microsoftSecurityPrincipal
+sAMAccountName: manager1
+cn: Manager 1
+sn: Surname 1
+userPassword: manager1-password
+memberOf: cn=Team 1,ou=Teams,dc=ad,dc=example,dc=com
+
+dn: sAMAccountName=manager2,ou=Management,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: microsoftSecurityPrincipal
+sAMAccountName: manager2
+cn: Manager 2
+sn: Surname 2
+userPassword: manager2-password
+memberOf: cn=Team 2,ou=Teams,dc=ad,dc=example,dc=com
+
+dn: sAMAccountName=admin1,ou=Administration,dc=ad,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: microsoftSecurityPrincipal
+sAMAccountName: admin1
+cn: Admin 1
+sn: Surname 1
+userPassword: admin1-password
+memberOf: cn=Admins,ou=Administration,dc=ad,dc=example,dc=com

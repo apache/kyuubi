@@ -17,26 +17,32 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.commons.lang3.StringUtils
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
+import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.spark.events.SessionEvent
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+import org.apache.kyuubi.session._
 
 class SparkSessionImpl(
     protocol: TProtocolVersion,
     user: String,
     password: String,
-    serverIpAddress: String,
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,
     val spark: SparkSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  override val handle: SessionHandle =
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {
@@ -48,11 +54,36 @@ class SparkSessionImpl(
 
   private val sessionEvent = SessionEvent(this)
 
-  def serverIpAddress(): String = serverIpAddress
-
   override def open(): Unit = {
-    normalizedConf.foreach {
-      case ("use:database", database) => spark.catalog.setCurrentDatabase(database)
+
+    val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
+      Array(USE_CATALOG, USE_DATABASE).contains(k)
+    }
+
+    useCatalogAndDatabaseConf.get(USE_CATALOG).foreach { catalog =>
+      try {
+        SparkCatalogUtils.setCurrentCatalog(spark, catalog)
+      } catch {
+        case e if e.getMessage.contains("Cannot find catalog plugin class for catalog") =>
+          warn(e.getMessage())
+      }
+    }
+
+    useCatalogAndDatabaseConf.get("use:database").foreach { database =>
+      try {
+        spark.sessionState.catalogManager.setCurrentNamespace(Array(database))
+      } catch {
+        case e
+            if database == "default" &&
+              StringUtils.containsAny(
+                e.getMessage,
+                "not found",
+                "SCHEMA_NOT_FOUND",
+                "is not authorized to perform: glue:GetDatabase") =>
+      }
+    }
+
+    otherConf.foreach {
       case (key, value) => setModifiableConfig(key, value)
     }
     KDFRegistry.registerAll(spark)
@@ -65,11 +96,26 @@ class SparkSessionImpl(
     super.runOperation(operation)
   }
 
+  override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
+    infoType match {
+      case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
+        TGetInfoValue.stringValue("Spark SQL")
+      case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(org.apache.spark.SPARK_VERSION)
+      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
+      case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
+          TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
+          TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(128)
+      case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
+    }
+  }
+
   override def close(): Unit = {
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)
     super.close()
-    spark.sessionState.catalog.getTempViewNames().foreach(spark.catalog.uncacheTable(_))
+    spark.sessionState.catalog.getTempViewNames().foreach(spark.catalog.uncacheTable)
     sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closeILoop(handle)
+    sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closePythonProcess(
+      handle)
   }
 }

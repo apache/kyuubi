@@ -48,25 +48,64 @@ else
 fi
 
 export KYUUBI_LOG_DIR="${KYUUBI_LOG_DIR:-"${KYUUBI_HOME}/logs"}"
-if [[ -e ${KYUUBI_LOG_DIR} ]]; then
+if [[ ! -e ${KYUUBI_LOG_DIR} ]]; then
   mkdir -p ${KYUUBI_LOG_DIR}
 fi
 
 export KYUUBI_PID_DIR="${KYUUBI_PID_DIR:-"${KYUUBI_HOME}/pid"}"
-if [[ -e ${KYUUBI_LOG_DIR} ]]; then
-  mkdir -p ${KYUUBI_LOG_DIR}
+if [[ ! -e ${KYUUBI_PID_DIR} ]]; then
+  mkdir -p ${KYUUBI_PID_DIR}
 fi
 
 export KYUUBI_WORK_DIR_ROOT="${KYUUBI_WORK_DIR_ROOT:-"${KYUUBI_HOME}/work"}"
-if [[ -e ${KYUUBI_WORK_DIR_ROOT} ]]; then
-  mkdir -p ${KYUUBI_WORK_DIR_ROOT}
+if [[ ! -e ${KYUUBI_WORK_DIR_ROOT} ]]; then
+  mkdir -p "${KYUUBI_WORK_DIR_ROOT}"
 fi
 
 if [[ -z ${JAVA_HOME} ]]; then
   if [[ $(command -v java) ]]; then
+    # shellcheck disable=SC2155
     export JAVA_HOME="$(dirname $(dirname $(which java)))"
   fi
 fi
+
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS -Dio.netty.tryReflectionSetAccessible=true"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.lang=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.io=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.net=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.nio=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.util=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/sun.nio.cs=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/sun.security.action=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/sun.security.x509=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/sun.util.calendar=ALL-UNNAMED"
+export KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS"
+
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS -Dio.netty.tryReflectionSetAccessible=true"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.lang=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.io=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.net=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.nio=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.util=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/sun.nio.cs=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/sun.security.action=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/sun.security.x509=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/sun.util.calendar=ALL-UNNAMED"
+export KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS"
 
 export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
 

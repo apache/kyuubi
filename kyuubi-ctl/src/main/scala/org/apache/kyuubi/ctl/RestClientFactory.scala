@@ -18,25 +18,41 @@ package org.apache.kyuubi.ctl
 
 import java.util.{Map => JMap}
 
+import scala.collection.JavaConverters._
+
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.client.KyuubiRestClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ctl.CtlConf._
+import org.apache.kyuubi.ctl.opt.CliConfig
 
 object RestClientFactory {
 
-  private[ctl] def withKyuubiRestClient(
+  private[ctl] def withKyuubiRestClient[T](
       cliConfig: CliConfig,
       map: JMap[String, Object],
-      conf: KyuubiConf)(f: KyuubiRestClient => Unit): Unit = {
+      conf: KyuubiConf)(f: KyuubiRestClient => T): T = {
     val kyuubiRestClient: KyuubiRestClient =
       RestClientFactory.getKyuubiRestClient(cliConfig, map, conf)
     try {
       f(kyuubiRestClient)
     } finally {
       kyuubiRestClient.close()
+    }
+  }
+
+  private[ctl] def withKyuubiInstanceRestClient(
+      kyuubiRestClient: KyuubiRestClient,
+      kyuubiInstance: String)(f: KyuubiRestClient => Unit): Unit = {
+    val kyuubiInstanceRestClient = kyuubiRestClient.clone()
+    val hostUrls = Seq(s"http://$kyuubiInstance") ++ kyuubiRestClient.getHostUrls.asScala
+    kyuubiInstanceRestClient.setHostUrls(hostUrls.asJava)
+    try {
+      f(kyuubiInstanceRestClient)
+    } finally {
+      kyuubiInstanceRestClient.close()
     }
   }
 
@@ -52,6 +68,8 @@ object RestClientFactory {
 
     val maxAttempts = conf.get(CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS)
     val attemptWaitTime = conf.get(CTL_REST_CLIENT_REQUEST_ATTEMPT_WAIT).toInt
+    val connectionTimeout = conf.get(CTL_REST_CLIENT_CONNECT_TIMEOUT).toInt
+    val socketTimeout = conf.get(CTL_REST_CLIENT_SOCKET_TIMEOUT).toInt
 
     var kyuubiRestClient: KyuubiRestClient = null
     authSchema.toLowerCase match {
@@ -63,6 +81,8 @@ object RestClientFactory {
           .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
           .username(username)
           .password(password)
+          .connectionTimeout(connectionTimeout)
+          .socketTimeout(socketTimeout)
           .maxAttempts(maxAttempts)
           .attemptWaitTime(attemptWaitTime)
           .build()
@@ -73,6 +93,8 @@ object RestClientFactory {
           .apiVersion(KyuubiRestClient.ApiVersion.valueOf(version))
           .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
           .spnegoHost(spnegoHost)
+          .connectionTimeout(connectionTimeout)
+          .socketTimeout(socketTimeout)
           .maxAttempts(maxAttempts)
           .attemptWaitTime(attemptWaitTime)
           .build()

@@ -18,23 +18,25 @@
 package org.apache.kyuubi.server
 
 import java.util.EnumSet
-import java.util.concurrent.Future
+import java.util.concurrent.{Future, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import javax.servlet.DispatcherType
+import javax.ws.rs.WebApplicationException
+import javax.ws.rs.core.Response.Status
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.conf.Configuration
-import org.eclipse.jetty.servlet.FilterHolder
+import org.eclipse.jetty.servlet.{ErrorPageErrorHandler, FilterHolder}
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT, SERVER_STATE_STORE_SESSIONS_RECOVERY_NUM_THREADS}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
-import org.apache.kyuubi.server.ui.JettyServer
+import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.session.KyuubiSessionManager
+import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
 import org.apache.kyuubi.util.ThreadUtils
 
 /**
@@ -50,12 +52,29 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
 
-  private def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
+  private[kyuubi] def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
+
+  private val batchChecker = ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-checker")
+
+  lazy val host: String = conf.get(FRONTEND_REST_BIND_HOST)
+    .getOrElse {
+      if (Utils.isWindows || Utils.isMac) {
+        warn(s"Kyuubi Server run in Windows or Mac environment, binding $getName to 0.0.0.0")
+        "0.0.0.0"
+      } else if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
+        Utils.findLocalInetAddress.getCanonicalHostName
+      } else {
+        Utils.findLocalInetAddress.getHostAddress
+      }
+    }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    val host = conf.get(FRONTEND_REST_BIND_HOST)
-      .getOrElse(Utils.findLocalInetAddress.getHostAddress)
-    server = JettyServer(getName, host, conf.get(FRONTEND_REST_BIND_PORT))
+    this.conf = conf
+    server = JettyServer(
+      getName,
+      host,
+      conf.get(FRONTEND_REST_BIND_PORT),
+      conf.get(FRONTEND_REST_MAX_WORKER_THREADS))
     super.initialize(conf)
   }
 
@@ -71,15 +90,54 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))
 
-    server.addStaticHandler("org/apache/kyuubi/ui/static", "/static")
-    server.addRedirectHandler("/", "/static")
-    server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger")
-    server.addRedirectHandler("/docs", "/swagger")
+    val proxyHandler = ApiRootResource.getEngineUIProxyHandler(this)
+    server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(proxyHandler))
+
+    server.addStaticHandler("org/apache/kyuubi/ui/static", "/static/")
+    server.addRedirectHandler("/", "/static/")
+    server.addRedirectHandler("/static", "/static/")
+    server.addStaticHandler("META-INF/resources/webjars/swagger-ui/4.9.1/", "/swagger-static/")
+    server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger/")
+    server.addRedirectHandler("/docs", "/swagger/")
+    server.addRedirectHandler("/docs/", "/swagger/")
+    server.addRedirectHandler("/swagger", "/swagger/")
+
+    installWebUI()
+  }
+
+  private def installWebUI(): Unit = {
+    val servletHandler = JettyUtils.createStaticHandler("dist", "/ui")
+    // HTML5 Web History Mode requires redirect any url path under Web UI Servlet to the main page.
+    // See more details at https://router.vuejs.org/guide/essentials/history-mode.html#html5-mode
+    val errorHandler = new ErrorPageErrorHandler
+    errorHandler.addErrorPage(404, "/")
+    servletHandler.setErrorHandler(errorHandler)
+    server.addHandler(servletHandler)
+  }
+
+  private def startBatchChecker(): Unit = {
+    val interval = conf.get(KyuubiConf.BATCH_CHECK_INTERVAL)
+    val task = new Runnable {
+      override def run(): Unit = {
+        try {
+          sessionManager.getPeerInstanceClosedBatchSessions(connectionUrl).foreach { batch =>
+            Utils.tryLogNonFatalError {
+              val sessionHandle = SessionHandle.fromUUID(batch.identifier)
+              sessionManager.getBatchSession(sessionHandle).foreach(_.close())
+            }
+          }
+        } catch {
+          case e: Throwable => error("Error checking batch sessions", e)
+        }
+      }
+    }
+
+    batchChecker.scheduleWithFixedDelay(task, interval, interval, TimeUnit.MILLISECONDS)
   }
 
   @VisibleForTesting
   private[kyuubi] def recoverBatchSessions(): Unit = {
-    val recoveryNumThreads = conf.get(SERVER_STATE_STORE_SESSIONS_RECOVERY_NUM_THREADS)
+    val recoveryNumThreads = conf.get(METADATA_RECOVERY_THREADS)
     val batchRecoveryExecutor =
       ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
     try {
@@ -122,27 +180,51 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
         server.start()
         recoverBatchSessions()
         isStarted.set(true)
-        info(s"$getName has started at ${server.getServerUri}")
+        startBatchChecker()
         startInternal()
       } catch {
         case e: Exception => throw new KyuubiException(s"Cannot start $getName", e)
       }
     }
-    KyuubiRestFrontendService.connectionUrl = server.getServerUri
     super.start()
+    info(s"Exposing REST endpoint at: http://${server.getServerUri}")
   }
 
   override def stop(): Unit = synchronized {
+    ThreadUtils.shutdown(batchChecker)
     if (isStarted.getAndSet(false)) {
       server.stop()
     }
     super.stop()
   }
 
-  def getUserName(sessionConf: Map[String, String]): String = {
-    val realUser: String = ServiceUtils.getShortName(
+  def getRealUser(): String = {
+    ServiceUtils.getShortName(
       Option(AuthenticationFilter.getUserName).filter(_.nonEmpty).getOrElse("anonymous"))
-    getProxyUser(sessionConf, Option(AuthenticationFilter.getUserIpAddress).orNull, realUser)
+  }
+
+  def getSessionUser(hs2ProxyUser: String): String = {
+    val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
+      Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
+    getSessionUser(sessionConf)
+  }
+
+  def getSessionUser(sessionConf: Map[String, String]): String = {
+    // using the remote ip address instead of that in proxy http header for authentication
+    val ipAddress = AuthenticationFilter.getUserIpAddress
+    val realUser: String = getRealUser()
+    try {
+      getProxyUser(sessionConf, ipAddress, realUser)
+    } catch {
+      case t: Throwable => throw new WebApplicationException(
+          t.getMessage,
+          Status.METHOD_NOT_ALLOWED)
+    }
+  }
+
+  def getIpAddress: String = {
+    Option(AuthenticationFilter.getUserProxyHeaderIpAddress).getOrElse(
+      AuthenticationFilter.getUserIpAddress)
   }
 
   private def getProxyUser(
@@ -160,10 +242,4 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   override val discoveryService: Option[Service] = None
-}
-
-object KyuubiRestFrontendService {
-  private var connectionUrl: String = _
-
-  def getConnectionUrl: String = connectionUrl
 }

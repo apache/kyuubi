@@ -1,0 +1,47 @@
+{{/*
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/}}
+
+The chart has been installed!
+
+In order to check the release status, use:
+  helm status {{ .Release.Name }} -n {{ .Release.Namespace }}
+    or for more detailed info
+  helm get all {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+************************
+******* Services *******
+************************
+{{- range $name, $frontend := .Values.server }}
+{{- if $frontend.enabled }}
+{{ $name | snakecase | upper }}:
+- To access {{ $.Release.Name }}-{{ $name | kebabcase }} service within the cluster, use the following URL:
+    {{ $.Release.Name }}-{{ $name | kebabcase }}.{{ $.Release.Namespace }}.svc.cluster.local
+{{- if $.Values.kyuubiConf.kyuubiDefaults }}
+{{- if regexMatch "(^|\\s)kyuubi.frontend.bind.host\\s*=?\\s*(localhost|127\\.0\\.0\\.1)($|\\s)" $.Values.kyuubiConf.kyuubiDefaults }}
+- To access {{ $.Release.Name }}-{{ $name | kebabcase }} service from outside the cluster for debugging, run the following command:
+    kubectl port-forward svc/{{ $.Release.Name }}-{{ $name | kebabcase }} {{ tpl $frontend.service.port $ }}:{{ tpl $frontend.service.port $ }} -n {{ $.Release.Namespace }}
+  and use 127.0.0.1:{{ tpl $frontend.service.port $ }}
+{{- end }}
+{{- end }}
+{{- if eq $frontend.service.type "NodePort" }}
+- To access {{ $.Release.Name }}-{{ $name | kebabcase }} service from outside the cluster through configured NodePort, run the following commands:
+    export NODE_PORT=$(kubectl get service {{ $.Release.Name }}-{{ $name | kebabcase }} -n {{ $.Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}")
+    export NODE_IP=$(kubectl get nodes -n {{ $.Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+    echo http://$NODE_IP:$NODE_PORT
+{{- end }}
+{{- end }}
+{{- end }}

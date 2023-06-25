@@ -44,13 +44,13 @@ class DorisSchemaHelper extends SchemaHelper {
       TTypeId.STRING_TYPE
 
     case Types.DATE =>
-      TTypeId.STRING_TYPE
+      TTypeId.DATE_TYPE
 
     case Types.TIMESTAMP =>
-      TTypeId.STRING_TYPE
+      TTypeId.TIMESTAMP_TYPE
 
     case Types.DECIMAL =>
-      TTypeId.STRING_TYPE
+      TTypeId.DECIMAL_TYPE
 
     // TODO add more type support
     case _ =>

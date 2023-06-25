@@ -18,18 +18,25 @@
 package org.apache.kyuubi.client;
 
 import java.util.Map;
+import org.apache.kyuubi.client.api.v1.dto.MultiPart;
 
 /** A underlying http client interface for common rest request. */
 public interface IRestClient extends AutoCloseable {
-  public <T> T get(String path, Map<String, Object> params, Class<T> type, String authHeader);
+  <T> T get(String path, Map<String, Object> params, Class<T> type, String authHeader);
 
-  public String get(String path, Map<String, Object> params, String authHeader);
+  String get(String path, Map<String, Object> params, String authHeader);
 
-  public <T> T post(String path, String body, Class<T> type, String authHeader);
+  <T> T post(String path, String body, Class<T> type, String authHeader);
 
-  public String post(String path, String body, String authHeader);
+  <T> T post(String path, Map<String, MultiPart> multiPartMap, Class<T> type, String authHeader);
 
-  public <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader);
+  String post(String path, String body, String authHeader);
 
-  public String delete(String path, Map<String, Object> params, String authHeader);
+  <T> T put(String path, String body, Class<T> type, String authHeader);
+
+  String put(String path, String body, String authHeader);
+
+  <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader);
+
+  String delete(String path, Map<String, Object> params, String authHeader);
 }

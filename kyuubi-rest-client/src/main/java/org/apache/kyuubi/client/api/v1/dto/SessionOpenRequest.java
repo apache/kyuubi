@@ -20,59 +20,16 @@ package org.apache.kyuubi.client.api.v1.dto;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class SessionOpenRequest {
-  private int protocolVersion;
-  private String user;
-  private String password;
-  private String ipAddr;
   private Map<String, String> configs;
 
   public SessionOpenRequest() {}
 
-  public SessionOpenRequest(
-      int protocolVersion,
-      String user,
-      String password,
-      String ipAddr,
-      Map<String, String> configs) {
-    this.protocolVersion = protocolVersion;
-    this.user = user;
-    this.password = password;
-    this.ipAddr = ipAddr;
+  public SessionOpenRequest(Map<String, String> configs) {
     this.configs = configs;
-  }
-
-  public int getProtocolVersion() {
-    return protocolVersion;
-  }
-
-  public void setProtocolVersion(int protocolVersion) {
-    this.protocolVersion = protocolVersion;
-  }
-
-  public String getUser() {
-    return user;
-  }
-
-  public void setUser(String user) {
-    this.user = user;
-  }
-
-  public String getPassword() {
-    return password;
-  }
-
-  public void setPassword(String password) {
-    this.password = password;
-  }
-
-  public String getIpAddr() {
-    return ipAddr;
-  }
-
-  public void setIpAddr(String ipAddr) {
-    this.ipAddr = ipAddr;
   }
 
   public Map<String, String> getConfigs() {
@@ -91,15 +48,16 @@ public class SessionOpenRequest {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SessionOpenRequest that = (SessionOpenRequest) o;
-    return getProtocolVersion() == that.getProtocolVersion()
-        && Objects.equals(getUser(), that.getUser())
-        && Objects.equals(getPassword(), that.getPassword())
-        && Objects.equals(getIpAddr(), that.getIpAddr())
-        && Objects.equals(getConfigs(), that.getConfigs());
+    return Objects.equals(getConfigs(), that.getConfigs());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getProtocolVersion(), getUser(), getPassword(), getIpAddr(), getConfigs());
+    return Objects.hash(getConfigs());
+  }
+
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

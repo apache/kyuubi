@@ -17,17 +17,24 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class VersionInfo {
   private String version;
 
   public VersionInfo() {}
 
-  public VersionInfo(String version) {
+  // Explicitly specifies JsonProperty to be compatible if disable auto detect feature
+  @JsonCreator
+  public VersionInfo(@JsonProperty("version") String version) {
     this.version = version;
   }
 
+  @JsonProperty
   public String getVersion() {
     return version;
   }
@@ -47,5 +54,10 @@ public class VersionInfo {
   @Override
   public int hashCode() {
     return Objects.hash(getVersion());
+  }
+
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

@@ -19,11 +19,18 @@ package org.apache.kyuubi.engine.flink.session
 
 import scala.util.control.NonFatal
 
-import org.apache.flink.table.client.gateway.{Executor, SqlExecutionException}
-import org.apache.flink.table.client.gateway.context.SessionContext
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.flink.configuration.Configuration
+import org.apache.flink.runtime.util.EnvironmentInformation
+import org.apache.flink.table.client.gateway.SqlExecutionException
+import org.apache.flink.table.gateway.api.operation.OperationHandle
+import org.apache.flink.table.gateway.service.context.SessionContext
+import org.apache.flink.table.gateway.service.session.{Session => FSession}
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_CATALOG, USE_DATABASE}
 
 class FlinkSessionImpl(
     protocol: TProtocolVersion,
@@ -32,11 +39,16 @@ class FlinkSessionImpl(
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,
-    override val handle: SessionHandle,
-    val sessionContext: SessionContext)
+    val fSession: FSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  def executor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
+  override val handle: SessionHandle =
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
+      .getOrElse(SessionHandle.fromUUID(fSession.getSessionHandle.getIdentifier.toString))
+
+  lazy val sessionContext: SessionContext = {
+    FlinkEngineUtils.getSessionContext(fSession)
+  }
 
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {
@@ -47,19 +59,44 @@ class FlinkSessionImpl(
   }
 
   override def open(): Unit = {
-    normalizedConf.foreach {
-      case ("use:database", database) =>
-        val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-        try {
-          tableEnv.useDatabase(database)
-        } catch {
-          case NonFatal(e) =>
-            if (database != "default") {
-              throw e
-            }
-        }
+    val executor = fSession.createExecutor(Configuration.fromMap(fSession.getSessionConfig))
+
+    val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
+      Array(USE_CATALOG, USE_DATABASE).contains(k)
+    }
+
+    useCatalogAndDatabaseConf.get(USE_CATALOG).foreach { catalog =>
+      try {
+        executor.executeStatement(OperationHandle.create, s"USE CATALOG $catalog")
+      } catch {
+        case NonFatal(e) =>
+          throw e
+      }
+    }
+
+    useCatalogAndDatabaseConf.get("use:database").foreach { database =>
+      try {
+        executor.executeStatement(OperationHandle.create, s"USE $database")
+      } catch {
+        case NonFatal(e) =>
+          if (database != "default") {
+            throw e
+          }
+      }
+    }
+
+    otherConf.foreach {
       case (key, value) => setModifiableConfig(key, value)
     }
     super.open()
+  }
+
+  override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
+    infoType match {
+      case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
+        TGetInfoValue.stringValue("Apache Flink")
+      case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(EnvironmentInformation.getVersion)
+      case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
+    }
   }
 }

@@ -19,15 +19,16 @@ package org.apache.kyuubi.operation
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TProtocolVersion}
+import com.codahale.metrics.MetricRegistry
+import org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TOperationState, TProtocolVersion}
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.events.{EventBus, KyuubiOperationEvent}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
-import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, Session}
+import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
     session: Session,
@@ -35,8 +36,7 @@ class ExecuteStatement(
     confOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
-  extends KyuubiOperation(OperationType.EXECUTE_STATEMENT, session) {
-  EventBus.post(KyuubiOperationEvent(this))
+  extends KyuubiOperation(session) {
 
   final private val _operationLog: OperationLog =
     if (shouldRunAsync) {
@@ -51,6 +51,7 @@ class ExecuteStatement(
     OperationLog.setCurrentOperationLog(_operationLog)
     setHasResultSet(true)
     setState(OperationState.PENDING)
+    sendCredentialsIfNeeded()
   }
 
   override protected def afterRun(): Unit = {
@@ -62,7 +63,8 @@ class ExecuteStatement(
       // We need to avoid executing query in sync mode, because there is no heartbeat mechanism
       // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
       // engine crash without response before socket read timeout.
-      _remoteOpHandle = client.executeStatement(statement, confOverlay, true, queryTimeout)
+      _remoteOpHandle =
+        client.executeStatement(statement, confOverlay ++ operationHandleConf, true, queryTimeout)
       setHasResultSet(_remoteOpHandle.isHasResultSet)
     } catch onError()
   }
@@ -78,6 +80,10 @@ class ExecuteStatement(
       }
 
       var isComplete = false
+      var lastState: TOperationState = null
+      var lastStateUpdateTime: Long = 0L
+      val stateUpdateInterval =
+        session.sessionManager.getConf.get(KyuubiConf.OPERATION_STATUS_UPDATE_INTERVAL)
       while (!isComplete) {
         fetchQueryLog()
         verifyTStatus(statusResp.getStatus)
@@ -85,7 +91,12 @@ class ExecuteStatement(
           setOperationJobProgress(statusResp.getProgressUpdateResponse)
         }
         val remoteState = statusResp.getOperationState
-        info(s"Query[$statementId] in ${remoteState.name()}")
+        if (lastState != remoteState ||
+          System.currentTimeMillis() - lastStateUpdateTime > stateUpdateInterval) {
+          lastStateUpdateTime = System.currentTimeMillis()
+          info(s"Query[$statementId] in ${remoteState.name()}")
+        }
+        lastState = remoteState
         isComplete = true
         remoteState match {
           case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
@@ -108,7 +119,7 @@ class ExecuteStatement(
               // this will cause the client of the lower version to get stuck.
               // Check thrift protocol version <= HIVE_CLI_SERVICE_PROTOCOL_V8(Hive 2.1.0),
               // convert TIMEDOUT_STATE to CANCELED.
-              if getSession.protocol.getValue <=
+              if getProtocolVersion.getValue <=
                 TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8.getValue =>
             setState(OperationState.CANCELED)
 
@@ -123,18 +134,15 @@ class ExecuteStatement(
         }
         sendCredentialsIfNeeded()
       }
+      MetricsSystem.tracing { ms =>
+        val execTime = System.currentTimeMillis() - startTime
+        ms.updateHistogram(
+          MetricRegistry.name(MetricsConstants.OPERATION_EXEC_TIME, opType),
+          execTime)
+      }
       // see if anymore log could be fetched
       fetchQueryLog()
     } catch onError()
-
-  private def sendCredentialsIfNeeded(): Unit = {
-    val appUser = session.asInstanceOf[KyuubiSessionImpl].engine.appUser
-    val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
-    sessionManager.credentialsManager.sendCredentialsIfNeeded(
-      session.handle.identifier.toString,
-      appUser,
-      client.sendCredentials)
-  }
 
   private def fetchQueryLog(): Unit = {
     getOperationLog.foreach { logger =>
@@ -160,8 +168,5 @@ class ExecuteStatement(
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
-  override def setState(newState: OperationState): Unit = {
-    super.setState(newState)
-    EventBus.post(KyuubiOperationEvent(this))
-  }
+  override protected def eventEnabled: Boolean = true
 }

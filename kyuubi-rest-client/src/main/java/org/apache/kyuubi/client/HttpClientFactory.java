@@ -25,6 +25,7 @@ import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.ssl.SSLContexts;
+import org.apache.kyuubi.client.exception.KyuubiRestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +46,7 @@ public class HttpClientFactory {
       sslSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
     } catch (Exception e) {
       LOG.error("Error: ", e);
-      throw new RuntimeException(e);
+      throw new KyuubiRestException("Failed to create HttpClient", e);
     }
 
     return HttpClientBuilder.create()

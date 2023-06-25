@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.client;
 
-import java.io.IOException;
+import java.io.File;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,19 +27,25 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.ContentBody;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.apache.kyuubi.client.api.v1.dto.MultiPart;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
-import org.apache.kyuubi.client.exception.KyuubiRetryableException;
-import org.apache.kyuubi.client.util.JsonUtil;
+import org.apache.kyuubi.client.exception.RetryableKyuubiRestException;
+import org.apache.kyuubi.client.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +72,7 @@ public class RestClient implements IRestClient {
   @Override
   public <T> T get(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     String responseJson = get(path, params, authHeader);
-    return JsonUtil.toObject(responseJson, type);
+    return JsonUtils.fromJson(responseJson, type);
   }
 
   @Override
@@ -77,20 +83,68 @@ public class RestClient implements IRestClient {
   @Override
   public <T> T post(String path, String body, Class<T> type, String authHeader) {
     String responseJson = post(path, body, authHeader);
-    return JsonUtil.toObject(responseJson, type);
+    return JsonUtils.fromJson(responseJson, type);
   }
 
   @Override
   public String post(String path, String body, String authHeader) {
-    RequestBuilder postRequestBuilder =
-        RequestBuilder.post().setEntity(new StringEntity(body, StandardCharsets.UTF_8));
+    RequestBuilder postRequestBuilder = RequestBuilder.post();
+    if (body != null) {
+      postRequestBuilder.setEntity(new StringEntity(body, StandardCharsets.UTF_8));
+    }
     return doRequest(buildURI(path), authHeader, postRequestBuilder);
+  }
+
+  @Override
+  public <T> T post(
+      String path, Map<String, MultiPart> multiPartMap, Class<T> type, String authHeader) {
+    MultipartEntityBuilder entityBuilder =
+        MultipartEntityBuilder.create().setCharset(StandardCharsets.UTF_8);
+    multiPartMap.forEach(
+        (s, multiPart) -> {
+          ContentBody contentBody;
+          Object payload = multiPart.getPayload();
+          switch (multiPart.getType()) {
+            case JSON:
+              String string =
+                  (payload instanceof String) ? (String) payload : JsonUtils.toJson(payload);
+              contentBody = new StringBody(string, ContentType.APPLICATION_JSON);
+              break;
+            case FILE:
+              contentBody = new FileBody((File) payload);
+              break;
+            default:
+              throw new RuntimeException("Unsupported multi part type:" + multiPart.getType());
+          }
+          entityBuilder.addPart(s, contentBody);
+        });
+    HttpEntity httpEntity = entityBuilder.build();
+    RequestBuilder postRequestBuilder = RequestBuilder.post(buildURI(path));
+    postRequestBuilder.setHeader(httpEntity.getContentType());
+    postRequestBuilder.setEntity(httpEntity);
+    String responseJson = doRequest(buildURI(path), authHeader, postRequestBuilder);
+    return JsonUtils.fromJson(responseJson, type);
+  }
+
+  @Override
+  public <T> T put(String path, String body, Class<T> type, String authHeader) {
+    String responseJson = put(path, body, authHeader);
+    return JsonUtils.fromJson(responseJson, type);
+  }
+
+  @Override
+  public String put(String path, String body, String authHeader) {
+    RequestBuilder putRequestBuilder = RequestBuilder.put();
+    if (body != null) {
+      putRequestBuilder.setEntity(new StringEntity(body, StandardCharsets.UTF_8));
+    }
+    return doRequest(buildURI(path), authHeader, putRequestBuilder);
   }
 
   @Override
   public <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     String responseJson = delete(path, params, authHeader);
-    return JsonUtil.toObject(responseJson, type);
+    return JsonUtils.fromJson(responseJson, type);
   }
 
   @Override
@@ -99,17 +153,16 @@ public class RestClient implements IRestClient {
   }
 
   private String doRequest(URI uri, String authHeader, RequestBuilder requestBuilder) {
-    String response = "";
-    CloseableHttpResponse httpResponse = null;
+    String response;
     try {
+      if (requestBuilder.getFirstHeader(HttpHeaders.CONTENT_TYPE) == null) {
+        requestBuilder.setHeader(
+            HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+      }
       if (StringUtils.isNotBlank(authHeader)) {
         requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
       }
-      HttpUriRequest httpRequest =
-          requestBuilder
-              .setUri(uri)
-              .setHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-              .build();
+      HttpUriRequest httpRequest = requestBuilder.setUri(uri).build();
 
       LOG.debug("Executing {} request: {}", httpRequest.getMethod(), uri);
 
@@ -127,20 +180,14 @@ public class RestClient implements IRestClient {
 
       response = httpclient.execute(httpRequest, responseHandler);
       LOG.debug("Response: {}", response);
-    } catch (ConnectException | ConnectTimeoutException e) {
+    } catch (ConnectException | ConnectTimeoutException | NoHttpResponseException e) {
       // net exception can be retried by connecting to other Kyuubi server
-      throw new KyuubiRetryableException("Api request failed for " + uri.toString(), e);
+      throw new RetryableKyuubiRestException("Api request failed for " + uri.toString(), e);
+    } catch (KyuubiRestException rethrow) {
+      throw rethrow;
     } catch (Exception e) {
       LOG.error("Error: ", e);
       throw new KyuubiRestException("Api request failed for " + uri.toString(), e);
-    } finally {
-      if (httpResponse != null) {
-        try {
-          httpResponse.close();
-        } catch (IOException e) {
-          throw new KyuubiRestException("Failed to close HttpResponse.", e);
-        }
-      }
     }
 
     return response;
@@ -151,7 +198,7 @@ public class RestClient implements IRestClient {
   }
 
   private URI buildURI(String path, Map<String, Object> params) {
-    URI uri = null;
+    URI uri;
     try {
       String url = StringUtils.isNotBlank(path) ? this.baseUrl + "/" + path : this.baseUrl;
       URIBuilder builder = new URIBuilder(url);

@@ -19,34 +19,18 @@ package org.apache.kyuubi.operation
 
 import java.util.UUID
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-import org.apache.hive.service.rpc.thrift.TProtocolVersion._
-
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.operation.OperationType._
 
 class OperationHandleSuite extends KyuubiFunSuite {
 
   test("OperationHandle") {
-    val h1 = OperationHandle(EXECUTE_STATEMENT, HIVE_CLI_SERVICE_PROTOCOL_V10)
-    TProtocolVersion.values().foreach { protocol =>
-      assert(h1 === OperationHandle(h1.identifier, h1.typ, protocol))
-    }
-
+    val h1 = OperationHandle()
     val t1 = h1.toTOperationHandle
-    TProtocolVersion.values().foreach { protocol =>
-      assert(h1 === OperationHandle(t1, protocol))
-    }
-    val h2 = OperationHandle(t1)
-    assert(h1 === h2)
+    assert(OperationHandle(t1) === h1)
     assert(!t1.isHasResultSet)
     h1.setHasResultSet(true)
     assert(h1.toTOperationHandle.isHasResultSet)
-    assert(h1 !== null)
-    assert(h1 !== new Integer(1))
-    val h3 = OperationHandle(h1.identifier, GET_CATALOGS, HIVE_CLI_SERVICE_PROTOCOL_V10)
-    assert(h3 !== h1, "different types")
-    val h4 = OperationHandle(UUID.randomUUID(), h1.typ, HIVE_CLI_SERVICE_PROTOCOL_V10)
-    assert(h4 !== h1)
+    assert(OperationHandle(UUID.randomUUID()) !== h1)
+    assert(OperationHandle(h1.identifier.toString) === h1)
   }
 }

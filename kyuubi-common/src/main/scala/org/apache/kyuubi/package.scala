@@ -30,7 +30,8 @@ package object kyuubi {
     if (buildFileStream == null) {
       throw new KyuubiException(s"Can not load the core build file: $buildFile, if you meet " +
         s"this exception when running unit tests " +
-        s"please make sure you have run the `mvn package` or `mvn generate-resources` command.")
+        s"please make sure you have run the `mvn package` or " +
+        s"`mvn antrun:run@build-info -pl kyuubi-common` command.")
     }
 
     private val unknown = "<unknown>"
@@ -52,6 +53,7 @@ package object kyuubi {
     val trino_version: String = props.getProperty("kyuubi_trino_version", unknown)
     val branch: String = props.getProperty("branch", unknown)
     val revision: String = props.getProperty("revision", unknown)
+    val revisionTime: String = props.getProperty("revision_time", unknown)
     val user: String = props.getProperty("user", unknown)
     val repoUrl: String = props.getProperty("url", unknown)
     val buildDate: String = props.getProperty("date", unknown)
@@ -67,6 +69,7 @@ package object kyuubi {
   val TRINO_COMPILE_VERSION: String = BuildInfo.trino_version
   val BRANCH: String = BuildInfo.branch
   val REVISION: String = BuildInfo.revision
+  val REVISION_TIME: String = BuildInfo.revisionTime
   val BUILD_USER: String = BuildInfo.user
   val REPO_URL: String = BuildInfo.repoUrl
   val BUILD_DATE: String = BuildInfo.buildDate

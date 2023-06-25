@@ -17,22 +17,25 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import java.io.InputStreamReader
+import java.text.SimpleDateFormat
 
-import com.google.gson.GsonBuilder
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.json.JsonMapper
 import org.apache.ranger.admin.client.RangerAdminRESTClient
 import org.apache.ranger.plugin.util.ServicePolicies
 
 class RangerLocalClient extends RangerAdminRESTClient with RangerClientHelper {
 
-  private val g =
-    new GsonBuilder().setDateFormat("yyyyMMdd-HH:mm:ss.SSS-Z").setPrettyPrinting().create
+  private val mapper = new JsonMapper()
+    .setDateFormat(new SimpleDateFormat("yyyyMMdd-HH:mm:ss.SSS-Z"))
+    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
   private val policies: ServicePolicies = {
     val loader = Thread.currentThread().getContextClassLoader
     val inputStream = {
       loader.getResourceAsStream("sparkSql_hive_jenkins.json")
     }
-    g.fromJson(new InputStreamReader(inputStream), classOf[ServicePolicies])
+    mapper.readValue(inputStream, classOf[ServicePolicies])
   }
 
   override def getServicePoliciesIfUpdated(

@@ -21,13 +21,18 @@ import java.util.Base64
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.rpc.thrift._
+import org.apache.thrift.protocol.TProtocol
+import org.apache.thrift.server.ServerContext
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.cli.Handle
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.metrics.MetricsConstants._
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
-import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS}
+import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, FeServiceServerContext, OK_STATUS}
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
 final class KyuubiTBinaryFrontendService(
@@ -42,6 +47,30 @@ final class KyuubiTBinaryFrontendService(
     } else {
       None
     }
+  }
+
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
+    super.initialize(conf)
+
+    server.foreach(_.setServerEventHandler(new FeTServerEventHandler() {
+      override def createContext(input: TProtocol, output: TProtocol): ServerContext = {
+        MetricsSystem.tracing { ms =>
+          ms.incCount(THRIFT_BINARY_CONN_OPEN)
+          ms.incCount(THRIFT_BINARY_CONN_TOTAL)
+        }
+        new FeServiceServerContext()
+      }
+
+      override def deleteContext(
+          serverContext: ServerContext,
+          input: TProtocol,
+          output: TProtocol): Unit = {
+        super.deleteContext(serverContext, input, output)
+        MetricsSystem.tracing { ms =>
+          ms.decCount(THRIFT_BINARY_CONN_OPEN)
+        }
+      }
+    }))
   }
 
   override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {

@@ -32,7 +32,10 @@ import io.trino.client.StatementClientFactory
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_SHOW_PROGRESS
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_SHOW_PROGRESS_DEBUG
 import org.apache.kyuubi.engine.trino.TrinoConf.DATA_PROCESSING_POOL_SIZE
+import org.apache.kyuubi.operation.log.OperationLog
 
 /**
  * Trino client communicate with trino cluster.
@@ -40,12 +43,15 @@ import org.apache.kyuubi.engine.trino.TrinoConf.DATA_PROCESSING_POOL_SIZE
 class TrinoStatement(
     trinoContext: TrinoContext,
     kyuubiConf: KyuubiConf,
-    sql: String) extends Logging {
+    sql: String,
+    operationLog: Option[OperationLog]) extends Logging {
 
   private lazy val trino = StatementClientFactory
     .newStatementClient(trinoContext.httpClient, trinoContext.clientSession.get, sql)
 
   private lazy val dataProcessingPoolSize = kyuubiConf.get(DATA_PROCESSING_POOL_SIZE)
+  private lazy val showProcess = kyuubiConf.get(ENGINE_TRINO_SHOW_PROGRESS)
+  private lazy val showDebug = kyuubiConf.get(ENGINE_TRINO_SHOW_PROGRESS_DEBUG)
 
   implicit val ec: ExecutionContext =
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(dataProcessingPoolSize))
@@ -90,6 +96,9 @@ class TrinoStatement(
           }
         } else {
           Verify.verify(trino.isFinished)
+          if (operationLog.isDefined && showProcess) {
+            TrinoStatusPrinter.printFinalInfo(trino, operationLog.get, showDebug)
+          }
           val finalStatus = trino.finalStatusInfo()
           if (finalStatus.getError() != null) {
             throw KyuubiSQLException(
@@ -103,7 +112,6 @@ class TrinoStatement(
     }
       .takeWhile(_._1)
       .flatMap(_._2)
-
   }
 
   def updateTrinoContext(): Unit = {
@@ -135,7 +143,11 @@ class TrinoStatement(
 }
 
 object TrinoStatement {
-  def apply(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: String): TrinoStatement = {
-    new TrinoStatement(trinoContext, kyuubiConf, sql)
+  def apply(
+      trinoContext: TrinoContext,
+      kyuubiConf: KyuubiConf,
+      sql: String,
+      operationLog: Option[OperationLog] = None): TrinoStatement = {
+    new TrinoStatement(trinoContext, kyuubiConf, sql, operationLog)
   }
 }

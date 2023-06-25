@@ -22,7 +22,7 @@ import org.apache.kyuubi.operation.JDBCTestHelper
 
 trait MySQLJDBCTestHelper extends JDBCTestHelper {
 
-  override def jdbcDriverClass: String = "com.mysql.jdbc.Driver"
+  override def jdbcDriverClass: String = "com.mysql.cj.jdbc.Driver"
 
   protected lazy val user: String = Utils.currentUser
 
@@ -42,7 +42,7 @@ trait MySQLJDBCTestHelper extends JDBCTestHelper {
       if (jdbcConfigs.isEmpty) {
         ""
       } else {
-        "?" + jdbcConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
+        "?" + jdbcConfigs.map(kv => kv._1 + "=" + kv._2).mkString("&")
       }
     jdbcUrl + jdbcConfStr
   }

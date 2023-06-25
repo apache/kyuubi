@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import com.google.common.base.Preconditions
 import org.apache.flink.table.api.TableEnvironment
+import org.apache.flink.table.gateway.api.operation.OperationHandle
 import org.apache.flink.table.operations.command._
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.OperationModes._
 import org.apache.kyuubi.engine.flink.result.ResultSetUtil
-import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.{ExecutionMode, ParseMode, PhysicalMode, PlanOnlyMode, UnknownMode}
+import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -33,27 +34,32 @@ import org.apache.kyuubi.session.Session
 class PlanOnlyStatement(
     session: Session,
     override val statement: String,
-    mode: OperationMode)
-  extends FlinkOperation(OperationType.EXECUTE_STATEMENT, session) {
+    mode: PlanOnlyMode) extends FlinkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   private val lineSeparator: String = System.lineSeparator()
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
+  override protected def beforeRun(): Unit = {
+    OperationLog.setCurrentOperationLog(operationLog)
+    super.beforeRun()
+  }
+
   override protected def runInternal(): Unit = {
     try {
-      val operation = executor.parseStatement(sessionId, statement)
+      val operations = executor.getTableEnvironment.getParser.parse(statement)
+      Preconditions.checkArgument(
+        operations.size() == 1,
+        "Plan-only mode supports single statement only",
+        null)
+      val operation = operations.get(0)
       operation match {
-        case setOperation: SetOperation =>
-          resultSet = OperationUtils.runSetOperation(setOperation, executor, sessionId)
-        case resetOperation: ResetOperation =>
-          resultSet = OperationUtils.runResetOperation(resetOperation, executor, sessionId)
-        case addJarOperation: AddJarOperation =>
-          resultSet = OperationUtils.runAddJarOperation(addJarOperation, executor, sessionId)
-        case removeJarOperation: RemoveJarOperation =>
-          resultSet = OperationUtils.runRemoveJarOperation(removeJarOperation, executor, sessionId)
-        case showJarsOperation: ShowJarsOperation =>
-          resultSet = OperationUtils.runShowJarOperation(showJarsOperation, executor, sessionId)
+        case _: SetOperation | _: ResetOperation | _: AddJarOperation | _: RemoveJarOperation |
+            _: ShowJarsOperation =>
+          val resultFetcher = executor.executeStatement(
+            new OperationHandle(getHandle.identifier),
+            statement)
+          resultSet = ResultSetUtil.fromResultFetcher(resultFetcher);
         case _ => explainOperation(statement)
       }
     } catch {
@@ -62,17 +68,17 @@ class PlanOnlyStatement(
   }
 
   private def explainOperation(statement: String): Unit = {
-    val tableEnv: TableEnvironment = sessionContext.getExecutionContext.getTableEnvironment
+    val tableEnv: TableEnvironment = executor.getTableEnvironment
     val explainPlans =
       tableEnv.explainSql(statement).split(s"$lineSeparator$lineSeparator")
     val operationPlan = mode match {
-      case PARSE => explainPlans(0).split(s"== Abstract Syntax Tree ==$lineSeparator")(1)
-      case PHYSICAL =>
+      case ParseMode => explainPlans(0).split(s"== Abstract Syntax Tree ==$lineSeparator")(1)
+      case PhysicalMode =>
         explainPlans(1).split(s"== Optimized Physical Plan ==$lineSeparator")(1)
-      case EXECUTION =>
+      case ExecutionMode =>
         explainPlans(2).split(s"== Optimized Execution Plan ==$lineSeparator")(1)
-      case _ =>
-        throw KyuubiSQLException(s"The operation mode $mode doesn't support in Flink SQL engine.")
+      case UnknownMode => throw unknownModeError(mode)
+      case _ => throw notSupportedModeError(mode, "Flink SQL")
     }
     resultSet =
       ResultSetUtil.stringListToResultSet(

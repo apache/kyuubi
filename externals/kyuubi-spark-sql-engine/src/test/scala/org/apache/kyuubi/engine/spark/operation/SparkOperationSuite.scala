@@ -26,16 +26,19 @@ import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hive.service.rpc.thrift._
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.kyuubi.SparkContextHelper
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.types._
 
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.schema.SchemaHelper.TIMESTAMP_NTZ
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.{HiveMetadataTests, SparkQueryTests}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
+import org.apache.kyuubi.util.SemanticVersion
 
 class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with SparkQueryTests {
 
@@ -46,12 +49,23 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
     withJdbcStatement() { statement =>
       val meta = statement.getConnection.getMetaData
       val types = meta.getTableTypes
-      val expected = SparkCatalogShim.sparkTableTypes.toIterator
+      val expected = SparkCatalogUtils.sparkTableTypes.toIterator
       while (types.next()) {
         assert(types.getString(TABLE_TYPE) === expected.next())
       }
       assert(!expected.hasNext)
       assert(!types.next())
+    }
+  }
+
+  test("audit Spark engine MetaData") {
+    withJdbcStatement() { statement =>
+      val metaData = statement.getConnection.getMetaData
+      assert(metaData.getDatabaseProductName === "Spark SQL")
+      assert(metaData.getDatabaseProductVersion === SPARK_VERSION)
+      val ver = SemanticVersion(SPARK_VERSION)
+      assert(metaData.getDatabaseMajorVersion === ver.majorVersion)
+      assert(metaData.getDatabaseMinorVersion === ver.minorVersion)
     }
   }
 
@@ -78,14 +92,12 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       .add("c17", "struct<X: string>", nullable = true, "17")
 
     // since spark3.3.0
-    if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 > 3 ||
-      (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 3)) {
+    if (SPARK_ENGINE_RUNTIME_VERSION >= "3.3") {
       schema = schema.add("c18", "interval day", nullable = true, "18")
         .add("c19", "interval year", nullable = true, "19")
     }
     // since spark3.4.0
-    if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 > 3 ||
-      (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 4)) {
+    if (SPARK_ENGINE_RUNTIME_VERSION >= "3.4") {
       schema = schema.add("c20", "timestamp_ntz", nullable = true, "20")
     }
 
@@ -131,7 +143,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
         var pos = 0
 
         while (rowSet.next()) {
-          assert(rowSet.getString(TABLE_CAT) === SparkCatalogShim.SESSION_CATALOG)
+          assert(rowSet.getString(TABLE_CAT) === SparkCatalogUtils.SESSION_CATALOG)
           assert(rowSet.getString(TABLE_SCHEM) === defaultSchema)
           assert(rowSet.getString(TABLE_NAME) === tableName)
           assert(rowSet.getString(COLUMN_NAME) === schema(pos).name)
@@ -189,7 +201,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       val data = statement.getConnection.getMetaData
       val rowSet = data.getColumns("", "global_temp", viewName, null)
       while (rowSet.next()) {
-        assert(rowSet.getString(TABLE_CAT) === SparkCatalogShim.SESSION_CATALOG)
+        assert(rowSet.getString(TABLE_CAT) === SparkCatalogUtils.SESSION_CATALOG)
         assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
         assert(rowSet.getString(TABLE_NAME) === viewName)
         assert(rowSet.getString(COLUMN_NAME) === "i")
@@ -216,7 +228,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       val data = statement.getConnection.getMetaData
       val rowSet = data.getColumns("", "global_temp", viewName, "n")
       while (rowSet.next()) {
-        assert(rowSet.getString(TABLE_CAT) === SparkCatalogShim.SESSION_CATALOG)
+        assert(rowSet.getString(TABLE_CAT) === SparkCatalogUtils.SESSION_CATALOG)
         assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
         assert(rowSet.getString(TABLE_NAME) === viewName)
         assert(rowSet.getString(COLUMN_NAME) === "n")
@@ -294,29 +306,76 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       val tFetchResultsReq1 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
       val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq1)
       assert(tFetchResultsResp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0).getI64Val.getValues.asScala
       assertResult(Seq(0L))(idSeq1)
 
       // fetch next from first row
       val tFetchResultsReq2 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
       val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
       assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0).getI64Val.getValues.asScala
       assertResult(Seq(1L))(idSeq2)
 
       // fetch prior from second row, expected got first row
       val tFetchResultsReq3 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_PRIOR, 1)
       val tFetchResultsResp3 = client.FetchResults(tFetchResultsReq3)
       assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq3 = tFetchResultsResp3.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      val idSeq3 = tFetchResultsResp3.getResults.getColumns.get(0).getI64Val.getValues.asScala
       assertResult(Seq(0L))(idSeq3)
 
       // fetch first
       val tFetchResultsReq4 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_FIRST, 3)
       val tFetchResultsResp4 = client.FetchResults(tFetchResultsReq4)
       assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq4 = tFetchResultsResp4.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      val idSeq4 = tFetchResultsResp4.getResults.getColumns.get(0).getI64Val.getValues.asScala
       assertResult(Seq(0L, 1L))(idSeq4)
+    }
+  }
+
+  test("test fetch orientation with incremental collect mode") {
+    val sql = "SELECT id FROM range(2)"
+
+    withSessionConf(Map(KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TExecuteStatementReq()
+        req.setSessionHandle(handle)
+        req.setStatement(sql)
+        val tExecuteStatementResp = client.ExecuteStatement(req)
+        val opHandle = tExecuteStatementResp.getOperationHandle
+        waitForOperationToComplete(client, opHandle)
+
+        // fetch next from before first row
+        val tFetchResultsReq1 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
+        val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq1)
+        assert(tFetchResultsResp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0)
+          .getI64Val.getValues.asScala
+        assertResult(Seq(0L))(idSeq1)
+
+        // fetch next from first row
+        val tFetchResultsReq2 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
+        val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
+        assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0)
+          .getI64Val.getValues.asScala
+        assertResult(Seq(1L))(idSeq2)
+
+        // fetch prior from second row, expected got first row
+        val tFetchResultsReq3 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_PRIOR, 1)
+        val tFetchResultsResp3 = client.FetchResults(tFetchResultsReq3)
+        assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val idSeq3 = tFetchResultsResp3.getResults.getColumns.get(0)
+          .getI64Val.getValues.asScala
+        assertResult(Seq(0L))(idSeq3)
+
+        // fetch first
+        val tFetchResultsReq4 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_FIRST, 3)
+        val tFetchResultsResp4 = client.FetchResults(tFetchResultsReq4)
+        assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val idSeq4 = tFetchResultsResp4.getResults.getColumns.get(0)
+          .getI64Val.getValues.asScala
+        assertResult(Seq(0L, 1L))(idSeq4)
+      }
     }
   }
 
@@ -444,12 +503,19 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       val req = new TOpenSessionReq()
       req.setUsername("kentyao")
       req.setPassword("anonymous")
-      val conf = Map("use:database" -> "default2")
+      val dbName = "default2"
+      val conf = Map("use:database" -> dbName)
       req.setConfiguration(conf.asJava)
       val tOpenSessionResp = client.OpenSession(req)
       val status = tOpenSessionResp.getStatus
+      val errorMessage = status.getErrorMessage
       assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(status.getErrorMessage.contains("Database 'default2' does not exist"))
+      if (SPARK_ENGINE_RUNTIME_VERSION >= "3.4") {
+        assert(errorMessage.contains("[SCHEMA_NOT_FOUND]"))
+        assert(errorMessage.contains(s"The schema `$dbName` cannot be found."))
+      } else {
+        assert(errorMessage.contains(s"Database '$dbName' not found"))
+      }
     }
   }
 
@@ -475,8 +541,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       tFetchResultsReq.setMaxRows(1000)
       val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
       assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(tFetchResultsResp.getStatus.getErrorMessage startsWith "Invalid OperationHandle" +
-        " [type=EXECUTE_STATEMENT, identifier:")
+      assert(tFetchResultsResp.getStatus.getErrorMessage startsWith "Invalid OperationHandle [")
 
       val tCloseSessionReq = new TCloseSessionReq()
       tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)

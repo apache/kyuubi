@@ -18,11 +18,10 @@
 package org.apache.kyuubi.engine.trino.operation
 
 import org.apache.kyuubi.engine.trino.TrinoStatement
-import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationType}
+import org.apache.kyuubi.operation.ArrayFetchIterator
 import org.apache.kyuubi.session.Session
 
-class GetCatalogs(session: Session)
-  extends TrinoOperation(OperationType.GET_CATALOGS, session) {
+class GetCatalogs(session: Session) extends TrinoOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

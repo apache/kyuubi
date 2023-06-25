@@ -15,31 +15,23 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>23</version>
+        <version>30</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
-    <version>1.6.0-SNAPSHOT</version>
+    <version>1.8.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
     <url>https://kyuubi.apache.org/</url>
-
-    <scm>
-        <connection>scm:git:git@github.com:apache/incubator-kyuubi.git</connection>
-        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/incubator-kyuubi.git</developerConnection>
-        <url>scm:git:git@github.com:apache/incubator-kyuubi.git</url>
-        <tag>HEAD</tag>
-    </scm>
 
     <licenses>
         <license>
@@ -49,17 +41,12 @@
         </license>
     </licenses>
 
-    <issueManagement>
-        <system>GitHub Issues</system>
-        <url>https://github.com/apache/incubator-kyuubi/issues</url>
-    </issueManagement>
-
     <mailingLists>
         <mailingList>
             <name>Dev Mailing List</name>
-            <post>dev@kyuubi.apache.org</post>
             <subscribe>dev-subscribe@kyuubi.apache.org</subscribe>
             <unsubscribe>dev-unsubscribe@kyuubi.apache.org</unsubscribe>
+            <post>dev@kyuubi.apache.org</post>
             <archive>https://mail-archives.apache.org/mod_mbox/kyuubi-dev</archive>
         </mailingList>
     </mailingLists>
@@ -67,14 +54,17 @@
     <modules>
         <module>dev/kyuubi-codecov</module>
         <module>extensions/server/kyuubi-server-plugin</module>
+        <module>extensions/spark/kyuubi-extension-spark-jdbc-dialect</module>
         <module>extensions/spark/kyuubi-spark-authz</module>
         <module>extensions/spark/kyuubi-spark-connector-common</module>
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>extensions/spark/kyuubi-spark-connector-tpch</module>
+        <module>extensions/spark/kyuubi-spark-lineage</module>
+        <module>externals/kyuubi-chat-engine</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
-        <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-hive-sql-engine</module>
+        <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>externals/kyuubi-trino-engine</module>
         <module>integration-tests</module>
@@ -89,189 +79,22 @@
         <module>kyuubi-metrics</module>
         <module>kyuubi-rest-client</module>
         <module>kyuubi-server</module>
+        <module>kyuubi-util</module>
+        <module>kyuubi-util-scala</module>
         <module>kyuubi-zookeeper</module>
     </modules>
 
-    <properties>
-        <java.version>1.8</java.version>
-        <maven.version>3.8.4</maven.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
-        <scala.version>2.12.15</scala.version>
-        <scala.binary.version>2.12</scala.binary.version>
+    <scm>
+        <connection>scm:git:git@github.com:apache/kyuubi.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/kyuubi.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>scm:git:git@github.com:apache/kyuubi.git</url>
+    </scm>
 
-        <antlr4.version>4.8</antlr4.version>
-        <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
-        <bouncycastle.version>1.67</bouncycastle.version>
-        <codahale.metrics.version>4.2.8</codahale.metrics.version>
-        <commons-codec.version>1.15</commons-codec.version>
-        <commons-collections.version>3.2.2</commons-collections.version>
-        <commons-io.version>2.8.0</commons-io.version>
-        <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.10</commons-lang3.version>
-        <curator.version>2.12.0</curator.version>
-        <delta.version>1.2.1</delta.version>
-        <fb303.version>0.9.3</fb303.version>
-        <flink.version>1.14.4</flink.version>
-        <flink.module.scala.suffix>_${scala.binary.version}</flink.module.scala.suffix>
-        <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
-        <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
-        <flink.archive.download.skip>false</flink.archive.download.skip>
-        <google.jsr305.version>3.0.2</google.jsr305.version>
-        <gson.version>2.8.9</gson.version>
-        <guava.version>30.1-jre</guava.version>
-        <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
-        <hadoop.version>3.3.2</hadoop.version>
-        <hikaricp.version>4.0.3</hikaricp.version>
-        <derby.version>10.14.2.0</derby.version>
-        <hive.engine.hive.version>3.1.3</hive.engine.hive.version>
-        <hive.version>3.1.3</hive.version>
-        <hive.service.rpc.version>3.1.3</hive.service.rpc.version>
-        <hive.storage-api.version>2.7.0</hive.storage-api.version>
-        <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
-        <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
-        <hive.archive.download.skip>false</hive.archive.download.skip>
-        <httpclient.version>4.5.13</httpclient.version>
-        <hudi.version>0.11.0</hudi.version>
-        <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
-        <iceberg.version>0.13.2</iceberg.version>
-        <jackson.version>2.13.3</jackson.version>
-        <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
-        <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
-        <jakarta.activation.version>1.2.1</jakarta.activation.version>
-        <jersey.version>2.35</jersey.version>
-        <jetty.version>9.4.41.v20210516</jetty.version>
-        <jline.version>0.9.94</jline.version>
-        <junit.version>4.13.1</junit.version>
-        <kubernetes-client.version>5.12.1</kubernetes-client.version>
-        <kudu.version>1.15.0</kudu.version>
-        <ldapsdk.version>5.1.4</ldapsdk.version>
-        <log4j.version>2.17.2</log4j.version>
-        <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
-        <netty.version>4.1.73.Final</netty.version>
-        <parquet.version>1.10.1</parquet.version>
-        <prometheus.version>0.14.1</prometheus.version>
-        <ranger.version>2.2.0</ranger.version>
-        <scalacheck.version>3.2.9.0</scalacheck.version>
-        <scalatest.version>3.2.9</scalatest.version>
-        <scalatestplus.version>3.2.9.0</scalatestplus.version>
-        <scopt.version>4.0.1</scopt.version>
-        <slf4j.version>1.7.35</slf4j.version>
-        <snakeyaml.version>1.30</snakeyaml.version>
-        <!--
-          DO NOT forget to change the following properties when change the minor version of Spark:
-          `delta.version`, `iceberg.name`, `maven.plugin.scalatest.exclude.tags`
-          -->
-        <spark.version>3.2.1</spark.version>
-        <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
-        <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
-        <spark.archive.download.skip>false</spark.archive.download.skip>
-        <swagger.version>2.1.11</swagger.version>
-        <testcontainers-scala.version>0.40.7</testcontainers-scala.version>
-        <thrift.version>0.9.3</thrift.version>
-        <trino.client.version>363</trino.client.version>
-        <trino.tpcds.version>1.4</trino.tpcds.version>
-        <trino.tpch.version>1.1</trino.tpch.version>
-        <zookeeper.version>3.4.14</zookeeper.version>
-
-        <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
-        <hive.client.commons-cli.version>1.2</hive.client.commons-cli.version>
-        <hive.client.httpcomponents-core.version>4.4.13</hive.client.httpcomponents-core.version>
-        <hive.client.jline.version>2.12</hive.client.jline.version>
-        <hive.client.storage-api.version>2.7.2</hive.client.storage-api.version>
-        <hive.client.supercsv.version>2.2.0</hive.client.supercsv.version>
-
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
-
-        <maven.plugin.antrun.version>3.0.0</maven.plugin.antrun.version>
-        <maven.plugin.assembly.version>3.2.0</maven.plugin.assembly.version>
-        <maven.plugin.build.helper.version>3.2.0</maven.plugin.build.helper.version>
-        <maven.plugin.clean.version>3.1.0</maven.plugin.clean.version>
-        <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
-        <maven.plugin.dependency.version>3.1.1</maven.plugin.dependency.version>
-        <maven.plugin.deploy.version>3.0.0-M1</maven.plugin.deploy.version>
-        <maven.plugin.download.version>1.6.6</maven.plugin.download.version>
-        <maven.plugin.gpg.version>3.0.1</maven.plugin.gpg.version>
-        <maven.plugin.javadoc.version>3.3.0</maven.plugin.javadoc.version>
-        <maven.plugin.scala.version>4.6.1</maven.plugin.scala.version>
-        <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
-        <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
-        <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
-        <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
-        <maven.plugin.spotless.version>2.17.4</maven.plugin.spotless.version>
-        <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
-        <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
-        <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
-        <maven.plugin.shade.version>3.2.4</maven.plugin.shade.version>
-        <maven.plugin.silencer.version>1.7.6</maven.plugin.silencer.version>
-        <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
-        <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
-
-        <!-- Needed for consistent times -->
-        <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
-
-        <!-- Package to use when relocating shaded classes. -->
-        <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
-
-        <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
-        <distMgmtReleaseName>Apache Release Distribution Repository</distMgmtReleaseName>
-        <distMgmtReleaseUrl>https://repository.apache.org/service/local/staging/deploy/maven2</distMgmtReleaseUrl>
-        <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
-        <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
-        <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
-    </properties>
-
-    <repositories>
-        <repository>
-            <id>gcs-maven-central-mirror</id>
-            <name>GCS Maven Central mirror Asia Pacific</name>
-            <url>https://maven-central-asia.storage-download.googleapis.com/maven2/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-
-        <repository>
-            <id>central</id>
-            <name>Maven Repository</name>
-            <url>https://repo.maven.apache.org/maven2</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>gcs-maven-central-mirror</id>
-            <name>GCS Maven Central mirror Asia Pacific</name>
-            <url>https://maven-central-asia.storage-download.googleapis.com/maven2/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-
-        <pluginRepository>
-            <id>central</id>
-            <url>https://repo.maven.apache.org/maven2</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/apache/kyuubi/issues</url>
+    </issueManagement>
 
     <distributionManagement>
         <repository>
@@ -286,8 +109,206 @@
         </snapshotRepository>
     </distributionManagement>
 
+    <properties>
+        <java.version>1.8</java.version>
+        <maven.version>3.8.8</maven.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <scala.version>2.12.17</scala.version>
+        <scala.binary.version>2.12</scala.binary.version>
+        <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
+
+        <arrow.version>12.0.0</arrow.version>
+        <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
+        <antlr4.version>4.9.3</antlr4.version>
+        <antlr.st4.version>4.3.4</antlr.st4.version>
+        <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
+        <atlas.version>2.3.0</atlas.version>
+        <bouncycastle.version>1.67</bouncycastle.version>
+        <codahale.metrics.version>4.2.8</codahale.metrics.version>
+        <commons-cli.version>1.5.0</commons-cli.version>
+        <commons-codec.version>1.15</commons-codec.version>
+        <commons-collections.version>3.2.2</commons-collections.version>
+        <commons-io.version>2.11.0</commons-io.version>
+        <commons-lang.version>2.6</commons-lang.version>
+        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <etcd.version>0.7.3</etcd.version>
+        <delta.version>2.3.0</delta.version>
+        <failsafe.verion>2.4.4</failsafe.verion>
+        <fb303.version>0.9.3</fb303.version>
+        <flexmark.version>0.62.2</flexmark.version>
+        <flink.version>1.17.1</flink.version>
+        <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
+        <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
+        <flink.archive.download.skip>false</flink.archive.download.skip>
+        <google.jsr305.version>3.0.2</google.jsr305.version>
+        <grpc.version>1.48.0</grpc.version>
+        <guava.version>32.0.1-jre</guava.version>
+        <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
+        <hadoop.version>3.3.5</hadoop.version>
+        <hikaricp.version>4.0.3</hikaricp.version>
+        <derby.version>10.14.2.0</derby.version>
+        <fliptables.verion>1.0.2</fliptables.verion>
+        <hive.engine.hive.version>3.1.3</hive.engine.hive.version>
+        <hive.version>3.1.3</hive.version>
+        <hive.service.rpc.version>3.1.3</hive.service.rpc.version>
+        <hive.storage-api.version>2.7.0</hive.storage-api.version>
+        <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
+        <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
+        <hive.archive.download.skip>false</hive.archive.download.skip>
+        <httpclient.version>4.5.14</httpclient.version>
+        <httpcore.version>4.4.16</httpcore.version>
+        <iceberg.version>1.3.0</iceberg.version>
+        <jackson.version>2.15.0</jackson.version>
+        <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
+        <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
+        <jakarta.activation.version>1.2.2</jakarta.activation.version>
+        <jersey.version>2.39.1</jersey.version>
+        <jetty.version>9.4.51.v20230217</jetty.version>
+        <jline.version>0.9.94</jline.version>
+        <junit.version>4.13.2</junit.version>
+        <kafka.version>3.4.0</kafka.version>
+        <kubernetes-client.version>6.4.1</kubernetes-client.version>
+        <kudu.version>1.15.0</kudu.version>
+        <kyuubi-shaded-zookeeper.artifacts>kyuubi-shaded-zookeeper-34</kyuubi-shaded-zookeeper.artifacts>
+        <kyuubi-shaded-zookeeper.version>0.1.0</kyuubi-shaded-zookeeper.version>
+        <ldapsdk.version>6.0.5</ldapsdk.version>
+        <log4j.version>2.20.0</log4j.version>
+        <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
+        <mockito.version>4.11.0</mockito.version>
+        <netty.version>4.1.89.Final</netty.version>
+        <openai.java.version>0.12.0</openai.java.version>
+        <parquet.version>1.10.1</parquet.version>
+        <phoenix.version>6.0.0</phoenix.version>
+        <prometheus.version>0.16.0</prometheus.version>
+        <protobuf.version>3.21.7</protobuf.version>
+        <py4j.version>0.10.7</py4j.version>
+        <ranger.version>2.4.0</ranger.version>
+        <scalatest.version>3.2.16</scalatest.version>
+        <scalatestplus.version>3.2.16.0</scalatestplus.version>
+        <scopt.version>4.1.0</scopt.version>
+        <slf4j.version>1.7.36</slf4j.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
+        <!--
+          DO NOT forget to change the following properties when change the minor version of Spark:
+          `delta.version`, `maven.plugin.scalatest.exclude.tags`
+          -->
+        <spark.version>3.3.2</spark.version>
+        <spark.binary.version>3.3</spark.binary.version>
+        <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
+        <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
+        <spark.archive.download.skip>false</spark.archive.download.skip>
+        <sqlite.version>3.42.0.0</sqlite.version>
+        <swagger.version>2.2.1</swagger.version>
+        <swagger-ui.version>4.9.1</swagger-ui.version>
+        <testcontainers-scala.version>0.40.12</testcontainers-scala.version>
+        <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
+        <threeten.version>1.7.0</threeten.version>
+        <thrift.version>0.9.3</thrift.version>
+        <trino.client.version>363</trino.client.version>
+        <trino.tpcds.version>1.4</trino.tpcds.version>
+        <trino.tpch.version>1.1</trino.tpch.version>
+
+        <!-- webui -->
+        <webui.skip>true</webui.skip>
+        <node.version>v18.16.0</node.version>
+        <pnpm.version>v8.6.1</pnpm.version>
+
+        <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
+        <hive.client.jline.version>2.12</hive.client.jline.version>
+        <hive.client.supercsv.version>2.2.0</hive.client.supercsv.version>
+
+        <hive.jdbc.artifact>kyuubi-hive-jdbc</hive.jdbc.artifact>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
+
+        <maven.plugin.build.helper.version>3.3.0</maven.plugin.build.helper.version>
+        <maven.plugin.download.version>1.6.8</maven.plugin.download.version>
+        <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
+        <maven.plugin.enforcer.mojo.rules.version>1.6.1</maven.plugin.enforcer.mojo.rules.version>
+        <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
+        <maven.plugin.scala.version>4.8.0</maven.plugin.scala.version>
+        <maven.plugin.scalatest.version>2.2.0</maven.plugin.scalatest.version>
+        <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
+        <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
+        <maven.plugin.scalatest.debug.enabled>false</maven.plugin.scalatest.debug.enabled>
+        <maven.plugin.spotless.version>2.30.0</maven.plugin.spotless.version>
+        <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
+        <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
+        <maven.plugin.shade.version>3.4.1</maven.plugin.shade.version>
+        <maven.plugin.silencer.version>1.7.10</maven.plugin.silencer.version>
+
+        <maven.scaladoc.skip>false</maven.scaladoc.skip>
+        <maven.scalastyle.skip>false</maven.scalastyle.skip>
+        <!-- Needed for consistent times -->
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
+
+        <!-- Package to use when relocating shaded classes. -->
+        <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
+
+        <!-- Needed for Spotless style check-->
+        <spotless.java.googlejavaformat.version>1.7</spotless.java.googlejavaformat.version>
+        <spotless.python.includes></spotless.python.includes>
+        <spotless.python.black.version>22.3.0</spotless.python.black.version>
+        <!-- Please also update .scalafmt.conf when you change it here -->
+        <spotless.scala.scalafmt.version>3.7.4</spotless.scala.scalafmt.version>
+
+        <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
+        <distMgmtReleaseName>Apache Release Distribution Repository</distMgmtReleaseName>
+        <distMgmtReleaseUrl>https://repository.apache.org/service/local/staging/deploy/maven2</distMgmtReleaseUrl>
+        <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
+        <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
+        <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
+
+        <extraJavaTestArgs>-XX:+IgnoreUnrecognizedVMOptions
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+            --add-opens=java.base/java.io=ALL-UNNAMED
+            --add-opens=java.base/java.net=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.cs=ALL-UNNAMED
+            --add-opens=java.base/sun.security.action=ALL-UNNAMED
+            --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
+            --add-opens=java.base/sun.security.x509=ALL-UNNAMED
+            --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+            -Djdk.reflect.useDirectMethodHandle=false
+            -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
+        <debugArgLine>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</debugArgLine>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>${kyuubi-shaded-zookeeper.artifacts}</artifactId>
+                <version>${kyuubi-shaded-zookeeper.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-runtime</artifactId>
+                <version>${antlr4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>ST4</artifactId>
+                <version>${antlr.st4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-vector</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-netty</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
@@ -304,6 +325,12 @@
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-reflect</artifactId>
                 <version>${scala.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.scala-lang.modules</groupId>
+                <artifactId>scala-collection-compat_${scala.binary.version}</artifactId>
+                <version>${scala-collection-compat.version}</version>
             </dependency>
 
             <dependency>
@@ -324,12 +351,12 @@
                 <version>${hadoop.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>org.xerial.snappy</groupId>
-                        <artifactId>snappy-java</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>com.google.code.findbugs</groupId>
                         <artifactId>jsr305</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.xerial.snappy</groupId>
+                        <artifactId>snappy-java</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -371,6 +398,12 @@
             </dependency>
 
             <dependency>
+                <groupId>commons-cli</groupId>
+                <artifactId>commons-cli</artifactId>
+                <version>${commons-cli.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${commons-codec.version}</version>
@@ -402,19 +435,15 @@
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
-                <artifactId>spark-repl_${scala.binary.version}</artifactId>
+                <artifactId>spark-core_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
+                    <!-- Use Hadoop Shaded Client to gain more clean transitive dependencies -->
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
-                    <!--
-                      Use log4j2
-                     -->
+                    <!--  Use log4j2 -->
                     <exclusion>
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
@@ -422,34 +451,25 @@
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <!-- SPARK-40511 upgrade SLF4J2, which is not compatible w/ SLF4J1 -->
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j2-impl</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
+                <artifactId>spark-repl_${scala.binary.version}</artifactId>
+                <version>${spark.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.spark</groupId>
                 <artifactId>spark-sql_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
-                <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <!--
-                      Use log4j2
-                     -->
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -457,27 +477,10 @@
                 <artifactId>spark-hive_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
+                    <!-- Use Hadoop Shaded Client to gain more clean transitive dependencies -->
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-common</artifactId>
-                    </exclusion>
-                    <!--
-                      Use log4j2
-                     -->
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -488,17 +491,25 @@
                 <version>${spark.version}</version>
                 <type>test-jar</type>
                 <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
+                    <!-- Use Hadoop Shaded Client to gain more clean transitive dependencies -->
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
-                    <!--
-                      The module is only used in Kyuubi Spark Extensions, we should respect
-                      the Spark bundled log4j.
-                     -->
+                    <!--  Use log4j2 -->
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <!-- SPARK-40511 upgrade SLF4J2, which is not compatible w/ SLF4J1 -->
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j2-impl</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -507,19 +518,6 @@
                 <artifactId>spark-catalyst_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <type>test-jar</type>
-                <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <!--
-                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
-                      version of Log4j it depends on.
-                     -->
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -527,19 +525,6 @@
                 <artifactId>spark-sql_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <type>test-jar</type>
-                <exclusions>
-                    <!--
-                      Use Hadoop Shaded Client to gain more clean transitive dependencies
-                     -->
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <!--
-                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
-                      version of Log4j it depends on.
-                     -->
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -591,8 +576,24 @@
             </dependency>
 
             <dependency>
+                <groupId>com.dimafeng</groupId>
+                <artifactId>testcontainers-scala-kafka_${scala.binary.version}</artifactId>
+                <version>${testcontainers-scala.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-client</artifactId>
+                <version>${kubernetes-client.version}</version>
+            </dependency>
+            <!--
+                according to kubernetes-client MIGRATION-v6.md, we should include this dependency
+                for doing any customization to OkHttp clients.
+                https://github.com/fabric8io/kubernetes-client/blob/master/doc/MIGRATION-v6.md#okhttp-httpclient
+            -->
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-httpclient-okhttp</artifactId>
                 <version>${kubernetes-client.version}</version>
             </dependency>
 
@@ -637,58 +638,16 @@
                 </exclusions>
             </dependency>
 
-            <!--
-             Do not add hive dependencies here if they are dependencies of
-             org.apache.spark:spark-hive_${scala.binary.version}.
-             We should leave these dependencies' versions as they are defined in
-             spark-parent_${scala.binary.version}-${spark.version}.pom.
-             Otherwise, kyuubi-spark-sql-engine tests may encounter hive version compatibility issue.
-            -->
-
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-framework</artifactId>
-                <version>${curator.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-recipes</artifactId>
-                <version>${curator.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-client</artifactId>
-                <version>${curator.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.guava</groupId>
-                        <artifactId>guava</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-all</artifactId>
+                <version>${flexmark.version}</version>
             </dependency>
 
             <dependency>
@@ -780,6 +739,12 @@
             </dependency>
 
             <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
                 <artifactId>jackson-jaxrs-base</artifactId>
                 <version>${jackson.version}</version>
@@ -801,6 +766,30 @@
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-scala_${scala.binary.version}</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpclient.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpmime</artifactId>
+                <version>${httpclient.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>${httpcore.version}</version>
             </dependency>
 
             <!--
@@ -831,6 +820,18 @@
                 </exclusions>
             </dependency>
 
+            <!--
+              1. This library only contains swagger-ui static resource (.html/.css/.js/.png), for more detail, see
+                 https://github.com/swagger-api/swagger-ui/blob/master/dist/
+              2. Note that when trying to upgrade swagger-ui, we should also update the version in the file(
+                 kyuubi-server/src/main/scala/org/apache/kyuubi/server/KyuubiRestFrontendService.scala).
+            -->
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>swagger-ui</artifactId>
+                <version>${swagger-ui.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
@@ -838,19 +839,7 @@
                 <exclusions>
                     <exclusion>
                         <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-dns</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
                         <artifactId>netty-codec-haproxy</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-http</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-http2</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>io.netty</groupId>
@@ -870,10 +859,6 @@
                     </exclusion>
                     <exclusion>
                         <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-socks</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
                         <artifactId>netty-codec-stomp</artifactId>
                     </exclusion>
                     <exclusion>
@@ -882,11 +867,7 @@
                     </exclusion>
                     <exclusion>
                         <groupId>io.netty</groupId>
-                        <artifactId>netty-handler-proxy</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-resolver-dns</artifactId>
+                        <artifactId>netty-handler-ssl-ocsp</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>io.netty</groupId>
@@ -895,6 +876,14 @@
                     <exclusion>
                         <groupId>io.netty</groupId>
                         <artifactId>netty-resolver-dns-native-macos</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-transport-classes-kqueue</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-transport-native-kqueue</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>io.netty</groupId>
@@ -909,6 +898,104 @@
                         <artifactId>netty-transport-udt</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-dns</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http2</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-socks</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler-proxy</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-resolver-dns</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-resolver</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-classes-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+                <classifier>linux-aarch_64</classifier>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+                <classifier>linux-x86_64</classifier>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
+                <version>${netty.version}</version>
             </dependency>
 
             <dependency>
@@ -945,6 +1032,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-proxy</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest_${scala.binary.version}</artifactId>
                 <version>${scalatest.version}</version>
@@ -952,15 +1045,28 @@
 
             <dependency>
                 <groupId>org.scalatestplus</groupId>
-                <artifactId>scalacheck-1-15_${scala.binary.version}</artifactId>
-                <version>${scalacheck.version}</version>
+                <artifactId>scalacheck-1-17_${scala.binary.version}</artifactId>
+                <version>${scalatestplus.version}</version>
                 <scope>test</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.scalatestplus</groupId>
-                <artifactId>mockito-3-4_${scala.binary.version}</artifactId>
+                <artifactId>mockito-4-11_${scala.binary.version}</artifactId>
                 <version>${scalatestplus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
             </dependency>
 
             <dependency>
@@ -970,7 +1076,7 @@
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>junit</groupId>
@@ -989,177 +1095,84 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-minicluster</artifactId>
                 <version>${hadoop.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.xerial.snappy</groupId>
+                        <artifactId>snappy-java</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
-                <groupId>org.apache.zookeeper</groupId>
-                <artifactId>zookeeper</artifactId>
-                <version>${zookeeper.version}</version>
+                <groupId>io.etcd</groupId>
+                <artifactId>jetcd-core</artifactId>
+                <version>${etcd.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
+                        <groupId>javax.annotation</groupId>
+                        <artifactId>javax.annotation-api</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.etcd</groupId>
+                <artifactId>jetcd-launcher</artifactId>
+                <version>${etcd.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-core</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-grpclb</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java-util</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>net.jodah</groupId>
+                <artifactId>failsafe</artifactId>
+                <version>${failsafe.verion}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.iceberg</groupId>
-                <artifactId>${iceberg.name}</artifactId>
+                <artifactId>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</artifactId>
                 <version>${iceberg.version}</version>
-            </dependency>
-
-            <!-- Hudi dependency  -->
-            <dependency>
-                <groupId>org.apache.parquet</groupId>
-                <artifactId>parquet-avro</artifactId>
-                <version>${parquet.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.spark</groupId>
-                <artifactId>spark-avro_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-common</artifactId>
-                <version>${hudi.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hbase</groupId>
-                        <artifactId>hbase-server</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hbase</groupId>
-                        <artifactId>hbase-client</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-spark-common_${scala.binary.version}</artifactId>
-                <version>${hudi.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.scala-lang</groupId>
-                        <artifactId>scala-library</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hudi</groupId>
-                        <artifactId>hudi-timeline-service</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.dropwizard.metrics</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.prometheus</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.curator</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hbase</groupId>
-                        <artifactId>hbase-server</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hbase</groupId>
-                        <artifactId>hbase-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.orc</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hudi</groupId>
-                        <artifactId>hudi-aws</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-spark_${scala.binary.version}</artifactId>
-                <version>${hudi.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.scala-lang</groupId>
-                        <artifactId>scala-library</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hudi</groupId>
-                        <artifactId>hudi-spark-common_2.11</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hudi</groupId>
-                        <artifactId>hudi-spark2_2.11</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hudi</groupId>
-                        <artifactId>hudi-spark2-common</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.curator</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.module</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-spark3.1.x_${scala.binary.version}</artifactId>
-                <version>${hudi.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hudi</groupId>
-                        <artifactId>hudi-spark-common_2.11</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.scala-lang</groupId>
-                        <artifactId>scala-library</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -1208,7 +1221,7 @@
             </dependency>
 
             <!--
-              Required for Yarn Mini Cluster on JDK 11, it already be a transitive dependency
+              Required for Yarn Mini Cluster on JDK 11, it is already a transitive dependency
               of spark-core, thus only should explicitly add on Kyuubi Server Main test scope.
               -->
             <dependency>
@@ -1224,16 +1237,29 @@
                 <version>${jline.version}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>junit</artifactId>
                         <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${kafka.version}</version>
+                <optional>true</optional>
             </dependency>
 
             <dependency>
                 <groupId>com.github.scopt</groupId>
                 <artifactId>scopt_${scala.binary.version}</artifactId>
                 <version>${scopt.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.jakewharton.fliptables</groupId>
+                <artifactId>fliptables</artifactId>
+                <version>${fliptables.verion}</version>
             </dependency>
 
             <!-- RESTful service required -->
@@ -1280,6 +1306,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-multipart</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.glassfish.jersey.test-framework</groupId>
                 <artifactId>jersey-test-framework-core</artifactId>
                 <version>${jersey.version}</version>
@@ -1302,9 +1334,15 @@
             </dependency>
 
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql.jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.phoenix</groupId>
+                <artifactId>phoenix-queryserver-client</artifactId>
+                <version>${phoenix.version}</version>
             </dependency>
 
             <!-- flink -->
@@ -1322,13 +1360,13 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-streaming-java${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-streaming-java</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-clients${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-clients</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
@@ -1346,7 +1384,7 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-table-api-java-bridge${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-table-api-java-bridge</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
@@ -1358,7 +1396,7 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-table-runtime${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-table-runtime</artifactId>
                 <version>${flink.version}</version>
                 <scope>provided</scope>
             </dependency>
@@ -1371,13 +1409,19 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-sql-client${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-sql-client</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-test-utils${flink.module.scala.suffix}</artifactId>
+                <artifactId>flink-sql-gateway</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-test-utils</artifactId>
                 <version>${flink.version}</version>
                 <exclusions>
                     <exclusion>
@@ -1396,12 +1440,6 @@
             </dependency>
 
             <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>${gson.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>${hikaricp.version}</version>
@@ -1414,9 +1452,32 @@
             </dependency>
 
             <dependency>
+                <groupId>org.xerial</groupId>
+                <artifactId>sqlite-jdbc</artifactId>
+                <version>${sqlite.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.kudu</groupId>
                 <artifactId>kudu-client</artifactId>
                 <version>${kudu.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.sf.py4j</groupId>
+                <artifactId>py4j</artifactId>
+                <version>${py4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.theokanning.openai-gpt3-java</groupId>
+                <artifactId>service</artifactId>
+                <version>${openai.java.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.threeten</groupId>
+                <artifactId>threeten-extra</artifactId>
+                <version>${threeten.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1429,23 +1490,73 @@
         </dependency>
     </dependencies>
 
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>gcs-maven-central-mirror</id>
+            <name>GCS Maven Central mirror Asia Pacific</name>
+            <url>https://maven-central-asia.storage-download.googleapis.com/maven2/</url>
+        </repository>
+
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>central</id>
+            <name>Maven Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>gcs-maven-central-mirror</id>
+            <name>GCS Maven Central mirror Asia Pacific</name>
+            <url>https://maven-central-asia.storage-download.googleapis.com/maven2/</url>
+        </pluginRepository>
+
+        <pluginRepository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <build>
         <pluginManagement>
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>${maven.plugin.antrun.version}</version>
                     <executions>
                         <execution>
                             <id>create-tmp-dir</id>
-                            <phase>generate-test-resources</phase>
                             <goals>
                                 <goal>run</goal>
                             </goals>
+                            <phase>generate-test-resources</phase>
                             <configuration>
                                 <target>
-                                    <mkdir dir="${project.build.directory}/tmp"/>
+                                    <mkdir dir="${project.build.directory}/tmp"></mkdir>
                                 </target>
                             </configuration>
                         </execution>
@@ -1459,10 +1570,10 @@
                     <executions>
                         <execution>
                             <id>module-timestamp-property</id>
-                            <phase>validate</phase>
                             <goals>
                                 <goal>timestamp-property</goal>
                             </goals>
+                            <phase>validate</phase>
                             <configuration>
                                 <name>module.build.timestamp</name>
                                 <pattern>${maven.build.timestamp.format}</pattern>
@@ -1473,10 +1584,10 @@
                         </execution>
                         <execution>
                             <id>local-timestamp-property</id>
-                            <phase>validate</phase>
                             <goals>
                                 <goal>timestamp-property</goal>
                             </goals>
+                            <phase>validate</phase>
                             <configuration>
                                 <name>local.build.timestamp</name>
                                 <pattern>${maven.build.timestamp.format}</pattern>
@@ -1487,10 +1598,10 @@
                         </execution>
                         <execution>
                             <id>add-scala-sources</id>
-                            <phase>generate-sources</phase>
                             <goals>
                                 <goal>add-source</goal>
                             </goals>
+                            <phase>generate-sources</phase>
                             <configuration>
                                 <sources>
                                     <source>src/main/scala-${scala.binary.version}</source>
@@ -1503,12 +1614,11 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${maven.plugin.compiler.version}</version>
                     <configuration>
                         <maxmem>1024m</maxmem>
                         <fork>true</fork>
                         <compilerArgs>
-                            <arg>-Xlint:all,-serial,-path</arg>
+                            <arg>-Xlint:all,-serial,-path,-processing</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
@@ -1517,6 +1627,39 @@
                     <groupId>net.alchim31.maven</groupId>
                     <artifactId>scala-maven-plugin</artifactId>
                     <version>${maven.plugin.scala.version}</version>
+                    <configuration>
+                        <scalaVersion>${scala.version}</scalaVersion>
+                        <recompileMode>incremental</recompileMode>
+                        <args>
+                            <arg>-unchecked</arg>
+                            <arg>-deprecation</arg>
+                            <arg>-feature</arg>
+                            <arg>-explaintypes</arg>
+                            <arg>-Yno-adapted-args</arg>
+                            <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
+                            <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
+                            <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
+                            <arg>-Xfatal-warnings</arg>
+                            <arg>-Ywarn-unused:imports</arg>
+                        </args>
+                        <jvmArgs>
+                            <jvmArg>-Xms1024m</jvmArg>
+                            <jvmArg>-Xmx1024m</jvmArg>
+                            <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
+                        </jvmArgs>
+                        <javacArgs>
+                            <javacArg>-Xlint:all,-serial,-path,-try,-processing</javacArg>
+                        </javacArgs>
+                        <compilerPlugins>
+                            <compilerPlugin>
+                                <groupId>com.github.ghik</groupId>
+                                <artifactId>silencer-plugin_${scala.version}</artifactId>
+                                <version>${maven.plugin.silencer.version}</version>
+                            </compilerPlugin>
+                        </compilerPlugins>
+                        <!-- only skipping `scala:doc-jar` -->
+                        <skip>${maven.scaladoc.skip}</skip>
+                    </configuration>
                     <executions>
                         <execution>
                             <id>eclipse-add-source</id>
@@ -1538,55 +1681,22 @@
                         </execution>
                         <execution>
                             <id>attach-scaladocs</id>
-                            <phase>verify</phase>
                             <goals>
                                 <goal>doc-jar</goal>
                             </goals>
+                            <phase>verify</phase>
                         </execution>
                     </executions>
-                    <configuration>
-                        <scalaVersion>${scala.version}</scalaVersion>
-                        <recompileMode>incremental</recompileMode>
-                        <args>
-                            <arg>-unchecked</arg>
-                            <arg>-deprecation</arg>
-                            <arg>-feature</arg>
-                            <arg>-explaintypes</arg>
-                            <arg>-Yno-adapted-args</arg>
-                            <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
-                            <arg>-Xfatal-warnings</arg>
-                            <arg>-Ywarn-unused:imports</arg>
-                        </args>
-                        <jvmArgs>
-                            <jvmArg>-Xms1024m</jvmArg>
-                            <jvmArg>-Xmx1024m</jvmArg>
-                            <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
-                        </jvmArgs>
-                        <javacArgs>
-                            <javacArg>-source</javacArg>
-                            <javacArg>${java.version}</javacArg>
-                            <javacArg>-target</javacArg>
-                            <javacArg>${java.version}</javacArg>
-                            <javacArg>-Xlint:all,-serial,-path,-try</javacArg>
-                        </javacArgs>
-                        <compilerPlugins>
-                            <compilerPlugin>
-                                <groupId>com.github.ghik</groupId>
-                                <artifactId>silencer-plugin_${scala.version}</artifactId>
-                                <version>${maven.plugin.silencer.version}</version>
-                            </compilerPlugin>
-                        </compilerPlugins>
-                    </configuration>
                 </plugin>
 
                 <!-- disable surefire -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven.plugin.surefire.version}</version>
                     <configuration>
                         <skipTests>true</skipTests>
-                        <failIfNoTests>false</failIfNoTests>
+                        <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+                        <argLine>${extraJavaTestArgs}</argLine>
                     </configuration>
                 </plugin>
                 <!-- enable scalatest -->
@@ -1598,12 +1708,14 @@
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
                         <filereports>TestSuite.txt</filereports>
+                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
                         <systemProperties>
                             <log4j.ignoreTCL>true</log4j.ignoreTCL>
-                            <log4j2.configurationFile>file:src/test/resources/log4j2-test.xml</log4j2.configurationFile>
+                            <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
+                            <log4j2.configurationFile>src/test/resources/log4j2-test.xml</log4j2.configurationFile>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>1g</spark.driver.memory>
                             <kyuubi.metrics.json.location>${project.build.directory}/metrics</kyuubi.metrics.json.location>
@@ -1614,6 +1726,8 @@
                         </systemProperties>
                         <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>
                         <tagsToInclude>${maven.plugin.scalatest.include.tags}</tagsToInclude>
+                        <debugForkedProcess>${maven.plugin.scalatest.debug.enabled}</debugForkedProcess>
+                        <debugArgLine>${debugArgLine}</debugArgLine>
                     </configuration>
                     <executions>
                         <execution>
@@ -1638,10 +1752,10 @@
                         </execution>
                         <execution>
                             <id>report</id>
-                            <phase>test</phase>
                             <goals>
                                 <goal>report</goal>
                             </goals>
+                            <phase>test</phase>
                             <configuration>
                                 <outputDirectory>${project.build.directory}/codecov</outputDirectory>
                             </configuration>
@@ -1657,20 +1771,7 @@
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>${maven.plugin.jar.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>${maven.plugin.assembly.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>${maven.plugin.dependency.version}</version>
                     <executions>
                         <execution>
                             <id>default-cli</id>
@@ -1685,10 +1786,10 @@
                         </execution>
                         <execution>
                             <id>generate-test-classpath</id>
-                            <phase>test-compile</phase>
                             <goals>
                                 <goal>build-classpath</goal>
                             </goals>
+                            <phase>test-compile</phase>
                             <configuration>
                                 <includeScope>test</includeScope>
                                 <outputProperty>test_classpath</outputProperty>
@@ -1696,10 +1797,10 @@
                         </execution>
                         <execution>
                             <id>copy-module-dependencies</id>
-                            <phase>package</phase>
                             <goals>
                                 <goal>copy-dependencies</goal>
                             </goals>
+                            <phase>package</phase>
                             <configuration>
                                 <includeScope>runtime</includeScope>
                                 <outputDirectory>${jars.target.dir}</outputDirectory>
@@ -1711,13 +1812,13 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>${maven.plugin.clean.version}</version>
                     <configuration>
                         <filesets>
                             <fileset>
                                 <directory>${project.basedir}</directory>
                                 <includes>
                                     <include>**/*.log</include>
+                                    <include>**/*.db</include>
                                 </includes>
                             </fileset>
                             <fileset>
@@ -1732,32 +1833,11 @@
                             <fileset>
                                 <directory>${project.basedir}/spark-warehouse</directory>
                             </fileset>
+                            <fileset>
+                                <directory>${project.basedir}/web-ui/dist</directory>
+                            </fileset>
                         </filesets>
                     </configuration>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <version>${maven.plugin.deploy.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>${maven.plugin.source.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>${maven.plugin.javadoc.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>${maven.plugin.gpg.version}</version>
                 </plugin>
 
                 <plugin>
@@ -1774,6 +1854,7 @@
                         <configLocation>scalastyle-config.xml</configLocation>
                         <outputFile>${project.build.directory}/scalastyle-output.xml</outputFile>
                         <outputEncoding>UTF-8</outputEncoding>
+                        <skip>${maven.scalastyle.skip}</skip>
                     </configuration>
                     <executions>
                         <execution>
@@ -1788,26 +1869,64 @@
                     <artifactId>spotless-maven-plugin</artifactId>
                     <version>${maven.plugin.spotless.version}</version>
                     <configuration>
+                        <upToDateChecking>
+                            <enabled>true</enabled>
+                        </upToDateChecking>
                         <java>
                             <includes>
                                 <include>src/main/java/**/*.java</include>
                                 <include>src/test/java/**/*.java</include>
                             </includes>
                             <googleJavaFormat>
-                                <version>1.7</version>
+                                <version>${spotless.java.googlejavaformat.version}</version>
                                 <style>GOOGLE</style>
                             </googleJavaFormat>
+                            <removeUnusedImports></removeUnusedImports>
                         </java>
                         <scala>
                             <includes>
                                 <include>src/main/scala/**/*.scala</include>
                                 <include>src/test/scala/**/*.scala</include>
+                                <include>src/test/gen/scala/**/*.scala</include>
                             </includes>
                             <scalafmt>
-                                <version>3.1.1</version>
+                                <version>${spotless.scala.scalafmt.version}</version>
+                                <scalaMajorVersion>${scala.binary.version}</scalaMajorVersion>
                                 <file>${maven.multiModuleProjectDirectory}/.scalafmt.conf</file>
                             </scalafmt>
                         </scala>
+                        <pom>
+                            <includes>
+                                <include>pom.xml</include>
+                            </includes>
+                            <sortPom>
+                                <encoding>${project.build.sourceEncoding}</encoding>
+                                <expandEmptyElements>true</expandEmptyElements>
+                                <indentSchemaLocation>true</indentSchemaLocation>
+                                <nrOfIndentSpace>4</nrOfIndentSpace>
+                            </sortPom>
+                        </pom>
+                        <python>
+                            <includes>
+                                <include>${spotless.python.includes}</include>
+                            </includes>
+                            <black>
+                                <version>${spotless.python.black.version}</version>
+                            </black>
+                        </python>
+                        <markdown>
+                            <includes>
+                                <include>docs/**/*.md</include>
+                                <include>*/README.md</include>
+                                <include>docker/playground/README.md</include>
+                            </includes>
+                            <excludes>
+                                <exclude>docs/*/lib/python*/**/*.md</exclude>
+                            </excludes>
+                            <flexmark>
+                                <version>${flexmark.version}</version>
+                            </flexmark>
+                        </markdown>
                     </configuration>
                     <executions>
                         <execution>
@@ -1827,16 +1946,7 @@
                 <plugin>
                     <groupId>org.apache.rat</groupId>
                     <artifactId>apache-rat-plugin</artifactId>
-                    <version>${maven.plugin.rat.version}</version>
                     <inherited>true</inherited>
-                    <executions>
-                        <execution>
-                            <phase>verify</phase>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                     <configuration>
                         <excludeSubProjects>false</excludeSubProjects>
                         <numUnapprovedLicenses>0</numUnapprovedLicenses>
@@ -1847,11 +1957,22 @@
                         </licenseFamilies>
                         <excludesFile>.rat-excludes</excludesFile>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>verify</phase>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.antlr</groupId>
                     <artifactId>antlr4-maven-plugin</artifactId>
                     <version>${antlr4.version}</version>
+                    <configuration>
+                        <treatWarningsAsErrors>true</treatWarningsAsErrors>
+                    </configuration>
                     <executions>
                         <execution>
                             <goals>
@@ -1859,8 +1980,27 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>extra-enforcer-rules</artifactId>
+                            <version>${maven.plugin.enforcer.mojo.rules.version}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+
+                <plugin>
+                    <groupId>com.github.eirslett</groupId>
+                    <artifactId>frontend-maven-plugin</artifactId>
+                    <version>${maven.plugin.frontend.version}</version>
                     <configuration>
-                        <treatWarningsAsErrors>true</treatWarningsAsErrors>
+                        <nodeVersion>${node.version}</nodeVersion>
+                        <pnpmVersion>${pnpm.version}</pnpmVersion>
                     </configuration>
                 </plugin>
             </plugins>
@@ -1919,15 +2059,39 @@
                 <groupId>org.apache.rat</groupId>
                 <artifactId>apache-rat-plugin</artifactId>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-bytecode-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <enforceBytecodeVersion>
+                                    <maxJdkVersion>${java.version}</maxJdkVersion>
+                                    <ignoredScopes>test</ignoredScopes>
+                                </enforceBytecodeVersion>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
     <profiles>
         <profile>
             <id>mirror-cdn</id>
-            <!-- this profile works only for latest apache releases -->
             <properties>
+                <!-- the apache cdn mirror works only for latest apache releases -->
                 <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
+                <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
+                <pnpmDownloadRoot>https://registry.npmmirror.com/pnpm/-/</pnpmDownloadRoot>
             </properties>
         </profile>
 
@@ -1955,103 +2119,108 @@
             </activation>
             <properties>
                 <java.version>11</java.version>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>spark-3.0</id>
-            <properties>
-                <spark.version>3.0.3</spark.version>
-                <delta.version>0.8.0</delta.version>
-                <iceberg.name>iceberg-spark3-runtime</iceberg.name>
-                <!--
-                    https://hudi.apache.org/releases/release-0.11.0/#bundle-usage-updates
-                    Hudi 0.11.0 Spark bundle for 3.0.x is no longer officially supported.
-                -->
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <maven.compiler.source></maven.compiler.source>
+                <maven.compiler.target></maven.compiler.target>
+                <maven.compiler.release>${java.version}</maven.compiler.release>
+                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
 
         <profile>
             <id>spark-3.1</id>
-            <properties>
-                <spark.version>3.1.3</spark.version>
-                <delta.version>1.0.1</delta.version>
-                <iceberg.name>iceberg-spark-runtime-3.1_${scala.binary.version}</iceberg.name>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
-            </properties>
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-common</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-1</module>
-                <module>extensions/spark/kyuubi-spark-authz</module>
             </modules>
+            <properties>
+                <spark.version>3.1.3</spark.version>
+                <spark.binary.version>3.1</spark.binary.version>
+                <delta.version>1.0.1</delta.version>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
+            </properties>
         </profile>
 
         <profile>
             <id>spark-3.2</id>
-            <properties>
-                <spark.version>3.2.1</spark.version>
-                <delta.version>1.2.1</delta.version>
-                <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
-                <!--
-                    See https://github.com/apache/incubator-kyuubi/pull/2576
-                    Hudi 0.11 requires hudi-spark3.2-bundle to execute UT
-                -->
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
-            </properties>
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-common</module>
-                <module>extensions/spark/kyuubi-spark-authz</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-2</module>
             </modules>
+            <properties>
+                <spark.version>3.2.4</spark.version>
+                <spark.binary.version>3.2</spark.binary.version>
+                <delta.version>2.0.2</delta.version>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
+            </properties>
         </profile>
 
         <profile>
             <id>spark-3.3</id>
-            <properties>
-                <spark.version>3.3.0</spark.version>
-                <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
-            </properties>
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-common</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-3</module>
+                <module>extensions/spark/kyuubi-spark-connector-hive</module>
                 <module>extensions/spark/kyuubi-spark-connector-kudu</module>
             </modules>
+            <properties>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>spark-3.4</id>
+            <modules>
+                <module>extensions/spark/kyuubi-spark-connector-hive</module>
+                <module>extensions/spark/kyuubi-spark-connector-kudu</module>
+            </modules>
+            <properties>
+                <delta.version>2.4.0</delta.version>
+                <spark.version>3.4.1</spark.version>
+                <spark.binary.version>3.4</spark.binary.version>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
+            </properties>
         </profile>
 
         <profile>
             <id>spark-master</id>
+            <properties>
+                <spark.version>3.5.0-SNAPSHOT</spark.version>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
+            </properties>
             <repositories>
                 <repository>
-                    <id>Apache Snapshots Repository</id>
-                    <url>https://repository.apache.org/snapshots/</url>
                     <releases>
                         <enabled>true</enabled>
                     </releases>
                     <snapshots>
                         <enabled>true</enabled>
                     </snapshots>
+                    <id>Apache Snapshots Repository</id>
+                    <url>https://repository.apache.org/snapshots/</url>
                 </repository>
             </repositories>
+        </profile>
+
+        <profile>
+            <id>flink-1.16</id>
             <properties>
-                <spark.version>3.4.0-SNAPSHOT</spark.version>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <flink.version>1.16.2</flink.version>
             </properties>
         </profile>
 
         <profile>
-            <id>flink-1.14</id>
+            <id>flink-1.17</id>
             <properties>
-                <flink.version>1.14.4</flink.version>
-                <flink.module.scala.suffix>_${scala.binary.version}</flink.module.scala.suffix>
+                <flink.version>1.17.1</flink.version>
             </properties>
         </profile>
+
         <profile>
-            <id>flink-1.15</id>
+            <id>zookeeper-3.6</id>
             <properties>
-                <flink.version>1.15.0</flink.version>
-                <flink.module.scala.suffix></flink.module.scala.suffix>
+                <kyuubi-shaded-zookeeper.artifacts>kyuubi-shaded-zookeeper-36</kyuubi-shaded-zookeeper.artifacts>
             </properties>
         </profile>
 
@@ -2084,6 +2253,51 @@
         </profile>
 
         <profile>
+            <id>spotless-python</id>
+            <properties>
+                <spotless.python.includes>src/**/*.py</spotless.python.includes>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jdbc-shaded</id>
+            <properties>
+                <hive.jdbc.artifact>kyuubi-hive-jdbc-shaded</hive.jdbc.artifact>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>fast</id>
+            <properties>
+                <enforcer.skip>true</enforcer.skip>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.scaladoc.skip>true</maven.scaladoc.skip>
+                <maven.scalastyle.skip>true</maven.scalastyle.skip>
+                <rat.skip>true</rat.skip>
+                <skipTests>true</skipTests>
+                <spotless.check.skip>true</spotless.check.skip>
+                <flink.archive.download.skip>true</flink.archive.download.skip>
+                <hive.archive.download.skip>true</hive.archive.download.skip>
+                <spark.archive.download.skip>true</spark.archive.download.skip>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>remote-debug</id>
+            <properties>
+                <maven.surefire.debug>${debugArgLine}</maven.surefire.debug>
+                <maven.plugin.scalatest.debug.enabled>true</maven.plugin.scalatest.debug.enabled>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>web-ui</id>
+            <properties>
+                <webui.skip>false</webui.skip>
+            </properties>
+        </profile>
+
+        <profile>
             <id>apache-release</id>
             <build>
                 <plugins>
@@ -2095,6 +2309,16 @@
                         <executions>
                             <execution>
                                 <id>source-release-assembly</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>net.nicoulaj.maven.plugins</groupId>
+                        <artifactId>checksum-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>source-release-checksum</id>
                                 <phase>none</phase>
                             </execution>
                         </executions>
@@ -2121,6 +2345,7 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <configuration>
                             <quiet>true</quiet>
+                            <doclint>none</doclint>
                         </configuration>
                         <executions>
                             <execution>
@@ -2137,10 +2362,10 @@
                         <executions>
                             <execution>
                                 <id>sign-release-artifacts</id>
-                                <phase>verify</phase>
                                 <goals>
                                     <goal>sign</goal>
                                 </goals>
+                                <phase>verify</phase>
                             </execution>
                         </executions>
                     </plugin>

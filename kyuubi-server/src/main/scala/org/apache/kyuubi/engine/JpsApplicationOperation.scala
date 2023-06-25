@@ -58,7 +58,7 @@ class JpsApplicationOperation extends ApplicationOperation {
     }
   }
 
-  override def killApplicationByTag(tag: String): KillResponse = {
+  private def killJpsApplicationByTag(tag: String, retryable: Boolean): KillResponse = {
     val commandOption = getEngine(tag)
     if (commandOption.nonEmpty) {
       val idAndCmd = commandOption.get
@@ -68,25 +68,32 @@ class JpsApplicationOperation extends ApplicationOperation {
         (true, s"Succeeded to terminate: $idAndCmd")
       } catch {
         case e: Exception =>
-          (false, s"Failed to terminate: $idAndCmd, due to ${e.getMessage}")
+          // the application might generate multiple processes, ensure that it is killed eventually.
+          if (retryable && getEngine(tag).nonEmpty) {
+            killJpsApplicationByTag(tag, false)
+          } else {
+            (false, s"Failed to terminate: $idAndCmd, due to ${e.getMessage}")
+          }
       }
     } else {
       (false, NOT_FOUND)
     }
   }
 
-  override def getApplicationInfoByTag(tag: String): Map[String, String] = {
+  override def killApplicationByTag(tag: String): KillResponse = {
+    killJpsApplicationByTag(tag, true)
+  }
+
+  override def getApplicationInfoByTag(tag: String, submitTime: Option[Long]): ApplicationInfo = {
     val commandOption = getEngine(tag)
     if (commandOption.nonEmpty) {
       val idAndCmd = commandOption.get
       val (id, cmd) = idAndCmd.splitAt(idAndCmd.indexOf(" "))
-      Map(
-        APP_ID_KEY -> id,
-        APP_NAME_KEY -> cmd,
-        APP_STATE_KEY -> "RUNNING")
+      ApplicationInfo(id = id, name = cmd, state = ApplicationState.RUNNING)
     } else {
-      Map(APP_STATE_KEY -> "FINISHED")
+      ApplicationInfo(id = null, name = null, state = ApplicationState.NOT_FOUND)
     }
+    // TODO check if the process is zombie
   }
 
   override def stop(): Unit = {}

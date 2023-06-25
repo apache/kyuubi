@@ -84,6 +84,10 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
           <strong>Background execution pool threads active: </strong>
           {engine.backendService.sessionManager.getActiveCount}
         </li>
+          <li>
+            <strong>Background execution pool work queue size: </strong>
+            {engine.backendService.sessionManager.getWorkQueueSize}
+          </li>
       }.getOrElse(Seq.empty)
     }
     </ul>
@@ -92,14 +96,23 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   private def stop(request: HttpServletRequest): Seq[Node] = {
     val basePath = UIUtils.prependBaseUri(request, parent.basePath)
     if (parent.killEnabled) {
-      val confirm =
-        s"if (window.confirm('Are you sure you want to kill kyuubi engine ?')) " +
+      val confirmForceStop =
+        s"if (window.confirm('Are you sure you want to stop kyuubi engine immediately ?')) " +
           "{ this.parentNode.submit(); return true; } else { return false; }"
-      val stopLinkUri = s"$basePath/kyuubi/stop"
-      <ul class ="list-unstyled">
+      val forceStopLinkUri = s"$basePath/kyuubi/stop"
+
+      val confirmGracefulStop =
+        s"if (window.confirm('Are you sure you want to stop kyuubi engine gracefully ?')) " +
+          "{ this.parentNode.submit(); return true; } else { return false; }"
+      val gracefulStopLinkUri = s"$basePath/kyuubi/gracefulstop"
+
+      <ul class="list-unstyled">
         <li>
-          <strong>Stop kyuubi engine:  </strong>
-          <a href={stopLinkUri} onclick={confirm} class="stop-link">(kill)</a>
+          <strong>Stop kyuubi engine:</strong>
+          <a href={forceStopLinkUri} onclick={confirmForceStop} class="stop-link">
+            (Stop Immediately)</a>
+          <a href={gracefulStopLinkUri} onclick={confirmGracefulStop} class="stop-link">
+            (Stop Gracefully)</a>
         </li>
       </ul>
     } else {
@@ -146,7 +159,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
                 'aggregated-sqlstat')">
         <h4>
           <span class="collapse-table-arrow arrow-open"></span>
-          <a>SQL Statistics ({numStatement})</a>
+          <a>Statement Statistics ({numStatement})</a>
         </h4>
       </span> ++
         <div class="aggregated-sqlstat collapsible-table">
@@ -250,6 +263,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
           ("Client IP", true, None),
           ("Server IP", true, None),
           ("Session ID", true, None),
+          ("Session Name", true, None),
           ("Start Time", true, None),
           ("Finish Time", true, None),
           ("Duration", true, None),
@@ -275,6 +289,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         <td> {session.ip} </td>
         <td> {session.serverIp} </td>
         <td> <a href={sessionLink}> {session.sessionId} </a> </td>
+        <td> {session.name} </td>
         <td> {formatDate(session.startTime)} </td>
         <td> {if (session.endTime > 0) formatDate(session.endTime)} </td>
         <td> {formatDurationVerbose(session.duration)} </td>
@@ -329,6 +344,7 @@ private class StatementStatsPagedTable(
     val sqlTableHeadersAndTooltips: Seq[(String, Boolean, Option[String])] =
       Seq(
         ("User", true, None),
+        ("Session ID", true, None),
         ("Statement ID", true, None),
         ("Create Time", true, None),
         ("Finish Time", true, None),
@@ -349,9 +365,16 @@ private class StatementStatsPagedTable(
   }
 
   override def row(event: SparkOperationEvent): Seq[Node] = {
+    val sessionLink = "%s/%s/session/?id=%s".format(
+      UIUtils.prependBaseUri(request, parent.basePath),
+      parent.prefix,
+      event.sessionId)
     <tr>
       <td>
         {event.sessionUser}
+      </td>
+      <td>
+        <a href={sessionLink}>{event.sessionId}</a>
       </td>
       <td>
         {event.statementId}
@@ -386,7 +409,9 @@ private class StatementStatsPagedTable(
       }
     }
       </td>
-      {if (event.exception.isDefined) errorMessageCell(event.exception.get.getMessage)}
+      {
+      if (event.exception.isDefined) errorMessageCell(event.exception.get.getMessage) else <td></td>
+    }
     </tr>
   }
 
@@ -428,6 +453,7 @@ private class SessionStatsTableDataSource(
       case "Client IP" => Ordering.by(_.ip)
       case "Server IP" => Ordering.by(_.serverIp)
       case "Session ID" => Ordering.by(_.sessionId)
+      case "Session Name" => Ordering.by(_.name)
       case "Start Time" => Ordering.by(_.startTime)
       case "Finish Time" => Ordering.by(_.endTime)
       case "Duration" => Ordering.by(_.duration)
@@ -461,6 +487,7 @@ private class StatementStatsTableDataSource(
   private def ordering(sortColumn: String, desc: Boolean): Ordering[SparkOperationEvent] = {
     val ordering: Ordering[SparkOperationEvent] = sortColumn match {
       case "User" => Ordering.by(_.sessionUser)
+      case "Session ID" => Ordering.by(_.sessionId)
       case "Statement ID" => Ordering.by(_.statementId)
       case "Create Time" => Ordering.by(_.createTime)
       case "Finish Time" => Ordering.by(_.completeTime)

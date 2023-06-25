@@ -21,17 +21,15 @@ import java.util.concurrent.Future
 
 import org.apache.hive.service.cli.operation.{Operation, OperationManager}
 import org.apache.hive.service.cli.session.{HiveSession, SessionManager => HiveSessionManager}
-import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.hive.session.HiveSessionImpl
 import org.apache.kyuubi.operation.{AbstractOperation, FetchOrientation, OperationState, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.session.Session
 
-abstract class HiveOperation(opType: OperationType, session: Session)
-  extends AbstractOperation(opType, session) {
+abstract class HiveOperation(session: Session) extends AbstractOperation(session) {
 
   protected val hive: HiveSession = session.asInstanceOf[HiveSessionImpl].hive
 
@@ -48,7 +46,7 @@ abstract class HiveOperation(opType: OperationType, session: Session)
   }
 
   override def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }
@@ -86,11 +84,15 @@ abstract class HiveOperation(opType: OperationType, session: Session)
       Option(status.getOperationException).map(KyuubiSQLException(_)))
   }
 
-  override def getResultSetSchema: TTableSchema = {
-    internalHiveOperation.getResultSetSchema.toTTableSchema
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
+    val schema = internalHiveOperation.getResultSetSchema.toTTableSchema
+    val resp = new TGetResultSetMetadataResp
+    resp.setSchema(schema)
+    resp.setStatus(OK_STATUS)
+    resp
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     val tOrder = FetchOrientation.toTFetchOrientation(order)
     val hiveOrder = org.apache.hive.service.cli.FetchOrientation.getFetchOrientation(tOrder)
     val rowSet = internalHiveOperation.getNextRowSet(hiveOrder, rowSetSize)

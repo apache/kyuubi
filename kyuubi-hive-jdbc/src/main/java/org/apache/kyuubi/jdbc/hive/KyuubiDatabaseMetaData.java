@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import static org.apache.hive.service.rpc.thrift.TTypeId.*;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -26,11 +28,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.jar.Attributes;
-import org.apache.hadoop.hive.metastore.TableType;
-import org.apache.hadoop.hive.metastore.api.FieldSchema;
-import org.apache.hive.service.cli.GetInfoType;
-import org.apache.hive.service.cli.HiveSQLException;
-import org.apache.hive.service.cli.TableSchema;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLDatabaseMetaData;
@@ -81,7 +78,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       catalogResp = client.GetCatalogs(new TGetCatalogsReq(sessHandle));
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(catalogResp.getStatus());
 
@@ -94,7 +91,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
   private static final class ClientInfoPropertiesResultSet extends KyuubiMetaDataResultSet<Object> {
     private static final String[] COLUMNS = {"NAME", "MAX_LEN", "DEFAULT_VALUE", "DESCRIPTION"};
-    private static final String[] COLUMN_TYPES = {"STRING", "INT", "STRING", "STRING"};
+    private static final TTypeId[] COLUMN_TYPES = {STRING_TYPE, INT_TYPE, STRING_TYPE, STRING_TYPE};
 
     private static final Object[][] DATA = {
       {"ApplicationName", 1000, null, null},
@@ -105,11 +102,17 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
     public ClientInfoPropertiesResultSet() throws SQLException {
       super(Arrays.asList(COLUMNS), Arrays.asList(COLUMN_TYPES), null);
-      List<FieldSchema> fieldSchemas = new ArrayList<>(COLUMNS.length);
+      List<TColumnDesc> fieldSchemas = new ArrayList<>(COLUMNS.length);
       for (int i = 0; i < COLUMNS.length; ++i) {
-        fieldSchemas.add(new FieldSchema(COLUMNS[i], COLUMN_TYPES[i], null));
+        TColumnDesc tColumnDesc = new TColumnDesc();
+        tColumnDesc.setColumnName(COLUMNS[i]);
+        TTypeDesc tTypeDesc = new TTypeDesc();
+        tTypeDesc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(COLUMN_TYPES[i])));
+        tColumnDesc.setTypeDesc(tTypeDesc);
+        tColumnDesc.setPosition(i);
+        fieldSchemas.add(tColumnDesc);
       }
-      setSchema(new TableSchema(fieldSchemas));
+      setSchema(new TTableSchema(fieldSchemas));
     }
 
     @Override
@@ -124,7 +127,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
       for (int i = 0; i < COLUMNS.length; ++i) {
         if (COLUMNS[i].equalsIgnoreCase(columnLabel)) return getObject(i, type);
       }
-      throw new SQLException("No column " + columnLabel);
+      throw new KyuubiSQLException("No column " + columnLabel);
     }
 
     @SuppressWarnings("unchecked")
@@ -194,7 +197,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       colResp = client.GetColumns(colReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(colResp.getStatus());
     // build the resultset from response
@@ -252,7 +255,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       getFKResp = client.GetCrossReference(getFKReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(getFKResp.getStatus());
 
@@ -275,7 +278,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
   @Override
   public String getDatabaseProductName() throws SQLException {
-    TGetInfoResp resp = getServerInfo(GetInfoType.CLI_DBMS_NAME.toTGetInfoType());
+    TGetInfoResp resp = getServerInfo(TGetInfoType.CLI_DBMS_NAME);
     return resp.getInfoValue().getStringValue();
   }
 
@@ -285,7 +288,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
       return dbVersion;
     }
 
-    TGetInfoResp resp = getServerInfo(GetInfoType.CLI_DBMS_VER.toTGetInfoType());
+    TGetInfoResp resp = getServerInfo(TGetInfoType.CLI_DBMS_VER);
     this.dbVersion = resp.getInfoValue().getStringValue();
     return dbVersion;
   }
@@ -334,7 +337,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       funcResp = client.GetFunctions(getFunctionsReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(funcResp.getStatus());
 
@@ -373,20 +376,20 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
                 "PK_NAME",
                 "DEFERRABILITY"),
             Arrays.asList(
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "SMALLINT",
-                "SMALLINT",
-                "SMALLINT",
-                "STRING",
-                "STRING",
-                "STRING"))
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                SMALLINT_TYPE,
+                SMALLINT_TYPE,
+                SMALLINT_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE))
         .build();
   }
 
@@ -413,8 +416,19 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
                 "PAGES",
                 "FILTER_CONDITION"),
             Arrays.asList(
-                "STRING", "STRING", "STRING", "BOOLEAN", "STRING", "STRING", "SHORT", "SHORT",
-                "STRING", "STRING", "INT", "INT", "STRING"))
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                BOOLEAN_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                SMALLINT_TYPE,
+                SMALLINT_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                INT_TYPE,
+                INT_TYPE,
+                STRING_TYPE))
         .build();
   }
 
@@ -449,7 +463,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       getPKResp = client.GetPrimaryKeys(getPKReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(getPKResp.getStatus());
 
@@ -492,32 +506,32 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
                 "IS_NULLABLE",
                 "SPECIFIC_NAME"),
             Arrays.asList(
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "SMALLINT",
-                "INT",
-                "STRING",
-                "INT",
-                "INT",
-                "SMALLINT",
-                "SMALLINT",
-                "SMALLINT",
-                "STRING",
-                "STRING",
-                "INT",
-                "INT",
-                "INT",
-                "INT",
-                "STRING",
-                "STRING"))
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                SMALLINT_TYPE,
+                INT_TYPE,
+                STRING_TYPE,
+                INT_TYPE,
+                INT_TYPE,
+                SMALLINT_TYPE,
+                SMALLINT_TYPE,
+                SMALLINT_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                INT_TYPE,
+                INT_TYPE,
+                INT_TYPE,
+                INT_TYPE,
+                STRING_TYPE,
+                STRING_TYPE))
         .build();
   }
 
   @Override
   public String getProcedureTerm() throws SQLException {
-    return new String("UDF");
+    return "UDF";
   }
 
   @Override
@@ -540,15 +554,15 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
                 "PROCEDURE_TYPE",
                 "SPECIFIC_NAME"),
             Arrays.asList(
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "SMALLINT",
-                "STRING"))
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE))
         .build();
   }
 
@@ -557,7 +571,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     // Note: the definitions of what ODBC and JDBC keywords exclude are different in different
     //       places. For now, just return the ODBC version here; that excludes Hive keywords
     //       that are also ODBC reserved keywords. We could also exclude SQL:2003.
-    TGetInfoResp resp = getServerInfo(GetInfoType.CLI_ODBC_KEYWORDS.toTGetInfoType());
+    TGetInfoResp resp = getServerInfo(TGetInfoType.CLI_ODBC_KEYWORDS);
     return resp.getInfoValue().getStringValue();
   }
 
@@ -593,7 +607,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       schemaResp = client.GetSchemas(schemaReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(schemaResp.getStatus());
 
@@ -626,7 +640,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       tableTypeResp = client.GetTableTypes(new TGetTableTypesReq(sessHandle));
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(tableTypeResp.getStatus());
 
@@ -653,11 +667,11 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       getTableResp = client.GetTables(getTableReq);
     } catch (TException rethrow) {
-      throw new SQLException(rethrow.getMessage(), "08S01", rethrow);
+      throw new KyuubiSQLException(rethrow.getMessage(), "08S01", rethrow);
     }
     TStatus tStatus = getTableResp.getStatus();
     if (tStatus.getStatusCode() != TStatusCode.SUCCESS_STATUS) {
-      throw new HiveSQLException(tStatus);
+      throw new KyuubiSQLException(tStatus);
     }
     return new KyuubiQueryResultSet.Builder(connection)
         .setClient(client)
@@ -682,22 +696,17 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     }
   }
 
-  /**
-   * Translate hive table types into jdbc table types.
-   *
-   * @param hivetabletype
-   * @return the type of the table
-   */
+  /** Translate hive table types into jdbc table types. */
   public static String toJdbcTableType(String hivetabletype) {
     if (hivetabletype == null) {
       return null;
-    } else if (hivetabletype.equals(TableType.MANAGED_TABLE.toString())) {
+    } else if (hivetabletype.equals("MANAGED_TABLE")) {
       return "TABLE";
-    } else if (hivetabletype.equals(TableType.VIRTUAL_VIEW.toString())) {
+    } else if (hivetabletype.equals("VIRTUAL_VIEW")) {
       return "VIEW";
-    } else if (hivetabletype.equals(TableType.EXTERNAL_TABLE.toString())) {
+    } else if (hivetabletype.equals("EXTERNAL_TABLE")) {
       return "EXTERNAL TABLE";
-    } else if (hivetabletype.equals(TableType.MATERIALIZED_VIEW.toString())) {
+    } else if (hivetabletype.equals("MATERIALIZED_VIEW")) {
       return "MATERIALIZED VIEW";
     } else {
       return hivetabletype;
@@ -717,7 +726,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       getTypeInfoResp = client.GetTypeInfo(getTypeInfoReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(getTypeInfoResp.getStatus());
     return new KyuubiQueryResultSet.Builder(connection)
@@ -741,7 +750,8 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
             "DATA_TYPE",
             "REMARKS",
             "BASE_TYPE"),
-        Arrays.asList("STRING", "STRING", "STRING", "STRING", "INT", "STRING", "INT"),
+        Arrays.asList(
+            STRING_TYPE, STRING_TYPE, STRING_TYPE, STRING_TYPE, INT_TYPE, STRING_TYPE, INT_TYPE),
         null) {
 
       @Override
@@ -901,19 +911,13 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     return true;
   }
 
-  public static void main(String[] args) throws SQLException {
-    KyuubiDatabaseMetaData meta = new KyuubiDatabaseMetaData(null, null, null);
-    System.out.println("DriverName: " + meta.getDriverName());
-    System.out.println("DriverVersion: " + meta.getDriverVersion());
-  }
-
   private TGetInfoResp getServerInfo(TGetInfoType type) throws SQLException {
     TGetInfoReq req = new TGetInfoReq(sessHandle, type);
     TGetInfoResp resp;
     try {
       resp = client.GetInfo(req);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(resp.getStatus());
     return resp;

@@ -17,9 +17,7 @@
 package org.apache.kyuubi.engine.jdbc.dialect
 
 import java.sql.{Connection, Statement}
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
+import java.util
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
@@ -28,6 +26,7 @@ import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
 import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 abstract class JdbcDialect extends SupportServiceLoader with Logging {
 
@@ -39,11 +38,20 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
 
   def getSchemasOperation(session: Session): Operation
 
-  def getTablesOperation(session: Session): Operation
+  def getTablesQuery(
+      catalog: String,
+      schema: String,
+      tableName: String,
+      tableTypes: util.List[String]): String
 
   def getTableTypesOperation(session: Session): Operation
 
-  def getColumnsOperation(session: Session): Operation
+  def getColumnsQuery(
+      session: Session,
+      catalogName: String,
+      schemaName: String,
+      tableName: String,
+      columnName: String): String
 
   def getFunctionsOperation(session: Session): Operation
 
@@ -65,9 +73,8 @@ object JdbcDialects extends Logging {
       assert(url.length > 5 && url.substring(5).contains(":"))
       url.substring(5, url.indexOf(":", 5))
     }
-    val serviceLoader =
-      ServiceLoader.load(classOf[JdbcDialect], Thread.currentThread().getContextClassLoader)
-    serviceLoader.asScala.filter(_.name().equalsIgnoreCase(shortName)).toList match {
+    loadFromServiceLoader[JdbcDialect]()
+      .filter(_.name().equalsIgnoreCase(shortName)).toList match {
       case Nil =>
         throw new KyuubiException(s"Don't find jdbc dialect implement for jdbc engine: $shortName.")
       case head :: Nil =>

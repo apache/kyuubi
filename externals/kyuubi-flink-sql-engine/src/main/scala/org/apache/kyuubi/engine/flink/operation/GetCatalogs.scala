@@ -17,18 +17,18 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import scala.collection.convert.ImplicitConversions._
+
 import org.apache.kyuubi.engine.flink.result.ResultSetUtil
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 import org.apache.kyuubi.session.Session
 
-class GetCatalogs(session: Session)
-  extends FlinkOperation(OperationType.GET_CATALOGS, session) {
+class GetCatalogs(session: Session) extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {
-      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-      val catalogs = tableEnv.listCatalogs.toList
+      val catalogManager = sessionContext.getSessionState.catalogManager
+      val catalogs = catalogManager.listCatalogs.toList
       resultSet = ResultSetUtil.stringListToResultSet(catalogs, TABLE_CAT)
     } catch onError()
   }

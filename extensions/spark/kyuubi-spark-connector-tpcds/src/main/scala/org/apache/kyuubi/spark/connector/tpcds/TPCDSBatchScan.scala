@@ -36,19 +36,20 @@ case class TPCDSTableChuck(table: String, scale: Double, parallelism: Int, index
 class TPCDSBatchScan(
     @transient table: Table,
     scale: Double,
-    schema: StructType) extends ScanBuilder
+    schema: StructType,
+    readConf: TPCDSReadConf) extends ScanBuilder
   with SupportsReportStatistics with Batch with Serializable {
 
   private val _sizeInBytes: Long = TPCDSStatisticsUtils.sizeInBytes(table, scale)
   private val _numRows: Long = TPCDSStatisticsUtils.numRows(table, scale)
 
-  private val rowCountPerTask: Int = 1000000
-
+  // Tables with fewer than 1000000 are not parallelized,
+  // the limit made in `io.trino.tpcds.Parallel#splitWork`.
   private val parallelism: Int =
     if (table.isSmall) 1
     else math.max(
       SparkSession.active.sparkContext.defaultParallelism,
-      (_numRows / rowCountPerTask.toDouble).ceil.toInt)
+      (_sizeInBytes / readConf.maxPartitionBytes).ceil.toInt)
 
   override def build: Scan = this
 
@@ -91,13 +92,15 @@ class TPCDSPartitionReader(
 
   private lazy val dateFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
+  private val reusedRow = new Array[Any](schema.length)
   private val iterator = Results
     .constructResults(chuckInfo.getOnlyTableToGenerate, chuckInfo)
     .iterator.asScala
     .map { _.get(0).asScala } // the 1st row is specific table row
-    .map { row =>
-      row.zipWithIndex.map { case (v, i) =>
-        (v, schema(i).dataType) match {
+    .map { stringRow =>
+      var i = 0
+      while (i < stringRow.length) {
+        reusedRow(i) = (stringRow(i), schema(i).dataType) match {
           case (null, _) => null
           case (Options.DEFAULT_NULL_STRING, _) => null
           case (v, IntegerType) => v.toInt
@@ -109,9 +112,10 @@ class TPCDSPartitionReader(
           case (v, DecimalType()) => Decimal(v)
           case (v, dt) => throw new IllegalArgumentException(s"value: $v, type: $dt")
         }
+        i += 1
       }
+      InternalRow(reusedRow: _*)
     }
-    .map { row => InternalRow.fromSeq(row) }
 
   private var currentRow: InternalRow = _
 

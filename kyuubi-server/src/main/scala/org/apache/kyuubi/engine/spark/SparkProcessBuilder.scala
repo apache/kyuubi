@@ -28,9 +28,11 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.Validator
 
 class SparkProcessBuilder(
     override val proxyUser: String,
@@ -46,7 +48,7 @@ class SparkProcessBuilder(
 
   import SparkProcessBuilder._
 
-  private val sparkHome = getEngineHome(shortName)
+  private[kyuubi] val sparkHome = getEngineHome(shortName)
 
   override protected val executable: String = {
     Paths.get(sparkHome, "bin", SPARK_SUBMIT_FILE).toFile.getCanonicalPath
@@ -54,7 +56,52 @@ class SparkProcessBuilder(
 
   override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
 
+  /**
+   * Add `spark.master` if KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT
+   * are defined. So we can deploy spark on kubernetes without setting `spark.master`
+   * explicitly when kyuubi-servers are on kubernetes, which also helps in case that
+   * api-server is not exposed to us.
+   */
+  override protected def completeMasterUrl(conf: KyuubiConf): Unit = {
+    try {
+      (
+        clusterManager(),
+        sys.env.get(KUBERNETES_SERVICE_HOST),
+        sys.env.get(KUBERNETES_SERVICE_PORT)) match {
+        case (None, Some(kubernetesServiceHost), Some(kubernetesServicePort)) =>
+          // According to "https://kubernetes.io/docs/concepts/architecture/control-plane-
+          // node-communication/#node-to-control-plane", the API server is configured to listen
+          // for remote connections on a secure HTTPS port (typically 443), so we set https here.
+          val masterURL = s"k8s://https://${kubernetesServiceHost}:${kubernetesServicePort}"
+          conf.set(MASTER_KEY, masterURL)
+        case _ =>
+      }
+    } catch {
+      case e: Exception =>
+        warn("Failed when setting up spark.master with kubernetes environment automatically.", e)
+    }
+  }
+
+  /**
+   * Converts kyuubi config key so that Spark could identify.
+   * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
+   * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
+   * - Otherwise, the key will be added a `spark.` prefix
+   */
+  protected def convertConfigKey(key: String): String = {
+    if (key.startsWith("spark.")) {
+      key
+    } else if (key.startsWith("hadoop.")) {
+      "spark.hadoop." + key
+    } else {
+      "spark." + key
+    }
+  }
+
   override protected val commands: Array[String] = {
+    // complete `spark.master` if absent on kubernetes
+    completeMasterUrl(conf)
+
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     val buffer = new ArrayBuffer[String]()
     buffer += executable
@@ -69,30 +116,12 @@ class SparkProcessBuilder(
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
 
-    /**
-     * Converts kyuubi configs to configs that Spark could identify.
-     * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
-     * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
-     * - Otherwise, the key will be added a `spark.` prefix
-     */
     allConf.foreach { case (k, v) =>
-      val newKey =
-        if (k.startsWith("spark.")) {
-          k
-        } else if (k.startsWith("hadoop.")) {
-          "spark.hadoop." + k
-        } else {
-          "spark." + k
-        }
       buffer += CONF
-      buffer += s"$newKey=$v"
+      buffer += s"${convertConfigKey(k)}=$v"
     }
 
-    // iff the keytab is specified, PROXY_USER is not supported
-    if (!useKeytab()) {
-      buffer += PROXY_USER
-      buffer += proxyUser
-    }
+    setupKerberos(buffer)
 
     mainResource.foreach { r => buffer += r }
 
@@ -101,26 +130,39 @@ class SparkProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-sql-engine"
 
-  private def useKeytab(): Boolean = {
+  protected def setupKerberos(buffer: ArrayBuffer[String]): Unit = {
+    // if the keytab is specified, PROXY_USER is not supported
+    tryKeytab() match {
+      case None =>
+        setSparkUserName(proxyUser, buffer)
+        buffer += PROXY_USER
+        buffer += proxyUser
+      case Some(name) =>
+        setSparkUserName(name, buffer)
+    }
+  }
+
+  private def tryKeytab(): Option[String] = {
     val principal = conf.getOption(PRINCIPAL)
     val keytab = conf.getOption(KEYTAB)
     if (principal.isEmpty || keytab.isEmpty) {
-      false
+      None
     } else {
       try {
         val ugi = UserGroupInformation
           .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
-        val keytabEnabled = ugi.getShortUserName == proxyUser
-        if (!keytabEnabled) {
+        if (ugi.getShortUserName != proxyUser) {
           warn(s"The session proxy user: $proxyUser is not same with " +
             s"spark principal: ${ugi.getShortUserName}, so we can't support use keytab. " +
             s"Fallback to use proxy user.")
+          None
+        } else {
+          Some(ugi.getShortUserName)
         }
-        keytabEnabled
       } catch {
         case e: IOException =>
           error(s"Failed to login for ${principal.get}", e)
-          false
+          None
       }
     }
   }
@@ -162,12 +204,49 @@ class SparkProcessBuilder(
   override def clusterManager(): Option[String] = {
     conf.getOption(MASTER_KEY).orElse(defaultMaster)
   }
+
+  override def validateConf: Unit = Validator.validateConf(conf)
+
+  // For spark on kubernetes, spark pod using env SPARK_USER_NAME as current user
+  def setSparkUserName(userName: String, buffer: ArrayBuffer[String]): Unit = {
+    clusterManager().foreach { cm =>
+      if (cm.toUpperCase.startsWith("K8S")) {
+        buffer += CONF
+        buffer += s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$userName"
+        buffer += CONF
+        buffer += s"spark.executorEnv.SPARK_USER_NAME=$userName"
+      }
+    }
+  }
 }
 
 object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
+  final val INTERNAL_RESOURCE = "spark-internal"
+
+  /**
+   * The path configs from Spark project that might upload local files:
+   * - SparkSubmit
+   * - org.apache.spark.deploy.yarn.Client::prepareLocalResources
+   * - KerberosConfDriverFeatureStep::configurePod
+   * - KubernetesUtils.uploadAndTransformFileUris
+   */
+  final val PATH_CONFIGS = Seq(
+    SPARK_FILES,
+    "spark.jars",
+    "spark.archives",
+    "spark.yarn.jars",
+    "spark.yarn.dist.files",
+    "spark.yarn.dist.pyFiles",
+    "spark.submit.pyFiles",
+    "spark.yarn.dist.jars",
+    "spark.yarn.dist.archives",
+    "spark.kerberos.keytab",
+    "spark.yarn.keytab",
+    "spark.kubernetes.kerberos.krb5.path",
+    "spark.kubernetes.file.upload.path")
 
   final private[spark] val CONF = "--conf"
   final private[spark] val CLASS = "--class"

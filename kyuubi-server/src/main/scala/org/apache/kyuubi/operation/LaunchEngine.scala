@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
 class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean)
-  extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
-
-  override def statement: String = "LAUNCH_ENGINE"
+  extends KyuubiApplicationOperation(session) {
 
   private lazy val _operationLog: OperationLog =
     if (shouldRunAsync) {
@@ -33,6 +32,16 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
       null
     }
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
+
+  override protected def currentApplicationInfo(): Option[ApplicationInfo] = {
+    Option(client).map { cli =>
+      ApplicationInfo(
+        cli.engineId.orNull,
+        cli.engineName.orNull,
+        ApplicationState.RUNNING,
+        cli.engineUrl)
+    }
+  }
 
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(_operationLog)
@@ -44,7 +53,7 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     OperationLog.removeCurrentOperationLog()
   }
 
-  override protected def runInternal(): Unit = {
+  override protected def runInternal(): Unit = session.handleSessionException {
     val asyncOperation: Runnable = () => {
       setState(OperationState.RUNNING)
       try {
@@ -59,4 +68,9 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
 
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
+
+  override protected def applicationInfoMap: Option[Map[String, String]] = {
+    super.applicationInfoMap.map { _ + ("refId" -> session.engine.getEngineRefId()) }
+  }
+
 }

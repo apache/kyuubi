@@ -18,6 +18,7 @@
 apiVersion: v1
 user: test_user
 request:
+  batchType: Spark
   name: test_batch
   resource: /MySpace/kyuubi-spark-sql-engine_2.12-1.6.0-SNAPSHOT.jar
   className: org.apache.kyuubi.engine.spark.SparkSQLEngine

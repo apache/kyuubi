@@ -19,15 +19,13 @@ package org.apache.kyuubi.engine.hive.operation
 
 import org.apache.hive.service.cli.operation.Operation
 
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class GetPrimaryKeys(
     session: Session,
     catalogName: String,
     schemaName: String,
-    tableName: String)
-  extends HiveOperation(OperationType.GET_FUNCTIONS, session) {
+    tableName: String) extends HiveOperation(session) {
 
   override val internalHiveOperation: Operation =
     delegatedOperationManager.newGetPrimaryKeysOperation(

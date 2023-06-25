@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.ApplicationState.ApplicationState
 
 trait ApplicationOperation {
 
@@ -55,21 +56,55 @@ trait ApplicationOperation {
    * Get the engine/application status by the unique application tag
    *
    * @param tag the unique application tag for engine instance.
-   * @return a map contains the application status
+   * @param submitTime engine submit to resourceManager time
+   * @return [[ApplicationInfo]]
    */
-  def getApplicationInfoByTag(tag: String): Map[String, String]
+  def getApplicationInfoByTag(tag: String, submitTime: Option[Long] = None): ApplicationInfo
+}
+
+object ApplicationState extends Enumeration {
+  type ApplicationState = Value
+  val PENDING, RUNNING, FINISHED, KILLED, FAILED, ZOMBIE, NOT_FOUND, UNKNOWN = Value
+
+  def isFailed(state: ApplicationState): Boolean = state match {
+    case FAILED => true
+    case KILLED => true
+    case _ => false
+  }
+
+  def isTerminated(state: ApplicationState): Boolean = {
+    state match {
+      case FAILED => true
+      case KILLED => true
+      case FINISHED => true
+      case NOT_FOUND => true
+      case _ => false
+    }
+  }
+}
+
+case class ApplicationInfo(
+    id: String,
+    name: String,
+    state: ApplicationState,
+    url: Option[String] = None,
+    error: Option[String] = None) {
+
+  def toMap: Map[String, String] = {
+    Map(
+      "id" -> id,
+      "name" -> name,
+      "state" -> state.toString,
+      "url" -> url.orNull,
+      "error" -> error.orNull)
+  }
+}
+
+object ApplicationInfo {
+  val NOT_FOUND: ApplicationInfo = ApplicationInfo(null, null, ApplicationState.NOT_FOUND)
+  val UNKNOWN: ApplicationInfo = ApplicationInfo(null, null, ApplicationState.UNKNOWN)
 }
 
 object ApplicationOperation {
-
-  /**
-   * identifier determined by cluster manager for the engine
-   */
-  val APP_ID_KEY = "id"
-  val APP_NAME_KEY = "name"
-  val APP_STATE_KEY = "state"
-  val APP_URL_KEY = "url"
-  val APP_ERROR_KEY = "error"
-
   val NOT_FOUND = "APPLICATION_NOT_FOUND"
 }

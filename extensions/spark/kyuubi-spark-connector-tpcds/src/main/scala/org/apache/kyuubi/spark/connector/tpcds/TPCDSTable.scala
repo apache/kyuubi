@@ -25,25 +25,15 @@ import scala.collection.JavaConverters._
 import io.trino.tpcds.Table
 import io.trino.tpcds.column._
 import io.trino.tpcds.column.ColumnType.Base._
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.{SupportsRead, Table => SparkTable, TableCapability}
 import org.apache.spark.sql.connector.expressions.{Expressions, Transform}
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class TPCDSTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
+class TPCDSTable(tbl: String, scale: Double, tpcdsConf: TPCDSConf)
   extends SparkTable with SupportsRead {
-
-  // When true, use CHAR VARCHAR; otherwise use STRING
-  val useAnsiStringType: Boolean = options.getBoolean("useAnsiStringType", false)
-
-  // 09-26-2017 v2.6.0
-  // Replaced two occurrences of "c_last_review_date" with "c_last_review_date_sk" to be consistent
-  // with Table 2-14 (Customer Table Column Definitions) in section 2.4.7 of the specification
-  // (fogbugz 2046).
-  //
-  // https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v3.2.0.pdf
-  val useTableSchema_2_6: Boolean = options.getBoolean("useTableSchema_2_6", true)
 
   val tpcdsTable: Table = Table.getTable(tbl)
 
@@ -64,21 +54,23 @@ class TPCDSTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
         // Like: io.trino.tpcds.row.CallCenterRow.getValues
         val index = TPCDSSchemaUtils.reviseNullColumnIndex(tpcdsTable, i)
         StructField(
-          TPCDSSchemaUtils.reviseColumnName(c, useTableSchema_2_6),
+          TPCDSSchemaUtils.reviseColumnName(c, tpcdsConf.useTableSchema_2_6),
           toSparkDataType(c.getType),
           nullable(index))
       })
   }
 
   override def partitioning: Array[Transform] = TPCDSSchemaUtils
-    .tablePartitionColumnNames(tpcdsTable, useTableSchema_2_6)
+    .tablePartitionColumnNames(tpcdsTable, tpcdsConf.useTableSchema_2_6)
     .map { Expressions.identity }
 
   override def capabilities(): util.Set[TableCapability] =
     Set(TableCapability.BATCH_READ).asJava
 
-  override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder =
-    new TPCDSBatchScan(tpcdsTable, scale, schema)
+  override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
+    val scanConf = TPCDSReadConf(SparkSession.active, this, options)
+    new TPCDSBatchScan(tpcdsTable, scale, schema, scanConf)
+  }
 
   def toSparkDataType(tpcdsType: ColumnType): DataType = {
     (tpcdsType.getBase, tpcdsType.getPrecision.asScala, tpcdsType.getScale.asScala) match {
@@ -87,9 +79,9 @@ class TPCDSTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
       case (DATE, None, None) => DateType
       case (DECIMAL, Some(precision), Some(scale)) => DecimalType(precision, scale)
       case (VARCHAR, Some(precision), None) =>
-        if (useAnsiStringType) VarcharType(precision) else StringType
+        if (tpcdsConf.useAnsiStringType) VarcharType(precision) else StringType
       case (CHAR, Some(precision), None) =>
-        if (useAnsiStringType) CharType(precision) else StringType
+        if (tpcdsConf.useAnsiStringType) CharType(precision) else StringType
       case (t, po, so) =>
         throw new IllegalArgumentException(s"Unsupported TPC-DS type: ($t, $po, $so)")
     }

@@ -1,0 +1,18 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+B1_LP DECIMAL(11,6),B1_CNT BIGINT NOT NULL,B1_CNTD BIGINT NOT NULL,B2_LP DECIMAL(11,6),B2_CNT BIGINT NOT NULL,B2_CNTD BIGINT NOT NULL,B3_LP DECIMAL(11,6),B3_CNT BIGINT NOT NULL,B3_CNTD BIGINT NOT NULL,B4_LP DECIMAL(11,6),B4_CNT BIGINT NOT NULL,B4_CNTD BIGINT NOT NULL,B5_LP DECIMAL(11,6),B5_CNT BIGINT NOT NULL,B5_CNTD BIGINT NOT NULL,B6_LP DECIMAL(11,6),B6_CNT BIGINT NOT NULL,B6_CNTD BIGINT NOT NULL

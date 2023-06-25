@@ -1,0 +1,18 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+d_week_seq1 INT,`round((sun_sales1 / sun_sales2), 2)` DECIMAL(20,2),`round((mon_sales1 / mon_sales2), 2)` DECIMAL(20,2),`round((tue_sales1 / tue_sales2), 2)` DECIMAL(20,2),`round((wed_sales1 / wed_sales2), 2)` DECIMAL(20,2),`round((thu_sales1 / thu_sales2), 2)` DECIMAL(20,2),`round((fri_sales1 / fri_sales2), 2)` DECIMAL(20,2),`round((sat_sales1 / sat_sales2), 2)` DECIMAL(20,2)

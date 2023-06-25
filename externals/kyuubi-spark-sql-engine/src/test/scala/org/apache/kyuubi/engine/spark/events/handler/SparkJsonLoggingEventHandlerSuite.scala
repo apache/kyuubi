@@ -39,7 +39,7 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
 
   override def withKyuubiConf: Map[String, String] = Map(
-    KyuubiConf.ENGINE_EVENT_LOGGERS.key -> s"$JSON",
+    KyuubiConf.ENGINE_SPARK_EVENT_LOGGERS.key -> s"$JSON",
     KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot,
     "spark.eventLog.enabled" -> "true",
     "spark.eventLog.dir" -> logRoot)

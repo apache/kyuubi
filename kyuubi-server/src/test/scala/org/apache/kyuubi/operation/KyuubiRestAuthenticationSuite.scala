@@ -25,7 +25,6 @@ import javax.ws.rs.core.MediaType
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.RestClientTestHelper
 import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, SessionOpenRequest}
@@ -33,8 +32,16 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.http.authentication.AuthSchemes
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
+import org.apache.kyuubi.session.KyuubiSession
 
 class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
+
+  override protected val otherConfigs: Map[String, String] = {
+    // allow to impersonate other users with spnego authentication
+    Map(
+      s"hadoop.proxyuser.$clientPrincipalUser.groups" -> "*",
+      s"hadoop.proxyuser.$clientPrincipalUser.hosts" -> "*")
+  }
 
   test("test with LDAP authorization") {
     val encodeAuthorization = new String(
@@ -118,14 +125,12 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
   }
 
   test("test with ugi wrapped open session") {
+    val proxyUser = "user1"
     UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
     var token = generateToken(hostName)
-    val sessionOpenRequest = new SessionOpenRequest(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11.getValue,
-      "kyuubi",
-      "pass",
-      "localhost",
-      Map(KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION").asJava)
+    val sessionOpenRequest = new SessionOpenRequest(Map(
+      KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION",
+      "hive.server2.proxy.user" -> proxyUser).asJava)
 
     var response = webTarget.path("api/v1/sessions")
       .request()
@@ -134,6 +139,12 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
 
     assert(HttpServletResponse.SC_OK == response.getStatus)
     val sessionHandle = response.readEntity(classOf[SessionHandle])
+    assert(sessionHandle.getKyuubiInstance === fe.connectionUrl)
+    val session = server.backendService.sessionManager.getSession(
+      org.apache.kyuubi.session.SessionHandle.fromUUID(sessionHandle.getIdentifier.toString))
+      .asInstanceOf[KyuubiSession]
+    assert(session.realUser === clientPrincipalUser)
+    assert(session.user === proxyUser)
 
     token = generateToken(hostName)
     response = webTarget.path(s"api/v1/sessions/${sessionHandle.getIdentifier}")

@@ -45,7 +45,12 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       _.toBoolean).getOrElse(
       session.sessionManager.getConf.get(OPERATION_INCREMENTAL_COLLECT))
     val executeStatement =
-      new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
+      new ExecuteStatement(
+        session,
+        statement,
+        runAsync,
+        queryTimeout,
+        incrementalCollect)
     addOperation(executeStatement)
   }
 
@@ -73,8 +78,10 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       schemaName: String,
       tableName: String,
       tableTypes: util.List[String]): Operation = {
-    val operation = dialect.getTablesOperation(session)
-    addOperation(operation)
+    val query = dialect.getTablesQuery(catalogName, schemaName, tableName, tableTypes)
+    val executeStatement =
+      new ExecuteStatement(session, query, false, 0L, true)
+    addOperation(executeStatement)
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
@@ -88,8 +95,10 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       schemaName: String,
       tableName: String,
       columnName: String): Operation = {
-    val operation = dialect.getColumnsOperation(session)
-    addOperation(operation)
+    val query = dialect.getColumnsQuery(session, catalogName, schemaName, tableName, columnName)
+    val executeStatement =
+      new ExecuteStatement(session, query, false, 0L, true)
+    addOperation(executeStatement)
   }
 
   override def newGetFunctionsOperation(
@@ -97,7 +106,7 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       catalogName: String,
       schemaName: String,
       functionName: String): Operation = {
-    val operation = dialect.getColumnsOperation(session)
+    val operation = dialect.getFunctionsOperation(session)
     addOperation(operation)
   }
 

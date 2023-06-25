@@ -17,9 +17,13 @@
 package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.ctl.cli.ControlCliArguments
 import org.apache.kyuubi.ctl.util.DateTimeUtils._
 
 class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
+
+  val batchYamlFile: String = Thread.currentThread.getContextClassLoader
+    .getResource("cli/batch.yaml").getFile
 
   test("create/submit batch") {
     Seq("create", "submit").foreach { op =>
@@ -27,9 +31,9 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
         op,
         "batch",
         "-f",
-        "src/test/resources/cli/batch.yaml")
+        batchYamlFile)
       val opArgs = new ControlCliArguments(args)
-      assert(opArgs.cliConfig.createOpts.filename == "src/test/resources/cli/batch.yaml")
+      assert(opArgs.cliConfig.createOpts.filename == batchYamlFile)
     }
   }
 
@@ -39,7 +43,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
         op,
         "batch",
         "-f",
-        "src/test/resources/cli/batch.yaml",
+        batchYamlFile,
         "--hostUrl",
         "https://localhost:8440",
         "--username",
@@ -73,20 +77,58 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
     }
   }
 
-  test("get batch without batch id specified") {
+  test("submit batch default option") {
     val args = Array(
-      "get",
-      "batch")
-    testPrematureExitForControlCliArgs(args, "Must specify batchId for get batch command")
+      "submit",
+      "batch",
+      "-f",
+      batchYamlFile)
+    val opArgs = new ControlCliArguments(args)
+    assert(opArgs.cliConfig.batchOpts.waitCompletion)
   }
 
-  test("get batch") {
+  test("submit batch without waitForCompletion") {
     val args = Array(
-      "get",
+      "submit",
       "batch",
-      "f7fd702c-e54e-11ec-8fea-0242ac120002")
+      "-f",
+      batchYamlFile,
+      "--waitCompletion",
+      "false")
+    val opArgs = new ControlCliArguments(args)
+    assert(!opArgs.cliConfig.batchOpts.waitCompletion)
+  }
+
+  test("get/delete batch") {
+    Seq("get", "delete").foreach { op =>
+      val args = Seq(
+        op,
+        "batch",
+        "f7fd702c-e54e-11ec-8fea-0242ac120002")
+      val opArgs = new ControlCliArguments(args)
+      assert(opArgs.cliConfig.batchOpts.batchId == "f7fd702c-e54e-11ec-8fea-0242ac120002")
+    }
+  }
+
+  test("get/delete batch without batch id specified") {
+    Seq("get", "delete").foreach { op =>
+      val args = Array(
+        op,
+        "batch")
+      testPrematureExitForControlCliArgs(args, s"Must specify batchId for ${op} batch command")
+    }
+  }
+
+  test("delete batch with hs2ProxyUser") {
+    val args = Array(
+      "delete",
+      "batch",
+      "f7fd702c-e54e-11ec-8fea-0242ac120002",
+      "--hs2ProxyUser",
+      "b_user")
     val opArgs = new ControlCliArguments(args)
     assert(opArgs.cliConfig.batchOpts.batchId == "f7fd702c-e54e-11ec-8fea-0242ac120002")
+    assert(opArgs.cliConfig.commonOpts.hs2ProxyUser == "b_user")
   }
 
   test("test list batch option") {

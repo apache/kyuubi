@@ -28,11 +28,12 @@ import org.apache.hive.service.cli.session.{HiveSessionImplwithUGI => ImportedHi
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.engine.hive.operation.HiveOperationManager
 import org.apache.kyuubi.operation.OperationManager
-import org.apache.kyuubi.session.{CLIENT_IP_KEY, Session, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 
 class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSessionManager") {
   override protected def isServer: Boolean = false
@@ -72,35 +73,38 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    val sessionHandle = SessionHandle(protocol)
-    val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
-    val hive = {
-      val sessionWithUGI = new ImportedHiveSessionImpl(
-        new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
+      getSessionOption).getOrElse {
+      val sessionHandle =
+        conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+      val hive = {
+        val sessionWithUGI = new ImportedHiveSessionImpl(
+          new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
+          protocol,
+          user,
+          password,
+          HiveSQLEngine.hiveConf,
+          ipAddress,
+          null,
+          Seq(ipAddress).asJava)
+        val proxy = HiveSessionProxy.getProxy(sessionWithUGI, sessionWithUGI.getSessionUgi)
+        sessionWithUGI.setProxySession(proxy)
+        proxy
+      }
+      hive.setSessionManager(internalSessionManager)
+      hive.setOperationManager(internalSessionManager.getOperationManager)
+      operationLogRoot.foreach(dir => hive.setOperationLogSessionDir(new File(dir)))
+      new HiveSessionImpl(
         protocol,
         user,
         password,
-        HiveSQLEngine.hiveConf,
         ipAddress,
-        null,
-        Seq(clientIp).asJava)
-      val proxy = HiveSessionProxy.getProxy(sessionWithUGI, sessionWithUGI.getSessionUgi)
-      sessionWithUGI.setProxySession(proxy)
-      proxy
+        conf,
+        this,
+        sessionHandle,
+        hive)
     }
-    hive.setSessionManager(internalSessionManager)
-    hive.setOperationManager(internalSessionManager.getOperationManager)
-    operationLogRoot.foreach(dir => hive.setOperationLogSessionDir(new File(dir)))
-    new HiveSessionImpl(
-      protocol,
-      user,
-      password,
-      ipAddress,
-      clientIp,
-      conf,
-      this,
-      sessionHandle,
-      hive)
+
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

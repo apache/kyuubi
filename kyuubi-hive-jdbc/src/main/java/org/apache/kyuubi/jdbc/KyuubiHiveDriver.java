@@ -24,7 +24,10 @@ import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.logging.Logger;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
+import org.apache.kyuubi.jdbc.hive.KyuubiSQLException;
 import org.apache.kyuubi.jdbc.hive.Utils;
 
 /** Kyuubi JDBC driver to connect to Kyuubi server via HiveServer2 thrift protocol. */
@@ -47,11 +50,7 @@ public class KyuubiHiveDriver implements Driver {
 
   @Override
   public boolean acceptsURL(String url) throws SQLException {
-    return url != null
-        && Utils.URL_PREFIX_LIST.stream()
-            .filter(pre -> url.startsWith(pre))
-            .findFirst()
-            .isPresent();
+    return url != null && Utils.URL_PREFIX_LIST.stream().anyMatch(url::startsWith);
   }
 
   @Override
@@ -125,21 +124,21 @@ public class KyuubiHiveDriver implements Driver {
     Properties urlProps = (defaults != null) ? new Properties(defaults) : new Properties();
 
     if (!acceptsURL(url)) {
-      throw new SQLException("Invalid connection url: " + url);
+      throw new KyuubiSQLException("Invalid connection url: " + url);
     }
 
-    Utils.JdbcConnectionParams params;
+    JdbcConnectionParams params;
     try {
       params = Utils.parseURL(url, defaults);
     } catch (Exception e) {
-      throw new SQLException(e);
+      throw new KyuubiSQLException(e);
     }
     String host = params.getHost();
     if (host == null) {
       host = "";
     }
     String port = Integer.toString(params.getPort());
-    if (host.equals("")) {
+    if (StringUtils.isEmpty(host)) {
       port = "";
     } else if (port.equals("0") || port.equals("-1")) {
       port = DEFAULT_PORT;
@@ -175,7 +174,7 @@ public class KyuubiHiveDriver implements Driver {
     try {
       loadManifestAttributes();
     } catch (IOException e) {
-      throw new SQLException("Couldn't load manifest attributes.", e);
+      throw new KyuubiSQLException("Couldn't load manifest attributes.", e);
     }
     return manifestAttributes.getValue(attributeName);
   }

@@ -20,27 +20,31 @@ package org.apache.kyuubi.engine.spark.operation
 import java.io.IOException
 import java.time.ZoneId
 
-import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TProgressUpdateResp, TRowSet}
+import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.execution.SQLExecution
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE, SESSION_USER_SIGN_ENABLED}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
+import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.engine.spark.schema.{RowSet, SchemaHelper}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
-import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
+import org.apache.kyuubi.events.EventBus
+import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
-abstract class SparkOperation(opType: OperationType, session: Session)
-  extends AbstractOperation(opType, session) {
+abstract class SparkOperation(session: Session)
+  extends AbstractOperation(session) {
 
   protected val spark: SparkSession = session.asInstanceOf[SparkSessionImpl].spark
 
@@ -50,7 +54,7 @@ abstract class SparkOperation(opType: OperationType, session: Session)
     }.getOrElse(ZoneId.systemDefault())
   }
 
-  protected var iter: FetchIterator[Row] = _
+  protected var iter: FetchIterator[_] = _
 
   protected var result: DataFrame = _
 
@@ -59,7 +63,46 @@ abstract class SparkOperation(opType: OperationType, session: Session)
   override def redactedStatement: String =
     redact(spark.sessionState.conf.stringRedactionPattern, statement)
 
-  override def cleanup(targetState: OperationState): Unit = state.synchronized {
+  protected val operationSparkListenerEnabled =
+    spark.conf.getOption(OPERATION_SPARK_LISTENER_ENABLED.key) match {
+      case Some(s) => s.toBoolean
+      case _ => session.sessionManager.getConf.get(OPERATION_SPARK_LISTENER_ENABLED)
+    }
+
+  protected val operationListener: Option[SQLOperationListener] =
+    if (operationSparkListenerEnabled) {
+      Some(new SQLOperationListener(this, spark))
+    } else {
+      None
+    }
+
+  protected def addOperationListener(): Unit = {
+    operationListener.foreach(spark.sparkContext.addSparkListener(_))
+  }
+
+  private val progressEnable = spark.conf.getOption(SESSION_PROGRESS_ENABLE.key) match {
+    case Some(s) => s.toBoolean
+    case _ => session.sessionManager.getConf.get(SESSION_PROGRESS_ENABLE)
+  }
+
+  protected def supportProgress: Boolean = false
+
+  override def getStatus: OperationStatus = {
+    if (progressEnable && supportProgress) {
+      val progressMonitor = new SparkProgressMonitor(spark, statementId)
+      setOperationJobProgress(new TProgressUpdateResp(
+        progressMonitor.headers,
+        progressMonitor.rows,
+        progressMonitor.progressedPercentage,
+        progressMonitor.executionStatus,
+        progressMonitor.footerSummary,
+        startTime))
+    }
+    super.getStatus
+  }
+
+  override def cleanup(targetState: OperationState): Unit = withLockRequired {
+    operationListener.foreach(_.cleanup())
     if (!isTerminalState(state)) {
       setState(targetState)
       Option(getBackgroundHandle).foreach(_.cancel(true))
@@ -67,30 +110,62 @@ abstract class SparkOperation(opType: OperationType, session: Session)
     }
   }
 
-  private val forceCancel =
+  protected val forceCancel =
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
 
-  private val schedulerPool =
+  protected val schedulerPool =
     spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
       session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
 
-  protected def withLocalProperties[T](f: => T): T = {
-    try {
-      spark.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
-      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
-      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
-      schedulerPool match {
-        case Some(pool) =>
-          spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
-        case None =>
-      }
+  protected val isSessionUserSignEnabled: Boolean = spark.sparkContext.getConf.getBoolean(
+    s"spark.${SESSION_USER_SIGN_ENABLED.key}",
+    SESSION_USER_SIGN_ENABLED.defaultVal.get)
 
-      f
-    } finally {
-      spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
-      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
-      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
-      spark.sparkContext.clearJobGroup()
+  protected def eventEnabled: Boolean = true
+
+  if (eventEnabled) EventBus.post(SparkOperationEvent(this))
+
+  override protected def setState(newState: OperationState): Unit = {
+    super.setState(newState)
+    if (eventEnabled) {
+      EventBus.post(SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
+    }
+  }
+
+  protected def setSparkLocalProperty: (String, String) => Unit =
+    spark.sparkContext.setLocalProperty
+
+  protected def withLocalProperties[T](f: => T): T = {
+    SQLExecution.withSQLConfPropagated(spark) {
+      val originalSession = SparkSession.getActiveSession
+      try {
+        SparkSession.setActiveSession(spark)
+        spark.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
+        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
+        spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
+        schedulerPool match {
+          case Some(pool) =>
+            spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
+          case None =>
+        }
+        if (isSessionUserSignEnabled) {
+          setSessionUserSign()
+        }
+
+        f
+      } finally {
+        spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
+        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
+        spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
+        spark.sparkContext.clearJobGroup()
+        if (isSessionUserSignEnabled) {
+          clearSessionUserSign()
+        }
+        originalSession match {
+          case Some(session) => SparkSession.setActiveSession(session)
+          case None => SparkSession.clearActiveSession()
+        }
+      }
     }
   }
 
@@ -99,15 +174,16 @@ abstract class SparkOperation(opType: OperationType, session: Session)
     // could be thrown.
     case e: Throwable =>
       if (cancel && !spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
-      state.synchronized {
+      withLockRequired {
         val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {
           val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")
           setOperationException(ke)
           throw ke
         } else if (isTerminalState(state)) {
-          setOperationException(KyuubiSQLException(errMsg))
-          warn(s"Ignore exception in terminal state with $statementId: $errMsg")
+          val ke = KyuubiSQLException(errMsg)
+          setOperationException(ke)
+          throw ke
         } else {
           error(s"Error operating $opType: $errMsg", e)
           val ke = KyuubiSQLException(s"Error operating $opType: $errMsg", e)
@@ -125,7 +201,7 @@ abstract class SparkOperation(opType: OperationType, session: Session)
   }
 
   override protected def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }
@@ -147,12 +223,20 @@ abstract class SparkOperation(opType: OperationType, session: Session)
     }
   }
 
-  override def getResultSetSchema: TTableSchema = SchemaHelper.toTTableSchema(resultSchema)
+  def getResultSetMetadataHints(): Seq[String] = Seq.empty
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet =
-    withLocalProperties {
-      var resultRowSet: TRowSet = null
-      try {
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
+    val resp = new TGetResultSetMetadataResp
+    val schema = SchemaHelper.toTTableSchema(resultSchema, timeZone.toString)
+    resp.setSchema(schema)
+    resp.setStatus(okStatusWithHints(getResultSetMetadataHints()))
+    resp
+  }
+
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+    var resultRowSet: TRowSet = null
+    try {
+      withLocalProperties {
         validateDefaultFetchOrientation(order)
         assertState(OperationState.FINISHED)
         setHasResultSet(true)
@@ -161,16 +245,56 @@ abstract class SparkOperation(opType: OperationType, session: Session)
           case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
           case FETCH_FIRST => iter.fetchAbsolute(0);
         }
-        val taken = iter.take(rowSetSize)
         resultRowSet =
-          RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion, timeZone)
+          if (isArrowBasedOperation) {
+            if (iter.hasNext) {
+              val taken = iter.next().asInstanceOf[Array[Byte]]
+              RowSet.toTRowSet(taken, getProtocolVersion)
+            } else {
+              RowSet.emptyTRowSet()
+            }
+          } else {
+            val taken = iter.take(rowSetSize)
+            RowSet.toTRowSet(
+              taken.toSeq.asInstanceOf[Seq[Row]],
+              resultSchema,
+              getProtocolVersion)
+          }
         resultRowSet.setStartRowOffset(iter.getPosition)
-      } catch onError(cancel = true)
+      }
+    } catch onError(cancel = true)
 
-      resultRowSet
-    }
+    resultRowSet
+  }
 
   override def shouldRunAsync: Boolean = false
+
+  protected def isArrowBasedOperation: Boolean = false
+
+  protected def resultFormat: String = "thrift"
+
+  protected def timestampAsString: Boolean = {
+    spark.conf.get("kyuubi.operation.result.arrow.timestampAsString", "false").toBoolean
+  }
+
+  protected def setSessionUserSign(): Unit = {
+    (
+      session.conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY),
+      session.conf.get(KYUUBI_SESSION_USER_SIGN)) match {
+      case (Some(pubKey), Some(userSign)) =>
+        setSparkLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, pubKey)
+        setSparkLocalProperty(KYUUBI_SESSION_USER_SIGN, userSign)
+      case _ =>
+        throw new IllegalArgumentException(
+          s"missing $KYUUBI_SESSION_SIGN_PUBLICKEY or $KYUUBI_SESSION_USER_SIGN" +
+            s" in session config for session user sign")
+    }
+  }
+
+  protected def clearSessionUserSign(): Unit = {
+    setSparkLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, null)
+    setSparkLocalProperty(KYUUBI_SESSION_USER_SIGN, null)
+  }
 }
 
 object SparkOperation {

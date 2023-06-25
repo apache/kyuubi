@@ -21,17 +21,16 @@ import java.nio.ByteBuffer
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TPrimitiveTypeEntry, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
+import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThriftUtils
 
-class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = false)
-  extends AbstractOperation(typ, session) {
+class NoopOperation(session: Session, shouldFail: Boolean = false)
+  extends AbstractOperation(session) {
   override protected def runInternal(): Unit = {
     setState(OperationState.RUNNING)
     if (shouldFail) {
@@ -61,7 +60,7 @@ class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = 
     setState(OperationState.CLOSED)
   }
 
-  override def getResultSetSchema: TTableSchema = {
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
     val tColumnDesc = new TColumnDesc()
     tColumnDesc.setColumnName("noop")
     val desc = new TTypeDesc
@@ -71,11 +70,14 @@ class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = 
     tColumnDesc.setPosition(0)
     val schema = new TTableSchema()
     schema.addToColumns(tColumnDesc)
-    schema
+    val resp = new TGetResultSetMetadataResp
+    resp.setSchema(schema)
+    resp.setStatus(OK_STATUS)
+    resp
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
-    val col = TColumn.stringVal(new TStringColumn(Seq(typ.toString).asJava, ByteBuffer.allocate(0)))
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+    val col = TColumn.stringVal(new TStringColumn(Seq(opType).asJava, ByteBuffer.allocate(0)))
     val tRowSet = ThriftUtils.newEmptyRowSet
     tRowSet.addToColumns(col)
     tRowSet

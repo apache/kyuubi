@@ -28,10 +28,19 @@ import org.apache.kyuubi.spark.connector.common.SparkUtils
 class TPCDSCatalogSuite extends KyuubiFunSuite {
 
   test("get catalog name") {
-    val catalog = new TPCDSCatalog
-    val catalogName = "test"
-    catalog.initialize(catalogName, CaseInsensitiveStringMap.empty())
-    assert(catalog._name == catalogName)
+    val sparkConf = new SparkConf()
+      .setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
+      .set("spark.sql.cbo.enabled", "true")
+      .set("spark.sql.cbo.planStats.enabled", "true")
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { _ =>
+      val catalog = new TPCDSCatalog
+      val catalogName = "test"
+      catalog.initialize(catalogName, CaseInsensitiveStringMap.empty())
+      assert(catalog._name == catalogName)
+    }
   }
 
   test("supports namespaces") {
@@ -161,7 +170,8 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
       val exception = intercept[AnalysisException] {
         spark.table("tpcds.sf1.nonexistent_table")
       }
-      assert(exception.message === "Table or view not found: tpcds.sf1.nonexistent_table")
+      assert(exception.message.contains("Table or view not found")
+        || exception.message.contains("TABLE_OR_VIEW_NOT_FOUND"))
     }
   }
 }

@@ -15,20 +15,19 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>kyuubi-parent</artifactId>
         <groupId>org.apache.kyuubi</groupId>
-        <version>1.6.0-SNAPSHOT</version>
+        <artifactId>kyuubi-parent</artifactId>
+        <version>1.8.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-jdbc-engine_2.12</artifactId>
-    <name>Kyuubi Project Engine JDBC</name>
     <packaging>jar</packaging>
+    <name>Kyuubi Project Engine JDBC</name>
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
@@ -43,12 +42,6 @@
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-ha_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -60,12 +53,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>com.dimafeng</groupId>
             <artifactId>testcontainers-scala-scalatest_${scala.binary.version}</artifactId>
             <scope>test</scope>
@@ -73,80 +60,42 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
+            <artifactId>${hive.jdbc.artifact}</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.phoenix</groupId>
+            <artifactId>phoenix-queryserver-client</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
-        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <configuration>
-                    <shadedArtifactAttached>false</shadedArtifactAttached>
-                    <artifactSet>
-                        <includes>
-                            <include>org.scala-lang:scala-library</include>
-                            <include>com.fasterxml.jackson.core:jackson-annotations</include>
-                            <include>com.fasterxml.jackson.core:jackson-core</include>
-                            <include>com.fasterxml.jackson.core:jackson-databind</include>
-                            <include>com.fasterxml.jackson.module:jackson-module-scala_2.12</include>
-                            <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
-                            <include>org.apache.kyuubi:kyuubi-events_${scala.binary.version}</include>
-                            <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
-                            <include>org.apache.curator:curator-client</include>
-                            <include>org.apache.curator:curator-framework</include>
-                            <include>org.apache.curator:curator-recipes</include>
-                        </includes>
-                    </artifactSet>
-                    <filters>
-                        <filter>
-                            <artifact>*:*</artifact>
-                            <excludes>
-                                <exclude>META-INF/*.SF</exclude>
-                                <exclude>META-INF/*.DSA</exclude>
-                                <exclude>META-INF/*.RSA</exclude>
-                                <exclude>META-INF/DEPENDENCIES</exclude>
-                                <exclude>META-INF/LICENSE.txt</exclude>
-                                <exclude>META-INF/NOTICE.txt</exclude>
-                                <exclude>META-INF/maven/**</exclude>
-                                <exclude>LICENSE.txt</exclude>
-                                <exclude>NOTICE.txt</exclude>
-                                <exclude>mozilla/**</exclude>
-                                <exclude>**/module-info.class</exclude>
-                            </excludes>
-                        </filter>
-                    </filters>
-                    <relocations>
-                        <relocation>
-                            <pattern>org.apache.curator</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.curator</shadedPattern>
-                            <includes>
-                                <include>org.apache.curator.**</include>
-                            </includes>
-                        </relocation>
-                    </relocations>
-                </configuration>
+                <artifactId>maven-jar-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>package</phase>
+                        <id>prepare-test-jar</id>
                         <goals>
-                            <goal>shade</goal>
+                            <goal>test-jar</goal>
                         </goals>
+                        <phase>test-compile</phase>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
+        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
+        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
 
 </project>

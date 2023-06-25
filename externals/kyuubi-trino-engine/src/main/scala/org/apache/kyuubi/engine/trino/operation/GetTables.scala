@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.engine.trino.TrinoStatement
-import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationType}
+import org.apache.kyuubi.operation.ArrayFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{TABLE_CAT, TABLE_NAME, TABLE_SCHEM, TABLE_TYPE}
 import org.apache.kyuubi.session.Session
 
@@ -32,7 +32,7 @@ class GetTables(
     schemaName: String,
     tableName: String,
     tableTypes: Set[String])
-  extends TrinoOperation(OperationType.GET_TABLES, session) {
+  extends TrinoOperation(session) {
 
   private val SEARCH_STRING_ESCAPE: String = "\\"
 
@@ -57,7 +57,7 @@ class GetTables(
     }
     if (tableTypes.nonEmpty) {
       filters += s"(${tableTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
-        .mkString(" OR ")})"
+          .mkString(" OR ")})"
     }
 
     if (filters.nonEmpty) {

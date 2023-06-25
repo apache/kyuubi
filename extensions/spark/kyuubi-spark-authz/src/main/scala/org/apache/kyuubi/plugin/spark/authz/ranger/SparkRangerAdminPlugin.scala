@@ -17,11 +17,73 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import scala.collection.JavaConverters._
+import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
+
+import org.apache.hadoop.util.ShutdownHookManager
+import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
+import org.slf4j.LoggerFactory
 
+import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider
 
-object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
+object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
+  with RangerConfigProvider {
+  final private val LOG = LoggerFactory.getLogger(getClass)
+
+  /**
+   * For a Spark SQL query, it may contain 0 or more privilege objects to verify, e.g. a typical
+   * JOIN operator may have two tables and their columns to verify.
+   *
+   * This configuration controls whether to verify the privilege objects in single call or
+   * to verify them one by one.
+   */
+  def authorizeInSingleCall: Boolean = getRangerConf.getBoolean(
+    s"ranger.plugin.${getServiceType}.authorize.in.single.call",
+    false)
+
+  /**
+   * This configuration controls whether to override user's usergroups
+   * by the mapping fetched from Ranger's UserStore.
+   *
+   * It relies on Ranger's UserStore is a feature supported since Ranger 2.1.
+   *
+   * If true, user bound usergroups will be looked up in in Ranger's UserStore
+   * and the usergroups of AccessRequest is overriden.
+   *
+   * Please make sure configs in Ranger set properly:
+   * 1. set `ranger.plugin.spark.enable.implicit.userstore.enricher` to true
+   * 2. set cache path for UserStore in `ranger.plugin.hive.policy.cache.dir`
+   * 3. at least one condition of policies containing scripts, e.g. {{USER.attr}} in row-filter
+   */
+  def useUserGroupsFromUserStoreEnabled: Boolean = getRangerConf.getBoolean(
+    s"ranger.plugin.$getServiceType.use.usergroups.from.userstore.enabled",
+    false)
+
+  /**
+   * plugin initialization
+   * with cleanup shutdown hook registered
+   */
+  def initialize(): Unit = {
+    this.init()
+    registerCleanupShutdownHook(this)
+  }
+
+  /**
+   * register shutdown hook for plugin cleanup
+   */
+  private def registerCleanupShutdownHook(plugin: RangerBasePlugin): Unit = {
+    ShutdownHookManager.get().addShutdownHook(
+      () => {
+        if (plugin != null) {
+          LOG.info(s"clean up ranger plugin, appId: ${plugin.getAppId}")
+          plugin.cleanup()
+        }
+      },
+      Integer.MAX_VALUE)
+  }
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
     val result = evalRowFilterPolicies(req, null)
@@ -47,7 +109,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
       } else if (result.getMaskTypeDef != null) {
         result.getMaskTypeDef.getName match {
           case "MASK" => regexp_replace(col)
-          case "MASK_SHOW_FIRST_4" if isSparkVersionAtLeast("3.1") =>
+          case "MASK_SHOW_FIRST_4" if isSparkV31OrGreater =>
             regexp_replace(col, hasLen = true)
           case "MASK_SHOW_FIRST_4" =>
             val right = regexp_replace(s"substr($col, 5)")
@@ -74,6 +136,43 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
     val upper = s"regexp_replace($expr, '[A-Z]', 'X'$pos)"
     val lower = s"regexp_replace($upper, '[a-z]', 'x'$pos)"
     val digits = s"regexp_replace($lower, '[0-9]', 'n'$pos)"
-    digits
+    val other = s"regexp_replace($digits, '[^A-Za-z0-9]', 'U'$pos)"
+    other
+  }
+
+  /**
+   * batch verifying RangerAccessRequests
+   * and throws exception with all disallowed privileges
+   * for accessType and resources
+   */
+  def verify(
+      requests: Seq[RangerAccessRequest],
+      auditHandler: SparkRangerAuditHandler): Unit = {
+    if (requests.nonEmpty) {
+      val results = SparkRangerAdminPlugin.isAccessAllowed(requests.asJava, auditHandler)
+      if (results != null) {
+        val indices = results.asScala.zipWithIndex.filter { case (result, idx) =>
+          result != null && !result.getIsAllowed
+        }.map(_._2)
+        if (indices.nonEmpty) {
+          val user = requests.head.getUser
+          val accessTypeToResource =
+            indices.foldLeft(LinkedHashMap.empty[String, ArrayBuffer[String]])((m, idx) => {
+              val req = requests(idx)
+              val accessType = req.getAccessType
+              val resource = req.getResource.getAsString
+              m.getOrElseUpdate(accessType, ArrayBuffer.empty[String])
+                .append(resource)
+              m
+            })
+          val errorMsg = accessTypeToResource
+            .map { case (accessType, resources) =>
+              s"[$accessType] ${resources.mkString("privilege on [", ",", "]")}"
+            }.mkString(", ")
+          throw new AccessControlException(
+            s"Permission denied: user [$user] does not have $errorMsg")
+        }
+      }
+    }
   }
 }

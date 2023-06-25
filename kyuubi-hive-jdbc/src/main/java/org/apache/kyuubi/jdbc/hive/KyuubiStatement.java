@@ -18,18 +18,14 @@
 package org.apache.kyuubi.jdbc.hive;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLTimeoutException;
-import java.sql.SQLWarning;
+import java.sql.*;
 import java.util.*;
-import org.apache.commons.lang.StringUtils;
-import org.apache.hive.service.cli.FetchType;
-import org.apache.hive.service.cli.RowSet;
-import org.apache.hive.service.cli.RowSetFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLStatement;
+import org.apache.kyuubi.jdbc.hive.cli.FetchType;
+import org.apache.kyuubi.jdbc.hive.cli.RowSet;
+import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.thrift.TException;
@@ -40,6 +36,8 @@ import org.slf4j.LoggerFactory;
 public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiStatement.class.getName());
   public static final int DEFAULT_FETCH_SIZE = 1000;
+  public static final String DEFAULT_RESULT_FORMAT = "thrift";
+  public static final String DEFAULT_ARROW_TIMESTAMP_AS_STRING = "false";
   private final KyuubiConnection connection;
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle = null;
@@ -48,6 +46,8 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private int fetchSize = DEFAULT_FETCH_SIZE;
   private boolean isScrollableResultset = false;
   private boolean isOperationComplete = false;
+
+  private Map<String, String> properties = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
   /**
    * We need to keep a reference to the result set to support the following: <code>
    * statement.execute(String sql);
@@ -138,7 +138,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     } catch (SQLException e) {
       throw e;
     } catch (Exception e) {
-      throw new SQLException(e.toString(), "08S01", e);
+      throw new KyuubiSQLException(e.toString(), "08S01", e);
     }
     isCancelled = true;
   }
@@ -164,7 +164,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     } catch (SQLException e) {
       throw e;
     } catch (Exception e) {
-      throw new SQLException(e.toString(), "08S01", e);
+      throw new KyuubiSQLException(e.toString(), "08S01", e);
     }
   }
 
@@ -203,15 +203,47 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!status.isHasResultSet() && !stmtHandle.isHasResultSet()) {
       return false;
     }
-    resultSet =
-        new KyuubiQueryResultSet.Builder(this)
-            .setClient(client)
-            .setSessionHandle(sessHandle)
-            .setStmtHandle(stmtHandle)
-            .setMaxRows(maxRows)
-            .setFetchSize(fetchSize)
-            .setScrollable(isScrollableResultset)
-            .build();
+
+    TGetResultSetMetadataResp metadata = getResultSetMetadata();
+    List<String> columnNames = new ArrayList<>();
+    List<TTypeId> columnTypes = new ArrayList<>();
+    List<JdbcColumnAttributes> columnAttributes = new ArrayList<>();
+    parseMetadata(metadata, columnNames, columnTypes, columnAttributes);
+
+    String resultFormat =
+        properties.getOrDefault("__kyuubi_operation_result_format__", DEFAULT_RESULT_FORMAT);
+    LOG.debug("kyuubi.operation.result.format: {}", resultFormat);
+    switch (resultFormat) {
+      case "arrow":
+        boolean timestampAsString =
+            Boolean.parseBoolean(
+                properties.getOrDefault(
+                    "__kyuubi_operation_result_arrow_timestampAsString__",
+                    DEFAULT_ARROW_TIMESTAMP_AS_STRING));
+        resultSet =
+            new KyuubiArrowQueryResultSet.Builder(this)
+                .setClient(client)
+                .setSessionHandle(sessHandle)
+                .setStmtHandle(stmtHandle)
+                .setMaxRows(maxRows)
+                .setFetchSize(fetchSize)
+                .setScrollable(isScrollableResultset)
+                .setSchema(columnNames, columnTypes, columnAttributes)
+                .setTimestampAsString(timestampAsString)
+                .build();
+        break;
+      default:
+        resultSet =
+            new KyuubiQueryResultSet.Builder(this)
+                .setClient(client)
+                .setSessionHandle(sessHandle)
+                .setStmtHandle(stmtHandle)
+                .setMaxRows(maxRows)
+                .setFetchSize(fetchSize)
+                .setScrollable(isScrollableResultset)
+                .setSchema(columnNames, columnTypes, columnAttributes)
+                .build();
+    }
     return true;
   }
 
@@ -235,15 +267,46 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!status.isHasResultSet()) {
       return false;
     }
-    resultSet =
-        new KyuubiQueryResultSet.Builder(this)
-            .setClient(client)
-            .setSessionHandle(sessHandle)
-            .setStmtHandle(stmtHandle)
-            .setMaxRows(maxRows)
-            .setFetchSize(fetchSize)
-            .setScrollable(isScrollableResultset)
-            .build();
+    TGetResultSetMetadataResp metadata = getResultSetMetadata();
+    List<String> columnNames = new ArrayList<>();
+    List<TTypeId> columnTypes = new ArrayList<>();
+    List<JdbcColumnAttributes> columnAttributes = new ArrayList<>();
+    parseMetadata(metadata, columnNames, columnTypes, columnAttributes);
+
+    String resultFormat =
+        properties.getOrDefault("__kyuubi_operation_result_format__", DEFAULT_RESULT_FORMAT);
+    LOG.debug("kyuubi.operation.result.format: {}", resultFormat);
+    switch (resultFormat) {
+      case "arrow":
+        boolean timestampAsString =
+            Boolean.parseBoolean(
+                properties.getOrDefault(
+                    "__kyuubi_operation_result_arrow_timestampAsString__",
+                    DEFAULT_ARROW_TIMESTAMP_AS_STRING));
+        resultSet =
+            new KyuubiArrowQueryResultSet.Builder(this)
+                .setClient(client)
+                .setSessionHandle(sessHandle)
+                .setStmtHandle(stmtHandle)
+                .setMaxRows(maxRows)
+                .setFetchSize(fetchSize)
+                .setScrollable(isScrollableResultset)
+                .setSchema(columnNames, columnTypes, columnAttributes)
+                .setTimestampAsString(timestampAsString)
+                .build();
+        break;
+      default:
+        resultSet =
+            new KyuubiQueryResultSet.Builder(this)
+                .setClient(client)
+                .setSessionHandle(sessHandle)
+                .setStmtHandle(stmtHandle)
+                .setMaxRows(maxRows)
+                .setFetchSize(fetchSize)
+                .setScrollable(isScrollableResultset)
+                .setSchema(columnNames, columnTypes, columnAttributes)
+                .build();
+    }
     return true;
   }
 
@@ -283,7 +346,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     } catch (Exception ex) {
       isExecuteStatementFailed = true;
       isLogBeingGenerated = false;
-      throw new SQLException(ex.toString(), "08S01", ex);
+      throw new KyuubiSQLException(ex.toString(), "08S01", ex);
     }
   }
 
@@ -302,7 +365,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         statusResp = client.GetOperationStatus(statusReq);
       } catch (TException e) {
         isLogBeingGenerated = false;
-        throw new SQLException(e.toString(), "08S01", e);
+        throw new KyuubiSQLException(e.toString(), "08S01", e);
       }
     }
 
@@ -340,20 +403,20 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
               // 01000 -> warning
               String errMsg = statusResp.getErrorMessage();
               if (errMsg != null && !errMsg.isEmpty()) {
-                throw new SQLException("Query was cancelled. " + errMsg, "01000");
+                throw new KyuubiSQLException("Query was cancelled. " + errMsg, "01000");
               } else {
-                throw new SQLException("Query was cancelled", "01000");
+                throw new KyuubiSQLException("Query was cancelled", "01000");
               }
             case TIMEDOUT_STATE:
               throw new SQLTimeoutException("Query timed out after " + queryTimeout + " seconds");
             case ERROR_STATE:
               // Get the error details from the underlying exception
-              throw new SQLException(
+              throw new KyuubiSQLException(
                   statusResp.getErrorMessage(),
                   statusResp.getSqlState(),
                   statusResp.getErrorCode());
             case UKNOWN_STATE:
-              throw new SQLException("Unknown query", "HY000");
+              throw new KyuubiSQLException("Unknown query", "HY000");
             case INITIALIZED_STATE:
             case PENDING_STATE:
             case RUNNING_STATE:
@@ -365,7 +428,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         throw e;
       } catch (Exception e) {
         isLogBeingGenerated = false;
-        throw new SQLException(e.toString(), "08S01", e);
+        throw new KyuubiSQLException(e.toString(), "08S01", e);
       }
     }
 
@@ -378,7 +441,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
 
   private void checkConnection(String action) throws SQLException {
     if (isClosed) {
-      throw new SQLException("Can't " + action + " after statement has been closed");
+      throw new KyuubiSQLException("Can't " + action + " after statement has been closed");
     }
   }
 
@@ -399,7 +462,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     if (!execute(sql)) {
-      throw new SQLException("The query did not generate a result set!");
+      throw new KyuubiSQLException("The query did not generate a result set!");
     }
     return resultSet;
   }
@@ -407,7 +470,15 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public ResultSet executeScala(String code) throws SQLException {
     if (!executeWithConfOverlay(
         code, Collections.singletonMap("kyuubi.operation.language", "SCALA"))) {
-      throw new SQLException("The query did not generate a result set!");
+      throw new KyuubiSQLException("The query did not generate a result set!");
+    }
+    return resultSet;
+  }
+
+  public ResultSet executePython(String code) throws SQLException {
+    if (!executeWithConfOverlay(
+        code, Collections.singletonMap("kyuubi.operation.language", "PYTHON"))) {
+      throw new KyuubiSQLException("The query did not generate a result set!");
     }
     return resultSet;
   }
@@ -422,7 +493,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public ResultSet executeGetCurrentCatalog(String sql) throws SQLException {
     if (!executeWithConfOverlay(
         sql, Collections.singletonMap("kyuubi.operation.get.current.catalog", ""))) {
-      throw new SQLException("The query did not generate a result set!");
+      throw new KyuubiSQLException("The query did not generate a result set!");
     }
     return resultSet;
   }
@@ -437,7 +508,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public ResultSet executeGetCurrentDatabase(String sql) throws SQLException {
     if (!executeWithConfOverlay(
         sql, Collections.singletonMap("kyuubi.operation.get.current.database", ""))) {
-      throw new SQLException("The query did not generate a result set!");
+      throw new KyuubiSQLException("The query did not generate a result set!");
     }
     return resultSet;
   }
@@ -532,7 +603,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public void setFetchDirection(int direction) throws SQLException {
     checkConnection("setFetchDirection");
     if (direction != ResultSet.FETCH_FORWARD) {
-      throw new SQLException("Not supported direction " + direction);
+      throw new KyuubiSQLException("Not supported direction " + direction);
     }
   }
 
@@ -547,7 +618,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       // In this case it means reverting it to the default value.
       fetchSize = DEFAULT_FETCH_SIZE;
     } else {
-      throw new SQLException("Fetch size must be greater or equal to 0");
+      throw new KyuubiSQLException("Fetch size must be greater or equal to 0");
     }
   }
 
@@ -555,7 +626,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public void setMaxRows(int max) throws SQLException {
     checkConnection("setMaxRows");
     if (max < 0) {
-      throw new SQLException("max must be >= 0");
+      throw new KyuubiSQLException("max must be >= 0");
     }
     maxRows = max;
   }
@@ -572,7 +643,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
 
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    throw new SQLException("Cannot unwrap to " + iface);
+    throw new KyuubiSQLException("Cannot unwrap to " + iface);
   }
 
   /**
@@ -641,9 +712,9 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     } catch (SQLException e) {
       throw e;
     } catch (TException e) {
-      throw new SQLException("Error when getting query log: " + e, e);
+      throw new KyuubiSQLException("Error when getting query log: " + e, e);
     } catch (Exception e) {
-      throw new SQLException("Error when getting query log: " + e, e);
+      throw new KyuubiSQLException("Error when getting query log: " + e, e);
     }
 
     try {
@@ -653,7 +724,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         logs.add(String.valueOf(row[0]));
       }
     } catch (TException e) {
-      throw new SQLException("Error building result set for query log: " + e, e);
+      throw new KyuubiSQLException("Error building result set for query log: " + e, e);
     }
 
     return logs;
@@ -704,7 +775,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       // queryId can be empty string if query was already closed. Need to return null in such case.
       return StringUtils.isBlank(queryId) ? null : queryId;
     } catch (TException e) {
-      throw new SQLException(e);
+      throw new KyuubiSQLException(e);
     }
   }
 
@@ -714,5 +785,58 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
    */
   public void setInPlaceUpdateStream(InPlaceUpdateStream stream) {
     this.inPlaceUpdateStream = stream;
+  }
+
+  private TGetResultSetMetadataResp getResultSetMetadata() throws SQLException {
+    try {
+      TGetResultSetMetadataReq metadataReq = new TGetResultSetMetadataReq(stmtHandle);
+      // TODO need session handle
+      TGetResultSetMetadataResp metadataResp;
+      metadataResp = client.GetResultSetMetadata(metadataReq);
+      Utils.verifySuccess(metadataResp.getStatus());
+      return metadataResp;
+    } catch (SQLException eS) {
+      throw eS; // rethrow the SQLException as is
+    } catch (Exception ex) {
+      throw new KyuubiSQLException("Could not create ResultSet: " + ex.getMessage(), ex);
+    }
+  }
+
+  private void parseMetadata(
+      TGetResultSetMetadataResp metadataResp,
+      List<String> columnNames,
+      List<TTypeId> columnTypes,
+      List<JdbcColumnAttributes> columnAttributes)
+      throws KyuubiSQLException {
+    TTableSchema schema = metadataResp.getSchema();
+    if (schema == null || !schema.isSetColumns()) {
+      throw new KyuubiSQLException("the result set schema is null");
+    }
+
+    // parse kyuubi hint
+    List<String> infoMessages = metadataResp.getStatus().getInfoMessages();
+    if (infoMessages != null) {
+      metadataResp.getStatus().getInfoMessages().stream()
+          .filter(hint -> Utils.isKyuubiOperationHint(hint))
+          .forEach(
+              line -> {
+                String[] keyValue = line.toLowerCase(Locale.ROOT).split("=");
+                assert keyValue.length == 2 : "Illegal Kyuubi operation hint found!";
+                String key = keyValue[0];
+                String value = keyValue[1];
+                properties.put(key, value);
+              });
+    }
+
+    // parse metadata
+    List<TColumnDesc> columns = schema.getColumns();
+    for (int pos = 0; pos < schema.getColumnsSize(); pos++) {
+      String columnName = columns.get(pos).getColumnName();
+      columnNames.add(columnName);
+      TPrimitiveTypeEntry primitiveTypeEntry =
+          columns.get(pos).getTypeDesc().getTypes().get(0).getPrimitiveEntry();
+      columnTypes.add(primitiveTypeEntry.getType());
+      columnAttributes.add(KyuubiArrowQueryResultSet.getColumnAttributes(primitiveTypeEntry));
+    }
   }
 }

@@ -19,13 +19,13 @@ package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
+import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class GetSchemas(session: Session, catalogName: String, schema: String)
-  extends SparkOperation(OperationType.GET_SCHEMAS, session) {
+  extends SparkOperation(session) {
 
   override def statement: String = {
     super.statement + s" [catalog : $catalogName, schemaPattern : $schema]"
@@ -40,7 +40,7 @@ class GetSchemas(session: Session, catalogName: String, schema: String)
   override protected def runInternal(): Unit = {
     try {
       val schemaPattern = toJavaRegex(schema)
-      val rows = SparkCatalogShim().getSchemas(spark, catalogName, schemaPattern)
+      val rows = SparkCatalogUtils.getSchemas(spark, catalogName, schemaPattern)
       iter = new IterableFetchIterator(rows)
     } catch onError()
   }

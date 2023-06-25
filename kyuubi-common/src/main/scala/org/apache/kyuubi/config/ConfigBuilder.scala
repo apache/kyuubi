@@ -18,6 +18,7 @@
 package org.apache.kyuubi.config
 
 import java.time.Duration
+import java.util.Locale
 import java.util.regex.PatternSyntaxException
 
 import scala.util.{Failure, Success, Try}
@@ -30,9 +31,16 @@ private[kyuubi] case class ConfigBuilder(key: String) {
   private[config] var _onCreate: Option[ConfigEntry[_] => Unit] = None
   private[config] var _type = ""
   private[config] var _internal = false
+  private[config] var _serverOnly = false
+  private[config] var _alternatives = List.empty[String]
 
   def internal: ConfigBuilder = {
     _internal = true
+    this
+  }
+
+  def serverOnly: ConfigBuilder = {
+    _serverOnly = true
     this
   }
 
@@ -48,6 +56,11 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
   def onCreate(callback: ConfigEntry[_] => Unit): ConfigBuilder = {
     _onCreate = Option(callback)
+    this
+  }
+
+  def withAlternative(key: String): ConfigBuilder = {
+    _alternatives = _alternatives :+ key
     this
   }
 
@@ -117,7 +130,14 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
   def fallbackConf[T](fallback: ConfigEntry[T]): ConfigEntry[T] = {
     val entry =
-      new ConfigEntryFallback[T](key, _doc, _version, _internal, fallback)
+      new ConfigEntryFallback[T](
+        key,
+        _alternatives,
+        _doc,
+        _version,
+        _internal,
+        _serverOnly,
+        fallback)
     _onCreate.foreach(_(entry))
     entry
   }
@@ -131,7 +151,7 @@ private[kyuubi] case class ConfigBuilder(key: String) {
       }
     }
 
-    new TypedConfigBuilder(this, regexFromString(_, this.key), _.toString)
+    TypedConfigBuilder(this, regexFromString(_, this.key), _.toString)
   }
 }
 
@@ -146,6 +166,21 @@ private[kyuubi] case class TypedConfigBuilder[T](
     this(parent, fromStr, Option[T](_).map(_.toString).orNull)
 
   def transform(fn: T => T): TypedConfigBuilder[T] = this.copy(fromStr = s => fn(fromStr(s)))
+
+  def transformToUpperCase: TypedConfigBuilder[T] = {
+    transformString(_.toUpperCase(Locale.ROOT))
+  }
+
+  def transformToLowerCase: TypedConfigBuilder[T] = {
+    transformString(_.toLowerCase(Locale.ROOT))
+  }
+
+  private def transformString(fn: String => String): TypedConfigBuilder[T] = {
+    require(parent._type == "string")
+    this.asInstanceOf[TypedConfigBuilder[String]]
+      .transform(fn)
+      .asInstanceOf[TypedConfigBuilder[T]]
+  }
 
   /** Checks if the user-provided value for the config matches the validator. */
   def checkValue(validator: T => Boolean, errMsg: String): TypedConfigBuilder[T] = {
@@ -177,12 +212,14 @@ private[kyuubi] case class TypedConfigBuilder[T](
   def createOptional: OptionalConfigEntry[T] = {
     val entry = new OptionalConfigEntry(
       parent.key,
+      parent._alternatives,
       fromStr,
       toStr,
       parent._doc,
       parent._version,
       parent._type,
-      parent._internal)
+      parent._internal,
+      parent._serverOnly)
     parent._onCreate.foreach(_(entry))
     entry
   }
@@ -193,13 +230,15 @@ private[kyuubi] case class TypedConfigBuilder[T](
       val d = fromStr(toStr(default))
       val entry = new ConfigEntryWithDefault(
         parent.key,
+        parent._alternatives,
         d,
         fromStr,
         toStr,
         parent._doc,
         parent._version,
         parent._type,
-        parent._internal)
+        parent._internal,
+        parent._serverOnly)
       parent._onCreate.foreach(_(entry))
       entry
   }
@@ -207,13 +246,15 @@ private[kyuubi] case class TypedConfigBuilder[T](
   def createWithDefaultString(default: String): ConfigEntryWithDefaultString[T] = {
     val entry = new ConfigEntryWithDefaultString(
       parent.key,
+      parent._alternatives,
       default,
       fromStr,
       toStr,
       parent._doc,
       parent._version,
       parent._type,
-      parent._internal)
+      parent._internal,
+      parent._serverOnly)
     parent._onCreate.foreach(_(entry))
     entry
   }

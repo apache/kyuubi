@@ -17,6 +17,7 @@
 
 *#*#
 *.#*
+*.db
 *.iml
 *.ipr
 *.iws
@@ -31,11 +32,8 @@
 .ensime_cache/
 .ensime_lucene
 .generated-mima*
-# The star is required for further !/.idea/ to work, see https://git-scm.com/docs/gitignore
-/.idea/*
-# Icon for JetBrains Toolbox
-!/.idea/icon.png
-!/.idea/vcs.xml
+.vscode/
+.idea/
 .idea_modules/
 .project
 .pydevproject
@@ -58,10 +56,9 @@ hs_err_pid*
 spark-warehouse/
 metastore_db
 derby.log
-ldap
+rest-audit.log
 **/dependency-reduced-pom.xml
-metrics/report.json
-metrics/.report.json.crc
+metrics/
 /kyuubi-ha/embedded_zookeeper/
 embedded_zookeeper/
 /externals/kyuubi-spark-sql-engine/operation_logs/
@@ -74,6 +71,11 @@ embedded_zookeeper/
 **/operation_logs/
 **/server_operation_logs/
 **/engine_operation_logs/
-conf/log4j2.properties
+conf/log4j2.xml
 conf/kyuubi-defaults.conf
 conf/kyuubi-env.sh
+
+# For Antlr
+kyuubi-server/gen
+kyuubi-server/src/main/antlr4/org/apache/kyuubi/sql/*.tokens
+kyuubi-server/src/main/antlr4/org/apache/kyuubi/sql/gen/

@@ -1,23 +1,21 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # How To Use Spark Dynamic Resource Allocation (DRA) in Kyuubi
-
 
 When we adopt Kyuubi in a production environment,
 we always want to use the environment's computing resources more cost-effectively and efficiently.
@@ -42,7 +40,6 @@ On the one hand, we need to rely on the resource manager's capabilities for effi
 resource isolation, and sharing.
 On the other hand, we need to enable Spark's DRA feature for the engines' executors' elastic scaling.
 
-
 ## The Basics of Dynamic Resource Allocation
 
 Spark provides a mechanism to dynamically adjust the application resources based on the workload, which means that an application may give resources back to the cluster if they are no longer used and request them again later when there is demand.
@@ -57,7 +54,6 @@ it can request executors via ```ExecutorAllocationManager```.
 When the engine has executors that become idle, the executors are released,
 and the occupied resources are given back to the cluster manager.
 Then other engines or other applications run in the same queue could acquire the resources.
-
 
 ## How to Enable Dynamic Resource Allocation
 
@@ -77,7 +73,6 @@ spark.shuffle.service.enabled=true
 ```
 
 Another thing to be sure of is that ```spark.shuffle.service.port``` should be configured to point to the port on which the ESS is running.
-
 
 ### Dynamic Allocation w/o External Shuffle Service
 
@@ -103,7 +98,6 @@ However, the larger the ```minExecutors``` goes, the more resources may be waste
 On the other hand, the ```maxExecutors``` determines the upper bound executors of an engine could reach. From the individual engine perspective, this value is the larger, the better, to handle heavier queries. However, we must limit it to a reasonable range in terms of the entire cluster's resources. Otherwise, a large query may trigger the engine where it runs to consume too many resources from the queue/namespace and occupy them for a considerable time, which could be a bad idea for using the resources efficiently. In this case, we would prefer that such an enormous task be done more slowly in a limited amount of concurrency.
 
 The following Spark configurations consist of sizing for the DRA.
-
 
 ```
 spark.dynamicAllocation.minExecutors=10
@@ -132,11 +126,9 @@ By default, the dynamic allocation will request enough executors to maximize the
 
 </div>
 
-
 While this minimizes the latency of the job, but with small tasks, the default behavior can waste many resources due to executor allocation overhead, as some executors might not even do any work.
 
 In this case, we can adjust ```spark.dynamicAllocation.executorAllocationRatio``` a bit lower to reduce the number of executors w.r.t. full parallelism.  For instance, 0.5 will divide the target number of executors by 2.
-
 
 <div align=center>
 
@@ -153,6 +145,7 @@ After finish one task,  Spark Driver will schedule a new task for the executor w
 </div>
 
 If one executor reached the maximum timeout, it will be removed.
+
 ```properties
 spark.dynamicAllocation.executorIdleTimeout=60s
 spark.dynamicAllocation.cachedExecutorIdleTimeout=infinity
@@ -163,7 +156,6 @@ spark.dynamicAllocation.cachedExecutorIdleTimeout=infinity
 ![](../../imgs/spark/dra_executor_removal.png)
 
 </div>
-
 
 If the DRA finds there have been pending tasks backlogged for more than the timeouts, new executors will be requested, controlled by the following configs.
 
@@ -176,7 +168,6 @@ spark.dynamicAllocation.sustainedSchedulerBacklogTimeout=1s
 
 Kyuubi is a long-running service to make it easier for end-users to use Spark SQL without having much of Spark's basic knowledge. It is essential to have a basic configuration for resource management that works for most scenarios on the server-side.
 
-
 ### Setting Default Configurations
 
 [Configuring by `spark-defaults.conf`](settings.html#via-spark-defaults-conf) at the engine side is the best way to set up Kyuubi with DRA. All engines will be instantiated with DRA enabled.
@@ -185,7 +176,7 @@ Here is a config setting that we use in our platform when deploying Kyuubi.
 
 ```properties
 spark.dynamicAllocation.enabled=true
-##false if perfer shuffle tracking than ESS
+##false if prefer shuffle tracking than ESS
 spark.shuffle.service.enabled=true
 spark.dynamicAllocation.initialExecutors=10
 spark.dynamicAllocation.minExecutors=10
@@ -193,7 +184,7 @@ spark.dynamicAllocation.maxExecutors=500
 spark.dynamicAllocation.executorAllocationRatio=0.5
 spark.dynamicAllocation.executorIdleTimeout=60s
 spark.dynamicAllocation.cachedExecutorIdleTimeout=30min
-# true if perfer shuffle tracking than ESS
+# true if prefer shuffle tracking than ESS
 spark.dynamicAllocation.shuffleTracking.enabled=false
 spark.dynamicAllocation.shuffleTracking.timeout=30min
 spark.dynamicAllocation.schedulerBacklogTimeout=1s
@@ -204,6 +195,7 @@ spark.cleaner.periodicGC.interval=5min
 Note that, ```spark.cleaner.periodicGC.interval=5min``` is useful here when ```spark.dynamicAllocation.shuffleTracking.enabled``` is enabled, as we can tell Spark to be more active for shuffle data GC.
 
 ### Setting User Default Settings
+
 On the server-side, the workloads for different users might be different.
 
 Then we can set different defaults for them via the [User Defaults](../settings.html#user-defaults) in ```$KYUUBI_HOME/conf/kyuubi-defaults.conf```
@@ -214,11 +206,12 @@ ___kent___.spark.dynamicAllocation.maxExecutors=20
 # For a user named bob
 ___bob___.spark.dynamicAllocation.maxExecutors=600
 ```
+
 In this case, the user named `kent` can only use 20 executors for his engines, but `bob` can use 600 executors for better performance or handle heavy workloads.
 
 ### Dynamically Setting
 
-All AQE related configurations are static of Spark core and unchangeable by `SET` syntaxes before each SQL query. For example,
+All AQE related configurations are static of Spark core and unchangeable by `SET` commands before each SQL query. For example,
 
 ```sql
 SET spark.dynamicAllocation.maxExecutors=33;
@@ -229,9 +222,9 @@ For the above case, the value - 33 will not affect as Spark does not support cha
 
 Instead, end-users can set them via [JDBC Connection URL](../settings.html#via-jdbc-connection-url) for some specific cases.
 
-
 ## References
 
 1. [Spark Official Online Document: Dynamic Resource Allocation](https://spark.apache.org/docs/latest/job-scheduling.html#dynamic-resource-allocation)
 2. [Spark Official Online Document: Dynamic Resource Allocation Configurations](https://spark.apache.org/docs/latest/configuration.html#dynamic-allocation)
 3. [SPARK-27963: Allow dynamic allocation without an external shuffle service](https://issues.apache.org/jira/browse/SPARK-27963)
+

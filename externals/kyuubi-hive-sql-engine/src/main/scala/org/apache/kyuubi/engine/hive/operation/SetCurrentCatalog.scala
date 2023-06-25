@@ -21,11 +21,10 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.cli.operation.Operation
 
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class SetCurrentCatalog(session: Session, catalog: String)
-  extends HiveOperation(OperationType.EXECUTE_STATEMENT, session) {
+  extends HiveOperation(session) {
   // Hive does not support catalog
   override val internalHiveOperation: Operation =
     delegatedOperationManager.newExecuteStatementOperation(

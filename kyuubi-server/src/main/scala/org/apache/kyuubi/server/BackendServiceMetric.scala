@@ -20,7 +20,7 @@ package org.apache.kyuubi.server
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
-import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
+import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.session.SessionHandle
@@ -152,9 +152,11 @@ trait BackendServiceMetric extends BackendService {
     }
   }
 
-  abstract override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
+  abstract override def getOperationStatus(
+      operationHandle: OperationHandle,
+      maxWait: Option[Long] = None): OperationStatus = {
     MetricsSystem.timerTracing(MetricsConstants.BS_GET_OPERATION_STATUS) {
-      super.getOperationStatus(operationHandle)
+      super.getOperationStatus(operationHandle, maxWait)
     }
   }
 
@@ -170,7 +172,8 @@ trait BackendServiceMetric extends BackendService {
     }
   }
 
-  abstract override def getResultSetMetadata(operationHandle: OperationHandle): TTableSchema = {
+  abstract override def getResultSetMetadata(operationHandle: OperationHandle)
+      : TGetResultSetMetadataResp = {
     MetricsSystem.timerTracing(MetricsConstants.BS_GET_RESULT_SET_METADATA) {
       super.getResultSetMetadata(operationHandle)
     }
@@ -183,6 +186,7 @@ trait BackendServiceMetric extends BackendService {
       fetchLog: Boolean): TRowSet = {
     MetricsSystem.timerTracing(MetricsConstants.BS_FETCH_RESULTS) {
       val rowSet = super.fetchResults(operationHandle, orientation, maxRows, fetchLog)
+      // TODO: the statistics are wrong when we enabled the arrow.
       val rowsSize =
         if (rowSet.getColumnsSize > 0) {
           rowSet.getColumns.get(0).getFieldValue match {
@@ -202,6 +206,16 @@ trait BackendServiceMetric extends BackendService {
         if (fetchLog) MetricsConstants.BS_FETCH_LOG_ROWS_RATE
         else MetricsConstants.BS_FETCH_RESULT_ROWS_RATE,
         rowsSize))
+
+      val operation = sessionManager.operationManager
+        .getOperation(operationHandle)
+        .asInstanceOf[KyuubiOperation]
+
+      if (fetchLog) {
+        operation.increaseFetchLogCount(rowsSize)
+      } else {
+        operation.increaseFetchResultsCount(rowsSize)
+      }
 
       rowSet
     }

@@ -30,7 +30,7 @@ function usage() {
   echo "    -h | --help  - Show this help message"
 }
 
-if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
+if [[ "$*" = *--help ]] || [[ "$*" = *-h ]]; then
   usage
   exit 0
 fi
@@ -48,6 +48,7 @@ function kyuubi_rotate_log() {
     num=${KYUUBI_MAX_LOG_FILES}
   else
     echo "Error: KYUUBI_MAX_LOG_FILES must be a positive number, but got ${KYUUBI_MAX_LOG_FILES}"
+    # shellcheck disable=SC2242
     exit -1
   fi
 
@@ -85,10 +86,18 @@ if [[ -z "$KYUUBI_JAR_DIR" ]]; then
   fi
 fi
 
-if [[ -z ${YARN_CONF_DIR} ]]; then
-  KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}:${HADOOP_CONF_DIR}"
-else
-  KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}:${HADOOP_CONF_DIR}:${YARN_CONF_DIR}"
+## Find the WebUI dist
+if [[ -z "$KYUUBI_WEBUI_DIR" ]]; then
+  KYUUBI_WEBUI_DIR="$KYUUBI_HOME/web-ui"
+  if [[ ! -d ${KYUUBI_WEBUI_DIR} ]]; then
+  echo -e "\nCandidate Kyuubi WebUI dist $KYUUBI_WEBUI_DIR doesn't exist, searching development environment..."
+    KYUUBI_WEBUI_DIR="$KYUUBI_HOME/kyuubi-server/web-ui"
+  fi
+fi
+
+KYUUBI_CLASSPATH="${KYUUBI_CONF_DIR}:${KYUUBI_WEBUI_DIR}:${KYUUBI_JAR_DIR}/*:${HADOOP_CONF_DIR}"
+if [[ -n ${YARN_CONF_DIR} ]]; then
+  KYUUBI_CLASSPATH="${KYUUBI_CLASSPATH}:${YARN_CONF_DIR}"
 fi
 
 cmd="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS"
@@ -146,7 +155,7 @@ function start_kyuubi() {
 
 function run_kyuubi() {
   echo "Starting $CLASS"
-  nice -n "${KYUUBI_NICENESS:-0}" ${cmd}
+  exec nice -n "${KYUUBI_NICENESS:-0}" ${cmd}
 }
 
 function stop_kyuubi() {
@@ -154,17 +163,34 @@ function stop_kyuubi() {
     TARGET_ID="$(cat "$pid")"
     if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
       echo "Stopping $CLASS"
-      kill "$TARGET_ID" && rm -f "$pid"
+      kill "$TARGET_ID"
       for i in {1..20}
       do
         sleep 0.5
         if [[ ! $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+          rm -f "$pid"
           break
         fi
       done
 
-      if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
-        echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully "
+      if [ -f ${pid} ]; then
+        echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully"
+        kill -9 ${TARGET_ID}
+        for i in {1..20}
+        do
+          sleep 0.5
+          if [[ ! $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+            rm -f "$pid"
+            break
+          fi
+        done
+        if [ -f ${pid} ]; then
+          echo "Failed to stop kyuubi forcefully after 10 seconds"
+          exit 1
+        else
+          kyuubi_logo
+          echo "Bye!"
+        fi
       else
         kyuubi_logo
         echo "Bye!"

@@ -35,7 +35,7 @@ Top level targets are:
 
 All other inputs are environment variables:
 
-RELEASE_VERSION - Release version, must match pom.xml (e.g. 1.3.0-incubating)
+RELEASE_VERSION - Release version, must match pom.xml (e.g. 1.7.0)
 SKIP_GPG        - (optional) Default false
 EOF
   exit 1
@@ -75,7 +75,7 @@ package_binary() {
 
   echo "Creating binary release tarball ${BIN_TGZ_FILE}"
 
-  ${KYUUBI_DIR}/build/dist --tgz --spark-provided --flink-provided --hive-provided -Pspark-3.2
+  ${KYUUBI_DIR}/build/dist --tgz --web-ui --spark-provided --flink-provided --hive-provided
 
   cp "${BIN_TGZ_FILE}" "${RELEASE_DIR}"
 

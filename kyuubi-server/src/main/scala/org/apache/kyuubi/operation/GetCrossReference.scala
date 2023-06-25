@@ -27,7 +27,7 @@ class GetCrossReference(
     foreignCatalog: String,
     foreignSchema: String,
     foreignTable: String)
-  extends KyuubiOperation(OperationType.GET_FUNCTIONS, session) {
+  extends KyuubiOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

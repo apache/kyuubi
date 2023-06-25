@@ -20,5 +20,5 @@ package org.apache.kyuubi.session
 object SessionType extends Enumeration {
   type SessionType = Value
 
-  val SQL, BATCH = Value
+  val INTERACTIVE, BATCH = Value
 }

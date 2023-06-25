@@ -17,34 +17,42 @@
 package org.apache.kyuubi.ctl.cmd.delete
 
 import org.apache.kyuubi.client.BatchRestApi
-import org.apache.kyuubi.client.util.JsonUtil
-import org.apache.kyuubi.ctl.{CliConfig, ControlCliException}
+import org.apache.kyuubi.client.api.v1.dto.Batch
+import org.apache.kyuubi.client.util.{BatchUtils, JsonUtils}
+import org.apache.kyuubi.ctl.ControlCliException
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
-import org.apache.kyuubi.ctl.util.BatchUtil
+import org.apache.kyuubi.ctl.opt.CliConfig
 
-class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
-  def validate(): Unit = {}
+class DeleteBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig) {
+  def validate(): Unit = {
+    if (normalizedCliConfig.batchOpts.batchId == null) {
+      fail("Must specify batchId for delete batch command.")
+    }
+  }
 
-  def run(): Unit = {
+  def doRun(): Batch = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       val batchId = normalizedCliConfig.batchOpts.batchId
 
-      val result = batchRestApi.deleteBatch(batchId, normalizedCliConfig.batchOpts.hs2ProxyUser)
+      val result = batchRestApi.deleteBatch(batchId, normalizedCliConfig.commonOpts.hs2ProxyUser)
 
-      info(JsonUtil.toJson(result))
+      info(JsonUtils.toJson(result))
 
       if (!result.isSuccess) {
         val batch = batchRestApi.getBatchById(batchId)
-        if (!BatchUtil.isTerminalState(batch.getState)) {
-          error(s"Failed to delete batch $batchId, its current state is ${batch.getState}")
+        if (!BatchUtils.isTerminalState(batch.getState)) {
+          error(s"Failed to delete batch ${batch.getId}, its current state is ${batch.getState}")
           throw ControlCliException(1)
         } else {
-          warn(s"Batch $batchId is already in terminal state ${batch.getState}.")
+          warn(s"Batch ${batch.getId} is already in terminal state ${batch.getState}.")
         }
       }
+
+      null
     }
   }
 
+  def render(batch: Batch): Unit = {}
 }

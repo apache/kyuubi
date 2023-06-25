@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.operation.log.OperationLog
 
 class SparkBatchProcessBuilder(
@@ -43,17 +44,19 @@ class SparkBatchProcessBuilder(
       buffer += cla
     }
 
-    val batchJobTag = batchConf.get(TAG_KEY).map(_ + ",").getOrElse("") + batchId
+    val batchKyuubiConf = new KyuubiConf(false)
+    // complete `spark.master` if absent on kubernetes
+    completeMasterUrl(batchKyuubiConf)
+    batchConf.foreach(entry => { batchKyuubiConf.set(entry._1, entry._2) })
+    // tag batch application
+    KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
-    val allConf = batchConf ++ Map(TAG_KEY -> batchJobTag) ++ sparkAppNameConf()
-
-    allConf.foreach { case (k, v) =>
+    (batchKyuubiConf.getAll ++ sparkAppNameConf()).foreach { case (k, v) =>
       buffer += CONF
-      buffer += s"$k=$v"
+      buffer += s"${convertConfigKey(k)}=$v"
     }
 
-    buffer += PROXY_USER
-    buffer += proxyUser
+    setupKerberos(buffer)
 
     assert(mainResource.isDefined)
     buffer += mainResource.get
@@ -72,6 +75,6 @@ class SparkBatchProcessBuilder(
   override protected def module: String = "kyuubi-spark-batch-submit"
 
   override def clusterManager(): Option[String] = {
-    batchConf.get(MASTER_KEY).orElse(defaultMaster)
+    batchConf.get(MASTER_KEY).orElse(super.clusterManager())
   }
 }

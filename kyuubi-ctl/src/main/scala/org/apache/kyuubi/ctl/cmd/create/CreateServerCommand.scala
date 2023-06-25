@@ -18,14 +18,14 @@ package org.apache.kyuubi.ctl.cmd.create
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.ctl.{CliConfig, ControlObject}
 import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.opt.{CliConfig, ControlObject}
 import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 
-class CreateServerCommand(cliConfig: CliConfig) extends Command(cliConfig) {
+class CreateServerCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](cliConfig) {
 
   def validate(): Unit = {
     if (normalizedCliConfig.resource != ControlObject.SERVER) {
@@ -36,7 +36,7 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
     val defaultNamespace = conf.getOption(HA_NAMESPACE.key)
       .getOrElse(HA_NAMESPACE.defaultValStr)
-    if (defaultNamespace.equals(normalizedCliConfig.commonOpts.namespace)) {
+    if (defaultNamespace.equals(normalizedCliConfig.zkOpts.namespace)) {
       fail(
         s"""
            |Only support expose Kyuubi server instance to another domain, a different namespace
@@ -49,14 +49,14 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   /**
    * Expose Kyuubi server instance to another domain.
    */
-  def run(): Unit = {
+  def doRun(): Seq[ServiceNodeInfo] = {
     val kyuubiConf = conf
 
-    kyuubiConf.setIfMissing(HA_ADDRESSES, normalizedCliConfig.commonOpts.zkQuorum)
+    kyuubiConf.setIfMissing(HA_ADDRESSES, normalizedCliConfig.zkOpts.zkQuorum)
     withDiscoveryClient(kyuubiConf) { discoveryClient =>
       val fromNamespace =
         DiscoveryPaths.makePath(null, kyuubiConf.get(HA_NAMESPACE))
-      val toNamespace = CtlUtils.getZkNamespace(kyuubiConf, normalizedCliConfig)
+      val toNamespace = CtlUtils.getZkServerNamespace(kyuubiConf, normalizedCliConfig)
 
       val currentServerNodes = discoveryClient.getServiceNodesInfo(fromNamespace)
       val exposedServiceNodes = ListBuffer[ServiceNodeInfo]()
@@ -68,7 +68,7 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command(cliConfig) {
               s" from $fromNamespace to $toNamespace")
             val newNodePath = zc.createAndGetServiceNode(
               kyuubiConf,
-              normalizedCliConfig.commonOpts.namespace,
+              normalizedCliConfig.zkOpts.namespace,
               sn.instance,
               sn.version,
               true)
@@ -78,17 +78,19 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command(cliConfig) {
           }
         }
 
-        if (kyuubiConf.get(HA_ADDRESSES) == normalizedCliConfig.commonOpts.zkQuorum) {
+        if (kyuubiConf.get(HA_ADDRESSES) == normalizedCliConfig.zkOpts.zkQuorum) {
           doCreate(discoveryClient)
         } else {
-          kyuubiConf.set(HA_ADDRESSES, normalizedCliConfig.commonOpts.zkQuorum)
+          kyuubiConf.set(HA_ADDRESSES, normalizedCliConfig.zkOpts.zkQuorum)
           withDiscoveryClient(kyuubiConf)(doCreate)
         }
       }
-
-      val title = "Created zookeeper service nodes"
-      info(Render.renderServiceNodesInfo(title, exposedServiceNodes, verbose))
+      exposedServiceNodes
     }
   }
 
+  def render(nodes: Seq[ServiceNodeInfo]): Unit = {
+    val title = "Created zookeeper service nodes"
+    info(Render.renderServiceNodesInfo(title, nodes))
+  }
 }

@@ -25,7 +25,8 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.kvstore.KVIndex
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.util.SemanticVersion
 
 object KyuubiSparkUtil extends Logging {
 
@@ -52,20 +53,28 @@ object KyuubiSparkUtil extends Logging {
   }
 
   def engineId: String = globalSparkContext.applicationId
+  def engineName: String = globalSparkContext.appName
+  def engineUrl: String = globalSparkContext.getConf.getOption(
+    "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
+    .orElse(globalSparkContext.uiWebUrl).getOrElse("")
+  def deployMode: String = {
+    if (globalSparkContext.getConf.getBoolean("spark.kubernetes.submitInDriver", false)) {
+      "cluster"
+    } else {
+      globalSparkContext.deployMode
+    }
+  }
 
   lazy val diagnostics: String = {
     val sc = globalSparkContext
-    val webUrl = sc.getConf.getOption(
-      "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
-      .orElse(sc.uiWebUrl).getOrElse("")
     // scalastyle:off line.size.limit
     // format: off
     s"""
-       |           Spark application name: ${sc.appName}
+       |           Spark application name: $engineName
        |                 application ID: $engineId
-       |                 application web UI: $webUrl
+       |                 application web UI: $engineUrl
        |                 master: ${sc.master}
-       |                 deploy mode: ${sc.deployMode}
+       |                 deploy mode: $deployMode
        |                 version: ${sc.version}
        |           Start time: ${LocalDateTime.ofInstant(Instant.ofEpochMilli(sc.startTime), ZoneId.systemDefault)}
        |           User: ${sc.sparkUser}""".stripMargin
@@ -88,6 +97,7 @@ object KyuubiSparkUtil extends Logging {
 
   lazy val sparkMajorMinorVersion: (Int, Int) = {
     val runtimeSparkVer = org.apache.spark.SPARK_VERSION
-    Utils.majorMinorVersion(runtimeSparkVer)
+    val runtimeVersion = SemanticVersion(runtimeSparkVer)
+    (runtimeVersion.majorVersion, runtimeVersion.minorVersion)
   }
 }

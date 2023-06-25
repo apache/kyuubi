@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import scala.collection.JavaConverters._
+
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -40,6 +42,8 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   protected def skipOperationLog: Boolean = false
 
   def getOperationCount: Int = handleToOperation.size()
+
+  def allOperations(): Iterable[Operation] = handleToOperation.values().asScala
 
   override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize(skipOperationLog)
@@ -126,8 +130,8 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     operation.close()
   }
 
-  final def getOperationResultSetSchema(opHandle: OperationHandle): TTableSchema = {
-    getOperation(opHandle).getResultSetSchema
+  final def getOperationResultSetSchema(opHandle: OperationHandle): TGetResultSetMetadataResp = {
+    getOperation(opHandle).getResultSetMetadata
   }
 
   final def getOperationNextRowSet(
@@ -142,7 +146,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       order: FetchOrientation,
       maxRows: Int): TRowSet = {
     val operationLog = getOperation(opHandle).getOperationLog
-    operationLog.map(_.read(maxRows)).getOrElse {
+    operationLog.map(_.read(order, maxRows)).getOrElse {
       throw KyuubiSQLException(s"$opHandle failed to generate operation log")
     }
   }

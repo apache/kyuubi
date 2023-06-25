@@ -21,7 +21,7 @@ import java.io.File
 
 import com.dimafeng.testcontainers.{DockerComposeContainer, ExposedService, ForAllTestContainer}
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 
 trait KuduMixin extends KyuubiFunSuite with ForAllTestContainer {
 
@@ -30,7 +30,8 @@ trait KuduMixin extends KyuubiFunSuite with ForAllTestContainer {
   override val container: DockerComposeContainer =
     DockerComposeContainer
       .Def(
-        composeFiles = new File(getClass.getClassLoader.getResource("kudu-compose.yml").toURI),
+        composeFiles =
+          new File(Utils.getContextOrKyuubiClassLoader.getResource("kudu-compose.yml").toURI),
         exposedServices = ExposedService("kudu-master", KUDU_MASTER_PORT) :: Nil)
       .createContainer()
 

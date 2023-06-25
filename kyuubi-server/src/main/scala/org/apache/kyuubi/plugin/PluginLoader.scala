@@ -21,6 +21,7 @@ import scala.util.control.NonFatal
 
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.util.reflect.DynConstructors
 
 private[kyuubi] object PluginLoader {
 
@@ -31,14 +32,26 @@ private[kyuubi] object PluginLoader {
     }
 
     try {
-      Class.forName(advisorClass.get).getConstructor().newInstance()
-        .asInstanceOf[SessionConfAdvisor]
+      DynConstructors.builder.impl(advisorClass.get).buildChecked[SessionConfAdvisor].newInstance()
     } catch {
       case _: ClassCastException =>
         throw new KyuubiException(
           s"Class ${advisorClass.get} is not a child of '${classOf[SessionConfAdvisor].getName}'.")
       case NonFatal(e) =>
-        throw new IllegalArgumentException(s"Error while instantiating '${advisorClass.get}':", e)
+        throw new IllegalArgumentException(s"Error while instantiating '${advisorClass.get}': ", e)
+    }
+  }
+
+  def loadGroupProvider(conf: KyuubiConf): GroupProvider = {
+    val groupProviderClass = conf.get(KyuubiConf.GROUP_PROVIDER)
+    try {
+      DynConstructors.builder().impl(groupProviderClass).buildChecked[GroupProvider]().newInstance()
+    } catch {
+      case _: ClassCastException =>
+        throw new KyuubiException(
+          s"Class $groupProviderClass is not a child of '${classOf[GroupProvider].getName}'.")
+      case NonFatal(e) =>
+        throw new IllegalArgumentException(s"Error while instantiating '$groupProviderClass': ", e)
     }
   }
 }

@@ -31,7 +31,8 @@ import org.apache.thrift.transport.TTransport
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
-import org.apache.kyuubi.config.KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, SESSION_CLOSE_ON_DISCONNECT}
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
@@ -114,7 +115,7 @@ abstract class TFrontendService(name: String)
     val host = serverHost match {
       case Some(h) => h // respect user's setting ahead
       case None if conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME) =>
-        serverAddr.getHostName
+        serverAddr.getCanonicalHostName
       case None =>
         serverAddr.getHostAddress
     }
@@ -135,15 +136,23 @@ abstract class TFrontendService(name: String)
     }
   }
 
-  protected def getUserName(req: TOpenSessionReq): String = {
+  /**
+   * Get the real user and the session user.
+   * The real user is the user used for session authentication.
+   * The session user is the proxy user if proxy user is provided, otherwise is the real user.
+   */
+  protected def getRealUserAndSessionUser(req: TOpenSessionReq): (String, String) = {
     val realUser: String =
       ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
-    if (req.getConfiguration == null) {
-      realUser
-    } else {
-      getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
-    }
+    val sessionUser =
+      if (req.getConfiguration == null) {
+        realUser
+      } else {
+        getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
+      }
+    realUser -> sessionUser
   }
+
   protected def getIpAddress: String = {
     authFactory.getIpAddress.orNull
   }
@@ -156,13 +165,17 @@ abstract class TFrontendService(name: String)
   protected def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
-    val userName = getUserName(req)
+    val (realUser, sessionUser) = getRealUserAndSessionUser(req)
     val ipAddress = getIpAddress
     val configuration =
-      Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
+      Map(KYUUBI_CLIENT_IP_KEY -> ipAddress, KYUUBI_SERVER_IP_KEY -> serverAddr.getHostAddress) ++
+        Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String]) ++
+        Map(
+          KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl,
+          KYUUBI_SESSION_REAL_USER_KEY -> realUser)
     val sessionHandle = be.openSession(
       protocol,
-      userName,
+      sessionUser,
       req.getPassword,
       ipAddress,
       configuration)
@@ -215,7 +228,7 @@ abstract class TFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        error("Error getting type info: ", e)
+        error("Error getting info: ", e)
         resp.setInfoValue(TGetInfoValue.lenValue(0))
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
@@ -237,7 +250,9 @@ abstract class TFrontendService(name: String)
         confOverlay.asScala.toMap,
         runAsync,
         queryTimeout)
-      resp.setOperationHandle(operationHandle.toTOperationHandle)
+      val tOperationHandle = operationHandle.toTOperationHandle
+      tOperationHandle.setOperationType(TOperationType.EXECUTE_STATEMENT)
+      resp.setOperationHandle(tOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -252,7 +267,9 @@ abstract class TFrontendService(name: String)
     val resp = new TGetTypeInfoResp
     try {
       val operationHandle = be.getTypeInfo(SessionHandle(req.getSessionHandle))
-      resp.setOperationHandle(operationHandle.toTOperationHandle)
+      val tOperationHandle = operationHandle.toTOperationHandle
+      tOperationHandle.setOperationType(TOperationType.GET_TYPE_INFO)
+      resp.setOperationHandle(tOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -267,7 +284,9 @@ abstract class TFrontendService(name: String)
     val resp = new TGetCatalogsResp
     try {
       val opHandle = be.getCatalogs(SessionHandle(req.getSessionHandle))
-      resp.setOperationHandle(opHandle.toTOperationHandle)
+      val tOperationHandle = opHandle.toTOperationHandle
+      tOperationHandle.setOperationType(TOperationType.GET_CATALOGS)
+      resp.setOperationHandle(tOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -285,7 +304,9 @@ abstract class TFrontendService(name: String)
         SessionHandle(req.getSessionHandle),
         req.getCatalogName,
         req.getSchemaName)
-      resp.setOperationHandle(opHandle.toTOperationHandle)
+      val tOperationHandle = opHandle.toTOperationHandle
+      tOperationHandle.setOperationType(TOperationType.GET_SCHEMAS)
+      resp.setOperationHandle(tOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -305,7 +326,9 @@ abstract class TFrontendService(name: String)
       val table = req.getTableName
       val tableTypes = req.getTableTypes
       val opHandle = be.getTables(sessionHandle, catalog, schema, table, tableTypes)
-      resp.setOperationHandle(opHandle.toTOperationHandle)
+      val tOperationHandle = opHandle.toTOperationHandle
+      tOperationHandle.setOperationType(TOperationType.GET_TABLES)
+      resp.setOperationHandle(tOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -320,7 +343,9 @@ abstract class TFrontendService(name: String)
     val resp = new TGetTableTypesResp
     try {
       val opHandle = be.getTableTypes(SessionHandle(req.getSessionHandle))
-      resp.setOperationHandle(opHandle.toTOperationHandle)
+      val tOperationHandle = opHandle.toTOperationHandle
+      tOperationHandle.setOperationType(TOperationType.GET_TABLE_TYPES)
+      resp.setOperationHandle(tOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -340,7 +365,9 @@ abstract class TFrontendService(name: String)
       val table = req.getTableName
       val col = req.getColumnName
       val opHandle = be.getColumns(sessionHandle, catalog, schema, table, col)
-      resp.setOperationHandle(opHandle.toTOperationHandle)
+      val tOperationHandle = opHandle.toTOperationHandle
+      tOperationHandle.setOperationType(TOperationType.GET_COLUMNS)
+      resp.setOperationHandle(tOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -359,7 +386,9 @@ abstract class TFrontendService(name: String)
       val schema = req.getSchemaName
       val func = req.getFunctionName
       val opHandle = be.getFunctions(sessionHandle, catalog, schema, func)
-      resp.setOperationHandle(opHandle.toTOperationHandle)
+      val tOperationHandle = opHandle.toTOperationHandle
+      tOperationHandle.setOperationType(TOperationType.GET_FUNCTIONS)
+      resp.setOperationHandle(tOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -378,7 +407,9 @@ abstract class TFrontendService(name: String)
       val schema = req.getSchemaName
       val table = req.getTableName
       val opHandle = be.getPrimaryKeys(sessionHandle, catalog, schema, table)
-      resp.setOperationHandle(opHandle.toTOperationHandle)
+      val tOperationHandle = opHandle.toTOperationHandle
+      tOperationHandle.setOperationType(TOperationType.GET_FUNCTIONS)
+      resp.setOperationHandle(tOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -407,7 +438,9 @@ abstract class TFrontendService(name: String)
         foreignCatalog,
         foreignSchema,
         foreignTable)
-      resp.setOperationHandle(opHandle.toTOperationHandle)
+      val tOperationHandle = opHandle.toTOperationHandle
+      tOperationHandle.setOperationType(TOperationType.GET_FUNCTIONS)
+      resp.setOperationHandle(tOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -474,17 +507,15 @@ abstract class TFrontendService(name: String)
 
   override def GetResultSetMetadata(req: TGetResultSetMetadataReq): TGetResultSetMetadataResp = {
     debug(req.toString)
-    val resp = new TGetResultSetMetadataResp
     try {
-      val schema = be.getResultSetMetadata(OperationHandle(req.getOperationHandle))
-      resp.setSchema(schema)
-      resp.setStatus(OK_STATUS)
+      be.getResultSetMetadata(OperationHandle(req.getOperationHandle))
     } catch {
       case e: Exception =>
         error("Error getting result set metadata: ", e)
+        val resp = new TGetResultSetMetadataResp
         resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp
     }
-    resp
   }
 
   override def FetchResults(req: TFetchResultsReq): TFetchResultsResp = {
@@ -577,7 +608,14 @@ abstract class TFrontendService(name: String)
       if (handle != null) {
         info(s"Session [$handle] disconnected without closing properly, close it now")
         try {
-          be.closeSession(handle)
+          val needToClose = be.sessionManager.getSession(handle).conf
+            .getOrElse(SESSION_CLOSE_ON_DISCONNECT.key, "true").toBoolean
+          if (needToClose) {
+            be.closeSession(handle)
+          } else {
+            warn(s"Session not actually closed because configuration " +
+              s"${SESSION_CLOSE_ON_DISCONNECT.key} is set to false")
+          }
         } catch {
           case e: KyuubiSQLException =>
             error("Failed closing session", e)
@@ -603,7 +641,7 @@ private[kyuubi] object TFrontendService {
 
   final val CURRENT_SERVER_CONTEXT = new ThreadLocal[FeServiceServerContext]()
 
-  final val SERVER_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10
+  final val SERVER_VERSION = TProtocolVersion.values.max
 
   class FeServiceServerContext extends ServerContext {
     private var sessionHandle: SessionHandle = _

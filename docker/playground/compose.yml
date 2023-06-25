@@ -1,0 +1,83 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+services:
+  minio:
+    image: bitnami/minio:2023-debian-11
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio_minio
+      MINIO_DEFAULT_BUCKETS: spark-bucket,iceberg-bucket
+    container_name: minio
+    hostname: minio
+    ports:
+      - 9000
+      - 9001:9001
+
+  postgres:
+    image: postgres:${POSTGRES_VERSION}
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: metastore
+    container_name: postgres
+    hostname: postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - ./script/hive-schema-2.3.0.postgres.sql:/docker-entrypoint-initdb.d/hive-schema-2.3.0.postgres.sql
+      - ./script/hive-txn-schema-2.3.0.postgres.sql:/docker-entrypoint-initdb.d/hive-txn-schema-2.3.0.postgres.sql
+
+  zookeeper:
+    image: zookeeper:${ZOOKEEPER_VERSION}
+    ports:
+      - 2181
+    container_name: zookeeper
+    hostname: zookeeper
+
+  metastore:
+    image: nekyuubi/kyuubi-playground-metastore:${KYUUBI_VERSION}
+    container_name: metastore
+    hostname: metastore
+    ports:
+      - 9083
+    volumes:
+      - ./conf/core-site.xml:/etc/hadoop/conf/core-site.xml
+      - ./conf/hive-site.xml:/etc/hive/conf/hive-site.xml
+    depends_on:
+      - postgres
+
+  kyuubi:
+    image: nekyuubi/kyuubi-playground-kyuubi:${KYUUBI_VERSION}
+    container_name: kyuubi
+    hostname: kyuubi
+    ports:
+      - 4040-4050:4040-4050
+      - 10009:10009
+      - 10099:10099
+    volumes:
+      - ./conf/core-site.xml:/etc/hadoop/conf/core-site.xml
+      - ./conf/hive-site.xml:/etc/hive/conf/hive-site.xml
+      - ./conf/spark-defaults.conf:/etc/spark/conf/spark-defaults.conf
+      - ./conf/kyuubi-defaults.conf:/etc/kyuubi/conf/kyuubi-defaults.conf
+      - ./conf/kyuubi-log4j2.xml:/etc/kyuubi/conf/log4j2.xml
+      - ./script/load-dataset-tpcds-tiny.sql:/opt/load_data/load-dataset-tpcds-tiny.sql
+      - ./script/load-dataset-tpch-tiny.sql:/opt/load_data/load-dataset-tpch-tiny.sql
+    depends_on:
+      - metastore
+      - minio
+      - zookeeper

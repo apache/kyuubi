@@ -19,10 +19,11 @@ package org.apache.kyuubi.session
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
@@ -34,9 +35,10 @@ abstract class AbstractSession(
     val ipAddress: String,
     val conf: Map[String, String],
     val sessionManager: SessionManager) extends Session with Logging {
-  override val handle: SessionHandle = SessionHandle(protocol)
+  override val handle: SessionHandle = SessionHandle()
 
-  protected def logSessionInfo(msg: String): Unit = info(s"[$user:$ipAddress] $handle - $msg")
+  def clientIpAddress: String = conf.getOrElse(KYUUBI_CLIENT_IP_KEY, ipAddress)
+  protected def logSessionInfo(msg: String): Unit = info(s"[$user:$clientIpAddress] $handle - $msg")
 
   final private val _createTime: Long = System.currentTimeMillis()
   override def createTime: Long = _createTime
@@ -51,9 +53,11 @@ abstract class AbstractSession(
     if (lastIdleTime > 0) System.currentTimeMillis() - _lastIdleTime else 0
   }
 
+  override val sessionIdleTimeoutThreshold: Long = sessionManager.getConf.get(SESSION_IDLE_TIMEOUT)
+
   val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
 
-  override lazy val name: Option[String] = normalizedConf.get(KyuubiConf.SESSION_NAME.key)
+  override lazy val name: Option[String] = normalizedConf.get(SESSION_NAME.key)
 
   final private val opHandleSet = new java.util.HashSet[OperationHandle]
 
@@ -73,7 +77,7 @@ abstract class AbstractSession(
     }
   }
 
-  private def withAcquireRelease[T](userAccess: Boolean = true)(f: => T): T = {
+  protected def withAcquireRelease[T](userAccess: Boolean = true)(f: => T): T = {
     acquire(userAccess)
     try f
     finally release(userAccess)
@@ -106,8 +110,8 @@ abstract class AbstractSession(
 
   override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
     infoType match {
-      case TGetInfoType.CLI_SERVER_NAME => TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
-      case TGetInfoType.CLI_DBMS_NAME => TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
+      case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
+        TGetInfoValue.stringValue("Apache Kyuubi")
       case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(org.apache.kyuubi.KYUUBI_VERSION)
       case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
       case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
@@ -221,7 +225,7 @@ abstract class AbstractSession(
   }
 
   override def getResultSetMetadata(
-      operationHandle: OperationHandle): TTableSchema = withAcquireRelease() {
+      operationHandle: OperationHandle): TGetResultSetMetadataResp = withAcquireRelease() {
     sessionManager.operationManager.getOperationResultSetSchema(operationHandle)
   }
 

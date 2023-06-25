@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.engine.spark
 
+import scala.collection.JavaConverters._
+
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
@@ -25,11 +28,13 @@ import org.apache.spark.SparkContext
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
+import org.apache.kyuubi.util.reflect.DynConstructors
 
 class SparkTBinaryFrontendService(
     override val serverable: Serverable)
@@ -60,8 +65,10 @@ class SparkTBinaryFrontendService(
     info("Client protocol version: " + req.getClient_protocol)
     val resp = new TOpenSessionResp
     try {
-      val respConfiguration = new java.util.HashMap[String, String]()
-      respConfiguration.put("kyuubi.engine.id", sc.applicationId)
+      val respConfiguration = Map(
+        KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
+        KYUUBI_ENGINE_NAME -> KyuubiSparkUtil.engineName,
+        KYUUBI_ENGINE_URL -> KyuubiSparkUtil.engineUrl).asJava
 
       if (req.getConfiguration != null) {
         val credentials = req.getConfiguration.remove(KYUUBI_ENGINE_CREDENTIALS_KEY)
@@ -88,11 +95,25 @@ class SparkTBinaryFrontendService(
       None
     }
   }
+
+  override def attributes: Map[String, String] = {
+    val extraAttributes = conf.get(KyuubiConf.ENGINE_SPARK_REGISTER_ATTRIBUTES).map { attr =>
+      attr -> KyuubiSparkUtil.globalSparkContext.getConf.get(attr, "")
+    }.toMap
+    val attributes = extraAttributes ++ Map(KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId)
+    // TODO Support Spark Web UI Enabled SSL
+    sc.uiWebUrl match {
+      case Some(url) => attributes ++ Map(KYUUBI_ENGINE_URL -> url.split("//").last)
+      case None => attributes
+    }
+  }
 }
 
 object SparkTBinaryFrontendService extends Logging {
 
   val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
+  val HIVE_CONF_CLASSNAME = "org.apache.hadoop.hive.conf.HiveConf"
+  @volatile private var _hiveConf: Configuration = _
 
   private[spark] def renewDelegationToken(sc: SparkContext, delegationToken: String): Unit = {
     val newCreds = KyuubiHadoopUtils.decodeCredentials(delegationToken)
@@ -116,7 +137,7 @@ object SparkTBinaryFrontendService extends Logging {
       newTokens: Map[Text, Token[_ <: TokenIdentifier]],
       oldCreds: Credentials,
       updateCreds: Credentials): Unit = {
-    val metastoreUris = sc.hadoopConfiguration.getTrimmed("hive.metastore.uris", "")
+    val metastoreUris = hiveConf(sc.hadoopConfiguration).getTrimmed("hive.metastore.uris", "")
 
     // `HiveMetaStoreClient` selects the first token whose service is "" and kind is
     // "HIVE_DELEGATION_TOKEN" to authenticate.
@@ -141,8 +162,7 @@ object SparkTBinaryFrontendService extends Logging {
         }
         .map(_._2)
       newToken.foreach { token =>
-        if (KyuubiHadoopUtils.getTokenIssueDate(token) >
-            KyuubiHadoopUtils.getTokenIssueDate(oldAliasAndToken.get._2)) {
+        if (compareIssueDate(token, oldAliasAndToken.get._2) > 0) {
           updateCreds.addToken(oldAliasAndToken.get._1, token)
         } else {
           warn(s"Ignore Hive token with earlier issue date: $token")
@@ -166,8 +186,7 @@ object SparkTBinaryFrontendService extends Logging {
     tokens.foreach { case (alias, newToken) =>
       val oldToken = oldCreds.getToken(alias)
       if (oldToken != null) {
-        if (KyuubiHadoopUtils.getTokenIssueDate(newToken) >
-            KyuubiHadoopUtils.getTokenIssueDate(oldToken)) {
+        if (compareIssueDate(newToken, oldToken) > 0) {
           updateCreds.addToken(alias, newToken)
         } else {
           warn(s"Ignore token with earlier issue date: $newToken")
@@ -176,5 +195,38 @@ object SparkTBinaryFrontendService extends Logging {
         info(s"Ignore unknown token $newToken")
       }
     }
+  }
+
+  private def compareIssueDate(
+      newToken: Token[_ <: TokenIdentifier],
+      oldToken: Token[_ <: TokenIdentifier]): Int = {
+    val newDate = KyuubiHadoopUtils.getTokenIssueDate(newToken)
+    val oldDate = KyuubiHadoopUtils.getTokenIssueDate(oldToken)
+    if (newDate.isDefined && oldDate.isDefined && newDate.get <= oldDate.get) {
+      -1
+    } else {
+      1
+    }
+  }
+
+  private[kyuubi] def hiveConf(hadoopConf: Configuration): Configuration = {
+    if (_hiveConf == null) {
+      synchronized {
+        if (_hiveConf == null) {
+          _hiveConf =
+            try {
+              DynConstructors.builder()
+                .impl(HIVE_CONF_CLASSNAME, classOf[Configuration], classOf[Class[_]])
+                .build[Configuration]()
+                .newInstance(hadoopConf, Class.forName(HIVE_CONF_CLASSNAME))
+            } catch {
+              case e: Throwable =>
+                warn("Fail to create Hive Configuration", e)
+                hadoopConf
+            }
+        }
+      }
+    }
+    _hiveConf
   }
 }

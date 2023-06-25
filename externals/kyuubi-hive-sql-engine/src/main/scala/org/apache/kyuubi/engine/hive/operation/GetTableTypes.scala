@@ -19,11 +19,9 @@ package org.apache.kyuubi.engine.hive.operation
 
 import org.apache.hive.service.cli.operation.Operation
 
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
-class GetTableTypes(session: Session)
-  extends HiveOperation(OperationType.GET_TABLE_TYPES, session) {
+class GetTableTypes(session: Session) extends HiveOperation(session) {
 
   override val internalHiveOperation: Operation =
     delegatedOperationManager.newGetTableTypesOperation(hive)

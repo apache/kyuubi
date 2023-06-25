@@ -17,7 +17,7 @@
 
 # Usage:
 #   DEMO:
-#     kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-configmap.yaml
+#     kubectl apply -f https://raw.githubusercontent.com/apache/kyuubi/master/docker/kyuubi-configmap.yaml
 #   LOCAL:
 #     kubectl create cm kyuubi-defaults --from-file=${KYUUBI_HOME}/conf/kyuubi-defaults.conf
 
@@ -52,4 +52,4 @@ data:
     # kyuubi.frontend.bind.port       10009
     #
 
-    # Details in https://kyuubi.apache.org/docs/latest/deployment/settings.html
+    # Details in https://kyuubi.readthedocs.io/en/master/deployment/settings.html

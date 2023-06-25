@@ -17,25 +17,20 @@
 
 package org.apache.kyuubi.engine.trino
 
-import java.net.InetAddress
 import java.util.concurrent.CountDownLatch
 
 import scala.util.control.NonFatal
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.Utils.TRINO_ENGINE_SHUTDOWN_PRIORITY
-import org.apache.kyuubi.Utils.addShutdownHook
+import org.apache.kyuubi.Utils.{addShutdownHook, TRINO_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
-import org.apache.kyuubi.engine.trino.TrinoSqlEngine.countDownLatch
-import org.apache.kyuubi.engine.trino.TrinoSqlEngine.currentEngine
-import org.apache.kyuubi.engine.trino.event.TrinoEngineEvent
-import org.apache.kyuubi.engine.trino.event.handler.TrinoJsonLoggingEventHandler
-import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
+import org.apache.kyuubi.engine.trino.TrinoSqlEngine.{countDownLatch, currentEngine}
+import org.apache.kyuubi.engine.trino.event.{TrinoEngineEvent, TrinoEventHandlerRegister}
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
-import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
+import org.apache.kyuubi.util.SignalRegister
 
 case class TrinoSqlEngine()
   extends Serverable("TrinoSQLEngine") {
@@ -63,7 +58,6 @@ object TrinoSqlEngine extends Logging {
   private val countDownLatch = new CountDownLatch(1)
 
   val kyuubiConf: KyuubiConf = KyuubiConf()
-    .set(ENGINE_EVENT_LOGGERS.key, "JSON")
 
   var currentEngine: Option[TrinoSqlEngine] = None
 
@@ -92,19 +86,7 @@ object TrinoSqlEngine extends Logging {
   }
 
   private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
-    val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-    conf.get(ENGINE_EVENT_LOGGERS).map(EventLoggerType.withName).foreach {
-      case EventLoggerType.JSON =>
-        val hostName = InetAddress.getLocalHost.getCanonicalHostName
-        val handler = TrinoJsonLoggingEventHandler(
-          s"Trino-$hostName",
-          ENGINE_EVENT_JSON_LOG_PATH,
-          hadoopConf,
-          conf)
-        EventBus.register[KyuubiEvent](handler)
-      case logger =>
-        throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
-    }
+    TrinoEventHandlerRegister.registerEventLoggers(conf)
   }
 
   def main(args: Array[String]): Unit = {

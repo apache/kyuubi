@@ -15,21 +15,19 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>kyuubi-parent</artifactId>
         <groupId>org.apache.kyuubi</groupId>
-        <version>1.6.0-SNAPSHOT</version>
+        <artifactId>kyuubi-parent</artifactId>
+        <version>1.8.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-flink-sql-engine_2.12</artifactId>
-    <name>Kyuubi Project Engine Flink SQL</name>
     <packaging>jar</packaging>
+    <name>Kyuubi Project Engine Flink SQL</name>
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
@@ -61,19 +59,25 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java${flink.module.scala.suffix}</artifactId>
+            <artifactId>flink-streaming-java</artifactId>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-clients${flink.module.scala.suffix}</artifactId>
+            <artifactId>flink-clients</artifactId>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-sql-client${flink.module.scala.suffix}</artifactId>
+            <artifactId>flink-sql-client</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-sql-gateway</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -91,7 +95,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-api-java-bridge${flink.module.scala.suffix}</artifactId>
+            <artifactId>flink-table-api-java-bridge</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -103,7 +107,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-runtime${flink.module.scala.suffix}</artifactId>
+            <artifactId>flink-table-runtime</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -124,27 +128,56 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
+            <artifactId>${hive.jdbc.artifact}</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-zookeeper_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-test-utils${flink.module.scala.suffix}</artifactId>
+            <artifactId>flink-test-utils</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client-minicluster</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
-        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -153,20 +186,15 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
-                            <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
-                            <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
                             <include>com.fasterxml.jackson.core:*</include>
                             <include>com.fasterxml.jackson.module:*</include>
                             <include>com.google.guava:failureaccess</include>
                             <include>com.google.guava:guava</include>
                             <include>commons-codec:commons-codec</include>
                             <include>org.apache.commons:commons-lang3</include>
-                            <include>org.apache.curator:curator-client</include>
-                            <include>org.apache.curator:curator-framework</include>
-                            <include>org.apache.curator:curator-recipes</include>
                             <include>org.apache.hive:hive-service-rpc</include>
                             <include>org.apache.thrift:*</include>
-                            <include>org.apache.zookeeper:*</include>
+                            <include>org.apache.kyuubi:*</include>
                         </includes>
                     </artifactSet>
                     <filters>
@@ -193,13 +221,6 @@
                             <shadedPattern>${kyuubi.shade.packageName}.com.fasterxml.jackson</shadedPattern>
                             <includes>
                                 <include>com.fasterxml.jackson.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.curator</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.curator</shadedPattern>
-                            <includes>
-                                <include>org.apache.curator.**</include>
                             </includes>
                         </relocation>
                         <relocation>
@@ -245,31 +266,17 @@
                                 <include>org.apache.thrift.**</include>
                             </includes>
                         </relocation>
-                        <relocation>
-                            <pattern>org.apache.jute</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.jute</shadedPattern>
-                            <includes>
-                                <include>org.apache.jute.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.zookeeper</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.zookeeper</shadedPattern>
-                            <includes>
-                                <include>org.apache.zookeeper.**</include>
-                            </includes>
-                        </relocation>
                     </relocations>
                     <transformers>
-                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"></transformer>
                     </transformers>
                 </configuration>
                 <executions>
                     <execution>
-                        <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <phase>package</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -280,13 +287,15 @@
                 <executions>
                     <execution>
                         <id>prepare-test-jar</id>
-                        <phase>test-compile</phase>
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                        <phase>test-compile</phase>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
+        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
+        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
 </project>

@@ -140,6 +140,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
     debug(authTypes)
     if (none) AuthMethods.NONE
     else if (authTypes.contains(LDAP)) AuthMethods.LDAP
+    else if (authTypes.contains(JDBC)) AuthMethods.JDBC
     else if (authTypes.contains(CUSTOM)) AuthMethods.CUSTOM
     else throw new IllegalArgumentException("No valid Password Auth detected")
   }

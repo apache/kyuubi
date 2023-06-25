@@ -22,6 +22,7 @@ import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.{Application, Response, UriBuilder}
 
 import org.glassfish.jersey.client.ClientConfig
+import org.glassfish.jersey.media.multipart.MultiPartFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.test.JerseyTest
 import org.glassfish.jersey.test.jetty.JettyTestContainerFactory
@@ -36,12 +37,14 @@ import org.apache.kyuubi.service.AbstractFrontendService
 
 object RestFrontendTestHelper {
 
-  private class RestApiBaseSuite extends JerseyTest {
+  class RestApiBaseSuite extends JerseyTest {
 
     override def configure: Application = new ResourceConfig(getClass)
+      .register(classOf[MultiPartFeature])
 
     override def configureClient(config: ClientConfig): Unit = {
       config.register(classOf[KyuubiScalaObjectMapper])
+        .register(classOf[MultiPartFeature])
     }
 
     override def getTestContainerFactory: TestContainerFactory = new JettyTestContainerFactory
@@ -55,7 +58,7 @@ trait RestFrontendTestHelper extends WithKyuubiServer {
   override protected val frontendProtocols: Seq[FrontendProtocol] =
     FrontendProtocols.REST :: Nil
 
-  private val restApiBaseSuite = new RestApiBaseSuite
+  protected val restApiBaseSuite: JerseyTest = new RestApiBaseSuite
 
   override def beforeAll(): Unit = {
     super.beforeAll()

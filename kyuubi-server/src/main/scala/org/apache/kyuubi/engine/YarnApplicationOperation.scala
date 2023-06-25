@@ -17,20 +17,27 @@
 
 package org.apache.kyuubi.engine
 
+import java.util.Locale
+
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.yarn.api.records.{FinalApplicationStatus, YarnApplicationState}
 import org.apache.hadoop.yarn.client.api.YarnClient
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationOperation._
+import org.apache.kyuubi.engine.ApplicationState.ApplicationState
+import org.apache.kyuubi.engine.YarnApplicationOperation.toApplicationState
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class YarnApplicationOperation extends ApplicationOperation with Logging {
 
   @volatile private var yarnClient: YarnClient = _
+  private var submitTimeout: Long = _
 
   override def initialize(conf: KyuubiConf): Unit = {
+    submitTimeout = conf.get(KyuubiConf.ENGINE_YARN_SUBMIT_TIMEOUT)
     val yarnConf = KyuubiHadoopUtils.newYarnConfiguration(conf)
     // YarnClient is thread-safe
     val c = YarnClient.createYarnClient()
@@ -41,7 +48,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
   }
 
   override def isSupported(clusterManager: Option[String]): Boolean = {
-    yarnClient != null && clusterManager.nonEmpty && "yarn".equalsIgnoreCase(clusterManager.get)
+    yarnClient != null && clusterManager.exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))
   }
 
   override def killApplicationByTag(tag: String): KillResponse = {
@@ -72,23 +79,39 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  override def getApplicationInfoByTag(tag: String): Map[String, String] = {
+  override def getApplicationInfoByTag(tag: String, submitTime: Option[Long]): ApplicationInfo = {
     if (yarnClient != null) {
       debug(s"Getting application info from Yarn cluster by $tag tag")
       val reports = yarnClient.getApplications(null, null, Set(tag).asJava)
       if (reports.isEmpty) {
         debug(s"Application with tag $tag not found")
-        null
+        submitTime match {
+          case Some(_submitTime) =>
+            val elapsedTime = System.currentTimeMillis - _submitTime
+            if (elapsedTime > submitTimeout) {
+              error(s"Can't find target yarn application by tag: $tag, " +
+                s"elapsed time: ${elapsedTime}ms exceeds ${submitTimeout}ms.")
+              ApplicationInfo.NOT_FOUND
+            } else {
+              warn("Wait for yarn application to be submitted, " +
+                s"elapsed time: ${elapsedTime}ms, return UNKNOWN status")
+              ApplicationInfo.UNKNOWN
+            }
+          case _ => ApplicationInfo.NOT_FOUND
+        }
       } else {
         val report = reports.get(0)
-        val res = Map(
-          APP_ID_KEY -> report.getApplicationId.toString,
-          APP_NAME_KEY -> report.getName,
-          APP_STATE_KEY -> report.getYarnApplicationState.toString,
-          APP_URL_KEY -> report.getTrackingUrl,
-          APP_ERROR_KEY -> report.getDiagnostics)
-        debug(s"Successfully got application info by $tag: " + res.mkString(", "))
-        res
+        val info = ApplicationInfo(
+          id = report.getApplicationId.toString,
+          name = report.getName,
+          state = toApplicationState(
+            report.getApplicationId.toString,
+            report.getYarnApplicationState,
+            report.getFinalApplicationStatus),
+          url = Option(report.getTrackingUrl),
+          error = Option(report.getDiagnostics))
+        debug(s"Successfully got application info by $tag: $info")
+        info
       }
     } else {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
@@ -102,6 +125,33 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
       } catch {
         case e: Exception => error(e.getMessage)
       }
+    }
+  }
+}
+
+object YarnApplicationOperation extends Logging {
+  def toApplicationState(
+      appId: String,
+      yarnAppState: YarnApplicationState,
+      finalAppStatus: FinalApplicationStatus): ApplicationState = {
+    (yarnAppState, finalAppStatus) match {
+      case (YarnApplicationState.NEW, FinalApplicationStatus.UNDEFINED) |
+          (YarnApplicationState.NEW_SAVING, FinalApplicationStatus.UNDEFINED) |
+          (YarnApplicationState.SUBMITTED, FinalApplicationStatus.UNDEFINED) |
+          (YarnApplicationState.ACCEPTED, FinalApplicationStatus.UNDEFINED) =>
+        ApplicationState.PENDING
+      case (YarnApplicationState.RUNNING, FinalApplicationStatus.UNDEFINED) |
+          (YarnApplicationState.RUNNING, FinalApplicationStatus.SUCCEEDED) =>
+        ApplicationState.RUNNING
+      case (YarnApplicationState.FINISHED, FinalApplicationStatus.SUCCEEDED) =>
+        ApplicationState.FINISHED
+      case (YarnApplicationState.FAILED, FinalApplicationStatus.FAILED) =>
+        ApplicationState.FAILED
+      case (YarnApplicationState.KILLED, FinalApplicationStatus.KILLED) =>
+        ApplicationState.KILLED
+      case (state, finalStatus) => // any other combination is invalid, so FAIL the application.
+        error(s"Unknown YARN state $state for app $appId with final status $finalStatus.")
+        ApplicationState.FAILED
     }
   }
 }

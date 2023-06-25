@@ -19,8 +19,9 @@ package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
+import org.apache.kyuubi.config.KyuubiConf.OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
+import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
@@ -30,7 +31,13 @@ class GetTables(
     schema: String,
     tableName: String,
     tableTypes: Set[String])
-  extends SparkOperation(OperationType.GET_TABLES, session) {
+  extends SparkOperation(session) {
+
+  protected val ignoreTableProperties =
+    spark.conf.getOption(OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES.key) match {
+      case Some(s) => s.toBoolean
+      case _ => session.sessionManager.getConf.get(OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES)
+    }
 
   override def statement: String = {
     super.statement +
@@ -47,16 +54,16 @@ class GetTables(
       .add(TABLE_NAME, "string", nullable = true, "Table name.")
       .add(TABLE_TYPE, "string", nullable = true, "The table type, e.g. \"TABLE\", \"VIEW\"")
       .add(REMARKS, "string", nullable = true, "Comments about the table.")
-      .add("TYPE_CAT", "string", nullable = true, "The types catalog.")
-      .add("TYPE_SCHEM", "string", nullable = true, "the types schema (may be null)")
-      .add("TYPE_NAME", "string", nullable = true, "Type name.")
+      .add(TYPE_CAT, "string", nullable = true, "The types catalog.")
+      .add(TYPE_SCHEM, "string", nullable = true, "the types schema (may be null)")
+      .add(TYPE_NAME, "string", nullable = true, "Type name.")
       .add(
-        "SELF_REFERENCING_COL_NAME",
+        SELF_REFERENCING_COL_NAME,
         "string",
         nullable = true,
         "Name of the designated \"identifier\" column of a typed table.")
       .add(
-        "REF_GENERATION",
+        REF_GENERATION,
         "string",
         nullable = true,
         "Specifies how values in SELF_REFERENCING_COL_NAME are created.")
@@ -66,14 +73,19 @@ class GetTables(
     try {
       val schemaPattern = toJavaRegex(schema)
       val tablePattern = toJavaRegex(tableName)
-      val sparkShim = SparkCatalogShim()
       val catalogTablesAndViews =
-        sparkShim.getCatalogTablesOrViews(spark, catalog, schemaPattern, tablePattern, tableTypes)
+        SparkCatalogUtils.getCatalogTablesOrViews(
+          spark,
+          catalog,
+          schemaPattern,
+          tablePattern,
+          tableTypes,
+          ignoreTableProperties)
 
       val allTableAndViews =
         if (tableTypes.exists("VIEW".equalsIgnoreCase)) {
           catalogTablesAndViews ++
-            sparkShim.getTempViews(spark, catalog, schemaPattern, tablePattern)
+            SparkCatalogUtils.getTempViews(spark, catalog, schemaPattern, tablePattern)
         } else {
           catalogTablesAndViews
         }

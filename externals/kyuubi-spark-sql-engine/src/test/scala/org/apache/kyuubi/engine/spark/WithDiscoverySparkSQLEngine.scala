@@ -17,39 +17,16 @@
 
 package org.apache.kyuubi.engine.spark
 
-import org.apache.kyuubi.Utils
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_NAMESPACE, HA_ZK_AUTH_TYPE}
-import org.apache.kyuubi.ha.client.AuthTypes
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.DiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
-import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
-  private var zkServer: EmbeddedZookeeper = _
+
   def namespace: String
+
   override def withKyuubiConf: Map[String, String] = {
-    assert(zkServer != null)
-    Map(
-      HA_ADDRESSES.key -> zkServer.getConnectString,
-      HA_ZK_AUTH_TYPE.key -> AuthTypes.NONE.toString,
-      HA_NAMESPACE.key -> namespace)
-  }
-
-  override def beforeAll(): Unit = {
-    zkServer = new EmbeddedZookeeper()
-    val zkData = Utils.createTempDir()
-    val tmpConf = KyuubiConf()
-    tmpConf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
-    tmpConf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
-    zkServer.initialize(tmpConf)
-    zkServer.start()
-  }
-
-  override def afterAll(): Unit = {
-    if (zkServer != null) {
-      zkServer.stop()
-    }
+    Map(HA_NAMESPACE.key -> namespace)
   }
 
   override protected def beforeEach(): Unit = {
@@ -64,13 +41,5 @@ trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
 
   def withDiscoveryClient(f: DiscoveryClient => Unit): Unit = {
     DiscoveryClientProvider.withDiscoveryClient(kyuubiConf)(f)
-  }
-
-  protected def getDiscoveryConnectionString: String = {
-    if (zkServer == null) {
-      ""
-    } else {
-      zkServer.getConnectString
-    }
   }
 }

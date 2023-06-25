@@ -19,9 +19,8 @@ package org.apache.kyuubi.engine
 
 import java.lang.management.ManagementFactory
 import java.time.Duration
-import java.util.{ServiceLoader, UUID}
+import java.util.UUID
 
-import scala.collection.JavaConverters._
 import scala.sys.process._
 
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -31,11 +30,11 @@ import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SESSION_IDLE_TIMEOUT
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class JpsApplicationOperationSuite extends KyuubiFunSuite {
-  private val operations = ServiceLoader.load(classOf[ApplicationOperation])
-    .asScala.filter(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation]))
-  private val jps = operations.head
+  private val jps = loadFromServiceLoader[ApplicationOperation]()
+    .find(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation])).get
   jps.initialize(null)
 
   test("JpsApplicationOperation with jstat") {
@@ -52,17 +51,21 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
       }
     }.start()
 
-    val desc1 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
-    assert(desc1.contains("id"))
-    assert(desc1.contains("name"))
-    assert(desc1("state") === "RUNNING")
+    eventually(Timeout(10.seconds)) {
+      val desc1 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
+      assert(desc1.id != null)
+      assert(desc1.name != null)
+      assert(desc1.state == ApplicationState.RUNNING)
+    }
 
     jps.killApplicationByTag("sun.tools.jstat.Jstat")
 
-    val desc2 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
-    assert(!desc2.contains("id"))
-    assert(!desc2.contains("name"))
-    assert(desc2("state") === "FINISHED")
+    eventually(Timeout(10.seconds)) {
+      val desc2 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
+      assert(desc2.id == null)
+      assert(desc2.name == null)
+      assert(desc2.state == ApplicationState.NOT_FOUND)
+    }
   }
 
   test("JpsApplicationOperation with spark local mode") {
@@ -78,9 +81,9 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     assert(jps.isSupported(builder.clusterManager()))
     eventually(Timeout(10.seconds)) {
       val desc1 = jps.getApplicationInfoByTag(id)
-      assert(desc1.contains("id"))
-      assert(desc1("name").contains(id))
-      assert(desc1("state") === "RUNNING")
+      assert(desc1.id != null)
+      assert(desc1.name != null)
+      assert(desc1.state == ApplicationState.RUNNING)
       val response = jps.killApplicationByTag(id)
       assert(response._1, response._2)
       assert(response._2 startsWith "Succeeded to terminate:")
@@ -88,9 +91,9 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
 
     eventually(Timeout(10.seconds)) {
       val desc2 = jps.getApplicationInfoByTag(id)
-      assert(!desc2.contains("id"))
-      assert(!desc2.contains("name"))
-      assert(desc2("state") === "FINISHED")
+      assert(desc2.id == null)
+      assert(desc2.name == null)
+      assert(desc2.state == ApplicationState.NOT_FOUND)
     }
 
     val response2 = jps.killApplicationByTag(id)

@@ -18,16 +18,15 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import java.util
-import java.util.Locale
 
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiConf.OperationModes._
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
-import org.apache.kyuubi.operation.{Operation, OperationManager, OperationType}
+import org.apache.kyuubi.operation.{NoneMode, Operation, OperationManager, PlanOnlyMode}
 import org.apache.kyuubi.session.Session
 
 class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManager") {
@@ -46,7 +45,8 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val flinkSession = session.asInstanceOf[FlinkSessionImpl]
-    if (flinkSession.sessionContext.getConfigMap.getOrDefault(
+    val sessionConfig = flinkSession.fSession.getSessionConfig
+    if (sessionConfig.getOrDefault(
         ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key,
         operationConvertCatalogDatabaseDefault.toString).toBoolean) {
       val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
@@ -54,16 +54,24 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
         return catalogDatabaseOperation
       }
     }
-    val mode = flinkSession.sessionContext.getConfigMap.getOrDefault(
-      OPERATION_PLAN_ONLY_MODE.key,
-      operationModeDefault)
+
+    val mode = PlanOnlyMode.fromString(
+      sessionConfig.getOrDefault(
+        OPERATION_PLAN_ONLY_MODE.key,
+        operationModeDefault))
+
+    val sessionContext = FlinkEngineUtils.getSessionContext(flinkSession.fSession)
+    sessionContext.set(OPERATION_PLAN_ONLY_MODE.key, mode.name)
     val resultMaxRows =
       flinkSession.normalizedConf.getOrElse(
         ENGINE_FLINK_MAX_ROWS.key,
         resultMaxRowsDefault.toString).toInt
-    val op = OperationModes.withName(mode.toUpperCase(Locale.ROOT)) match {
-      case NONE =>
-        new ExecuteStatement(session, statement, runAsync, queryTimeout, resultMaxRows)
+    val op = mode match {
+      case NoneMode =>
+        // FLINK-24427 seals calcite classes which required to access in async mode, considering
+        // there is no much benefit in async mode, here we just ignore `runAsync` and always run
+        // statement in sync mode as a workaround
+        new ExecuteStatement(session, statement, false, queryTimeout, resultMaxRows)
       case mode =>
         new PlanOnlyStatement(session, statement, mode)
     }
@@ -124,9 +132,9 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
 
     val op = new GetTables(
       session = session,
-      catalog = catalogName,
-      schema = schemaName,
-      tableName = tableName,
+      catalogNameOrEmpty = catalogName,
+      schemaNamePattern = schemaName,
+      tableNamePattern = tableName,
       tableTypes = tTypes)
 
     addOperation(op)
@@ -143,9 +151,14 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       schemaName: String,
       tableName: String,
       columnName: String): Operation = {
-    throw new UnsupportedOperationException(
-      s"Unsupported Operation type ${OperationType.GET_COLUMNS}. You can execute " +
-        "DESCRIBE statement instead to get column infos.")
+    val op = new GetColumns(
+      session = session,
+      catalogNameOrEmpty = catalogName,
+      schemaNamePattern = schemaName,
+      tableNamePattern = tableName,
+      columnNamePattern = columnName)
+
+    addOperation(op)
   }
 
   override def newGetFunctionsOperation(
@@ -162,7 +175,8 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       catalogName: String,
       schemaName: String,
       tableName: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val op = new GetPrimaryKeys(session, catalogName, schemaName, tableName)
+    addOperation(op)
   }
 
   override def newGetCrossReferenceOperation(
@@ -177,6 +191,13 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
   }
 
   override def getQueryId(operation: Operation): String = {
-    throw KyuubiSQLException.featureNotSupported()
+    // return empty string instead of null if there's no query id
+    // otherwise there would be TTransportException
+    operation match {
+      case exec: ExecuteStatement => exec.jobId.map(_.toHexString).getOrElse("")
+      case _: PlanOnlyStatement => ""
+      case _ =>
+        throw new IllegalStateException(s"Unsupported Flink operation class $classOf[operation].")
+    }
   }
 }

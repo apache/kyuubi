@@ -19,26 +19,23 @@ package org.apache.kyuubi.engine.trino.session
 
 import java.net.URI
 import java.time.ZoneId
-import java.util.Collections
-import java.util.Locale
-import java.util.Optional
+import java.util.{Collections, Locale, Optional}
 import java.util.concurrent.TimeUnit
 
 import io.airlift.units.Duration
 import io.trino.client.ClientSession
 import okhttp3.OkHttpClient
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils.currentUser
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
-import org.apache.kyuubi.engine.trino.TrinoConf
-import org.apache.kyuubi.engine.trino.TrinoContext
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
+import org.apache.kyuubi.engine.trino.{TrinoConf, TrinoContext, TrinoStatement}
 import org.apache.kyuubi.engine.trino.event.TrinoSessionEvent
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.AbstractSession
-import org.apache.kyuubi.session.SessionManager
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_CATALOG, USE_DATABASE}
 
 class TrinoSessionImpl(
     protocol: TProtocolVersion,
@@ -49,34 +46,47 @@ class TrinoSessionImpl(
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
+  override val handle: SessionHandle =
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+
   var trinoContext: TrinoContext = _
   private var clientSession: ClientSession = _
+  private var catalogName: String = _
+  private var databaseName: String = _
 
   private val sessionEvent = TrinoSessionEvent(this)
 
   override def open(): Unit = {
-    normalizedConf.foreach {
-      case ("use:database", database) => clientSession = createClientSession(database)
-      case _ => // do nothing
+
+    val (useCatalogAndDatabaseConf, _) = normalizedConf.partition { case (k, _) =>
+      Array(USE_CATALOG, USE_DATABASE).contains(k)
+    }
+
+    useCatalogAndDatabaseConf.foreach {
+      case (USE_CATALOG, catalog) => catalogName = catalog
+      case (USE_DATABASE, database) => databaseName = database
     }
 
     val httpClient = new OkHttpClient.Builder().build()
 
-    if (clientSession == null) {
-      clientSession = createClientSession()
-    }
+    clientSession = createClientSession()
     trinoContext = TrinoContext(httpClient, clientSession)
 
     super.open()
     EventBus.post(sessionEvent)
   }
 
-  private def createClientSession(schema: String = null): ClientSession = {
+  private def createClientSession(): ClientSession = {
     val sessionConf = sessionManager.getConf
     val connectionUrl = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_URL).getOrElse(
       throw KyuubiSQLException("Trino server url can not be null!"))
-    val catalog = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG).getOrElse(
-      throw KyuubiSQLException("Trino default catalog can not be null!"))
+
+    if (catalogName == null) {
+      catalogName = sessionConf.get(
+        KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG).getOrElse(
+        throw KyuubiSQLException("Trino default catalog can not be null!"))
+    }
+
     val user = sessionConf
       .getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY).getOrElse(currentUser)
     val clientRequestTimeout = sessionConf.get(TrinoConf.CLIENT_REQUEST_TIMEOUT)
@@ -89,8 +99,8 @@ class TrinoSessionImpl(
       Optional.empty(),
       Collections.emptySet(),
       null,
-      catalog,
-      schema,
+      catalogName,
+      databaseName,
       null,
       ZoneId.systemDefault(),
       Locale.getDefault,
@@ -107,6 +117,28 @@ class TrinoSessionImpl(
   override protected def runOperation(operation: Operation): OperationHandle = {
     sessionEvent.totalOperations += 1
     super.runOperation(operation)
+  }
+
+  override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
+    infoType match {
+      case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
+        TGetInfoValue.stringValue("Trino")
+      case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(getTrinoServerVersion)
+      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
+      case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
+          TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
+          TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(0)
+      case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
+    }
+  }
+
+  private def getTrinoServerVersion: String = {
+    val trinoStatement =
+      TrinoStatement(trinoContext, sessionManager.getConf, "SELECT version()")
+    val resultSet = trinoStatement.execute()
+
+    assert(resultSet.hasNext)
+    resultSet.next().head.toString
   }
 
   override def close(): Unit = {

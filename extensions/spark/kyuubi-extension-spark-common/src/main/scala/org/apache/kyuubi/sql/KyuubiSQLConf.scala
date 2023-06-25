@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.sql
 
+import org.apache.spark.network.util.ByteUnit
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.internal.SQLConf._
 
@@ -33,7 +34,8 @@ object KyuubiSQLConf {
     buildConf("spark.sql.optimizer.insertRepartitionNum")
       .doc(s"The partition number if ${INSERT_REPARTITION_BEFORE_WRITE.key} is enabled. " +
         s"If AQE is disabled, the default value is ${SQLConf.SHUFFLE_PARTITIONS.key}. " +
-        "If AQE is enabled, the default value is none that means depend on AQE.")
+        "If AQE is enabled, the default value is none that means depend on AQE. " +
+        "This config is used for Spark 3.1 only.")
       .version("1.2.0")
       .intConf
       .createOptional
@@ -99,7 +101,7 @@ object KyuubiSQLConf {
 
   val REBALANCE_BEFORE_ZORDER =
     buildConf("spark.sql.optimizer.rebalanceBeforeZorder.enabled")
-      .doc("when true, we do a rebalance before zorder in case data skew. " +
+      .doc("When true, we do a rebalance before zorder in case data skew. " +
         "Note that, if the insertion is dynamic partition we will use the partition " +
         "columns to rebalance. Note that, this config only affects with Spark 3.3.x")
       .version("1.6.0")
@@ -138,11 +140,21 @@ object KyuubiSQLConf {
   val WATCHDOG_MAX_PARTITIONS =
     buildConf("spark.sql.watchdog.maxPartitions")
       .doc("Set the max partition number when spark scans a data source. " +
-        "Enable MaxPartitionStrategy by specifying this configuration. " +
+        "Enable maxPartitions Strategy by specifying this configuration. " +
         "Add maxPartitions Strategy to avoid scan excessive partitions " +
         "on partitioned table, it's optional that works with defined")
       .version("1.4.0")
       .intConf
+      .createOptional
+
+  val WATCHDOG_MAX_FILE_SIZE =
+    buildConf("spark.sql.watchdog.maxFileSize")
+      .doc("Set the maximum size in bytes of files when spark scans a data source. " +
+        "Enable maxFileSize Strategy by specifying this configuration. " +
+        "Add maxFileSize Strategy to avoid scan excessive size of files," +
+        " it's optional that works with defined")
+      .version("1.8.0")
+      .bytesConf(ByteUnit.BYTE)
       .createOptional
 
   val WATCHDOG_FORCED_MAXOUTPUTROWS =
@@ -160,4 +172,97 @@ object KyuubiSQLConf {
       .version("1.5.0")
       .booleanConf
       .createWithDefault(false)
+
+  val INFER_REBALANCE_AND_SORT_ORDERS =
+    buildConf("spark.sql.optimizer.inferRebalanceAndSortOrders.enabled")
+      .doc("When ture, infer columns for rebalance and sort orders from original query, " +
+        "e.g. the join keys from join. It can avoid compression ratio regression.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val INFER_REBALANCE_AND_SORT_ORDERS_MAX_COLUMNS =
+    buildConf("spark.sql.optimizer.inferRebalanceAndSortOrdersMaxColumns")
+      .doc("The max columns of inferred columns.")
+      .version("1.7.0")
+      .intConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(3)
+
+  val INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE =
+    buildConf("spark.sql.optimizer.insertRepartitionBeforeWriteIfNoShuffle.enabled")
+      .doc("When true, add repartition even if the original plan does not have shuffle.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FINAL_STAGE_CONFIG_ISOLATION_WRITE_ONLY =
+    buildConf("spark.sql.optimizer.finalStageConfigIsolationWriteOnly.enabled")
+      .doc("When true, only enable final stage isolation for writing.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val FINAL_WRITE_STAGE_EAGERLY_KILL_EXECUTORS_ENABLED =
+    buildConf("spark.sql.finalWriteStage.eagerlyKillExecutors.enabled")
+      .doc("When true, eagerly kill redundant executors before running final write stage.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FINAL_WRITE_STAGE_SKIP_KILLING_EXECUTORS_FOR_TABLE_CACHE =
+    buildConf("spark.sql.finalWriteStage.skipKillingExecutorsForTableCache")
+      .doc("When true, skip killing executors if the plan has table caches.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val FINAL_WRITE_STAGE_PARTITION_FACTOR =
+    buildConf("spark.sql.finalWriteStage.retainExecutorsFactor")
+      .doc("If the target executors * factor < active executors, and " +
+        "target executors * factor > min executors, then kill redundant executors.")
+      .version("1.8.0")
+      .doubleConf
+      .checkValue(_ >= 1, "must be bigger than or equal to 1")
+      .createWithDefault(1.2)
+
+  val FINAL_WRITE_STAGE_RESOURCE_ISOLATION_ENABLED =
+    buildConf("spark.sql.finalWriteStage.resourceIsolation.enabled")
+      .doc(
+        "When true, make final write stage resource isolation using custom RDD resource profile.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FINAL_WRITE_STAGE_EXECUTOR_CORES =
+    buildConf("spark.sql.finalWriteStage.executorCores")
+      .doc("Specify the executor core request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .intConf
+      .createOptional
+
+  val FINAL_WRITE_STAGE_EXECUTOR_MEMORY =
+    buildConf("spark.sql.finalWriteStage.executorMemory")
+      .doc("Specify the executor on heap memory request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val FINAL_WRITE_STAGE_EXECUTOR_MEMORY_OVERHEAD =
+    buildConf("spark.sql.finalWriteStage.executorMemoryOverhead")
+      .doc("Specify the executor memory overhead request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val FINAL_WRITE_STAGE_EXECUTOR_OFF_HEAP_MEMORY =
+    buildConf("spark.sql.finalWriteStage.executorOffHeapMemory")
+      .doc("Specify the executor off heap memory request for final write stage. " +
+        "It would be passed to the RDD resource profile.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
 }

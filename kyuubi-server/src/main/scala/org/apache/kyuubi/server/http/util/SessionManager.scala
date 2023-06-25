@@ -35,6 +35,20 @@ object SessionManager extends Logging {
     threadLocalIpAddress.get
   }
 
+  private val threadLocalProxyHttpHeaderIpAddress: ThreadLocal[String] = new ThreadLocal[String]
+
+  def setProxyHttpHeaderIpAddress(realIpAddress: String): Unit = {
+    threadLocalProxyHttpHeaderIpAddress.set(realIpAddress)
+  }
+
+  def clearProxyHttpHeaderIpAddress(): Unit = {
+    threadLocalProxyHttpHeaderIpAddress.remove()
+  }
+
+  def getProxyHttpHeaderIpAddress: String = {
+    threadLocalProxyHttpHeaderIpAddress.get
+  }
+
   private val threadLocalForwardedAddresses: ThreadLocal[List[String]] =
     new ThreadLocal[List[String]]
 

@@ -102,15 +102,23 @@ trait ProcBuilder {
 
   def conf: KyuubiConf
 
-  protected def env: Map[String, String] = conf.getEnvs
+  def env: Map[String, String] = conf.getEnvs
 
   protected val extraEngineLog: Option[OperationLog]
+
+  /**
+   * Add `engine.master` if KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT
+   * are defined. So we can deploy engine on kubernetes without setting `engine.master`
+   * explicitly when kyuubi-servers are on kubernetes, which also helps in case that
+   * api-server is not exposed to us.
+   */
+  protected def completeMasterUrl(conf: KyuubiConf) = {}
 
   protected val workingDir: Path = {
     env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
       val workingRoot = Paths.get(root).toAbsolutePath
       if (!Files.exists(workingRoot)) {
-        debug(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
+        info(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
         Files.createDirectories(workingRoot)
       }
       if (Files.isDirectory(workingRoot)) {
@@ -119,16 +127,16 @@ trait ProcBuilder {
     }.map { rootAbs =>
       val working = Paths.get(rootAbs, proxyUser)
       if (!Files.exists(working)) {
-        debug(s"Creating $proxyUser's working directory at $working")
+        info(s"Creating $proxyUser's working directory at $working")
         Files.createDirectories(working)
       }
       if (Files.isDirectory(working)) {
         working
       } else {
-        Utils.createTempDir(rootAbs, proxyUser)
+        Utils.createTempDir(proxyUser, rootAbs)
       }
     }.getOrElse {
-      Utils.createTempDir(namePrefix = proxyUser)
+      Utils.createTempDir(prefix = proxyUser)
     }
   }
 
@@ -191,6 +199,8 @@ trait ProcBuilder {
     info(s"Logging to $file")
     file
   }
+
+  def validateConf: Unit = {}
 
   final def start: Process = synchronized {
     process = processBuilder.start()
@@ -297,34 +307,35 @@ trait ProcBuilder {
    * @return SPARK_HOME, HIVE_HOME, etc.
    */
   protected def getEngineHome(shortName: String): String = {
+    val homeDirFilter: FilenameFilter = (dir: File, name: String) =>
+      dir.isDirectory && name.contains(s"$shortName-") && !name.contains("-engine")
+
     val homeKey = s"${shortName.toUpperCase}_HOME"
-    val homeVal = env.get(homeKey).orElse {
-      val cwd = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(
-        Paths.get(cwd.head)
-          .resolve("externals")
-          .resolve("kyuubi-download")
-          .resolve("target")
-          .toFile
-          .listFiles(new FilenameFilter {
-            override def accept(dir: File, name: String): Boolean = {
-              dir.isDirectory && name.contains(s"$shortName-")
-            }
-          }))
-        .flatMap(_.headOption)
-        .map(_.getAbsolutePath)
-    }
-    if (homeVal.isEmpty) {
-      throw validateEnv(homeKey)
-    } else {
-      homeVal.get
+    // 1. get from env, e.g. SPARK_HOME, FLINK_HOME
+    env.get(homeKey)
+      .orElse {
+        // 2. get from $KYUUBI_HOME/externals/kyuubi-download/target
+        env.get(KYUUBI_HOME).flatMap { p =>
+          val candidates = Paths.get(p, "externals", "kyuubi-download", "target")
+            .toFile.listFiles(homeDirFilter)
+          if (candidates == null) None else candidates.map(_.toPath).headOption
+        }.filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
+      }.orElse {
+        // 3. get from kyuubi-server/../externals/kyuubi-download/target
+        Utils.getCodeSourceLocation(getClass).split("kyuubi-server").flatMap { cwd =>
+          val candidates = Paths.get(cwd, "externals", "kyuubi-download", "target")
+            .toFile.listFiles(homeDirFilter)
+          if (candidates == null) None else candidates.map(_.toPath).headOption
+        }.find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
+      } match {
+      case Some(homeVal) => homeVal
+      case None => throw validateEnv(homeKey)
     }
   }
 
   protected def validateEnv(requiredEnv: String): Throwable = {
     KyuubiSQLException(s"$requiredEnv is not set! For more information on installing and " +
-      s"configuring $requiredEnv, please visit https://kyuubi.apache.org/docs/latest/" +
+      s"configuring $requiredEnv, please visit https://kyuubi.readthedocs.io/en/master/" +
       s"deployment/settings.html#environments")
   }
 

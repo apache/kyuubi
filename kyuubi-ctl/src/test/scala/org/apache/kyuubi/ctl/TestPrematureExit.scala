@@ -22,6 +22,7 @@ import java.io.{OutputStream, PrintStream}
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.ctl.cli.{AdminControlCli, AdminControlCliArguments, ControlCli, ControlCliArguments}
 import org.apache.kyuubi.ctl.util.CommandLineUtils
 
 trait TestPrematureExit {
@@ -33,7 +34,7 @@ trait TestPrematureExit {
 
   /** Simple PrintStream that reads data into a buffer */
   private class BufferPrintStream extends PrintStream(noOpOutputStream) {
-    var lineBuffer = ArrayBuffer[String]()
+    val lineBuffer = ArrayBuffer[String]()
     // scalastyle:off println
     override def println(line: Any): Unit = {
       lineBuffer += line.toString
@@ -51,11 +52,11 @@ trait TestPrematureExit {
 
     @volatile var exitedCleanly = false
     val original = mainObject.exitFn
-    mainObject.exitFn = (_) => exitedCleanly = true
+    mainObject.exitFn = _ => exitedCleanly = true
     try {
       @volatile var exception: Exception = null
       val thread = new Thread {
-        override def run() =
+        override def run(): Unit =
           try {
             mainObject.main(input)
           } catch {
@@ -88,6 +89,32 @@ trait TestPrematureExit {
         override def run(): Unit =
           try {
             new ControlCliArguments(args)
+          } catch {
+            case e: Exception =>
+              error(e)
+          }
+      }
+      thread.start()
+      thread.join()
+      assert(logAppender.loggingEvents.exists(
+        _.getMessage.getFormattedMessage.contains(searchString)))
+    }
+  }
+
+  /** Returns true if the script exits and the given search string is printed. */
+  private[kyuubi] def testPrematureExitForAdminControlCli(
+      input: Array[String],
+      searchString: String): String = {
+    testPrematureExitForControlCli(input, searchString, AdminControlCli)
+  }
+
+  def testPrematureExitForAdminControlCliArgs(args: Array[String], searchString: String): Unit = {
+    val logAppender = new LogAppender("test premature exit")
+    withLogAppender(logAppender) {
+      val thread = new Thread {
+        override def run(): Unit =
+          try {
+            new AdminControlCliArguments(args)
           } catch {
             case e: Exception =>
               error(e)

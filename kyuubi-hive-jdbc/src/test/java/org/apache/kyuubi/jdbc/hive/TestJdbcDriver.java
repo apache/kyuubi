@@ -24,10 +24,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,32 +68,24 @@ public class TestJdbcDriver {
   public static void setUpBeforeClass() throws Exception {
     file = new File(System.getProperty("user.dir") + File.separator + "Init.sql");
     if (!file.exists()) {
-      file.createNewFile();
+      Files.createFile(file.toPath());
     }
   }
 
   @AfterClass
   public static void cleanUpAfterClass() throws Exception {
     if (file != null) {
-      file.delete();
+      Files.deleteIfExists(file.toPath());
     }
   }
 
   @Test
   public void testParseInitFile() throws IOException {
-    BufferedWriter bw = null;
-    try {
-      bw = new BufferedWriter(new FileWriter(file));
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
       bw.write(input);
       bw.flush();
       assertEquals(
           Arrays.asList(expected.split(",")), KyuubiConnection.parseInitFile(file.toString()));
-    } catch (Exception e) {
-      Assert.fail("Test was failed due to " + e);
-    } finally {
-      if (bw != null) {
-        bw.close();
-      }
     }
   }
 }

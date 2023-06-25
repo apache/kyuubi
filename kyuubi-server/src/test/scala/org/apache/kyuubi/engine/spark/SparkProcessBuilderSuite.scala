@@ -151,7 +151,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   test(s"sub process log should be overwritten") {
     def atomicTest(): Unit = {
       val pool = Executors.newFixedThreadPool(3)
-      val fakeWorkDir = Files.createTempDirectory("fake")
+      val fakeWorkDir = Utils.createTempDir("fake")
       val dir = fakeWorkDir.toFile
       try {
         assert(dir.list().length == 0)
@@ -165,17 +165,15 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
         val config = KyuubiConf().set(KyuubiConf.ENGINE_LOG_TIMEOUT, 20000L)
         (1 to 10).foreach { _ =>
-          pool.execute(new Runnable {
-            override def run(): Unit = {
-              val pb = new FakeSparkProcessBuilder(config) {
-                override val workingDir: Path = fakeWorkDir
-              }
-              try {
-                val p = pb.start
-                p.waitFor()
-              } finally {
-                pb.close()
-              }
+          pool.execute(() => {
+            val pb = new FakeSparkProcessBuilder(config) {
+              override val workingDir: Path = fakeWorkDir
+            }
+            try {
+              val p = pb.start
+              p.waitFor()
+            } finally {
+              pb.close()
             }
           })
         }
@@ -197,7 +195,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("overwrite log file should cleanup before write") {
-    val fakeWorkDir = Files.createTempDirectory("fake")
+    val fakeWorkDir = Utils.createTempDir("fake")
     val conf = KyuubiConf()
     conf.set(ENGINE_LOG_TIMEOUT, Duration.ofDays(1).toMillis)
     val builder1 = new FakeSparkProcessBuilder(conf) {
@@ -220,7 +218,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("main resource jar should not check when is not a local file") {
-    val workDir = Files.createTempDirectory("resource")
+    val workDir = Utils.createTempDir("resource")
     val jarPath = Paths.get(workDir.toString, "test.jar")
     val hdfsPath = s"hdfs://$jarPath"
 
@@ -252,7 +250,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
   test("zookeeper kerberos authentication") {
     val conf = KyuubiConf()
-    conf.set(HighAvailabilityConf.HA_ZK_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
+    conf.set(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
     conf.set(HighAvailabilityConf.HA_ZK_AUTH_KEYTAB.key, testKeytab)
     conf.set(HighAvailabilityConf.HA_ZK_AUTH_PRINCIPAL.key, testPrincipal)
 
@@ -269,6 +267,34 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     conf.set("spark.yarn.tags", engineRefId2)
     assert(!pb.toString.contains(engineRefId2))
     assert(pb.toString.contains(engineRefId))
+  }
+
+  test("SparkProcessBuilder build spark engine with SPARK_USER_NAME") {
+    val proxyName = "kyuubi"
+    val conf1 = KyuubiConf(false).set("spark.master", "k8s://test:12345")
+    val b1 = new SparkProcessBuilder(proxyName, conf1)
+    val c1 = b1.toString.split(' ')
+    assert(c1.contains(s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$proxyName"))
+    assert(c1.contains(s"spark.executorEnv.SPARK_USER_NAME=$proxyName"))
+
+    tryWithSecurityEnabled {
+      val conf2 = conf.set("spark.master", "k8s://test:12345")
+        .set("spark.kerberos.principal", testPrincipal)
+        .set("spark.kerberos.keytab", testKeytab)
+      val name = ServiceUtils.getShortName(testPrincipal)
+      val b2 = new SparkProcessBuilder(name, conf2)
+      val c2 = b2.toString.split(' ')
+      assert(c2.contains(s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$name"))
+      assert(c2.contains(s"spark.executorEnv.SPARK_USER_NAME=$name"))
+      assert(!c2.contains(s"--proxy-user $name"))
+    }
+
+    // Test no-kubernetes case
+    val conf3 = KyuubiConf(false)
+    val b3 = new SparkProcessBuilder(proxyName, conf3)
+    val c3 = b3.toString.split(' ')
+    assert(!c3.contains(s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$proxyName"))
+    assert(!c3.contains(s"spark.executorEnv.SPARK_USER_NAME=$proxyName"))
   }
 }
 

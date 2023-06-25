@@ -45,8 +45,6 @@
   - ".gitattributes"
   - ".github/**/*"
   - ".gitignore"
-  - ".travis.yml"
-  - "DISCLAIMER"
   - "LICENSE"
   - "LICENSE-binary"
   - "NOTICE"
@@ -104,18 +102,26 @@
 
 "module:server":
   - "bin/kyuubi"
-  - "kyuubi-server/**/*"
+  - "kyuubi-server/src/**/*"
+  - "kyuubi-server/pom.xml"
   - "extension/server/kyuubi-server-plugin/**/*"
 
 "module:spark":
   - "externals/kyuubi-spark-sql-engine/**/*" 
-  - "extensions/spark/kyuubi-extension-spark*/**/*"
-  - "extensions/spark/kyuubi-spark-authz/**/*"
-  - "integration-tests/kyuubi-kubernetes-it/**/*"
+  - "extensions/spark/**/*"
   - "tools/spark-block-cleaner/**/*"
 
 "module:extensions":
-  - "extension/**/*"
+  - "extensions/**/*"
 
 "module:rest-client":
   - "kyuubi-rest-client/**/*"
+
+"module:integration-tests":
+  - "integration-tests/**/*"
+
+"module:authz":
+  - "extensions/spark/kyuubi-spark-authz/**/*"
+
+"module:ui":
+  - "kyuubi-server/web-ui/**/*"

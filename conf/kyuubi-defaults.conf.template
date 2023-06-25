@@ -18,9 +18,19 @@
 ## Kyuubi Configurations
 
 #
-# kyuubi.authentication           NONE
-# kyuubi.frontend.bind.host       localhost
-# kyuubi.frontend.bind.port       10009
+# kyuubi.authentication                    NONE
+#
+# kyuubi.frontend.bind.host                10.0.0.1
+# kyuubi.frontend.protocols                THRIFT_BINARY,REST
+# kyuubi.frontend.thrift.binary.bind.port  10009
+# kyuubi.frontend.rest.bind.port           10099
+#
+# kyuubi.engine.type                       SPARK_SQL
+# kyuubi.engine.share.level                USER
+# kyuubi.session.engine.initialize.timeout PT3M
+#
+# kyuubi.ha.addresses                      zk1:2181,zk2:2181,zk3:2181
+# kyuubi.ha.namespace                      kyuubi
 #
 
-# Details in https://kyuubi.apache.org/docs/latest/deployment/settings.html
+# Details in https://kyuubi.readthedocs.io/en/master/deployment/settings.html

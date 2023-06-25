@@ -140,7 +140,7 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
       try {
         val meta = statement.getConnection.getMetaData
         var resultSet = meta.getColumns(null, null, null, null)
-        var resultSetBuffer = ArrayBuffer[(String, String, String, String, String)]()
+        val resultSetBuffer = ArrayBuffer[(String, String, String, String, String)]()
         while (resultSet.next()) {
           resultSetBuffer += Tuple5(
             resultSet.getString(TABLE_CAT),
@@ -434,8 +434,8 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
       val res = statement.getConnection.getMetaData.getClientInfoProperties
       assert(res.next())
       assert(res.getString(1) === "ApplicationName")
-      assert(res.getInt("MAX_LEN") === 1000);
-      assert(!res.next());
+      assert(res.getInt("MAX_LEN") === 1000)
+      assert(!res.next())
 
       val connection = statement.getConnection
       connection.setClientInfo("ApplicationName", "test kyuubi hive jdbc")

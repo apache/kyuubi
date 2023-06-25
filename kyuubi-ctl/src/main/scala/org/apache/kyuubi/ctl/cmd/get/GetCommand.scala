@@ -16,11 +16,12 @@
  */
 package org.apache.kyuubi.ctl.cmd.get
 
-import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.cmd.Command
-import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
+import org.apache.kyuubi.ctl.opt.CliConfig
+import org.apache.kyuubi.ctl.util.{Render, Validator}
+import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
-class GetCommand(cliConfig: CliConfig) extends Command(cliConfig) {
+abstract class GetCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](cliConfig) {
 
   def validate(): Unit = {
     Validator.validateZkArguments(normalizedCliConfig)
@@ -28,10 +29,10 @@ class GetCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     mergeArgsIntoKyuubiConf()
   }
 
-  def run(): Unit = {
-    val nodes = CtlUtils.listZkServerNodes(conf, normalizedCliConfig, filterHostPort = true)
-    val title = "Zookeeper service nodes"
-    info(Render.renderServiceNodesInfo(title, nodes, verbose))
-  }
+  def doRun(): Seq[ServiceNodeInfo]
 
+  def render(nodes: Seq[ServiceNodeInfo]): Unit = {
+    val title = "Zookeeper service nodes"
+    info(Render.renderServiceNodesInfo(title, nodes))
+  }
 }

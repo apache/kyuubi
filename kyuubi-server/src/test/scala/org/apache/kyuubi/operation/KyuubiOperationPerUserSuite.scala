@@ -17,17 +17,46 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.UUID
+
+import org.apache.hadoop.fs.{FileSystem, FileUtil, Path}
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetInfoReq, TGetInfoType, TStatusCode}
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
+import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
+import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
+import org.apache.kyuubi.util.SemanticVersion
+import org.apache.kyuubi.zookeeper.ZookeeperConf
 
-class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests {
+class KyuubiOperationPerUserSuite
+  extends WithKyuubiServer with SparkQueryTests with WithSimpleDFSService {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
+  }
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    conf.set(s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CONF_DIR", getHadoopConfDir)
+  }
+
+  test("audit Kyuubi server MetaData") {
+    withSessionConf()(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER"))(Map.empty) {
+      withJdbcStatement() { statement =>
+        val metaData = statement.getConnection.getMetaData
+        assert(metaData.getDatabaseProductName === "Apache Kyuubi")
+        assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
+        val ver = SemanticVersion(KYUUBI_VERSION)
+        assert(metaData.getDatabaseMajorVersion === ver.majorVersion)
+        assert(metaData.getDatabaseMinorVersion === ver.minorVersion)
+      }
+    }
   }
 
   test("kyuubi defined function - system_user/session_user") {
@@ -137,19 +166,212 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
     assert(r1 !== r2)
   }
 
-  test("test engine spark result max rows") {
-    withSessionConf()(Map.empty)(Map(KyuubiConf.OPERATION_RESULT_MAX_ROWS.key -> "1")) {
-      withJdbcStatement("va") { statement =>
-        statement.executeQuery("create temporary view va as select * from values(1),(2)")
+  test("max result rows") {
+    Seq("true", "false").foreach { incremental =>
+      Seq("thrift", "arrow").foreach { resultFormat =>
+        Seq("0", "1").foreach { maxResultRows =>
+          withSessionConf()(Map.empty)(Map(
+            KyuubiConf.OPERATION_RESULT_FORMAT.key -> resultFormat,
+            KyuubiConf.OPERATION_RESULT_MAX_ROWS.key -> maxResultRows,
+            KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> incremental)) {
+            withJdbcStatement("va") { statement =>
+              statement.executeQuery("create temporary view va as select * from values(1),(2)")
+              val resultLimit = statement.executeQuery("select * from va")
+              assert(resultLimit.next())
+              // always ignore max result rows on incremental collect mode
+              if (incremental == "true" || maxResultRows == "0") assert(resultLimit.next())
+              assert(!resultLimit.next())
+            }
+          }
+        }
+      }
+    }
+  }
 
-        val resultLimit1 = statement.executeQuery("select * from va")
-        assert(resultLimit1.next())
-        assert(!resultLimit1.next())
+  test("scala NPE issue with hdfs jar") {
+    val jarDir = Utils.createTempDir().toFile
+    val udfCode =
+      """
+        |package test.utils
+        |
+        |object Math {
+        |def add(x: Int, y: Int): Int = x + y
+        |}
+        |
+        |""".stripMargin
+    val jarFile = UserJarTestUtils.createJarFile(
+      udfCode,
+      "test",
+      s"test-function-${UUID.randomUUID}.jar",
+      jarDir.toString)
+    val hadoopConf = getHadoopConf
+    val dfs = FileSystem.get(hadoopConf)
+    val dfsJarDir = dfs.makeQualified(new Path(s"jars-${UUID.randomUUID()}"))
+    val localFs = FileSystem.getLocal(hadoopConf)
+    val localPath = new Path(jarFile.getAbsolutePath)
+    val dfsJarPath = new Path(dfsJarDir, "test-function.jar")
+    FileUtil.copy(localFs, localPath, dfs, dfsJarPath, false, false, hadoopConf)
+    withJdbcStatement() { statement =>
+      val kyuubiStatement = statement.asInstanceOf[KyuubiStatement]
+      statement.executeQuery(s"add jar $dfsJarPath")
+      val rs = kyuubiStatement.executeScala("println(test.utils.Math.add(1,2))")
+      rs.next()
+      assert(rs.getString(1) === "3")
+    }
+  }
 
-        statement.executeQuery(s"set ${KyuubiConf.OPERATION_RESULT_MAX_ROWS.key}=0")
-        val resultUnLimit = statement.executeQuery("select * from va")
-        assert(resultUnLimit.next())
-        assert(resultUnLimit.next())
+  test("server info provider - server") {
+    assume(!httpMode)
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi")
+      }
+    }
+  }
+
+  test("server info provider - engine") {
+    assume(!httpMode)
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Spark SQL")
+      }
+    }
+  }
+
+  test("the new client should work properly when the engine exits unexpectedly") {
+    assume(!httpMode)
+    withSessionConf(Map(
+      ZookeeperConf.ZK_MAX_SESSION_TIMEOUT.key -> "10000"))(Map.empty)(
+      Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val preReq = new TExecuteStatementReq()
+        preReq.setStatement("SET kyuubi.operation.language=scala")
+        preReq.setSessionHandle(handle)
+        preReq.setRunAsync(false)
+        client.ExecuteStatement(preReq)
+
+        val exitReq = new TExecuteStatementReq()
+        // force kill engine without shutdown hook
+        exitReq.setStatement("java.lang.Runtime.getRuntime().halt(-1)")
+        exitReq.setSessionHandle(handle)
+        exitReq.setRunAsync(false)
+        client.ExecuteStatement(exitReq)
+      }
+      withSessionHandle { (client, handle) =>
+        val preReq = new TExecuteStatementReq()
+        preReq.setStatement("select engine_name()")
+        preReq.setSessionHandle(handle)
+        preReq.setRunAsync(false)
+        val tExecuteStatementResp = client.ExecuteStatement(preReq)
+        val opHandle = tExecuteStatementResp.getOperationHandle
+        waitForOperationToComplete(client, opHandle)
+        assert(tExecuteStatementResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      }
+    }
+  }
+
+  test("transfer connection url when opening connection") {
+    withJdbcStatement() { _ =>
+      val session =
+        server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
+      assert(session.connectionUrl == server.frontendServices.head.connectionUrl)
+    }
+  }
+
+  test("remove spark.kyuubi.engine.credentials") {
+    withJdbcStatement() { statement =>
+      val result = statement.executeQuery("set spark.kyuubi.engine.credentials")
+      assert(result.next())
+      assert(result.getString(1) === "spark.kyuubi.engine.credentials")
+      assert(result.getString(2).isEmpty)
+      assert(!result.next())
+    }
+  }
+
+  test("accumulate the operation terminal state") {
+    val opType = classOf[ExecuteStatement].getSimpleName
+    val finishedMetric = s"${MetricsConstants.OPERATION_STATE}.$opType" +
+      s".${OperationState.FINISHED.toString.toLowerCase}"
+    val closedMetric = s"${MetricsConstants.OPERATION_STATE}.$opType" +
+      s".${OperationState.CLOSED.toString.toLowerCase}"
+    val finishedCount = MetricsSystem.meterValue(finishedMetric).getOrElse(0L)
+    val closedCount = MetricsSystem.meterValue(finishedMetric).getOrElse(0L)
+    withJdbcStatement() { statement =>
+      statement.executeQuery("select engine_name()")
+    }
+    eventually(timeout(5.seconds), interval(100.milliseconds)) {
+      assert(MetricsSystem.meterValue(finishedMetric).getOrElse(0L) > finishedCount)
+      assert(MetricsSystem.meterValue(closedMetric).getOrElse(0L) > closedCount)
+    }
+  }
+
+  test("trace ExecuteStatement exec time histogram") {
+    withJdbcStatement() { statement =>
+      statement.executeQuery("select engine_name()")
+    }
+    val metric =
+      s"${MetricsConstants.OPERATION_EXEC_TIME}.${classOf[ExecuteStatement].getSimpleName}"
+    val snapshot = MetricsSystem.histogramSnapshot(metric).get
+    assert(snapshot.getMax > 0 && snapshot.getMedian > 0)
+  }
+
+  test("align the server/engine session/executeStatement handle for Spark engine") {
+    withSessionConf(Map(
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"))(Map.empty)(Map.empty) {
+      withJdbcStatement() { _ =>
+        val session =
+          server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
+        eventually(timeout(10.seconds)) {
+          assert(session.handle === SessionHandle.apply(session.client.remoteSessionHandle))
+        }
+
+        def checkOpHandleAlign(statement: String, confOverlay: Map[String, String]): Unit = {
+          val opHandle = session.executeStatement(statement, confOverlay, true, 0L)
+          eventually(timeout(10.seconds)) {
+            val operation = session.sessionManager.operationManager.getOperation(
+              opHandle).asInstanceOf[KyuubiOperation]
+            assert(opHandle == OperationHandle.apply(operation.remoteOpHandle()))
+          }
+        }
+
+        val statement = "SELECT engine_id()"
+
+        val confOverlay = Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> "PARSE")
+        checkOpHandleAlign(statement, confOverlay)
+
+        Map(
+          statement -> "SQL",
+          s"""spark.sql("$statement")""" -> "SCALA",
+          s"spark.sql('$statement')" -> "PYTHON").foreach { case (statement, lang) =>
+          val confOverlay = Map(KyuubiConf.OPERATION_LANGUAGE.key -> lang)
+          checkOpHandleAlign(statement, confOverlay)
+        }
+      }
+    }
+  }
+
+  test("support to expose kyuubi operation metrics") {
+    withSessionConf()(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val uuid = UUID.randomUUID().toString
+        val query = s"select '$uuid'"
+        val res = statement.executeQuery(query)
+        assert(res.next())
+        assert(!res.next())
+
+        val operationMetrics =
+          server.backendService.sessionManager.operationManager.allOperations()
+            .map(_.asInstanceOf[KyuubiOperation])
+            .filter(_.statement == query)
+            .head.metrics
+        assert(operationMetrics.get("fetchResultsCount") == Some("1"))
+        assert(operationMetrics.get("fetchLogCount") == Some("0"))
       }
     }
   }

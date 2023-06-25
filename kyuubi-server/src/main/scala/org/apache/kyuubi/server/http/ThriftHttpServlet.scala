@@ -21,15 +21,11 @@ import java.io.IOException
 import java.security.SecureRandom
 import javax.security.sasl.AuthenticationException
 import javax.servlet.ServletException
-import javax.servlet.http.Cookie
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
+import javax.servlet.http.{Cookie, HttpServletRequest, HttpServletResponse}
 import javax.ws.rs.core.NewCookie
 
 import scala.collection.mutable
 
-import org.apache.commons.codec.binary.Base64
-import org.apache.commons.codec.binary.StringUtils
 import org.apache.hadoop.hive.shims.Utils
 import org.apache.thrift.TProcessor
 import org.apache.thrift.protocol.TProtocolFactory
@@ -37,8 +33,11 @@ import org.apache.thrift.server.TServlet
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER
+import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
+import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils, SessionManager}
-import org.apache.kyuubi.service.authentication.{AuthenticationProviderFactory, KyuubiAuthenticationFactory}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 
 class ThriftHttpServlet(
     processor: TProcessor,
@@ -57,6 +56,7 @@ class ThriftHttpServlet(
   private var isCookieSecure = false
   private var isHttpOnlyCookie = false
   private val X_FORWARDED_FOR_HEADER = "X-Forwarded-For"
+  private val authenticationFilter = new AuthenticationFilter(conf)
 
   override def init(): Unit = {
     isCookieAuthEnabled = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_AUTH_ENABLED)
@@ -72,13 +72,13 @@ class ThriftHttpServlet(
       isCookieSecure = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_USE_SSL)
       isHttpOnlyCookie = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_IS_HTTPONLY)
     }
+    authenticationFilter.initAuthHandlers()
   }
 
   @throws[ServletException]
   @throws[IOException]
   override def doPost(request: HttpServletRequest, response: HttpServletResponse): Unit = {
     var clientUserName: String = null
-    var clientIpAddress: String = null
     var requireNewCookie: Boolean = false
     try {
       if (conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_XSRF_FILTER_ENABLED)) {
@@ -105,10 +105,10 @@ class ThriftHttpServlet(
       // If the cookie based authentication is not enabled or the request does not have a valid
       // cookie, use authentication depending on the server setup.
       if (clientUserName == null) {
-        clientUserName = doPasswdAuth(request, authFactory)
+        clientUserName = authenticate(request, response)
       }
 
-      assert(clientUserName != null)
+      require(clientUserName != null, "No valid authorization provided")
       debug("Client username: " + clientUserName)
 
       // Set the thread local username to be used for doAs if true
@@ -118,10 +118,15 @@ class ThriftHttpServlet(
       val doAsQueryParam = getDoAsQueryParam(request.getQueryString)
       if (doAsQueryParam != null) SessionManager.setProxyUserName(doAsQueryParam)
 
-      clientIpAddress = request.getRemoteAddr
+      val clientIpAddress = request.getRemoteAddr
       debug("Client IP Address: " + clientIpAddress)
-      // Set the thread local ip address
       SessionManager.setIpAddress(clientIpAddress)
+
+      Option(request.getHeader(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER))).foreach {
+        ipAddress =>
+          debug("Proxy Http Header Client IP Address: " + ipAddress)
+          SessionManager.setProxyHttpHeaderIpAddress(ipAddress)
+      }
 
       val forwarded_for = request.getHeader(X_FORWARDED_FOR_HEADER)
       if (forwarded_for != null) {
@@ -155,6 +160,7 @@ class ThriftHttpServlet(
       // Clear the thread locals
       SessionManager.clearUserName()
       SessionManager.clearIpAddress()
+      SessionManager.clearProxyHttpHeaderIpAddress()
       SessionManager.clearProxyUserName()
       SessionManager.clearForwardedAddresses()
     }
@@ -280,100 +286,10 @@ class ThriftHttpServlet(
     newCookie + "; HttpOnly"
   }
 
-  /**
-   * Do the LDAP/PAM authentication
-   *
-   * @param request
-   * @param authFactory
-   * @throws AuthenticationException
-   */
-  @throws[AuthenticationException]
-  private def doPasswdAuth(
-      request: HttpServletRequest,
-      authFactory: KyuubiAuthenticationFactory): String = {
-    val userName = getUsername(request, authFactory: KyuubiAuthenticationFactory)
-    debug("Is No SASL Enabled : " + authFactory.isNoSaslEnabled)
-    // No-op when authType is NOSASL
-    if (authFactory.isNoSaslEnabled) return userName
-    try {
-      debug("Initiating Password Authentication")
-      val password = getPassword(request, authFactory)
-      val authMethod = authFactory.getValidPasswordAuthMethod
-      debug("Password Method: " + authMethod)
-      val provider = AuthenticationProviderFactory.getAuthenticationProvider(authMethod, conf)
-      debug("Password Provider obtained")
-      provider.authenticate(userName, password)
-      debug("Password Provider authenticated username successfully")
-    } catch {
-      case e: Exception =>
-        throw new AuthenticationException(e.getMessage, e)
-    }
-    userName
-  }
-
-  @throws[AuthenticationException]
-  private def getUsername(
-      request: HttpServletRequest,
-      authFactory: KyuubiAuthenticationFactory): String = {
-    val creds = getAuthHeaderTokens(request, authFactory)
-    // Username must be present
-    if (creds(0) == null || creds(0).isEmpty) {
-      throw new AuthenticationException("Authorization header received " +
-        "from the client does not contain username.")
-    }
-    creds(0)
-  }
-
-  @throws[AuthenticationException]
-  private def getPassword(
-      request: HttpServletRequest,
-      authFactory: KyuubiAuthenticationFactory): String = {
-    val creds = getAuthHeaderTokens(request, authFactory)
-    // Password must be present
-    if (creds(1) == null || creds(1).isEmpty) {
-      throw new AuthenticationException("Authorization header received " +
-        "from the client does not contain username.")
-    }
-    creds(1)
-  }
-
-  @throws[AuthenticationException]
-  private def getAuthHeaderTokens(
-      request: HttpServletRequest,
-      authFactory: KyuubiAuthenticationFactory): Array[String] = {
-    val authHeaderBase64 = getAuthHeader(request, authFactory)
-    val authHeaderString = StringUtils.newStringUtf8(Base64.decodeBase64(authHeaderBase64.getBytes))
-    authHeaderString.split(":")
-  }
-
-  /**
-   * Returns the base64 encoded auth header payload
-   *
-   * @param request
-   * @param authFactory
-   * @return
-   * @throws AuthenticationException
-   */
-  @throws[AuthenticationException]
-  private def getAuthHeader(
-      request: HttpServletRequest,
-      authFactory: KyuubiAuthenticationFactory): String = {
-    val authHeader = request.getHeader(HttpAuthUtils.AUTHORIZATION)
-    // Each http request must have an Authorization header
-    if (authHeader == null || authHeader.isEmpty) {
-      throw new AuthenticationException("Authorization header received " +
-        "from the client is empty.")
-    }
-
-    var authHeaderBase64String: String = null
-    val beginIndex = (HttpAuthUtils.BASIC + " ").length
-    authHeaderBase64String = authHeader.substring(beginIndex)
-    // Authorization header must have a payload
-    if (authHeaderBase64String == null || authHeaderBase64String.isEmpty) {
-      throw new AuthenticationException("Authorization header received " +
-        "from the client does not contain any data.")
-    }
-    authHeaderBase64String
+  private def authenticate(request: HttpServletRequest, response: HttpServletResponse): String = {
+    val authorization = request.getHeader(AUTHORIZATION_HEADER)
+    authenticationFilter.getMatchedHandler(authorization).map(
+      _.authenticate(request, response)).orNull
   }
 
   private def getDoAsQueryParam(queryString: String): String = {

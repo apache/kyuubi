@@ -17,33 +17,21 @@
 
 package org.apache.kyuubi.it.flink.operation
 
-import java.io.File
-import java.nio.file.Paths
+import org.apache.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
 
-import org.apache.kyuubi.{HADOOP_COMPILE_VERSION, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TYPE, KYUUBI_ENGINE_ENV_PREFIX}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.it.flink.WithKyuubiServerAndFlinkMiniCluster
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 
-class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster with HiveJDBCTestHelper {
-  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests")(0)
-  val hadoopClasspath: String = Paths.get(
-    kyuubiHome,
-    "externals",
-    "kyuubi-flink-sql-engine",
-    "target",
-    s"scala-$SCALA_COMPILE_VERSION",
-    "jars").toAbsolutePath.toString
+class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
+  with HiveJDBCTestHelper {
+
   override val conf: KyuubiConf = KyuubiConf()
+    .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
     .set(ENGINE_TYPE, "FLINK_SQL")
     .set("flink.parallelism.default", "6")
-    .set(
-      s"$KYUUBI_ENGINE_ENV_PREFIX.FLINK_HADOOP_CLASSPATH",
-      s"$hadoopClasspath${File.separator}" +
-        s"hadoop-client-api-$HADOOP_COMPILE_VERSION.jar${File.pathSeparator}" +
-        s"$hadoopClasspath${File.separator}hadoop-client-runtime-$HADOOP_COMPILE_VERSION.jar")
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -58,6 +46,14 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster with HiveJ
       assert(!expected.hasNext)
       assert(!catalogs.next())
     }
+  }
+
+  test("execute statement - create/alter/drop table") {
+    withJdbcStatement()({ statement =>
+      statement.executeQuery("create table tbl_a (a string) with ('connector' = 'blackhole')")
+      assert(statement.execute("alter table tbl_a rename to tbl_b"))
+      assert(statement.execute("drop table tbl_b"))
+    })
   }
 
   test("execute statement - select column name with dots") {
@@ -81,6 +77,28 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster with HiveJ
         }
       }
       assert(success)
+    }
+  }
+
+  test("server info provider - server") {
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi")
+      }
+    }
+  }
+
+  test("server info provider - engine") {
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Flink")
+      }
     }
   }
 }

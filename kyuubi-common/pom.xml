@@ -15,24 +15,28 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.6.0-SNAPSHOT</version>
+        <version>1.8.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-common_2.12</artifactId>
-    <name>Kyuubi Project Common</name>
     <packaging>jar</packaging>
+    <name>Kyuubi Project Common</name>
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
@@ -46,6 +50,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
         </dependency>
 
         <dependency>
@@ -80,6 +89,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>ST4</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
@@ -110,6 +124,18 @@
         </dependency>
 
         <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-minikdc</artifactId>
             <scope>test</scope>
@@ -122,14 +148,14 @@
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-compiler</artifactId>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-compiler</artifactId>
+            <groupId>org.scalatestplus</groupId>
+            <artifactId>mockito-4-11_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -138,20 +164,42 @@
             <artifactId>failureaccess</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jakewharton.fliptables</groupId>
+            <artifactId>fliptables</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-all</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
-        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
 
         <resources>
             <resource>
                 <directory>${project.basedir}/src/main/resources</directory>
             </resource>
             <resource>
+                <filtering>true</filtering>
                 <!-- Include the properties file to provide the build information. -->
                 <directory>${project.build.directory}/extra-resources</directory>
-                <filtering>true</filtering>
             </resource>
         </resources>
 
@@ -168,26 +216,40 @@
                 <executions>
                     <execution>
                         <id>build-info</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <target>
-                                <exec executable="bash">
-                                    <arg value="${project.basedir}/../build/kyuubi-build-info"/>
-                                    <arg value="${project.build.directory}/extra-resources"/>
-                                    <arg value="${project.version}"/>
-                                    <arg value="${java.version}"/>
-                                    <arg value="${scala.binary.version}"/>
-                                    <arg value="${spark.version}"/>
-                                    <arg value="${hive.version}"/>
-                                    <arg value="${hadoop.version}"/>
-                                    <arg value="${flink.version}"/>
-                                    <arg value="${trino.client.version}"/>
-                                </exec>
-                            </target>
-                        </configuration>
                         <goals>
                             <goal>run</goal>
                         </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <target>
+                                <exec executable="bash" osfamily="unix">
+                                    <arg value="${project.basedir}/../build/kyuubi-build-info"></arg>
+                                    <arg value="${project.build.directory}/extra-resources"></arg>
+                                    <arg value="${project.version}"></arg>
+                                    <arg value="${java.version}"></arg>
+                                    <arg value="${scala.binary.version}"></arg>
+                                    <arg value="${spark.version}"></arg>
+                                    <arg value="${hive.version}"></arg>
+                                    <arg value="${hadoop.version}"></arg>
+                                    <arg value="${flink.version}"></arg>
+                                    <arg value="${trino.client.version}"></arg>
+                                </exec>
+
+                                <exec executable="cmd.exe" osfamily="windows">
+                                    <arg value="/c"></arg>
+                                    <arg value="${project.basedir}/../build/kyuubi-build-info.cmd"></arg>
+                                    <arg value="${project.build.directory}/extra-resources"></arg>
+                                    <arg value="${project.version}"></arg>
+                                    <arg value="${java.version}"></arg>
+                                    <arg value="${scala.binary.version}"></arg>
+                                    <arg value="${spark.version}"></arg>
+                                    <arg value="${hive.version}"></arg>
+                                    <arg value="${hadoop.version}"></arg>
+                                    <arg value="${flink.version}"></arg>
+                                    <arg value="${trino.client.version}"></arg>
+                                </exec>
+                            </target>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -198,13 +260,15 @@
                 <executions>
                     <execution>
                         <id>prepare-test-jar</id>
-                        <phase>test-compile</phase>
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                        <phase>test-compile</phase>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
+        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
+        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
 </project>

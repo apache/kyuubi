@@ -19,6 +19,7 @@ package org.apache.kyuubi.util
 
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.util.reflect._
 
 object ClassUtils {
 
@@ -32,21 +33,16 @@ object ClassUtils {
    */
   def createInstance[T](className: String, expected: Class[T], conf: KyuubiConf): T = {
     val classLoader = Thread.currentThread.getContextClassLoader
-    val cls = Class.forName(className, true, classLoader)
-    cls match {
-      case clazz if expected.isAssignableFrom(cls) =>
-        val confConstructor = clazz.getConstructors.exists(p => {
-          val params = p.getParameterTypes
-          params.length == 1 && classOf[KyuubiConf].isAssignableFrom(params(0))
-        })
-        if (confConstructor) {
-          clazz.getConstructor(classOf[KyuubiConf]).newInstance(conf)
-            .asInstanceOf[T]
-        } else {
-          clazz.newInstance().asInstanceOf[T]
-        }
-      case _ => throw new KyuubiException(
-          s"$className must extend of ${expected.getName}")
+    try {
+      DynConstructors.builder(expected).loader(classLoader)
+        .impl(className, classOf[KyuubiConf])
+        .impl(className)
+        .buildChecked[T]()
+        .newInstance(conf)
+    } catch {
+      case e: Exception =>
+        throw new KyuubiException(s"$className must extend of ${expected.getName}", e)
     }
   }
+
 }

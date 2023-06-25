@@ -32,7 +32,7 @@ private[kyuubi] trait CommandLineLoggingUtils {
   // Exposed for testing
   private[kyuubi] var exitFn: Int => Unit = (exitCode: Int) => System.exit(exitCode)
 
-  private[kyuubi] var printStream: PrintStream = System.err
+  private[kyuubi] var printStream: PrintStream = System.out
 
   // scalastyle:off println
   private[kyuubi] def printMessage(msg: Any): Unit = printStream.println(msg)

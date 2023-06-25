@@ -34,7 +34,7 @@ class UtilsSuite extends KyuubiFunSuite {
 
   test("build information check") {
     val buildFile = "kyuubi-version-info.properties"
-    val str = this.getClass.getClassLoader.getResourceAsStream(buildFile)
+    val str = Utils.getContextOrKyuubiClassLoader.getResourceAsStream(buildFile)
     val props = new Properties()
     assert(str !== null)
     props.load(str)
@@ -49,6 +49,7 @@ class UtilsSuite extends KyuubiFunSuite {
     assert(props.getProperty("kyuubi_trino_version") === TRINO_COMPILE_VERSION)
     assert(props.getProperty("branch") === BRANCH)
     assert(props.getProperty("revision") === REVISION)
+    assert(props.getProperty("revision_time") === REVISION_TIME)
     assert(props.getProperty("user") === BUILD_USER)
     assert(props.getProperty("url") === REPO_URL)
     assert(props.getProperty("date") === BUILD_DATE)
@@ -114,19 +115,6 @@ class UtilsSuite extends KyuubiFunSuite {
           assert(Utils.currentUser === "kentyao")
         }
       })
-  }
-
-  test("version test") {
-    assert(Utils.majorVersion(KYUUBI_VERSION) ===
-      Utils.majorMinorVersion(KYUUBI_VERSION)._1)
-    assert(Utils.majorVersion(SPARK_COMPILE_VERSION) ===
-      Utils.majorMinorVersion(SPARK_COMPILE_VERSION)._1)
-    assert(Utils.majorVersion(HADOOP_COMPILE_VERSION) ===
-      Utils.majorMinorVersion(HADOOP_COMPILE_VERSION)._1)
-    assert(Utils.minorVersion(KYUUBI_VERSION) ===
-      Utils.majorMinorVersion(KYUUBI_VERSION)._2)
-    intercept[IllegalArgumentException](Utils.shortVersion("-" + KYUUBI_VERSION))
-    intercept[IllegalArgumentException](Utils.majorMinorVersion("-" + KYUUBI_VERSION))
   }
 
   test("findLocalInetAddress") {
@@ -209,5 +197,10 @@ class UtilsSuite extends KyuubiFunSuite {
     // Do not redact when value type is not string
     assert(Utils.redact(secretKeys, Seq(("my.password", 12345))) ===
       Seq(("my.password", 12345)))
+  }
+
+  test("test isCommandAvailable") {
+    assert(Utils.isCommandAvailable("java"))
+    assertResult(false)(Utils.isCommandAvailable("un_exist_cmd"))
   }
 }

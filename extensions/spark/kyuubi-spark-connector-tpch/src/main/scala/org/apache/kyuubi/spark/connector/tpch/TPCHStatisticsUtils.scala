@@ -22,7 +22,7 @@ import io.trino.tpch.TpchTable._
 
 import org.apache.kyuubi.spark.connector.tpch.TPCHSchemaUtils.{normalize, SCALES}
 
-// https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-h_v3.0.0.pdf
+// https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-h_v3.0.1.pdf
 // Page 88 Table 3: Estimated Database Size
 object TPCHStatisticsUtils {
 

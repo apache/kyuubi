@@ -21,14 +21,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class BatchRequest {
   private String batchType;
   private String resource;
   private String className;
   private String name;
-  private Map<String, String> conf;
-  private List<String> args;
+  private Map<String, String> conf = Collections.emptyMap();
+  private List<String> args = Collections.emptyList();
 
   public BatchRequest() {}
 
@@ -52,8 +54,6 @@ public class BatchRequest {
     this.resource = resource;
     this.className = className;
     this.name = name;
-    this.conf = Collections.emptyMap();
-    this.args = Collections.emptyList();
   }
 
   public String getBatchType() {
@@ -127,5 +127,10 @@ public class BatchRequest {
   public int hashCode() {
     return Objects.hash(
         getBatchType(), getResource(), getClassName(), getName(), getConf(), getArgs());
+  }
+
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

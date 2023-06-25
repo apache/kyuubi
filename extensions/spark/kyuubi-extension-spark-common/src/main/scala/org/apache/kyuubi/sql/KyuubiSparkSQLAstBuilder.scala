@@ -116,7 +116,6 @@ class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQ
     val zorderCols = ctx.zorderClause().order.asScala
       .map(visitMultipartIdentifier)
       .map(UnresolvedAttribute(_))
-      .toSeq
 
     val orderExpr =
       if (zorderCols.length == 1) {

@@ -1,20 +1,19 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
- - contributor license agreements.  See the NOTICE file distributed with
- - this work for additional information regarding copyright ownership.
- - The ASF licenses this file to You under the Apache License, Version 2.0
- - (the "License"); you may not use this file except in compliance with
- - the License.  You may obtain a copy of the License at
- -
- -   http://www.apache.org/licenses/LICENSE-2.0
- -
- - Unless required by applicable law or agreed to in writing, software
- - distributed under the License is distributed on an "AS IS" BASIS,
- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- - See the License for the specific language governing permissions and
- - limitations under the License.
- -->
-
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
 
 # Deploy Kyuubi On Kubernetes
 
@@ -28,15 +27,16 @@ If you want to deploy Kyuubi on Kubernetes, you'd better get a sense of the foll
 * [Kubectl](https://kubernetes.io/docs/reference/kubectl/overview/)
 * KubeConfig of the target cluster
 
-## Kyuubi Official Docker Image 
+## Kyuubi Official Docker Image
 
-You can find the official docker image at [Apache Kyuubi (Incubating) Docker Hub](https://registry.hub.docker.com/r/apache/kyuubi).
+You can find the official docker image at [Apache Kyuubi Docker Hub](https://registry.hub.docker.com/r/apache/kyuubi).
 
 ## Build Kyuubi Docker Image
 
 You can build custom Docker images from the `${KYUUBI_HOME}/bin/docker-image-tool.sh` contained in the binary package.
 
 Examples:
+
 ```shell
   - Build and push image with tag "v1.4.0" to docker.io/myrepo
     $0 -r docker.io/myrepo -t v1.4.0 build
@@ -58,7 +58,7 @@ Examples:
 
 `${KYUUBI_HOME}/bin/docker-image-tool.sh` use `Kyuubi Version` as default docker tag and always build `${repo}/kyuubi:${tag}` image.
 
-The script can also help build external Spark into a Kyuubi image that acts as a client for submitting tasks by `-s ${SPAAK_HOME}`.
+The script can also help build external Spark into a Kyuubi image that acts as a client for submitting tasks by `-s ${SPARK_HOME}`.
 
 Of course, if you have an image that contains the Spark binary package, you don't have to copy Spark locally. Make your Spark Image as BASE_IMAGE by using the `-S ${SPARK_HOME_IN_DOCKER}` and `-b BASE_IMAGE=${SPARK_IMAGE}` arguments.
 
@@ -71,6 +71,22 @@ Multiple YAML files are provided under `${KYUUBI_HOME}/docker/` to help you depl
 You can deploy single-node Kyuubi through `${KYUUBI_HOME}/docker/kyuubi-pod.yaml` or `${KYUUBI_HOME}/docker/kyuubi-deployment.yaml`.
 
 Also, you can use `${KYUUBI_HOME}/docker/kyuubi-service.yaml` to deploy Kyuubi Service.
+
+### [Optional] ServiceAccount
+
+According to [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/), we need to give kyuubi server the corresponding kubernetes privileges for `created/list/delete` engine pods in kubernetes.
+
+You should create your serviceAccount ( or reuse account with the appropriate privileges ) and set your serviceAccountName for kyuubi pod, which you can find template in `${KYUUBI_HOME}/docker/kyuubi-deployment.yaml` or `${KYUUBI_HOME}/docker/kyuubi-pod.yaml`.
+
+For example, you can create serviceAccount by following command:
+
+```shell
+kubectl create serviceAccount kyuubi -n <your namespace>
+
+kubectl create rolebinding kyuubi-role --role=edit --serviceAccount=<your namespace>:kyuubi --namespace=<your namespace>
+```
+
+See more related details in [Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) and [Configure Service Accounts for Pods](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/).
 
 ## Config
 
@@ -86,18 +102,22 @@ If you want to know kyuubi engine on kubernetes configurations, you can refer to
 
 If you do not use Service or HostNetwork to get the IP address of the node where Kyuubi deployed.
 You should connect like:
+
 ```shell
 kubectl exec -it kyuubi-example -- /bin/bash
-${SPARK_HOME}/bin/beeline -u 'jdbc:hive2://localhost:10009'
+${KYUUBI_HOME}/bin/beeline -u 'jdbc:hive2://localhost:10009'
 ```
 
 Or you can submit tasks directly through local beeline:
+
 ```shell
-${SPARK_HOME}/bin/beeline -u 'jdbc:hive2://${hostname}:${port}'
+${KYUUBI_HOME}/bin/beeline -u 'jdbc:hive2://${hostname}:${port}'
 ```
+
 As using service nodePort, port means nodePort and hostname means any hostname of kubernetes node.
 
 As using HostNetwork, port means kyuubi containerPort and hostname means hostname of node where Kyuubi deployed.
 
-## TODO 
+## TODO
+
 Kyuubi will provide other connection methods in the future, like `Ingress`, `Load Balance`.

@@ -1,0 +1,55 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+$--colors: (
+  'primary': (
+    'base': #242e42,
+  ),
+  'success': (
+    'base': #21ba45,
+  ),
+  'warning': (
+    'base': #f2711c,
+  ),
+  'danger': (
+    'base': #db2828,
+  ),
+  'error': (
+    'base': #db2828,
+  ),
+  'info': (
+    'base': #2f9688,
+  ),
+);
+
+$--menus: (
+  'item-height': 46px,
+  'icon-width': 24px,
+  'text-color': 'rgba(255, 255, 255, .75)',
+  'hover-text-color': '#fff',
+  'hover-bg-color': '#1890ff',
+  'bg-color': '#001529',
+  'active-color': '#1890ff',
+);
+
+@forward 'element-plus/theme-chalk/src/common/var.scss' with (
+    // do not use same name, it will override.
+    $colors: $--colors,
+    $menu: $--menus
+  );
+
+@use "element-plus/theme-chalk/src/index.scss" as *;

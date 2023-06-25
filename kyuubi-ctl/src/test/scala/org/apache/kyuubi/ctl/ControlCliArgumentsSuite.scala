@@ -18,6 +18,9 @@
 package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
+import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
+import org.apache.kyuubi.ctl.cli.ControlCliArguments
+import org.apache.kyuubi.ctl.opt.{ControlAction, ControlObject}
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 
 class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
@@ -55,6 +58,12 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
   test("test basic kyuubi service arguments parser") {
     Seq("get", "list", "delete").foreach { op =>
       Seq("server", "engine").foreach { service =>
+        val engineUser =
+          if (service == "engine") {
+            Seq("-u", user)
+          } else {
+            Seq.empty[String]
+          }
         val args = Seq(
           op,
           service,
@@ -62,23 +71,23 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
           zkQuorum,
           "--namespace",
           namespace,
-          "--user",
-          user,
           "--host",
           host,
           "--port",
           port,
           "--version",
-          KYUUBI_VERSION)
+          KYUUBI_VERSION) ++ engineUser
         val opArgs = new ControlCliArguments(args)
         assert(opArgs.cliConfig.action.toString.equalsIgnoreCase(op))
         assert(opArgs.cliConfig.resource.toString.equalsIgnoreCase(service))
-        assert(opArgs.cliConfig.commonOpts.zkQuorum == zkQuorum)
-        assert(opArgs.cliConfig.commonOpts.namespace == namespace)
-        assert(opArgs.cliConfig.engineOpts.user == user)
-        assert(opArgs.cliConfig.commonOpts.host == host)
-        assert(opArgs.cliConfig.commonOpts.port == port)
-        assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
+        assert(opArgs.cliConfig.zkOpts.zkQuorum == zkQuorum)
+        assert(opArgs.cliConfig.zkOpts.namespace == namespace)
+        assert(opArgs.cliConfig.zkOpts.host == host)
+        assert(opArgs.cliConfig.zkOpts.port == port)
+        assert(opArgs.cliConfig.zkOpts.version == KYUUBI_VERSION)
+        if (service == "engine") {
+          assert(opArgs.cliConfig.engineOpts.user == user)
+        }
       }
     }
 
@@ -102,11 +111,11 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       val opArgs = new ControlCliArguments(args)
       assert(opArgs.cliConfig.action.toString.equalsIgnoreCase(op))
       assert(opArgs.cliConfig.resource.toString.equalsIgnoreCase(service))
-      assert(opArgs.cliConfig.commonOpts.zkQuorum == zkQuorum)
-      assert(opArgs.cliConfig.commonOpts.namespace == newNamespace)
-      assert(opArgs.cliConfig.commonOpts.host == host)
-      assert(opArgs.cliConfig.commonOpts.port == port)
-      assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
+      assert(opArgs.cliConfig.zkOpts.zkQuorum == zkQuorum)
+      assert(opArgs.cliConfig.zkOpts.namespace == newNamespace)
+      assert(opArgs.cliConfig.zkOpts.host == host)
+      assert(opArgs.cliConfig.zkOpts.port == port)
+      assert(opArgs.cliConfig.zkOpts.version == KYUUBI_VERSION)
     }
   }
 
@@ -152,8 +161,14 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       zkQuorum,
       "--namespace",
       namespace)
-    val opArgs = new ControlCliArguments(args2)
+    var opArgs = new ControlCliArguments(args2)
     assert(opArgs.cliConfig.action == ControlAction.LIST)
+
+    val args3 = Array(
+      "list",
+      "session")
+    opArgs = new ControlCliArguments(args3)
+    assert(opArgs.cliConfig.resource === ControlObject.SESSION)
   }
 
   test("test get/delete action arguments") {
@@ -288,13 +303,19 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       "--zk-quorum",
       zkQuorum)
     val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliConfig.commonOpts.namespace == namespace)
-    assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
+    assert(opArgs.cliConfig.zkOpts.namespace == namespace)
+    assert(opArgs.cliConfig.zkOpts.version == KYUUBI_VERSION)
   }
 
   test("test use short options") {
     Seq("get", "list", "delete").foreach { op =>
       Seq("server", "engine").foreach { service =>
+        val engineUser =
+          if (service == "engine") {
+            Seq("-u", user)
+          } else {
+            Seq.empty[String]
+          }
         val args = Seq(
           op,
           service,
@@ -302,23 +323,23 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
           zkQuorum,
           "-n",
           namespace,
-          "-u",
-          user,
           "-s",
           host,
           "-p",
           port,
           "-v",
-          KYUUBI_VERSION)
+          KYUUBI_VERSION) ++ engineUser
         val opArgs = new ControlCliArguments(args)
         assert(opArgs.cliConfig.action.toString.equalsIgnoreCase(op))
         assert(opArgs.cliConfig.resource.toString.equalsIgnoreCase(service))
-        assert(opArgs.cliConfig.commonOpts.zkQuorum == zkQuorum)
-        assert(opArgs.cliConfig.commonOpts.namespace == namespace)
-        assert(opArgs.cliConfig.engineOpts.user == user)
-        assert(opArgs.cliConfig.commonOpts.host == host)
-        assert(opArgs.cliConfig.commonOpts.port == port)
-        assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
+        assert(opArgs.cliConfig.zkOpts.zkQuorum == zkQuorum)
+        assert(opArgs.cliConfig.zkOpts.namespace == namespace)
+        assert(opArgs.cliConfig.zkOpts.host == host)
+        assert(opArgs.cliConfig.zkOpts.port == port)
+        assert(opArgs.cliConfig.zkOpts.version == KYUUBI_VERSION)
+        if (service == "engine") {
+          assert(opArgs.cliConfig.engineOpts.user == user)
+        }
       }
     }
 
@@ -337,23 +358,27 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
     val zkHelpString = "The connection string for the zookeeper ensemble, using zk quorum manually."
     val versionHelpString = "Using the compiled KYUUBI_VERSION default," +
       " change it if the active service is running in another."
+    val waitBatchCompletionHelpString = "Boolean property. If true(default), the client process " +
+      "will stay alive until the batch is in any terminal state. If false, the client will exit " +
+      "when the batch is no longer in PENDING state."
     val helpString =
       s"""kyuubi $KYUUBI_VERSION
-         |Usage: kyuubi-ctl [create|get|delete|list|log|submit] [options] <args>...
+         |Usage: kyuubi-ctl [create|get|delete|list|log|submit] [options]
          |
-         |  -zk, --zk-quorum <value>
-         |                           $zkHelpString
-         |  -n, --namespace <value>  The namespace, using kyuubi-defaults/conf if absent.
-         |  -s, --host <value>       Hostname or IP address of a service.
-         |  -p, --port <value>       Listening port of a service.
-         |  -v, --version <value>    $versionHelpString
          |  -b, --verbose            Print additional debug output.
          |  --hostUrl <value>        Host url for rest api.
          |  --authSchema <value>     Auth schema for rest api, valid values are basic, spnego.
          |  --username <value>       Username for basic authentication.
          |  --password <value>       Password for basic authentication.
          |  --spnegoHost <value>     Spnego host for spnego authentication.
+         |  --hs2ProxyUser <value>   The value of hive.server2.proxy.user config.
          |  --conf <value>           Kyuubi config property pair, formatted key=value.
+         |  -zk, --zk-quorum <value>
+         |                           $zkHelpString
+         |  -n, --namespace <value>  The namespace, using kyuubi-defaults/conf if absent.
+         |  -s, --host <value>       Hostname or IP address of a service.
+         |  -p, --port <value>       Listening port of a service.
+         |  -v, --version <value>    $versionHelpString
          |
          |Command: create [batch|server] [options]
          |${"\t"}Create a resource.
@@ -363,14 +388,14 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |Command: create server
          |${"\t"}Expose Kyuubi server instance to another domain.
          |
-         |Command: get [batch|server|engine] [options] [<batchId>]
+         |Command: get [batch|server|engine] <args>...
          |${"\t"}Display information about the specified resources.
-         |Command: get batch
+         |Command: get batch [<batchId>]
          |${"\t"}Get batch by id.
          |  <batchId>                Batch id.
          |Command: get server
          |${"\t"}Get Kyuubi server info of domain
-         |Command: get engine
+         |Command: get engine [options]
          |${"\t"}Get Kyuubi engine info belong to a user.
          |  -u, --user <value>       The user name this engine belong to.
          |  -et, --engine-type <value>
@@ -380,15 +405,14 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  -esl, --engine-share-level <value>
          |                           The engine share level this engine belong to.
          |
-         |Command: delete [batch|server|engine] [options] [<batchId>]
+         |Command: delete [batch|server|engine] <args>...
          |${"\t"}Delete resources.
-         |Command: delete batch
+         |Command: delete batch [<batchId>]
          |${"\t"}Close batch session.
          |  <batchId>                Batch id.
-         |  --hs2ProxyUser <value>   The value of hive.server2.proxy.user config.
          |Command: delete server
          |${"\t"}Delete the specified service node for a domain
-         |Command: delete engine
+         |Command: delete engine [options]
          |${"\t"}Delete the specified engine node for user.
          |  -u, --user <value>       The user name this engine belong to.
          |  -et, --engine-type <value>
@@ -398,9 +422,9 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  -esl, --engine-share-level <value>
          |                           The engine share level this engine belong to.
          |
-         |Command: list [batch|server|engine] [options]
+         |Command: list [batch|session|server|engine]
          |${"\t"}List information about resources.
-         |Command: list batch
+         |Command: list batch [options]
          |${"\t"}List batch session info.
          |  --batchType <value>      Batch type.
          |  --batchUser <value>      Batch user.
@@ -409,9 +433,11 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  --endTime <value>        Batch end time, should be in yyyyMMddHHmmss format.
          |  --from <value>           Specify which record to start from retrieving info.
          |  --size <value>           The max number of records returned in the query.
+         |Command: list session
+         |${"\t"}List all the live sessions
          |Command: list server
          |${"\t"}List all the service nodes for a particular domain
-         |Command: list engine
+         |Command: list engine [options]
          |${"\t"}List all the engine nodes for a user
          |  -u, --user <value>       The user name this engine belong to.
          |  -et, --engine-type <value>
@@ -421,10 +447,10 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  -esl, --engine-share-level <value>
          |                           The engine share level this engine belong to.
          |
-         |Command: log [batch] [options] [<batchId>]
+         |Command: log [batch] [options] <args>...
          |${"\t"}Print the logs for specified resource.
          |  --forward                If forward is specified, the ctl will block forever.
-         |Command: log batch
+         |Command: log batch [options] [<batchId>]
          |${"\t"}Get batch session local log.
          |  <batchId>                Batch id.
          |  --from <value>           Specify which record to start from retrieving info.
@@ -433,8 +459,10 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |Command: submit [batch] [options]
          |${"\t"}Combination of create, get and log commands.
          |  -f, --filename <value>   Filename to use to create the resource
-         |Command: submit batch
+         |Command: submit batch [options]
          |${"\t"}open batch session and wait for completion.
+         |  --waitCompletion <value>
+         |                           ${waitBatchCompletionHelpString}
          |
          |  -h, --help               Show help message and exit.""".stripMargin
 
@@ -462,5 +490,25 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       "--conf",
       s"${CtlConf.CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS.key}")
     testPrematureExitForControlCliArgs(args2.toArray, "Kyuubi config without '='")
+  }
+
+  test("test ctl client conf") {
+    val args = Seq(
+      "delete",
+      "batch",
+      "123",
+      "--hostUrl",
+      "https://kyuubi.test.com",
+      "--conf",
+      s"${CtlConf.CTL_REST_CLIENT_CONNECT_TIMEOUT.key}=5000",
+      "--conf",
+      s"${CtlConf.CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS.key}=1")
+    val opArgs = new ControlCliArguments(args)
+    withKyuubiRestClient(opArgs.cliConfig, null, opArgs.command.conf) { kyuubiRestClient =>
+      assert(kyuubiRestClient.getConf.getConnectTimeout == 5000)
+      assert(kyuubiRestClient.getConf.getSocketTimeout == 120000)
+      assert(kyuubiRestClient.getConf.getMaxAttempts == 1)
+      assert(kyuubiRestClient.getConf.getAttemptWaitTime == 3000)
+    }
   }
 }

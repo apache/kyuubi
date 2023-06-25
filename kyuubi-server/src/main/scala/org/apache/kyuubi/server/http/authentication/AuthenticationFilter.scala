@@ -26,7 +26,7 @@ import scala.collection.mutable.HashMap
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.AUTHENTICATION_METHOD
+import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER}
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 
@@ -53,7 +53,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     }
   }
 
-  override def init(filterConfig: FilterConfig): Unit = {
+  private[kyuubi] def initAuthHandlers(): Unit = {
     val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
     val spnegoKerberosEnabled = authTypes.contains(KERBEROS)
     val basicAuthTypeOpt = {
@@ -75,13 +75,20 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
       val internalHandler = new KyuubiInternalAuthenticationHandler
       addAuthHandler(internalHandler)
     }
-    super.init(filterConfig)
+  }
+
+  override def init(filterConfig: FilterConfig): Unit = {
+    initAuthHandlers()
+  }
+
+  private[kyuubi] def getMatchedHandler(authorization: String): Option[AuthenticationHandler] = {
+    authSchemeHandlers.values.find(_.matchAuthScheme(authorization))
   }
 
   /**
    * If the request has a valid authentication token it allows the request to continue to the
    * target resource, otherwise it triggers an authentication sequence using the configured
-   * {@link AuthenticationHandler}.
+   * [[AuthenticationHandler]].
    *
    * @param request     the request object.
    * @param response    the response object.
@@ -97,33 +104,35 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     val httpResponse = response.asInstanceOf[HttpServletResponse]
 
     val authorization = httpRequest.getHeader(AUTHORIZATION_HEADER)
-    var matchedHandler: AuthenticationHandler = null
-
-    for (authHandler <- authSchemeHandlers.values if matchedHandler == null) {
-      if (authHandler.matchAuthScheme(authorization)) {
-        matchedHandler = authHandler
-      }
-    }
+    val matchedHandler = getMatchedHandler(authorization).orNull
+    HTTP_CLIENT_IP_ADDRESS.set(httpRequest.getRemoteAddr)
+    HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.set(
+      httpRequest.getHeader(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
 
     if (matchedHandler == null) {
       debug(s"No auth scheme matched for url: ${httpRequest.getRequestURL}")
       httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
+      AuthenticationAuditLogger.audit(httpRequest, httpResponse)
       httpResponse.sendError(
         HttpServletResponse.SC_UNAUTHORIZED,
         s"No auth scheme matched for $authorization")
     } else {
-      HTTP_CLIENT_IP_ADDRESS.set(httpRequest.getRemoteAddr)
+      HTTP_AUTH_TYPE.set(matchedHandler.authScheme.toString)
       try {
         val authUser = matchedHandler.authenticate(httpRequest, httpResponse)
         if (authUser != null) {
           HTTP_CLIENT_USER_NAME.set(authUser)
           doFilter(filterChain, httpRequest, httpResponse)
         }
+        AuthenticationAuditLogger.audit(httpRequest, httpResponse)
       } catch {
         case e: AuthenticationException =>
+          httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN)
+          AuthenticationAuditLogger.audit(httpRequest, httpResponse)
           HTTP_CLIENT_USER_NAME.remove()
           HTTP_CLIENT_IP_ADDRESS.remove()
-          httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN)
+          HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.remove()
+          HTTP_AUTH_TYPE.remove()
           httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage)
       }
     }
@@ -149,7 +158,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   }
 
   override def destroy(): Unit = {
-    if (!authSchemeHandlers.isEmpty) {
+    if (authSchemeHandlers.nonEmpty) {
       authSchemeHandlers.values.foreach(_.destroy())
       authSchemeHandlers.clear()
     }
@@ -160,11 +169,21 @@ object AuthenticationFilter {
   final val HTTP_CLIENT_IP_ADDRESS = new ThreadLocal[String]() {
     override protected def initialValue: String = null
   }
+  final val HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS = new ThreadLocal[String]() {
+    override protected def initialValue: String = null
+  }
   final val HTTP_CLIENT_USER_NAME = new ThreadLocal[String]() {
     override protected def initialValue: String = null
+  }
+  final val HTTP_AUTH_TYPE = new ThreadLocal[String]() {
+    override protected def initialValue(): String = null
   }
 
   def getUserIpAddress: String = HTTP_CLIENT_IP_ADDRESS.get
 
+  def getUserProxyHeaderIpAddress: String = HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.get()
+
   def getUserName: String = HTTP_CLIENT_USER_NAME.get
+
+  def getAuthType: String = HTTP_AUTH_TYPE.get()
 }

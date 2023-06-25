@@ -22,21 +22,12 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Set
 
 import io.trino.client.ClientStandardTypes._
-import org.apache.hive.service.rpc.thrift.TCancelOperationReq
-import org.apache.hive.service.rpc.thrift.TCloseOperationReq
-import org.apache.hive.service.rpc.thrift.TCloseSessionReq
-import org.apache.hive.service.rpc.thrift.TExecuteStatementReq
-import org.apache.hive.service.rpc.thrift.TFetchOrientation
-import org.apache.hive.service.rpc.thrift.TFetchResultsReq
-import org.apache.hive.service.rpc.thrift.TGetOperationStatusReq
-import org.apache.hive.service.rpc.thrift.TOpenSessionReq
-import org.apache.hive.service.rpc.thrift.TOperationState
-import org.apache.hive.service.rpc.thrift.TStatusCode
+import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.trino.TrinoQueryTests
-import org.apache.kyuubi.engine.trino.WithTrinoEngine
+import org.apache.kyuubi.engine.trino.{TrinoQueryTests, TrinoStatement, WithTrinoEngine}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
@@ -599,14 +590,14 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
       val tFetchResultsReq1 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
       val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq1)
       assert(tFetchResultsResp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
+      val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0).getI32Val.getValues.asScala
       assertResult(Seq(0L))(idSeq1)
 
       // fetch next from first row
       val tFetchResultsReq2 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
       val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
       assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
+      val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0).getI32Val.getValues.asScala
       assertResult(Seq(1L))(idSeq2)
 
       val tFetchResultsReq3 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_PRIOR, 1)
@@ -616,7 +607,7 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
       } else {
         assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         val idSeq3 =
-          tFetchResultsResp3.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
+          tFetchResultsResp3.getResults.getColumns.get(0).getI32Val.getValues.asScala
         assertResult(Seq(0L))(idSeq3)
       }
 
@@ -627,7 +618,7 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
       } else {
         assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         val idSeq4 =
-          tFetchResultsResp4.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
+          tFetchResultsResp4.getResults.getColumns.get(0).getI32Val.getValues.asScala
         assertResult(Seq(0L, 1L))(idSeq4)
       }
     }
@@ -709,8 +700,7 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
       tFetchResultsReq.setMaxRows(1000)
       val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
       assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(tFetchResultsResp.getStatus.getErrorMessage startsWith "Invalid OperationHandle" +
-        " [type=EXECUTE_STATEMENT, identifier:")
+      assert(tFetchResultsResp.getStatus.getErrorMessage startsWith "Invalid OperationHandle [")
 
       val tCloseSessionReq = new TCloseSessionReq()
       tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
@@ -766,6 +756,43 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
             assert(changedCatalog == "")
           }
         }
+      }
+    }
+  }
+
+  test("[KYUUBI #3452] Implement GetInfo for Trino engine") {
+    def getTrinoVersion: String = {
+      var version: String = "Unknown"
+      withTrinoContainer { trinoContext =>
+        val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "SELECT version()")
+        val schema = trinoStatement.getColumns
+        val resultSet = trinoStatement.execute()
+
+        assert(schema.size === 1)
+        assert(schema(0).getName === "_col0")
+
+        assert(resultSet.hasNext)
+        version = resultSet.next().head.toString
+      }
+      version
+    }
+
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Trino")
+
+        val req2 = new TGetInfoReq()
+        req2.setSessionHandle(handle)
+        req2.setInfoType(TGetInfoType.CLI_DBMS_VER)
+        assert(client.GetInfo(req2).getInfoValue.getStringValue === getTrinoVersion)
+
+        val req3 = new TGetInfoReq()
+        req3.setSessionHandle(handle)
+        req3.setInfoType(TGetInfoType.CLI_MAX_COLUMN_NAME_LEN)
+        assert(client.GetInfo(req3).getInfoValue.getLenValue === 0)
       }
     }
   }

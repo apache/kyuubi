@@ -44,6 +44,7 @@ object AuthenticationProviderFactory {
       conf: KyuubiConf): PasswdAuthenticationProvider = method match {
     case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
     case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
+    case AuthMethods.JDBC => new JdbcAuthenticationProviderImpl(conf)
     case AuthMethods.CUSTOM =>
       val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS)
       if (className.isEmpty) {

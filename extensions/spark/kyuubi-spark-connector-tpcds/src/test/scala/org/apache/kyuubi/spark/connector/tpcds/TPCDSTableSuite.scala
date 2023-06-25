@@ -21,9 +21,11 @@ import io.trino.tpcds.Table
 import io.trino.tpcds.generator.CallCenterGeneratorColumn
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
+import org.apache.kyuubi.spark.connector.tpcds.TPCDSConf._
 
 class TPCDSTableSuite extends KyuubiFunSuite {
 
@@ -118,6 +120,31 @@ class TPCDSTableSuite extends KyuubiFunSuite {
         assert(TPCDSSchemaUtils.reviseNullColumnIndex(Table.CALL_CENTER, i) ==
           CallCenterGeneratorColumn.valueOf(getValuesColumns(i)).getGlobalColumnNumber -
           CallCenterGeneratorColumn.CC_CALL_CENTER_SK.getGlobalColumnNumber)
+    }
+  }
+
+  test("test maxPartitionBytes") {
+    val maxPartitionBytes: Long = 1 * 1024 * 1024L
+    val sparkConf = new SparkConf().setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
+      .set(
+        s"$TPCDS_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF",
+        String.valueOf(maxPartitionBytes))
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      val tableName = "catalog_returns"
+      val table = Table.getTable(tableName)
+      val scale = 100
+      val df = spark.sql(s"select * from tpcds.sf$scale.$tableName")
+      val scan = df.queryExecution.executedPlan.collectFirst {
+        case scanExec: BatchScanExec if scanExec.scan.isInstanceOf[TPCDSBatchScan] =>
+          scanExec.scan.asInstanceOf[TPCDSBatchScan]
+      }
+      assert(scan.isDefined)
+      val expected =
+        (TPCDSStatisticsUtils.sizeInBytes(table, scale) / maxPartitionBytes).ceil.toInt
+      assert(scan.get.planInputPartitions.length == expected)
     }
   }
 }
