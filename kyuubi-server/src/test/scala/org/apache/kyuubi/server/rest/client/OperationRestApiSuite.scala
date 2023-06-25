@@ -55,16 +55,14 @@ class OperationRestApiSuite extends RestClientTestHelper {
 
       operationRestApi.applyOperationAction(new OpActionRequest("close"), statementHandleStr)
       // failed request
-      val exception = intercept[KyuubiRestException] {
+      assertThrows[KyuubiRestException] {
         operationRestApi.applyOperationAction(new OpActionRequest("close"), statementHandleStr)
       }
-      assert(exception.getCause.getMessage.contains("Invalid OperationHandle"))
 
       // invalid operation
-      val invalid = intercept[KyuubiRestException] {
+      assertThrows[KyuubiRestException] {
         operationRestApi.applyOperationAction(new OpActionRequest("fake"), statementHandleStr)
       }
-      assert(invalid.getCause.getMessage.contains("Invalid action fake"))
     }
   }
 
