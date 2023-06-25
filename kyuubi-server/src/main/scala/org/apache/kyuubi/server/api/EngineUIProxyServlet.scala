@@ -20,6 +20,7 @@ package org.apache.kyuubi.server.api
 import java.net.URL
 import javax.servlet.http.HttpServletRequest
 
+import org.apache.commons.lang3.StringUtils
 import org.eclipse.jetty.client.api.Request
 import org.eclipse.jetty.proxy.ProxyServlet
 
@@ -30,18 +31,18 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
   override def rewriteTarget(request: HttpServletRequest): String = {
     val requestURL = request.getRequestURL
     val requestURI = request.getRequestURI
-    val queryString = getQueryString(request)
     var targetURL = "/no-ui-error"
     extractTargetAddress(requestURI).foreach { case (host, port) =>
-      val targetURI =
-        (requestURI.stripPrefix(s"/engine-ui/$host:$port") match {
-          // for some reason, the proxy can not handle redirect well, as a workaround,
-          // we simulate the Spark UI redirection behavior and forcibly rewrite the
-          // empty URI to the Spark Jobs page.
-          case "" | "/" => "/jobs/"
-          case path => path
-        }) + queryString
-      targetURL = new URL("http", host, port, targetURI).toString
+      val targetURI = requestURI.stripPrefix(s"/engine-ui/$host:$port") match {
+        // for some reason, the proxy can not handle redirect well, as a workaround,
+        // we simulate the Spark UI redirection behavior and forcibly rewrite the
+        // empty URI to the Spark Jobs page.
+        case "" | "/" => "/jobs/"
+        case path => path
+      }
+      val targetQueryString =
+        Option(request.getQueryString).filter(StringUtils.isNotEmpty).map(q => s"?$q").getOrElse("")
+      targetURL = new URL("http", host, port, targetURI + targetQueryString).toString
     }
     debug(s"rewrite $requestURL => $targetURL")
     targetURL
@@ -64,9 +65,4 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
       case r(host, port) => Some(host -> port.toInt)
       case _ => None
     }
-
-  def getQueryString(request: HttpServletRequest): String = {
-    val queryString = request.getQueryString
-    if (StringUtils.isNotEmpty(queryString)) s"?$queryString" else ""
-  }
 }
