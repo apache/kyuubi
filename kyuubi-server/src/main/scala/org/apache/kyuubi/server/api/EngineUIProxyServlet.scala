@@ -20,6 +20,7 @@ package org.apache.kyuubi.server.api
 import java.net.URL
 import javax.servlet.http.HttpServletRequest
 
+import org.apache.commons.lang3.StringUtils
 import org.eclipse.jetty.client.api.Request
 import org.eclipse.jetty.proxy.ProxyServlet
 
@@ -39,7 +40,9 @@ private[api] class EngineUIProxyServlet extends ProxyServlet with Logging {
         case "" | "/" => "/jobs/"
         case path => path
       }
-      targetURL = new URL("http", host, port, targetURI).toString
+      val targetQueryString =
+        Option(request.getQueryString).filter(StringUtils.isNotEmpty).map(q => s"?$q").getOrElse("")
+      targetURL = new URL("http", host, port, targetURI + targetQueryString).toString
     }
     debug(s"rewrite $requestURL => $targetURL")
     targetURL
