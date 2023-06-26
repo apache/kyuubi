@@ -1132,9 +1132,9 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val KUBERNETES_CONTEXT_LIST: ConfigEntry[Seq[String]] =
-    buildConf("kyuubi.kubernetes.context.list")
-      .doc("The supported kubernetes context list, if it is empty," +
+  val KUBERNETES_CONTEXT_ALLOW_LIST: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.kubernetes.context.allow.list")
+      .doc("The allowed kubernetes context list, if it is empty," +
         " there is no kubernetes context limitation.")
       .version("1.8.0")
       .stringConf
@@ -1148,9 +1148,9 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("default")
 
-  val KUBERNETES_NAMESPACE_LIST: ConfigEntry[Seq[String]] =
-    buildConf("kyuubi.kubernetes.namespace.list")
-      .doc("The supported kubernetes namespace list, if it is empty," +
+  val KUBERNETES_NAMESPACE_ALLOW_LIST: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.kubernetes.namespace.allow.list")
+      .doc("The allowed kubernetes namespace list, if it is empty," +
         " there is no kubernetes namespace limitation.")
       .version("1.8.0")
       .stringConf

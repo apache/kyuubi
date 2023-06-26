@@ -66,16 +66,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         s"Kubernetes namespace $namespace is not in the support list[$supportedNamespaces]")
     }
 
-    var kubernetesClient = kubernetesClients.get(kubernetesInfo)
-    if (kubernetesClient == null) {
-      synchronized {
-        kubernetesClient = kubernetesClients.get(kubernetesInfo)
-        if (kubernetesClient == null) {
-          kubernetesClients.put(kubernetesInfo, buildKubernetesClient(kubernetesInfo))
-        }
-      }
-    }
-    kubernetesClient
+    kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
   }
 
   private def buildKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
@@ -88,7 +79,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           .withLabel(LABEL_KYUUBI_UNIQUE_KEY)
           .inform(new SparkEnginePodEventHandler)
         info(s"[$kubernetesInfo] Start Kubernetes Client Informer.")
-        enginePodInformers.putIfAbsent(kubernetesInfo, enginePodInformer)
+        enginePodInformers.put(kubernetesInfo, enginePodInformer)
         client
 
       case None => throw new KyuubiException(s"Fail to build Kubernetes client for $kubernetesInfo")
@@ -99,8 +90,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kyuubiConf = conf
     info("Start initializing Kubernetes application operation.")
     submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
-    supportedContexts = conf.get(KyuubiConf.KUBERNETES_CONTEXT_LIST)
-    supportedNamespaces = conf.get(KyuubiConf.KUBERNETES_NAMESPACE_LIST)
+    supportedContexts = conf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
+    supportedNamespaces = conf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
     // Defer cleaning terminated application information
     val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
     cleanupTerminatedAppInfoTrigger = CacheBuilder.newBuilder()
