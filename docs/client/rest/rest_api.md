@@ -451,6 +451,10 @@ Refresh the Hadoop configurations of the Kyuubi server.
 
 Refresh the [user defaults configs](../../deployment/settings.html#user-defaults) with key in format in the form of `___{username}___.{config key}` from default property file.
 
+### POST /admin/refresh/kubernetes_conf
+
+Refresh the kubernetes configs with key prefixed with `kyuubi.kubernetes` from default property file.
+
 ### DELETE /admin/engine
 
 Delete the specified engine.
