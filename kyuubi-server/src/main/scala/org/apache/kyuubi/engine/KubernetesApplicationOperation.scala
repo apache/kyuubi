@@ -40,8 +40,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private val enginePodInformers: ConcurrentHashMap[KubernetesInfo, SharedIndexInformer[Pod]] =
     new ConcurrentHashMap[KubernetesInfo, SharedIndexInformer[Pod]]
 
-  private var supportedContexts: Seq[String] = Seq.empty
-  private var supportedNamespaces: Seq[String] = Seq.empty
+  private var allowedContexts: Seq[String] = Seq.empty
+  private var allowedNamespaces: Seq[String] = Seq.empty
 
   private var submitTimeout: Long = _
   private var kyuubiConf: KyuubiConf = _
@@ -56,14 +56,14 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     val context = kubernetesInfo.context
     val namespace = kubernetesInfo.namespace
 
-    if (supportedContexts.nonEmpty && !supportedContexts.contains(context)) {
+    if (allowedContexts.nonEmpty && !allowedContexts.contains(context)) {
       throw new KyuubiException(
-        s"Kubernetes context $context is not in the support list[$supportedContexts]")
+        s"Kubernetes context $context is not in the allowed list[$allowedContexts]")
     }
 
-    if (supportedNamespaces.nonEmpty && !supportedNamespaces.contains(namespace)) {
+    if (allowedNamespaces.nonEmpty && !allowedNamespaces.contains(namespace)) {
       throw new KyuubiException(
-        s"Kubernetes namespace $namespace is not in the support list[$supportedNamespaces]")
+        s"Kubernetes namespace $namespace is not in the allowed list[$allowedNamespaces]")
     }
 
     kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
@@ -90,8 +90,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kyuubiConf = conf
     info("Start initializing Kubernetes application operation.")
     submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
-    supportedContexts = conf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
-    supportedNamespaces = conf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
+    allowedContexts = conf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
+    allowedNamespaces = conf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
     // Defer cleaning terminated application information
     val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
     cleanupTerminatedAppInfoTrigger = CacheBuilder.newBuilder()
