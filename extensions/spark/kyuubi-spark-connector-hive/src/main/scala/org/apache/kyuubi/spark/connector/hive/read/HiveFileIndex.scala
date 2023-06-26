@@ -80,7 +80,7 @@ class HiveCatalogFileIndex(
       val partitions = selectedPartitions.map {
         case BindPartition(catalogTablePartition, hivePartition) =>
           val path = new Path(catalogTablePartition.location)
-          val fs = path.getFileSystem(hadoopConf)
+          val fs = path.getFileSystem(hiveCatalog.hadoopConfiguration())
           val partPath = PartitionPath(
             catalogTablePartition.toRow(
               partitionSchema,
