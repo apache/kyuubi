@@ -20,6 +20,8 @@ package org.apache.kyuubi.sql
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Ascending, Attribute, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
+import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 
 import org.apache.kyuubi.sql.repartition.IcebergRepartitionUtils.getDynamicPartitionColsFromIcebergTable
 
