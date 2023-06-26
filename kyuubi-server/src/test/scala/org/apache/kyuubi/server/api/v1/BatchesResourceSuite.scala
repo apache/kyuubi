@@ -37,7 +37,7 @@ import org.apache.kyuubi.client.util.BatchUtils
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.{ApplicationInfo, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
@@ -64,7 +64,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     }
     sessionManager.getBatchesFromMetadataStore(null, null, null, 0, 0, 0, Int.MaxValue).foreach {
       batch =>
-        sessionManager.applicationManager.killApplication(None, batch.getId)
+        sessionManager.applicationManager.killApplication(ApplicationManagerInfo(None), batch.getId)
         sessionManager.cleanupMetadata(batch.getId)
     }
   }
@@ -481,7 +481,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
 
     var applicationStatus: Option[ApplicationInfo] = None
     eventually(timeout(5.seconds)) {
-      applicationStatus = sessionManager.applicationManager.getApplicationInfo(None, batchId2)
+      applicationStatus =
+        sessionManager.applicationManager.getApplicationInfo(ApplicationManagerInfo(None), batchId2)
       assert(applicationStatus.isDefined)
     }
 

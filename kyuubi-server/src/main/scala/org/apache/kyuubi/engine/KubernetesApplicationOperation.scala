@@ -20,12 +20,14 @@ package org.apache.kyuubi.engine
 import java.util.Locale
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
+import scala.collection.JavaConverters._
+
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndexInformer}
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationState, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
@@ -33,10 +35,16 @@ import org.apache.kyuubi.util.KubernetesUtils
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
-  @volatile
-  private var kubernetesClient: KubernetesClient = _
-  private var enginePodInformer: SharedIndexInformer[Pod] = _
+  private val kubernetesClients: ConcurrentHashMap[KubernetesInfo, KubernetesClient] =
+    new ConcurrentHashMap[KubernetesInfo, KubernetesClient]
+  private val enginePodInformers: ConcurrentHashMap[KubernetesInfo, SharedIndexInformer[Pod]] =
+    new ConcurrentHashMap[KubernetesInfo, SharedIndexInformer[Pod]]
+
+  private var allowedContexts: Seq[String] = Seq.empty
+  private var allowedNamespaces: Seq[String] = Seq.empty
+
   private var submitTimeout: Long = _
+  private var kyuubiConf: KyuubiConf = _
 
   // key is kyuubi_unique_key
   private val appInfoStore: ConcurrentHashMap[String, ApplicationInfo] =
@@ -44,45 +52,74 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   // key is kyuubi_unique_key
   private var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    info("Start initializing Kubernetes Client.")
-    kubernetesClient = KubernetesUtils.buildKubernetesClient(conf) match {
+  private def getOrCreateKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
+    val context = kubernetesInfo.context
+    val namespace = kubernetesInfo.namespace
+
+    if (allowedContexts.nonEmpty && !allowedContexts.contains(context)) {
+      throw new KyuubiException(
+        s"Kubernetes context $context is not in the allowed list[$allowedContexts]")
+    }
+
+    if (allowedNamespaces.nonEmpty && !allowedNamespaces.contains(namespace)) {
+      throw new KyuubiException(
+        s"Kubernetes namespace $namespace is not in the allowed list[$allowedNamespaces]")
+    }
+
+    kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
+  }
+
+  private def buildKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
+    val kubernetesConf =
+      kyuubiConf.getKubernetesConf(kubernetesInfo.context, kubernetesInfo.namespace)
+    KubernetesUtils.buildKubernetesClient(kubernetesConf) match {
       case Some(client) =>
-        info(s"Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
-        submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
-        // Disable resync, see https://github.com/fabric8io/kubernetes-client/discussions/5015
-        enginePodInformer = client.pods()
+        info(s"[$kubernetesInfo] Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
+        val enginePodInformer = client.pods()
           .withLabel(LABEL_KYUUBI_UNIQUE_KEY)
           .inform(new SparkEnginePodEventHandler)
-        info("Start Kubernetes Client Informer.")
-        // Defer cleaning terminated application information
-        val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
-        cleanupTerminatedAppInfoTrigger = CacheBuilder.newBuilder()
-          .expireAfterWrite(retainPeriod, TimeUnit.MILLISECONDS)
-          .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
-            Option(appInfoStore.remove(notification.getKey)).foreach { removed =>
-              info(s"Remove terminated application ${removed.id} with " +
-                s"tag ${notification.getKey} and state ${removed.state}")
-            }
-          })
-          .build()
+        info(s"[$kubernetesInfo] Start Kubernetes Client Informer.")
+        enginePodInformers.put(kubernetesInfo, enginePodInformer)
         client
-      case None =>
-        warn("Fail to init Kubernetes Client for Kubernetes Application Operation")
-        null
+
+      case None => throw new KyuubiException(s"Fail to build Kubernetes client for $kubernetesInfo")
     }
   }
 
-  override def isSupported(clusterManager: Option[String]): Boolean = {
-    // TODO add deploy mode to check whether is supported
-    kubernetesClient != null && clusterManager.exists(_.toLowerCase(Locale.ROOT).startsWith("k8s"))
+  override def initialize(conf: KyuubiConf): Unit = {
+    kyuubiConf = conf
+    info("Start initializing Kubernetes application operation.")
+    submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
+    allowedContexts = conf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
+    allowedNamespaces = conf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
+    // Defer cleaning terminated application information
+    val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
+    cleanupTerminatedAppInfoTrigger = CacheBuilder.newBuilder()
+      .expireAfterWrite(retainPeriod, TimeUnit.MILLISECONDS)
+      .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
+        Option(appInfoStore.remove(notification.getKey)).foreach { removed =>
+          info(s"Remove terminated application ${removed.id} with " +
+            s"tag ${notification.getKey} and state ${removed.state}")
+        }
+      })
+      .build()
   }
 
-  override def killApplicationByTag(tag: String): KillResponse = {
-    if (kubernetesClient == null) {
+  override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
+    // TODO add deploy mode to check whether is supported
+    kyuubiConf != null &&
+    appMgrInfo.resourceManager.exists(_.toLowerCase(Locale.ROOT).startsWith("k8s"))
+  }
+
+  override def killApplicationByTag(
+      appMgrInfo: ApplicationManagerInfo,
+      tag: String): KillResponse = {
+    if (kyuubiConf == null) {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
     }
-    debug(s"Deleting application info from Kubernetes cluster by $tag tag")
+    val kubernetesInfo = appMgrInfo.kubernetesInfo
+    val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
+    debug(s"[$kubernetesInfo] Deleting application info from Kubernetes cluster by $tag tag")
     try {
       val info = appInfoStore.getOrDefault(tag, ApplicationInfo.NOT_FOUND)
       debug(s"Application info[tag: $tag] is in ${info.state}")
@@ -90,24 +127,32 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         case NOT_FOUND | FAILED | UNKNOWN =>
           (
             false,
-            s"Target application[tag: $tag] is in ${info.state} status")
+            s"[$kubernetesInfo] Target application[tag: $tag] is in ${info.state} status")
         case _ =>
           (
             !kubernetesClient.pods.withName(info.name).delete().isEmpty,
-            s"Operation of deleted application[appId: ${info.id} ,tag: $tag] is completed")
+            s"[$kubernetesInfo] Operation of deleted" +
+              s" application[appId: ${info.id} ,tag: $tag] is completed")
       }
     } catch {
       case e: Exception =>
-        (false, s"Failed to terminate application with $tag, due to ${e.getMessage}")
+        (
+          false,
+          s"[$kubernetesInfo] Failed to terminate application with $tag, due to ${e.getMessage}")
     }
   }
 
-  override def getApplicationInfoByTag(tag: String, submitTime: Option[Long]): ApplicationInfo = {
-    if (kubernetesClient == null) {
+  override def getApplicationInfoByTag(
+      appMgrInfo: ApplicationManagerInfo,
+      tag: String,
+      submitTime: Option[Long]): ApplicationInfo = {
+    if (kyuubiConf == null) {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
     }
     debug(s"Getting application info from Kubernetes cluster by $tag tag")
     try {
+      // need to initialize the kubernetes client if not exists
+      getOrCreateKubernetesClient(appMgrInfo.kubernetesInfo)
       val appInfo = appInfoStore.getOrDefault(tag, ApplicationInfo.NOT_FOUND)
       (appInfo.state, submitTime) match {
         // Kyuubi should wait second if pod is not be created
@@ -136,19 +181,15 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   override def stop(): Unit = {
-    Utils.tryLogNonFatalError {
-      if (enginePodInformer != null) {
-        enginePodInformer.stop()
-        enginePodInformer = null
-      }
+    enginePodInformers.asScala.foreach { case (_, informer) =>
+      Utils.tryLogNonFatalError(informer.stop())
     }
+    enginePodInformers.clear()
 
-    Utils.tryLogNonFatalError {
-      if (kubernetesClient != null) {
-        kubernetesClient.close()
-        kubernetesClient = null
-      }
+    kubernetesClients.asScala.foreach { case (_, client) =>
+      Utils.tryLogNonFatalError(client.close())
     }
+    kubernetesClients.clear()
 
     if (cleanupTerminatedAppInfoTrigger != null) {
       cleanupTerminatedAppInfoTrigger.cleanUp()

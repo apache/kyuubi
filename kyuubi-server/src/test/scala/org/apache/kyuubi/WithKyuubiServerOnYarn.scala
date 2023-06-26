@@ -26,7 +26,7 @@ import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
-import org.apache.kyuubi.engine.{ApplicationState, YarnApplicationOperation}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState, YarnApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState._
 import org.apache.kyuubi.operation.{FetchOrientation, HiveJDBCTestHelper, OperationState}
 import org.apache.kyuubi.operation.OperationState.ERROR
@@ -134,11 +134,15 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       assert(metadata.map(_.engineId).get.startsWith("application_"))
     }
 
-    val killResponse = yarnOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    val appMgrInfo = ApplicationManagerInfo(Some("yarn"))
+
+    val killResponse =
+      yarnOperation.killApplicationByTag(appMgrInfo, sessionHandle.identifier.toString)
     assert(killResponse._1)
     assert(killResponse._2 startsWith "Succeeded to terminate:")
 
-    val appInfo = yarnOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+    val appInfo =
+      yarnOperation.getApplicationInfoByTag(appMgrInfo, sessionHandle.identifier.toString)
 
     assert(appInfo.state === KILLED)
 

@@ -341,6 +341,7 @@ trait ProcBuilder {
 
   def clusterManager(): Option[String] = None
 
+  def appMgrInfo(): ApplicationManagerInfo = ApplicationManagerInfo(None)
 }
 
 object ProcBuilder extends Logging {

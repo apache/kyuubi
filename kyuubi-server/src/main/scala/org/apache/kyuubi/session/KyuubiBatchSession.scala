@@ -143,6 +143,12 @@ class KyuubiBatchSession(
     traceMetricsOnOpen()
 
     if (recoveryMetadata.isEmpty) {
+      val appMgrInfo = batchJobSubmissionOp.builder.appMgrInfo()
+      val kubernetesInfo = appMgrInfo.kubernetesInfo.context.map { context =>
+        Map(KyuubiConf.KUBERNETES_CONTEXT.key -> context)
+      }.getOrElse(Map.empty) ++ appMgrInfo.kubernetesInfo.namespace.map { namespace =>
+        Map(KyuubiConf.KUBERNETES_NAMESPACE.key -> namespace)
+      }.getOrElse(Map.empty)
       val metaData = Metadata(
         identifier = handle.identifier.toString,
         sessionType = sessionType,
@@ -154,7 +160,7 @@ class KyuubiBatchSession(
         resource = resource,
         className = className,
         requestName = name.orNull,
-        requestConf = optimizedConf,
+        requestConf = optimizedConf ++ kubernetesInfo, // save the kubernetes info into request conf
         requestArgs = batchArgs,
         createTime = createTime,
         engineType = batchType,

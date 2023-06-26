@@ -223,7 +223,7 @@ private[kyuubi] class EngineRef(
         }
 
         if (started + timeout <= System.currentTimeMillis()) {
-          val killMessage = engineManager.killApplication(builder.clusterManager(), engineRefId)
+          val killMessage = engineManager.killApplication(builder.appMgrInfo(), engineRefId)
           process.destroyForcibly()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
@@ -242,7 +242,7 @@ private[kyuubi] class EngineRef(
             }
 
             val applicationInfo = engineMgr.getApplicationInfo(
-              builder.clusterManager(),
+              builder.appMgrInfo(),
               engineRefId,
               Some(started))
 
@@ -291,9 +291,9 @@ private[kyuubi] class EngineRef(
   def close(): Unit = {
     if (shareLevel == CONNECTION && builder != null) {
       try {
-        val clusterManager = builder.clusterManager()
+        val appMgrInfo = builder.appMgrInfo()
         builder.close(true)
-        engineManager.killApplication(clusterManager, engineRefId)
+        engineManager.killApplication(appMgrInfo, engineRefId)
       } catch {
         case e: Exception =>
           warn(s"Error closing engine builder, engineRefId: $engineRefId", e)

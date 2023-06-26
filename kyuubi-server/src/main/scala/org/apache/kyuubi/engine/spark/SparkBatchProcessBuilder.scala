@@ -77,4 +77,12 @@ class SparkBatchProcessBuilder(
   override def clusterManager(): Option[String] = {
     batchConf.get(MASTER_KEY).orElse(super.clusterManager())
   }
+
+  override def kubernetesContext(): Option[String] = {
+    batchConf.get(KUBERNETES_CONTEXT_KEY).orElse(super.kubernetesContext())
+  }
+
+  override def kubernetesNamespace(): Option[String] = {
+    batchConf.get(KUBERNETES_NAMESPACE_KEY).orElse(super.kubernetesNamespace())
+  }
 }

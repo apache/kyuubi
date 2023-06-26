@@ -200,4 +200,25 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assertResult(kSeq(1))("kyuubi.efg")
     assertResult(kSeq(2))("kyuubi.xyz")
   }
+
+  test("KYUUBI #4843 - Support multiple kubernetes contexts and namespaces") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set("kyuubi.kubernetes.28.master.address", "k8s://master")
+    kyuubiConf.set(
+      "kyuubi.kubernetes.28.ns1.authenticate.oauthTokenFile",
+      "/var/run/secrets/kubernetes.io/token.ns1")
+    kyuubiConf.set(
+      "kyuubi.kubernetes.28.ns2.authenticate.oauthTokenFile",
+      "/var/run/secrets/kubernetes.io/token.ns2")
+
+    val kubernetesConf1 = kyuubiConf.getKubernetesConf(Some("28"), Some("ns1"))
+    assert(kubernetesConf1.get(KyuubiConf.KUBERNETES_MASTER) == Some("k8s://master"))
+    assert(kubernetesConf1.get(KyuubiConf.KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE) ==
+      Some("/var/run/secrets/kubernetes.io/token.ns1"))
+
+    val kubernetesConf2 = kyuubiConf.getKubernetesConf(Some("28"), Some("ns2"))
+    assert(kubernetesConf2.get(KyuubiConf.KUBERNETES_MASTER) == Some("k8s://master"))
+    assert(kubernetesConf2.get(KyuubiConf.KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE) ==
+      Some("/var/run/secrets/kubernetes.io/token.ns2"))
+  }
 }
