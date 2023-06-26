@@ -120,11 +120,9 @@ class HiveTableCatalog(sparkSession: SparkSession)
     val globalTempDB = conf.getConf(GLOBAL_TEMP_DATABASE)
     if (externalCatalog.databaseExists(globalTempDB)) {
       throw KyuubiHiveConnectorException(
-        s"""
-           |$globalTempDB is a system preserved database, please rename your existing database
-           |to resolve the name conflict, or set a different value for
-           |${GLOBAL_TEMP_DATABASE.key}, and launch your Spark application again.
-         """.stripMargin.split("\n").mkString(" "))
+        s"$globalTempDB is a system preserved database, please rename your existing database to " +
+          s"resolve the name conflict, or set a different value for ${GLOBAL_TEMP_DATABASE.key}, " +
+          s"and launch your Spark application again.")
     }
     new GlobalTempViewManager(globalTempDB)
   }
