@@ -25,7 +25,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols, KYUUBI_KUBERNETES_CONF_PREFIX}
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
 import org.apache.kyuubi.events.{EventBus, KyuubiServerInfoEvent, ServerEventHandlerRegister}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -111,14 +111,29 @@ object KyuubiServer extends Logging {
   private[kyuubi] def refreshUserDefaultsConf(): Unit = kyuubiServer.conf.synchronized {
     val existedUserDefaults = kyuubiServer.conf.getAllUserDefaults
     val refreshedUserDefaults = KyuubiConf().loadFileDefaults().getAllUserDefaults
+    refreshConfig("user defaults", existedUserDefaults, refreshedUserDefaults)
+  }
+
+  private[kyuubi] def refreshKubernetesConf(): Unit = kyuubiServer.conf.synchronized {
+    val existedKubernetesConf =
+      kyuubiServer.conf.getAll.filter(_._1.startsWith(KYUUBI_KUBERNETES_CONF_PREFIX))
+    val refreshedKubernetesConf =
+      KyuubiConf().loadFileDefaults().getAll.filter(_._1.startsWith(KYUUBI_KUBERNETES_CONF_PREFIX))
+    refreshConfig("kubernetes", existedKubernetesConf, refreshedKubernetesConf)
+  }
+
+  private def refreshConfig(
+      configDomain: String,
+      existing: Map[String, String],
+      refreshed: Map[String, String]): Unit = {
     var (unsetCount, updatedCount, addedCount) = (0, 0, 0)
-    for ((k, _) <- existedUserDefaults if !refreshedUserDefaults.contains(k)) {
+    for ((k, _) <- existing if !refreshed.contains(k)) {
       kyuubiServer.conf.unset(k)
       unsetCount = unsetCount + 1
     }
-    for ((k, v) <- refreshedUserDefaults) {
-      if (existedUserDefaults.contains(k)) {
-        if (!StringUtils.equals(existedUserDefaults.get(k).orNull, v)) {
+    for ((k, v) <- refreshed) {
+      if (existing.contains(k)) {
+        if (!StringUtils.equals(existing.get(k).orNull, v)) {
           updatedCount = updatedCount + 1
         }
       } else {
@@ -126,7 +141,7 @@ object KyuubiServer extends Logging {
       }
       kyuubiServer.conf.set(k, v)
     }
-    info(s"Refreshed user defaults configs with changes of " +
+    info(s"Refreshed $configDomain configs with changes of " +
       s"unset: $unsetCount, updated: $updatedCount, added: $addedCount")
   }
 
