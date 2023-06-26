@@ -40,6 +40,7 @@ import org.apache.spark.sql.execution.datasources.DataSource
 import org.apache.spark.sql.hive.HiveUDFExpressionBuilder
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper._
 import org.apache.spark.sql.internal.StaticSQLConf.CATALOG_IMPLEMENTATION
+import org.apache.spark.sql.internal.StaticSQLConf.GLOBAL_TEMP_DATABASE
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
@@ -105,7 +106,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     catalogOptions = options
     catalog = new HiveSessionCatalog(
       externalCatalogBuilder = () => externalCatalog,
-      globalTempViewManagerBuilder = () => sparkSession.sharedState.globalTempViewManager,
+      globalTempViewManagerBuilder = () => globalTempViewManager,
       metastoreCatalog = new HiveMetastoreCatalog(sparkSession),
       functionRegistry = sessionState.functionRegistry,
       tableFunctionRegistry = sessionState.tableFunctionRegistry,
@@ -113,6 +114,17 @@ class HiveTableCatalog(sparkSession: SparkSession)
       parser = sessionState.sqlParser,
       functionResourceLoader = sessionState.resourceLoader,
       HiveUDFExpressionBuilder)
+  }
+
+  private lazy val globalTempViewManager: GlobalTempViewManager = {
+    val globalTempDB = conf.getConf(GLOBAL_TEMP_DATABASE)
+    if (externalCatalog.databaseExists(globalTempDB)) {
+      throw KyuubiHiveConnectorException(
+        s"$globalTempDB is a system preserved database, please rename your existing database to " +
+          s"resolve the name conflict, or set a different value for ${GLOBAL_TEMP_DATABASE.key}, " +
+          "and launch your Spark application again.")
+    }
+    new GlobalTempViewManager(globalTempDB)
   }
 
   /**
