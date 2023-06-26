@@ -40,11 +40,13 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private val enginePodInformers: ConcurrentHashMap[KubernetesInfo, SharedIndexInformer[Pod]] =
     new ConcurrentHashMap[KubernetesInfo, SharedIndexInformer[Pod]]
 
-  private var allowedContexts: Seq[String] = Seq.empty
-  private var allowedNamespaces: Seq[String] = Seq.empty
-
   private var submitTimeout: Long = _
   private var kyuubiConf: KyuubiConf = _
+
+  private def allowedContexts: Seq[String] =
+    kyuubiConf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
+  private def allowedNamespaces: Seq[String] =
+    kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
 
   // key is kyuubi_unique_key
   private val appInfoStore: ConcurrentHashMap[String, ApplicationInfo] =
@@ -90,8 +92,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kyuubiConf = conf
     info("Start initializing Kubernetes application operation.")
     submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
-    allowedContexts = conf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
-    allowedNamespaces = conf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
     // Defer cleaning terminated application information
     val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
     cleanupTerminatedAppInfoTrigger = CacheBuilder.newBuilder()

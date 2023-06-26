@@ -86,6 +86,15 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
     args = Array(
       "refresh",
       "config",
+      "kubernetesConf")
+    val opArgs4 = new AdminControlCliArguments(args)
+    assert(opArgs4.cliConfig.action === ControlAction.REFRESH)
+    assert(opArgs4.cliConfig.resource === ControlObject.CONFIG)
+    assert(opArgs4.cliConfig.adminConfigOpts.configType === KUBERNETES_CONF)
+
+    args = Array(
+      "refresh",
+      "config",
       "--hostUrl",
       "https://kyuubi.test.com",
       "otherConf")
@@ -165,7 +174,7 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |	Refresh the resource.
          |Command: refresh config [<configType>]
          |	Refresh the config with specified type.
-         |  <configType>             The valid config type can be one of the following: $HADOOP_CONF, $USER_DEFAULTS_CONF, $UNLIMITED_USERS.
+         |  <configType>             The valid config type can be one of the following: $HADOOP_CONF, $USER_DEFAULTS_CONF, $KUBERNETES_CONF, $UNLIMITED_USERS.
          |
          |  -h, --help               Show help message and exit.""".stripMargin
     // scalastyle:on

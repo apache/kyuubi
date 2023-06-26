@@ -47,6 +47,11 @@ public class AdminRestApi {
     return this.getClient().post(path, null, client.getAuthHeader());
   }
 
+  public String refreshKubernetesConf() {
+    String path = String.format("%s/%s", API_BASE_PATH, "refresh/kubernetes_conf");
+    return this.getClient().post(path, null, client.getAuthHeader());
+  }
+
   public String refreshUnlimitedUsers() {
     String path = String.format("%s/%s", API_BASE_PATH, "refresh/unlimited_users");
     return this.getClient().post(path, null, client.getAuthHeader());
