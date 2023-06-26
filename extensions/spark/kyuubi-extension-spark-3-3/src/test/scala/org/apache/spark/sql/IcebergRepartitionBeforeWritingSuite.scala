@@ -90,7 +90,7 @@ class IcebergRepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
     withTable("tmp1") {
       sql(s"CREATE TABLE tmp1 (c1 int) $storage")
       check(
-        sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1),(2),(3) AS t(c1)"))
+        sql("INSERT OVERWRITE TABLE tmp1 SELECT * FROM VALUES(1),(2),(3) AS t(c1)"))
     }
 
     withTable("tmp1", "tmp2") {
