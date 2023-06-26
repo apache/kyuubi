@@ -455,6 +455,8 @@ Refresh the [user defaults configs](../../deployment/settings.html#user-defaults
 
 Refresh the kubernetes configs with key prefixed with `kyuubi.kubernetes` from default property file.
 
+It is helpful if you need to support multiple kubernetes contexts and namespaces, see [KYUUBI #4843].
+
 ### DELETE /admin/engine
 
 Delete the specified engine.
