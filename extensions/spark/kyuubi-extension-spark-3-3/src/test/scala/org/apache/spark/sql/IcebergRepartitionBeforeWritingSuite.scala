@@ -23,7 +23,9 @@ import org.apache.spark.util.Utils
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
 class IcebergRepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
-  val catalog = "catalog2"
+  private val catalog = "catalog2"
+  private val storage = "USING ICEBERG"
+
   override def sparkConf(): SparkConf = {
     val conf = super.sparkConf()
     val value =
@@ -45,68 +47,77 @@ class IcebergRepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
     conf
   }
 
-  test("test insert iceberg table") {
-    def check(df: => DataFrame, expectedRebalanceNum: Int = 1): Unit = {
-      withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
-        assert(
-          df.queryExecution.analyzed.collect {
-            case r: RebalancePartitions => r
-          }.size == expectedRebalanceNum)
+  test("test INSERT OVERWRITE partitioned iceberg table") {
+    withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true") {
+      withTable("tmp1", "tmp2") {
+        sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
+        sql(s"CREATE TABLE tmp2 (c1 int) $storage PARTITIONED BY (c2 string)")
+        check(sql("INSERT OVERWRITE TABLE tmp1 " +
+          "SELECT * FROM tmp2 WHERE c2='1'"))
       }
-      withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "false") {
-        assert(
-          df.queryExecution.analyzed.collect {
-            case r: RebalancePartitions => r
-          }.isEmpty)
+
+      withTable("tmp1", "tmp2") {
+        sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
+        sql(s"CREATE TABLE tmp2 (c1 int) $storage PARTITIONED BY (c2 string)")
+        check(
+          sql(
+            """FROM VALUES(1),(2)
+              |INSERT OVERWRITE TABLE tmp1 PARTITION(c2='a') SELECT *
+              |INSERT OVERWRITE TABLE tmp2 PARTITION(c2='a') SELECT *
+              |""".stripMargin),
+          2)
       }
+
+      withTable("tmp1") {
+        sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
+        check(
+          sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1,'a'),(2,'b'),(3,'c') AS t(c1,c2)"))
+      }
+
+    }
+  }
+
+  test("test INSERT INTO non-partitioned iceberg table") {
+    withTable("tmp1") {
+      sql(s"CREATE TABLE tmp1 (c1 int) $storage")
+      check(
+        sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1),(2),(3) AS t(c1)"))
     }
 
-    withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true") {
-      Seq("USING ICEBERG").foreach { storage =>
-        withTable("tmp1", "tmp2") {
-          sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
-          sql(s"CREATE TABLE tmp2 (c1 int) $storage PARTITIONED BY (c2 string)")
-          check(sql("INSERT OVERWRITE TABLE tmp1 " +
-            "SELECT * FROM tmp2 WHERE c2='1'"))
-        }
+  }
 
-        withTable("tmp1", "tmp2") {
-          sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
-          sql(s"CREATE TABLE tmp2 (c1 int) $storage PARTITIONED BY (c2 string)")
-          check(
-            sql(
-              """FROM VALUES(1),(2)
-                |INSERT OVERWRITE TABLE tmp1 PARTITION(c2='a') SELECT *
-                |INSERT OVERWRITE TABLE tmp2 PARTITION(c2='a') SELECT *
-                |""".stripMargin),
-            2)
-        }
+  test("test INSERT OVERWRITE non-partitioned iceberg table") {
+    withTable("tmp1") {
+      sql(s"CREATE TABLE tmp1 (c1 int) $storage")
+      check(
+        sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1),(2),(3) AS t(c1)"))
+    }
 
-        withTable("tmp1") {
-          sql(s"CREATE TABLE tmp1 (c1 int) $storage")
-          check(
-            sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1),(2),(3) AS t(c1)"))
-        }
+    withTable("tmp1", "tmp2") {
+      sql(s"CREATE TABLE tmp1 (c1 int) $storage")
+      sql(s"CREATE TABLE tmp2 (c1 int) $storage")
+      check(
+        sql(
+          """FROM VALUES(1),(2),(3)
+            |INSERT OVERWRITE TABLE tmp1 SELECT *
+            |INSERT OVERWRITE TABLE tmp2 SELECT *
+            |""".stripMargin),
+        2)
+    }
+  }
 
-        withTable("tmp1") {
-          sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
-          check(
-            sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1,'a'),(2,'b'),(3,'c') AS t(c1,c2)"))
-        }
-
-        withTable("tmp1", "tmp2") {
-          sql(s"CREATE TABLE tmp1 (c1 int) $storage")
-          sql(s"CREATE TABLE tmp2 (c1 int) $storage")
-          check(
-            sql(
-              """FROM VALUES(1),(2),(3)
-                |INSERT OVERWRITE TABLE tmp1 SELECT *
-                |INSERT OVERWRITE TABLE tmp2 SELECT *
-                |""".stripMargin),
-            2)
-        }
-      }
-
+  private def check(df: => DataFrame, expectedRebalanceNum: Int = 1): Unit = {
+    withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
+      assert(
+        df.queryExecution.analyzed.collect {
+          case r: RebalancePartitions => r
+        }.size == expectedRebalanceNum)
+    }
+    withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "false") {
+      assert(
+        df.queryExecution.analyzed.collect {
+          case r: RebalancePartitions => r
+        }.isEmpty)
     }
   }
 }
