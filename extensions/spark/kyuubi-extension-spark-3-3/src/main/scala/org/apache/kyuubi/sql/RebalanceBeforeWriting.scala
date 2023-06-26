@@ -69,48 +69,46 @@ trait RepartitionBuilderWithRebalance extends RepartitionBuilder {
 case class RebalanceBeforeWritingDatasource(session: SparkSession)
   extends RepartitionBeforeWritingDatasourceBase
   with RepartitionBuilderWithRebalance {
-  override def addRepartition(plan: LogicalPlan): LogicalPlan =
-    plan match {
-      case i @ InsertIntoHadoopFsRelationCommand(_, sp, _, pc, bucket, _, _, query, _, _, _, _)
-          if query.resolved && bucket.isEmpty && canInsertRepartitionByExpression(query) =>
-        val dynamicPartitionColumns = pc.filterNot(attr => sp.contains(attr.name))
-        i.copy(query = buildRepartition(dynamicPartitionColumns, query))
+  override def addRepartition(plan: LogicalPlan): LogicalPlan = plan match {
+    case i @ InsertIntoHadoopFsRelationCommand(_, sp, _, pc, bucket, _, _, query, _, _, _, _)
+        if query.resolved && bucket.isEmpty && canInsertRepartitionByExpression(query) =>
+      val dynamicPartitionColumns = pc.filterNot(attr => sp.contains(attr.name))
+      i.copy(query = buildRepartition(dynamicPartitionColumns, query))
 
-      case c @ CreateDataSourceTableAsSelectCommand(table, _, query, _)
-          if query.resolved && table.bucketSpec.isEmpty && canInsertRepartitionByExpression(
-            query) =>
-        val dynamicPartitionColumns =
-          query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
-        c.copy(query = buildRepartition(dynamicPartitionColumns, query))
+    case c @ CreateDataSourceTableAsSelectCommand(table, _, query, _)
+        if query.resolved && table.bucketSpec.isEmpty && canInsertRepartitionByExpression(query) =>
+      val dynamicPartitionColumns =
+        query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
+      c.copy(query = buildRepartition(dynamicPartitionColumns, query))
 
-      case o @ OverwritePartitionsDynamic(table, query, _, _, _) =>
-        getDynamicPartitionColsFromIcebergTable(table, query) match {
-          case Some(dynamicPartitionColumns) =>
-            o.copy(query = buildRepartition(dynamicPartitionColumns, query))
-          case None => o
-        }
+    case o @ OverwritePartitionsDynamic(table, query, _, _, _) =>
+      getDynamicPartitionColsFromIcebergTable(table, query) match {
+        case Some(dynamicPartitionColumns) =>
+          o.copy(query = buildRepartition(dynamicPartitionColumns, query))
+        case None => o
+      }
 
-      case o @ OverwriteByExpression(table, _, query, _, _, _)
-          if query.resolved && canInsertRepartitionByExpression(query) =>
-        getDynamicPartitionColsFromIcebergTable(table, query) match {
-          case Some(dynamicPartitionColumns) =>
-            o.copy(query = buildRepartition(dynamicPartitionColumns, query))
-          case None => o
-        }
+    case o @ OverwriteByExpression(table, _, query, _, _, _)
+        if query.resolved && canInsertRepartitionByExpression(query) =>
+      getDynamicPartitionColsFromIcebergTable(table, query) match {
+        case Some(dynamicPartitionColumns) =>
+          o.copy(query = buildRepartition(dynamicPartitionColumns, query))
+        case None => o
+      }
 
-      case a @ AppendData(table, query, _, _, _)
-          if query.resolved && canInsertRepartitionByExpression(query) =>
-        getDynamicPartitionColsFromIcebergTable(table, query) match {
-          case Some(dynamicPartitionColumns) =>
-            a.copy(query = buildRepartition(dynamicPartitionColumns, query))
-          case None => a
-        }
+    case a @ AppendData(table, query, _, _, _)
+        if query.resolved && canInsertRepartitionByExpression(query) =>
+      getDynamicPartitionColsFromIcebergTable(table, query) match {
+        case Some(dynamicPartitionColumns) =>
+          a.copy(query = buildRepartition(dynamicPartitionColumns, query))
+        case None => a
+      }
 
-      case u @ Union(children, _, _) =>
-        u.copy(children = children.map(addRepartition))
+    case u @ Union(children, _, _) =>
+      u.copy(children = children.map(addRepartition))
 
-      case _ => plan
-    }
+    case _ => plan
+  }
 }
 
 /**
