@@ -90,6 +90,25 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "refresh the kubernetes configs")
+  @POST
+  @Path("refresh/kubernetes_conf")
+  def refreshKubernetesConf(): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Receive refresh kubernetes conf request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to refresh the kubernetes conf")
+    }
+    info(s"Reloading kubernetes conf")
+    KyuubiServer.refreshKubernetesConf()
+    Response.ok(s"Refresh the kubernetes conf successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
     description = "refresh the unlimited users")
   @POST
   @Path("refresh/unlimited_users")
