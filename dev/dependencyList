@@ -170,7 +170,7 @@ perfmark-api/0.25.0//perfmark-api-0.25.0.jar
 proto-google-common-protos/2.9.0//proto-google-common-protos-2.9.0.jar
 protobuf-java-util/3.21.7//protobuf-java-util-3.21.7.jar
 protobuf-java/3.21.7//protobuf-java-3.21.7.jar
-scala-library/2.12.17//scala-library-2.12.17.jar
+scala-library/2.12.18//scala-library-2.12.18.jar
 scopt_2.12/4.1.0//scopt_2.12-4.1.0.jar
 simpleclient/0.16.0//simpleclient-0.16.0.jar
 simpleclient_common/0.16.0//simpleclient_common-0.16.0.jar
