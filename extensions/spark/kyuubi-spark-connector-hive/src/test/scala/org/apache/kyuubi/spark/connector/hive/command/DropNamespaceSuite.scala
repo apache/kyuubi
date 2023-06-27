@@ -60,7 +60,8 @@ trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
     val message = intercept[AnalysisException] {
       sql(s"DROP NAMESPACE $catalogName.unknown")
     }.getMessage
-    assert(message.contains(s"'unknown' not found"))
+    assert(message.contains(s"'unknown' not found") ||
+      message.contains(s"The schema `unknown` cannot be found"))
   }
 
   test("drop non-empty namespace with a non-cascading mode") {

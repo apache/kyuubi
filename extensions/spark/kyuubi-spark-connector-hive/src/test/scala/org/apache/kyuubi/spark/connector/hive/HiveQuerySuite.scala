@@ -18,6 +18,7 @@
 package org.apache.kyuubi.spark.connector.hive
 
 import org.apache.spark.sql.{AnalysisException, Row, SparkSession}
+import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 
 class HiveQuerySuite extends KyuubiHiveTest {
 
@@ -70,7 +71,10 @@ class HiveQuerySuite extends KyuubiHiveTest {
                | SELECT * FROM hive.ns1.tb1
                |""".stripMargin)
         }
-        assert(e.getMessage().contains("Table or view not found: hive.ns1.tb1"))
+
+        assert(e.plan.exists { p =>
+          p.exists(child => child.isInstanceOf[UnresolvedRelation])
+        })
       }
     }
   }
