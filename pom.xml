@@ -114,7 +114,7 @@
         <maven.version>3.8.8</maven.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <scala.version>2.12.17</scala.version>
+        <scala.version>2.12.18</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
@@ -241,7 +241,7 @@
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.4.1</maven.plugin.shade.version>
-        <maven.plugin.silencer.version>1.7.10</maven.plugin.silencer.version>
+        <maven.plugin.silencer.version>1.7.13</maven.plugin.silencer.version>
 
         <maven.scaladoc.skip>false</maven.scaladoc.skip>
         <maven.scalastyle.skip>false</maven.scalastyle.skip>
