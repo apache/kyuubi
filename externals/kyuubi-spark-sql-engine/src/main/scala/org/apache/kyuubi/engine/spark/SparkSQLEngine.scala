@@ -37,6 +37,7 @@ import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
@@ -57,6 +58,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
   @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
   @volatile private var stopEngineExec: Option[ThreadPoolExecutor] = None
+  @volatile private var failfastChecker: Option[ScheduledExecutorService] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
@@ -80,6 +82,13 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
       assert(currentEngine.isDefined)
       currentEngine.get.stop()
     })
+
+    if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString) {
+      startFailFastChecker(() => {
+        assert(currentEngine.isDefined)
+        currentEngine.get.stop()
+      })
+    }
   }
 
   override def stop(): Unit = if (shutdown.compareAndSet(false, true)) {
@@ -90,11 +99,17 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         checker,
         Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
     })
+    failfastChecker.foreach(checker => {
+      ThreadUtils.shutdown(
+        checker,
+        Duration(10, TimeUnit.SECONDS))
+    })
     stopEngineExec.foreach(exec => {
       ThreadUtils.shutdown(
         exec,
         Duration(60, TimeUnit.SECONDS))
     })
+
   }
 
   def gracefulStop(): Unit = if (gracefulStopDeregistered.compareAndSet(false, true)) {
@@ -146,6 +161,34 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         interval,
         TimeUnit.MILLISECONDS)
     }
+  }
+
+  private[kyuubi] def startFailFastChecker(stop: () => Unit): Unit = {
+    val interval = conf.get(ENGINE_CHECK_INTERVAL)
+    val deregistered = new AtomicBoolean(false)
+    var timeout = Duration(60, TimeUnit.SECONDS).toMillis
+
+    val checkTask: Runnable = () => {
+      val openSessionCount = backendService.sessionManager.getOpenSessionCount
+      info(s"Current open session is ${openSessionCount}")
+      if (!shutdown.get && System.currentTimeMillis() - getStartTime > timeout &&
+        openSessionCount <= 0) {
+        if (deregistered.compareAndSet(false, true)) {
+          error(s"Spark engine has been terminated because no incoming connection" +
+            s" for more than $timeout ms, deregistering from engine discovery space.")
+          frontendServices.flatMap(_.discoveryService).foreach(_.stop())
+        }
+        stop()
+      }
+    }
+    failfastChecker =
+      Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("spark-engine-failfast-checker"))
+    failfastChecker.get.scheduleWithFixedDelay(
+      checkTask,
+      interval,
+      interval,
+      TimeUnit.MILLISECONDS)
+
   }
 }
 
