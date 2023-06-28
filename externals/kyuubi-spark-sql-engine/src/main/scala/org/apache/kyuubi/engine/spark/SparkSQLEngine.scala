@@ -137,7 +137,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         }
         if (backendService.sessionManager.getOpenSessionCount <= 0) {
           error(s"Spark engine has been terminated because no incoming connection" +
-            s" for more than $timeout ms, deregistering from engine discovery space.")
+            s" for more than $timeout ms, de-registering from engine discovery space.")
           assert(currentEngine.isDefined)
           currentEngine.get.stop()
         }
