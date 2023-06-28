@@ -1282,6 +1282,15 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(0)
 
+  val ENGINE_SPARK_MAX_INITIAL_WAIT: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.spark.max.initial.wait")
+      .doc("Max wait time for the initial connection to Spark engine. The engine will" +
+        " self-terminate no new incoming connection is established within this time." +
+        "This setting only applies at the CONNECTION share level.")
+      .version("1.8.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
+
   val ENGINE_FLINK_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.engine.flink.main.resource")
       .doc("The package used to create Flink SQL engine remote job. If it is undefined," +
