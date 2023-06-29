@@ -59,6 +59,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
   }
 
+  // Visible for testing
   private[engine] def checkKubernetesInfo(kubernetesInfo: KubernetesInfo): Unit = {
     val context = kubernetesInfo.context
     val namespace = kubernetesInfo.namespace
