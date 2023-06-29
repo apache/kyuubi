@@ -55,20 +55,24 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
 
   private def getOrCreateKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
+    checkKubernetesInfo(kubernetesInfo)
+    kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
+  }
+
+  // Visible for testing
+  private[engine] def checkKubernetesInfo(kubernetesInfo: KubernetesInfo): Unit = {
     val context = kubernetesInfo.context
     val namespace = kubernetesInfo.namespace
 
-    if (allowedContexts.nonEmpty && !allowedContexts.contains(context)) {
+    if (allowedContexts.nonEmpty && context.exists(!allowedContexts.contains(_))) {
       throw new KyuubiException(
         s"Kubernetes context $context is not in the allowed list[$allowedContexts]")
     }
 
-    if (allowedNamespaces.nonEmpty && !allowedNamespaces.contains(namespace)) {
+    if (allowedNamespaces.nonEmpty && namespace.exists(!allowedNamespaces.contains(_))) {
       throw new KyuubiException(
         s"Kubernetes namespace $namespace is not in the allowed list[$allowedNamespaces]")
     }
-
-    kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
   }
 
   private def buildKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
