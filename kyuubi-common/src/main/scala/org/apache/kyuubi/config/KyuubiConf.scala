@@ -1289,7 +1289,7 @@ object KyuubiConf {
         "This setting only applies at the CONNECTION share level.")
       .version("1.8.0")
       .timeConf
-      .createWithDefault(Duration.ofSeconds(60).toMillis)
+      .createWithDefault(Duration.ofSeconds(0).toMillis)
 
   val ENGINE_FLINK_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.engine.flink.main.resource")

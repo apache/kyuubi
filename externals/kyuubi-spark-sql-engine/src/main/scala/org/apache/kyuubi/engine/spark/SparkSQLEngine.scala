@@ -83,7 +83,9 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
       currentEngine.get.stop()
     })
 
-    if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString) {
+    val maxInitTimeout = conf.get(ENGINE_SPARK_MAX_INITIAL_WAIT)
+    if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString &&
+      maxInitTimeout > 0) {
       startFastFailChecker()
     }
   }
