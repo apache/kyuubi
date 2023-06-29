@@ -55,6 +55,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
 
   private def getOrCreateKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
+    checkKubernetesInfo(kubernetesInfo)
+    kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
+  }
+
+  private[engine] def checkKubernetesInfo(kubernetesInfo: KubernetesInfo): Unit = {
     val context = kubernetesInfo.context
     val namespace = kubernetesInfo.namespace
 
@@ -67,8 +72,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       throw new KyuubiException(
         s"Kubernetes namespace $namespace is not in the allowed list[$allowedNamespaces]")
     }
-
-    kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
   }
 
   private def buildKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
