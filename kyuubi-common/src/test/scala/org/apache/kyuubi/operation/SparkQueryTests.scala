@@ -383,7 +383,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
         rs.next()
         // scalastyle:off
         println(rs.getString(1))
-      // scalastyle:on
+        // scalastyle:on
       }
 
       val code1 = s"""spark.sql("add jar " + jarPath)"""
