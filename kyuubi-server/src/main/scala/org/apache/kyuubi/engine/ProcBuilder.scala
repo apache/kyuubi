@@ -349,5 +349,5 @@ object ProcBuilder extends Logging {
 
   private val UNCAUGHT_ERROR = new RuntimeException("Uncaught error")
 
-  val KYUUBI_ENGINE_LOG_PATH_KEY = "kyuubi.engine.engineLog.path"
+  private[engine] val KYUUBI_ENGINE_LOG_PATH_KEY = "kyuubi.engine.engineLog.path"
 }
