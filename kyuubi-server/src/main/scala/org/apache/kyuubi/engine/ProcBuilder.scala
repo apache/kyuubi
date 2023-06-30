@@ -348,4 +348,6 @@ object ProcBuilder extends Logging {
   private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
 
   private val UNCAUGHT_ERROR = new RuntimeException("Uncaught error")
+
+  val KYUUBI_ENGINE_LOG_PATH_KEY = "kyuubi.engine.engineLog.path"
 }

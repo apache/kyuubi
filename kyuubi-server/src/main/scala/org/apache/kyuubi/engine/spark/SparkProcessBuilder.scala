@@ -29,6 +29,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
+import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
@@ -115,8 +116,8 @@ class SparkProcessBuilder(
         == AuthTypes.KERBEROS) {
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
-
-    allConf.foreach { case (k, v) =>
+    // pass spark engine log path to spark conf
+    (allConf ++ engineLogPathConf).foreach { case (k, v) =>
       buffer += CONF
       buffer += s"${convertConfigKey(k)}=$v"
     }
@@ -230,6 +231,10 @@ class SparkProcessBuilder(
         buffer += s"spark.executorEnv.SPARK_USER_NAME=$userName"
       }
     }
+  }
+
+  private[spark] def engineLogPathConf(): Map[String, String] = {
+    Map(KYUUBI_ENGINE_LOG_PATH_KEY -> engineLog.getAbsolutePath)
   }
 }
 
