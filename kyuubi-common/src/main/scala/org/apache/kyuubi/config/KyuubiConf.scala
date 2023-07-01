@@ -1287,7 +1287,7 @@ object KyuubiConf {
       .doc("Max wait time for the initial connection to Spark engine. The engine will" +
         " self-terminate no new incoming connection is established within this time." +
         " This setting only applies at the CONNECTION share level." +
-        "0 or negative means not to self-terminate.")
+        " 0 or negative means not to self-terminate.")
       .version("1.8.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(60).toMillis)
