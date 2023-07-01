@@ -58,7 +58,6 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
   @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
   @volatile private var stopEngineExec: Option[ThreadPoolExecutor] = None
-  @volatile private var failfastChecker: Option[ThreadPoolExecutor] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
@@ -98,11 +97,6 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         checker,
         Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
     })
-    failfastChecker.foreach(checker => {
-      ThreadUtils.shutdown(
-        checker,
-        Duration(10, TimeUnit.SECONDS))
-    })
     stopEngineExec.foreach(exec => {
       ThreadUtils.shutdown(
         exec,
@@ -130,24 +124,24 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   private[kyuubi] def startFastFailChecker(): Unit = {
     val interval = conf.get(ENGINE_CHECK_INTERVAL)
     val timeout = conf.get(ENGINE_SPARK_MAX_INITIAL_WAIT)
-    val failFastCheck: Runnable = () => {
-      if (!shutdown.get) {
-        while (backendService.sessionManager.getOpenSessionCount <= 0 &&
-          System.currentTimeMillis() - getStartTime < timeout) {
-          info(s"Waiting for the initial connection")
-          Thread.sleep(interval)
-        }
-        if (backendService.sessionManager.getOpenSessionCount <= 0) {
-          error(s"Spark engine has been terminated because no incoming connection" +
-            s" for more than $timeout ms, de-registering from engine discovery space.")
-          assert(currentEngine.isDefined)
-          currentEngine.get.stop()
+
+    Utils.tryLogNonFatalError {
+      ThreadUtils.runInNewThread("spark-engine-failfast-checker") {
+        if (!shutdown.get) {
+          while (backendService.sessionManager.getOpenSessionCount <= 0 &&
+            System.currentTimeMillis() - getStartTime < timeout) {
+            info(s"Waiting for the initial connection")
+            Thread.sleep(interval)
+          }
+          if (backendService.sessionManager.getOpenSessionCount <= 0) {
+            error(s"Spark engine has been terminated because no incoming connection" +
+              s" for more than $timeout ms, de-registering from engine discovery space.")
+            assert(currentEngine.isDefined)
+            currentEngine.get.stop()
+          }
         }
       }
     }
-    failfastChecker =
-      Some(ThreadUtils.newDaemonFixedThreadPool(1, "spark-engine-failfast-checker"))
-    failfastChecker.get.execute(failFastCheck)
   }
 
   override protected def stopServer(): Unit = {
