@@ -85,7 +85,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     val maxInitTimeout = conf.get(ENGINE_SPARK_MAX_INITIAL_WAIT)
     if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString &&
       maxInitTimeout > 0) {
-      startFastFailChecker()
+      startFastFailChecker(maxInitTimeout)
     }
   }
 
@@ -121,21 +121,19 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     stopEngineExec.get.execute(stopTask)
   }
 
-  private[kyuubi] def startFastFailChecker(): Unit = {
-    val interval = conf.get(ENGINE_CHECK_INTERVAL)
-    val timeout = conf.get(ENGINE_SPARK_MAX_INITIAL_WAIT)
-
+  private[kyuubi] def startFastFailChecker(maxTimeout: Long): Unit = {
+    val startedTime = System.currentTimeMillis()
     Utils.tryLogNonFatalError {
       ThreadUtils.runInNewThread("spark-engine-failfast-checker") {
         if (!shutdown.get) {
           while (backendService.sessionManager.getOpenSessionCount <= 0 &&
-            System.currentTimeMillis() - getStartTime < timeout) {
+            System.currentTimeMillis() - startedTime < maxTimeout) {
             info(s"Waiting for the initial connection")
-            Thread.sleep(interval)
+            Thread.sleep(Duration(10, TimeUnit.SECONDS).toMillis)
           }
           if (backendService.sessionManager.getOpenSessionCount <= 0) {
             error(s"Spark engine has been terminated because no incoming connection" +
-              s" for more than $timeout ms, de-registering from engine discovery space.")
+              s" for more than $maxTimeout ms, de-registering from engine discovery space.")
             assert(currentEngine.isDefined)
             currentEngine.get.stop()
           }
