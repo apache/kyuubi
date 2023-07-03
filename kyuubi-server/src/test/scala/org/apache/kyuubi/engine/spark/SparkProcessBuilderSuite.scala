@@ -300,10 +300,12 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("[KYUUBI #5009] Test pass spark engine log path to spark conf") {
+    System.getenv().put("KYUUBI_WORK_DIR_ROOT", "/tmp/kyuubi/unit-test")
     val b1 = new SparkProcessBuilder("kyuubi", conf)
     assert(
       b1.toString.contains(
         s"$CONF spark.$KYUUBI_ENGINE_LOG_PATH_KEY=${b1.engineLog.getAbsolutePath}"))
+    System.getenv().remove("KYUUBI_WORK_DIR_ROOT")
   }
 }
 
