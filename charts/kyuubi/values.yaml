@@ -29,13 +29,18 @@ image:
 
 imagePullSecrets: []
 
-# ServiceAccount used for Kyuubi create/list/delete pod in kubernetes
+# ServiceAccount used for Kyuubi create/list/delete pod in Kubernetes
 serviceAccount:
+  # Specifies whether a ServiceAccount should be created
   create: true
+  # Specifies ServiceAccount name to be used (created if `create: true`)
   name: ~
 
+# Role-based access control
 rbac:
+  # Specifies whether RBAC resources should be created
   create: true
+  # RBAC rules
   rules:
     - apiGroups: [""]
       resources: ["pods"]
@@ -82,34 +87,30 @@ server:
       nodePort: ~
       annotations: {}
 
+# $KYUUBI_CONF_DIR directory
 kyuubiConfDir: /opt/kyuubi/conf
+# Kyuubi configurations files
 kyuubiConf:
   # The value (templated string) is used for kyuubi-env.sh file
-  # Example:
-  #
-  # kyuubiEnv: |
-  #   export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
-  #   export SPARK_HOME=/opt/spark
-  #   export FLINK_HOME=/opt/flink
-  #   export HIVE_HOME=/opt/hive
-  #
   # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/deployment/settings.html#environments for more details
   kyuubiEnv: ~
+  #  kyuubiEnv: |
+  #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
+  #    export SPARK_HOME=/opt/spark
+  #    export FLINK_HOME=/opt/flink
+  #    export HIVE_HOME=/opt/hive
 
   # The value (templated string) is used for kyuubi-defaults.conf file
-  # Example:
-  #
-  # kyuubiDefaults: |
-  #   kyuubi.authentication=NONE
-  #   kyuubi.frontend.bind.host=10.0.0.1
-  #   kyuubi.engine.type=SPARK_SQL
-  #   kyuubi.engine.share.level=USER
-  #   kyuubi.session.engine.initialize.timeout=PT3M
-  #   kyuubi.ha.addresses=zk1:2181,zk2:2181,zk3:2181
-  #   kyuubi.ha.namespace=kyuubi
-  #
   # See https://kyuubi.readthedocs.io/en/master/deployment/settings.html#kyuubi-configurations for more details
   kyuubiDefaults: ~
+  #  kyuubiDefaults: |
+  #    kyuubi.authentication=NONE
+  #    kyuubi.frontend.bind.host=10.0.0.1
+  #    kyuubi.engine.type=SPARK_SQL
+  #    kyuubi.engine.share.level=USER
+  #    kyuubi.session.engine.initialize.timeout=PT3M
+  #    kyuubi.ha.addresses=zk1:2181,zk2:2181,zk3:2181
+  #    kyuubi.ha.namespace=kyuubi
 
   # The value (templated string) is used for log4j2.xml file
   # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/deployment/settings.html#logging for more details
@@ -122,6 +123,7 @@ args: ~
 
 # Environment variables (templated)
 env: []
+# Environment variables from ConfigMaps and Secrets (templated)
 envFrom: []
 
 # Additional volumes for Kyuubi pod (templated)
@@ -134,17 +136,15 @@ initContainers: []
 # Additional containers for Kyuubi pod (templated)
 containers: []
 
+# Resource requests and limits for Kyuubi pods
 resources: {}
-  # Used to specify resource, default unlimited.
-  # If you do want to specify resources:
-  #   1. remove the curly braces after 'resources:'
-  #   2. uncomment the following lines
-  # limits:
-  #   cpu: 4
-  #   memory: 10Gi
-  # requests:
-  #   cpu: 2
-  #   memory: 4Gi
+#  resources:
+#    requests:
+#      cpu: 2
+#      memory: 4Gi
+#    limits:
+#      cpu: 4
+#      memory: 10Gi
 
 # Liveness probe
 livenessProbe:
@@ -164,9 +164,12 @@ readinessProbe:
   failureThreshold: 10
   successThreshold: 1
 
-# Constrain Kyuubi server pods to specific nodes
+# Constrain Kyuubi pods to nodes with specific node labels
 nodeSelector: {}
+# Allow to schedule Kyuubi pods on nodes with matching taints
 tolerations: []
+# Constrain Kyuubi pods to nodes by complex affinity/anti-affinity rules
 affinity: {}
 
+# Kyuubi pods security context
 securityContext: {}
