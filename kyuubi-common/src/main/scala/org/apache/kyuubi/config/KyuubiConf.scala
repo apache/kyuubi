@@ -507,6 +507,15 @@ object KyuubiConf {
       .serverOnly
       .fallbackConf(FRONTEND_BIND_PORT)
 
+  val FRONTEND_THRIFT_CONNECTION_URL_HOST: ConfigEntry[String] =
+    buildConf("kyuubi.frontend.thrift.connection.url.host")
+      .doc("Hostname or IP of the Kyuubi server's thrift frontend service that will be " +
+        "registered for the service discovery ensemble.")
+      .version("1.8.0")
+      .serverOnly
+      .stringConf
+      .createWithDefault("")
+
   val FRONTEND_THRIFT_HTTP_BIND_HOST: ConfigEntry[Option[String]] =
     buildConf("kyuubi.frontend.thrift.http.bind.host")
       .doc("Hostname or IP of the machine on which to run the thrift frontend service " +
