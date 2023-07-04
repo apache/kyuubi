@@ -2176,6 +2176,8 @@
         <profile>
             <id>spark-3.4</id>
             <modules>
+                <module>extensions/spark/kyuubi-extension-spark-common</module>
+                <module>extensions/spark/kyuubi-extension-spark-3-4</module>
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
                 <module>extensions/spark/kyuubi-spark-connector-kudu</module>
             </modules>
