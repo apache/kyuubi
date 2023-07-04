@@ -113,7 +113,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Super Linter Checks
-        uses: github/super-linter/slim@latest
+        uses: super-linter/super-linter/slim@v5
         env:
           CREATE_LOG_FILE: true
           ERROR_ON_MISSING_EXEC_BIT: true
