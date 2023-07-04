@@ -17,13 +17,15 @@
 
 package org.apache.spark.sql
 
+import java.io.File
+
+import scala.collection.JavaConverters._
+
 import org.apache.commons.io.FileUtils
-import org.apache.kyuubi.sql.KyuubiSQLConf
-import org.apache.kyuubi.sql.watchdog.{MaxFileSizeExceedException, MaxPartitionExceedException}
 import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
 
-import java.io.File
-import scala.collection.JavaConverters._
+import org.apache.kyuubi.sql.KyuubiSQLConf
+import org.apache.kyuubi.sql.watchdog.{MaxFileSizeExceedException, MaxPartitionExceedException}
 
 trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
   override protected def beforeAll(): Unit = {

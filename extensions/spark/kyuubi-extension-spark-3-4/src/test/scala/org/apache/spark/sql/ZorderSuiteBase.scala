@@ -17,18 +17,18 @@
 
 package org.apache.spark.sql
 
-import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, Zorder, ZorderBytesUtils}
-import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, Expression, ExpressionEvalHelper, Literal, NullsLast, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation, Project, Sort}
-import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable}
+import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.types._
+
+import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
+import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, Zorder, ZorderBytesUtils}
 
 trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
   override def sparkConf(): SparkConf = {
@@ -291,24 +291,24 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
             withSQLConf(
               "spark.sql.hive.convertMetastoreCtas" -> optimized,
               "spark.sql.hive.convertMetastoreParquet" -> optimized) {
-              val df2 =
-                sql(
-                  s"""
-                     |CREATE TABLE zorder_t2_$optimized STORED AS PARQUET
-                     |TBLPROPERTIES (
-                     | 'kyuubi.zorder.enabled' = '$enabled',
-                     | 'kyuubi.zorder.cols' = '$cols')
-                     |
-                     |SELECT $repartition * FROM
-                     |VALUES(1,'a',2,4D),(2,'b',3,6D) AS t(c1 ,c2 , c3, c4)
-                     |""".stripMargin)
-              if (optimized.toBoolean) {
-                assert(df2.queryExecution.analyzed
-                  .isInstanceOf[OptimizedCreateHiveTableAsSelectCommand])
-              } else {
-                assert(df2.queryExecution.analyzed.isInstanceOf[CreateHiveTableAsSelectCommand])
+
+              withListener(
+                s"""
+                   |CREATE TABLE zorder_t2_$optimized STORED AS PARQUET
+                   |TBLPROPERTIES (
+                   | 'kyuubi.zorder.enabled' = '$enabled',
+                   | 'kyuubi.zorder.cols' = '$cols')
+                   |
+                   |SELECT $repartition * FROM
+                   |VALUES(1,'a',2,4D),(2,'b',3,6D) AS t(c1 ,c2 , c3, c4)
+                   |""".stripMargin) { write =>
+                if (optimized.toBoolean) {
+                  assert(write.isInstanceOf[InsertIntoHadoopFsRelationCommand])
+                } else {
+                  assert(write.isInstanceOf[InsertIntoHiveTable])
+                }
+                checkSort(write.query)
               }
-              checkSort(df2.queryExecution.analyzed.children.head)
             }
           }
         }
@@ -330,19 +330,19 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
         assert(df1.queryExecution.analyzed.isInstanceOf[InsertIntoHadoopFsRelationCommand])
         checkSort(df1.queryExecution.analyzed.children.head)
 
-        val df2 =
-          sql(
-            s"""
-               |CREATE TABLE zorder_t4 USING PARQUET
-               |TBLPROPERTIES (
-               | 'kyuubi.zorder.enabled' = '$enabled',
-               | 'kyuubi.zorder.cols' = '$cols')
-               |
-               |SELECT $repartition * FROM
-               |VALUES(1,'a',2,4D),(2,'b',3,6D) AS t(c1 ,c2 , c3, c4)
-               |""".stripMargin)
-        assert(df2.queryExecution.analyzed.isInstanceOf[CreateDataSourceTableAsSelectCommand])
-        checkSort(df2.queryExecution.analyzed.children.head)
+        withListener(
+          s"""
+             |CREATE TABLE zorder_t4 USING PARQUET
+             |TBLPROPERTIES (
+             | 'kyuubi.zorder.enabled' = '$enabled',
+             | 'kyuubi.zorder.cols' = '$cols')
+             |
+             |SELECT $repartition * FROM
+             |VALUES(1,'a',2,4D),(2,'b',3,6D) AS t(c1 ,c2 , c3, c4)
+             |""".stripMargin) { write =>
+          assert(write.isInstanceOf[InsertIntoHadoopFsRelationCommand])
+          checkSort(write.query)
+        }
       }
     }
   }

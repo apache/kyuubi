@@ -25,9 +25,9 @@
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-extension-spark-3-3_2.12</artifactId>
+    <artifactId>kyuubi-extension-spark-3-4_2.12</artifactId>
     <packaging>jar</packaging>
-    <name>Kyuubi Dev Spark Extensions (for Spark 3.3)</name>
+    <name>Kyuubi Dev Spark Extensions (for Spark 3.4)</name>
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
@@ -116,6 +116,15 @@
     <build>
 
         <plugins>
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <configuration>
+                    <visitor>true</visitor>
+                    <sourceDirectory>${project.basedir}/src/main/antlr4</sourceDirectory>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>

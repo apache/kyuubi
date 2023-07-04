@@ -17,17 +17,17 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.kyuubi.sql.KyuubiSQLConf
+import java.util.Locale
+
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Ascending, Expression, NullsLast, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
-import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable}
+import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
 
-import java.util.Locale
+import org.apache.kyuubi.sql.KyuubiSQLConf
 
 /**
  * TODO: shall we forbid zorder if it's dynamic partition inserts ?
@@ -45,17 +45,6 @@ abstract class InsertZorderBeforeWritingDatasourceBase
       } else {
         insert.copy(query = newQuery)
       }
-
-    case ctas: CreateDataSourceTableAsSelectCommand
-        if ctas.query.resolved && ctas.table.bucketSpec.isEmpty &&
-          isZorderEnabled(ctas.table.properties) =>
-      val newQuery = insertZorder(ctas.table, ctas.query)
-      if (newQuery.eq(ctas.query)) {
-        ctas
-      } else {
-        ctas.copy(query = newQuery)
-      }
-
     case _ => plan
   }
 }
@@ -76,27 +65,6 @@ abstract class InsertZorderBeforeWritingHiveBase
       } else {
         insert.copy(query = newQuery)
       }
-
-    case ctas: CreateHiveTableAsSelectCommand
-        if ctas.query.resolved && ctas.tableDesc.bucketSpec.isEmpty &&
-          isZorderEnabled(ctas.tableDesc.properties) =>
-      val newQuery = insertZorder(ctas.tableDesc, ctas.query)
-      if (newQuery.eq(ctas.query)) {
-        ctas
-      } else {
-        ctas.copy(query = newQuery)
-      }
-
-    case octas: OptimizedCreateHiveTableAsSelectCommand
-        if octas.query.resolved && octas.tableDesc.bucketSpec.isEmpty &&
-          isZorderEnabled(octas.tableDesc.properties) =>
-      val newQuery = insertZorder(octas.tableDesc, octas.query)
-      if (newQuery.eq(octas.query)) {
-        octas
-      } else {
-        octas.copy(query = newQuery)
-      }
-
     case _ => plan
   }
 }

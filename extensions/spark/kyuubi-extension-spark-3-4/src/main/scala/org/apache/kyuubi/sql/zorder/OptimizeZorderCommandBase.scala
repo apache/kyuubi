@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.kyuubi.sql.KyuubiSQLExtensionException
+import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.DataWritingCommand
 import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
-import org.apache.spark.sql.{Row, SparkSession}
+
+import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 /**
  * A runnable command for zorder, we delegate to real command to execute

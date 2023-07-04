@@ -17,13 +17,17 @@
 package org.apache.spark.sql
 
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
-import org.apache.kyuubi.sql.KyuubiSQLConf
 import org.apache.spark.SparkConf
+import org.apache.spark.sql.execution.QueryExecution
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanHelper
+import org.apache.spark.sql.execution.command.{DataWritingCommand, DataWritingCommandExec}
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.test.SQLTestData.TestData
 import org.apache.spark.sql.test.SQLTestUtils
+import org.apache.spark.sql.util.QueryExecutionListener
 import org.apache.spark.util.Utils
+
+import org.apache.kyuubi.sql.KyuubiSQLConf
 
 trait KyuubiSparkSQLExtensionTest extends QueryTest
   with SQLTestUtils
@@ -92,5 +96,29 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
         s"jdbc:derby:;databaseName=$metastorePath;create=true")
       .set(StaticSQLConf.WAREHOUSE_PATH, warehousePath)
       .set("spark.ui.enabled", "false")
+  }
+
+  def withListener(sqlString: String)(callback: DataWritingCommand => Unit): Unit = {
+    withListener(sql(sqlString))(callback)
+  }
+
+  def withListener(df: => DataFrame)(callback: DataWritingCommand => Unit): Unit = {
+    val listener = new QueryExecutionListener {
+      override def onFailure(f: String, qe: QueryExecution, e: Exception): Unit = {}
+
+      override def onSuccess(funcName: String, qe: QueryExecution, duration: Long): Unit = {
+        qe.executedPlan match {
+          case write: DataWritingCommandExec => callback(write.cmd)
+          case _ =>
+        }
+      }
+    }
+    spark.listenerManager.register(listener)
+    try {
+      df.collect()
+      sparkContext.listenerBus.waitUntilEmpty()
+    } finally {
+      spark.listenerManager.unregister(listener)
+    }
   }
 }

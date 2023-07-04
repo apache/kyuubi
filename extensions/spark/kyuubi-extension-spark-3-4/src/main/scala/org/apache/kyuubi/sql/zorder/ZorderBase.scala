@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode, FalseLiteral}
+import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.types.{BinaryType, DataType}
+
+import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 abstract class ZorderBase extends Expression {
   override def foldable: Boolean = children.forall(_.foldable)

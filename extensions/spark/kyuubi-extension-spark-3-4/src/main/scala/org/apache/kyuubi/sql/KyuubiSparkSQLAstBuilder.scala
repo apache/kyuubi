@@ -17,16 +17,21 @@
 
 package org.apache.kyuubi.sql
 
+import java.time.LocalDate
+import java.util.Locale
+
+import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.util.control.NonFatal
+
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
 import org.apache.commons.codec.binary.Hex
-import org.apache.kyuubi.sql.KyuubiSparkSQLParser._
-import org.apache.kyuubi.sql.zorder.{OptimizeZorderStatement, OptimizeZorderStatementBase, Zorder, ZorderBase}
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.parser.ParseException
-import org.apache.spark.sql.catalyst.parser.ParserUtils.{string, stringWithoutUnescape, withOrigin}
+import org.apache.spark.sql.catalyst.parser.ParserUtils.{string, withOrigin}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils.{getZoneId, localDateToDays, stringToTimestamp}
 import org.apache.spark.sql.catalyst.util.IntervalUtils
@@ -35,11 +40,8 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-import java.time.LocalDate
-import java.util.Locale
-import scala.collection.JavaConverters.asScalaBufferConverter
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-import scala.util.control.NonFatal
+import org.apache.kyuubi.sql.KyuubiSparkSQLParser._
+import org.apache.kyuubi.sql.zorder.{OptimizeZorderStatement, OptimizeZorderStatementBase, Zorder, ZorderBase}
 
 abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[AnyRef] {
   def buildZorder(child: Seq[Expression]): ZorderBase
@@ -354,6 +356,11 @@ abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[An
       case e: AnalysisException =>
         throw new ParseException(e.message, ctx)
     }
+  }
+
+  private def stringWithoutUnescape(node: TerminalNode): String = {
+    // STRING parser rule forces that the input always has quotes at the starting and ending.
+    node.getText.slice(1, node.getText.size - 1)
   }
 
   /**

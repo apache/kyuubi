@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.sql.watchdog
 
-import org.apache.kyuubi.sql.KyuubiSQLConf
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.DataWritingCommand
+
+import org.apache.kyuubi.sql.KyuubiSQLConf
 
 /*
  * Add ForcedMaxOutputRows rule for output rows limitation

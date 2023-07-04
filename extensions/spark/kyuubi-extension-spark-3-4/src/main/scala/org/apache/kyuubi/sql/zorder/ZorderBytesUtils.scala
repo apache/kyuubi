@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.kyuubi.sql.KyuubiSQLExtensionException
+import java.lang.{Double => jDouble, Float => jFloat}
+
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-import java.lang.{Double => jDouble, Float => jFloat}
+import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 object ZorderBytesUtils {
   final private val BIT_8_MASK = 1 << 7

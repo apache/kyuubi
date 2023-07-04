@@ -17,11 +17,12 @@
 
 package org.apache.spark.sql
 
-import org.apache.kyuubi.sql.zorder.ZorderBytesUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.benchmark.Benchmark
 import org.apache.spark.sql.benchmark.KyuubiBenchmarkBase
 import org.apache.spark.sql.internal.StaticSQLConf
+
+import org.apache.kyuubi.sql.zorder.ZorderBytesUtils
 
 /**
  * Benchmark to measure performance with zorder core.

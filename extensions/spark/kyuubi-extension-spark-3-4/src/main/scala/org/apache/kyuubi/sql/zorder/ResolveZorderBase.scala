@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.AttributeSet
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
+
+import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 /**
  * Resolve `OptimizeZorderStatement` to `OptimizeZorderCommand`
