@@ -37,7 +37,7 @@ object HiveConnectorUtils extends Logging {
   def partitionedFilePath(file: PartitionedFile): String = {
     if (SparkUtils.isSparkVersionAtLeast("3.4")) {
       invokeAs[String](file, "urlEncodedPath")
-    } else if (SparkUtils.isSparkVersionAtLeast("3.3.0")) {
+    } else if (SparkUtils.isSparkVersionAtLeast("3.3")) {
       invokeAs[String](file, "filePath")
     } else {
       throw KyuubiHiveConnectorException(s"Spark version ${SemanticVersion(SPARK_VERSION)} " +
