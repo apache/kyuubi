@@ -40,7 +40,7 @@ object HiveConnectorUtils extends Logging {
     } else if (SparkUtils.isSparkVersionAtLeast("3.3")) {
       invokeAs[String](file, "filePath")
     } else {
-      throw KyuubiHiveConnectorException(s"Spark version ${SemanticVersion(SPARK_VERSION)} " +
+      throw KyuubiHiveConnectorException(s"Spark version $SPARK_VERSION " +
         s"is not supported by Kyuubi spark hive connector.")
     }
   }
