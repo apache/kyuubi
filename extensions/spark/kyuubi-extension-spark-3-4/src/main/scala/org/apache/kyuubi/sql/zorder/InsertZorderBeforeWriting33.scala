@@ -22,9 +22,8 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Ascending, Attribute, Expression, NullsLast, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
-import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable, OptimizedCreateHiveTableAsSelectCommand}
+import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 
@@ -154,18 +153,6 @@ case class InsertZorderBeforeWritingDatasource33(session: SparkSession)
         insert.copy(query = newQuery)
       }
 
-    case ctas: CreateDataSourceTableAsSelectCommand
-        if ctas.query.resolved &&
-          ctas.table.bucketSpec.isEmpty && isZorderEnabled(ctas.table.properties) =>
-      val dynamicPartition =
-        ctas.query.output.filter(attr => ctas.table.partitionColumnNames.contains(attr.name))
-      val newQuery = insertZorder(ctas.table, ctas.query, dynamicPartition)
-      if (newQuery.eq(ctas.query)) {
-        ctas
-      } else {
-        ctas.copy(query = newQuery)
-      }
-
     case _ => plan
   }
 }
@@ -183,30 +170,6 @@ case class InsertZorderBeforeWritingHive33(session: SparkSession)
         insert
       } else {
         insert.copy(query = newQuery)
-      }
-
-    case ctas: CreateHiveTableAsSelectCommand
-        if ctas.query.resolved &&
-          ctas.tableDesc.bucketSpec.isEmpty && isZorderEnabled(ctas.tableDesc.properties) =>
-      val dynamicPartition =
-        ctas.query.output.filter(attr => ctas.tableDesc.partitionColumnNames.contains(attr.name))
-      val newQuery = insertZorder(ctas.tableDesc, ctas.query, dynamicPartition)
-      if (newQuery.eq(ctas.query)) {
-        ctas
-      } else {
-        ctas.copy(query = newQuery)
-      }
-
-    case octas: OptimizedCreateHiveTableAsSelectCommand
-        if octas.query.resolved &&
-          octas.tableDesc.bucketSpec.isEmpty && isZorderEnabled(octas.tableDesc.properties) =>
-      val dynamicPartition =
-        octas.query.output.filter(attr => octas.tableDesc.partitionColumnNames.contains(attr.name))
-      val newQuery = insertZorder(octas.tableDesc, octas.query, dynamicPartition)
-      if (newQuery.eq(octas.query)) {
-        octas
-      } else {
-        octas.copy(query = newQuery)
       }
 
     case _ => plan

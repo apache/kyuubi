@@ -17,7 +17,7 @@
 package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.analysis.{UnresolvedFunc, UnresolvedRelation, UnresolvedTableOrView, UnresolvedView}
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedFunctionName, UnresolvedRelation, UnresolvedTableOrView, UnresolvedView}
 import org.apache.spark.sql.catalyst.plans.logical.{DropFunction, DropNamespace, DropTable, DropView, LogicalPlan, NoopCommand, UncacheTable}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.{AlterTableDropPartitionCommand, DropTableCommand}
@@ -42,7 +42,7 @@ case class DropIgnoreNonexistent(session: SparkSession) extends Rule[LogicalPlan
           NoopCommand("DROP VIEW", u.multipartIdentifier)
         case UncacheTable(u: UnresolvedRelation, false, _) =>
           NoopCommand("UNCACHE TABLE", u.multipartIdentifier)
-        case DropFunction(u: UnresolvedFunc, false) =>
+        case DropFunction(u: UnresolvedFunctionName, false) =>
           NoopCommand("DROP FUNCTION", u.multipartIdentifier)
         case _ => plan
       }
