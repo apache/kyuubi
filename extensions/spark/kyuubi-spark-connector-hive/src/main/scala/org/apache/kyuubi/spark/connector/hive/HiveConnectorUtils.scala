@@ -112,9 +112,7 @@ object HiveConnectorUtils extends Logging {
           replace(
             schema,
             update.fieldNames,
-            field => {
-              Some(field.copy(dataType = update.newDataType))
-            })
+            field => Some(field.copy(dataType = update.newDataType)))
 
         case update: UpdateColumnNullability =>
           replace(
