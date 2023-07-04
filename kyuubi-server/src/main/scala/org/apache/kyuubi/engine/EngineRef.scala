@@ -184,22 +184,7 @@ private[kyuubi] class EngineRef(
     conf.set(HA_ENGINE_REF_ID, engineRefId)
     val started = System.currentTimeMillis()
     conf.set(KYUUBI_ENGINE_SUBMIT_TIME_KEY, String.valueOf(started))
-    builder = engineType match {
-      case SPARK_SQL =>
-        conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
-        new SparkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
-      case FLINK_SQL =>
-        conf.setIfMissing(FlinkProcessBuilder.YARN_APP_KEY, defaultEngineName)
-        new FlinkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
-      case TRINO =>
-        new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
-      case HIVE_SQL =>
-        new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
-      case JDBC =>
-        new JdbcProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
-      case CHAT =>
-        new ChatProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
-    }
+    builder = getProcessBuilder(engineType, conf, extraEngineLog)
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
@@ -270,6 +255,48 @@ private[kyuubi] class EngineRef(
       // we must close the process builder whether session open is success or failure since
       // we have a log capture thread in process builder.
       builder.close()
+    }
+  }
+
+  @VisibleForTesting
+  private[engine] def getProcessBuilder(
+      engineType: EngineType,
+      conf: KyuubiConf,
+      extraEngineLog: Option[OperationLog]): ProcBuilder = {
+    applyDefaultEngineName(engineType, conf)
+    engineType match {
+      case SPARK_SQL =>
+        new SparkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+      case FLINK_SQL =>
+        new FlinkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+      case TRINO =>
+        new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+      case HIVE_SQL =>
+        new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+      case JDBC =>
+        new JdbcProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+      case CHAT =>
+        new ChatProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+    }
+  }
+
+  private def applyDefaultEngineName(engineType: EngineType, conf: KyuubiConf): Unit = {
+    engineType match {
+      case SPARK_SQL =>
+        val isForcedDefaultEngineName =
+          if (conf.get(ENGINE_SHARE_LEVEL).equals(CONNECTION.toString)) {
+            false
+          } else {
+            !conf.get(ENGINE_SPARK_CUSTOM_APPNAME_ALLOWED)
+          }
+        if (isForcedDefaultEngineName) {
+          conf.set(SparkProcessBuilder.APP_KEY, defaultEngineName)
+        } else {
+          conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
+        }
+      case FLINK_SQL =>
+        conf.setIfMissing(FlinkProcessBuilder.YARN_APP_KEY, defaultEngineName)
+      case _ =>
     }
   }
 

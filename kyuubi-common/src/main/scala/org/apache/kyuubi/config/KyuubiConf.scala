@@ -2859,6 +2859,13 @@ object KyuubiConf {
       .version("1.7.0")
       .fallbackConf(ENGINE_EVENT_LOGGERS)
 
+  val ENGINE_SPARK_CUSTOM_APPNAME_ALLOWED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.spark.custom.appname.allowed")
+      .doc("Whether to allow custom spark.app.name in the share level of USER, GROUP or SERVER.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val ENGINE_SPARK_PYTHON_HOME_ARCHIVE: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.spark.python.home.archive")
       .doc("Spark archive containing $SPARK_HOME/python directory, which is used to init session" +

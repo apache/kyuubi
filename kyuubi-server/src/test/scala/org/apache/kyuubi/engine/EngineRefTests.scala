@@ -30,6 +30,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineType._
 import org.apache.kyuubi.engine.ShareLevel._
+import org.apache.kyuubi.engine.spark.SparkProcessBuilder.APP_KEY
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
 import org.apache.kyuubi.ha.client.DiscoveryPaths
@@ -340,5 +341,58 @@ trait EngineRefTests extends KyuubiFunSuite {
     conf.set(ENGINE_POOL_IGNORE_SUBDOMAIN, true)
     val engine4 = new EngineRef(conf, user, PluginLoader.loadGroupProvider(conf), id, null)
     assert(engine4.subdomain.startsWith("engine-pool-"))
+  }
+
+  test("ignoring custom app name for Spark engine") {
+    val customSparkAppName = "custom_spark_appname"
+    val id = UUID.randomUUID().toString
+
+    val conf1 = conf.clone
+    conf1.set(KyuubiConf.ENGINE_SPARK_CUSTOM_APPNAME_ALLOWED, true)
+    conf1.set(ENGINE_SHARE_LEVEL, USER.toString)
+    conf1.set(APP_KEY, customSparkAppName)
+    val builder1 = new EngineRef(conf1, user, PluginLoader.loadGroupProvider(conf1), id, null)
+      .getProcessBuilder(SPARK_SQL, conf1, None)
+    assert(builder1.toString.contains(s"--conf $APP_KEY=$customSparkAppName"))
+
+    val conf2 = conf.clone
+    conf2.set(KyuubiConf.ENGINE_SPARK_CUSTOM_APPNAME_ALLOWED, false)
+    conf2.set(ENGINE_SHARE_LEVEL, USER.toString)
+    conf2.set(APP_KEY, customSparkAppName)
+    val builder2 = new EngineRef(conf2, user, PluginLoader.loadGroupProvider(conf1), id, null)
+      .getProcessBuilder(SPARK_SQL, conf2, None)
+    assert(builder2.toString.contains(s"--conf $APP_KEY=kyuubi_${USER}_${SPARK_SQL}_"))
+
+    val conf3 = conf.clone
+    conf3.set(KyuubiConf.ENGINE_SPARK_CUSTOM_APPNAME_ALLOWED, true)
+    conf3.set(ENGINE_SHARE_LEVEL, USER.toString)
+    conf3.set(APP_KEY, customSparkAppName)
+    val builder3 = new EngineRef(conf3, user, PluginLoader.loadGroupProvider(conf1), id, null)
+      .getProcessBuilder(SPARK_SQL, conf3, None)
+    assert(builder3.toString.contains(s"--conf $APP_KEY=$customSparkAppName"))
+
+    val conf4 = conf.clone
+    conf4.set(KyuubiConf.ENGINE_SPARK_CUSTOM_APPNAME_ALLOWED, false)
+    conf4.set(ENGINE_SHARE_LEVEL, CONNECTION.toString)
+    conf4.set(APP_KEY, customSparkAppName)
+    val builder4 = new EngineRef(conf4, user, PluginLoader.loadGroupProvider(conf1), id, null)
+      .getProcessBuilder(SPARK_SQL, conf4, None)
+    assert(builder4.toString.contains(s"--conf $APP_KEY=$customSparkAppName"))
+
+    val conf5 = conf.clone
+    conf5.set(KyuubiConf.ENGINE_SPARK_CUSTOM_APPNAME_ALLOWED, true)
+    conf5.set(ENGINE_SHARE_LEVEL, SERVER.toString)
+    conf5.set(APP_KEY, customSparkAppName)
+    val builder5 = new EngineRef(conf5, user, PluginLoader.loadGroupProvider(conf1), id, null)
+      .getProcessBuilder(SPARK_SQL, conf5, None)
+    assert(builder5.toString.contains(s"--conf $APP_KEY=$customSparkAppName"))
+
+    val conf6 = conf.clone
+    conf6.set(KyuubiConf.ENGINE_SPARK_CUSTOM_APPNAME_ALLOWED, false)
+    conf6.set(ENGINE_SHARE_LEVEL, SERVER.toString)
+    conf6.set(APP_KEY, customSparkAppName)
+    val builder6 = new EngineRef(conf6, user, PluginLoader.loadGroupProvider(conf1), id, null)
+      .getProcessBuilder(SPARK_SQL, conf6, None)
+    assert(builder6.toString.contains(s"--conf $APP_KEY=kyuubi_${SERVER}_${SPARK_SQL}_"))
   }
 }
