@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.udf
+package org.apache.kyuubi.engine.flink.udf
 
-import org.apache.spark.sql.expressions.UserDefinedFunction
+import org.apache.flink.table.functions.UserDefinedFunction
 
 /**
- * A wrapper for Spark's [[UserDefinedFunction]]
+ * A wrapper for Flink's [[UserDefinedFunction]]
  *
  * @param name function name
  * @param udf user-defined function
