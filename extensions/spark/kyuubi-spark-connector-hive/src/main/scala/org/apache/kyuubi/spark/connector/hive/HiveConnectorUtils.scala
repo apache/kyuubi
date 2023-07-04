@@ -35,7 +35,7 @@ import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
 object HiveConnectorUtils extends Logging {
 
   def partitionedFilePath(file: PartitionedFile): String = {
-    if (SparkUtils.isSparkVersionAtLeast("3.4.0")) {
+    if (SparkUtils.isSparkVersionAtLeast("3.4")) {
       invokeAs[String](file, "urlEncodedPath")
     } else if (SparkUtils.isSparkVersionAtLeast("3.3.0")) {
       invokeAs[String](file, "filePath")
