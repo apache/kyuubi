@@ -124,8 +124,7 @@ object HiveConnectorUtils extends Logging {
           replace(
             schema,
             update.fieldNames,
-            field =>
-              Some(field.withComment(update.newComment)))
+            field => Some(field.withComment(update.newComment)))
 
         case update: UpdateColumnPosition =>
           def updateFieldPos(struct: StructType, name: String): StructType = {
