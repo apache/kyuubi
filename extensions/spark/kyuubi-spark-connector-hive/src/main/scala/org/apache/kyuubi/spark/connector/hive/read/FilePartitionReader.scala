@@ -26,6 +26,8 @@ import org.apache.spark.sql.execution.datasources.SchemaColumnConvertNotSupporte
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.InputFileBlockHolder
 import org.apache.spark.sql.internal.SQLConf
 
+import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils
+
 // scalastyle:off line.size.limit
 // copy from https://github.com/apache/spark/blob/master/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/v2/FilePartitionReader.scala
 // scalastyle:on line.size.limit
@@ -98,7 +100,10 @@ class FilePartitionReader[T](readers: Iterator[HivePartitionedFileReader[T]])
     logInfo(s"Reading file $reader")
     // Sets InputFileBlockHolder for the file block's information
     val file = reader.file
-    InputFileBlockHolder.set(file.filePath, file.start, file.length)
+    InputFileBlockHolder.set(
+      HiveConnectorUtils.partitionedFilePath(file),
+      file.start,
+      file.length)
     reader
   }
 
