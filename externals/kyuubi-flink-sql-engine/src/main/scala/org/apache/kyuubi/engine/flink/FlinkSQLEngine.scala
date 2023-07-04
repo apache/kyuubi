@@ -138,7 +138,8 @@ object FlinkSQLEngine extends Logging {
 
   private def setDeploymentConf(executionTarget: String, flinkConf: Configuration): Unit = {
     // forward kyuubi engine variables to flink configuration
-    val engineName = s"kyuubi_${user}_flink_${Instant.now}"
+    val instant = Instant.now
+    val engineName = s"kyuubi_${user}_flink_$instant"
     flinkConf.setString(KYUUBI_ENGINE_NAME, engineName)
 
     kyuubiConf.getOption(KYUUBI_SESSION_USER_KEY).foreach(user =>
@@ -148,7 +149,7 @@ object FlinkSQLEngine extends Logging {
     executionTarget match {
       case "yarn-per-job" | "yarn-application" =>
         if (!flinkConf.containsKey("yarn.application.name")) {
-          val appName = s"kyuubi_${user}_flink_${Instant.now}"
+          val appName = engineName
           flinkConf.setString("yarn.application.name", appName)
         }
         if (flinkConf.containsKey("high-availability.cluster-id")) {
@@ -158,7 +159,7 @@ object FlinkSQLEngine extends Logging {
         }
       case "kubernetes-application" =>
         if (!flinkConf.containsKey("kubernetes.cluster-id")) {
-          val appName = s"kyuubi-${user}-flink-${Instant.now}"
+          val appName = s"kyuubi-${user}-flink-$instant"
           flinkConf.setString("kubernetes.cluster-id", appName)
         }
       case other =>
