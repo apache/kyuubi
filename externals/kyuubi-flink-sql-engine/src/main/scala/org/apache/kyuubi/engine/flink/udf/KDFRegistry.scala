@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink.udf
 
+import java.util
+
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.flink.configuration.Configuration
@@ -25,6 +27,8 @@ import org.apache.flink.table.gateway.service.context.SessionContext
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_NAME, KYUUBI_SESSION_USER_KEY}
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils
+import org.apache.kyuubi.util.reflect.DynMethods
 
 object KDFRegistry {
 
@@ -32,9 +36,28 @@ object KDFRegistry {
 
     val kyuubiDefinedFunctions = new ArrayBuffer[KyuubiDefinedFunction]
 
+    val flinkConfigMap: util.Map[String, String] = {
+      if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
+        DynMethods
+          .builder("getConfigMap")
+          .impl(classOf[SessionContext])
+          .build()
+          .invoke(sessionContext)
+          .asInstanceOf[util.Map[String, String]]
+      } else {
+        DynMethods
+          .builder("getSessionConf")
+          .impl(classOf[SessionContext])
+          .build()
+          .invoke(sessionContext)
+          .asInstanceOf[Configuration]
+          .toMap
+      }
+    }
+
     val kyuubi_version: KyuubiDefinedFunction = create(
       "kyuubi_version",
-      new KyuubiVersionFunction(sessionContext.getSessionConf),
+      new KyuubiVersionFunction(flinkConfigMap),
       "Return the version of Kyuubi Server",
       "string",
       "1.8.0")
@@ -42,7 +65,7 @@ object KDFRegistry {
 
     val engineName: KyuubiDefinedFunction = create(
       "kyuubi_engine_name",
-      new EngineNameFunction(sessionContext.getSessionConf),
+      new EngineNameFunction(flinkConfigMap),
       "Return the spark application name for the associated query engine",
       "string",
       "1.8.0")
@@ -50,7 +73,7 @@ object KDFRegistry {
 
     val engineId: KyuubiDefinedFunction = create(
       "kyuubi_engine_id",
-      new EngineIdFunction(sessionContext.getSessionConf),
+      new EngineIdFunction(flinkConfigMap),
       "Return the spark application id for the associated query engine",
       "string",
       "1.8.0")
@@ -58,7 +81,7 @@ object KDFRegistry {
 
     val systemUser: KyuubiDefinedFunction = create(
       "kyuubi_system_user",
-      new SystemUserFunction(sessionContext.getSessionConf),
+      new SystemUserFunction(flinkConfigMap),
       "Return the system user name for the associated query engine",
       "string",
       "1.8.0")
@@ -66,7 +89,7 @@ object KDFRegistry {
 
     val sessionUser: KyuubiDefinedFunction = create(
       "kyuubi_session_user",
-      new SessionUserFunction(sessionContext.getSessionConf),
+      new SessionUserFunction(flinkConfigMap),
       "Return the session username for the associated query engine",
       "string",
       "1.8.0")
@@ -94,13 +117,12 @@ object KDFRegistry {
   }
 }
 
-class KyuubiVersionFunction(flinkConf: Configuration) extends ScalarFunction {
+class KyuubiVersionFunction(confMap: util.Map[String, String]) extends ScalarFunction {
   def eval(): String = KYUUBI_VERSION
 }
 
-class EngineNameFunction(flinkConf: Configuration) extends ScalarFunction {
+class EngineNameFunction(confMap: util.Map[String, String]) extends ScalarFunction {
   def eval(): String = {
-    val confMap = flinkConf.toMap
     confMap match {
       case m if m.containsKey("yarn.application.name") => m.get("yarn.application.name")
       case m if m.containsKey("kubernetes.cluster-id") => m.get("kubernetes.cluster-id")
@@ -109,9 +131,8 @@ class EngineNameFunction(flinkConf: Configuration) extends ScalarFunction {
   }
 }
 
-class EngineIdFunction(flinkConf: Configuration) extends ScalarFunction {
+class EngineIdFunction(confMap: util.Map[String, String]) extends ScalarFunction {
   def eval(): String = {
-    val confMap = flinkConf.toMap
     confMap match {
       case m if m.containsKey("yarn.application.id") => m.get("yarn.application.id")
       case m if m.containsKey("kubernetes.cluster-id") => m.get("kubernetes.cluster-id")
@@ -120,10 +141,10 @@ class EngineIdFunction(flinkConf: Configuration) extends ScalarFunction {
   }
 }
 
-class SystemUserFunction(flinkConf: Configuration) extends ScalarFunction {
+class SystemUserFunction(confMap: util.Map[String, String]) extends ScalarFunction {
   def eval(): String = Utils.currentUser
 }
 
-class SessionUserFunction(flinkConf: Configuration) extends ScalarFunction {
-  def eval(): String = flinkConf.toMap.getOrDefault(KYUUBI_SESSION_USER_KEY, "unknown-user")
+class SessionUserFunction(confMap: util.Map[String, String]) extends ScalarFunction {
+  def eval(): String = confMap.getOrDefault(KYUUBI_SESSION_USER_KEY, "unknown-user")
 }
