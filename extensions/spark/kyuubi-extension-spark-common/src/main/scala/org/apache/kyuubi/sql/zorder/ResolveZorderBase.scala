@@ -57,7 +57,7 @@ abstract class ResolveZorderBase extends Rule[LogicalPlan] {
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
-    case statement: OptimizeZorderStatementBase if statement.query.resolved =>
+    case statement: OptimizeZorderStatement if statement.query.resolved =>
       checkQueryAllowed(statement.query)
       val tableIdentifier = getTableIdentifier(statement.tableIdentifier)
       val catalogTable = session.sessionState.catalog.getTableMetadata(tableIdentifier)
