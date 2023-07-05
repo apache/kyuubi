@@ -27,9 +27,12 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{FilterExec, ProjectExec, SortExec, SparkPlan}
 import org.apache.spark.sql.execution.adaptive._
 import org.apache.spark.sql.execution.columnar.InMemoryTableScanExec
+import org.apache.spark.sql.execution.command.DataWritingCommandExec
+import org.apache.spark.sql.execution.datasources.WriteFilesExec
+import org.apache.spark.sql.execution.datasources.v2.V2TableWriteExec
 import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExchangeExec}
 
-import org.apache.kyuubi.sql.{KyuubiSQLConf, MarkNumOutputColumnsRule}
+import org.apache.kyuubi.sql.{KyuubiSQLConf, WriteUtils}
 
 /**
  * This rule assumes the final write stage has less cores requirement than previous, otherwise
@@ -45,7 +48,7 @@ case class FinalStageResourceManager(session: SparkSession)
       return plan
     }
 
-    if (!MarkNumOutputColumnsRule.isWrite(session, plan)) {
+    if (!WriteUtils.isWrite(session, plan)) {
       return plan
     }
 
@@ -222,6 +225,9 @@ trait FinalRebalanceStageHelper extends AdaptiveSparkPlanHelper {
   @tailrec
   final protected def findFinalRebalanceStage(plan: SparkPlan): Option[ShuffleQueryStageExec] = {
     plan match {
+      case write: DataWritingCommandExec => findFinalRebalanceStage(write.child)
+      case write: V2TableWriteExec => findFinalRebalanceStage(write.child)
+      case write: WriteFilesExec => findFinalRebalanceStage(write.child)
       case p: ProjectExec => findFinalRebalanceStage(p.child)
       case f: FilterExec => findFinalRebalanceStage(f.child)
       case s: SortExec if !s.global => findFinalRebalanceStage(s.child)

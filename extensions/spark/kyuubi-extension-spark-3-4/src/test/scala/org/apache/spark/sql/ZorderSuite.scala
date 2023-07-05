@@ -115,9 +115,9 @@ trait ParserSuite { self: ZorderSuiteBase =>
 
 class ZorderWithCodegenEnabledSuite
   extends ZorderWithCodegenEnabledSuiteBase
-    with ZorderSuiteSpark
-    with ParserSuite {}
+  with ZorderSuiteSpark
+  with ParserSuite {}
 class ZorderWithCodegenDisabledSuite
   extends ZorderWithCodegenDisabledSuiteBase
-    with ZorderSuiteSpark
-    with ParserSuite {}
+  with ZorderSuiteSpark
+  with ParserSuite {}

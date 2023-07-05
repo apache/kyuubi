@@ -20,7 +20,7 @@ package org.apache.spark.sql
 import org.apache.spark.sql.execution.adaptive.{AQEShuffleReadExec, QueryStageExec}
 import org.apache.spark.sql.internal.SQLConf
 
-import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf, MarkNumOutputColumnsRule}
+import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
 
 class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
   override protected def beforeAll(): Unit = {
@@ -101,7 +101,6 @@ class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
       }
       assert(sortedShuffleReaders.last.partitionSpecs.length === finalPartitionNum)
       assert(df.rdd.partitions.length === finalPartitionNum)
-      assert(MarkNumOutputColumnsRule.numOutputColumns(spark).isEmpty)
     }
 
     withSQLConf(
@@ -187,19 +186,16 @@ class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
       "spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes" -> "7") {
       sql("set spark.sql.adaptive.advisoryPartitionSizeInBytes=5")
       sql("SELECT * FROM t1").count()
-      assert(MarkNumOutputColumnsRule.numOutputColumns(spark).isEmpty)
       assert(spark.conf.getOption("spark.sql.adaptive.advisoryPartitionSizeInBytes")
         .contains("5"))
 
       withTable("tmp") {
         sql("CREATE TABLE t1 USING PARQUET SELECT /*+ repartition */ 1 AS c1, 'a' AS c2")
-        assert(MarkNumOutputColumnsRule.numOutputColumns(spark).contains("2"))
         assert(spark.conf.getOption("spark.sql.adaptive.advisoryPartitionSizeInBytes")
           .contains("7"))
       }
 
       sql("SELECT * FROM t1").count()
-      assert(MarkNumOutputColumnsRule.numOutputColumns(spark).isEmpty)
       assert(spark.conf.getOption("spark.sql.adaptive.advisoryPartitionSizeInBytes")
         .contains("5"))
     }

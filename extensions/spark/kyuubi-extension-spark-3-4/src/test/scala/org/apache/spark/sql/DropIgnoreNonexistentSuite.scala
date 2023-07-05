@@ -29,14 +29,6 @@ class DropIgnoreNonexistentSuite extends KyuubiSparkSQLExtensionTest {
       val df1 = sql("DROP DATABASE nonexistent_database")
       assert(df1.queryExecution.analyzed.asInstanceOf[DropNamespace].ifExists == true)
 
-      // drop nonexistent table
-      val df2 = sql("DROP TABLE nonexistent_table")
-      assert(df2.queryExecution.analyzed.isInstanceOf[NoopCommand])
-
-      // drop nonexistent view
-      val df3 = sql("DROP VIEW nonexistent_view")
-      assert(df3.queryExecution.analyzed.isInstanceOf[NoopCommand])
-
       // drop nonexistent function
       val df4 = sql("DROP FUNCTION nonexistent_function")
       assert(df4.queryExecution.analyzed.isInstanceOf[NoopCommand])

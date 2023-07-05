@@ -21,7 +21,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{CustomResourceProfileExec, SparkPlan}
 import org.apache.spark.sql.execution.adaptive._
 
-import org.apache.kyuubi.sql.{KyuubiSQLConf, MarkNumOutputColumnsRule}
+import org.apache.kyuubi.sql.{KyuubiSQLConf, WriteUtils}
 
 /**
  * Inject custom resource profile for final write stage, so we can specify custom
@@ -34,7 +34,7 @@ case class InjectCustomResourceProfile(session: SparkSession)
       return plan
     }
 
-    if (!MarkNumOutputColumnsRule.isWrite(session, plan)) {
+    if (!WriteUtils.isWrite(session, plan)) {
       return plan
     }
 
