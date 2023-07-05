@@ -30,10 +30,10 @@ import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndex
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationState, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
 import org.apache.kyuubi.util.KubernetesUtils
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
-  import KubernetesApplicationOperation._
 
   private val kubernetesClients: ConcurrentHashMap[KubernetesInfo, KubernetesClient] =
     new ConcurrentHashMap[KubernetesInfo, KubernetesClient]
@@ -125,26 +125,18 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
     debug(s"[$kubernetesInfo] Deleting application info from Kubernetes cluster by $tag tag")
     try {
-      Option(appInfoStore.get(tag)) match {
-        case Some(info) =>
-          debug(s"Application info[tag: $tag] is in ${info.state}")
-          info.state match {
-            case NOT_FOUND | FAILED | UNKNOWN =>
-              (
-                false,
-                s"[$kubernetesInfo] Target application[tag: $tag] is in ${info.state} status")
-            case _ =>
-              (
-                !kubernetesClient.pods.withName(info.name).delete().isEmpty,
-                s"[$kubernetesInfo] Operation of deleted" +
-                  s" application[appId: ${info.id} ,tag: $tag] is completed")
-          }
-        case None =>
-          val podName = tagToKubernetesPodName(tag)
-          debug(s"No application info found for tag[$tag], trying to delete pod with name $podName")
+      val info = appInfoStore.getOrDefault(tag, ApplicationInfo.NOT_FOUND)
+      debug(s"Application info[tag: $tag] is in ${info.state}")
+      info.state match {
+        case NOT_FOUND | FAILED | UNKNOWN =>
           (
-            !kubernetesClient.pods.withName(podName).delete().isEmpty,
-            s"[$kubernetesInfo] Operation of deleted pod with name $podName is completed")
+            false,
+            s"[$kubernetesInfo] Target application[tag: $tag] is in ${info.state} status")
+        case _ =>
+          (
+            !kubernetesClient.pods.withName(info.name).delete().isEmpty,
+            s"[$kubernetesInfo] Operation of deleted" +
+              s" application[appId: ${info.id} ,tag: $tag] is completed")
       }
     } catch {
       case e: Exception =>
@@ -266,8 +258,6 @@ object KubernetesApplicationOperation extends Logging {
   val KUBERNETES_SERVICE_HOST = "KUBERNETES_SERVICE_HOST"
   val KUBERNETES_SERVICE_PORT = "KUBERNETES_SERVICE_PORT"
 
-  val KUBERNETES_POD_NAME_PREFIX = "kyuubi-"
-
   def toApplicationState(state: String): ApplicationState = state match {
     // https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/types.go#L2396
     // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
@@ -281,6 +271,4 @@ object KubernetesApplicationOperation extends Logging {
         "mark the application state as UNKNOWN.")
       UNKNOWN
   }
-
-  def tagToKubernetesPodName(tag: String): String = s"$KUBERNETES_POD_NAME_PREFIX$tag"
 }

@@ -26,7 +26,7 @@ import scala.util.control.NonFatal
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.{tagToKubernetesPodName, LABEL_KYUUBI_UNIQUE_KEY}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.service.AbstractService
@@ -101,7 +101,6 @@ object KyuubiApplicationManager {
 
   private def setupSparkK8sTag(tag: String, conf: KyuubiConf): Unit = {
     conf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY, tag)
-    conf.set(SparkProcessBuilder.KUBERNETES_DRIVER_POD_NAME, tagToKubernetesPodName(tag))
   }
 
   private def setupFlinkYarnTag(tag: String, conf: KyuubiConf): Unit = {
