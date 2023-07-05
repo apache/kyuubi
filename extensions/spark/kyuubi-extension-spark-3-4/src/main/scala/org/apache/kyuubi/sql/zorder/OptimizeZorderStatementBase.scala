@@ -24,20 +24,11 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
  * A zorder statement that contains we parsed from SQL.
  * We should convert this plan to certain command at Analyzer.
  */
-abstract class OptimizeZorderStatementBase extends UnaryNode {
-  def tableIdentifier: Seq[String]
-  def query: LogicalPlan
-  override def child: LogicalPlan = query
-  override def output: Seq[Attribute] = child.output
-}
-
-/**
- * A zorder statement that contains we parsed from SQL.
- * We should convert this plan to certain command at Analyzer.
- */
 case class OptimizeZorderStatement(
     tableIdentifier: Seq[String],
-    query: LogicalPlan) extends OptimizeZorderStatementBase {
+    query: LogicalPlan) extends UnaryNode {
+  override def child: LogicalPlan = query
+  override def output: Seq[Attribute] = child.output
   protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
     copy(query = newChild)
 }
