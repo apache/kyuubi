@@ -66,7 +66,7 @@ object KDFRegistry {
     val engineName: KyuubiDefinedFunction = create(
       "kyuubi_engine_name",
       new EngineNameFunction(flinkConfigMap),
-      "Return the spark application name for the associated query engine",
+      "Return the application name for the associated query engine",
       "string",
       "1.8.0")
     kyuubiDefinedFunctions += engineName
@@ -74,7 +74,7 @@ object KDFRegistry {
     val engineId: KyuubiDefinedFunction = create(
       "kyuubi_engine_id",
       new EngineIdFunction(flinkConfigMap),
-      "Return the spark application id for the associated query engine",
+      "Return the application id for the associated query engine",
       "string",
       "1.8.0")
     kyuubiDefinedFunctions += engineId
