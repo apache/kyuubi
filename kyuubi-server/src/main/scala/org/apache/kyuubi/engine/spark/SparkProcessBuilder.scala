@@ -239,6 +239,7 @@ object SparkProcessBuilder {
   final val MASTER_KEY = "spark.master"
   final val KUBERNETES_CONTEXT_KEY = "spark.kubernetes.context"
   final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
+  final val KUBERNETES_DRIVER_POD_NAME = "spark.kubernetes.driver.pod.name"
   final val INTERNAL_RESOURCE = "spark-internal"
 
   /**
