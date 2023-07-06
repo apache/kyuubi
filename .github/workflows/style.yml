@@ -68,6 +68,7 @@ jobs:
           build/mvn clean install ${MVN_OPT} -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.2,tpcds
           build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-1 -Pspark-3.1
           build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-3,extensions/spark/kyuubi-spark-connector-kudu,extensions/spark/kyuubi-spark-connector-hive -Pspark-3.3
+          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-4 -Pspark-3.4
 
       - name: Scalastyle with maven
         id: scalastyle-check
