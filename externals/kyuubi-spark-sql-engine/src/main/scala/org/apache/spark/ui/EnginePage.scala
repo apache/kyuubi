@@ -292,7 +292,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         <td> {session.name} </td>
         <td> {formatDate(session.startTime)} </td>
         <td> {if (session.endTime > 0) formatDate(session.endTime)} </td>
-        <td> {formatDurationVerbose(session.duration)} </td>
+        <td> {formatDuration(session.duration)} </td>
         <td> {session.totalOperations} </td>
       </tr>
     }
@@ -386,7 +386,7 @@ private class StatementStatsPagedTable(
         {if (event.completeTime > 0) formatDate(event.completeTime)}
       </td>
       <td >
-        {formatDurationVerbose(event.duration)}
+        {formatDuration(event.duration)}
       </td>
       <td>
         <span class="description-input">
