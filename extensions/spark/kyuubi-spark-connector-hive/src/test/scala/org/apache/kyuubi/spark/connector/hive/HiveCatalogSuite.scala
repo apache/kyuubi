@@ -164,7 +164,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
       catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
 
     val parsed = CatalystSqlParser.parseMultipartIdentifier(table.name)
-    assert(parsed == Seq("db", "test_table") || parsed == Seq("spark_catalog", "db", "test_table"))
+    assert(parsed == Seq("db", "test_table"))
     assert(table.schema == schema)
     assert(filterV2TableProperties(table.properties) == Map())
 
@@ -181,7 +181,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     val table = catalog.createTable(testIdent, schema, Array.empty[Transform], properties)
 
     val parsed = CatalystSqlParser.parseMultipartIdentifier(table.name)
-    assert(parsed == Seq("db", "test_table") || parsed == Seq("spark_catalog", "db", "test_table"))
+    assert(parsed == Seq("db", "test_table"))
     assert(table.schema == schema)
     assert(filterV2TableProperties(table.properties).asJava == properties)
 

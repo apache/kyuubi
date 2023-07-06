@@ -26,6 +26,7 @@ import org.apache.spark.sql.connector.catalog.TableChange.{AddColumn, After, Col
 import org.apache.spark.sql.execution.command.CommandUtils
 import org.apache.spark.sql.execution.command.CommandUtils.{calculateMultipleLocationSizes, calculateSingleLocationSize}
 import org.apache.spark.sql.execution.datasources.PartitionedFile
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
 
 import org.apache.kyuubi.spark.connector.common.SparkUtils
@@ -252,5 +253,30 @@ object HiveConnectorUtils extends Logging {
     }
 
     new StructType(newFields)
+  }
+
+  def withSQLConf[T](pairs: (String, String)*)(f: => T): T = {
+    val conf = SQLConf.get
+    val (keys, values) = pairs.unzip
+    val currentValues = keys.map { key =>
+      if (conf.contains(key)) {
+        Some(conf.getConfString(key))
+      } else {
+        None
+      }
+    }
+    (keys, values).zipped.foreach { (k, v) =>
+      if (SQLConf.isStaticConfigKey(k)) {
+        throw KyuubiHiveConnectorException(s"Cannot modify the value of a static config: $k")
+      }
+      conf.setConfString(k, v)
+    }
+    try f
+    finally {
+      keys.zip(currentValues).foreach {
+        case (key, Some(value)) => conf.setConfString(key, value)
+        case (key, None) => conf.unsetConf(key)
+      }
+    }
   }
 }
