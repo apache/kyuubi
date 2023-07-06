@@ -55,7 +55,7 @@ case class HiveScan(
   private val partFileToHivePartMap: mutable.Map[PartitionedFile, HivePartition] = mutable.Map()
 
   override def createReaderFactory(): PartitionReaderFactory = {
-    val hiveConf = sparkSession.sessionState.newHadoopConf()
+    val hiveConf = fileIndex.hiveCatalog.hadoopConfiguration()
     addCatalogTableConfToConf(hiveConf, catalogTable)
 
     val table = HiveClientImpl.toHiveTable(catalogTable)
