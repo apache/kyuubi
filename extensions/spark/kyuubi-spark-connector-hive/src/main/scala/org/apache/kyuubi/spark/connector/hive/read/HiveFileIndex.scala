@@ -21,6 +21,7 @@ import java.net.URI
 
 import scala.collection.mutable
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.hive.ql.metadata.{Partition => HivePartition, Table}
 import org.apache.spark.sql.SparkSession
@@ -37,7 +38,7 @@ import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConne
 class HiveCatalogFileIndex(
     sparkSession: SparkSession,
     val catalogTable: CatalogTable,
-    hiveCatalog: HiveTableCatalog,
+    val hiveCatalog: HiveTableCatalog,
     override val sizeInBytes: Long)
   extends PartitioningAwareFileIndex(
     sparkSession,
@@ -99,14 +100,16 @@ class HiveCatalogFileIndex(
         userSpecifiedSchema = Some(partitionSpec.partitionColumns),
         fileStatusCache = fileStatusCache,
         userSpecifiedPartitionSpec = Some(partitionSpec),
-        metadataOpsTimeNs = Some(timeNs))
+        metadataOpsTimeNs = Some(timeNs),
+        hadoopConf = hiveCatalog.hadoopConfiguration())
     } else {
       new HiveInMemoryFileIndex(
         sparkSession = sparkSession,
         rootPathsSpecified = rootPaths,
         parameters = table.properties,
         userSpecifiedSchema = None,
-        fileStatusCache = fileStatusCache)
+        fileStatusCache = fileStatusCache,
+        hadoopConf = hiveCatalog.hadoopConfiguration())
     }
   }
 
@@ -142,7 +145,8 @@ class HiveInMemoryFileIndex(
     partPathToBindHivePart: Map[PartitionPath, HivePartition] = Map.empty,
     fileStatusCache: FileStatusCache = NoopCache,
     userSpecifiedPartitionSpec: Option[PartitionSpec] = None,
-    override val metadataOpsTimeNs: Option[Long] = None)
+    override val metadataOpsTimeNs: Option[Long] = None,
+    override protected val hadoopConf: Configuration)
   extends InMemoryFileIndex(
     sparkSession,
     rootPathsSpecified,
