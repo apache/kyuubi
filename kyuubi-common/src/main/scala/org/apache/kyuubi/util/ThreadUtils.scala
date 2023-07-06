@@ -115,7 +115,6 @@ object ThreadUtils extends Logging {
     }
     thread.setDaemon(isDaemon)
     thread.start()
-    thread.join()
 
     exception match {
       case Some(realException) =>
