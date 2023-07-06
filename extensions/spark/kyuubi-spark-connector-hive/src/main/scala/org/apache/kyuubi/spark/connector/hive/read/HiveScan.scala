@@ -25,7 +25,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hive.ql.metadata.{Partition => HivePartition}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression}
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
 import org.apache.spark.sql.connector.read.PartitionReaderFactory
@@ -53,6 +53,15 @@ case class HiveScan(
   private val isCaseSensitive = sparkSession.sessionState.conf.caseSensitiveAnalysis
 
   private val partFileToHivePartMap: mutable.Map[PartitionedFile, HivePartition] = mutable.Map()
+
+  override def isSplitable(path: Path): Boolean = {
+    catalogTable.provider.map(_.toUpperCase(Locale.ROOT)).exists {
+      case "PARQUET" => true
+      case "ORC" => true
+      case "HIVE" => isHiveOrcOrParquet(catalogTable.storage)
+      case _ => super.isSplitable(path)
+    }
+  }
 
   override def createReaderFactory(): PartitionReaderFactory = {
     val hiveConf = fileIndex.hiveCatalog.hadoopConfiguration()
@@ -140,6 +149,11 @@ case class HiveScan(
     } else {
       name.toLowerCase(Locale.ROOT)
     }
+  }
+
+  private def isHiveOrcOrParquet(storage: CatalogStorageFormat): Boolean = {
+    val serde = storage.serde.getOrElse("").toLowerCase(Locale.ROOT)
+    serde.contains("parquet") || serde.contains("orc")
   }
 
   def toAttributes(structType: StructType): Seq[AttributeReference] =

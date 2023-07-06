@@ -36,6 +36,7 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.IdentifierHelper
+import org.apache.kyuubi.spark.connector.hive.read.HiveScan
 
 class HiveCatalogSuite extends KyuubiHiveTest {
 
@@ -338,5 +339,23 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     checkMetadata(metadata.asScala.toMap, emptyProps.asScala.toMap)
 
     catalog.dropNamespace(testNs, cascade = false)
+  }
+
+  test("Support Parquet/Orc provider is splitable") {
+    val parquet_table = Identifier.of(testNs, "parquet_table")
+    val parProps: util.Map[String, String] = new util.HashMap[String, String]()
+    parProps.put(TableCatalog.PROP_PROVIDER, "parquet")
+    val pt = catalog.createTable(parquet_table, schema, Array.empty[Transform], parProps)
+    val parScan = pt.asInstanceOf[HiveTable]
+      .newScanBuilder(CaseInsensitiveStringMap.empty()).build().asInstanceOf[HiveScan]
+    assert(parScan.isSplitable(new Path("empty")))
+
+    val orc_table = Identifier.of(testNs, "orc_table")
+    val orcProps: util.Map[String, String] = new util.HashMap[String, String]()
+    orcProps.put(TableCatalog.PROP_PROVIDER, "orc")
+    val ot = catalog.createTable(orc_table, schema, Array.empty[Transform], orcProps)
+    val orcScan = ot.asInstanceOf[HiveTable]
+      .newScanBuilder(CaseInsensitiveStringMap.empty()).build().asInstanceOf[HiveScan]
+    assert(orcScan.isSplitable(new Path("empty")))
   }
 }
