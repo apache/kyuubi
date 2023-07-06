@@ -36,15 +36,16 @@ import org.apache.spark.sql.catalyst.util.quoteIfNeeded
 import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table, TableCatalog, TableChange}
 import org.apache.spark.sql.connector.catalog.NamespaceChange.RemoveProperty
 import org.apache.spark.sql.connector.expressions.Transform
-import org.apache.spark.sql.execution.datasources.DataSource
+import org.apache.spark.sql.execution.command.DDLUtils
 import org.apache.spark.sql.hive.HiveUDFExpressionBuilder
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper._
+import org.apache.spark.sql.internal.{HiveSerDe, SQLConf}
 import org.apache.spark.sql.internal.StaticSQLConf.{CATALOG_IMPLEMENTATION, GLOBAL_TEMP_DATABASE}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.withSQLConf
-import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
+import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{getStorageFormatAndProvider, toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
 
 /**
@@ -173,11 +174,14 @@ class HiveTableCatalog(sparkSession: SparkSession)
     withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.TransformHelper
       val (partitionColumns, maybeBucketSpec) = partitions.toSeq.convertTransforms
-      val provider = properties.getOrDefault(TableCatalog.PROP_PROVIDER, conf.defaultDataSourceName)
-      val tableProperties = properties.asScala
       val location = Option(properties.get(TableCatalog.PROP_LOCATION))
-      val storage = DataSource.buildStorageFormatFromOptions(toOptions(tableProperties.toMap))
-        .copy(locationUri = location.map(CatalogUtils.stringToURI))
+      val maybeProvider = Option(properties.get(TableCatalog.PROP_PROVIDER))
+      val (storage, provider) =
+        getStorageFormatAndProvider(
+          maybeProvider,
+          location,
+          properties.asScala.toMap)
+      val tableProperties = properties.asScala
       val isExternal = properties.containsKey(TableCatalog.PROP_EXTERNAL)
       val tableType =
         if (isExternal || location.isDefined) {
@@ -394,7 +398,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 }
 
-private object HiveTableCatalog {
+private object HiveTableCatalog extends Logging {
   private def toCatalogDatabase(
       db: String,
       metadata: util.Map[String, String],
@@ -408,6 +412,70 @@ private object HiveTableCatalog {
         .getOrElse(throw new IllegalArgumentException("Missing database location")),
       properties = metadata.asScala.toMap --
         Seq(SupportsNamespaces.PROP_COMMENT, SupportsNamespaces.PROP_LOCATION))
+  }
+
+  private def getStorageFormatAndProvider(
+      provider: Option[String],
+      location: Option[String],
+      options: Map[String, String]): (CatalogStorageFormat, String) = {
+    val nonHiveStorageFormat = CatalogStorageFormat.empty.copy(
+      locationUri = location.map(CatalogUtils.stringToURI),
+      properties = options)
+
+    val conf = SQLConf.get
+    val defaultHiveStorage = HiveSerDe.getDefaultStorage(conf).copy(
+      locationUri = location.map(CatalogUtils.stringToURI),
+      properties = options)
+
+    if (provider.isDefined) {
+      (nonHiveStorageFormat, provider.get)
+    } else if (serdeIsDefined(options)) {
+      val maybeSerde = options.get("hive.serde")
+      val maybeStoredAs = options.get("hive.stored-as")
+      val maybeInputFormat = options.get("hive.input-format")
+      val maybeOutputFormat = options.get("hive.output-format")
+      val storageFormat = if (maybeStoredAs.isDefined) {
+        // If `STORED AS fileFormat` is used, infer inputFormat, outputFormat and serde from it.
+        HiveSerDe.sourceToSerDe(maybeStoredAs.get) match {
+          case Some(hiveSerde) =>
+            defaultHiveStorage.copy(
+              inputFormat = hiveSerde.inputFormat.orElse(defaultHiveStorage.inputFormat),
+              outputFormat = hiveSerde.outputFormat.orElse(defaultHiveStorage.outputFormat),
+              // User specified serde takes precedence over the one inferred from file format.
+              serde = maybeSerde.orElse(hiveSerde.serde).orElse(defaultHiveStorage.serde),
+              properties = options ++ defaultHiveStorage.properties)
+          case _ => throw KyuubiHiveConnectorException(s"Unsupported serde ${maybeSerde.get}.")
+        }
+      } else {
+        defaultHiveStorage.copy(
+          inputFormat =
+            maybeInputFormat.orElse(defaultHiveStorage.inputFormat),
+          outputFormat =
+            maybeOutputFormat.orElse(defaultHiveStorage.outputFormat),
+          serde = maybeSerde.orElse(defaultHiveStorage.serde),
+          properties = options ++ defaultHiveStorage.properties)
+      }
+      (storageFormat, DDLUtils.HIVE_PROVIDER)
+    } else {
+      val createHiveTableByDefault = conf.getConf(SQLConf.LEGACY_CREATE_HIVE_TABLE_BY_DEFAULT)
+      if (!createHiveTableByDefault) {
+        (nonHiveStorageFormat, conf.defaultDataSourceName)
+      } else {
+        logWarning("A Hive serde table will be created as there is no table provider " +
+          s"specified. You can set ${SQLConf.LEGACY_CREATE_HIVE_TABLE_BY_DEFAULT.key} to false " +
+          "so that native data source table will be created instead.")
+        (defaultHiveStorage, DDLUtils.HIVE_PROVIDER)
+      }
+    }
+  }
+
+  private def serdeIsDefined(options: Map[String, String]): Boolean = {
+    val maybeStoredAs = options.get("hive.stored-as")
+    val maybeInputFormat = options.get("hive.input-format")
+    val maybeOutputFormat = options.get("hive.output-format")
+    val maybeSerde = options.get("hive.serde")
+    maybeStoredAs.isDefined || maybeInputFormat.isDefined ||
+    maybeOutputFormat.isDefined || maybeSerde.isDefined
   }
 
   implicit class NamespaceHelper(namespace: Array[String]) {
