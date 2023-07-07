@@ -293,7 +293,7 @@ class KyuubiSessionImpl(
 
   def checkEngineConnectionAlive(): Boolean = {
     try {
-      if (Option(client).forall(_.engineConnectionClosed)) return false
+      if (Option(client).exists(_.engineConnectionClosed)) return false
       if (!aliveProbeEnabled) return true
       getInfo(TGetInfoType.CLI_DBMS_VER)
       engineLastAlive = System.currentTimeMillis()
