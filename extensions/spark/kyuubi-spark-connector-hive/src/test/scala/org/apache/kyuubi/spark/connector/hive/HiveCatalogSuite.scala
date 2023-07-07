@@ -220,6 +220,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
 
   test("createTable: location") {
     val properties = new util.HashMap[String, String]()
+    properties.put(TableCatalog.PROP_PROVIDER, "parquet")
     assert(!catalog.tableExists(testIdent))
 
     // default location
