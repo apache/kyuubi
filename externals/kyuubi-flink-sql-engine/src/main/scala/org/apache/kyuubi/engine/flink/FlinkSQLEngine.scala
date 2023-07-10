@@ -31,6 +31,7 @@ import org.apache.flink.table.gateway.service.context.DefaultContext
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, currentUser, FLINK_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_NAME, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
@@ -92,26 +93,7 @@ object FlinkSQLEngine extends Logging {
       flinkConf.addAll(Configuration.fromMap(flinkConfFromArgs.asJava))
 
       val executionTarget = flinkConf.getString(DeploymentOptions.TARGET)
-      // set cluster name for per-job and application mode
-      executionTarget match {
-        case "yarn-per-job" | "yarn-application" =>
-          if (!flinkConf.containsKey("yarn.application.name")) {
-            val appName = s"kyuubi_${user}_flink_${Instant.now}"
-            flinkConf.setString("yarn.application.name", appName)
-          }
-          if (flinkConf.containsKey("high-availability.cluster-id")) {
-            flinkConf.setString(
-              "yarn.application.id",
-              flinkConf.toMap.get("high-availability.cluster-id"))
-          }
-        case "kubernetes-application" =>
-          if (!flinkConf.containsKey("kubernetes.cluster-id")) {
-            val appName = s"kyuubi-${user}-flink-${Instant.now}"
-            flinkConf.setString("kubernetes.cluster-id", appName)
-          }
-        case other =>
-          debug(s"Skip generating app name for execution target $other")
-      }
+      setDeploymentConf(executionTarget, flinkConf)
 
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
@@ -152,5 +134,36 @@ object FlinkSQLEngine extends Logging {
     val res = tableEnv.executeSql("select 'kyuubi'")
     res.await()
     info("Initial Flink SQL finished.")
+  }
+
+  private def setDeploymentConf(executionTarget: String, flinkConf: Configuration): Unit = {
+    // forward kyuubi engine variables to flink configuration
+    val instant = Instant.now
+    val engineName = s"kyuubi_${user}_flink_$instant"
+    flinkConf.setString(KYUUBI_ENGINE_NAME, engineName)
+
+    kyuubiConf.getOption(KYUUBI_SESSION_USER_KEY).foreach(user =>
+      flinkConf.setString(KYUUBI_SESSION_USER_KEY, user))
+
+    // set cluster name for per-job and application mode
+    executionTarget match {
+      case "yarn-per-job" | "yarn-application" =>
+        if (!flinkConf.containsKey("yarn.application.name")) {
+          val appName = engineName
+          flinkConf.setString("yarn.application.name", appName)
+        }
+        if (flinkConf.containsKey("high-availability.cluster-id")) {
+          flinkConf.setString(
+            "yarn.application.id",
+            flinkConf.toMap.get("high-availability.cluster-id"))
+        }
+      case "kubernetes-application" =>
+        if (!flinkConf.containsKey("kubernetes.cluster-id")) {
+          val appName = s"kyuubi-${user}-flink-$instant"
+          flinkConf.setString("kubernetes.cluster-id", appName)
+        }
+      case other =>
+        debug(s"Skip generating app name for execution target $other")
+    }
   }
 }
