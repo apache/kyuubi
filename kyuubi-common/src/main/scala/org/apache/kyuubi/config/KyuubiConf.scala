@@ -429,6 +429,17 @@ object KyuubiConf {
     .stringConf
     .createOptional
 
+  val FRONTEND_ADVERTISED_HOST: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.advertised.host")
+      .doc(
+        "Hostname or IP of the Kyuubi server's frontend services to publish to " +
+          "external systems such as the service discovery ensemble and metadata store. " +
+          "Use it when you want to advertise a different hostname or IP than the bind host.")
+      .version("1.8.0")
+      .serverOnly
+      .stringConf
+      .createOptional
+
   val FRONTEND_THRIFT_BINARY_BIND_HOST: ConfigEntry[Option[String]] =
     buildConf("kyuubi.frontend.thrift.binary.bind.host")
       .doc("Hostname or IP of the machine on which to run the thrift frontend service " +
@@ -506,15 +517,6 @@ object KyuubiConf {
       .version("1.4.0")
       .serverOnly
       .fallbackConf(FRONTEND_BIND_PORT)
-
-  val FRONTEND_THRIFT_CONNECTION_URL_HOST: ConfigEntry[String] =
-    buildConf("kyuubi.frontend.thrift.connection.url.host")
-      .doc("Hostname or IP of the Kyuubi server's thrift frontend service that will be " +
-        "registered for the service discovery ensemble.")
-      .version("1.8.0")
-      .serverOnly
-      .stringConf
-      .createWithDefault("")
 
   val FRONTEND_THRIFT_HTTP_BIND_HOST: ConfigEntry[Option[String]] =
     buildConf("kyuubi.frontend.thrift.http.bind.host")

@@ -68,19 +68,26 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       }
     }
 
+  private lazy val port: Int = conf.get(FRONTEND_REST_BIND_PORT)
+
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
     server = JettyServer(
       getName,
       host,
-      conf.get(FRONTEND_REST_BIND_PORT),
+      port,
       conf.get(FRONTEND_REST_MAX_WORKER_THREADS))
     super.initialize(conf)
   }
 
   override def connectionUrl: String = {
     checkInitialized()
-    server.getServerUri
+    val advertisedHost = conf.get(FRONTEND_ADVERTISED_HOST)
+    if (advertisedHost.isEmpty) {
+      server.getServerUri
+    } else {
+      s"${advertisedHost.get}:$port"
+    }
   }
 
   private def startInternal(): Unit = {

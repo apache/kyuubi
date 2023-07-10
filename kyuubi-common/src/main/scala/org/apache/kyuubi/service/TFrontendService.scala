@@ -31,7 +31,7 @@ import org.apache.thrift.transport.TTransport
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_CONNECTION_URL_HOST, SESSION_CLOSE_ON_DISCONNECT}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, SESSION_CLOSE_ON_DISCONNECT}
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -112,8 +112,8 @@ abstract class TFrontendService(name: String)
 
   override def connectionUrl: String = {
     checkInitialized()
-    val connUrlHost = conf.get(FRONTEND_THRIFT_CONNECTION_URL_HOST)
-    val host = if (connUrlHost.isEmpty) {
+    val advertisedHost = conf.get(FRONTEND_ADVERTISED_HOST)
+    val host = if (advertisedHost.isEmpty) {
       serverHost match {
         case Some(h) => h // respect user's setting ahead
         case None if conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME) =>
@@ -122,7 +122,7 @@ abstract class TFrontendService(name: String)
           serverAddr.getHostAddress
       }
     } else {
-      connUrlHost
+      advertisedHost.get
     }
 
     host + ":" + actualPort

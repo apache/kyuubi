@@ -115,7 +115,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     assert(service2.connectionUrl.split("\\.")(0).toInt > 0)
   }
 
-  test("thrift connection url host") {
+  test("advertised host") {
 
     def newService: TBinaryFrontendService = {
       new TBinaryFrontendService("DummyThriftBinaryFrontendService") {
@@ -127,7 +127,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     val conf = new KyuubiConf()
       .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "localhost")
       .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-      .set(FRONTEND_THRIFT_CONNECTION_URL_HOST, "dummy.host")
+      .set(FRONTEND_ADVERTISED_HOST, "dummy.host")
     val service = newService
 
     service.initialize(conf)
