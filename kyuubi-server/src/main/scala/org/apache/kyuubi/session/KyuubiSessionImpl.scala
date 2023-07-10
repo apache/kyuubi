@@ -291,8 +291,9 @@ class KyuubiSessionImpl(
   var engineAliveMaxFailCount = 3
   var engineAliveFailCount = 0
 
-  def checkEngineAlive(): Boolean = {
+  def checkEngineConnectionAlive(): Boolean = {
     try {
+      if (Option(client).exists(_.engineConnectionClosed)) return false
       if (!aliveProbeEnabled) return true
       getInfo(TGetInfoType.CLI_DBMS_VER)
       engineLastAlive = System.currentTimeMillis()

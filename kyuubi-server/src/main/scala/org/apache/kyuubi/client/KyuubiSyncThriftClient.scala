@@ -52,6 +52,8 @@ class KyuubiSyncThriftClient private (
   @volatile private var _engineUrl: Option[String] = _
   @volatile private var _engineName: Option[String] = _
 
+  private[kyuubi] def engineConnectionClosed: Boolean = !protocol.getTransport.isOpen
+
   private val lock = new ReentrantLock()
 
   // Visible for testing.
@@ -84,7 +86,7 @@ class KyuubiSyncThriftClient private (
       "engine-alive-probe-" + _aliveProbeSessionHandle)
     val task = new Runnable {
       override def run(): Unit = {
-        if (!remoteEngineBroken && protocol.getTransport.isOpen) {
+        if (!remoteEngineBroken && !engineConnectionClosed) {
           engineAliveProbeClient.foreach { client =>
             val tGetInfoReq = new TGetInfoReq()
             tGetInfoReq.setSessionHandle(_aliveProbeSessionHandle)
@@ -134,7 +136,7 @@ class KyuubiSyncThriftClient private (
    * Lock every rpc call to send them sequentially
    */
   private def withLockAcquired[T](block: => T): T = Utils.withLockRequired(lock) {
-    if (!protocol.getTransport.isOpen) {
+    if (engineConnectionClosed) {
       throw KyuubiSQLException.connectionDoesNotExist()
     }
     block
