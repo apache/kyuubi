@@ -80,6 +80,16 @@ case class EngineSessionPage(parent: EngineTab)
           IP {sessionStat.ip},
           Server {sessionStat.serverIp},
           Session created at {formatDate(sessionStat.startTime)},
+          {
+          if (sessionStat.endTime == -1L) {
+            ""
+          } else {
+            s"""
+               |Session end at ${formatDate(sessionStat.endTime)},
+               |Session duration ${formatDuration(sessionStat.duration)},
+               |""".stripMargin
+          }
+        }
           Total run {sessionStat.totalOperations} SQL
         </h4> ++
         sessionPropertiesTable ++
