@@ -212,6 +212,28 @@ object PrivilegesBuilder {
   type PrivilegesAndOpType = (Seq[PrivilegeObject], Seq[PrivilegeObject], OperationType)
 
   /**
+   * Build input  privilege objects from a Spark's LogicalPlan for hive permanent udf
+   *
+   * @param plan      A Spark LogicalPlan
+   */
+  def buildFunctions(
+      plan: LogicalPlan,
+      spark: SparkSession): PrivilegesAndOpType = {
+    val inputObjs = new ArrayBuffer[PrivilegeObject]
+    // TODO: add support for Spark 3.4.x
+    plan transformAllExpressions {
+      case hiveFunction: Expression if isKnownFunction(hiveFunction) =>
+        val functionSpec: ScanSpec = getFunctionSpec(hiveFunction)
+        if (functionSpec.functionDescs.exists(!_.functionTypeDesc.get.skip(hiveFunction, spark))) {
+          functionSpec.functions(hiveFunction).foreach(func =>
+            inputObjs += PrivilegeObject(func))
+        }
+        hiveFunction
+    }
+    (inputObjs, Seq.empty, OperationType.QUERY)
+  }
+
+  /**
    * Build input and output privilege objects from a Spark's LogicalPlan
    *
    * For `Command`s, build outputs if it has an target to write, build inputs for the
