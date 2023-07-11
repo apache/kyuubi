@@ -78,15 +78,15 @@ case class EngineSessionPage(parent: EngineTab)
         <h4>
           User {sessionStat.username},
           IP {sessionStat.ip},
-          Server {sessionStat.serverIp},
+          Server {sessionStat.serverIp}
+        </h4> ++
+        <h4>
           Session created at {formatDate(sessionStat.startTime)},
           {
-          if (sessionStat.endTime < 0) {
-            ""
-          } else {
+          if (sessionStat.endTime > 0) {
             s"""
-               |Session end at ${formatDate(sessionStat.endTime)},
-               |Session duration ${formatDuration(sessionStat.duration)},
+               | ended at ${formatDate(sessionStat.endTime)},
+               | after ${formatDuration(sessionStat.duration)}.
                |""".stripMargin
           }
         }
