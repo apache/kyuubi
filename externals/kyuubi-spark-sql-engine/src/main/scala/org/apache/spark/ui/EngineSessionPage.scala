@@ -81,7 +81,7 @@ case class EngineSessionPage(parent: EngineTab)
           Server {sessionStat.serverIp},
           Session created at {formatDate(sessionStat.startTime)},
           {
-          if (sessionStat.endTime == -1L) {
+          if (sessionStat.endTime < 0) {
             ""
           } else {
             s"""
