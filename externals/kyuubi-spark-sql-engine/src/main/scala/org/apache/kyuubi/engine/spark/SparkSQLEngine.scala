@@ -165,6 +165,10 @@ object SparkSQLEngine extends Logging {
 
   private val sparkSessionCreated = new AtomicBoolean(false)
 
+  // Kubernetes pod name max length - '-exec-' - Int.MAX_VALUE.length
+  // 253 - 10 - 6
+  val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
+
   SignalRegister.registerLogger(logger)
   setupConf()
 
@@ -391,8 +395,4 @@ object SparkSQLEngine extends Logging {
       s"kyuubi-${UUID.randomUUID()}"
     }
   }
-
-  // Kubernetes pod name max length - '-exec-' - Int.MAX_VALUE.length
-  // 253 - 10 - 6
-  val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
 }
