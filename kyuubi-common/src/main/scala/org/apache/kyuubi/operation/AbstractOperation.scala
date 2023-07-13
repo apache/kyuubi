@@ -115,7 +115,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
         info(s"Processing ${session.user}'s query[$statementId]: " +
           s"${state.name} -> ${newState.name}, statement:\n$redactedStatement")
         startTime = System.currentTimeMillis()
-      case ERROR | FINISHED | CANCELED | TIMEOUT =>
+      case ERROR | FINISHED | CANCELED | TIMEOUT | CLOSED =>
         completedTime = System.currentTimeMillis()
         val timeCost = s", time taken: ${(completedTime - startTime) / 1000.0} seconds"
         info(s"Processing ${session.user}'s query[$statementId]: " +
