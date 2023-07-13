@@ -380,6 +380,7 @@ object SparkSQLEngine extends Logging {
     // only spark driver pod will build with `SPARK_APPLICATION_ID` env.
     Utils.isOnK8s && sys.env.contains("SPARK_APPLICATION_ID")
   }
+
   @VisibleForTesting
   def generateExecutorPodNamePrefixForK8s(userName: String): String = {
     val resolvedUserName =
