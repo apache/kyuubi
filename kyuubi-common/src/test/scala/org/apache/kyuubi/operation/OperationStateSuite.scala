@@ -17,11 +17,13 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.TOperationState
+import org.apache.hive.service.rpc.thrift.{TOperationState, TProtocolVersion}
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationState._
+import org.apache.kyuubi.session.NoopSessionManager
 
 class OperationStateSuite extends KyuubiFunSuite {
   test("toTOperationState") {
@@ -78,5 +80,28 @@ class OperationStateSuite extends KyuubiFunSuite {
     (OperationState.values -- Seq(FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR)).foreach { state =>
       assert(!OperationState.isTerminal(state))
     }
+  }
+
+  test("kyuubi-5036 operation close should set completeTime") {
+    val sessionManager = new NoopSessionManager
+    sessionManager.initialize(KyuubiConf())
+    val sHandle = sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      Map.empty)
+    val session = sessionManager.getSession(sHandle)
+
+    val operation = new NoopOperation(session)
+    assert(operation.getStatus.completed == 0)
+
+    operation.close()
+    val afterClose1 = operation.getStatus
+    assert(afterClose1.state == OperationState.CLOSED)
+    assert(afterClose1.completed != 0)
+    Thread.sleep(1000)
+    val afterClose2 = operation.getStatus
+    assert(afterClose1.completed == afterClose2.completed)
   }
 }
