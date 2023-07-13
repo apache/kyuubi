@@ -17,11 +17,26 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.net.InetAddress
+import java.time.Instant
+import java.util.{Locale, UUID}
+import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.atomic.AtomicBoolean
+
+import scala.concurrent.duration.Duration
+import scala.util.control.NonFatal
+
 import com.google.common.annotations.VisibleForTesting
+import org.apache.spark.{ui, SparkConf}
+import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
+import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
+import org.apache.spark.sql.SparkSession
+
+import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.Utils._
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
-import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
@@ -31,19 +46,6 @@ import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
-import org.apache.kyuubi.{KyuubiException, Logging, Utils}
-import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
-import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.{SparkConf, ui}
-
-import java.net.InetAddress
-import java.time.Instant
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
-import java.util.{Locale, UUID}
-import scala.concurrent.duration.Duration
-import scala.util.control.NonFatal
 
 case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
 
@@ -162,7 +164,6 @@ object SparkSQLEngine extends Logging {
   private val countDownLatch = new CountDownLatch(1)
 
   private val sparkSessionCreated = new AtomicBoolean(false)
-
 
   // Kubernetes pod name max length - '-exec-' - Int.MAX_VALUE.length
   // 253 - 10 - 6
