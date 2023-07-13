@@ -35,6 +35,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.schema.SchemaHelper.TIMESTAMP_NTZ
 import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.operation.{HiveMetadataTests, SparkQueryTests}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
@@ -725,6 +726,14 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
         assert(
           engineCredentials.getToken(hiveTokenAlias) == creds2.getToken(new Text(metastoreUris)))
       }
+    }
+  }
+
+  test("KYUUBI #5030: Support get query id in Spark engine") {
+    withJdbcStatement() { stmt =>
+      stmt.executeQuery("SELECT 1")
+      val queryId = stmt.asInstanceOf[KyuubiStatement].getQueryId
+      assert(queryId != null && queryId.nonEmpty)
     }
   }
 
