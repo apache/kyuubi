@@ -75,23 +75,24 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
     Files.write(Paths.get(batchFile), batch_basic.getBytes(StandardCharsets.UTF_8))
 
     val long_time_batch_basic = s"""apiVersion: v1
-                         |username: ${ldapUser}
-                         |request:
-                         |  batchType: Spark
-                         |  name: LongTimeBatch
-                         |  resource: ${sparkBatchTestResource.get}
-                         |  className: org.apache.spark.examples.DriverSubmissionTest
-                         |  args:
-                         |   - 10
-                         |  configs:
-                         |    spark.master: local
-                         |    wait.completion: true
-                         |    k1: v1
-                         |    1: test_integer_key
-                         |    key:
-                         |options:
-                         |  verbose: true""".stripMargin
-    Files.write(Paths.get(longTimeBatchFile),
+                                   |username: ${ldapUser}
+                                   |request:
+                                   |  batchType: Spark
+                                   |  name: LongTimeBatch
+                                   |  resource: ${sparkBatchTestResource.get}
+                                   |  className: org.apache.spark.examples.DriverSubmissionTest
+                                   |  args:
+                                   |   - 10
+                                   |  configs:
+                                   |    spark.master: local
+                                   |    wait.completion: true
+                                   |    k1: v1
+                                   |    1: test_integer_key
+                                   |    key:
+                                   |options:
+                                   |  verbose: true""".stripMargin
+    Files.write(
+      Paths.get(longTimeBatchFile),
       long_time_batch_basic.getBytes(StandardCharsets.UTF_8))
   }
 
