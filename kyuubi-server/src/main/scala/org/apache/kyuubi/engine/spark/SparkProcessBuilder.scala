@@ -99,7 +99,7 @@ class SparkProcessBuilder(
     }
   }
 
-  override protected val commands: Array[String] = {
+  override protected lazy val commands: Array[String] = {
     // complete `spark.master` if absent on kubernetes
     completeMasterUrl(conf)
 
