@@ -30,7 +30,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
@@ -199,7 +199,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       case NonFatal(e) =>
         val errorMsg = "Error executing statement"
         error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
+        throw new NotFoundException(s"$errorMsg: ${Utils.prettyPrint(e)}")
     }
   }
 
