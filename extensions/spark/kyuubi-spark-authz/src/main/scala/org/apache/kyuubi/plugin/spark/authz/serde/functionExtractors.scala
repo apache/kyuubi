@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.apache.spark.sql.catalyst.expressions.ExpressionInfo
 
-import org.apache.kyuubi.plugin.spark.authz.serde.FunctionExtractor.buildFunctionIdentFromQualifiedName
+import org.apache.kyuubi.plugin.spark.authz.serde.FunctionExtractor.buildFunctionFromQualifiedName
 
 trait FunctionExtractor extends (AnyRef => Function) with Extractor
 
@@ -29,13 +29,16 @@ object FunctionExtractor {
     loadExtractorsToMap[FunctionExtractor]
   }
 
-  def buildFunctionIdentFromQualifiedName(qualifiedName: String): (String, Option[String]) = {
-    val parts: Array[String] = qualifiedName.split("\\.", 2)
-    if (parts.length == 1) {
-      (qualifiedName, None)
+  private[authz] def buildFunctionFromQualifiedName(qualifiedName: String): Function = {
+    val parts: Array[String] = qualifiedName.split("\\.")
+    val (catalog, database, functionName) = if (parts.length == 3) {
+      (Some(parts.head), Some(parts.tail.head), parts.last)
+    } else if (parts.length == 2) {
+      (None, Some(parts.head), parts.last)
     } else {
-      (parts.last, Some(parts.head))
+      (None, None, qualifiedName)
     }
+    Function(catalog, database, functionName)
   }
 }
 
@@ -44,7 +47,7 @@ object FunctionExtractor {
  */
 class StringFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
-    Function(None, v1.asInstanceOf[String])
+    Function(None, None, v1.asInstanceOf[String])
   }
 }
 
@@ -54,8 +57,7 @@ class StringFunctionExtractor extends FunctionExtractor {
 class QualifiedNameStringFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     val qualifiedName: String = v1.asInstanceOf[String]
-    val (funcName, database) = buildFunctionIdentFromQualifiedName(qualifiedName)
-    Function(database, funcName)
+    buildFunctionFromQualifiedName(qualifiedName)
   }
 }
 
@@ -65,7 +67,7 @@ class QualifiedNameStringFunctionExtractor extends FunctionExtractor {
 class FunctionIdentifierFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     val identifier = v1.asInstanceOf[FunctionIdentifier]
-    Function(identifier.database, identifier.funcName)
+    Function(None, identifier.database, identifier.funcName)
   }
 }
 
@@ -75,6 +77,6 @@ class FunctionIdentifierFunctionExtractor extends FunctionExtractor {
 class ExpressionInfoFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     val info = v1.asInstanceOf[ExpressionInfo]
-    Function(Option(info.getDb), info.getName)
+    Function(None, Option(info.getDb), info.getName)
   }
 }
