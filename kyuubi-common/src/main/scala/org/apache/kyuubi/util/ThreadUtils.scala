@@ -21,7 +21,6 @@ import java.util.concurrent.{Executors, ExecutorService, LinkedBlockingQueue, Sc
 
 import scala.concurrent.Awaitable
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.util.control.NonFatal
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 
@@ -97,51 +96,17 @@ object ThreadUtils extends Logging {
     }
   }
 
-  def runInNewThread[T](
+  def runInNewThread(
       threadName: String,
-      isDaemon: Boolean = true)(body: => T): T = {
-    @volatile var exception: Option[Throwable] = None
-    @volatile var result: T = null.asInstanceOf[T]
+      isDaemon: Boolean = true)(body: => Unit): Unit = {
 
     val thread = new Thread(threadName) {
       override def run(): Unit = {
-        try {
-          result = body
-        } catch {
-          case NonFatal(e) =>
-            exception = Some(e)
-        }
+        body
       }
     }
     thread.setDaemon(isDaemon)
+    thread.setUncaughtExceptionHandler(NamedThreadFactory.kyuubiUncaughtExceptionHandler)
     thread.start()
-
-    exception match {
-      case Some(realException) =>
-        // Remove the part of the stack that shows method calls into this helper method
-        // This means drop everything from the top until the stack element
-        // ThreadUtils.runInNewThread(), and then drop that as well (hence the `drop(1)`).
-        val baseStackTrace = Thread.currentThread().getStackTrace().dropWhile(
-          !_.getClassName.contains(this.getClass.getSimpleName)).drop(1)
-
-        // Remove the part of the new thread stack that shows methods call from this helper method
-        val extraStackTrace = realException.getStackTrace.takeWhile(
-          !_.getClassName.contains(this.getClass.getSimpleName))
-
-        // Combine the two stack traces, with a place holder just specifying that there
-        // was a helper method used, without any further details of the helper
-        val placeHolderStackElem = new StackTraceElement(
-          s"... run in separate thread using ${ThreadUtils.getClass.getName.stripSuffix("$")} ..",
-          " ",
-          "",
-          -1)
-        val finalStackTrace = extraStackTrace ++ Seq(placeHolderStackElem) ++ baseStackTrace
-
-        // Update the stack trace and rethrow the exception in the caller thread
-        realException.setStackTrace(finalStackTrace)
-        throw realException
-      case None =>
-        result
-    }
   }
 }
