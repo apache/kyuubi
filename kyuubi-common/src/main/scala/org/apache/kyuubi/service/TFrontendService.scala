@@ -112,17 +112,12 @@ abstract class TFrontendService(name: String)
 
   override def connectionUrl: String = {
     checkInitialized()
-    val advertisedHost = conf.get(FRONTEND_ADVERTISED_HOST)
-    val host = if (advertisedHost.isEmpty) {
-      serverHost match {
-        case Some(h) => h // respect user's setting ahead
-        case None if conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME) =>
-          serverAddr.getCanonicalHostName
-        case None =>
-          serverAddr.getHostAddress
-      }
-    } else {
-      advertisedHost.get
+    val host = (conf.get(FRONTEND_ADVERTISED_HOST), serverHost) match {
+      case (Some(advertisedHost), _) => advertisedHost
+      case (None, Some(h)) => h
+      case (None, None) if conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME) =>
+        serverAddr.getCanonicalHostName
+      case (None, None) => serverAddr.getHostAddress
     }
 
     host + ":" + actualPort
