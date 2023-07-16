@@ -37,6 +37,7 @@ import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
@@ -80,6 +81,12 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
       assert(currentEngine.isDefined)
       currentEngine.get.stop()
     })
+
+    val maxInitTimeout = conf.get(ENGINE_SPARK_MAX_INITIAL_WAIT)
+    if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString &&
+      maxInitTimeout > 0) {
+      startFastFailChecker(maxInitTimeout)
+    }
   }
 
   override def stop(): Unit = if (shutdown.compareAndSet(false, true)) {
@@ -112,6 +119,27 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     stopEngineExec =
       Some(ThreadUtils.newDaemonFixedThreadPool(1, "spark-engine-graceful-stop"))
     stopEngineExec.get.execute(stopTask)
+  }
+
+  private[kyuubi] def startFastFailChecker(maxTimeout: Long): Unit = {
+    val startedTime = System.currentTimeMillis()
+    Utils.tryLogNonFatalError {
+      ThreadUtils.runInNewThread("spark-engine-failfast-checker") {
+        if (!shutdown.get) {
+          while (backendService.sessionManager.getOpenSessionCount <= 0 &&
+            System.currentTimeMillis() - startedTime < maxTimeout) {
+            info(s"Waiting for the initial connection")
+            Thread.sleep(Duration(10, TimeUnit.SECONDS).toMillis)
+          }
+          if (backendService.sessionManager.getOpenSessionCount <= 0) {
+            error(s"Spark engine has been terminated because no incoming connection" +
+              s" for more than $maxTimeout ms, de-registering from engine discovery space.")
+            assert(currentEngine.isDefined)
+            currentEngine.get.stop()
+          }
+        }
+      }
+    }
   }
 
   override protected def stopServer(): Unit = {

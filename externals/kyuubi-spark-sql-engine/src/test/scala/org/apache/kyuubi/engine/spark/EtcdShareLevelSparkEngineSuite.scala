@@ -17,9 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_CHECK_INTERVAL
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAX_LIFETIME
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_CHECK_INTERVAL, ENGINE_SHARE_LEVEL, ENGINE_SPARK_MAX_INITIAL_WAIT, ENGINE_SPARK_MAX_LIFETIME}
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel.ShareLevel
 
@@ -30,6 +28,7 @@ trait EtcdShareLevelSparkEngineSuite
       etcdConf ++ Map(
         ENGINE_SHARE_LEVEL.key -> shareLevel.toString,
         ENGINE_SPARK_MAX_LIFETIME.key -> "PT20s",
+        ENGINE_SPARK_MAX_INITIAL_WAIT.key -> "0",
         ENGINE_CHECK_INTERVAL.key -> "PT5s")
   }
 }

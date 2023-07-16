@@ -95,4 +95,18 @@ object ThreadUtils extends Logging {
       }
     }
   }
+
+  def runInNewThread(
+      threadName: String,
+      isDaemon: Boolean = true)(body: => Unit): Unit = {
+
+    val thread = new Thread(threadName) {
+      override def run(): Unit = {
+        body
+      }
+    }
+    thread.setDaemon(isDaemon)
+    thread.setUncaughtExceptionHandler(NamedThreadFactory.kyuubiUncaughtExceptionHandler)
+    thread.start()
+  }
 }

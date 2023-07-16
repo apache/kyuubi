@@ -48,6 +48,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "connection")
       .set(SESSION_CONF_ADVISOR.key, classOf[TestSessionConfAdvisor].getName)
+      .set(KyuubiConf.ENGINE_SPARK_MAX_INITIAL_WAIT.key, "0")
   }
 
   test("KYUUBI #647 - async query causes engine crash") {
