@@ -37,7 +37,6 @@ serviceAccount:
   name: ~
 
 # priorityClass used for Kyuubi server pod
-# This priority class should be used for kyuubi server pods only.
 priorityClass:
   # Specifies whether a priorityClass should be created
   create: false
