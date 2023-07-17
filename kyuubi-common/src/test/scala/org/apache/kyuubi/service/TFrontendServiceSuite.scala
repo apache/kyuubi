@@ -115,6 +115,33 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     assert(service2.connectionUrl.split("\\.")(0).toInt > 0)
   }
 
+  test("advertised host") {
+
+    def newService: TBinaryFrontendService = {
+      new TBinaryFrontendService("DummyThriftBinaryFrontendService") {
+        override val serverable: Serverable = new NoopTBinaryFrontendServer
+        override val discoveryService: Option[Service] = None
+      }
+    }
+
+    val conf = new KyuubiConf()
+      .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "localhost")
+      .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+      .set(FRONTEND_ADVERTISED_HOST, "dummy.host")
+    val service = newService
+
+    service.initialize(conf)
+    assert(service.connectionUrl.startsWith("dummy.host"))
+
+    val service2 = newService
+    val conf2 = KyuubiConf()
+      .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "localhost")
+      .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+
+    service2.initialize(conf2)
+    assert(service2.connectionUrl.startsWith("localhost"))
+  }
+
   test("open session") {
     TClientTestUtils.withThriftClient(server.frontendServices.head) {
       client =>
