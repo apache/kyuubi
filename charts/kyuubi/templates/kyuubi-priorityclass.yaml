@@ -23,5 +23,4 @@ metadata:
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
 value: {{ .Values.priorityClass.value }}
-description: {{ .Values.priorityClass.description }}
 {{- end }}

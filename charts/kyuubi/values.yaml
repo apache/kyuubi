@@ -37,6 +37,7 @@ serviceAccount:
   name: ~
 
 # priorityClass used for Kyuubi server pod
+# This priority class should be used for kyuubi server pods only.
 priorityClass:
   # Specifies whether a priorityClass should be created
   create: false
@@ -44,7 +45,6 @@ priorityClass:
   name: ~
   # half of system-cluster-critical by default
   value: 1000000000
-  description: "This priority class should be used for kyuubi server pods only."
 
 # Role-based access control
 rbac:
