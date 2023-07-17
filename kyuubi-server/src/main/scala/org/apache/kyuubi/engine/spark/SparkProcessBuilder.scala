@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark
 
 import java.io.{File, IOException}
 import java.nio.file.Paths
+import java.util.Locale
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -210,6 +211,18 @@ class SparkProcessBuilder(
     conf.getOption(MASTER_KEY).orElse(defaultsConf.get(MASTER_KEY))
   }
 
+  def deployMode(): Option[String] = {
+    conf.getOption(DEPLOY_MODE_KEY).orElse(defaultsConf.get(DEPLOY_MODE_KEY))
+  }
+
+  override def isClusterMode(): Boolean = {
+    clusterManager().map(_.toLowerCase(Locale.ROOT)) match {
+      case Some(m) if m.startsWith("yarn") || m.startsWith("k8s") =>
+        deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")
+      case _ => false
+    }
+  }
+
   def kubernetesContext(): Option[String] = {
     conf.getOption(KUBERNETES_CONTEXT_KEY).orElse(defaultsConf.get(KUBERNETES_CONTEXT_KEY))
   }
@@ -237,6 +250,7 @@ object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
+  final val DEPLOY_MODE_KEY = "spark.submit.deployMode"
   final val KUBERNETES_CONTEXT_KEY = "spark.kubernetes.context"
   final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
   final val INTERNAL_RESOURCE = "spark-internal"
