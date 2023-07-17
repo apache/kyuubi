@@ -278,7 +278,15 @@ class BatchJobSubmission(
         }
       }
     } finally {
-      builder.close()
+      val waitCompletion = batchConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION.key)
+        .map(_.toBoolean).getOrElse(
+          session.sessionConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION))
+      val destroyProcess = !waitCompletion && builder.isClusterMode()
+      if (destroyProcess) {
+        info("Destroy the builder process because waitCompletion is false" +
+          " and the engine is running in cluster mode.")
+      }
+      builder.close(destroyProcess)
       updateApplicationInfoMetadataIfNeeded()
       cleanupUploadedResourceIfNeeded()
     }
@@ -345,14 +353,14 @@ class BatchJobSubmission(
       // fast fail
       if (isTerminalState(state)) {
         killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
-        builder.close()
+        builder.close(true)
         cleanupUploadedResourceIfNeeded()
         return
       }
 
       try {
         killMessage = killBatchApplication()
-        builder.close()
+        builder.close(true)
         cleanupUploadedResourceIfNeeded()
       } finally {
         if (state == OperationState.INITIALIZED) {
