@@ -43,6 +43,11 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
       s"hadoop.proxyuser.$clientPrincipalUser.hosts" -> "*")
   }
 
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    InternalSecurityAccessor.initialize(conf, true)
+  }
+
   test("test with LDAP authorization") {
     val encodeAuthorization = new String(
       Base64.getEncoder.encode(
