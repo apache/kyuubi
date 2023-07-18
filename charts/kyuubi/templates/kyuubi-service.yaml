@@ -15,6 +15,23 @@
   limitations under the License.
 */}}
 
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Release.Name }}-headless
+  labels:
+    {{- include "kyuubi.labels" $ | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    {{- range $name, $frontend := .Values.server }}
+    - name: {{ $name | kebabcase }}
+      port: {{ tpl $frontend.service.port $ }}
+      targetPort: {{ $frontend.port }}
+    {{- end }}
+  selector:
+    {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
+---
 {{- range $name, $frontend := .Values.server }}
 {{- if $frontend.enabled }}
 apiVersion: v1

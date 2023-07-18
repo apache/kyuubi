@@ -16,16 +16,22 @@
 */}}
 
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ .Release.Name }}
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       {{- include "kyuubi.selectorLabels" . | nindent 6 }}
+  serviceName: {{ $.Release.Name }}-headless
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  {{- with .Values.updateStrategy }}
+  updateStrategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
   template:
     metadata:
       labels:
@@ -33,89 +39,89 @@ spec:
       annotations:
         checksum/conf: {{ include (print $.Template.BasePath "/kyuubi-configmap.yaml") . | sha256sum }}
     spec:
-      {{- with .Values.imagePullSecrets }}
+     {{- with .Values.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- if or .Values.serviceAccount.name .Values.serviceAccount.create }}
+     {{- end }}
+     {{- if or .Values.serviceAccount.name .Values.serviceAccount.create }}
       serviceAccountName: {{ .Values.serviceAccount.name | default .Release.Name }}
-      {{- end }}
-      {{- if or .Values.priorityClass.name .Values.priorityClass.create }}
+     {{- end }}
+     {{- if or .Values.priorityClass.name .Values.priorityClass.create }}
       priorityClassName: {{ .Values.priorityClass.name | default .Release.Name }}
-      {{- end }}
-      {{- with .Values.initContainers }}
+     {{- end }}
+     {{- with .Values.initContainers }}
       initContainers: {{- tpl (toYaml .) $ | nindent 8 }}
-      {{- end }}
+     {{- end }}
       containers:
         - name: kyuubi-server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with .Values.command }}
+         {{- with .Values.command }}
           command: {{- tpl (toYaml .) $ | nindent 12 }}
-          {{- end }}
-          {{- with .Values.args }}
+         {{- end }}
+         {{- with .Values.args }}
           args: {{- tpl (toYaml .) $ | nindent 12 }}
-          {{- end }}
-          {{- with .Values.env }}
+         {{- end }}
+         {{- with .Values.env }}
           env: {{- tpl (toYaml .) $ | nindent 12 }}
-          {{- end }}
-          {{- with .Values.envFrom }}
+         {{- end }}
+         {{- with .Values.envFrom }}
           envFrom: {{- tpl (toYaml .) $ | nindent 12 }}
-          {{- end }}
+         {{- end }}
           ports:
-            {{- range $name, $frontend := .Values.server }}
-            {{- if $frontend.enabled }}
+           {{- range $name, $frontend := .Values.server }}
+           {{- if $frontend.enabled }}
             - name: {{ $name | kebabcase }}
               containerPort: {{ $frontend.port }}
-            {{- end }}
-            {{- end }}
-          {{- if .Values.livenessProbe.enabled }}
+           {{- end }}
+           {{- end }}
+         {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             exec:
-              command: ["/bin/bash", "-c", "bin/kyuubi status"]
+              command: [ "/bin/bash", "-c", "bin/kyuubi status" ]
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
             successThreshold: {{ .Values.livenessProbe.successThreshold }}
-          {{- end }}
-          {{- if .Values.readinessProbe.enabled }}
+         {{- end }}
+         {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
             exec:
-              command: ["/bin/bash", "-c", "$KYUUBI_HOME/bin/kyuubi status"]
+              command: [ "/bin/bash", "-c", "$KYUUBI_HOME/bin/kyuubi status" ]
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
             successThreshold: {{ .Values.readinessProbe.successThreshold }}
-          {{- end }}
-          {{- with .Values.resources }}
+         {{- end }}
+         {{- with .Values.resources }}
           resources: {{- toYaml . | nindent 12 }}
-          {{- end }}
+         {{- end }}
           volumeMounts:
             - name: conf
               mountPath: {{ .Values.kyuubiConfDir }}
-            {{- with .Values.volumeMounts }}
-              {{- tpl (toYaml .) $ | nindent 12 }}
-            {{- end }}
-        {{- with .Values.containers }}
-          {{- tpl (toYaml .) $ | nindent 8 }}
-        {{- end }}
+           {{- with .Values.volumeMounts }}
+             {{- tpl (toYaml .) $ | nindent 12 }}
+           {{- end }}
+       {{- with .Values.containers }}
+         {{- tpl (toYaml .) $ | nindent 8 }}
+       {{- end }}
       volumes:
         - name: conf
           configMap:
             name: {{ .Release.Name }}
-        {{- with .Values.volumes }}
-          {{- tpl (toYaml .) $ | nindent 8 }}
-        {{- end }}
-      {{- with .Values.nodeSelector }}
+       {{- with .Values.volumes }}
+         {{- tpl (toYaml .) $ | nindent 8 }}
+       {{- end }}
+     {{- with .Values.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
+     {{- end }}
+     {{- with .Values.affinity }}
       affinity: {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
+     {{- end }}
+     {{- with .Values.tolerations }}
       tolerations: {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.securityContext }}
+     {{- end }}
+     {{- with .Values.securityContext }}
       securityContext: {{- toYaml . | nindent 8 }}
-      {{- end }}
+     {{- end }}
