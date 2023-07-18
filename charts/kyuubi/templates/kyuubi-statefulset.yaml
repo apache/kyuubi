@@ -87,7 +87,7 @@ spec:
           {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
             exec:
-              command: [ "/bin/bash", "-c", "$KYUUBI_HOME/bin/kyuubi status" ]
+              command: ["/bin/bash", "-c", "$KYUUBI_HOME/bin/kyuubi status"]
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
