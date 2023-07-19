@@ -27,10 +27,12 @@ object KubernetesApplicationAuditLogger extends Logging {
     override protected def initialValue: StringBuilder = new StringBuilder()
   }
 
-  def audit(pod: Pod): Unit = {
+  def audit(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
     val sb = AUDIT_BUFFER.get()
     sb.setLength(0)
     sb.append(s"label=${pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)}").append("\t")
+    sb.append(s"context=${kubernetesInfo.context.getOrElse("")}").append("\t")
+    sb.append(s"namespace=${kubernetesInfo.namespace.getOrElse("")}").append("\t")
     sb.append(s"pod=${pod.getMetadata.getName}").append("\t")
     sb.append(s"appId=${pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL)}").append("\t")
     sb.append(s"appState=${toApplicationState(pod.getStatus.getPhase)}")
