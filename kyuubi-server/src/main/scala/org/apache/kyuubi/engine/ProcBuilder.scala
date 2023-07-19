@@ -21,17 +21,19 @@ import java.io.{File, FilenameFilter, IOException}
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.TimeUnit
+
 import scala.collection.JavaConverters._
+
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.EvictingQueue
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
+
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.NamedThreadFactory
-
-import java.util.concurrent.TimeUnit
 
 trait ProcBuilder {
 
@@ -155,7 +157,8 @@ trait ProcBuilder {
 
   private val engineLogMaxLines = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_MAX_LOG_LINES)
 
-  private val engineStartupDestroyTimeout = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_DESTROY_TIMEOUT)
+  private val engineStartupDestroyTimeout =
+    conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_DESTROY_TIMEOUT)
 
   protected val lastRowsOfLog: EvictingQueue[String] = EvictingQueue.create(engineLogMaxLines)
   // Visible for test
@@ -259,7 +262,7 @@ trait ProcBuilder {
     }
     if (destroyProcess && process != null) {
       process.destroy()
-      if (!process.waitFor(engineDestroyTimeOut, TimeUnit.MICROSECONDS)) {
+      if (!process.waitFor(engineStartupDestroyTimeout, TimeUnit.MICROSECONDS)) {
         process.destroyForcibly()
       }
       process = null
