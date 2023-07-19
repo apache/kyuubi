@@ -83,7 +83,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         info(s"[$kubernetesInfo] Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
         val enginePodInformer = client.pods()
           .withLabel(LABEL_KYUUBI_UNIQUE_KEY)
-          .inform(new SparkEnginePodEventHandler)
+          .inform(new SparkEnginePodEventHandler(kubernetesInfo))
         info(s"[$kubernetesInfo] Start Kubernetes Client Informer.")
         enginePodInformers.put(kubernetesInfo, enginePodInformer)
         client
@@ -201,11 +201,13 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  private class SparkEnginePodEventHandler extends ResourceEventHandler[Pod] {
+  private class SparkEnginePodEventHandler(kubernetesInfo: KubernetesInfo)
+    extends ResourceEventHandler[Pod] {
 
     override def onAdd(pod: Pod): Unit = {
       if (isSparkEnginePod(pod)) {
         updateApplicationState(pod)
+        KubernetesApplicationAuditLogger.audit(kubernetesInfo, pod)
       }
     }
 
@@ -216,6 +218,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         if (isTerminated(appState)) {
           markApplicationTerminated(newPod)
         }
+        KubernetesApplicationAuditLogger.audit(kubernetesInfo, newPod)
       }
     }
 
@@ -223,6 +226,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       if (isSparkEnginePod(pod)) {
         updateApplicationState(pod)
         markApplicationTerminated(pod)
+        KubernetesApplicationAuditLogger.audit(kubernetesInfo, pod)
       }
     }
   }
