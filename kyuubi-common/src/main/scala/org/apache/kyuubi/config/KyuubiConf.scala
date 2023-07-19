@@ -1504,7 +1504,7 @@ object KyuubiConf {
       .createWithDefault(10)
 
   val SESSION_ENGINE_DESTROY_TIMEOUT: ConfigEntry[Long] =
-    buildConf("kyuubi.session.engine.destroy.timeout")
+    buildConf("kyuubi.session.engine.startup.destroy.timeout")
       .doc("Timeout(ms) for the engine destroy,if engine destroy times out," +
         "force destroy instead.")
       .version("1.8.0")
