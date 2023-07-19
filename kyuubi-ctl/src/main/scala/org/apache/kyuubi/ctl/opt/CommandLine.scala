@@ -222,6 +222,9 @@ object CommandLine extends CommonCommandLine {
         opt[String]("batchState")
           .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchState = v)))
           .text("Batch state."),
+        opt[String]("batchName")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchName = v)))
+          .text("Batch name."),
         opt[String]("createTime")
           .action((v, c) =>
             c.copy(batchOpts = c.batchOpts.copy(createTime =
