@@ -155,7 +155,7 @@ trait ProcBuilder {
 
   private val engineLogMaxLines = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_MAX_LOG_LINES)
 
-  private val engineDestroyTimeOut = conf.get(KyuubiConf.SESSION_ENGINE_DESTROY_TIMEOUT)
+  private val engineStartupDestroyTimeout = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_DESTROY_TIMEOUT)
 
   protected val lastRowsOfLog: EvictingQueue[String] = EvictingQueue.create(engineLogMaxLines)
   // Visible for test
