@@ -706,4 +706,31 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       .replaceAll("\\[", "").replaceAll("\\]", "")
     assert(sessionManager.getBatchMetadata(batchId).map(_.state).contains("CANCELED"))
   }
+
+  test("get batch list with batch name filter condition") {
+    val sessionManager = server.frontendServices.head
+      .be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    sessionManager.allSessions().foreach(_.close())
+
+    val uniqueName = UUID.randomUUID().toString
+    sessionManager.openBatchSession(
+      "kyuubi",
+      "kyuubi",
+      InetAddress.getLocalHost.getCanonicalHostName,
+      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
+      newBatchRequest(
+        "spark",
+        sparkBatchTestResource.get,
+        "",
+        uniqueName))
+
+    val response = webTarget.path("api/v1/batches")
+      .queryParam("batchName", uniqueName)
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+
+    assert(response.getStatus == 200)
+    val getBatchListResponse = response.readEntity(classOf[GetBatchesResponse])
+    assert(getBatchListResponse.getTotal == 1)
+  }
 }
