@@ -45,8 +45,8 @@ import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, Operat
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.metadata.MetadataManager
-import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle}
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
 import org.apache.kyuubi.util.JdbcUtils
 
 @Tag(name = "Batch")
@@ -315,6 +315,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @QueryParam("batchType") batchType: String,
       @QueryParam("batchState") batchState: String,
       @QueryParam("batchUser") batchUser: String,
+      @QueryParam("batchName") batchName: String,
       @QueryParam("createTime") createTime: Long,
       @QueryParam("endTime") endTime: Long,
       @QueryParam("from") from: Int,
@@ -327,15 +328,16 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         validBatchState(batchState),
         s"The valid batch state can be one of the following: ${VALID_BATCH_STATES.mkString(",")}")
     }
-    val batches =
-      sessionManager.getBatchesFromMetadataStore(
-        batchType,
-        batchUser,
-        batchState,
-        createTime,
-        endTime,
-        from,
-        size)
+
+    val filter = MetadataFilter(
+      sessionType = SessionType.BATCH,
+      engineType = batchType,
+      username = batchUser,
+      state = batchState,
+      requestName = batchName,
+      createTime = createTime,
+      endTime = endTime)
+    val batches = sessionManager.getBatchesFromMetadataStore(filter, from, size)
     new GetBatchesResponse(from, batches.size, batches.asJava)
   }
 

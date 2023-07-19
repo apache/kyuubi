@@ -44,7 +44,7 @@ import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
-import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
 
@@ -62,10 +62,9 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     sessionManager.allSessions().foreach { session =>
       sessionManager.closeSession(session.handle)
     }
-    sessionManager.getBatchesFromMetadataStore(null, null, null, 0, 0, 0, Int.MaxValue).foreach {
-      batch =>
-        sessionManager.applicationManager.killApplication(ApplicationManagerInfo(None), batch.getId)
-        sessionManager.cleanupMetadata(batch.getId)
+    sessionManager.getBatchesFromMetadataStore(MetadataFilter(), 0, Int.MaxValue).foreach { batch =>
+      sessionManager.applicationManager.killApplication(ApplicationManagerInfo(None), batch.getId)
+      sessionManager.cleanupMetadata(batch.getId)
     }
   }
 
@@ -518,11 +517,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     }
 
     assert(sessionManager.getBatchesFromMetadataStore(
-      "SPARK",
-      null,
-      null,
-      0,
-      0,
+      MetadataFilter(engineType = "SPARK"),
       0,
       Int.MaxValue).size == 2)
   }
@@ -710,5 +705,32 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     val batchId = sessionHandleRegex.findFirstMatchIn(e.getMessage).get.group(0)
       .replaceAll("\\[", "").replaceAll("\\]", "")
     assert(sessionManager.getBatchMetadata(batchId).map(_.state).contains("CANCELED"))
+  }
+
+  test("get batch list with batch name filter condition") {
+    val sessionManager = server.frontendServices.head
+      .be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    sessionManager.allSessions().foreach(_.close())
+
+    val uniqueName = UUID.randomUUID().toString
+    sessionManager.openBatchSession(
+      "kyuubi",
+      "kyuubi",
+      InetAddress.getLocalHost.getCanonicalHostName,
+      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
+      newBatchRequest(
+        "spark",
+        sparkBatchTestResource.get,
+        "",
+        uniqueName))
+
+    val response = webTarget.path("api/v1/batches")
+      .queryParam("batchName", uniqueName)
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+
+    assert(response.getStatus == 200)
+    val getBatchListResponse = response.readEntity(classOf[GetBatchesResponse])
+    assert(getBatchListResponse.getTotal == 1)
   }
 }

@@ -63,10 +63,23 @@ public class BatchRestApi {
       Long endTime,
       int from,
       int size) {
+    return listBatches(batchType, batchUser, batchState, null, createTime, endTime, from, size);
+  }
+
+  public GetBatchesResponse listBatches(
+      String batchType,
+      String batchUser,
+      String batchState,
+      String batchName,
+      Long createTime,
+      Long endTime,
+      int from,
+      int size) {
     Map<String, Object> params = new HashMap<>();
     params.put("batchType", batchType);
     params.put("batchUser", batchUser);
     params.put("batchState", batchState);
+    params.put("batchName", batchName);
     if (null != createTime && createTime > 0) {
       params.put("createTime", createTime);
     }

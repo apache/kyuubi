@@ -36,7 +36,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
-import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.util.{SignUtils, ThreadUtils}
 
@@ -240,17 +240,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     metadataManager.flatMap(mm => mm.getBatch(batchId))
   }
 
-  def getBatchesFromMetadataStore(
-      batchType: String,
-      batchUser: String,
-      batchState: String,
-      createTime: Long,
-      endTime: Long,
-      from: Int,
-      size: Int): Seq[Batch] = {
-    metadataManager.map { mm =>
-      mm.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
-    }.getOrElse(Seq.empty)
+  def getBatchesFromMetadataStore(filter: MetadataFilter, from: Int, size: Int): Seq[Batch] = {
+    metadataManager.map(_.getBatches(filter, from, size)).getOrElse(Seq.empty)
   }
 
   def getBatchMetadata(batchId: String): Option[Metadata] = {

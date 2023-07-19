@@ -28,7 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.metrics.MetricsConstants._
-import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.session.SessionType
 
 class MetadataManagerSuite extends KyuubiFunSuite {
@@ -157,7 +157,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       metadataManager.start()
       f(metadataManager)
     } finally {
-      metadataManager.getBatches(null, null, null, 0, 0, 0, Int.MaxValue).foreach { batch =>
+      metadataManager.getBatches(MetadataFilter(), 0, Int.MaxValue).foreach { batch =>
         metadataManager.cleanupMetadataById(batch.getId)
       }
       // ensure no metadata request leak
