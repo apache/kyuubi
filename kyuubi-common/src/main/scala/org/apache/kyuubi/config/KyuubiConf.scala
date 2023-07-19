@@ -1503,6 +1503,14 @@ object KyuubiConf {
       .checkValue(_ > 0, "the maximum must be positive integer.")
       .createWithDefault(10)
 
+  val SESSION_ENGINE_DESTROY_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.destroy.timeout")
+      .doc("Timeout(ms) for the engine destroy,if engine destroy times out," +
+        "force destroy instead.")
+      .version("1.8.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(5).toMillis)
+
   val SESSION_ENGINE_STARTUP_WAIT_COMPLETION: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.startup.waitCompletion")
       .doc("Whether to wait for completion after the engine starts." +
