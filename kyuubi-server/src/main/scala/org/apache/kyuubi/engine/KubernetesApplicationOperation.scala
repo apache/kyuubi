@@ -233,18 +233,16 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   private def updateApplicationState(pod: Pod): Unit = {
-    val label = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
-    val appId = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL)
-    val podName = pod.getMetadata.getName
     val appState = toApplicationState(pod.getStatus.getPhase)
-    info(s"Driver Informer changes label: $label, pod: $podName, appId: $appId to state: $appState")
+    debug(s"Driver Informer changes pod: ${pod.getMetadata.getName} to state: $appState")
     appInfoStore.put(
-      label,
+      pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
       ApplicationInfo(
-        id = appId,
-        name = podName,
+        id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
+        name = pod.getMetadata.getName,
         state = appState,
         error = Option(pod.getStatus.getReason)))
+    KubernetesApplicationAuditLogger.audit(pod)
   }
 
   private def markApplicationTerminated(pod: Pod): Unit = synchronized {
