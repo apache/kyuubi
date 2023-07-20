@@ -116,7 +116,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
         MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_RETRYING)
           .getOrElse(0L) - retryingRequests === 0)
 
-      val invalidMetadata = metadata.copy(kyuubiInstance = null)
+      val invalidMetadata = metadata.copy(state = null)
       intercept[Exception](metadataManager.insertMetadata(invalidMetadata, false))
       assert(
         MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_TOTAL)
