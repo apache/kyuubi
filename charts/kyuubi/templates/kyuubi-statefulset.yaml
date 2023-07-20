@@ -25,7 +25,7 @@ spec:
   selector:
     matchLabels:
       {{- include "kyuubi.selectorLabels" . | nindent 6 }}
-  serviceName: {{ $.Release.Name }}-headless
+  serviceName: {{ .Release.Name }}-headless
   minReadySeconds: {{ .Values.minReadySeconds }}
   replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
