@@ -15,28 +15,21 @@
   limitations under the License.
 */}}
 
-{{- range $name, $frontend := .Values.server }}
-{{- if $frontend.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $.Release.Name }}-{{ $name | kebabcase }}
+  name: {{ .Release.Name }}-headless
   labels:
     {{- include "kyuubi.labels" $ | nindent 4 }}
-  {{- with $frontend.service.annotations }}
-  annotations: {{- toYaml . | nindent 4 }}
-  {{- end }}
 spec:
-  type: {{ $frontend.service.type }}
+  type: ClusterIP
+  clusterIP: None
   ports:
+    {{- range $name, $frontend := .Values.server }}
     - name: {{ $name | kebabcase }}
       port: {{ tpl $frontend.service.port $ }}
       targetPort: {{ $frontend.port }}
-      {{- if and (eq $frontend.service.type "NodePort") ($frontend.service.nodePort) }}
-      nodePort: {{ $frontend.service.nodePort }}
-      {{- end }}
+    {{- end }}
   selector:
     {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
----
-{{- end }}
-{{- end }}
+
