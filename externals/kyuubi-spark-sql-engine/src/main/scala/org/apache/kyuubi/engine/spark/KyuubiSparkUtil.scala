@@ -95,9 +95,7 @@ object KyuubiSparkUtil extends Logging {
     }
   }
 
-  lazy val sparkMajorMinorVersion: (Int, Int) = {
-    val runtimeSparkVer = org.apache.spark.SPARK_VERSION
-    val runtimeVersion = SemanticVersion(runtimeSparkVer)
-    (runtimeVersion.majorVersion, runtimeVersion.minorVersion)
-  }
+  // Given that we are on the Spark SQL engine side, the [[org.apache.spark.SPARK_VERSION]] can be
+  // represented as the runtime version of the Spark SQL engine.
+  lazy val SPARK_ENGINE_RUNTIME_VERSION = SemanticVersion(org.apache.spark.SPARK_VERSION)
 }
