@@ -305,6 +305,10 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       basePath,
       initData.getBytes(StandardCharsets.UTF_8))
     secretNode.start()
+    val znodeTimeout = conf.get(HA_ZK_NODE_TIMEOUT)
+    if (!secretNode.waitForInitialCreate(znodeTimeout, TimeUnit.MILLISECONDS)) {
+      throw new KyuubiException(s"Max znode creation wait time $znodeTimeout s exhausted")
+    }
   }
 
   override def getAndIncrement(path: String, delta: Int = 1): Int = {
