@@ -1513,6 +1513,15 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val SESSION_ENGINE_STARTUP_DESTROY_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.startup.destroy.timeout")
+      .doc("Engine startup process destroy wait time, if the process does not " +
+        "stop after this time, force destroy instead. This configuration only " +
+        s"takes effect when `${SESSION_ENGINE_STARTUP_WAIT_COMPLETION.key}=false`.")
+      .version("1.8.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(5).toMillis)
+
   val SESSION_ENGINE_LAUNCH_ASYNC: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.launch.async")
       .doc("When opening kyuubi session, whether to launch the backend engine asynchronously." +
