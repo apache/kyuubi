@@ -38,6 +38,7 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
 
   override protected val otherConfigs: Map[String, String] = {
     Map(
+      KyuubiConf.ENGINE_SECURITY_ENABLED.key -> "true",
       KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER.key -> "simple",
       KyuubiConf.SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET.key -> "_KYUUBI_REST_",
       // allow to impersonate other users with spnego authentication
