@@ -29,6 +29,7 @@ spec:
   minReadySeconds: {{ .Values.minReadySeconds }}
   replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  podManagementPolicy: {{ .Values.podManagementPolicy }}
   {{- with .Values.updateStrategy }}
   updateStrategy: {{- toYaml . | nindent 4 }}
   {{- end }}
