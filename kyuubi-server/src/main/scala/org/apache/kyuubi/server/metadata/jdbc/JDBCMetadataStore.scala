@@ -54,7 +54,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         throw new IllegalArgumentException("No jdbc driver defined"))
   }
 
-  private val databaseAdaptor = dbType match {
+  private val dialect = dbType match {
     case DERBY => new DerbyDatabaseDialect
     case SQLITE => new SQLiteDatabaseDialect
     case MYSQL => new MySQLDatabaseDialect
@@ -216,12 +216,24 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       stateOnly: Boolean): Seq[Metadata] = {
     val queryBuilder = new StringBuilder
     val params = ListBuffer[Any]()
-    if (stateOnly) {
-      queryBuilder.append(s"SELECT $METADATA_STATE_ONLY_COLUMNS FROM $METADATA_TABLE")
-    } else {
-      queryBuilder.append(s"SELECT $METADATA_ALL_COLUMNS FROM $METADATA_TABLE")
+    queryBuilder.append("SELECT ")
+    queryBuilder.append(if (stateOnly) METADATA_STATE_ONLY_COLUMNS else METADATA_ALL_COLUMNS)
+    queryBuilder.append(s" FROM $METADATA_TABLE")
+    queryBuilder.append(s" ${assembleWhereClause(filter, params)}")
+    queryBuilder.append(" ORDER BY key_id ")
+    queryBuilder.append(dialect.limitClause(size, from))
+    val query = queryBuilder.toString
+    JdbcUtils.withConnection { connection =>
+      withResultSet(connection, query, params: _*) { rs =>
+        buildMetadata(rs, stateOnly)
+      }
     }
-    val whereConditions = ListBuffer[String]()
+  }
+
+  private def assembleWhereClause(
+      filter: MetadataFilter,
+      params: ListBuffer[Any]): String = {
+    val whereConditions = ListBuffer[String]("1 = 1")
     Option(filter.sessionType).foreach { sessionType =>
       whereConditions += "session_type = ?"
       params += sessionType.toString
@@ -259,16 +271,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       whereConditions += "peer_instance_closed = ?"
       params += filter.peerInstanceClosed
     }
-    if (whereConditions.nonEmpty) {
-      queryBuilder.append(whereConditions.mkString(" WHERE ", " AND ", ""))
-    }
-    queryBuilder.append(" ORDER BY key_id")
-    val query = databaseAdaptor.addLimitAndOffsetToQuery(queryBuilder.toString(), size, from)
-    JdbcUtils.withConnection { connection =>
-      withResultSet(connection, query, params: _*) { rs =>
-        buildMetadata(rs, stateOnly)
-      }
-    }
+    whereConditions.mkString("WHERE ", " AND ", "")
   }
 
   override def updateMetadata(metadata: Metadata): Unit = {
@@ -324,7 +327,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       withUpdateCount(connection, query, params: _*) { updateCount =>
         if (updateCount == 0) {
           throw new KyuubiException(
-            s"Error updating metadata for ${metadata.identifier} with $query")
+            s"Error updating metadata for ${metadata.identifier} by SQL: $query, " +
+              s"with params: ${params.mkString(", ")}")
         }
       }
     }
