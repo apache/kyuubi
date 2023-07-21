@@ -80,19 +80,19 @@ object InferDynamicPartitionConstantConditions {
           (p.output, v)
         }._2
 
-       case p: Generate =>
-         val childAttributeConditions = extractAttributeConditions(p.child)
-         if (p.generator.deterministic && p.generator.references.size == 1) {
-           val singleRef = p.generator.references.head
-           val outputs = p.generatorOutput
-           childAttributeConditions.flatMap {
-             case (k, v) if k == singleRef =>
-               outputs.map(o => o -> v)
-             case o => Some(o)
-           }
-         } else {
-           childAttributeConditions
-         }
+      case p: Generate =>
+        val childAttributeConditions = extractAttributeConditions(p.child)
+        if (p.generator.deterministic && p.generator.references.size == 1) {
+          val singleRef = p.generator.references.head
+          val outputs = p.generatorOutput
+          childAttributeConditions.flatMap {
+            case (k, v) if k == singleRef =>
+              outputs.map(o => o -> v)
+            case o => Some(o)
+          }
+        } else {
+          childAttributeConditions
+        }
       // TODO: support more UnaryNode like: Expand, Window
       case p: UnaryNode => extractAttributeConditions(p.child)
       case _ => Map.empty
