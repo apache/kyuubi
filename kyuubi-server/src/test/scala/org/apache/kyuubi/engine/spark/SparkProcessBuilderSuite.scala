@@ -29,6 +29,8 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE}
+import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
+import org.apache.kyuubi.engine.spark.SparkProcessBuilder.CONF
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.service.ServiceUtils
@@ -296,9 +298,16 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     assert(!c3.contains(s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$proxyName"))
     assert(!c3.contains(s"spark.executorEnv.SPARK_USER_NAME=$proxyName"))
   }
+
+  test("[KYUUBI #5009] Test pass spark engine log path to spark conf") {
+    val b1 = new SparkProcessBuilder("kyuubi", conf)
+    assert(
+      b1.toString.contains(
+        s"$CONF spark.$KYUUBI_ENGINE_LOG_PATH_KEY=${b1.engineLog.getAbsolutePath}"))
+  }
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)
   extends SparkProcessBuilder("fake", config) {
-  override protected val commands: Array[String] = Array("ls")
+  override protected lazy val commands: Array[String] = Array("ls")
 }
