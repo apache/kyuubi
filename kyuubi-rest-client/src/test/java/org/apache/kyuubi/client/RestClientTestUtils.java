@@ -45,35 +45,31 @@ public class RestClientTestUtils {
   }
 
   public static Batch generateTestBatch(String id) {
-    Batch batch =
-        new Batch(
-            id,
-            TEST_USERNAME,
-            "spark",
-            "batch_name",
-            0,
-            id,
-            null,
-            "RUNNING",
-            null,
-            "192.168.31.130:64573",
-            "RUNNING",
-            BATCH_CREATE_TIME,
-            0);
-
-    return batch;
+    return new Batch(
+        id,
+        TEST_USERNAME,
+        "spark",
+        "batch_name",
+        0,
+        id,
+        null,
+        "RUNNING",
+        null,
+        "192.168.31.130:64573",
+        "RUNNING",
+        BATCH_CREATE_TIME,
+        0,
+        Collections.emptyMap());
   }
 
   public static BatchRequest generateTestBatchRequest() {
-    BatchRequest batchRequest =
-        new BatchRequest(
-            "spark",
-            "/MySpace/kyuubi-spark-sql-engine_2.12-1.6.0-SNAPSHOT.jar",
-            "org.apache.kyuubi.engine.spark.SparkSQLEngine",
-            "test_batch",
-            Collections.singletonMap("spark.driver.memory", "16m"),
-            Collections.emptyList());
-    return batchRequest;
+    return new BatchRequest(
+        "spark",
+        "/MySpace/kyuubi-spark-sql-engine_2.12-1.6.0-SNAPSHOT.jar",
+        "org.apache.kyuubi.engine.spark.SparkSQLEngine",
+        "test_batch",
+        Collections.singletonMap("spark.driver.memory", "16m"),
+        Collections.emptyList());
   }
 
   public static GetBatchesResponse generateTestBatchesResponse() {
@@ -87,9 +83,8 @@ public class RestClientTestUtils {
   public static OperationLog generateTestOperationLog() {
     List<String> logs =
         Arrays.asList(
-            "13:15:13.523 INFO org.apache.curator.framework.state."
-                + "ConnectionStateManager: State change: CONNECTED",
-            "13:15:13.528 INFO org.apache.kyuubi." + "engine.EngineRef: Launching engine:");
+            "13:15:13.523 INFO ConnectionStateManager: State change: CONNECTED",
+            "13:15:13.528 INFO EngineRef: Launching engine:");
     return new OperationLog(logs, 2);
   }
 }

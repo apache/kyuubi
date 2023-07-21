@@ -33,4 +33,5 @@ class GenericDatabaseDialect extends JdbcDatabaseDialect {
   }
 }
 
-class MysqlDatabaseDialect extends GenericDatabaseDialect {}
+class SQLiteDatabaseDialect extends GenericDatabaseDialect {}
+class MySQLDatabaseDialect extends GenericDatabaseDialect {}

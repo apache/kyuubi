@@ -35,7 +35,8 @@ abstract class KyuubiHiveTest extends QueryTest with Logging {
       TableCatalog.PROP_PROVIDER,
       TableCatalog.PROP_OWNER,
       TableCatalog.PROP_EXTERNAL,
-      TableCatalog.PROP_IS_MANAGED_LOCATION)
+      TableCatalog.PROP_IS_MANAGED_LOCATION,
+      "transient_lastDdlTime")
 
   protected val NAMESPACE_RESERVED_PROPERTIES =
     Seq(

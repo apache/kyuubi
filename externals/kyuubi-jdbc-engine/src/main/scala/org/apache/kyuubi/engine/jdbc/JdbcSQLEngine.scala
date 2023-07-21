@@ -19,7 +19,9 @@ package org.apache.kyuubi.engine.jdbc
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, JDBC_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_JDBC_INITIALIZE_SQL
 import org.apache.kyuubi.engine.jdbc.JdbcSQLEngine.currentEngine
+import org.apache.kyuubi.engine.jdbc.util.KyuubiJdbcUtils
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
@@ -71,6 +73,8 @@ object JdbcSQLEngine extends Logging {
       kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
       startEngine()
+
+      KyuubiJdbcUtils.initializeJdbcSession(kyuubiConf, kyuubiConf.get(ENGINE_JDBC_INITIALIZE_SQL))
     } catch {
       case t: Throwable if currentEngine.isDefined =>
         currentEngine.foreach { engine =>

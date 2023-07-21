@@ -22,6 +22,11 @@
       "fieldExtractor" : "CatalogPluginCatalogExtractor"
     },
     "isInput" : false
+  }, {
+    "fieldName" : "name",
+    "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : false
   } ],
   "opType" : "CREATEDATABASE"
 }, {
@@ -45,6 +50,11 @@
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace",
   "databaseDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
+    "catalogDesc" : null,
+    "isInput" : true
+  }, {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedDBObjectNameDatabaseExtractor",
     "catalogDesc" : null,

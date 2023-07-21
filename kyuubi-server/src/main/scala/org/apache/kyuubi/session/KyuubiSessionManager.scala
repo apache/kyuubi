@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.util.concurrent.TimeUnit
+
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
@@ -34,9 +36,9 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
-import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.sql.parser.server.KyuubiParser
-import org.apache.kyuubi.util.SignUtils
+import org.apache.kyuubi.util.{SignUtils, ThreadUtils}
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
@@ -47,16 +49,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   val operationManager = new KyuubiOperationManager()
   val credentialsManager = new HadoopCredentialsManager()
   val applicationManager = new KyuubiApplicationManager()
-  private lazy val metadataManager: Option[MetadataManager] = {
-    // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
-    // so we initialize it only when Kyuubi starts with the REST frontend.
-    if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
-        .contains(FrontendProtocols.REST)) {
-      Option(new MetadataManager())
-    } else {
-      None
-    }
-  }
+
+  // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
+  // so we initialize it only when Kyuubi starts with the REST frontend.
+  lazy val metadataManager: Option[MetadataManager] =
+    if (conf.isRESTEnabled) Some(new MetadataManager()) else None
 
   // lazy is required for plugins since the conf is null when this class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
@@ -65,6 +62,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private var limiter: Option[SessionLimiter] = None
   private var batchLimiter: Option[SessionLimiter] = None
   lazy val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
+
+  private val engineConnectionAliveChecker =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-engine-alive-checker")
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
@@ -121,7 +121,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       super.closeSession(sessionHandle)
     } finally {
       session match {
-        case _: KyuubiBatchSessionImpl =>
+        case _: KyuubiBatchSession =>
           batchLimiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
         case _ =>
           limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
@@ -129,26 +129,41 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
-  private def createBatchSession(
+  // scalastyle:off
+  def createBatchSession(
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String],
-      batchRequest: BatchRequest,
-      recoveryMetadata: Option[Metadata] = None): KyuubiBatchSessionImpl = {
+      batchType: String,
+      batchName: Option[String],
+      resource: String,
+      className: String,
+      batchConf: Map[String, String],
+      batchArgs: Seq[String],
+      recoveryMetadata: Option[Metadata] = None,
+      shouldRunAsync: Boolean): KyuubiBatchSession = {
+    // scalastyle:on
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    new KyuubiBatchSessionImpl(
+    val sessionConf = this.getConf.getUserDefaults(user)
+    new KyuubiBatchSession(
       username,
       password,
       ipAddress,
       conf,
       this,
-      this.getConf.getUserDefaults(user),
-      batchRequest,
-      recoveryMetadata)
+      sessionConf,
+      batchType,
+      batchName,
+      resource,
+      className,
+      batchConf,
+      batchArgs,
+      recoveryMetadata,
+      shouldRunAsync)
   }
 
-  private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSessionImpl): SessionHandle = {
+  private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSession): SessionHandle = {
     val user = batchSession.user
     val ipAddress = batchSession.ipAddress
     batchLimiter.foreach(_.increment(UserIpAddress(user, ipAddress)))
@@ -183,13 +198,26 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       password: String,
       ipAddress: String,
       conf: Map[String, String],
-      batchRequest: BatchRequest): SessionHandle = {
-    val batchSession = createBatchSession(user, password, ipAddress, conf, batchRequest)
+      batchRequest: BatchRequest,
+      shouldRunAsync: Boolean = true): SessionHandle = {
+    val batchSession = createBatchSession(
+      user,
+      password,
+      ipAddress,
+      conf,
+      batchRequest.getBatchType,
+      Option(batchRequest.getName),
+      batchRequest.getResource,
+      batchRequest.getClassName,
+      batchRequest.getConf.asScala.toMap,
+      batchRequest.getArgs.asScala,
+      None,
+      shouldRunAsync)
     openBatchSession(batchSession)
   }
 
-  def getBatchSessionImpl(sessionHandle: SessionHandle): KyuubiBatchSessionImpl = {
-    getSessionOption(sessionHandle).map(_.asInstanceOf[KyuubiBatchSessionImpl]).orNull
+  def getBatchSession(sessionHandle: SessionHandle): Option[KyuubiBatchSession] = {
+    getSessionOption(sessionHandle).map(_.asInstanceOf[KyuubiBatchSession])
   }
 
   def insertMetadata(metadata: Metadata): Unit = {
@@ -201,32 +229,23 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def getMetadataRequestsRetryRef(identifier: String): Option[MetadataRequestsRetryRef] = {
-    Option(metadataManager.map(_.getMetadataRequestsRetryRef(identifier)).orNull)
+    metadataManager.flatMap(mm => Option(mm.getMetadataRequestsRetryRef(identifier)))
   }
 
   def deRegisterMetadataRequestsRetryRef(identifier: String): Unit = {
     metadataManager.foreach(_.deRegisterRequestsRetryRef(identifier))
   }
 
-  def getBatchFromMetadataStore(batchId: String): Batch = {
-    metadataManager.map(_.getBatch(batchId)).orNull
+  def getBatchFromMetadataStore(batchId: String): Option[Batch] = {
+    metadataManager.flatMap(mm => mm.getBatch(batchId))
   }
 
-  def getBatchesFromMetadataStore(
-      batchType: String,
-      batchUser: String,
-      batchState: String,
-      createTime: Long,
-      endTime: Long,
-      from: Int,
-      size: Int): Seq[Batch] = {
-    metadataManager.map(
-      _.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size))
-      .getOrElse(Seq.empty)
+  def getBatchesFromMetadataStore(filter: MetadataFilter, from: Int, size: Int): Seq[Batch] = {
+    metadataManager.map(_.getBatches(filter, from, size)).getOrElse(Seq.empty)
   }
 
-  def getBatchMetadata(batchId: String): Metadata = {
-    metadataManager.map(_.getBatchSessionMetadata(batchId)).orNull
+  def getBatchMetadata(batchId: String): Option[Metadata] = {
+    metadataManager.flatMap(_.getBatchSessionMetadata(batchId))
   }
 
   @VisibleForTesting
@@ -239,32 +258,32 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ms.registerGauge(CONN_OPEN, getOpenSessionCount, 0)
       ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
+      ms.registerGauge(EXEC_POOL_WORK_QUEUE_SIZE, getWorkQueueSize, 0)
     }
     super.start()
+    startEngineAliveChecker()
   }
 
-  def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSessionImpl] = {
+  def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSession] = {
     Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
       metadataManager.map(_.getBatchesRecoveryMetadata(
         stateToRecover.toString,
         kyuubiInstance,
         0,
         Int.MaxValue).map { metadata =>
-        val batchRequest = new BatchRequest(
-          metadata.engineType,
-          metadata.resource,
-          metadata.className,
-          metadata.requestName,
-          metadata.requestConf.asJava,
-          metadata.requestArgs.asJava)
-
         createBatchSession(
           metadata.username,
           "anonymous",
           metadata.ipAddress,
           metadata.requestConf,
-          batchRequest,
-          Some(metadata))
+          metadata.engineType,
+          Option(metadata.requestName),
+          metadata.resource,
+          metadata.className,
+          metadata.requestConf,
+          metadata.requestArgs,
+          Some(metadata),
+          shouldRunAsync = true)
       }).getOrElse(Seq.empty)
     }
   }
@@ -299,6 +318,16 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       userUnlimitedList)
   }
 
+  private[kyuubi] def getUnlimitedUsers(): Set[String] = {
+    limiter.orElse(batchLimiter).map(SessionLimiter.getUnlimitedUsers).getOrElse(Set.empty)
+  }
+
+  private[kyuubi] def refreshUnlimitedUsers(conf: KyuubiConf): Unit = {
+    val unlimitedUsers = conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).toSet
+    limiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
+    batchLimiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
+  }
+
   private def applySessionLimiter(
       userLimit: Int,
       ipAddressLimit: Int,
@@ -307,4 +336,28 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     Seq(userLimit, ipAddressLimit, userIpAddressLimit).find(_ > 0).map(_ =>
       SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, userUnlimitedList.toSet))
   }
+
+  private def startEngineAliveChecker(): Unit = {
+    val interval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL)
+    val checkTask: Runnable = () => {
+      allSessions().foreach { session =>
+        if (!session.asInstanceOf[KyuubiSessionImpl].checkEngineConnectionAlive()) {
+          try {
+            closeSession(session.handle)
+            logger.info(s"The session ${session.handle} has been closed " +
+              s"due to engine unresponsiveness (checked by the engine alive checker).")
+          } catch {
+            case e: KyuubiSQLException =>
+              warn(s"Error closing session ${session.handle}", e)
+          }
+        }
+      }
+    }
+    engineConnectionAliveChecker.scheduleWithFixedDelay(
+      checkTask,
+      interval,
+      interval,
+      TimeUnit.MILLISECONDS)
+  }
+
 }

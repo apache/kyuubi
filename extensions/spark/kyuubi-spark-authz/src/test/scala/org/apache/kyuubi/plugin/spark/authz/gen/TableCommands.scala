@@ -30,6 +30,8 @@ object TableCommands {
   val resolvedTableDesc = TableDesc("child", classOf[ResolvedTableTableExtractor])
   val resolvedDbObjectNameDesc =
     TableDesc("child", classOf[ResolvedDbObjectNameTableExtractor])
+  val resolvedIdentifierTableDesc =
+    TableDesc("child", classOf[ResolvedIdentifierTableExtractor])
   val overwriteActionTypeDesc =
     ActionTypeDesc("overwrite", classOf[OverwriteOrInsertActionTypeExtractor])
   val queryQueryDesc = QueryDesc("query")
@@ -102,7 +104,6 @@ object TableCommands {
 
   val AlterTableRename = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableRenameCommand"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(DELETE))
 
     val oldTableTableTypeDesc =
       TableTypeDesc(
@@ -112,12 +113,9 @@ object TableCommands {
     val oldTableD = TableDesc(
       "oldName",
       tite,
-      tableTypeDesc = Some(oldTableTableTypeDesc),
-      actionTypeDesc = Some(actionTypeDesc))
+      tableTypeDesc = Some(oldTableTableTypeDesc))
 
-    val newTableD =
-      TableDesc("newName", tite, tableTypeDesc = Some(oldTableTableTypeDesc))
-    TableCommandSpec(cmd, Seq(oldTableD, newTableD), ALTERTABLE_RENAME)
+    TableCommandSpec(cmd, Seq(oldTableD), ALTERTABLE_RENAME)
   }
 
   // this is for spark 3.1 or below
@@ -209,7 +207,10 @@ object TableCommands {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
-    TableCommandSpec(cmd, Seq(tableDesc, resolvedDbObjectNameDesc), CREATETABLE)
+    TableCommandSpec(
+      cmd,
+      Seq(resolvedIdentifierTableDesc, tableDesc, resolvedDbObjectNameDesc),
+      CREATETABLE)
   }
 
   val CreateV2Table = {
@@ -229,7 +230,10 @@ object TableCommands {
       catalogDesc = Some(CatalogDesc()))
     TableCommandSpec(
       cmd,
-      Seq(tableDesc, resolvedDbObjectNameDesc.copy(fieldName = "left")),
+      Seq(
+        resolvedIdentifierTableDesc.copy(fieldName = "left"),
+        tableDesc,
+        resolvedDbObjectNameDesc.copy(fieldName = "left")),
       CREATETABLE_AS_SELECT,
       Seq(queryQueryDesc))
   }
@@ -350,6 +354,13 @@ object TableCommands {
     TableCommandSpec(cmd, Nil, CREATEVIEW)
   }
 
+  val CreateTable = {
+    val cmd = "org.apache.spark.sql.execution.datasources.CreateTable"
+    val tableDesc = TableDesc("tableDesc", classOf[CatalogTableTableExtractor])
+    val queryDesc = QueryDesc("query", "LogicalPlanOptionQueryExtractor")
+    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE, queryDescs = Seq(queryDesc))
+  }
+
   val CreateDataSourceTable = {
     val cmd = "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand"
     val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
@@ -410,6 +421,16 @@ object TableCommands {
     TableCommandSpec(cmd, Seq(tableDesc), DESCTABLE)
   }
 
+  val DescribeRelationTable = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.DescribeRelation"
+    val tableDesc = TableDesc(
+      "relation",
+      classOf[ResolvedTableTableExtractor],
+      isInput = true,
+      setCurrentDatabaseIfMissing = true)
+    TableCommandSpec(cmd, Seq(tableDesc), DESCTABLE)
+  }
+
   val DropTable = {
     val cmd = "org.apache.spark.sql.execution.command.DropTableCommand"
     val tableTypeDesc =
@@ -425,8 +446,7 @@ object TableCommands {
 
   val DropTableV2 = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.DropTable"
-    val tableDesc1 = resolvedTableDesc
-    TableCommandSpec(cmd, Seq(tableDesc1), DROPTABLE)
+    TableCommandSpec(cmd, Seq(resolvedIdentifierTableDesc, resolvedTableDesc), DROPTABLE)
   }
 
   val MergeIntoTable = {
@@ -601,6 +621,7 @@ object TableCommands {
     CreateHiveTableAsSelect,
     CreateHiveTableAsSelect.copy(classname =
       "org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand"),
+    CreateTable,
     CreateTableLike,
     CreateTableV2,
     CreateTableV2.copy(classname =
@@ -614,6 +635,7 @@ object TableCommands {
     DeleteFromTable,
     DescribeColumn,
     DescribeTable,
+    DescribeRelationTable,
     DropTable,
     DropTableV2,
     InsertIntoDataSource,
@@ -622,7 +644,7 @@ object TableCommands {
       "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand"),
     InsertIntoHadoopFsRelationCommand,
     InsertIntoDataSourceDir.copy(classname =
-      "org.apache.spark.sql.execution.datasources.InsertIntoHiveDirCommand"),
+      "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand"),
     InsertIntoHiveTable,
     LoadData,
     MergeIntoTable,

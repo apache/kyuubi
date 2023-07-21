@@ -95,6 +95,7 @@ public class Timestamp implements Comparable<Timestamp> {
     return localDateTime.format(PRINT_FORMATTER);
   }
 
+  @Override
   public int hashCode() {
     return localDateTime.hashCode();
   }
@@ -207,6 +208,7 @@ public class Timestamp implements Comparable<Timestamp> {
   }
 
   /** Return a copy of this object. */
+  @Override
   public Object clone() {
     // LocalDateTime is immutable.
     return new Timestamp(this.localDateTime);

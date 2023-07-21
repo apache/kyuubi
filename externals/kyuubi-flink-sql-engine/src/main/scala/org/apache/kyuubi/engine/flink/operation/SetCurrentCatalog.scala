@@ -17,15 +17,21 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 class SetCurrentCatalog(session: Session, catalog: String)
   extends FlinkOperation(session) {
 
+  private val operationLog: OperationLog =
+    OperationLog.createOperationLog(session, getHandle)
+
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
+
   override protected def runInternal(): Unit = {
     try {
-      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-      tableEnv.useCatalog(catalog)
+      val catalogManager = sessionContext.getSessionState.catalogManager
+      catalogManager.setCurrentCatalog(catalog)
       setHasResultSet(false)
     } catch onError()
   }

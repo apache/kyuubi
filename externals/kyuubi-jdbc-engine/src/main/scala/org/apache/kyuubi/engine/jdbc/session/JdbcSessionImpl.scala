@@ -23,8 +23,11 @@ import scala.util.{Failure, Success, Try}
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_JDBC_SESSION_INITIALIZE_SQL
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
-import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+import org.apache.kyuubi.engine.jdbc.util.KyuubiJdbcUtils
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
 class JdbcSessionImpl(
     protocol: TProtocolVersion,
@@ -34,6 +37,9 @@ class JdbcSessionImpl(
     conf: Map[String, String],
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  override val handle: SessionHandle =
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
   private[jdbc] var sessionConnection: Connection = _
 
@@ -47,6 +53,10 @@ class JdbcSessionImpl(
       sessionConnection = ConnectionProvider.create(kyuubiConf)
       databaseMetaData = sessionConnection.getMetaData
     }
+    KyuubiJdbcUtils.initializeJdbcSession(
+      kyuubiConf,
+      sessionConnection,
+      kyuubiConf.get(ENGINE_JDBC_SESSION_INITIALIZE_SQL))
     super.open()
     info(s"The jdbc session is started.")
   }

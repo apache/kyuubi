@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.server
 
-import org.apache.hive.service.rpc.thrift.TOpenSessionReq
+import scala.collection.JavaConverters._
+
+import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TSessionHandle}
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils, WithKyuubiServer}
@@ -78,5 +80,40 @@ class KyuubiTBinaryFrontendServiceSuite extends WithKyuubiServer with KyuubiFunS
       assert(MetricsSystem.counterValue(
         MetricsConstants.THRIFT_BINARY_CONN_OPEN).getOrElse(0L) - openConnections === 0)
     }
+  }
+
+  test("do not close session when disconnect") {
+    val sessionCount = server.backendService.sessionManager.allSessions().size
+    var handle: TSessionHandle = null
+    TClientTestUtils.withThriftClient(server.frontendServices.head) {
+      client =>
+        val req = new TOpenSessionReq()
+        req.setUsername(Utils.currentUser)
+        req.setPassword("anonymous")
+        req.setConfiguration(Map("kyuubi.session.close.on.disconnect" -> "false").asJava)
+        val resp = client.OpenSession(req)
+        handle = resp.getSessionHandle
+
+        assert(server.backendService.sessionManager.allSessions().size - sessionCount == 1)
+    }
+    Thread.sleep(3000L)
+    assert(server.backendService.sessionManager.allSessions().size - sessionCount == 1)
+  }
+
+  test("close session when disconnect - default behavior") {
+    val sessionCount = server.backendService.sessionManager.allSessions().size
+    var handle: TSessionHandle = null
+    TClientTestUtils.withThriftClient(server.frontendServices.head) {
+      client =>
+        val req = new TOpenSessionReq()
+        req.setUsername(Utils.currentUser)
+        req.setPassword("anonymous")
+        val resp = client.OpenSession(req)
+        handle = resp.getSessionHandle
+
+        assert(server.backendService.sessionManager.allSessions().size - sessionCount == 1)
+    }
+    Thread.sleep(3000L)
+    assert(server.backendService.sessionManager.allSessions().size == sessionCount)
   }
 }

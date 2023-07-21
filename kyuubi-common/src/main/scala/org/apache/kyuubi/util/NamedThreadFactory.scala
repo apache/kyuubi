@@ -20,10 +20,17 @@ package org.apache.kyuubi.util
 import java.util.concurrent.ThreadFactory
 
 class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
+  import NamedThreadFactory._
+
   override def newThread(r: Runnable): Thread = {
     val t = new Thread(r)
     t.setName(name + ": Thread-" + t.getId)
     t.setDaemon(daemon)
+    t.setUncaughtExceptionHandler(kyuubiUncaughtExceptionHandler)
     t
   }
+}
+
+object NamedThreadFactory {
+  private[util] val kyuubiUncaughtExceptionHandler = new KyuubiUncaughtExceptionHandler
 }

@@ -25,7 +25,7 @@ class AuthenticationFilterSuite extends KyuubiFunSuite {
   test("add auth handler and destroy") {
     val filter = new AuthenticationFilter(KyuubiConf())
     filter.addAuthHandler(new BasicAuthenticationHandler(null))
-    assert(filter.authSchemeHandlers.size == 0)
+    assert(filter.authSchemeHandlers.isEmpty)
     filter.addAuthHandler(new BasicAuthenticationHandler(AuthTypes.LDAP))
     assert(filter.authSchemeHandlers.size == 1)
     filter.addAuthHandler(new BasicAuthenticationHandler(AuthTypes.LDAP))

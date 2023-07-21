@@ -49,12 +49,12 @@ To create custom Authenticator class derived from the above interface, we need t
 
 - Referencing the library
 
-.. code-block:: xml
+.. parsed-literal::
 
    <dependency>
       <groupId>org.apache.kyuubi</groupId>
       <artifactId>kyuubi-common_2.12</artifactId>
-      <version>1.5.2-incubating</version>
+      <version>\ |release|\</version>
       <scope>provided</scope>
    </dependency>
 

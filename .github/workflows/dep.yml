@@ -23,11 +23,12 @@ on:
       - master
       - branch-*
     paths:
-      # dependency check happens only pom changes
+      # when pom or dependency workflow changes
       - '**/pom.xml'
+      - '.github/workflows/dep.yml'
 
 concurrency:
-  group: dep-${{ github.ref }}
+  group: dep-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -43,9 +44,20 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
+      - name: Check kyuubi modules available
+        id: modules-check
+        run: >-
+          build/mvn dependency:resolve validate
+          -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile"
+          -Pfast -Denforcer.skip=false
+          -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
+        continue-on-error: true
       - name: build
         env:
           MAVEN_OPTS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error
+        if: steps.modules-check.conclusion == 'success' && steps.modules-check.outcome == 'failure'
         run: >-
           build/mvn clean install
           -Pflink-provided,spark-provided,hive-provided
@@ -57,3 +69,7 @@ jobs:
           -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Check dependency list
         run: build/dependency.sh
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        with:
+          fail-on-severity: moderate

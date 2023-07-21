@@ -21,6 +21,5 @@ object EventLoggerType extends Enumeration {
 
   type EventLoggerType = Value
 
-  // TODO: Only SPARK is done now
-  val SPARK, JSON, JDBC, CUSTOM = Value
+  val SPARK, JSON, JDBC, CUSTOM, KAFKA = Value
 }

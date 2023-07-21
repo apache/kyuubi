@@ -17,7 +17,7 @@
 #
 
 ## Zookeeper Shell Client Entrance
-CLASS="org.apache.zookeeper.ZooKeeperMain"
+CLASS="org.apache.kyuubi.shaded.zookeeper.ZooKeeperMain"
 
 export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
 

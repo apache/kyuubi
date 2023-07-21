@@ -20,6 +20,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.jdbc.JdbcSQLEngine
 import org.apache.kyuubi.engine.jdbc.operation.JdbcOperationManager
@@ -46,7 +47,10 @@ class JdbcSessionManager(name: String)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    new JdbcSessionImpl(protocol, user, password, ipAddress, conf, this)
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
+      getSessionOption).getOrElse {
+      new JdbcSessionImpl(protocol, user, password, ipAddress, conf, this)
+    }
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

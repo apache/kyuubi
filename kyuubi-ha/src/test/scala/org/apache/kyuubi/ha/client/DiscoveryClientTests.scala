@@ -162,7 +162,7 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
 
   test("setData method test") {
     withDiscoveryClient(conf) { discoveryClient =>
-      val data = "abc";
+      val data = "abc"
       val path = "/setData_test"
       discoveryClient.create(path, "PERSISTENT")
       discoveryClient.setData(path, data.getBytes)

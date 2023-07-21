@@ -26,10 +26,10 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
-import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
-import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
+import org.apache.kyuubi.util.SemanticVersion
 import org.apache.kyuubi.zookeeper.ZookeeperConf
 
 class KyuubiOperationPerUserSuite
@@ -166,63 +166,24 @@ class KyuubiOperationPerUserSuite
     assert(r1 !== r2)
   }
 
-  test("test engine spark result max rows") {
-    withSessionConf()(Map.empty)(Map(KyuubiConf.OPERATION_RESULT_MAX_ROWS.key -> "1")) {
-      withJdbcStatement("va") { statement =>
-        statement.executeQuery("create temporary view va as select * from values(1),(2)")
-
-        val resultLimit1 = statement.executeQuery("select * from va")
-        assert(resultLimit1.next())
-        assert(!resultLimit1.next())
-
-        statement.executeQuery(s"set ${KyuubiConf.OPERATION_RESULT_MAX_ROWS.key}=0")
-        val resultUnLimit = statement.executeQuery("select * from va")
-        assert(resultUnLimit.next())
-        assert(resultUnLimit.next())
-      }
-    }
-  }
-
-  test("support to interrupt the thrift request if remote engine is broken") {
-    assume(!httpMode)
-    withSessionConf(Map(
-      KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
-      KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "1000",
-      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "1000"))(Map.empty)(
-      Map.empty) {
-      withSessionHandle { (client, handle) =>
-        val preReq = new TExecuteStatementReq()
-        preReq.setStatement("select engine_name()")
-        preReq.setSessionHandle(handle)
-        preReq.setRunAsync(false)
-        client.ExecuteStatement(preReq)
-
-        val sessionHandle = SessionHandle(handle)
-        val session = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
-          .getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
-        session.client.getEngineAliveProbeProtocol.foreach(_.getTransport.close())
-
-        val exitReq = new TExecuteStatementReq()
-        exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 1000L)," +
-          "java_method('java.lang.System', 'exit', 1)")
-        exitReq.setSessionHandle(handle)
-        exitReq.setRunAsync(true)
-        client.ExecuteStatement(exitReq)
-
-        val executeStmtReq = new TExecuteStatementReq()
-        executeStmtReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 30000l)")
-        executeStmtReq.setSessionHandle(handle)
-        executeStmtReq.setRunAsync(false)
-        val startTime = System.currentTimeMillis()
-        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
-        assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-        assert(executeStmtResp.getStatus.getErrorMessage.contains(
-          "java.net.SocketException: Connection reset") ||
-          executeStmtResp.getStatus.getErrorMessage.contains(
-            "Caused by: java.net.SocketException: Broken pipe (Write failed)"))
-        val elapsedTime = System.currentTimeMillis() - startTime
-        assert(elapsedTime < 20 * 1000)
-        assert(session.client.asyncRequestInterrupted)
+  test("max result rows") {
+    Seq("true", "false").foreach { incremental =>
+      Seq("thrift", "arrow").foreach { resultFormat =>
+        Seq("0", "1").foreach { maxResultRows =>
+          withSessionConf()(Map.empty)(Map(
+            KyuubiConf.OPERATION_RESULT_FORMAT.key -> resultFormat,
+            KyuubiConf.OPERATION_RESULT_MAX_ROWS.key -> maxResultRows,
+            KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> incremental)) {
+            withJdbcStatement("va") { statement =>
+              statement.executeQuery("create temporary view va as select * from values(1),(2)")
+              val resultLimit = statement.executeQuery("select * from va")
+              assert(resultLimit.next())
+              // always ignore max result rows on incremental collect mode
+              if (incremental == "true" || maxResultRows == "0") assert(resultLimit.next())
+              assert(!resultLimit.next())
+            }
+          }
+        }
       }
     }
   }
@@ -358,5 +319,60 @@ class KyuubiOperationPerUserSuite
       s"${MetricsConstants.OPERATION_EXEC_TIME}.${classOf[ExecuteStatement].getSimpleName}"
     val snapshot = MetricsSystem.histogramSnapshot(metric).get
     assert(snapshot.getMax > 0 && snapshot.getMedian > 0)
+  }
+
+  test("align the server/engine session/executeStatement handle for Spark engine") {
+    withSessionConf(Map(
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"))(Map.empty)(Map.empty) {
+      withJdbcStatement() { _ =>
+        val session =
+          server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
+        eventually(timeout(10.seconds)) {
+          assert(session.handle === SessionHandle.apply(session.client.remoteSessionHandle))
+        }
+
+        def checkOpHandleAlign(statement: String, confOverlay: Map[String, String]): Unit = {
+          val opHandle = session.executeStatement(statement, confOverlay, true, 0L)
+          eventually(timeout(10.seconds)) {
+            val operation = session.sessionManager.operationManager.getOperation(
+              opHandle).asInstanceOf[KyuubiOperation]
+            assert(opHandle == OperationHandle.apply(operation.remoteOpHandle()))
+          }
+        }
+
+        val statement = "SELECT engine_id()"
+
+        val confOverlay = Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> "PARSE")
+        checkOpHandleAlign(statement, confOverlay)
+
+        Map(
+          statement -> "SQL",
+          s"""spark.sql("$statement")""" -> "SCALA",
+          s"spark.sql('$statement')" -> "PYTHON").foreach { case (statement, lang) =>
+          val confOverlay = Map(KyuubiConf.OPERATION_LANGUAGE.key -> lang)
+          checkOpHandleAlign(statement, confOverlay)
+        }
+      }
+    }
+  }
+
+  test("support to expose kyuubi operation metrics") {
+    withSessionConf()(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val uuid = UUID.randomUUID().toString
+        val query = s"select '$uuid'"
+        val res = statement.executeQuery(query)
+        assert(res.next())
+        assert(!res.next())
+
+        val operationMetrics =
+          server.backendService.sessionManager.operationManager.allOperations()
+            .map(_.asInstanceOf[KyuubiOperation])
+            .filter(_.statement == query)
+            .head.metrics
+        assert(operationMetrics.get("fetchResultsCount") == Some("1"))
+        assert(operationMetrics.get("fetchLogCount") == Some("0"))
+      }
+    }
   }
 }

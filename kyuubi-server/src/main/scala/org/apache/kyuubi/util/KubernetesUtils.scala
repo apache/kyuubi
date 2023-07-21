@@ -22,7 +22,7 @@ import java.io.File
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import io.fabric8.kubernetes.client.{Config, ConfigBuilder, DefaultKubernetesClient, KubernetesClient}
+import io.fabric8.kubernetes.client.{Config, ConfigBuilder, KubernetesClient, KubernetesClientBuilder}
 import io.fabric8.kubernetes.client.Config.autoConfigure
 import io.fabric8.kubernetes.client.okhttp.OkHttpClientFactory
 import okhttp3.{Dispatcher, OkHttpClient}
@@ -93,13 +93,16 @@ object KubernetesUtils extends Logging {
 
     debug("Kubernetes client config: " +
       new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(config))
-    Some(new DefaultKubernetesClient(factoryWithCustomDispatcher.createHttpClient(config), config))
+    Some(new KubernetesClientBuilder()
+      .withHttpClientFactory(factoryWithCustomDispatcher)
+      .withConfig(config)
+      .build())
   }
 
   implicit private class OptionConfigurableConfigBuilder(val configBuilder: ConfigBuilder)
     extends AnyVal {
 
-    def withOption[T](option: Option[T])(configurator: ((T, ConfigBuilder) => ConfigBuilder))
+    def withOption[T](option: Option[T])(configurator: (T, ConfigBuilder) => ConfigBuilder)
         : ConfigBuilder = {
       option.map { opt =>
         configurator(opt, configBuilder)

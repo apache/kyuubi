@@ -54,7 +54,7 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
     resp
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
@@ -75,7 +75,7 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
   }
 
   override protected def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }
@@ -108,7 +108,7 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
     // could be thrown.
     case e: Throwable =>
       if (cancel && trino.isRunning) trino.cancelLeafStage()
-      state.synchronized {
+      withLockRequired {
         val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {
           val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")

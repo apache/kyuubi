@@ -58,9 +58,6 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
   private boolean isScrollable = false;
   private boolean fetchFirst = false;
 
-  // TODO:(fchen) make this configurable
-  protected boolean convertComplexTypeToString = true;
-
   private final TProtocolVersion protocol;
 
   public static class Builder {
@@ -86,6 +83,8 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
     private boolean emptyResultSet = false;
     private boolean isScrollable = false;
     private ReentrantLock transportLock = null;
+
+    private boolean timestampAsString = true;
 
     public Builder(Statement statement) throws SQLException {
       this.statement = statement;
@@ -153,6 +152,11 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
       return this;
     }
 
+    public Builder setTimestampAsString(boolean timestampAsString) {
+      this.timestampAsString = timestampAsString;
+      return this;
+    }
+
     public Builder setTransportLock(ReentrantLock transportLock) {
       this.transportLock = transportLock;
       return this;
@@ -189,10 +193,10 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
       this.maxRows = builder.maxRows;
     }
     this.isScrollable = builder.isScrollable;
+    this.timestampAsString = builder.timestampAsString;
     this.protocol = builder.getProtocolVersion();
     arrowSchema =
-        ArrowUtils.toArrowSchema(
-            columnNames, convertComplexTypeToStringType(columnTypes), columnAttributes);
+        ArrowUtils.toArrowSchema(columnNames, convertToStringType(columnTypes), columnAttributes);
     if (allocator == null) {
       initArrowSchemaAndAllocator();
     }
@@ -271,8 +275,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
         columnAttributes.add(getColumnAttributes(primitiveTypeEntry));
       }
       arrowSchema =
-          ArrowUtils.toArrowSchema(
-              columnNames, convertComplexTypeToStringType(columnTypes), columnAttributes);
+          ArrowUtils.toArrowSchema(columnNames, convertToStringType(columnTypes), columnAttributes);
     } catch (SQLException eS) {
       throw eS; // rethrow the SQLException as is
     } catch (Exception ex) {
@@ -480,22 +483,25 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
     return isClosed;
   }
 
-  private List<TTypeId> convertComplexTypeToStringType(List<TTypeId> colTypes) {
-    if (convertComplexTypeToString) {
-      return colTypes.stream()
-          .map(
-              type -> {
-                if (type == TTypeId.ARRAY_TYPE
-                    || type == TTypeId.MAP_TYPE
-                    || type == TTypeId.STRUCT_TYPE) {
-                  return TTypeId.STRING_TYPE;
-                } else {
-                  return type;
-                }
-              })
-          .collect(Collectors.toList());
-    } else {
-      return colTypes;
-    }
+  /**
+   * 1. the complex types (map/array/struct) are always converted to string type to transport 2. if
+   * the user set `timestampAsString = true`, then the timestamp type will be converted to string
+   * type too.
+   */
+  private List<TTypeId> convertToStringType(List<TTypeId> colTypes) {
+    return colTypes.stream()
+        .map(
+            type -> {
+              if ((type == TTypeId.ARRAY_TYPE
+                      || type == TTypeId.MAP_TYPE
+                      || type == TTypeId.STRUCT_TYPE) // complex type (map/array/struct)
+                  // timestamp type
+                  || (type == TTypeId.TIMESTAMP_TYPE && timestampAsString)) {
+                return TTypeId.STRING_TYPE;
+              } else {
+                return type;
+              }
+            })
+        .collect(Collectors.toList());
   }
 }

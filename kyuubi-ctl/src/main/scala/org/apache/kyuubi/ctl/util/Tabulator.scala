@@ -23,11 +23,11 @@ import org.apache.commons.lang3.StringUtils
 private[kyuubi] object Tabulator {
   def format(title: String, header: Array[String], rows: Array[Array[String]]): String = {
     val textTable = formatTextTable(header, rows)
-    val footer = s"${rows.size} row(s)\n"
+    val footer = s"${rows.length} row(s)\n"
     if (StringUtils.isBlank(title)) {
       textTable + footer
     } else {
-      val rowWidth = textTable.split("\n").head.size
+      val rowWidth = textTable.split("\n").head.length
       val titleNewLine = "\n" + StringUtils.center(title, rowWidth) + "\n"
       titleNewLine + textTable + footer
     }

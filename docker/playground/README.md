@@ -1,5 +1,5 @@
 Playground
-===
+==========
 
 ## For Users
 
@@ -45,3 +45,4 @@ Kyuubi supply some built-in dataset, after Kyuubi started, you can run the follo
 
 1. Build images `docker/playground/build-image.sh`;
 2. Optional to use `buildx` to build and publish cross-platform images `BUILDX=1 docker/playground/build-image.sh`;
+

@@ -15,15 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.result;
+package org.apache.kyuubi.engine.flink.result
+
+import scala.collection.convert.ImplicitConversions._
+import scala.collection.mutable.ListBuffer
 
 import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.catalog.Column
+import org.apache.flink.table.data.RowData
+import org.apache.flink.table.data.conversion.DataStructureConverters
+import org.apache.flink.table.gateway.service.result.ResultFetcher
+import org.apache.flink.table.types.DataType
 import org.apache.flink.types.Row
+
+import org.apache.kyuubi.engine.flink.shim.FlinkResultSet
 
 /** Utility object for building ResultSet. */
 object ResultSetUtil {
+
+  private val FETCH_ROWS_PER_SECOND = 1000
 
   /**
    * Build a ResultSet with a column name and a list of String values.
@@ -54,4 +65,64 @@ object ResultSetUtil {
       .columns(Column.physical("result", DataTypes.STRING))
       .data(Array[Row](Row.of("OK")))
       .build
+
+  def fromResultFetcher(resultFetcher: ResultFetcher, maxRows: Int): ResultSet = {
+    val schema = resultFetcher.getResultSchema
+    val resultRowData = ListBuffer.newBuilder[RowData]
+    var fetched: FlinkResultSet = null
+    var token: Long = 0
+    var rowNum: Int = 0
+    do {
+      fetched = new FlinkResultSet(resultFetcher.fetchResults(token, FETCH_ROWS_PER_SECOND))
+      val data = fetched.getData
+      val slice = data.slice(0, maxRows - rowNum)
+      resultRowData ++= slice
+      rowNum += slice.size
+      token = fetched.getNextToken
+      try Thread.sleep(1000L)
+      catch {
+        case _: InterruptedException => fetched.getNextToken == null
+      }
+    } while (
+      fetched.getNextToken != null &&
+        rowNum < maxRows &&
+        fetched.getResultType != org.apache.flink.table.gateway.api.results.ResultSet.ResultType.EOS
+    )
+    val dataTypes = resultFetcher.getResultSchema.getColumnDataTypes
+    ResultSet.builder
+      .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(schema.getColumns)
+      .data(resultRowData.result().map(rd => convertToRow(rd, dataTypes.toList)).toArray)
+      .build
+  }
+
+  def fromResultFetcher(resultFetcher: ResultFetcher): ResultSet = {
+    val schema = resultFetcher.getResultSchema
+    val resultRowData = ListBuffer.newBuilder[RowData]
+    var fetched: FlinkResultSet = null
+    var token: Long = 0
+    do {
+      fetched = new FlinkResultSet(resultFetcher.fetchResults(token, FETCH_ROWS_PER_SECOND))
+      resultRowData ++= fetched.getData
+      token = fetched.getNextToken
+      try Thread.sleep(1000L)
+      catch {
+        case _: InterruptedException =>
+      }
+    } while (
+      fetched.getNextToken != null &&
+        fetched.getResultType != org.apache.flink.table.gateway.api.results.ResultSet.ResultType.EOS
+    )
+    val dataTypes = resultFetcher.getResultSchema.getColumnDataTypes
+    ResultSet.builder
+      .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(schema.getColumns)
+      .data(resultRowData.result().map(rd => convertToRow(rd, dataTypes.toList)).toArray)
+      .build
+  }
+
+  private[this] def convertToRow(r: RowData, dataTypes: List[DataType]): Row = {
+    val converter = DataStructureConverters.getConverter(DataTypes.ROW(dataTypes: _*))
+    converter.toExternal(r).asInstanceOf[Row]
+  }
 }

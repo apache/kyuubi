@@ -429,6 +429,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  --batchType <value>      Batch type.
          |  --batchUser <value>      Batch user.
          |  --batchState <value>     Batch state.
+         |  --batchName <value>      Batch name.
          |  --createTime <value>     Batch create time, should be in yyyyMMddHHmmss format.
          |  --endTime <value>        Batch end time, should be in yyyyMMddHHmmss format.
          |  --from <value>           Specify which record to start from retrieving info.

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.7.0-SNAPSHOT</version>
+        <version>1.8.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
@@ -157,6 +157,7 @@
                     <artifactSet>
                         <includes>
                             <include>org.apache.kudu:kudu-client</include>
+                            <include>org.apache.kyuubi:*</include>
                             <include>com.stumbleupon:async</include>
                         </includes>
                     </artifactSet>

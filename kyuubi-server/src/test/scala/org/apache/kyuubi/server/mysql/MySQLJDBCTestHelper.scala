@@ -42,7 +42,7 @@ trait MySQLJDBCTestHelper extends JDBCTestHelper {
       if (jdbcConfigs.isEmpty) {
         ""
       } else {
-        "?" + jdbcConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
+        "?" + jdbcConfigs.map(kv => kv._1 + "=" + kv._2).mkString("&")
       }
     jdbcUrl + jdbcConfStr
   }

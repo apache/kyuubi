@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.7.0-SNAPSHOT</version>
+        <version>1.8.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -63,6 +63,13 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_${scala.binary.version}</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -140,42 +147,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.parquet</groupId>
-            <artifactId>parquet-avro</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-avro_${scala.binary.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hudi</groupId>
-            <artifactId>hudi-common</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hudi</groupId>
-            <artifactId>hudi-spark-common_${scala.binary.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hudi</groupId>
-            <artifactId>hudi-spark_${scala.binary.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hudi</groupId>
-            <artifactId>hudi-spark3.1.x_${scala.binary.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>io.delta</groupId>
             <artifactId>delta-core_${scala.binary.version}</artifactId>
             <scope>test</scope>
@@ -223,15 +194,9 @@
                             <include>io.perfmark:perfmark-api</include>
                             <include>io.vertx:*</include>
                             <include>net.jodah:failsafe</include>
-                            <include>org.apache.curator:curator-client</include>
-                            <include>org.apache.curator:curator-framework</include>
-                            <include>org.apache.curator:curator-recipes</include>
                             <include>org.apache.hive:hive-service-rpc</include>
-                            <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
-                            <include>org.apache.kyuubi:kyuubi-events_${scala.binary.version}</include>
-                            <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
+                            <include>org.apache.kyuubi:*</include>
                             <include>org.apache.thrift:*</include>
-                            <include>org.apache.zookeeper:zookeeper</include>
                             <include>org.checkerframework:checker-qual</include>
                             <include>org.codehaus.mojo:animal-sniffer-annotations</include>
                         </includes>
@@ -256,27 +221,6 @@
                         </filter>
                     </filters>
                     <relocations>
-                        <relocation>
-                            <pattern>org.apache.curator</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.curator</shadedPattern>
-                            <includes>
-                                <include>org.apache.curator.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.zookeeper</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.zookeeper</shadedPattern>
-                            <includes>
-                                <include>org.apache.zookeeper.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.jute</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.jute</shadedPattern>
-                            <includes>
-                                <include>org.apache.jute.**</include>
-                            </includes>
-                        </relocation>
                         <relocation>
                             <pattern>org.apache.hive.service.rpc.thrift</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift</shadedPattern>

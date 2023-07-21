@@ -18,11 +18,13 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import java.io.IOException
+import java.time.ZoneId
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
-import org.apache.flink.table.client.gateway.Executor
-import org.apache.flink.table.client.gateway.context.SessionContext
+import org.apache.flink.configuration.Configuration
+import org.apache.flink.table.gateway.service.context.SessionContext
+import org.apache.flink.table.gateway.service.operation.OperationExecutor
 import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
@@ -36,11 +38,15 @@ import org.apache.kyuubi.session.Session
 
 abstract class FlinkOperation(session: Session) extends AbstractOperation(session) {
 
+  protected val flinkSession: org.apache.flink.table.gateway.service.session.Session =
+    session.asInstanceOf[FlinkSessionImpl].fSession
+
+  protected val executor: OperationExecutor = flinkSession.createExecutor(
+    Configuration.fromMap(flinkSession.getSessionConfig))
+
   protected val sessionContext: SessionContext = {
     session.asInstanceOf[FlinkSessionImpl].sessionContext
   }
-
-  protected val executor: Executor = session.asInstanceOf[FlinkSessionImpl].executor
 
   protected val sessionId: String = session.handle.identifier.toString
 
@@ -52,7 +58,7 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
   }
 
   override protected def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }
@@ -85,7 +91,7 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
     resp
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
@@ -95,9 +101,15 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
       case FETCH_FIRST => resultSet.getData.fetchAbsolute(0);
     }
     val token = resultSet.getData.take(rowSetSize)
+    val timeZone = Option(flinkSession.getSessionConfig.get("table.local-time-zone"))
+    val zoneId = timeZone match {
+      case Some(tz) => ZoneId.of(tz)
+      case None => ZoneId.systemDefault()
+    }
     val resultRowSet = RowSet.resultSetToTRowSet(
       token.toList,
       resultSet,
+      zoneId,
       getProtocolVersion)
     resultRowSet.setStartRowOffset(resultSet.getData.getPosition)
     resultRowSet
@@ -109,7 +121,7 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
     // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
     // could be thrown.
     case e: Throwable =>
-      state.synchronized {
+      withLockRequired {
         val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {
           val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")

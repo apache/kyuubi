@@ -23,10 +23,15 @@ import io.trino.client.ClientStandardTypes.VARCHAR
 import io.trino.client.ClientTypeSignature.VARCHAR_UNBOUNDED_LENGTH
 
 import org.apache.kyuubi.operation.IterableFetchIterator
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 class GetCurrentCatalog(session: Session)
   extends TrinoOperation(session) {
+
+  private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
+
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def runInternal(): Unit = {
     try {

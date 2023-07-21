@@ -30,11 +30,12 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtoco
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils.currentUser
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.trino.{TrinoConf, TrinoContext, TrinoStatement}
 import org.apache.kyuubi.engine.trino.event.TrinoSessionEvent
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_CATALOG, USE_DATABASE}
 
 class TrinoSessionImpl(
     protocol: TProtocolVersion,
@@ -45,18 +46,25 @@ class TrinoSessionImpl(
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
+  override val handle: SessionHandle =
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+
   var trinoContext: TrinoContext = _
   private var clientSession: ClientSession = _
-  private var catalogName: String = null
-  private var databaseName: String = null
+  private var catalogName: String = _
+  private var databaseName: String = _
 
   private val sessionEvent = TrinoSessionEvent(this)
 
   override def open(): Unit = {
-    normalizedConf.foreach {
-      case ("use:catalog", catalog) => catalogName = catalog
-      case ("use:database", database) => databaseName = database
-      case _ => // do nothing
+
+    val (useCatalogAndDatabaseConf, _) = normalizedConf.partition { case (k, _) =>
+      Array(USE_CATALOG, USE_DATABASE).contains(k)
+    }
+
+    useCatalogAndDatabaseConf.foreach {
+      case (USE_CATALOG, catalog) => catalogName = catalog
+      case (USE_DATABASE, database) => databaseName = database
     }
 
     val httpClient = new OkHttpClient.Builder().build()

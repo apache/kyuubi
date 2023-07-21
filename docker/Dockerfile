@@ -24,7 +24,7 @@
 #     -t the target repo and tag name
 #     more options can be found with -h
 
-ARG BASE_IMAGE=openjdk:8-jre-slim
+ARG BASE_IMAGE=eclipse-temurin:8-jdk-focal
 ARG spark_provided="spark_builtin"
 
 FROM ${BASE_IMAGE} as builder_spark_provided
@@ -34,7 +34,7 @@ ONBUILD ENV SPARK_HOME ${spark_home_in_docker}
 FROM ${BASE_IMAGE} as builder_spark_builtin
 
 ONBUILD ENV SPARK_HOME /opt/spark
-ONBUILD RUN mkdir -p  ${SPARK_HOME}
+ONBUILD RUN mkdir -p ${SPARK_HOME}
 ONBUILD COPY spark-binary ${SPARK_HOME}
 
 FROM builder_${spark_provided}
@@ -50,7 +50,8 @@ ENV KYUUBI_WORK_DIR_ROOT ${KYUUBI_HOME}/work
 RUN set -ex && \
     sed -i 's/http:\/\/deb.\(.*\)/https:\/\/deb.\1/g' /etc/apt/sources.list && \
     apt-get update && \
-    apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
+    apt-get install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
+    ln -snf /bin/bash /bin/sh && \
     useradd -u ${kyuubi_uid} -g root kyuubi -d /home/kyuubi -m && \
     mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
@@ -59,6 +60,7 @@ COPY LICENSE NOTICE RELEASE ${KYUUBI_HOME}/
 COPY bin ${KYUUBI_HOME}/bin
 COPY jars ${KYUUBI_HOME}/jars
 COPY beeline-jars ${KYUUBI_HOME}/beeline-jars
+COPY web-ui ${KYUUBI_HOME}/web-ui
 COPY externals/engines/spark ${KYUUBI_HOME}/externals/engines/spark
 
 WORKDIR ${KYUUBI_HOME}

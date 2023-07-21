@@ -20,7 +20,7 @@ package org.apache.kyuubi.parser.trino
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetColumns, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
+import org.apache.kyuubi.sql.plan.trino.{Deallocate, ExecuteForPreparing, GetCatalogs, GetColumns, GetPrimaryKeys, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
 
 class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
   val parser = new KyuubiTrinoFeParser()
@@ -353,5 +353,38 @@ class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
       schema = "%cc",
       tableName = "%aa",
       colName = "%bb")
+  }
+
+  test("Support GetPrimaryKeys for Trino Fe") {
+    val kyuubiTreeNode = parse(
+      """
+        | SELECT CAST(NULL AS varchar) TABLE_CAT,
+        | CAST(NULL AS varchar) TABLE_SCHEM,
+        | CAST(NULL AS varchar) TABLE_NAME,
+        | CAST(NULL AS varchar) COLUMN_NAME,
+        | CAST(NULL AS smallint) KEY_SEQ,
+        | CAST(NULL AS varchar) PK_NAME
+        | WHERE false
+        |""".stripMargin)
+
+    assert(kyuubiTreeNode.isInstanceOf[GetPrimaryKeys])
+  }
+
+  test("Support PreparedStatement for Trino Fe (ExecuteForPreparing)") {
+    val kyuubiTreeNode = parse(
+      """
+        | EXECUTE statement1 USING INTEGER '1'
+        |""".stripMargin)
+
+    assert(kyuubiTreeNode.isInstanceOf[ExecuteForPreparing])
+  }
+
+  test("Support PreparedStatement for Trino Fe (Deallocate)") {
+    val kyuubiTreeNode = parse(
+      """
+        | DEALLOCATE PREPARE statement1
+        |""".stripMargin)
+
+    assert(kyuubiTreeNode.isInstanceOf[Deallocate])
   }
 }

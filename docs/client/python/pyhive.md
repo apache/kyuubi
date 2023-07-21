@@ -64,7 +64,47 @@ If password is provided for connection, make sure the `auth` param set to either
 
 ```python
 # open connection
-conn = hive.Connection(host=kyuubi_host,port=10009, 
-user='user', password='password', auth='CUSTOM')
+conn = hive.Connection(host=kyuubi_host, port=10009, 
+                       username='user', password='password', auth='CUSTOM')
+```
+
+Use Kerberos to connect to Kyuubi.
+
+`kerberos_service_name` must be the name of the service that started the Kyuubi server, usually the prefix of the first slash of `kyuubi.kinit.principal`.
+
+Note that PyHive does not support passing in `principal`, it splices in part of `principal` with `kerberos_service_name` and `kyuubi_host`.
+
+```python
+# open connection
+conn = hive.Connection(host=kyuubi_host, port=10009, auth="KERBEROS", kerberos_service_name="kyuubi")
+```
+
+If you encounter the following errors, you need to install related packages.
+
+```
+thrift.transport.TTransport.TTransportException: Could not start SASL: b'Error in sasl_client_start (-4) SASL(-4): no mechanism available: No worthy mechs found'
+```
+
+```bash
+yum install -y cyrus-sasl-plain cyrus-sasl-devel cyrus-sasl-gssapi cyrus-sasl-md5
+```
+
+Note that PyHive does not support the connection method based on zookeeper HA, you can connect to zookeeper to get the service address via [Kazoo](https://pypi.org/project/kazoo/).
+
+Code reference [https://stackoverflow.com/a/73326589](https://stackoverflow.com/a/73326589)
+
+```python
+from pyhive import hive
+import random
+from kazoo.client import KazooClient
+zk = KazooClient(hosts='kyuubi1.xx.com:2181,kyuubi2.xx.com:2181,kyuubi3.xx.com:2181', read_only=True)
+zk.start()
+servers = [kyuubi_server.split(';')[0].split('=')[1].split(':') 
+           for kyuubi_server 
+           in zk.get_children(path='kyuubi')]
+kyuubi_host, kyuubi_port = random.choice(servers)
+zk.stop()
+print(kyuubi_host, kyuubi_port)
+conn = hive.Connection(host=kyuubi_host, port=kyuubi_port, auth="KERBEROS", kerberos_service_name="kyuubi")
 ```
 

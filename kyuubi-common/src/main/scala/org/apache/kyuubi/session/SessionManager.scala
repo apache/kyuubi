@@ -172,6 +172,11 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     execPool.getActiveCount
   }
 
+  def getWorkQueueSize: Int = {
+    assert(execPool != null)
+    execPool.getQueue.size()
+  }
+
   private var _confRestrictList: Set[String] = _
   private var _confIgnoreList: Set[String] = _
   private var _batchConfIgnoreList: Set[String] = _
@@ -204,11 +209,11 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
         key
       }
 
-    if (_confRestrictMatchList.exists(normalizedKey.startsWith(_)) ||
+    if (_confRestrictMatchList.exists(normalizedKey.startsWith) ||
       _confRestrictList.contains(normalizedKey)) {
       throw KyuubiSQLException(s"$normalizedKey is a restrict key according to the server-side" +
         s" configuration, please remove it and retry if you want to proceed")
-    } else if (_confIgnoreMatchList.exists(normalizedKey.startsWith(_)) ||
+    } else if (_confIgnoreMatchList.exists(normalizedKey.startsWith) ||
       _confIgnoreList.contains(normalizedKey)) {
       warn(s"$normalizedKey is a ignored key according to the server-side configuration")
       None
@@ -223,7 +228,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   // validate whether if a batch key should be ignored
   def validateBatchKey(key: String, value: String): Option[(String, String)] = {
-    if (_batchConfIgnoreMatchList.exists(key.startsWith(_)) || _batchConfIgnoreList.contains(key)) {
+    if (_batchConfIgnoreMatchList.exists(key.startsWith) || _batchConfIgnoreList.contains(key)) {
       warn(s"$key is a ignored batch key according to the server-side configuration")
       None
     } else {
@@ -283,9 +288,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     shutdown = true
     val shutdownTimeout: Long =
       if (isServer) {
-        conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
-      } else {
         conf.get(SERVER_EXEC_POOL_SHUTDOWN_TIMEOUT)
+      } else {
+        conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
       }
 
     ThreadUtils.shutdown(timeoutChecker, Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
@@ -302,6 +307,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
           for (session <- handleToSession.values().asScala) {
             if (session.lastAccessTime + session.sessionIdleTimeoutThreshold <= current &&
               session.getNoOperationTime > session.sessionIdleTimeoutThreshold) {
+              info(s"Closing session ${session.handle.identifier} that has been idle for more" +
+                s" than ${session.sessionIdleTimeoutThreshold} ms")
               try {
                 closeSession(session.handle)
               } catch {

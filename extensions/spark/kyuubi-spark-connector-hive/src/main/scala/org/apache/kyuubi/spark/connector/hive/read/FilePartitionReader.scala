@@ -23,15 +23,17 @@ import org.apache.parquet.io.ParquetDecodingException
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.sql.execution.datasources.SchemaColumnConvertNotSupportedException
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.inputFileBlockHolder
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.InputFileBlockHolder
 import org.apache.spark.sql.internal.SQLConf
+
+import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils
 
 // scalastyle:off line.size.limit
 // copy from https://github.com/apache/spark/blob/master/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/v2/FilePartitionReader.scala
 // scalastyle:on line.size.limit
 class FilePartitionReader[T](readers: Iterator[HivePartitionedFileReader[T]])
   extends PartitionReader[T] with Logging {
-  private var currentReader: HivePartitionedFileReader[T] = null
+  private var currentReader: HivePartitionedFileReader[T] = _
 
   private val sqlConf = SQLConf.get
   private def ignoreMissingFiles = sqlConf.ignoreMissingFiles
@@ -90,7 +92,7 @@ class FilePartitionReader[T](readers: Iterator[HivePartitionedFileReader[T]])
     if (currentReader != null) {
       currentReader.close()
     }
-    inputFileBlockHolder.unset()
+    InputFileBlockHolder.unset()
   }
 
   private def getNextReader(): HivePartitionedFileReader[T] = {
@@ -98,7 +100,10 @@ class FilePartitionReader[T](readers: Iterator[HivePartitionedFileReader[T]])
     logInfo(s"Reading file $reader")
     // Sets InputFileBlockHolder for the file block's information
     val file = reader.file
-    inputFileBlockHolder.set(file.filePath, file.start, file.length)
+    InputFileBlockHolder.set(
+      HiveConnectorUtils.partitionedFilePath(file),
+      file.start,
+      file.length)
     reader
   }
 

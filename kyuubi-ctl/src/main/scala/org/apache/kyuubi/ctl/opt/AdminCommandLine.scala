@@ -64,7 +64,8 @@ object AdminCommandLine extends CommonCommandLine {
         .text("\tList information about resources.")
         .action((_, c) => c.copy(action = ControlAction.LIST))
         .children(
-          engineCmd(builder).text("\tList all the engine nodes for a user")))
+          engineCmd(builder).text("\tList all the engine nodes for a user"),
+          serverCmd(builder).text("\tList all the server nodes")))
 
   }
 
@@ -94,6 +95,11 @@ object AdminCommandLine extends CommonCommandLine {
           .text("The engine share level this engine belong to."))
   }
 
+  private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("server").action((_, c) => c.copy(resource = ControlObject.SERVER))
+  }
+
   private def refreshConfigCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
     cmd("config").action((_, c) => c.copy(resource = ControlObject.CONFIG))
@@ -102,6 +108,6 @@ object AdminCommandLine extends CommonCommandLine {
           .optional()
           .action((v, c) => c.copy(adminConfigOpts = c.adminConfigOpts.copy(configType = v)))
           .text("The valid config type can be one of the following: " +
-            s"$HADOOP_CONF, $USER_DEFAULTS_CONF."))
+            s"$HADOOP_CONF, $USER_DEFAULTS_CONF, $KUBERNETES_CONF, $UNLIMITED_USERS."))
   }
 }

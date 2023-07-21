@@ -79,7 +79,6 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
 
   override def init(filterConfig: FilterConfig): Unit = {
     initAuthHandlers()
-    super.init(filterConfig)
   }
 
   private[kyuubi] def getMatchedHandler(authorization: String): Option[AuthenticationHandler] = {
@@ -89,7 +88,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   /**
    * If the request has a valid authentication token it allows the request to continue to the
    * target resource, otherwise it triggers an authentication sequence using the configured
-   * {@link AuthenticationHandler}.
+   * [[AuthenticationHandler]].
    *
    * @param request     the request object.
    * @param response    the response object.
@@ -159,7 +158,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   }
 
   override def destroy(): Unit = {
-    if (!authSchemeHandlers.isEmpty) {
+    if (authSchemeHandlers.nonEmpty) {
       authSchemeHandlers.values.foreach(_.destroy())
       authSchemeHandlers.clear()
     }

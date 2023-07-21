@@ -17,7 +17,11 @@
 
 package org.apache.kyuubi.kubernetes.test
 
-import io.fabric8.kubernetes.client.{Config, DefaultKubernetesClient}
+import io.fabric8.kubernetes.client.{Config, KubernetesClient, KubernetesClientBuilder}
+import io.fabric8.kubernetes.client.okhttp.OkHttpClientFactory
+import okhttp3.{Dispatcher, OkHttpClient}
+
+import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * This code copied from Aapache Spark
@@ -44,7 +48,7 @@ object MiniKube {
     executeMinikube(true, "ip").head
   }
 
-  def getKubernetesClient: DefaultKubernetesClient = {
+  def getKubernetesClient: KubernetesClient = {
     // only the three-part version number is matched (the optional suffix like "-beta.0" is dropped)
     val versionArrayOpt = "\\d+\\.\\d+\\.\\d+".r
       .findFirstIn(minikubeVersionString.split(VERSION_PREFIX)(1))
@@ -65,7 +69,18 @@ object MiniKube {
             "For minikube version a three-part version number is expected (the optional " +
             "non-numeric suffix is intentionally dropped)")
     }
+    // https://github.com/fabric8io/kubernetes-client/issues/3547
+    val dispatcher = new Dispatcher(
+      ThreadUtils.newDaemonCachedThreadPool("kubernetes-dispatcher"))
+    val factoryWithCustomDispatcher = new OkHttpClientFactory() {
+      override protected def additionalConfig(builder: OkHttpClient.Builder): Unit = {
+        builder.dispatcher(dispatcher)
+      }
+    }
 
-    new DefaultKubernetesClient(Config.autoConfigure("minikube"))
+    new KubernetesClientBuilder()
+      .withConfig(Config.autoConfigure("minikube"))
+      .withHttpClientFactory(factoryWithCustomDispatcher)
+      .build()
   }
 }

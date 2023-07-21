@@ -21,14 +21,15 @@ import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{DataFrame, Row}
-import org.apache.spark.sql.kyuubi.SparkDatasetHelper
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState}
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
+import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -37,7 +38,8 @@ class ExecuteStatement(
     override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
-    incrementalCollect: Boolean)
+    incrementalCollect: Boolean,
+    override protected val handle: OperationHandle)
   extends SparkOperation(session) with Logging {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
@@ -62,59 +64,35 @@ class ExecuteStatement(
     OperationLog.removeCurrentOperationLog()
   }
 
-  private def executeStatement(): Unit = withLocalProperties {
-    try {
-      setState(OperationState.RUNNING)
-      info(diagnostics)
-      Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-      addOperationListener()
-      result = spark.sql(statement)
+  protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
+    resultDF.toLocalIterator().asScala
+  }
 
-      iter =
-        if (incrementalCollect) {
-          info("Execute in incremental collect mode")
-          if (arrowEnabled) {
-            new IterableFetchIterator[Array[Byte]](new Iterable[Array[Byte]] {
-              override def iterator: Iterator[Array[Byte]] = SparkDatasetHelper.toArrowBatchRdd(
-                convertComplexType(result)).toLocalIterator
-            })
-          } else {
-            new IterableFetchIterator[Row](new Iterable[Row] {
-              override def iterator: Iterator[Row] = result.toLocalIterator().asScala
-            })
-          }
-        } else {
-          val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
-            .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
-          if (resultMaxRows <= 0) {
-            info("Execute in full collect mode")
-            if (arrowEnabled) {
-              new ArrayFetchIterator(
-                SparkDatasetHelper.toArrowBatchRdd(
-                  convertComplexType(result)).collect())
-            } else {
-              new ArrayFetchIterator(result.collect())
-            }
-          } else {
-            info(s"Execute with max result rows[$resultMaxRows]")
-            if (arrowEnabled) {
-              // this will introduce shuffle and hurt performance
-              new ArrayFetchIterator(
-                SparkDatasetHelper.toArrowBatchRdd(
-                  convertComplexType(result.limit(resultMaxRows))).collect())
-            } else {
-              new ArrayFetchIterator(result.take(resultMaxRows))
-            }
-          }
-        }
-      setCompiledStateIfNeeded()
-      setState(OperationState.FINISHED)
+  protected def fullCollectResult(resultDF: DataFrame): Array[_] = {
+    resultDF.collect()
+  }
+
+  protected def takeResult(resultDF: DataFrame, maxRows: Int): Array[_] = {
+    resultDF.take(maxRows)
+  }
+
+  protected def executeStatement(): Unit =
+    try {
+      withLocalProperties {
+        setState(OperationState.RUNNING)
+        info(diagnostics)
+        Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+        addOperationListener()
+        result = spark.sql(statement)
+        iter = collectAsIterator(result)
+        setCompiledStateIfNeeded()
+        setState(OperationState.FINISHED)
+      }
     } catch {
       onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
     }
-  }
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
@@ -164,17 +142,82 @@ class ExecuteStatement(
     }
   }
 
-  // TODO:(fchen) make this configurable
-  val kyuubiBeelineConvertToString = true
+  override def getResultSetMetadataHints(): Seq[String] =
+    Seq(
+      s"__kyuubi_operation_result_format__=$resultFormat",
+      s"__kyuubi_operation_result_arrow_timestampAsString__=$timestampAsString")
 
-  def convertComplexType(df: DataFrame): DataFrame = {
-    if (kyuubiBeelineConvertToString) {
-      SparkDatasetHelper.convertTopLevelComplexTypeToHiveString(df)
+  private def collectAsIterator(resultDF: DataFrame): FetchIterator[_] = {
+    val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
+      .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
+    if (incrementalCollect) {
+      if (resultMaxRows > 0) {
+        warn(s"Ignore ${OPERATION_RESULT_MAX_ROWS.key} on incremental collect mode.")
+      }
+      info("Execute in incremental collect mode")
+      new IterableFetchIterator[Any](new Iterable[Any] {
+        override def iterator: Iterator[Any] = incrementalCollectResult(resultDF)
+      })
     } else {
-      df
+      val internalArray = if (resultMaxRows <= 0) {
+        info("Execute in full collect mode")
+        fullCollectResult(resultDF)
+      } else {
+        info(s"Execute with max result rows[$resultMaxRows]")
+        takeResult(resultDF, resultMaxRows)
+      }
+      new ArrayFetchIterator(internalArray)
     }
   }
+}
 
-  override def getResultSetMetadataHints(): Seq[String] =
-    Seq(s"__kyuubi_operation_result_format__=$resultFormat")
+class ArrowBasedExecuteStatement(
+    session: Session,
+    override val statement: String,
+    override val shouldRunAsync: Boolean,
+    queryTimeout: Long,
+    incrementalCollect: Boolean,
+    override protected val handle: OperationHandle)
+  extends ExecuteStatement(
+    session,
+    statement,
+    shouldRunAsync,
+    queryTimeout,
+    incrementalCollect,
+    handle) {
+
+  checkUseLargeVarType()
+
+  override protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
+    toArrowBatchLocalIterator(convertComplexType(resultDF))
+  }
+
+  override protected def fullCollectResult(resultDF: DataFrame): Array[_] = {
+    executeCollect(convertComplexType(resultDF))
+  }
+
+  override protected def takeResult(resultDF: DataFrame, maxRows: Int): Array[_] = {
+    executeCollect(convertComplexType(resultDF.limit(maxRows)))
+  }
+
+  override protected def isArrowBasedOperation: Boolean = true
+
+  override val resultFormat = "arrow"
+
+  private def convertComplexType(df: DataFrame): DataFrame = {
+    convertTopLevelComplexTypeToHiveString(df, timestampAsString)
+  }
+
+  def checkUseLargeVarType(): Unit = {
+    // TODO: largeVarType support, see SPARK-39979.
+    val useLargeVarType = session.asInstanceOf[SparkSessionImpl].spark
+      .conf
+      .get("spark.sql.execution.arrow.useLargeVarType", "false")
+      .toBoolean
+    if (useLargeVarType) {
+      throw new KyuubiSQLException(
+        "`spark.sql.execution.arrow.useLargeVarType = true` not support now.",
+        null)
+    }
+  }
 }

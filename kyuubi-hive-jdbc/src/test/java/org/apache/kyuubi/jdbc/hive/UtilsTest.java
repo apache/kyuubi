@@ -21,9 +21,15 @@ package org.apache.kyuubi.jdbc.hive;
 import static org.apache.kyuubi.jdbc.hive.Utils.extractURLComponents;
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.collect.ImmutableMap;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -35,23 +41,76 @@ public class UtilsTest {
   private String expectedPort;
   private String expectedCatalog;
   private String expectedDb;
+  private Map<String, String> expectedHiveConf;
   private String uri;
 
   @Parameterized.Parameters
-  public static Collection<String[]> data() {
+  public static Collection<Object[]> data() throws UnsupportedEncodingException {
     return Arrays.asList(
-        new String[][] {
-          {"localhost", "10009", null, "db", "jdbc:hive2:///db;k1=v1?k2=v2#k3=v3"},
-          {"localhost", "10009", null, "default", "jdbc:hive2:///"},
-          {"localhost", "10009", null, "default", "jdbc:kyuubi://"},
-          {"localhost", "10009", null, "default", "jdbc:hive2://"},
-          {"hostname", "10018", null, "db", "jdbc:hive2://hostname:10018/db;k1=v1?k2=v2#k3=v3"},
+        new Object[][] {
+          {
+            "localhost",
+            "10009",
+            null,
+            "db",
+            new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
+            "jdbc:hive2:///db;k1=v1?k2=v2#k3=v3"
+          },
+          {
+            "localhost",
+            "10009",
+            null,
+            "default",
+            new ImmutableMap.Builder<String, String>().build(),
+            "jdbc:hive2:///"
+          },
+          {
+            "localhost",
+            "10009",
+            null,
+            "default",
+            new ImmutableMap.Builder<String, String>().build(),
+            "jdbc:kyuubi://"
+          },
+          {
+            "localhost",
+            "10009",
+            null,
+            "default",
+            new ImmutableMap.Builder<String, String>().build(),
+            "jdbc:hive2://"
+          },
+          {
+            "hostname",
+            "10018",
+            null,
+            "db",
+            new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
+            "jdbc:hive2://hostname:10018/db;k1=v1?k2=v2#k3=v3"
+          },
           {
             "hostname",
             "10018",
             "catalog",
             "db",
+            new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
             "jdbc:hive2://hostname:10018/catalog/db;k1=v1?k2=v2#k3=v3"
+          },
+          {
+            "hostname",
+            "10018",
+            "catalog",
+            "db",
+            new ImmutableMap.Builder<String, String>()
+                .put("k2", "v2")
+                .put("k3", "-Xmx2g -XX:+PrintGCDetails -XX:HeapDumpPath=/heap.hprof")
+                .build(),
+            "jdbc:hive2://hostname:10018/catalog/db;k1=v1?"
+                + URLEncoder.encode(
+                        "k2=v2;k3=-Xmx2g -XX:+PrintGCDetails -XX:HeapDumpPath=/heap.hprof",
+                        StandardCharsets.UTF_8.toString())
+                    .replaceAll("\\+", "%20")
+                + "#k4=v4"
           }
         });
   }
@@ -61,11 +120,13 @@ public class UtilsTest {
       String expectedPort,
       String expectedCatalog,
       String expectedDb,
+      Map<String, String> expectedHiveConf,
       String uri) {
     this.expectedHost = expectedHost;
     this.expectedPort = expectedPort;
     this.expectedCatalog = expectedCatalog;
     this.expectedDb = expectedDb;
+    this.expectedHiveConf = expectedHiveConf;
     this.uri = uri;
   }
 
@@ -76,5 +137,12 @@ public class UtilsTest {
     assertEquals(Integer.parseInt(expectedPort), jdbcConnectionParams1.getPort());
     assertEquals(expectedCatalog, jdbcConnectionParams1.getCatalogName());
     assertEquals(expectedDb, jdbcConnectionParams1.getDbName());
+    assertEquals(expectedHiveConf, jdbcConnectionParams1.getHiveConfs());
+  }
+
+  @Test
+  public void testGetVersion() {
+    Pattern pattern = Pattern.compile("^\\d+\\.\\d+\\.\\d+.*");
+    assert pattern.matcher(Utils.getVersion()).matches();
   }
 }

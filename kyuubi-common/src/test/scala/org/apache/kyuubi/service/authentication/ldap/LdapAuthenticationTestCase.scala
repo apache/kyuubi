@@ -21,7 +21,7 @@ import javax.security.sasl.AuthenticationException
 
 import scala.collection.mutable
 
-import org.scalatest.Assertions.{fail, intercept}
+import org.scalatest.Assertions._
 
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
 import org.apache.kyuubi.service.authentication.LdapAuthenticationProviderImpl

@@ -30,7 +30,7 @@ import org.apache.kyuubi.session.SessionType
 
 class JDBCMetadataStoreSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
-    .set(METADATA_STORE_JDBC_DATABASE_TYPE, DatabaseType.DERBY.toString)
+    .set(METADATA_STORE_JDBC_DATABASE_TYPE, DatabaseType.SQLITE.toString)
     .set(METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT, true)
     .set(s"$METADATA_STORE_JDBC_DATASOURCE_PREFIX.connectionTimeout", "3000")
     .set(s"$METADATA_STORE_JDBC_DATASOURCE_PREFIX.maximumPoolSize", "99")

@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
 import org.apache.kyuubi.operation.{NoneMode, Operation, OperationManager, PlanOnlyMode}
@@ -44,7 +45,8 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val flinkSession = session.asInstanceOf[FlinkSessionImpl]
-    if (flinkSession.sessionContext.getConfigMap.getOrDefault(
+    val sessionConfig = flinkSession.fSession.getSessionConfig
+    if (sessionConfig.getOrDefault(
         ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key,
         operationConvertCatalogDatabaseDefault.toString).toBoolean) {
       val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
@@ -53,11 +55,13 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       }
     }
 
-    val mode = PlanOnlyMode.fromString(flinkSession.sessionContext.getConfigMap.getOrDefault(
-      OPERATION_PLAN_ONLY_MODE.key,
-      operationModeDefault))
+    val mode = PlanOnlyMode.fromString(
+      sessionConfig.getOrDefault(
+        OPERATION_PLAN_ONLY_MODE.key,
+        operationModeDefault))
 
-    flinkSession.sessionContext.set(OPERATION_PLAN_ONLY_MODE.key, mode.name)
+    val sessionContext = FlinkEngineUtils.getSessionContext(flinkSession.fSession)
+    sessionContext.set(OPERATION_PLAN_ONLY_MODE.key, mode.name)
     val resultMaxRows =
       flinkSession.normalizedConf.getOrElse(
         ENGINE_FLINK_MAX_ROWS.key,

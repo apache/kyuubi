@@ -30,10 +30,12 @@ object KyuubiPythonGatewayServer extends Logging {
 
   val CONNECTION_FILE_PATH = Utils.createTempDir() + "/connection.info"
 
-  def start(): Unit = {
+  private var gatewayServer: Py4JServer = _
+
+  def start(): Unit = synchronized {
 
     val sparkConf = new SparkConf()
-    val gatewayServer: Py4JServer = new Py4JServer(sparkConf)
+    gatewayServer = new Py4JServer(sparkConf)
 
     gatewayServer.start()
     val boundPort: Int = gatewayServer.getListeningPort
@@ -63,6 +65,13 @@ object KyuubiPythonGatewayServer extends Logging {
     if (!tmpPath.renameTo(connectionInfoPath)) {
       logError(s"Unable to write connection information to $connectionInfoPath.")
       System.exit(1)
+    }
+  }
+
+  def shutdown(): Unit = synchronized {
+    if (gatewayServer != null) {
+      logInfo("shutting down the python gateway server.")
+      gatewayServer.shutdown()
     }
   }
 }

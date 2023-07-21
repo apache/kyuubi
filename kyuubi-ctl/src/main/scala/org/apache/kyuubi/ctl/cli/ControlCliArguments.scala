@@ -33,9 +33,9 @@ import org.apache.kyuubi.ctl.opt.{CliConfig, CommandLine, ControlAction, Control
 class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
   extends ControlCliArgumentsParser with Logging {
 
-  var cliConfig: CliConfig = null
+  var cliConfig: CliConfig = _
 
-  var command: Command[_] = null
+  var command: Command[_] = _
 
   // Set parameters from command line arguments
   parse(args)
@@ -112,6 +112,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
            |  batchType               ${cliConfig.batchOpts.batchType}
            |  batchUser               ${cliConfig.batchOpts.batchUser}
            |  batchState              ${cliConfig.batchOpts.batchState}
+           |  batchName               ${cliConfig.batchOpts.batchName}
            |  createTime              ${cliConfig.batchOpts.createTime}
            |  endTime                 ${cliConfig.batchOpts.endTime}
            |  from                    ${cliConfig.batchOpts.from}

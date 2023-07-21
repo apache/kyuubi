@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.{DriverManager, SQLException, Statement}
+import java.sql.{DriverManager, PreparedStatement, SQLException, Statement}
 import java.util.Locale
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -53,8 +53,34 @@ trait JDBCTestHelper extends KyuubiFunSuite {
 
   def withMultipleConnectionJdbcStatement(
       tableNames: String*)(fs: (Statement => Unit)*): Unit = {
+    info(s"Create JDBC connection using: $jdbcUrlWithConf")
     val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, password) }
     val statements = connections.map(_.createStatement())
+
+    try {
+      statements.zip(fs).foreach { case (s, f) => f(s) }
+    } finally {
+      tableNames.foreach { name =>
+        if (name.toUpperCase(Locale.ROOT).startsWith("VIEW")) {
+          statements.head.execute(s"DROP VIEW IF EXISTS $name")
+        } else {
+          statements.head.execute(s"DROP TABLE IF EXISTS $name")
+        }
+      }
+      info("Closing statements")
+      statements.foreach(_.close())
+      info("Closed statements")
+      info("Closing connections")
+      connections.foreach(_.close())
+      info("Closed connections")
+    }
+  }
+
+  def withMultipleConnectionJdbcPrepareStatement(
+      sql: String,
+      tableNames: String*)(fs: (PreparedStatement => Unit)*): Unit = {
+    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, password) }
+    val statements = connections.map(_.prepareStatement(sql))
 
     try {
       statements.zip(fs).foreach { case (s, f) => f(s) }
@@ -96,5 +122,11 @@ trait JDBCTestHelper extends KyuubiFunSuite {
 
   def withJdbcStatement(tableNames: String*)(f: Statement => Unit): Unit = {
     withMultipleConnectionJdbcStatement(tableNames: _*)(f)
+  }
+
+  def withJdbcPrepareStatement(
+      sql: String,
+      tableNames: String*)(f: PreparedStatement => Unit): Unit = {
+    withMultipleConnectionJdbcPrepareStatement(sql, tableNames: _*)(f)
   }
 }

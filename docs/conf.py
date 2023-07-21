@@ -64,7 +64,7 @@ copyright = year + ' The Apache Software Foundation, Licensed under the Apache L
 author = 'Apache Kyuubi Community'
 
 # The full version, including alpha/beta/rc tags
-release = subprocess.getoutput("cd .. && build/mvn help:evaluate -Dexpression=project.version|grep -v Using|grep -v INFO|grep -v WARNING|tail -n 1").split('\n')[-1]
+release = subprocess.getoutput("grep 'kyuubi-parent' -C1 ../pom.xml | grep '<version>' | awk -F '[<>]' '{print $3}'")
 
 
 # -- General configuration ---------------------------------------------------
@@ -77,9 +77,11 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'recommonmark',
+    'sphinx_copybutton',
     'sphinx_markdown_tables',
     'sphinx_togglebutton',
     'notfound.extension',
+    'sphinxemoji.sphinxemoji',
 ]
 
 master_doc = 'index'

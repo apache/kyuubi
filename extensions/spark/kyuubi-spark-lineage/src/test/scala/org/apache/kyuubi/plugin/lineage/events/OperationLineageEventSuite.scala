@@ -19,11 +19,17 @@ package org.apache.kyuubi.plugin.lineage.events
 
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 
+import scala.collection.immutable.List
+
 import org.apache.spark.SparkConf
+import org.apache.spark.kyuubi.lineage.LineageConf._
 import org.apache.spark.scheduler.{SparkListener, SparkListenerEvent}
 import org.apache.spark.sql.SparkListenerExtensionTest
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.events.EventBus
+import org.apache.kyuubi.plugin.lineage.Lineage
+import org.apache.kyuubi.plugin.lineage.dispatcher.{OperationLineageKyuubiEvent, OperationLineageSparkEvent}
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
 class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtensionTest {
@@ -40,24 +46,37 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
       .set(
         "spark.sql.queryExecutionListeners",
         "org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener")
+      .set(DISPATCHERS.key, "SPARK_EVENT,KYUUBI_EVENT")
+      .set(SKIP_PARSING_PERMANENT_VIEW_ENABLED.key, "true")
   }
 
   test("operation lineage event capture: for execute sql") {
-    val countDownLatch = new CountDownLatch(1)
-    var actual: Lineage = null
+    val countDownLatch = new CountDownLatch(2)
+    // get lineage from spark event
+    var actualSparkEventLineage: Lineage = null
     spark.sparkContext.addSparkListener(new SparkListener {
       override def onOtherEvent(event: SparkListenerEvent): Unit = {
         event match {
-          case lineageEvent: OperationLineageEvent =>
+          case lineageEvent: OperationLineageSparkEvent =>
             lineageEvent.lineage.foreach {
               case lineage if lineage.inputTables.nonEmpty =>
-                actual = lineage
+                actualSparkEventLineage = lineage
                 countDownLatch.countDown()
             }
           case _ =>
         }
       }
     })
+
+    // get lineage from kyuubi event
+    var actualKyuubiEventLineage: Lineage = null
+    EventBus.register[OperationLineageKyuubiEvent] { lineageEvent: OperationLineageKyuubiEvent =>
+      lineageEvent.lineage.foreach {
+        case lineage if lineage.inputTables.nonEmpty =>
+          actualKyuubiEventLineage = lineage
+          countDownLatch.countDown()
+      }
+    }
 
     withTable("test_table0") { _ =>
       spark.sql("create table test_table0(a string, b string)")
@@ -69,7 +88,8 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
           ("col0", Set("default.test_table0.a")),
           ("col1", Set("default.test_table0.b"))))
       countDownLatch.await(20, TimeUnit.SECONDS)
-      assert(actual == expected)
+      assert(actualSparkEventLineage == expected)
+      assert(actualKyuubiEventLineage == expected)
     }
   }
 
@@ -86,7 +106,8 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
     spark.sparkContext.addSparkListener(new SparkListener {
       override def onOtherEvent(event: SparkListenerEvent): Unit = {
         event match {
-          case lineageEvent: OperationLineageEvent if executionId == lineageEvent.executionId =>
+          case lineageEvent: OperationLineageSparkEvent
+              if executionId == lineageEvent.executionId =>
             lineageEvent.lineage.foreach { lineage =>
               assert(lineage == expected)
               countDownLatch.countDown()
@@ -113,6 +134,42 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
       r.collect()
       countDownLatch.await(20, TimeUnit.SECONDS)
       assert(countDownLatch.getCount == 0)
+    }
+  }
+
+  test("test for skip parsing permanent view") {
+    val countDownLatch = new CountDownLatch(1)
+    var actual: Lineage = null
+    spark.sparkContext.addSparkListener(new SparkListener {
+      override def onOtherEvent(event: SparkListenerEvent): Unit = {
+        event match {
+          case lineageEvent: OperationLineageSparkEvent =>
+            lineageEvent.lineage.foreach {
+              case lineage if lineage.inputTables.nonEmpty && lineage.outputTables.isEmpty =>
+                actual = lineage
+                countDownLatch.countDown()
+            }
+          case _ =>
+        }
+      }
+    })
+
+    withTable("t1") { _ =>
+      spark.sql("CREATE TABLE t1 (a string, b string, c string) USING hive")
+      spark.sql("CREATE VIEW t2 as select * from t1")
+      spark.sql(
+        s"select a as k, b" +
+          s" from t2" +
+          s" where a in ('HELLO') and c = 'HELLO'").collect()
+
+      val expected = Lineage(
+        List("default.t2"),
+        List(),
+        List(
+          ("k", Set("default.t2.a")),
+          ("b", Set("default.t2.b"))))
+      countDownLatch.await(20, TimeUnit.SECONDS)
+      assert(actual == expected)
     }
   }
 

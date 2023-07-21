@@ -29,11 +29,15 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{ExecuteStatement, OperationState}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
+
+  override protected lazy val conf: KyuubiConf = KyuubiConf()
+    .set(KyuubiConf.SERVER_LIMIT_CLIENT_FETCH_MAX_ROWS, 5000)
 
   test("get an operation event") {
     val catalogsHandleStr = getOpHandleStr("")
@@ -98,6 +102,47 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     val logRowSet = response.readEntity(classOf[OperationLog])
     assert(logRowSet.getLogRowSet.asScala.exists(_.contains("show tables")))
     assert(logRowSet.getRowCount === 10)
+
+    val response2 = webTarget.path(
+      s"api/v1/operations/$opHandleStr/log")
+      .queryParam("maxrows", "1000")
+      .queryParam("fetchorientation", "FETCH_NEXT")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response2.getStatus)
+    val logCount = response2.readEntity(classOf[OperationLog]).getRowCount
+    val totalLogCoung = logCount + 10
+    assert(logCount > 0)
+
+    val response3 = webTarget.path(
+      s"api/v1/operations/$opHandleStr/log")
+      .queryParam("maxrows", "1000")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response3.getStatus)
+    assert(response3.readEntity(classOf[OperationLog]).getRowCount == 0)
+
+    val response4 = webTarget.path(
+      s"api/v1/operations/$opHandleStr/log")
+      .queryParam("maxrows", "10")
+      .queryParam("fetchorientation", "FETCH_FIRST")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response4.getStatus)
+    assert(response4.readEntity(classOf[OperationLog]).getRowCount == 10)
+
+    val response5 = webTarget.path(
+      s"api/v1/operations/$opHandleStr/log")
+      .queryParam("maxrows", "10")
+      .queryParam("fetchorientation", "FETCH_PRIOR")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(400 == response5.getStatus)
+    assert(response5.getStatusInfo.getReasonPhrase == "Bad Request")
+
+    val response6 = webTarget.path(
+      s"api/v1/operations/$opHandleStr/log")
+      .queryParam("maxrows", "1000")
+      .queryParam("fetchorientation", "FETCH_NEXT")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response6.getStatus)
+    assert(response6.readEntity(classOf[OperationLog]).getRowCount == totalLogCoung - 10)
   }
 
   test("test get result row set") {
@@ -123,6 +168,40 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(200 == response.getStatus)
     val logRowSet = response.readEntity(classOf[ResultRowSet])
     assert("test".equals(logRowSet.getRows.asScala.head.getFields.asScala.head.getValue))
+    assert(logRowSet.getRowCount == 1)
+  }
+
+  test("test invalid max rows") {
+    val opHandleStr = getOpHandleStr("select \"test\", 1, 0.32d, true")
+    checkOpState(opHandleStr, FINISHED)
+    val response = webTarget.path(
+      s"api/v1/operations/$opHandleStr/rowset")
+      .queryParam("maxrows", "10000")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(400 == response.getStatus)
+  }
+
+  test("test get result row set with null value") {
+    val opHandleStr = getOpHandleStr(
+      s"""
+         |select
+         |cast(null as string) as c1,
+         |cast(null as boolean) as c2,
+         |cast(null as byte) as c3,
+         |cast(null as double) as c4,
+         |cast(null as short) as c5,
+         |cast(null as int) as c6,
+         |cast(null as bigint) as c7
+         |""".stripMargin)
+    checkOpState(opHandleStr, FINISHED)
+    val response = webTarget.path(
+      s"api/v1/operations/$opHandleStr/rowset")
+      .queryParam("maxrows", "2")
+      .queryParam("fetchorientation", "FETCH_NEXT")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response.getStatus)
+    val logRowSet = response.readEntity(classOf[ResultRowSet])
+    assert(logRowSet.getRows.asScala.head.getFields.asScala.forall(_.getValue == null))
     assert(logRowSet.getRowCount == 1)
   }
 

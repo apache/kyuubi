@@ -20,7 +20,7 @@ package org.apache.kyuubi.jdbc.hive;
 public class JdbcColumnAttributes {
   public int precision = 0;
   public int scale = 0;
-  public String timeZone = "";
+  public String timeZone = null;
 
   public JdbcColumnAttributes() {}
 

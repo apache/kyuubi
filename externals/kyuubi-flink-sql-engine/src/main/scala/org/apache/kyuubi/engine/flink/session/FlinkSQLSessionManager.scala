@@ -17,11 +17,17 @@
 
 package org.apache.kyuubi.engine.flink.session
 
-import org.apache.flink.table.client.gateway.context.DefaultContext
-import org.apache.flink.table.client.gateway.local.LocalExecutor
+import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.mapAsJavaMap
+
+import org.apache.flink.table.gateway.api.session.SessionEnvironment
+import org.apache.flink.table.gateway.rest.util.SqlGatewayRestAPIVersion
+import org.apache.flink.table.gateway.service.context.DefaultContext
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
+import org.apache.kyuubi.engine.flink.shim.FlinkSessionManager
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 
 class FlinkSQLSessionManager(engineContext: DefaultContext)
@@ -30,11 +36,11 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
   override protected def isServer: Boolean = false
 
   val operationManager = new FlinkSQLOperationManager()
-  val executor = new LocalExecutor(engineContext)
+  val sessionManager = new FlinkSessionManager(engineContext)
 
   override def start(): Unit = {
     super.start()
-    executor.start()
+    sessionManager.start()
   }
 
   override protected def createSession(
@@ -43,18 +49,41 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    new FlinkSessionImpl(
-      protocol,
-      user,
-      password,
-      ipAddress,
-      conf,
-      this,
-      executor)
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
+      getSessionOption).getOrElse {
+      val flinkInternalSession = sessionManager.openSession(
+        SessionEnvironment.newBuilder
+          .setSessionEndpointVersion(SqlGatewayRestAPIVersion.V1)
+          .addSessionConfig(mapAsJavaMap(conf))
+          .build)
+      val sessionConfig = flinkInternalSession.getSessionConfig
+      sessionConfig.putAll(conf.asJava)
+      val session = new FlinkSessionImpl(
+        protocol,
+        user,
+        password,
+        ipAddress,
+        conf,
+        this,
+        flinkInternalSession)
+      session
+    }
+  }
+
+  override def getSessionOption(sessionHandle: SessionHandle): Option[Session] = {
+    val session = super.getSessionOption(sessionHandle)
+    session.foreach(s => s.asInstanceOf[FlinkSessionImpl].fSession.touch())
+    session
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     super.closeSession(sessionHandle)
-    executor.closeSession(sessionHandle.toString)
+    sessionManager.closeSession(
+      new org.apache.flink.table.gateway.api.session.SessionHandle(sessionHandle.identifier))
+  }
+
+  override def stop(): Unit = synchronized {
+    sessionManager.stop()
+    super.stop()
   }
 }

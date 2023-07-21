@@ -25,7 +25,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols, KYUUBI_KUBERNETES_CONF_PREFIX}
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
 import org.apache.kyuubi.events.{EventBus, KyuubiServerInfoEvent, ServerEventHandlerRegister}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -33,6 +33,7 @@ import org.apache.kyuubi.ha.client.{AuthTypes, ServiceDiscovery}
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf
 import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable, ServiceState}
+import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
@@ -110,14 +111,29 @@ object KyuubiServer extends Logging {
   private[kyuubi] def refreshUserDefaultsConf(): Unit = kyuubiServer.conf.synchronized {
     val existedUserDefaults = kyuubiServer.conf.getAllUserDefaults
     val refreshedUserDefaults = KyuubiConf().loadFileDefaults().getAllUserDefaults
+    refreshConfig("user defaults", existedUserDefaults, refreshedUserDefaults)
+  }
+
+  private[kyuubi] def refreshKubernetesConf(): Unit = kyuubiServer.conf.synchronized {
+    val existedKubernetesConf =
+      kyuubiServer.conf.getAll.filter(_._1.startsWith(KYUUBI_KUBERNETES_CONF_PREFIX))
+    val refreshedKubernetesConf =
+      KyuubiConf().loadFileDefaults().getAll.filter(_._1.startsWith(KYUUBI_KUBERNETES_CONF_PREFIX))
+    refreshConfig("kubernetes", existedKubernetesConf, refreshedKubernetesConf)
+  }
+
+  private def refreshConfig(
+      configDomain: String,
+      existing: Map[String, String],
+      refreshed: Map[String, String]): Unit = {
     var (unsetCount, updatedCount, addedCount) = (0, 0, 0)
-    for ((k, _) <- existedUserDefaults if !refreshedUserDefaults.contains(k)) {
+    for ((k, _) <- existing if !refreshed.contains(k)) {
       kyuubiServer.conf.unset(k)
       unsetCount = unsetCount + 1
     }
-    for ((k, v) <- refreshedUserDefaults) {
-      if (existedUserDefaults.contains(k)) {
-        if (!StringUtils.equals(existedUserDefaults.get(k).orNull, v)) {
+    for ((k, v) <- refreshed) {
+      if (existing.contains(k)) {
+        if (!StringUtils.equals(existing.get(k).orNull, v)) {
           updatedCount = updatedCount + 1
         }
       } else {
@@ -125,8 +141,16 @@ object KyuubiServer extends Logging {
       }
       kyuubiServer.conf.set(k, v)
     }
-    info(s"Refreshed user defaults configs with changes of " +
+    info(s"Refreshed $configDomain configs with changes of " +
       s"unset: $unsetCount, updated: $updatedCount, added: $addedCount")
+  }
+
+  private[kyuubi] def refreshUnlimitedUsers(): Unit = synchronized {
+    val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val existingUnlimitedUsers = sessionMgr.getUnlimitedUsers()
+    sessionMgr.refreshUnlimitedUsers(KyuubiConf().loadFileDefaults())
+    val refreshedUnlimitedUsers = sessionMgr.getUnlimitedUsers()
+    info(s"Refreshed unlimited users from $existingUnlimitedUsers to $refreshedUnlimitedUsers")
   }
 }
 
@@ -148,22 +172,25 @@ class KyuubiServer(name: String) extends Serverable(name) {
         warn("MYSQL frontend protocol is experimental.")
         new KyuubiMySQLFrontendService(this)
       case TRINO =>
-        warn("Trio frontend protocol is experimental.")
+        warn("Trino frontend protocol is experimental.")
         new KyuubiTrinoFrontendService(this)
       case other =>
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
     }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    initLoggerEventHandler(conf)
-
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
+
+    val periodicGCService = new PeriodicGCService
+    addService(periodicGCService)
 
     if (conf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)
     }
     super.initialize(conf)
+
+    initLoggerEventHandler(conf)
   }
 
   override def start(): Unit = {
@@ -181,5 +208,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
     ServerEventHandlerRegister.registerEventLoggers(conf)
   }
 
-  override protected def stopServer(): Unit = {}
+  override protected def stopServer(): Unit = {
+    EventBus.deregisterAll()
+  }
 }

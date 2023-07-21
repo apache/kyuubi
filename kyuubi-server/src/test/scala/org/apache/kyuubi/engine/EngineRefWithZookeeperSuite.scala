@@ -29,6 +29,7 @@ import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.engine.ShareLevel.USER
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
+import org.apache.kyuubi.plugin.PluginLoader
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 import org.apache.kyuubi.zookeeper.ZookeeperConf
 
@@ -62,6 +63,8 @@ class EngineRefWithZookeeperSuite extends EngineRefTests {
     conf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test1")
     conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
     val conf1 = conf.clone
     conf1.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     val conf2 = conf.clone
@@ -74,7 +77,12 @@ class EngineRefWithZookeeperSuite extends EngineRefTests {
       executor.execute(() => {
         DiscoveryClientProvider.withDiscoveryClient(conf1) { client =>
           try {
-            new EngineRef(conf1, user, "grp", UUID.randomUUID().toString, null)
+            new EngineRef(
+              conf1,
+              user,
+              PluginLoader.loadGroupProvider(conf),
+              UUID.randomUUID().toString,
+              null)
               .getOrCreate(client)
           } finally {
             times(0) = System.currentTimeMillis()
@@ -84,7 +92,12 @@ class EngineRefWithZookeeperSuite extends EngineRefTests {
       executor.execute(() => {
         DiscoveryClientProvider.withDiscoveryClient(conf2) { client =>
           try {
-            new EngineRef(conf2, user, "grp", UUID.randomUUID().toString, null)
+            new EngineRef(
+              conf2,
+              user,
+              PluginLoader.loadGroupProvider(conf),
+              UUID.randomUUID().toString,
+              null)
               .getOrCreate(client)
           } finally {
             times(1) = System.currentTimeMillis()

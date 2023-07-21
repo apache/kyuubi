@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.trino.session
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.trino.TrinoSqlEngine
 import org.apache.kyuubi.engine.trino.operation.TrinoOperationManager
@@ -36,7 +37,10 @@ class TrinoSessionManager
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    new TrinoSessionImpl(protocol, user, password, ipAddress, conf, this)
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
+      getSessionOption).getOrElse {
+      new TrinoSessionImpl(protocol, user, password, ipAddress, conf, this)
+    }
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

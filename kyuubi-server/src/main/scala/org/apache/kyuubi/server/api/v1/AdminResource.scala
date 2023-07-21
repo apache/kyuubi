@@ -24,24 +24,29 @@ import javax.ws.rs.core.{MediaType, Response}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
-import org.apache.kyuubi.client.api.v1.dto.Engine
+import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, ServerData, SessionData}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
+import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.KyuubiServer
-import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
+import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
+import org.apache.kyuubi.shaded.zookeeper.KeeperException.NoNodeException
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class AdminResource extends ApiRequestContext with Logging {
-  private lazy val administrator = Utils.currentUser
+  private lazy val administrators = fe.getConf.get(KyuubiConf.SERVER_ADMINISTRATORS).toSet +
+    Utils.currentUser
 
   @ApiResponse(
     responseCode = "200",
@@ -54,7 +59,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive refresh Kyuubi server hadoop conf request from $userName/$ipAddress")
-    if (!userName.equals(administrator)) {
+    if (!isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to refresh the Kyuubi server hadoop conf")
     }
@@ -73,13 +78,145 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive refresh user defaults conf request from $userName/$ipAddress")
-    if (!userName.equals(administrator)) {
+    if (!isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to refresh the user defaults conf")
     }
     info(s"Reloading user defaults conf")
     KyuubiServer.refreshUserDefaultsConf()
     Response.ok(s"Refresh the user defaults conf successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "refresh the kubernetes configs")
+  @POST
+  @Path("refresh/kubernetes_conf")
+  def refreshKubernetesConf(): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Receive refresh kubernetes conf request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to refresh the kubernetes conf")
+    }
+    info(s"Reloading kubernetes conf")
+    KyuubiServer.refreshKubernetesConf()
+    Response.ok(s"Refresh the kubernetes conf successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "refresh the unlimited users")
+  @POST
+  @Path("refresh/unlimited_users")
+  def refreshUnlimitedUser(): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Receive refresh unlimited users request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to refresh the unlimited users")
+    }
+    info(s"Reloading unlimited users")
+    KyuubiServer.refreshUnlimitedUsers()
+    Response.ok(s"Refresh the unlimited users successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      array = new ArraySchema(schema = new Schema(implementation = classOf[SessionData])))),
+    description = "get the list of all live sessions")
+  @GET
+  @Path("sessions")
+  def sessions(@QueryParam("users") users: String): Seq[SessionData] = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received listing all live sessions request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to list all live sessions")
+    }
+    var sessions = fe.be.sessionManager.allSessions()
+    if (StringUtils.isNotBlank(users)) {
+      val usersSet = users.split(",").toSet
+      sessions = sessions.filter(session => usersSet.contains(session.user))
+    }
+    sessions.map(session => ApiUtils.sessionData(session.asInstanceOf[KyuubiSession])).toSeq
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "Close a session")
+  @DELETE
+  @Path("sessions/{sessionHandle}")
+  def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received closing a session request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to close the session $sessionHandleStr")
+    }
+    fe.be.closeSession(SessionHandle.fromUUID(sessionHandleStr))
+    Response.ok(s"Session $sessionHandleStr is closed successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      array = new ArraySchema(schema = new Schema(implementation =
+        classOf[OperationData])))),
+    description =
+      "get the list of all active operations")
+  @GET
+  @Path("operations")
+  def listOperations(
+      @QueryParam("users") users: String,
+      @QueryParam("sessionHandle") sessionHandle: String): Seq[OperationData] = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received listing all of the active operations request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to list all the operations")
+    }
+    var operations = fe.be.sessionManager.operationManager.allOperations()
+    if (StringUtils.isNotBlank(users)) {
+      val usersSet = users.split(",").toSet
+      operations = operations.filter(operation => usersSet.contains(operation.getSession.user))
+    }
+    if (StringUtils.isNotBlank(sessionHandle)) {
+      operations = operations.filter(operation =>
+        operation.getSession.handle.equals(SessionHandle.fromUUID(sessionHandle)))
+    }
+    operations
+      .map(operation => ApiUtils.operationData(operation.asInstanceOf[KyuubiOperation])).toSeq
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "close an operation")
+  @DELETE
+  @Path("operations/{operationHandle}")
+  def closeOperation(@PathParam("operationHandle") operationHandleStr: String): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received close an operation request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to close the operation $operationHandleStr")
+    }
+    val operationHandle = OperationHandle(operationHandleStr)
+    fe.be.closeOperation(operationHandle)
+    Response.ok(s"Operation $operationHandleStr is closed successfully.").build()
   }
 
   @ApiResponse(
@@ -93,7 +230,11 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
-    val userName = fe.getSessionUser(hs2ProxyUser)
+    val userName = if (isAdministrator(fe.getRealUser())) {
+      Option(hs2ProxyUser).getOrElse(fe.getRealUser())
+    } else {
+      fe.getSessionUser(hs2ProxyUser)
+    }
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "default")
     val engineSpace = getEngineSpace(engine)
 
@@ -127,11 +268,15 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
-    val userName = fe.getSessionUser(hs2ProxyUser)
+    val userName = if (isAdministrator(fe.getRealUser())) {
+      Option(hs2ProxyUser).getOrElse(fe.getRealUser())
+    } else {
+      fe.getSessionUser(hs2ProxyUser)
+    }
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
     val engineSpace = getEngineSpace(engine)
 
-    var engineNodes = ListBuffer[ServiceNodeInfo]()
+    val engineNodes = ListBuffer[ServiceNodeInfo]()
     Option(subdomain).filter(_.nonEmpty) match {
       case Some(_) =>
         withDiscoveryClient(fe.getConf) { discoveryClient =>
@@ -140,9 +285,19 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         }
       case None =>
         withDiscoveryClient(fe.getConf) { discoveryClient =>
-          discoveryClient.getChildren(engineSpace).map { child =>
-            info(s"Listing engine nodes for $engineSpace/$child")
-            engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+          try {
+            discoveryClient.getChildren(engineSpace).map { child =>
+              info(s"Listing engine nodes for $engineSpace/$child")
+              engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+            }
+          } catch {
+            case nne: NoNodeException =>
+              error(
+                s"No such engine for user: $userName, " +
+                  s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain",
+                nne)
+              throw new NotFoundException(s"No such engine for user: $userName, " +
+                s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain")
           }
         }
     }
@@ -156,6 +311,35 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.instance,
         node.namespace,
         node.attributes.asJava))
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(
+      new Content(
+        mediaType = MediaType.APPLICATION_JSON,
+        array = new ArraySchema(schema = new Schema(implementation =
+          classOf[OperationData])))),
+    description = "list all live kyuubi servers")
+  @GET
+  @Path("server")
+  def listServers(): Seq[ServerData] = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received list all live kyuubi servers request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to list all live kyuubi servers")
+    }
+    val kyuubiConf = fe.getConf
+    val servers = ListBuffer[ServerData]()
+    val serverSpec = DiscoveryPaths.makePath(null, kyuubiConf.get(HA_NAMESPACE))
+    withDiscoveryClient(kyuubiConf) { discoveryClient =>
+      discoveryClient.getServiceNodesInfo(serverSpec).map(nodeInfo => {
+        servers += ApiUtils.serverData(nodeInfo)
+      })
+    }
+    servers
   }
 
   private def getEngine(
@@ -188,9 +372,19 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
 
   private def getEngineSpace(engine: Engine): String = {
     val serverSpace = fe.getConf.get(HA_NAMESPACE)
+    val appUser = engine.getSharelevel match {
+      case "GROUP" =>
+        fe.sessionManager.groupProvider.primaryGroup(engine.getUser, fe.getConf.getAll.asJava)
+      case _ => engine.getUser
+    }
+
     DiscoveryPaths.makePath(
       s"${serverSpace}_${engine.getVersion}_${engine.getSharelevel}_${engine.getEngineType}",
-      engine.getUser,
+      appUser,
       engine.getSubdomain)
+  }
+
+  private def isAdministrator(userName: String): Boolean = {
+    administrators.contains(userName)
   }
 }

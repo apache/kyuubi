@@ -46,7 +46,7 @@ abstract class HiveOperation(session: Session) extends AbstractOperation(session
   }
 
   override def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }
@@ -92,7 +92,7 @@ abstract class HiveOperation(session: Session) extends AbstractOperation(session
     resp
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     val tOrder = FetchOrientation.toTFetchOrientation(order)
     val hiveOrder = org.apache.hive.service.cli.FetchOrientation.getFetchOrientation(tOrder)
     val rowSet = internalHiveOperation.getNextRowSet(hiveOrder, rowSetSize)

@@ -17,11 +17,25 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
+import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 
+import org.apache.kyuubi.plugin.spark.authz.ranger.datamasking.{DataMaskingStage0Marker, DataMaskingStage1Marker}
+import org.apache.kyuubi.plugin.spark.authz.ranger.rowfilter.RowFilterMarker
+
 class RuleEliminateMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUp { case rf: RowFilterAndDataMaskingMarker => rf.child }
+    plan.transformUp { case p =>
+      p.transformExpressionsUp {
+        case p: SubqueryExpression =>
+          p.withNewPlan(apply(p.plan))
+      } match {
+        case marker0: DataMaskingStage0Marker => marker0.child
+        case marker1: DataMaskingStage1Marker => marker1.child
+        case rf: RowFilterMarker => rf.child
+        case other => other
+      }
+    }
   }
 }

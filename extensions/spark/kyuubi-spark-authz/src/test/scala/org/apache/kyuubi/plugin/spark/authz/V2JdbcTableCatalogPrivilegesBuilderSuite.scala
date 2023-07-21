@@ -23,6 +23,8 @@ import scala.util.Try
 import org.scalatest.Outcome
 
 import org.apache.kyuubi.plugin.spark.authz.serde._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.util.AssertionUtils._
 
 class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val catalogImpl: String = "in-memory"
@@ -80,9 +82,9 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
             Try(table = d.extract(plan, spark).get).isSuccess
           }
           withClue(str) {
-            assert(table.catalog === Some(catalogV2))
-            assert(table.database === Some(ns1))
-            assert(table.table === tbl)
+            assertEqualsIgnoreCase(Some(catalogV2))(table.catalog)
+            assertEqualsIgnoreCase(Some(ns1))(table.database)
+            assertEqualsIgnoreCase(tbl)(table.table)
             assert(table.owner.isEmpty)
           }
         }
@@ -105,9 +107,9 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
           Try(table = d.extract(plan, spark).get).isSuccess
         }
         withClue(sql1) {
-          assert(table.catalog === Some(catalogV2))
-          assert(table.database === Some(ns1))
-          assert(table.table === tbl)
+          assertEqualsIgnoreCase(Some(catalogV2))(table.catalog)
+          assertEqualsIgnoreCase(Some(ns1))(table.database)
+          assertEqualsIgnoreCase(tbl)(table.table)
           assert(table.owner.isEmpty)
         }
       }
@@ -127,9 +129,9 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
         var table: Table = null
         spec.tableDescs.find { d => Try(table = d.extract(plan, spark).get).isSuccess }
         withClue(sql1) {
-          assert(table.catalog === Some(catalogV2))
-          assert(table.database === Some(ns1))
-          assert(table.table === tbl)
+          assertEqualsIgnoreCase(Some(catalogV2))(table.catalog)
+          assertEqualsIgnoreCase(Some(ns1))(table.database)
+          assertEqualsIgnoreCase(tbl)(table.table)
           assert(table.owner.isEmpty)
         }
       }
@@ -147,8 +149,8 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
         Try(db = d.extract(plan)).isSuccess
       }
       withClue(sql) {
-        assert(db.catalog === Some(catalogV2))
-        assert(db.database === ns1)
+        assertEqualsIgnoreCase(Some(catalogV2))(db.catalog)
+        assertEqualsIgnoreCase(ns1)(db.database)
       }
     }
 
@@ -166,8 +168,8 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
         Try(db = d.extract(plan)).isSuccess
       }
       withClue(sql1) {
-        assert(db.catalog === Some(catalogV2))
-        assert(db.database === ns1)
+        assertEqualsIgnoreCase(Some(catalogV2))(db.catalog)
+        assertEqualsIgnoreCase(ns1)(db.database)
       }
     }
   }

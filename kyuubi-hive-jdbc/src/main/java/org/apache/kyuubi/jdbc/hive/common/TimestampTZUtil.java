@@ -98,7 +98,7 @@ public class TimestampTZUtil {
     Matcher matcher = SINGLE_DIGIT_PATTERN.matcher(s);
     if (matcher.find()) {
       int index = matcher.start() + 1;
-      s = s.substring(0, index) + "0" + s.substring(index, s.length());
+      s = s.substring(0, index) + "0" + s.substring(index);
     }
     return s;
   }

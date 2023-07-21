@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import javax.ws.rs._
+import javax.ws.rs.{BadRequestException, _}
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
@@ -28,16 +28,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle}
-import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 
 @Tag(name = "Operation")
 @Produces(Array(MediaType.APPLICATION_JSON))
+@Consumes(Array(MediaType.APPLICATION_JSON))
 private[v1] class OperationsResource extends ApiRequestContext with Logging {
+  import ApiUtils.logAndRefineErrorMsg
 
   @ApiResponse(
     responseCode = "200",
@@ -57,8 +58,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting an operation event"
-        error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
+        throw new NotFoundException(logAndRefineErrorMsg(errorMsg, e))
     }
   }
 
@@ -84,8 +84,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       case NonFatal(e) =>
         val errorMsg =
           s"Error applying ${request.getAction} for operation handle $operationHandleStr"
-        error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
+        throw new NotFoundException(logAndRefineErrorMsg(errorMsg, e))
     }
   }
 
@@ -109,7 +108,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
           var scale = 0
           if (tPrimitiveTypeEntry.getTypeQualifiers != null) {
             val qualifiers = tPrimitiveTypeEntry.getTypeQualifiers.getQualifiers
-            val defaultValue = TTypeQualifierValue.i32Value(0);
+            val defaultValue = TTypeQualifierValue.i32Value(0)
             precision = qualifiers.getOrDefault("precision", defaultValue).getI32Value
             scale = qualifiers.getOrDefault("scale", defaultValue).getI32Value
           }
@@ -124,8 +123,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
     } catch {
       case NonFatal(e) =>
         val errorMsg = s"Error getting result set metadata for operation handle $operationHandleStr"
-        error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
+        throw new NotFoundException(logAndRefineErrorMsg(errorMsg, e))
     }
   }
 
@@ -140,19 +138,25 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   @Path("{operationHandle}/log")
   def getOperationLog(
       @PathParam("operationHandle") operationHandleStr: String,
-      @QueryParam("maxrows") maxRows: Int): OperationLog = {
+      @QueryParam("maxrows") @DefaultValue("100") maxRows: Int,
+      @QueryParam("fetchorientation") @DefaultValue("FETCH_NEXT")
+      fetchOrientation: String): OperationLog = {
     try {
+      if (fetchOrientation != "FETCH_NEXT" && fetchOrientation != "FETCH_FIRST") {
+        throw new BadRequestException(s"$fetchOrientation in operation log is not supported")
+      }
       val rowSet = fe.be.sessionManager.operationManager.getOperationLogRowSet(
         OperationHandle(operationHandleStr),
-        FetchOrientation.FETCH_NEXT,
+        FetchOrientation.withName(fetchOrientation),
         maxRows)
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
       new OperationLog(logRowSet.asJava, logRowSet.size)
     } catch {
+      case e: BadRequestException =>
+        throw e
       case NonFatal(e) =>
         val errorMsg = s"Error getting operation log for operation handle $operationHandleStr"
-        error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
+        throw new NotFoundException(logAndRefineErrorMsg(errorMsg, e))
     }
   }
 
@@ -182,28 +186,58 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
             i.getSetField.name(),
             i.getSetField match {
               case TColumnValue._Fields.STRING_VAL =>
-                i.getStringVal.getFieldValue(TStringValue._Fields.VALUE)
+                if (i.getStringVal.isSetValue) {
+                  i.getStringVal.getFieldValue(TStringValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.BOOL_VAL =>
-                i.getBoolVal.getFieldValue(TBoolValue._Fields.VALUE)
+                if (i.getBoolVal.isSetValue) {
+                  i.getBoolVal.getFieldValue(TBoolValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.BYTE_VAL =>
-                i.getByteVal.getFieldValue(TByteValue._Fields.VALUE)
+                if (i.getByteVal.isSetValue) {
+                  i.getByteVal.getFieldValue(TByteValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.DOUBLE_VAL =>
-                i.getDoubleVal.getFieldValue(TDoubleValue._Fields.VALUE)
+                if (i.getDoubleVal.isSetValue) {
+                  i.getDoubleVal.getFieldValue(TDoubleValue._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.I16_VAL =>
-                i.getI16Val.getFieldValue(TI16Value._Fields.VALUE)
+                if (i.getI16Val.isSetValue) {
+                  i.getI16Val.getFieldValue(TI16Value._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.I32_VAL =>
-                i.getI32Val.getFieldValue(TI32Value._Fields.VALUE)
+                if (i.getI32Val.isSetValue) {
+                  i.getI32Val.getFieldValue(TI32Value._Fields.VALUE)
+                } else {
+                  null
+                }
               case TColumnValue._Fields.I64_VAL =>
-                i.getI64Val.getFieldValue(TI64Value._Fields.VALUE)
+                if (i.getI64Val.isSetValue) {
+                  i.getI64Val.getFieldValue(TI64Value._Fields.VALUE)
+                } else {
+                  null
+                }
             })
         }).asJava)
       })
       new ResultRowSet(rows.asJava, rows.size)
     } catch {
+      case e: IllegalArgumentException =>
+        error(e.getMessage, e)
+        throw new BadRequestException(e.getMessage)
       case NonFatal(e) =>
         val errorMsg = s"Error getting result row set for operation handle $operationHandleStr"
-        error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
+        throw new NotFoundException(logAndRefineErrorMsg(errorMsg, e))
     }
   }
 }

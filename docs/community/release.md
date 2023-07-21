@@ -43,12 +43,14 @@ The release process consists of several steps:
 
 1. Decide to release
 2. Prepare for the release
-3. Cut branch off for __major__ release
+3. Cut branch off for __feature__ release
 4. Build a release candidate
 5. Vote on the release candidate
 6. If necessary, fix any issues and go back to step 3.
 7. Finalize the release
 8. Promote the release
+9. Remove the dist repo directories for deprecated release candidates
+10. Publish docker image
 
 ## Decide to release
 
@@ -151,12 +153,12 @@ gpg --keyserver hkp://keyserver.ubuntu.com --send-keys ${PUBLIC_KEY} # send publ
 gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys ${PUBLIC_KEY} # verify
 ```
 
-## Cut branch if for major release
+## Cut branch if for feature release
 
 Kyuubi use version pattern `{MAJOR_VERSION}.{MINOR_VERSION}.{PATCH_VERSION}[-{OPTIONAL_SUFFIX}]`, e.g. `1.7.0`.
-__Major Release__ means `MAJOR_VERSION` or `MINOR_VERSION` changed, and __Patch Release__ means `PATCH_VERSION` changed.
+__Feature Release__ means `MAJOR_VERSION` or `MINOR_VERSION` changed, and __Patch Release__ means `PATCH_VERSION` changed.
 
-The main step towards preparing a major release is to create a release branch. This is done via standard Git branching
+The main step towards preparing a feature release is to create a release branch. This is done via standard Git branching
 mechanism and should be announced to the community once the branch is created.
 
 > Note: If you are releasing a patch version, you can ignore this step.
@@ -169,29 +171,47 @@ After cutting release branch, don't forget bump version in `master` branch.
 
 > Don't forget to switch to the release branch!
 
-1. Set environment variables.
+- Set environment variables.
 
 ```shell
 export RELEASE_VERSION=<release version, e.g. 1.7.0>
 export RELEASE_RC_NO=<RC number, e.g. 0>
+export NEXT_VERSION=<e.g. 1.7.1>
 ```
 
-2. Bump version.
+- Bump version, and create a git tag for the release candidate.
 
-```shell
-build/mvn versions:set -DgenerateBackupPoms=false -DnewVersion="${RELEASE_VERSION}"
-
-git commit -am "[RELEASE] Bump ${RELEASE_VERSION}"
-```
-
-3. Create a git tag for the release candidate.
+Considering that other committers may merge PRs during your release period, you should accomplish the version change
+first, and then come back to the release candidate tag to continue the rest release process.
 
 The tag pattern is `v${RELEASE_VERSION}-rc${RELEASE_RC_NO}`, e.g. `v1.7.0-rc0`
 
 > NOTE: After all the voting passed, be sure to create a final tag with the pattern: `v${RELEASE_VERSION}`
 
-4. Package the release binaries & sources, and upload them to the Apache staging SVN repo. Publish jars to the Apache
-   staging Maven repo.
+```shell
+# Bump to the release version
+build/mvn versions:set -DgenerateBackupPoms=false -DnewVersion="${RELEASE_VERSION}"
+git commit -am "[RELEASE] Bump ${RELEASE_VERSION}"
+
+# Create tag
+git tag v${RELEASE_VERSION}-rc${RELEASE_RC_NO}
+
+# Prepare for the next development version
+build/mvn versions:set -DgenerateBackupPoms=false -DnewVersion="${NEXT_VERSION}-SNAPSHOT"
+git commit -am "[RELEASE] Bump ${NEXT_VERSION}-SNAPSHOT"
+
+# Push branch to apache remote repo
+git push apache
+
+# Push tag to apache remote repo
+git push apache v${RELEASE_VERSION}-rc${RELEASE_RC_NO}
+
+# Go back to release candidate tag 
+git checkout v${RELEASE_VERSION}-rc${RELEASE_RC_NO}
+```
+
+- Package source and binary artifacts, and upload them to the Apache staging SVN repo. Publish jars to the Apache
+  staging Maven repo.
 
 ```shell
 build/release/release.sh publish
@@ -199,7 +219,7 @@ build/release/release.sh publish
 
 To make your release available in the staging repository, you must close the staging repo in the [Apache Nexus](https://repository.apache.org/#stagingRepositories). Until you close, you can re-run deploying to staging multiple times. But once closed, it will create a new staging repo. So ensure you close this, so that the next RC (if need be) is on a new repo. Once everything is good, close the staging repository on Apache Nexus.
 
-5. Generate a pre-release note from GitHub for the subsequent voting.
+- Generate a pre-release note from GitHub for the subsequent voting.
 
 Goto the [release page](https://github.com/apache/kyuubi/releases) and click the "Draft a new release" button, then it would jump to a new page to prepare the release.
 
@@ -255,8 +275,7 @@ Fork and clone [Apache Kyuubi website](https://github.com/apache/kyuubi-website)
 
 1. Add a new markdown file in `src/zh/news/`, `src/en/news/`
 2. Add a new markdown file in `src/zh/release/`, `src/en/release/`
-3. Follow [Build Document](../develop_tools/build_document.md) to build documents, then copy `apache/kyuubi`'s
-   folder `docs/_build/html` to `apache/kyuubi-website`'s folder `content/docs/r{RELEASE_VERSION}`
+3. Update `releases` defined in `hugo.toml`'s `[params]` part.
 
 ### Create an Announcement
 
@@ -280,3 +299,6 @@ svn delete https://dist.apache.org/repos/dist/dev/kyuubi/{RELEASE_TAG} \
   --message "Remove deprecated Apache Kyuubi ${RELEASE_TAG}" 
 ```
 
+## Publish docker image
+
+See steps in `https://github.com/apache/kyuubi-docker/blob/master/release/release_guide.md`

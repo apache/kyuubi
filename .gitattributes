@@ -18,7 +18,6 @@
 .github/ export-ignore
 .idea/ export-ignore
 .readthedocs.yml export-ignore
-.travis.yml export-ignore
 _config.yml export-ignore
 codecov.yml export-ignore
 licenses-binary/ export-ignore

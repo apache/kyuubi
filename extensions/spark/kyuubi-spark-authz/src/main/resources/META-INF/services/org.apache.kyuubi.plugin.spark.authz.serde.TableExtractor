@@ -21,5 +21,6 @@ org.apache.kyuubi.plugin.spark.authz.serde.DataSourceV2RelationTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.IdentifierTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.LogicalRelationTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.ResolvedDbObjectNameTableExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.ResolvedIdentifierTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.ResolvedTableTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.TableIdentifierTableExtractor

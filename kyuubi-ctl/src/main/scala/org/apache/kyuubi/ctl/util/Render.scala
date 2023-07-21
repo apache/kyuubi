@@ -19,7 +19,7 @@ package org.apache.kyuubi.ctl.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.client.api.v1.dto.{Batch, Engine, GetBatchesResponse, SessionData}
+import org.apache.kyuubi.client.api.v1.dto.{Batch, Engine, GetBatchesResponse, ServerData, SessionData}
 import org.apache.kyuubi.ctl.util.DateTimeUtils._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
@@ -41,6 +41,19 @@ private[ctl] object Render {
         engine.getNamespace + "\n" + renderEngineNamespaceDetails(engine),
         engine.getInstance,
         engine.getAttributes.asScala.map(kv => kv._1 + "=" + kv._2).mkString("\n"))
+    }.toArray
+    Tabulator.format(title, header, rows)
+  }
+
+  def renderServerNodesInfo(serverNodesInfo: Seq[ServerData]): String = {
+    val title = s"Server Node List (total ${serverNodesInfo.size})"
+    val header = Array("Namespace", "Instance", "Attributes", "Status")
+    val rows = serverNodesInfo.map { server =>
+      Array(
+        server.getNamespace,
+        server.getInstance,
+        server.getAttributes.asScala.map { case (k, v) => s"$k=$v" }.mkString("\n"),
+        server.getStatus)
     }.toArray
     Tabulator.format(title, header, rows)
   }
@@ -111,6 +124,9 @@ private[ctl] object Render {
 
   private def buildBatchAppInfo(batch: Batch, showDiagnostic: Boolean = true): List[String] = {
     val batchAppInfo = ListBuffer[String]()
+    batch.getBatchInfo.asScala.foreach { case (key, value) =>
+      batchAppInfo += s"$key: $value"
+    }
     if (batch.getAppStartTime > 0) {
       batchAppInfo += s"App Start Time:" +
         s" ${millisToDateString(batch.getAppStartTime, "yyyy-MM-dd HH:mm:ss")}"

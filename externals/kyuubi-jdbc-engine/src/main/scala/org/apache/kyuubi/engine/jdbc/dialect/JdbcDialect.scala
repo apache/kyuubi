@@ -18,9 +18,6 @@ package org.apache.kyuubi.engine.jdbc.dialect
 
 import java.sql.{Connection, Statement}
 import java.util
-import java.util.ServiceLoader
-
-import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
@@ -29,6 +26,7 @@ import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
 import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 abstract class JdbcDialect extends SupportServiceLoader with Logging {
 
@@ -75,9 +73,8 @@ object JdbcDialects extends Logging {
       assert(url.length > 5 && url.substring(5).contains(":"))
       url.substring(5, url.indexOf(":", 5))
     }
-    val serviceLoader =
-      ServiceLoader.load(classOf[JdbcDialect], Thread.currentThread().getContextClassLoader)
-    serviceLoader.asScala.filter(_.name().equalsIgnoreCase(shortName)).toList match {
+    loadFromServiceLoader[JdbcDialect]()
+      .filter(_.name().equalsIgnoreCase(shortName)).toList match {
       case Nil =>
         throw new KyuubiException(s"Don't find jdbc dialect implement for jdbc engine: $shortName.")
       case head :: Nil =>

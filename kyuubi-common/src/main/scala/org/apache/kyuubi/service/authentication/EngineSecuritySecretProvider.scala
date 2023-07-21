@@ -18,7 +18,8 @@
 package org.apache.kyuubi.service.authentication
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.util.reflect.DynConstructors
 
 trait EngineSecuritySecretProvider {
 
@@ -33,11 +34,27 @@ trait EngineSecuritySecretProvider {
   def getSecret(): String
 }
 
+class SimpleEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvider {
+
+  private var _conf: KyuubiConf = _
+
+  override def initialize(conf: KyuubiConf): Unit = _conf = conf
+
+  override def getSecret(): String = {
+    _conf.get(SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET).getOrElse {
+      throw new IllegalArgumentException(
+        s"${SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET.key} must be configured " +
+          s"when ${ENGINE_SECURITY_SECRET_PROVIDER.key} is `simple`.")
+    }
+  }
+}
+
 object EngineSecuritySecretProvider {
   def create(conf: KyuubiConf): EngineSecuritySecretProvider = {
-    val providerClass = Class.forName(conf.get(ENGINE_SECURITY_SECRET_PROVIDER))
-    val provider = providerClass.getConstructor().newInstance()
-      .asInstanceOf[EngineSecuritySecretProvider]
+    val provider = DynConstructors.builder()
+      .impl(conf.get(ENGINE_SECURITY_SECRET_PROVIDER))
+      .buildChecked[EngineSecuritySecretProvider]()
+      .newInstance(conf)
     provider.initialize(conf)
     provider
   }

@@ -18,6 +18,7 @@
 package org.apache.kyuubi.config
 
 import java.time.Duration
+import java.util.Locale
 import java.util.regex.PatternSyntaxException
 
 import scala.util.{Failure, Success, Try}
@@ -150,7 +151,7 @@ private[kyuubi] case class ConfigBuilder(key: String) {
       }
     }
 
-    new TypedConfigBuilder(this, regexFromString(_, this.key), _.toString)
+    TypedConfigBuilder(this, regexFromString(_, this.key), _.toString)
   }
 }
 
@@ -165,6 +166,21 @@ private[kyuubi] case class TypedConfigBuilder[T](
     this(parent, fromStr, Option[T](_).map(_.toString).orNull)
 
   def transform(fn: T => T): TypedConfigBuilder[T] = this.copy(fromStr = s => fn(fromStr(s)))
+
+  def transformToUpperCase: TypedConfigBuilder[T] = {
+    transformString(_.toUpperCase(Locale.ROOT))
+  }
+
+  def transformToLowerCase: TypedConfigBuilder[T] = {
+    transformString(_.toLowerCase(Locale.ROOT))
+  }
+
+  private def transformString(fn: String => String): TypedConfigBuilder[T] = {
+    require(parent._type == "string")
+    this.asInstanceOf[TypedConfigBuilder[String]]
+      .transform(fn)
+      .asInstanceOf[TypedConfigBuilder[T]]
+  }
 
   /** Checks if the user-provided value for the config matches the validator. */
   def checkValue(validator: T => Boolean, errMsg: String): TypedConfigBuilder[T] = {

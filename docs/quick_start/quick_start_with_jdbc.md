@@ -15,82 +15,82 @@
 - limitations under the License.
 -->
 
-# Getting Started With Hive JDBC
+# Getting Started with Hive JDBC
 
-## How to install JDBC driver
+## How to get the Kyuubi JDBC driver
 
-Kyuubi JDBC driver is fully compatible with the 2.3.* version of hive JDBC driver, so we reuse hive JDBC driver to connect to Kyuubi server.
+Kyuubi Thrift API is fully compatible w/ HiveServer2, so technically, it allows to use any Hive JDBC driver to connect
+Kyuubi Server. But it's recommended to use [Kyuubi Hive JDBC driver](../client/jdbc/kyuubi_jdbc), which is forked from
+Hive 3.1.x JDBC driver, aims to support some missing functionalities of the original Hive JDBC driver.
 
-Add repository to your maven configuration file which may reside in `$MAVEN_HOME/conf/settings.xml`.
-
-```xml
-<repositories>
-  <repository>
-    <id>central maven repo</id>
-    <name>central maven repo https</name>
-    <url>https://repo.maven.apache.org/maven2</url>
-  </repository>
-</repositories>
-```
-
-You can add below dependency to your `pom.xml` file in your application.
+The driver is available from Maven Central:
 
 ```xml
-<!-- https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc -->
 <dependency>
-    <groupId>org.apache.hive</groupId>
-    <artifactId>hive-jdbc</artifactId>
-    <version>2.3.7</version>
-</dependency>
-<dependency>
-    <groupId>org.apache.hadoop</groupId>
-    <artifactId>hadoop-common</artifactId>
-    <!-- keep consistent with the build hadoop version -->
-    <version>2.7.4</version>
+    <groupId>org.apache.kyuubi</groupId>
+    <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
+    <version>1.7.0</version>
 </dependency>
 ```
 
-## Use JDBC driver with kerberos
+## Connect to non-kerberized Kyuubi Server
 
 The below java code is using a keytab file to login and connect to Kyuubi server by JDBC.
 
 ```java
 package org.apache.kyuubi.examples;
   
-import java.io.IOException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.*;
 
-import org.apache.hadoop.security.UserGroupInformation;
- 
-public class JDBCTest {
- 
-    private static String driverName = "org.apache.hive.jdbc.HiveDriver";
-    private static String kyuubiJdbcUrl = "jdbc:hive2://localhost:10009/default;";
- 
-    public static void main(String[] args) throws ClassNotFoundException, SQLException {
-        String principal = args[0]; // kerberos principal
-        String keytab = args[1]; // keytab file location
-        Configuration configuration = new Configuration();
-        configuration.set(HADOOP_SECURITY_AUTHENTICATION, "kerberos");
-        UserGroupInformation.setConfiguration(configuration);
-        UserGroupInformation ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(principal, keytab);
- 
-        Class.forName(driverName);
-        Connection conn = ugi.doAs(new PrivilegedExceptionAction<Connection>(){
-            public Connection run() throws SQLException {
-                return DriverManager.getConnection(kyuubiJdbcUrl);
-            }
-        });
-        Statement st = conn.createStatement();
-        ResultSet res = st.executeQuery("show databases");
-        while (res.next()) {
-            System.out.println(res.getString(1));
-        }
-        res.close();
-        st.close();
-        conn.close();
+public class KyuubiJDBC {
+
+  private static String driverName = "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
+  private static String kyuubiJdbcUrl = "jdbc:kyuubi://localhost:10009/default;";
+
+  public static void main(String[] args) throws SQLException {
+    try (Connection conn = DriverManager.getConnection(kyuubiJdbcUrl)) {
+      try (Statement stmt = conn.createStatement()) {
+        try (ResultSet rs = st.executeQuery("show databases")) {
+          while (rs.next()) {
+            System.out.println(rs.getString(1));
+          }
+        }   
+      }
     }
+  }
+}
+```
+
+## Connect to Kerberized Kyuubi Server
+
+The following Java code uses a keytab file to login and connect to Kyuubi Server by JDBC.
+
+```java
+package org.apache.kyuubi.examples;
+
+import java.sql.*;
+
+public class KyuubiJDBCDemo {
+
+  private static String driverName = "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
+  private static String kyuubiJdbcUrlTemplate = "jdbc:kyuubi://localhost:10009/default;" +
+          "kyuubiClientPrincipal=%s;kyuubiClientKeytab=%s;kyuubiServerPrincipal=%s";
+
+  public static void main(String[] args) throws SQLException {
+    String clientPrincipal = args[0]; // Kerberos principal
+    String clientKeytab = args[1];    // Keytab file location
+    String serverPrincipal = arg[2];  // Kerberos principal used by Kyuubi Server
+    String kyuubiJdbcUrl = String.format(kyuubiJdbcUrlTemplate, clientPrincipal, clientKeytab, serverPrincipal);
+    try (Connection conn = DriverManager.getConnection(kyuubiJdbcUrl)) {
+      try (Statement stmt = conn.createStatement()) {
+        try (ResultSet rs = st.executeQuery("show databases")) {
+          while (rs.next()) {
+            System.out.println(rs.getString(1));
+          }
+        }
+      }
+    }
+  }
 }
 ```
 

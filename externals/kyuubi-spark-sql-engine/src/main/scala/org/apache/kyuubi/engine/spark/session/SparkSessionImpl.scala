@@ -17,17 +17,19 @@
 
 package org.apache.kyuubi.engine.spark.session
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.spark.events.SessionEvent
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+import org.apache.kyuubi.session._
 
 class SparkSessionImpl(
     protocol: TProtocolVersion,
@@ -38,6 +40,9 @@ class SparkSessionImpl(
     sessionManager: SessionManager,
     val spark: SparkSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  override val handle: SessionHandle =
+    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {
@@ -50,22 +55,35 @@ class SparkSessionImpl(
   private val sessionEvent = SessionEvent(this)
 
   override def open(): Unit = {
-    normalizedConf.foreach {
-      case ("use:catalog", catalog) =>
-        try {
-          SparkCatalogShim().setCurrentCatalog(spark, catalog)
-        } catch {
-          case e if e.getMessage.contains("Cannot find catalog plugin class for catalog") =>
-            warn(e.getMessage())
-        }
-      case ("use:database", database) =>
-        try {
-          SparkCatalogShim().setCurrentDatabase(spark, database)
-        } catch {
-          case e
-              if database == "default" && e.getMessage != null &&
-                e.getMessage.contains("not found") =>
-        }
+
+    val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
+      Array(USE_CATALOG, USE_DATABASE).contains(k)
+    }
+
+    useCatalogAndDatabaseConf.get(USE_CATALOG).foreach { catalog =>
+      try {
+        SparkCatalogUtils.setCurrentCatalog(spark, catalog)
+      } catch {
+        case e if e.getMessage.contains("Cannot find catalog plugin class for catalog") =>
+          warn(e.getMessage())
+      }
+    }
+
+    useCatalogAndDatabaseConf.get("use:database").foreach { database =>
+      try {
+        spark.sessionState.catalogManager.setCurrentNamespace(Array(database))
+      } catch {
+        case e
+            if database == "default" &&
+              StringUtils.containsAny(
+                e.getMessage,
+                "not found",
+                "SCHEMA_NOT_FOUND",
+                "is not authorized to perform: glue:GetDatabase") =>
+      }
+    }
+
+    otherConf.foreach {
       case (key, value) => setModifiableConfig(key, value)
     }
     KDFRegistry.registerAll(spark)

@@ -20,6 +20,7 @@ package org.apache.kyuubi.client.util;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import org.apache.kyuubi.client.api.v1.dto.Batch;
 
 public final class BatchUtils {
   /** The batch has not been submitted to resource manager yet. */
@@ -40,6 +41,10 @@ public final class BatchUtils {
   public static List<String> terminalBatchStates =
       Arrays.asList(FINISHED_STATE, ERROR_STATE, CANCELED_STATE);
 
+  public static String KYUUBI_BATCH_ID_KEY = "kyuubi.batch.id";
+
+  public static String KYUUBI_BATCH_DUPLICATED_KEY = "kyuubi.batch.duplicated";
+
   public static boolean isPendingState(String state) {
     return PENDING_STATE.equalsIgnoreCase(state);
   }
@@ -54,5 +59,9 @@ public final class BatchUtils {
 
   public static boolean isTerminalState(String state) {
     return state != null && terminalBatchStates.contains(state.toUpperCase(Locale.ROOT));
+  }
+
+  public static boolean isDuplicatedSubmission(Batch batch) {
+    return "true".equalsIgnoreCase(batch.getBatchInfo().get(KYUUBI_BATCH_DUPLICATED_KEY));
   }
 }

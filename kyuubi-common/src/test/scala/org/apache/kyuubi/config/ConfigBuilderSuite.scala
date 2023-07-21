@@ -72,6 +72,27 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     KyuubiConf.register(sequenceConf)
     val kyuubiConf = KyuubiConf().set(sequenceConf.key, "kyuubi,kent")
     assert(kyuubiConf.get(sequenceConf) === Seq("kyuubi", "kent"))
+
+    val stringConfUpper = ConfigBuilder("kyuubi.string.conf.upper")
+      .stringConf
+      .transformToUpperCase
+      .createWithDefault("Kent, Yao")
+    assert(stringConfUpper.key === "kyuubi.string.conf.upper")
+    assert(stringConfUpper.defaultVal.get === "KENT, YAO")
+
+    val stringConfUpperSeq = ConfigBuilder("kyuubi.string.conf.upper.seq")
+      .stringConf
+      .transformToUpperCase
+      .toSequence()
+      .createWithDefault(Seq("hehe"))
+    assert(stringConfUpperSeq.defaultVal.get === Seq("HEHE"))
+
+    val stringConfLower = ConfigBuilder("kyuubi.string.conf.lower")
+      .stringConf
+      .transformToLowerCase
+      .createWithDefault("Kent, Yao")
+    assert(stringConfLower.key === "kyuubi.string.conf.lower")
+    assert(stringConfLower.defaultVal.get === "kent, yao")
   }
 
   test("time config") {

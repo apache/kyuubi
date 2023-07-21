@@ -19,10 +19,12 @@ package org.apache.hive.beeline;
 
 import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
+import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.Utils;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
@@ -43,9 +45,14 @@ public class KyuubiCommands extends Commands {
     return execute(line, false, false);
   }
 
+  /** For python mode, keep it as it is. */
+  private String trimForNonPythonMode(String line) {
+    return beeLine.isPythonMode() ? line : line.trim();
+  }
+
   /** Extract and clean up the first command in the input. */
   private String getFirstCmd(String cmd, int length) {
-    return cmd.substring(length).trim();
+    return trimForNonPythonMode(cmd.substring(length));
   }
 
   private String[] tokenizeCmd(String cmd) {
@@ -93,8 +100,9 @@ public class KyuubiCommands extends Commands {
           lines += "\n" + extra;
         }
       }
-      String[] cmds = lines.split(";");
+      String[] cmds = lines.split(beeLine.getOpts().getDelimiter());
       for (String c : cmds) {
+        c = trimForNonPythonMode(c);
         if (!executeInternal(c, false)) {
           return false;
         }
@@ -258,9 +266,10 @@ public class KyuubiCommands extends Commands {
       beeLine.handleException(e);
     }
 
+    line = trimForNonPythonMode(line);
     List<String> cmdList = getCmdList(line, entireLineAsCommand);
     for (int i = 0; i < cmdList.size(); i++) {
-      String sql = cmdList.get(i);
+      String sql = trimForNonPythonMode(cmdList.get(i));
       if (sql.length() != 0) {
         if (!executeInternal(sql, call)) {
           return false;
@@ -276,7 +285,8 @@ public class KyuubiCommands extends Commands {
    * quotations. It iterates through each character in the line and checks to see if it is a ;, ',
    * or "
    */
-  private List<String> getCmdList(String line, boolean entireLineAsCommand) {
+  @VisibleForTesting
+  public List<String> getCmdList(String line, boolean entireLineAsCommand) {
     List<String> cmdList = new ArrayList<String>();
     if (entireLineAsCommand) {
       cmdList.add(line);
@@ -352,7 +362,7 @@ public class KyuubiCommands extends Commands {
    */
   private void addCmdPart(List<String> cmdList, StringBuilder command, String cmdpart) {
     if (cmdpart.endsWith("\\")) {
-      command.append(cmdpart.substring(0, cmdpart.length() - 1)).append(";");
+      command.append(cmdpart, 0, cmdpart.length() - 1).append(";");
       return;
     } else {
       command.append(cmdpart);
@@ -417,6 +427,7 @@ public class KyuubiCommands extends Commands {
     return null;
   }
 
+  @Override
   public boolean connect(Properties props) throws IOException {
     String url =
         getProperty(
@@ -462,7 +473,7 @@ public class KyuubiCommands extends Commands {
 
     beeLine.info("Connecting to " + url);
     if (Utils.parsePropertyFromUrl(url, AUTH_PRINCIPAL) == null
-        || Utils.parsePropertyFromUrl(url, AUTH_KYUUBI_SERVER_PRINCIPAL) == null) {
+        && Utils.parsePropertyFromUrl(url, AUTH_KYUUBI_SERVER_PRINCIPAL) == null) {
       String urlForPrompt = url.substring(0, url.contains(";") ? url.indexOf(';') : url.length());
       if (username == null) {
         username = beeLine.getConsoleReader().readLine("Enter username for " + urlForPrompt + ": ");
@@ -484,7 +495,19 @@ public class KyuubiCommands extends Commands {
       if (!beeLine.isBeeLine()) {
         beeLine.updateOptsForCli();
       }
-      beeLine.runInit();
+
+      // see HIVE-19048 : Initscript errors are ignored
+      int initScriptExecutionResult = beeLine.runInit();
+
+      // if execution of the init script(s) return anything other than ERRNO_OK from beeline
+      // exit beeline with error unless --force is set
+      if (initScriptExecutionResult != 0 && !beeLine.getOpts().getForce()) {
+        return beeLine.error("init script execution failed.");
+      }
+
+      if (beeLine.getOpts().getInitFiles() != null) {
+        beeLine.initializeConsoleReader(null);
+      }
 
       beeLine.setCompletions();
       beeLine.getOpts().setLastConnectedUrl(url);
@@ -499,12 +522,14 @@ public class KyuubiCommands extends Commands {
 
   @Override
   public String handleMultiLineCmd(String line) throws IOException {
-    int[] startQuote = {-1};
     Character mask =
         (System.getProperty("jline.terminal", "").equals("jline.UnsupportedTerminal"))
             ? null
             : jline.console.ConsoleReader.NULL_MASK;
 
+    if (!beeLine.isPythonMode()) {
+      line = HiveStringUtils.removeComments(line);
+    }
     while (isMultiLine(line) && beeLine.getOpts().isAllowMultiLineCommand()) {
       StringBuilder prompt = new StringBuilder(beeLine.getPrompt());
       if (!beeLine.getOpts().isSilent()) {
@@ -530,6 +555,9 @@ public class KyuubiCommands extends Commands {
       if (extra == null) { // it happens when using -f and the line of cmds does not end with ;
         break;
       }
+      if (!beeLine.isPythonMode()) {
+        extra = HiveStringUtils.removeComments(extra);
+      }
       if (!extra.isEmpty()) {
         line += "\n" + extra;
       }
@@ -541,12 +569,13 @@ public class KyuubiCommands extends Commands {
   // console. Used in handleMultiLineCmd method assumes line would never be null when this method is
   // called
   private boolean isMultiLine(String line) {
+    line = trimForNonPythonMode(line);
     if (line.endsWith(beeLine.getOpts().getDelimiter()) || beeLine.isComment(line)) {
       return false;
     }
     // handles the case like line = show tables; --test comment
     List<String> cmds = getCmdList(line, false);
-    return cmds.isEmpty() || !cmds.get(cmds.size() - 1).startsWith("--");
+    return cmds.isEmpty() || !trimForNonPythonMode(cmds.get(cmds.size() - 1)).startsWith("--");
   }
 
   static class KyuubiLogRunnable implements Runnable {

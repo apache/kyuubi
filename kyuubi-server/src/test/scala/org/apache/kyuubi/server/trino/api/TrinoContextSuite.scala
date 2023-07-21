@@ -85,7 +85,7 @@ class TrinoContextSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val metadataResp = fe.be.getResultSetMetadata(opHandle)
     val tRowSet = fe.be.fetchResults(opHandle, FetchOrientation.FETCH_NEXT, 1000, false)
-    val status = fe.be.getOperationStatus(opHandle)
+    val status = fe.be.getOperationStatus(opHandle, Some(0))
 
     val uri = new URI("sfdsfsdfdsf")
     val results = TrinoContext
@@ -112,7 +112,7 @@ class TrinoContextSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val metadataResp = fe.be.getResultSetMetadata(opHandle)
     val tRowSet = fe.be.fetchResults(opHandle, FetchOrientation.FETCH_NEXT, 1000, false)
-    val status = fe.be.getOperationStatus(opHandle)
+    val status = fe.be.getOperationStatus(opHandle, Some(0))
 
     val uri = new URI("sfdsfsdfdsf")
     val results = TrinoContext

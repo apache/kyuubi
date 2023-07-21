@@ -35,7 +35,7 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
       .set("spark.sql.catalog.tpch", classOf[TPCHCatalog].getName)
       .set("spark.sql.cbo.enabled", "true")
       .set("spark.sql.cbo.planStats.enabled", "true")
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { _ =>
       val catalog = new TPCHCatalog
       val catalogName = "test"
       catalog.initialize(catalogName, CaseInsensitiveStringMap.empty())
@@ -158,7 +158,8 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
       val exception = intercept[AnalysisException] {
         spark.table("tpch.sf1.nonexistent_table")
       }
-      assert(exception.message === "Table or view not found: tpch.sf1.nonexistent_table")
+      assert(exception.message.contains("Table or view not found")
+        || exception.message.contains("TABLE_OR_VIEW_NOT_FOUND"))
     }
   }
 }

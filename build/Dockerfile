@@ -29,15 +29,15 @@
 
 # Declare the BASE_IMAGE argument in the first line, for more detail
 # see: https://github.com/moby/moby/issues/38379
-ARG BASE_IMAGE=openjdk:8-jdk
+ARG BASE_IMAGE=eclipse-temurin:8-jdk-focal
 
-FROM maven:3.6-jdk-8 as builder
+FROM eclipse-temurin:8-jdk-focal as builder
 
 ARG MVN_ARG
 
 # Pass the environment variable `CI` into container, for internal use only.
 #
-# Continuous integration(aka. CI) services like GitHub Actions, Travis always provide
+# Continuous integration(aka. CI) services like GitHub Actions always provide
 # an environment variable `CI` in runners, and we detect this variable to run some
 # specific actions, e.g. run `mvn` in batch mode to suppress noisy logs.
 ARG CI
@@ -48,7 +48,8 @@ WORKDIR /workspace/kyuubi
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y python3 && \
+    apt-get install -y bash python3 && \
+    ln -snf /bin/bash /bin/sh && \
     ./build/dist ${MVN_ARG} && \
     mv /workspace/kyuubi/dist /opt/kyuubi && \
     # Removing stuff saves time because docker creates a temporary layer
@@ -71,7 +72,8 @@ COPY --from=builder /opt/kyuubi ${KYUUBI_HOME}
 RUN set -ex && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
-    apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
+    apt-get install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
+    ln -snf /bin/bash /bin/sh && \
     useradd -u ${kyuubi_uid} -g root kyuubi && \
     mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
     chmod ug+rw -R ${KYUUBI_HOME} && \

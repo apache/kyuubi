@@ -28,7 +28,7 @@ import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionImpl, Session}
+import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionImpl, Session}
 import org.apache.kyuubi.sql.plan.command.RunnableCommand
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -74,14 +74,15 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   }
 
   def newBatchJobSubmissionOperation(
-      session: KyuubiBatchSessionImpl,
+      session: KyuubiBatchSession,
       batchType: String,
       batchName: String,
       resource: String,
       className: String,
       batchConf: Map[String, String],
       batchArgs: Seq[String],
-      recoveryMetadata: Option[Metadata]): BatchJobSubmission = {
+      recoveryMetadata: Option[Metadata],
+      shouldRunAsync: Boolean): BatchJobSubmission = {
     val operation = new BatchJobSubmission(
       session,
       batchType,
@@ -90,7 +91,8 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       className,
       batchConf,
       batchArgs,
-      recoveryMetadata)
+      recoveryMetadata,
+      shouldRunAsync)
     addOperation(operation)
     operation
   }
@@ -217,7 +219,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
     val operationLog = operation.getOperationLog
     operationLog match {
-      case Some(log) => log.read(maxRows)
+      case Some(log) => log.read(order, maxRows)
       case None =>
         val remoteHandle = operation.remoteOpHandle()
         val client = operation.client

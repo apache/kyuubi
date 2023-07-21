@@ -20,16 +20,21 @@ package org.apache.kyuubi.server.trino.api
 import java.io.UnsupportedEncodingException
 import java.net.{URI, URLDecoder, URLEncoder}
 import java.util
+import java.util.Optional
 import javax.ws.rs.core.{HttpHeaders, Response}
 
 import scala.collection.JavaConverters._
 
-import io.trino.client.{ClientStandardTypes, ClientTypeSignature, Column, QueryError, QueryResults, StatementStats, Warning}
+import com.google.common.collect.ImmutableList
+import io.trino.client.{ClientStandardTypes, ClientTypeSignature, ClientTypeSignatureParameter, Column, NamedClientTypeSignature, QueryError, QueryResults, RowFieldName, StatementStats, Warning}
 import io.trino.client.ProtocolHeaders.TRINO_HEADERS
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet, TTypeId}
+import org.apache.hive.service.rpc.thrift.{TCLIServiceConstants, TGetResultSetMetadataResp, TRowSet, TTypeEntry, TTypeId}
 
+import org.apache.kyuubi.operation.OperationState.FINISHED
 import org.apache.kyuubi.operation.OperationStatus
+import org.apache.kyuubi.server.trino.api.Query.KYUUBI_SESSION_ID
 
+// TODO: Support replace `preparedStatement` for Trino-jdbc
 /**
  * The description and functionality of trino request
  * and response's context
@@ -58,6 +63,7 @@ case class TrinoContext(
     source: Option[String] = None,
     catalog: Option[String] = None,
     schema: Option[String] = None,
+    remoteUserAddress: Option[String] = None,
     language: Option[String] = None,
     traceToken: Option[String] = None,
     clientInfo: Option[String] = None,
@@ -72,10 +78,11 @@ object TrinoContext {
   private val GENERIC_INTERNAL_ERROR_NAME = "GENERIC_INTERNAL_ERROR_NAME"
   private val GENERIC_INTERNAL_ERROR_TYPE = "INTERNAL_ERROR"
 
-  def apply(headers: HttpHeaders): TrinoContext = {
-    apply(headers.getRequestHeaders.asScala.toMap.map {
+  def apply(headers: HttpHeaders, remoteAddress: Option[String]): TrinoContext = {
+    val context = apply(headers.getRequestHeaders.asScala.toMap.map {
       case (k, v) => (k, v.asScala.toList)
     })
+    context.copy(remoteUserAddress = remoteAddress)
   }
 
   def apply(headers: Map[String, List[String]]): TrinoContext = {
@@ -134,19 +141,20 @@ object TrinoContext {
     }
   }
 
-  // TODO: Building response with TrinoContext and other information
   def buildTrinoResponse(qr: QueryResults, trinoContext: TrinoContext): Response = {
     val responseBuilder = Response.ok(qr)
 
-    trinoContext.catalog.foreach(
-      responseBuilder.header(TRINO_HEADERS.responseSetCatalog, _))
-    trinoContext.schema.foreach(
-      responseBuilder.header(TRINO_HEADERS.responseSetSchema, _))
+    // Note, We have injected kyuubi session id to session context so that the next query can find
+    // the previous session to restore the query context.
+    // It's hard to follow the Trino style that set all context to http headers.
+    // Because we do not know the context at server side. e.g. `set k=v`, `use database`.
+    // We also can not inject other session context into header before we supporting to map
+    // query result to session context.
+    require(trinoContext.session.contains(KYUUBI_SESSION_ID), s"$KYUUBI_SESSION_ID must be set.")
+    responseBuilder.header(
+      TRINO_HEADERS.responseSetSession,
+      s"$KYUUBI_SESSION_ID=${urlEncode(trinoContext.session(KYUUBI_SESSION_ID))}")
 
-    trinoContext.session.foreach {
-      case (k, v) =>
-        responseBuilder.header(TRINO_HEADERS.responseSetSession, s"${k}=${urlEncode(v)}")
-    }
     trinoContext.preparedStatement.foreach {
       case (k, v) =>
         responseBuilder.header(TRINO_HEADERS.responseAddedPrepare, s"${k}=${urlEncode(v)}")
@@ -156,8 +164,6 @@ object TrinoContext {
       responseBuilder.header(TRINO_HEADERS.responseDeallocatedPrepare, urlEncode(v))
     }
 
-    responseBuilder.header(TRINO_HEADERS.responseClearSession, s"responseClearSession")
-    responseBuilder.header(TRINO_HEADERS.responseClearTransactionId, "false")
     responseBuilder.build()
   }
 
@@ -181,56 +187,145 @@ object TrinoContext {
       queryHtmlUri: URI,
       queryStatus: OperationStatus,
       columns: Option[TGetResultSetMetadataResp] = None,
-      data: Option[TRowSet] = None): QueryResults = {
+      data: Option[TRowSet] = None,
+      updateType: String = null): QueryResults = {
 
     val columnList = columns match {
       case Some(value) => convertTColumn(value)
       case None => null
     }
     val rowList = data match {
-      case Some(value) => convertTRowSet(value)
+      case Some(value) =>
+        Option(updateType) match {
+          case Some("PREPARE") =>
+            ImmutableList.of(ImmutableList.of(true).asInstanceOf[util.List[Object]])
+          case _ => convertTRowSet(value)
+        }
       case None => null
+    }
+
+    val updatedNextUri = queryStatus.state match {
+      case FINISHED if rowList == null || rowList.isEmpty || rowList.get(0).isEmpty => null
+      case _ => nextUri
     }
 
     new QueryResults(
       queryId,
       queryHtmlUri,
       nextUri,
-      nextUri,
+      updatedNextUri,
       columnList,
       rowList,
       StatementStats.builder.setState(queryStatus.state.name()).setQueued(false)
         .setElapsedTimeMillis(0).setQueuedTimeMillis(0).build(),
       toQueryError(queryStatus),
       defaultWarning,
-      null,
+      updateType,
       0L)
   }
 
-  def convertTColumn(columns: TGetResultSetMetadataResp): util.List[Column] = {
+  private def convertTColumn(columns: TGetResultSetMetadataResp): util.List[Column] = {
     columns.getSchema.getColumns.asScala.map(c => {
-      val tp = c.getTypeDesc.getTypes.get(0).getPrimitiveEntry.getType match {
-        case TTypeId.BOOLEAN_TYPE => ClientStandardTypes.BOOLEAN
-        case TTypeId.TINYINT_TYPE => ClientStandardTypes.TINYINT
-        case TTypeId.SMALLINT_TYPE => ClientStandardTypes.SMALLINT
-        case TTypeId.INT_TYPE => ClientStandardTypes.INTEGER
-        case TTypeId.BIGINT_TYPE => ClientStandardTypes.BIGINT
-        case TTypeId.FLOAT_TYPE => ClientStandardTypes.DOUBLE
-        case TTypeId.DOUBLE_TYPE => ClientStandardTypes.DOUBLE
-        case TTypeId.STRING_TYPE => ClientStandardTypes.VARCHAR
-        case TTypeId.TIMESTAMP_TYPE => ClientStandardTypes.TIMESTAMP
-        case TTypeId.BINARY_TYPE => ClientStandardTypes.VARBINARY
-        case TTypeId.DECIMAL_TYPE => ClientStandardTypes.DECIMAL
-        case TTypeId.DATE_TYPE => ClientStandardTypes.DATE
-        case TTypeId.VARCHAR_TYPE => ClientStandardTypes.VARCHAR
-        case TTypeId.CHAR_TYPE => ClientStandardTypes.CHAR
-        case TTypeId.INTERVAL_YEAR_MONTH_TYPE => ClientStandardTypes.INTERVAL_YEAR_TO_MONTH
-        case TTypeId.INTERVAL_DAY_TIME_TYPE => ClientStandardTypes.TIME_WITH_TIME_ZONE
-        case TTypeId.TIMESTAMPLOCALTZ_TYPE => ClientStandardTypes.TIMESTAMP_WITH_TIME_ZONE
-        case _ => ClientStandardTypes.VARCHAR
-      }
-      new Column(c.getColumnName, tp, new ClientTypeSignature(tp))
+      val (tp, arguments) = toClientTypeSignature(c.getTypeDesc.getTypes.get(0))
+      new Column(c.getColumnName, tp, new ClientTypeSignature(tp, arguments))
     }).toList.asJava
+  }
+
+  private def toClientTypeSignature(
+      entry: TTypeEntry): (String, util.List[ClientTypeSignatureParameter]) = {
+    // according to `io.trino.jdbc.ColumnInfo`
+    if (entry.isSetPrimitiveEntry) {
+      entry.getPrimitiveEntry.getType match {
+        case TTypeId.BOOLEAN_TYPE =>
+          (ClientStandardTypes.BOOLEAN, ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.TINYINT_TYPE =>
+          (ClientStandardTypes.TINYINT, ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.SMALLINT_TYPE =>
+          (ClientStandardTypes.SMALLINT, ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.INT_TYPE =>
+          (ClientStandardTypes.INTEGER, ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.BIGINT_TYPE =>
+          (ClientStandardTypes.BIGINT, ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.FLOAT_TYPE =>
+          (ClientStandardTypes.DOUBLE, ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.DOUBLE_TYPE =>
+          (ClientStandardTypes.DOUBLE, ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.DATE_TYPE =>
+          (ClientStandardTypes.DATE, ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.TIMESTAMP_TYPE =>
+          (ClientStandardTypes.TIMESTAMP, ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.BINARY_TYPE =>
+          (ClientStandardTypes.VARBINARY, ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.DECIMAL_TYPE =>
+          val map = entry.getPrimitiveEntry.getTypeQualifiers.getQualifiers
+          val precision = Option(map.get(TCLIServiceConstants.PRECISION)).map(_.getI32Value)
+            .getOrElse(38)
+          val scale = Option(map.get(TCLIServiceConstants.SCALE)).map(_.getI32Value)
+            .getOrElse(18)
+          (
+            ClientStandardTypes.DECIMAL,
+            ImmutableList.of(
+              ClientTypeSignatureParameter.ofLong(precision),
+              ClientTypeSignatureParameter.ofLong(scale)))
+        case TTypeId.STRING_TYPE =>
+          (
+            ClientStandardTypes.VARCHAR,
+            varcharSignatureParameter)
+        case TTypeId.VARCHAR_TYPE =>
+          (
+            ClientStandardTypes.VARCHAR,
+            varcharSignatureParameter)
+        case TTypeId.CHAR_TYPE =>
+          (ClientStandardTypes.CHAR, ImmutableList.of(ClientTypeSignatureParameter.ofLong(65536)))
+        case TTypeId.INTERVAL_YEAR_MONTH_TYPE =>
+          (
+            ClientStandardTypes.INTERVAL_YEAR_TO_MONTH,
+            ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.INTERVAL_DAY_TIME_TYPE =>
+          (ClientStandardTypes.TIME_WITH_TIME_ZONE, ImmutableList.of[ClientTypeSignatureParameter])
+        case TTypeId.TIMESTAMPLOCALTZ_TYPE =>
+          (
+            ClientStandardTypes.TIMESTAMP_WITH_TIME_ZONE,
+            ImmutableList.of[ClientTypeSignatureParameter])
+        case _ =>
+          (
+            ClientStandardTypes.VARCHAR,
+            varcharSignatureParameter)
+      }
+    } else if (entry.isSetArrayEntry) {
+      // thrift does not support nested types.
+      // it's quite hard to follow the hive way, so always return varchar
+      // TODO: make complex data type more accurate
+      (
+        ClientStandardTypes.ARRAY,
+        ImmutableList.of(ClientTypeSignatureParameter.ofType(
+          new ClientTypeSignature(ClientStandardTypes.VARCHAR, varcharSignatureParameter))))
+    } else if (entry.isSetMapEntry) {
+      (
+        ClientStandardTypes.MAP,
+        ImmutableList.of(
+          ClientTypeSignatureParameter.ofType(
+            new ClientTypeSignature(ClientStandardTypes.VARCHAR, varcharSignatureParameter)),
+          ClientTypeSignatureParameter.ofType(
+            new ClientTypeSignature(ClientStandardTypes.VARCHAR, varcharSignatureParameter))))
+    } else if (entry.isSetStructEntry) {
+      val parameters = entry.getStructEntry.getNameToTypePtr.asScala.map { case (k, v) =>
+        ClientTypeSignatureParameter.ofNamedType(
+          new NamedClientTypeSignature(
+            Optional.of(new RowFieldName(k)),
+            new ClientTypeSignature(ClientStandardTypes.VARCHAR, varcharSignatureParameter)))
+      }
+      (
+        ClientStandardTypes.ROW,
+        ImmutableList.copyOf(parameters.toArray))
+    } else {
+      throw new UnsupportedOperationException(s"Do not support type: $entry")
+    }
+  }
+
+  private def varcharSignatureParameter: util.List[ClientTypeSignatureParameter] = {
+    ImmutableList.of(ClientTypeSignatureParameter.ofLong(
+      ClientTypeSignature.VARCHAR_UNBOUNDED_LENGTH))
   }
 
   def convertTRowSet(rowSet: TRowSet): util.List[util.List[Object]] = {
@@ -238,7 +333,7 @@ object TrinoContext {
 
     if (rowSet.getColumns == null) {
       return rowSet.getRows.asScala
-        .map(t => t.getColVals.asScala.map(v => v.getFieldValue.asInstanceOf[Object]).asJava)
+        .map(t => t.getColVals.asScala.map(v => v.getFieldValue).asJava)
         .asJava
     }
 

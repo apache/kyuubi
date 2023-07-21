@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.kyuubi.client.api.v1.dto.*;
 import org.apache.kyuubi.client.util.JsonUtils;
+import org.apache.kyuubi.client.util.VersionUtils;
 
 public class BatchRestApi {
 
@@ -36,11 +37,13 @@ public class BatchRestApi {
   }
 
   public Batch createBatch(BatchRequest request) {
+    setClientVersion(request);
     String requestBody = JsonUtils.toJson(request);
     return this.getClient().post(API_BASE_PATH, requestBody, Batch.class, client.getAuthHeader());
   }
 
   public Batch createBatch(BatchRequest request, File resourceFile) {
+    setClientVersion(request);
     Map<String, MultiPart> multiPartMap = new HashMap<>();
     multiPartMap.put("batchRequest", new MultiPart(MultiPart.MultiPartType.JSON, request));
     multiPartMap.put("resourceFile", new MultiPart(MultiPart.MultiPartType.FILE, resourceFile));
@@ -60,10 +63,23 @@ public class BatchRestApi {
       Long endTime,
       int from,
       int size) {
+    return listBatches(batchType, batchUser, batchState, null, createTime, endTime, from, size);
+  }
+
+  public GetBatchesResponse listBatches(
+      String batchType,
+      String batchUser,
+      String batchState,
+      String batchName,
+      Long createTime,
+      Long endTime,
+      int from,
+      int size) {
     Map<String, Object> params = new HashMap<>();
     params.put("batchType", batchType);
     params.put("batchUser", batchUser);
     params.put("batchState", batchState);
+    params.put("batchName", batchName);
     if (null != createTime && createTime > 0) {
       params.put("createTime", createTime);
     }
@@ -95,5 +111,14 @@ public class BatchRestApi {
 
   private IRestClient getClient() {
     return this.client.getHttpClient();
+  }
+
+  private void setClientVersion(BatchRequest request) {
+    if (request != null) {
+      Map<String, String> newConf = new HashMap<>();
+      newConf.putAll(request.getConf());
+      newConf.put(VersionUtils.KYUUBI_CLIENT_VERSION_KEY, VersionUtils.getVersion());
+      request.setConf(newConf);
+    }
   }
 }

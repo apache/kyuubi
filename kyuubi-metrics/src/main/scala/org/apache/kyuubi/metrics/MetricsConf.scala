@@ -43,7 +43,7 @@ object MetricsConf {
       "</ul>")
     .version("1.2.0")
     .stringConf
-    .transform(_.toUpperCase())
+    .transformToUpperCase
     .toSequence()
     .checkValue(
       _.forall(ReporterType.values.map(_.toString).contains),

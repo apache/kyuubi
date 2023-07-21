@@ -22,6 +22,28 @@ export const MENUS = [
     router: '/overview'
   },
   {
+    label: 'Management',
+    icon: 'List',
+    children: [
+      {
+        label: 'Session',
+        router: '/management/session'
+      },
+      {
+        label: 'Operation',
+        router: '/management/operation'
+      },
+      {
+        label: 'Engine',
+        router: '/management/engine'
+      },
+      {
+        label: 'Server',
+        router: '/management/server'
+      }
+    ]
+  },
+  {
     label: 'Workload',
     icon: 'List',
     children: [

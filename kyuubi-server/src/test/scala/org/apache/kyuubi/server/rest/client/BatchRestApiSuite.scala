@@ -22,10 +22,11 @@ import java.util.Base64
 
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.{BatchTestHelper, RestClientTestHelper}
+import org.apache.kyuubi.{BatchTestHelper, KYUUBI_VERSION, RestClientTestHelper}
 import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.client.exception.KyuubiRestException
+import org.apache.kyuubi.config.KyuubiReservedKeys
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 
@@ -67,8 +68,10 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     assert(batch.getBatchType === "SPARK")
 
     // get batch log
-    val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
-    assert(log.getRowCount == 1)
+    eventually(timeout(1.minutes)) {
+      val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
+      assert(log.getRowCount == 1)
+    }
 
     // delete batch
     val closeResp = batchRestApi.deleteBatch(batch.getId(), null)
@@ -161,8 +164,10 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     assert(batch.getBatchType === "SPARK")
 
     // get batch log
-    val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
-    assert(log.getRowCount == 1)
+    eventually(timeout(1.minutes)) {
+      val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
+      assert(log.getRowCount == 1)
+    }
 
     // delete batch
     val closeResp = batchRestApi.deleteBatch(batch.getId(), proxyUser)
@@ -214,5 +219,23 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
 
     batchRestApi.listBatches(null, null, null, 0, 0, 0, 1)
     batchRestApi.listBatches(null, null, null, 0, 0, 0, 1)
+  }
+
+  test("support to transfer client version when creating batch") {
+    val spnegoKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
+        .spnegoHost("localhost")
+        .build()
+    val batchRestApi: BatchRestApi = new BatchRestApi(spnegoKyuubiRestClient)
+    // create batch
+    val requestObj =
+      newSparkBatchRequest(Map("spark.master" -> "local"))
+
+    val batch = batchRestApi.createBatch(requestObj)
+    val batchSession =
+      server.backendService.sessionManager.getSession(SessionHandle.fromUUID(batch.getId))
+    assert(
+      batchSession.conf.get(KyuubiReservedKeys.KYUUBI_CLIENT_VERSION_KEY) == Some(KYUUBI_VERSION))
   }
 }
