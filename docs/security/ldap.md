@@ -24,11 +24,6 @@ LDAP server to verify user's identity and grant right access permissions based o
 
 To enable the LDAP authentication, we need to
 
-- Configure the following authentication properties to `$KYUUBI_HOME/conf/kyuubi-defaults.conf`
-  on each node where kyuubi server is installed.
-
-## Configure the authentication properties
-
 Configure the following properties to `$KYUUBI_HOME/conf/kyuubi-defaults.conf` on each node where kyuubi server is
 installed.
 
