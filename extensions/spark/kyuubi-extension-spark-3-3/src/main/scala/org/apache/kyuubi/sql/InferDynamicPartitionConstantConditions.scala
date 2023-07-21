@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql
 
 import scala.annotation.tailrec
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, Cast, EqualTo, Expression, In, Literal, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, Cast, EqualTo, Expression, In, Literal, NamedExpression, Or}
 import org.apache.spark.sql.catalyst.planning.ExtractEquiJoinKeys
 import org.apache.spark.sql.catalyst.plans.logical._
 
@@ -118,23 +118,40 @@ object InferDynamicPartitionConstantConditions {
       }
     }
 
-    splitConjunctivePredicates(condition).flatMap {
-      case EqualTo(ExtractAttribute(attr), value: Literal) =>
-        Some((attr, Seq(value)))
-      case EqualTo(value: Literal, ExtractAttribute(attr)) =>
-        Some((attr, Seq(value)))
-      case In(ExtractAttribute(attr), values: Seq[Expression])
-          if values.forall(_.isInstanceOf[Literal]) =>
-        Some((attr, values.asInstanceOf[Seq[Literal]]))
-      case _ => None
-    }.toMap
-  }
-
-  private def splitConjunctivePredicates(condition: Expression): Seq[Expression] = {
-    condition match {
-      case And(cond1, cond2) =>
-        splitConjunctivePredicates(cond1) ++ splitConjunctivePredicates(cond2)
-      case other => other :: Nil
+    object ConstantConditions {
+      def unapply(expr: Expression): Option[(Attribute, Seq[Literal])] = expr match {
+        case EqualTo(ExtractAttribute(attr), value: Literal) =>
+          Some((attr, Seq(value)))
+        case EqualTo(value: Literal, ExtractAttribute(attr)) =>
+          Some((attr, Seq(value)))
+        case In(ExtractAttribute(attr), values: Seq[Expression])
+            if values.forall(_.isInstanceOf[Literal]) =>
+          Some((attr, values.asInstanceOf[Seq[Literal]]))
+        case _ => None
+      }
     }
+
+    def getConstantConditions(expr: Expression): Map[Attribute, Seq[Literal]] = {
+      expr match {
+        case And(left, right) =>
+          val leftConstantConditions = getConstantConditions(left)
+          val rightConstantConditions = getConstantConditions(right)
+          leftConstantConditions ++ rightConstantConditions.map {
+            case (k, v) =>
+              k -> v.intersect(leftConstantConditions.getOrElse(k, Nil))
+          }
+        case Or(left, right) =>
+          val leftConstantConditions = getConstantConditions(left)
+          val rightConstantConditions = getConstantConditions(right)
+          leftConstantConditions ++ rightConstantConditions.map {
+            case (k, v) =>
+              k -> (v ++ leftConstantConditions.getOrElse(k, Nil))
+          }
+        case ConstantConditions(attr, values) => Map(attr -> values)
+        case _ => Map.empty
+      }
+    }
+
+    getConstantConditions(condition)
   }
 }

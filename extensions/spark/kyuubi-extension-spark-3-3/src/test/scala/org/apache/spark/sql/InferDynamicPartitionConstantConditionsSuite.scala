@@ -34,11 +34,14 @@ class InferDynamicPartitionConstantConditionsSuite extends KyuubiSparkSQLExtensi
         val actualResult = InferDynamicPartitionConstantConditions.infer(
           parts,
           df.queryExecution.analyzed)
+          .map {
+            case (k, v) => k -> v.toSet
+          }
         val expectResult = expect.map {
           case (k, v) =>
             val part = parts.find(_.name == k).get
             val values = v.map(Literal(_))
-            part -> values
+            part -> values.toSet
         }
         assert(actualResult == expectResult)
       }
@@ -46,6 +49,12 @@ class InferDynamicPartitionConstantConditionsSuite extends KyuubiSparkSQLExtensi
       check("SELECT c1, p1 FROM t1 WHERE p1 = '1'", Map("p1" -> Seq("1")))
 
       check("SELECT c1, p1 FROM t1 WHERE p1 in ('1', '2')", Map("p1" -> Seq("1", "2")))
+
+      check(
+        "SELECT c1, p1 FROM t1 WHERE p1 in ('1', '2') and p1 in ('2', '3')",
+        Map("p1" -> Seq("2")))
+
+      check("SELECT c1, p1 FROM t1 WHERE p1 = '1' or p1 = '2'", Map("p1" -> Seq("1", "2")))
 
       check(
         "SELECT c1, p1 FROM t1 join t2 on t1.c1 = t2.c2 WHERE t1.p1 = '1'",
@@ -65,14 +74,16 @@ class InferDynamicPartitionConstantConditionsSuite extends KyuubiSparkSQLExtensi
       check(
         """
           |SELECT c1, p1
-          |FROM (SELECT c1, p1 FROM t1 WHERE p1 = '1' UNION ALL SELECT c2, p2 FROM t2 WHERE p2 = '2') t
+          |FROM (SELECT c1, p1 FROM t1 WHERE p1 = '1'
+          | UNION ALL SELECT c2, p2 FROM t2 WHERE p2 = '2') t
           |JOIN t2 on t.c1 = t2.c2""".stripMargin,
         Map("p1" -> Seq("1", "2")))
 
       check(
         """
           |SELECT c1, p1
-          |FROM (SELECT c1, p1 FROM t1 WHERE p1 = '1' UNION ALL SELECT c2, p2 FROM t2 WHERE p2 > '2') t
+          |FROM (SELECT c1, p1 FROM t1 WHERE p1 = '1'
+          | UNION ALL SELECT c2, p2 FROM t2 WHERE p2 > '2') t
           |JOIN t2 on t.c1 = t2.c2""".stripMargin,
         Map())
     }
