@@ -20,7 +20,7 @@
 Kyuubi supports authentication via LDAP. Users can log into Kyuubi using their credentials. Then, Kyuubi can request
 LDAP server to verify user's identity and grant right access permissions based on their LDAP roles and groups.
 
-## Enable JDBC Authentication
+## Enable LDAP Authentication
 
 To enable the LDAP authentication, we need to
 
