@@ -32,6 +32,6 @@ kyuubi.authentication=LDAP
 kyuubi.authentication.ldap.baseDN=dc=com
 kyuubi.authentication.ldap.domain=kyuubi.com
 kyuubi.authentication.ldap.binddn=uid=kyuubi,OU=Users,DC=apache,DC=org
-kyuubi.authentication.ldap.bindpw==kyuubi123123
+kyuubi.authentication.ldap.bindpw=kyuubi123123
 kyuubi.authentication.ldap.url=ldap://hostname.com:389/
 ```
