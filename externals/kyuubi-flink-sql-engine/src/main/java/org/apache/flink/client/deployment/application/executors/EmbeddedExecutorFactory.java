@@ -85,16 +85,16 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
     checkState(EmbeddedExecutorFactory.submittedJobIds == null);
     checkState(EmbeddedExecutorFactory.dispatcherGateway == null);
     checkState(EmbeddedExecutorFactory.retryExecutor == null);
-    // submittedJobIds would be always 1, because we create a new list to avoid concurrent access
-    // issues
-    EmbeddedExecutorFactory.submittedJobIds =
-        new ConcurrentLinkedQueue<>(checkNotNull(submittedJobIds));
     synchronized (bootstrapLock) {
+      // submittedJobIds would be always 1, because we create a new list to avoid concurrent access
+      // issues
+      EmbeddedExecutorFactory.submittedJobIds =
+          new ConcurrentLinkedQueue<>(checkNotNull(submittedJobIds));
       EmbeddedExecutorFactory.bootstrapJobIds = submittedJobIds;
+      EmbeddedExecutorFactory.dispatcherGateway = checkNotNull(dispatcherGateway);
+      EmbeddedExecutorFactory.retryExecutor = checkNotNull(retryExecutor);
       bootstrapLock.notifyAll();
     }
-    EmbeddedExecutorFactory.dispatcherGateway = checkNotNull(dispatcherGateway);
-    EmbeddedExecutorFactory.retryExecutor = checkNotNull(retryExecutor);
   }
 
   @Override
