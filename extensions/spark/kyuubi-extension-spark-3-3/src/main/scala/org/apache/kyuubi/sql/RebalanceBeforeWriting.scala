@@ -31,10 +31,10 @@ trait RepartitionBuilderWithRebalance extends RepartitionBuilder {
       val constantConditions = InferDynamicPartitionConstantConditions
         .infer(dynamicPartitionColumns, query)
 
-      val inferredConstantPartition = dynamicPartitionColumns
-        .forall(constantConditions.getOrElse(_, Nil).nonEmpty)
+      val inferredStaticPartition = dynamicPartitionColumns
+        .forall(constantConditions.getOrElse(_, Nil).size == 1)
 
-      if (inferredConstantPartition) {
+      if (inferredStaticPartition) {
         RebalancePartitions(Seq.empty, query)
       } else {
         RebalancePartitions(dynamicPartitionColumns, query)
