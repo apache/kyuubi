@@ -86,6 +86,15 @@ class InferDynamicPartitionConstantConditionsSuite extends KyuubiSparkSQLExtensi
           | UNION ALL SELECT c2, p2 FROM t2 WHERE p2 > '2') t
           |JOIN t2 on t.c1 = t2.c2""".stripMargin,
         Map())
+
+      // generate from deterministic expressions
+      check(
+        """
+          |SELECT c1, p1 FROM
+          | (select c1, explode(from_json(p1, 'array<int>')) as p1 from t1 where p1 = '[1]')
+          |""".stripMargin,
+        Map("p1" -> Seq("[1]")))
+
     }
   }
 

@@ -27,7 +27,18 @@ trait RepartitionBuilderWithRebalance extends RepartitionBuilder {
       query: LogicalPlan): LogicalPlan = {
     if (!conf.getConf(KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS) ||
       dynamicPartitionColumns.nonEmpty) {
-      RebalancePartitions(dynamicPartitionColumns, query)
+      // TODO: make configurable
+      val constantConditions = InferDynamicPartitionConstantConditions
+        .infer(dynamicPartitionColumns, query)
+
+      val inferredConstantPartition = dynamicPartitionColumns
+        .forall(constantConditions.getOrElse(_, Nil).nonEmpty)
+
+      if (inferredConstantPartition) {
+        RebalancePartitions(Seq.empty, query)
+      } else {
+        RebalancePartitions(dynamicPartitionColumns, query)
+      }
     } else {
       val maxColumns = conf.getConf(KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS_MAX_COLUMNS)
       val inferred = InferRebalanceAndSortOrders.infer(query)
