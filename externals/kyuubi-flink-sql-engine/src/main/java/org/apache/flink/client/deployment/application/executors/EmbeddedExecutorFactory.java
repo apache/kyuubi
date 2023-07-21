@@ -129,8 +129,7 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
         throw new RuntimeException(
             "Bootstrap of Flink SQL engine timed out after "
                 + BOOTSTRAP_WAIT_INTERVAL * BOOTSTRAP_WAIT_RETRIES
-                + ". "
-                + "Please check the engine log for more details.");
+                + ". Please check the engine log for more details.");
       }
     }
     if (bootstrapJobIds.size() > 0) {
