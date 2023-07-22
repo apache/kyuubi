@@ -88,6 +88,7 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
     synchronized (bootstrapLock) {
       // submittedJobIds would be always 1, because we create a new list to avoid concurrent access
       // issues
+      LOGGER.debug("Bootstrapping EmbeddedExecutorFactory.");
       EmbeddedExecutorFactory.submittedJobIds =
           new ConcurrentLinkedQueue<>(checkNotNull(submittedJobIds));
       EmbeddedExecutorFactory.bootstrapJobIds = submittedJobIds;
@@ -105,7 +106,7 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
   @Override
   public boolean isCompatibleWith(final Configuration configuration) {
     // override Flink's implementation to allow usage in Kyuubi
-    LOGGER.debug("matching execution target: {}", configuration.get(DeploymentOptions.TARGET));
+    LOGGER.debug("Matching execution target: {}", configuration.get(DeploymentOptions.TARGET));
     return configuration.get(DeploymentOptions.TARGET).equalsIgnoreCase("yarn-application")
         && configuration.toMap().getOrDefault("yarn.tags", "").toLowerCase().contains("kyuubi");
   }
@@ -119,6 +120,7 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
       int retry = 0;
       while (bootstrapJobIds == null && retry < BOOTSTRAP_WAIT_RETRIES) {
         try {
+          LOGGER.debug("Waiting for bootstrap to complete. Wait retries: {}.", retry);
           bootstrapLock.wait(BOOTSTRAP_WAIT_INTERVAL);
           retry++;
         } catch (InterruptedException e) {
@@ -129,14 +131,14 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
         throw new RuntimeException(
             "Bootstrap of Flink SQL engine timed out after "
                 + BOOTSTRAP_WAIT_INTERVAL * BOOTSTRAP_WAIT_RETRIES
-                + ". Please check the engine log for more details.");
+                + " ms. Please check the engine log for more details.");
       }
     }
     if (bootstrapJobIds.size() > 0) {
-      LOGGER.info("Submitting new Kyuubi job. Job already submitted: {}.", submittedJobIds.size());
+      LOGGER.info("Submitting new Kyuubi job. Job submitted: {}.", submittedJobIds.size());
       executorJobIDs = submittedJobIds;
     } else {
-      LOGGER.info("Bootstrapping Flink SQL engine.");
+      LOGGER.info("Bootstrapping Flink SQL engine with the initial SQL.");
       executorJobIDs = bootstrapJobIds;
     }
     return new EmbeddedExecutor(
