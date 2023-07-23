@@ -27,7 +27,7 @@ import org.apache.flink.table.gateway.service.context.SessionContext
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_NAME, KYUUBI_SESSION_USER_KEY}
-import org.apache.kyuubi.engine.flink.FlinkEngineUtils
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils.FLINK_RUNTIME_VERSION
 import org.apache.kyuubi.util.reflect.DynMethods
 
 object KDFRegistry {
@@ -37,7 +37,7 @@ object KDFRegistry {
     val kyuubiDefinedFunctions = new ArrayBuffer[KyuubiDefinedFunction]
 
     val flinkConfigMap: util.Map[String, String] = {
-      if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
+      if (FLINK_RUNTIME_VERSION === "1.16") {
         DynMethods
           .builder("getConfigMap")
           .impl(classOf[SessionContext])

@@ -48,12 +48,13 @@ object FlinkEngineUtils extends Logging {
 
   val EMBEDDED_MODE_CLIENT_OPTIONS: Options = getEmbeddedModeClientOptions(new Options)
 
-  val SUPPORTED_FLINK_VERSIONS: Array[SemanticVersion] =
-    Array("1.16", "1.17").map(SemanticVersion.apply)
+  private def SUPPORTED_FLINK_VERSIONS = Set("1.16", "1.17").map(SemanticVersion.apply)
+
+  val FLINK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(EnvironmentInformation.getVersion)
 
   def checkFlinkVersion(): Unit = {
     val flinkVersion = EnvironmentInformation.getVersion
-    if (SUPPORTED_FLINK_VERSIONS.contains(SemanticVersion(flinkVersion))) {
+    if (SUPPORTED_FLINK_VERSIONS.contains(FLINK_RUNTIME_VERSION)) {
       info(s"The current Flink version is $flinkVersion")
     } else {
       throw new UnsupportedOperationException(
@@ -61,15 +62,6 @@ object FlinkEngineUtils extends Logging {
           s"only Flink ${SUPPORTED_FLINK_VERSIONS.mkString(", ")} are supported now.")
     }
   }
-
-  def isFlinkVersionAtMost(targetVersionString: String): Boolean =
-    SemanticVersion(EnvironmentInformation.getVersion).isVersionAtMost(targetVersionString)
-
-  def isFlinkVersionAtLeast(targetVersionString: String): Boolean =
-    SemanticVersion(EnvironmentInformation.getVersion).isVersionAtLeast(targetVersionString)
-
-  def isFlinkVersionEqualTo(targetVersionString: String): Boolean =
-    SemanticVersion(EnvironmentInformation.getVersion).isVersionEqualTo(targetVersionString)
 
   /**
    * Copied and modified from [[org.apache.flink.table.client.cli.CliOptionsParser]]
@@ -116,7 +108,7 @@ object FlinkEngineUtils extends Logging {
     val libDirs: JList[URL] = Option(checkUrls(line, CliOptionsParser.OPTION_LIBRARY))
       .getOrElse(JCollections.emptyList())
     val dependencies: JList[URL] = discoverDependencies(jars, libDirs)
-    if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
+    if (FLINK_RUNTIME_VERSION === "1.16") {
       val commandLines: JList[CustomCommandLine] =
         Seq(new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava
       DynConstructors.builder()
@@ -127,7 +119,7 @@ object FlinkEngineUtils extends Logging {
         .build()
         .newInstance(flinkConf, commandLines)
         .asInstanceOf[DefaultContext]
-    } else if (FlinkEngineUtils.isFlinkVersionEqualTo("1.17")) {
+    } else if (FLINK_RUNTIME_VERSION === "1.17") {
       invokeAs[DefaultContext](
         classOf[DefaultContext],
         "load",
@@ -144,7 +136,7 @@ object FlinkEngineUtils extends Logging {
   def getSessionContext(session: Session): SessionContext = getField(session, "sessionContext")
 
   def getResultJobId(resultFetch: ResultFetcher): Option[JobID] = {
-    if (FlinkEngineUtils.isFlinkVersionAtMost("1.16")) {
+    if (FLINK_RUNTIME_VERSION <= "1.16") {
       return None
     }
     try {

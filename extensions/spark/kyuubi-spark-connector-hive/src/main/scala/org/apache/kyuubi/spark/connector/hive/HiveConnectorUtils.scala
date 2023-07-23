@@ -29,15 +29,15 @@ import org.apache.spark.sql.execution.datasources.PartitionedFile
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
 
-import org.apache.kyuubi.spark.connector.common.SparkUtils
+import org.apache.kyuubi.spark.connector.common.SparkUtils.SPARK_RUNTIME_VERSION
 import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
 
 object HiveConnectorUtils extends Logging {
 
   def partitionedFilePath(file: PartitionedFile): String = {
-    if (SparkUtils.isSparkVersionAtLeast("3.4")) {
+    if (SPARK_RUNTIME_VERSION >= "3.4") {
       invokeAs[String](file, "urlEncodedPath")
-    } else if (SparkUtils.isSparkVersionAtLeast("3.3")) {
+    } else if (SPARK_RUNTIME_VERSION >= "3.3") {
       invokeAs[String](file, "filePath")
     } else {
       throw KyuubiHiveConnectorException(s"Spark version $SPARK_VERSION " +

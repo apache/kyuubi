@@ -62,10 +62,6 @@ class PlainSASLHelperSuite extends KyuubiFunSuite {
     val saslPlainProvider = new SaslPlainProvider()
     assert(saslPlainProvider.containsKey("SaslServerFactory.PLAIN"))
     assert(saslPlainProvider.getName === "KyuubiSaslPlain")
-    val version: Double = {
-      val ver = SemanticVersion(KYUUBI_VERSION)
-      ver.majorVersion + ver.minorVersion.toDouble / 10
-    }
-    assert(saslPlainProvider.getVersion === version)
+    assertResult(saslPlainProvider.getVersion)(SemanticVersion(KYUUBI_VERSION).toDouble)
   }
 }
