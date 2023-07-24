@@ -2981,4 +2981,12 @@ object KyuubiConf {
       .version("1.8.0")
       .booleanConf
       .createWithDefault(false)
+
+  val SERVER_LIMIT_ENGINE_CREATION: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.limit.engine.creation")
+      .doc("The maximum engine creation concurrency of kyuubi server.")
+      .version("1.8.0")
+      .serverOnly
+      .intConf
+      .createOptional
 }
