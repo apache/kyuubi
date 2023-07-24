@@ -1323,7 +1323,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.engine.flink.fetch.timeout")
       .doc("Result fetch timeout in milliseconds. Flink would keep fetching result until " +
         "either the max rows limit is reached or the timeout is reached.")
-      .version("1.5.0")
+      .version("1.8.0")
       .longConf
       .createWithDefault(300000L)
 
