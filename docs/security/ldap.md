@@ -22,7 +22,8 @@ LDAP server to verify user's identity and grant right access permissions based o
 
 ## Enable LDAP Authentication
 
-To enable the LDAP authentication, we need to configure the following properties to `$KYUUBI_HOME/conf/kyuubi-defaults.conf`
+To enable the LDAP authentication, we need to configure the following properties
+to `$KYUUBI_HOME/conf/kyuubi-defaults.conf`
 on each node where kyuubi server is installed.
 
 ```properties example
@@ -33,3 +34,11 @@ kyuubi.authentication.ldap.binddn=uid=kyuubi,OU=Users,DC=apache,DC=org
 kyuubi.authentication.ldap.bindpw=kyuubi123123
 kyuubi.authentication.ldap.url=ldap://hostname.com:389/
 ```
+
+LDAP supports various filters based on users and groups, which can restrict the set of users allowed to connect to
+Kyuubi.
+For more details
+in [User and Group Filter Support with LDAP](https://cwiki.apache.org/confluence/display/Hive/User+and+Group+Filter+Support+with+LDAP+Atn+Provider+in+HiveServer2#UserandGroupFilterSupportwithLDAPAtnProviderinHiveServer2-UserandGroupFilterSupportwithLDAP)
+
+There are some extra optional properties to set up LDAP user and group filters in Kyuubi. Please refer
+to [Settings for LDAP authentication in Kyuubi](https://kyuubi.readthedocs.io/en/master/deployment/settings.html?highlight=LDAP#authentication)
