@@ -22,12 +22,12 @@ import java.nio.file.{Files, Path, StandardOpenOption}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-import scala.compat.Platform.EOL
 
 import com.vladsch.flexmark.formatter.Formatter
 import com.vladsch.flexmark.parser.{Parser, ParserEmulationProfile, PegdownExtensions}
 import com.vladsch.flexmark.profile.pegdown.PegdownOptionsAdapter
 import com.vladsch.flexmark.util.data.{MutableDataHolder, MutableDataSet}
+import com.vladsch.flexmark.util.sequence.SequenceUtils.EOL
 import org.scalatest.Assertions.{assertResult, withClue}
 
 object MarkdownUtils {
@@ -58,7 +58,7 @@ object MarkdownUtils {
   }
 
   def line(str: String): String = {
-    str.stripMargin.replaceAll(EOL, "")
+    str.stripMargin.linesIterator.mkString
   }
 
   def appendBlankLine(buffer: ArrayBuffer[String]): Unit = buffer += ""
@@ -80,7 +80,7 @@ class MarkdownBuilder {
    * @return
    */
   def line(str: String = ""): MarkdownBuilder = {
-    buffer += str.stripMargin.replaceAll(EOL, "")
+    buffer += str.stripMargin.linesIterator.mkString
     this
   }
 
@@ -91,7 +91,7 @@ class MarkdownBuilder {
    * @return
    */
   def lines(multiline: String): MarkdownBuilder = {
-    buffer ++= multiline.stripMargin.split(EOL)
+    buffer ++= multiline.stripMargin.linesIterator
     this
   }
 
