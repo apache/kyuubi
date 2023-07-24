@@ -1257,7 +1257,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
 
   test("query with timeout") {
     withSessionConf()(Map(
-      ENGINE_FLINK_FETCH_TIMEOUT.key -> "10000",
+      ENGINE_FLINK_FETCH_TIMEOUT.key -> "PT10S",
       ENGINE_FLINK_MAX_ROWS.key -> "1000000"))() {
       withJdbcStatement("tbl_a") { stmt =>
         stmt.executeQuery("create table tbl_a (a int) with ('connector' = 'datagen'," +

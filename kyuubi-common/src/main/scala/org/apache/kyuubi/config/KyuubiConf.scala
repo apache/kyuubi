@@ -1321,11 +1321,11 @@ object KyuubiConf {
 
   val ENGINE_FLINK_FETCH_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.session.engine.flink.fetch.timeout")
-      .doc("Result fetch timeout in milliseconds. Flink would keep fetching result until " +
+      .doc("Result fetch timeout. Flink would keep fetching result until " +
         "either the max rows limit is reached or the timeout is reached.")
       .version("1.8.0")
-      .longConf
-      .createWithDefault(300000L)
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(5).toMillis)
 
   val ENGINE_TRINO_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.engine.trino.main.resource")
