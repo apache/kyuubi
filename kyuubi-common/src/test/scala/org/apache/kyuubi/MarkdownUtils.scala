@@ -58,7 +58,7 @@ object MarkdownUtils {
   }
 
   def line(str: String): String = {
-    str.stripMargin.lines.mkString
+    str.stripMargin.linesIterator.mkString
   }
 
   def appendBlankLine(buffer: ArrayBuffer[String]): Unit = buffer += ""
@@ -80,7 +80,7 @@ class MarkdownBuilder {
    * @return
    */
   def line(str: String = ""): MarkdownBuilder = {
-    buffer += str.stripMargin.lines.mkString
+    buffer += str.stripMargin.linesIterator.mkString
     this
   }
 
@@ -91,7 +91,7 @@ class MarkdownBuilder {
    * @return
    */
   def lines(multiline: String): MarkdownBuilder = {
-    buffer ++= multiline.stripMargin.lines
+    buffer ++= multiline.stripMargin.linesIterator
     this
   }
 
