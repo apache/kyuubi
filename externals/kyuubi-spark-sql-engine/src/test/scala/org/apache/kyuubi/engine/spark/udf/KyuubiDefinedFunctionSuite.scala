@@ -56,7 +56,6 @@ class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
       .lines("""
         | Name | Description | Return Type | Since
         | --- | --- | --- | ---
-        |
         |""")
     KDFRegistry.registeredFunctions.foreach { func =>
       builder.line(s"${func.name} | ${func.description} | ${func.returnType} | ${func.since}")
