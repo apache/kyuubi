@@ -34,7 +34,9 @@ import org.apache.kyuubi.session.Session
 class PlanOnlyStatement(
     session: Session,
     override val statement: String,
-    mode: PlanOnlyMode) extends FlinkOperation(session) {
+    mode: PlanOnlyMode,
+    resultMaxRows: Int,
+    resultFetchTimeout: Long) extends FlinkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   private val lineSeparator: String = System.lineSeparator()
@@ -59,7 +61,8 @@ class PlanOnlyStatement(
           val resultFetcher = executor.executeStatement(
             new OperationHandle(getHandle.identifier),
             statement)
-          resultSet = ResultSetUtil.fromResultFetcher(resultFetcher);
+          resultSet =
+            ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows, resultFetchTimeout);
         case _ => explainOperation(statement)
       }
     } catch {

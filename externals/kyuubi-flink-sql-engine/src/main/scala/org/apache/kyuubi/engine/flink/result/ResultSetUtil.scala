@@ -25,6 +25,7 @@ import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.catalog.Column
 import org.apache.flink.table.data.RowData
 import org.apache.flink.table.data.conversion.DataStructureConverters
+import org.apache.flink.table.gateway.api.results.{ResultSet => FResultSet}
 import org.apache.flink.table.gateway.service.result.ResultFetcher
 import org.apache.flink.table.types.DataType
 import org.apache.flink.types.Row
@@ -66,12 +67,16 @@ object ResultSetUtil {
       .data(Array[Row](Row.of("OK")))
       .build
 
-  def fromResultFetcher(resultFetcher: ResultFetcher, maxRows: Int): ResultSet = {
+  def fromResultFetcher(
+      resultFetcher: ResultFetcher,
+      maxRows: Int,
+      fetchTimeout: Long): ResultSet = {
     val schema = resultFetcher.getResultSchema
     val resultRowData = ListBuffer.newBuilder[RowData]
     var fetched: FlinkResultSet = null
     var token: Long = 0
     var rowNum: Int = 0
+    val fetchStart = System.currentTimeMillis()
     do {
       fetched = new FlinkResultSet(resultFetcher.fetchResults(token, FETCH_ROWS_PER_SECOND))
       val data = fetched.getData
@@ -84,34 +89,10 @@ object ResultSetUtil {
         case _: InterruptedException => fetched.getNextToken == null
       }
     } while (
-      fetched.getNextToken != null &&
+      System.currentTimeMillis() - fetchStart < fetchTimeout &&
+        fetched.getNextToken != null &&
         rowNum < maxRows &&
-        fetched.getResultType != org.apache.flink.table.gateway.api.results.ResultSet.ResultType.EOS
-    )
-    val dataTypes = resultFetcher.getResultSchema.getColumnDataTypes
-    ResultSet.builder
-      .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-      .columns(schema.getColumns)
-      .data(resultRowData.result().map(rd => convertToRow(rd, dataTypes.toList)).toArray)
-      .build
-  }
-
-  def fromResultFetcher(resultFetcher: ResultFetcher): ResultSet = {
-    val schema = resultFetcher.getResultSchema
-    val resultRowData = ListBuffer.newBuilder[RowData]
-    var fetched: FlinkResultSet = null
-    var token: Long = 0
-    do {
-      fetched = new FlinkResultSet(resultFetcher.fetchResults(token, FETCH_ROWS_PER_SECOND))
-      resultRowData ++= fetched.getData
-      token = fetched.getNextToken
-      try Thread.sleep(1000L)
-      catch {
-        case _: InterruptedException =>
-      }
-    } while (
-      fetched.getNextToken != null &&
-        fetched.getResultType != org.apache.flink.table.gateway.api.results.ResultSet.ResultType.EOS
+        fetched.getResultType != FResultSet.ResultType.EOS
     )
     val dataTypes = resultFetcher.getResultSchema.getColumnDataTypes
     ResultSet.builder

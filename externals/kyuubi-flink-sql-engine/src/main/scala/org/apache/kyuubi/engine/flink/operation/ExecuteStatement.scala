@@ -32,7 +32,8 @@ class ExecuteStatement(
     override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
-    resultMaxRows: Int)
+    resultMaxRows: Int,
+    resultFetchTimeout: Long)
   extends FlinkOperation(session) with Logging {
 
   private val operationLog: OperationLog =
@@ -64,7 +65,7 @@ class ExecuteStatement(
         new OperationHandle(getHandle.identifier),
         statement)
       jobId = FlinkEngineUtils.getResultJobId(resultFetcher)
-      resultSet = ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows)
+      resultSet = ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows, resultFetchTimeout)
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)

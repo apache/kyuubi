@@ -22,11 +22,14 @@ import java.sql.DatabaseMetaData
 import java.util.UUID
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
 
 import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.PipelineOptions
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.hive.service.rpc.thrift._
+import org.scalatest.concurrent.TimeLimits.failAfter
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
@@ -1248,6 +1251,25 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
         assert(queryId !== null)
         // parse the string to check if it's valid Flink job id
         assert(JobID.fromHexString(queryId) !== null)
+      }
+    }
+  }
+
+  test("query with timeout") {
+    withSessionConf()(Map(
+      ENGINE_FLINK_FETCH_TIMEOUT.key -> "10000",
+      ENGINE_FLINK_MAX_ROWS.key -> "1000000"))() {
+      withJdbcStatement("tbl_a") { stmt =>
+        stmt.executeQuery("create table tbl_a (a int) with ('connector' = 'datagen'," +
+          "'rows-per-second' = '1')")
+        failAfter(20000 millisecond) {
+          var numRows = 0
+          val result = stmt.executeQuery("select a from tbl_a")
+          while (result.next()) {
+            numRows += 1
+          }
+          assert(numRows > 0 && numRows <= 20)
+        }
       }
     }
   }

@@ -35,6 +35,8 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
 
   private lazy val resultMaxRowsDefault = getConf.get(ENGINE_FLINK_MAX_ROWS)
 
+  private lazy val resultFetchTimeoutDefault = getConf.get(ENGINE_FLINK_FETCH_TIMEOUT)
+
   private lazy val operationConvertCatalogDatabaseDefault =
     getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)
 
@@ -66,14 +68,24 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       flinkSession.normalizedConf.getOrElse(
         ENGINE_FLINK_MAX_ROWS.key,
         resultMaxRowsDefault.toString).toInt
+    val resultFetchTimeout =
+      flinkSession.normalizedConf.getOrElse(
+        ENGINE_FLINK_FETCH_TIMEOUT.key,
+        resultFetchTimeoutDefault.toString).toLong
     val op = mode match {
       case NoneMode =>
         // FLINK-24427 seals calcite classes which required to access in async mode, considering
         // there is no much benefit in async mode, here we just ignore `runAsync` and always run
         // statement in sync mode as a workaround
-        new ExecuteStatement(session, statement, false, queryTimeout, resultMaxRows)
+        new ExecuteStatement(
+          session,
+          statement,
+          false,
+          queryTimeout,
+          resultMaxRows,
+          resultFetchTimeout)
       case mode =>
-        new PlanOnlyStatement(session, statement, mode)
+        new PlanOnlyStatement(session, statement, mode, resultMaxRows, resultFetchTimeout)
     }
     addOperation(op)
   }
