@@ -33,17 +33,14 @@ case class SemanticVersion(majorVersion: Int, minorVersion: Int)
 
   def <(targetVersionString: String): Boolean = !isVersionAtLeast(targetVersionString)
 
-  def isVersionAtMost(targetVersionString: String): Boolean = {
+  def isVersionAtMost(targetVersionString: String): Boolean =
     compareTo(SemanticVersion(targetVersionString)) <= 0
-  }
 
-  def isVersionAtLeast(targetVersionString: String): Boolean = {
+  def isVersionAtLeast(targetVersionString: String): Boolean =
     compareTo(SemanticVersion(targetVersionString)) >= 0
-  }
 
-  def isVersionEqualTo(targetVersionString: String): Boolean = {
+  def isVersionEqualTo(targetVersionString: String): Boolean =
     compareTo(SemanticVersion(targetVersionString)) == 0
-  }
 
   override def compareTo(v: SemanticVersion): Int = {
     if (majorVersion > v.majorVersion) {
