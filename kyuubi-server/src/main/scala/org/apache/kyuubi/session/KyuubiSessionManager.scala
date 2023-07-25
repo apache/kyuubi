@@ -63,7 +63,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private var batchLimiter: Option[SessionLimiter] = None
   lazy val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
 
-  var engineBuilderSemaphore: Option[Semaphore] = None
+  var engineStartupProcessSemaphore: Option[Semaphore] = None
 
   private val engineConnectionAliveChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-engine-alive-checker")
@@ -74,7 +74,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     addService(credentialsManager)
     metadataManager.foreach(addService)
     initSessionLimiter(conf)
-    initEngineBuilderSemaphore(conf)
+    initEngineStartupProcessSemaphore(conf)
     super.initialize(conf)
   }
 
@@ -363,10 +363,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       TimeUnit.MILLISECONDS)
   }
 
-  private def initEngineBuilderSemaphore(conf: KyuubiConf): Unit = {
+  private def initEngineStartupProcessSemaphore(conf: KyuubiConf): Unit = {
     val engineCreationLimit = conf.get(KyuubiConf.SERVER_LIMIT_ENGINE_CREATION)
     engineCreationLimit.filter(_ > 0).foreach { limit =>
-      engineBuilderSemaphore = Some(new Semaphore(limit))
+      engineStartupProcessSemaphore = Some(new Semaphore(limit))
     }
   }
 }

@@ -2983,8 +2983,12 @@ object KyuubiConf {
       .createWithDefault(false)
 
   val SERVER_LIMIT_ENGINE_CREATION: OptionalConfigEntry[Int] =
-    buildConf("kyuubi.server.limit.engine.creation")
-      .doc("The maximum engine creation concurrency of kyuubi server.")
+    buildConf("kyuubi.server.limit.engine.startup")
+      .internal
+      .doc("The maximum engine startup concurrency of kyuubi server. Highly concurrent engine" +
+        " startup processes may lead to high load on the kyuubi server machine," +
+        " this configuration is used to limit the number of engine startup processes" +
+        " running at the same time to avoid it.")
       .version("1.8.0")
       .serverOnly
       .intConf

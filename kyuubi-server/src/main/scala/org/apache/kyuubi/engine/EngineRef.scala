@@ -58,7 +58,7 @@ private[kyuubi] class EngineRef(
     groupProvider: GroupProvider,
     engineRefId: String,
     engineManager: KyuubiApplicationManager,
-    builderSemaphore: Option[Semaphore] = None)
+    startupProcessSemaphore: Option[Semaphore] = None)
   extends Logging {
   // The corresponding ServerSpace where the engine belongs to
   private val serverSpace: String = conf.get(HA_NAMESPACE)
@@ -205,7 +205,7 @@ private[kyuubi] class EngineRef(
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     var acquiredPermit = false
     try {
-      if (!builderSemaphore.forall(_.tryAcquire(timeout, TimeUnit.MILLISECONDS))) {
+      if (!startupProcessSemaphore.forall(_.tryAcquire(timeout, TimeUnit.MILLISECONDS))) {
         throw KyuubiSQLException(
           s"Timeout($timeout ms, you can modify ${ENGINE_INIT_TIMEOUT.key} to change it) to" +
             s" acquires a permit from engine builder semaphore.")
@@ -275,7 +275,7 @@ private[kyuubi] class EngineRef(
       }
       engineRef.get
     } finally {
-      if (acquiredPermit) builderSemaphore.foreach(_.release())
+      if (acquiredPermit) startupProcessSemaphore.foreach(_.release())
       val waitCompletion = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
       val destroyProcess = !waitCompletion && builder.isClusterMode()
       if (destroyProcess) {
