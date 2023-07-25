@@ -153,7 +153,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
       "date",
       "timestamp",
       // SPARK-37931
-      if (SPARK_RUNTIME_VERSION >= "3.3") "struct<X: bigint, Y: double>"
+      if (SPARK_ENGINE_RUNTIME_VERSION >= "3.3") "struct<X: bigint, Y: double>"
       else "struct<`X`: bigint, `Y`: double>",
       "binary",
       // SPARK-37931

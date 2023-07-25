@@ -188,7 +188,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       returnSize.foreach { size =>
         val df = spark.sql(s"select * from t_1 limit $size")
         val headPlan = df.queryExecution.executedPlan.collectLeaves().head
-        if (SPARK_RUNTIME_VERSION >= "3.2") {
+        if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") {
           assert(headPlan.isInstanceOf[AdaptiveSparkPlanExec])
           val finalPhysicalPlan =
             SparkDatasetHelper.finalPhysicalPlan(headPlan.asInstanceOf[AdaptiveSparkPlanExec])
@@ -258,7 +258,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   }
 
   test("result offset support") {
-    assume(SPARK_RUNTIME_VERSION >= "3.4")
+    assume(SPARK_ENGINE_RUNTIME_VERSION >= "3.4")
     var numStages = 0
     val listener = new SparkListener {
       override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
@@ -298,7 +298,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     val listener = new JobCountListener
     val l2 = new SQLMetricsListener
     val nodeName = spark.sql("SHOW TABLES").queryExecution.executedPlan.getClass.getName
-    if (SPARK_RUNTIME_VERSION < "3.2") {
+    if (SPARK_ENGINE_RUNTIME_VERSION < "3.2") {
       assert(nodeName == "org.apache.spark.sql.execution.command.ExecutedCommandExec")
     } else {
       assert(nodeName == "org.apache.spark.sql.execution.CommandResultExec")
@@ -314,7 +314,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       }
     }
 
-    if (SPARK_RUNTIME_VERSION < "3.2") {
+    if (SPARK_ENGINE_RUNTIME_VERSION < "3.2") {
       // Note that before Spark 3.2, a LocalTableScan SparkPlan will be submitted, and the issue of
       // preventing LocalTableScan from triggering a job submission was addressed in [KYUUBI #4710].
       assert(l2.queryExecution.executedPlan.getClass.getName ==
@@ -378,7 +378,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
 
   test("post CommandResultExec driver-side metrics") {
     spark.sql("show tables").show(truncate = false)
-    assume(SPARK_RUNTIME_VERSION >= "3.2")
+    assume(SPARK_ENGINE_RUNTIME_VERSION >= "3.2")
     val expectedMetrics = Map(
       0L -> (("CommandResult", Map("number of output rows" -> "2"))))
     withTables("table_1", "table_2") {
@@ -557,7 +557,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       context: TaskContext): Iterator[InternalRow] = {
     val className = "org.apache.spark.sql.execution.arrow.ArrowConverters$"
     val instance = DynFields.builder().impl(className, "MODULE$").build[Object]().get(null)
-    if (SPARK_RUNTIME_VERSION >= "3.5") {
+    if (SPARK_ENGINE_RUNTIME_VERSION >= "3.5") {
       fromBatchIteratorMethod.invoke[Iterator[InternalRow]](
         instance,
         arrowBatchIter,
