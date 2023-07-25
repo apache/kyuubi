@@ -1645,7 +1645,7 @@ object KyuubiConf {
         s"when ${BATCH_SUBMITTER_ENABLED.key} is enabled")
       .version("1.8.0")
       .intConf
-      .createWithDefault(32)
+      .createWithDefault(100)
 
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
