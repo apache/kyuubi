@@ -206,6 +206,7 @@ private[kyuubi] class EngineRef(
     var acquiredPermit = false
     try {
       if (!startupProcessSemaphore.forall(_.tryAcquire(timeout, TimeUnit.MILLISECONDS))) {
+        MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
         throw KyuubiSQLException(
           s"Timeout($timeout ms, you can modify ${ENGINE_INIT_TIMEOUT.key} to change it) to" +
             s" acquires a permit from engine builder semaphore.")
