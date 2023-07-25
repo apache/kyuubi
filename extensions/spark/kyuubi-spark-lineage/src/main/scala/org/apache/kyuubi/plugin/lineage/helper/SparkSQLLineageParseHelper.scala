@@ -37,7 +37,7 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 
 import org.apache.kyuubi.plugin.lineage.Lineage
-import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
+import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 trait LineageParser {
@@ -194,7 +194,7 @@ trait LineageParser {
         extractColumnsLineage(commandPlan, parentColumnsLineage)
       case p if p.nodeName == "AlterViewAsCommand" =>
         val query =
-          if (isSparkVersionAtMost("3.1")) {
+          if (SPARK_RUNTIME_VERSION <= "3.1") {
             sparkSession.sessionState.analyzer.execute(getQuery(plan))
           } else {
             getQuery(plan)
@@ -211,7 +211,7 @@ trait LineageParser {
         val outputCols =
           getField[Seq[(String, Option[String])]](plan, "userSpecifiedColumns").map(_._1)
         val query =
-          if (isSparkVersionAtMost("3.1")) {
+          if (SPARK_RUNTIME_VERSION <= "3.1") {
             sparkSession.sessionState.analyzer.execute(getField[LogicalPlan](plan, "child"))
           } else {
             getField[LogicalPlan](plan, "plan")
@@ -240,7 +240,7 @@ trait LineageParser {
           if p.nodeName == "CreateTableAsSelect" ||
             p.nodeName == "ReplaceTableAsSelect" =>
         val (table, namespace, catalog) =
-          if (isSparkVersionAtMost("3.2")) {
+          if (SPARK_RUNTIME_VERSION <= "3.2") {
             (
               getField[Identifier](plan, "tableName").name,
               getField[Identifier](plan, "tableName").namespace.mkString("."),

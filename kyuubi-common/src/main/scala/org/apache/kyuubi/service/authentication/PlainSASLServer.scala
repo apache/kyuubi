@@ -126,10 +126,7 @@ object PlainSASLServer {
     }
   }
 
-  final private val version: Double = {
-    val runtimeVersion = SemanticVersion(KYUUBI_VERSION)
-    runtimeVersion.majorVersion + runtimeVersion.minorVersion.toDouble / 10
-  }
+  final private val version = SemanticVersion(KYUUBI_VERSION).toDouble
 
   class SaslPlainProvider
     extends Provider("KyuubiSaslPlain", version, "Kyuubi Plain SASL provider") {

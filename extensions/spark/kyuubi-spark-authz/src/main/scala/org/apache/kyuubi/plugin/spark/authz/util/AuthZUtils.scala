@@ -83,18 +83,10 @@ private[authz] object AuthZUtils {
     }
   }
 
-  private lazy val sparkSemanticVersion: SemanticVersion = SemanticVersion(SPARK_VERSION)
-  lazy val isSparkV31OrGreater: Boolean = isSparkVersionAtLeast("3.1")
-  lazy val isSparkV32OrGreater: Boolean = isSparkVersionAtLeast("3.2")
-  lazy val isSparkV33OrGreater: Boolean = isSparkVersionAtLeast("3.3")
-
-  def isSparkVersionAtMost(targetVersionString: String): Boolean = {
-    sparkSemanticVersion.isVersionAtMost(targetVersionString)
-  }
-
-  def isSparkVersionAtLeast(targetVersionString: String): Boolean = {
-    sparkSemanticVersion.isVersionAtLeast(targetVersionString)
-  }
+  lazy val SPARK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(SPARK_VERSION)
+  lazy val isSparkV31OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.1"
+  lazy val isSparkV32OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.2"
+  lazy val isSparkV33OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.3"
 
   def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {

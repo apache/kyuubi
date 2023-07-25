@@ -21,7 +21,7 @@ import java.time.{Instant, LocalDateTime, ZoneId}
 
 import scala.annotation.meta.getter
 
-import org.apache.spark.SparkContext
+import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.kvstore.KVIndex
 
@@ -97,5 +97,5 @@ object KyuubiSparkUtil extends Logging {
 
   // Given that we are on the Spark SQL engine side, the [[org.apache.spark.SPARK_VERSION]] can be
   // represented as the runtime version of the Spark SQL engine.
-  lazy val SPARK_ENGINE_RUNTIME_VERSION = SemanticVersion(org.apache.spark.SPARK_VERSION)
+  lazy val SPARK_ENGINE_RUNTIME_VERSION: SemanticVersion = SemanticVersion(SPARK_VERSION)
 }

@@ -41,6 +41,11 @@ class SemanticVersionSuite extends AnyFunSuite {
     assert(version.minorVersion === 9)
   }
 
+  test("reject parsing illegal formatted version") {
+    assertThrows[IllegalArgumentException](SemanticVersion("v1.0"))
+    assertThrows[IllegalArgumentException](SemanticVersion(".1.0"))
+  }
+
   test("companion class compare version at most") {
     assert(SemanticVersion("1.12").isVersionAtMost("2.8.8-SNAPSHOT"))
     val runtimeVersion = SemanticVersion("1.12.4")
@@ -72,5 +77,29 @@ class SemanticVersionSuite extends AnyFunSuite {
     assert(runtimeVersion.isVersionEqualTo("1.12.3-SNAPSHOT"))
     assert(!runtimeVersion.isVersionEqualTo("1.10.4"))
     assert(!runtimeVersion.isVersionEqualTo("2.12.8"))
+  }
+
+  test("compare version to major version only") {
+    val versionFromMajorOnly = SemanticVersion("3")
+    assert(versionFromMajorOnly === "3.0")
+    assert(versionFromMajorOnly < "3.1")
+    assert(!(versionFromMajorOnly > "3.0"))
+
+    val runtimeVersion = SemanticVersion("2.3.4")
+    assert(runtimeVersion > "1")
+    assert(runtimeVersion > "2")
+    assert(runtimeVersion >= "2")
+    assert(!(runtimeVersion === "2"))
+    assert(runtimeVersion < "3")
+    assert(runtimeVersion <= "4")
+  }
+
+  test("semantic version to double") {
+    assertResult(1.0d)(SemanticVersion("1").toDouble)
+    assertResult(1.2d)(SemanticVersion("1.2").toDouble)
+    assertResult(1.2d)(SemanticVersion("1.2.3").toDouble)
+    assertResult(1.2d)(SemanticVersion("1.2.3-SNAPSHOT").toDouble)
+    assertResult(1.234d)(SemanticVersion("1.234").toDouble)
+    assertResult(1.234d)(SemanticVersion("1.234.567").toDouble)
   }
 }

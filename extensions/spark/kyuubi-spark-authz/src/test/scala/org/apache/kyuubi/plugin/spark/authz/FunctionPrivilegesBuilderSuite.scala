@@ -24,7 +24,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.QUERY
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isSparkVersionAtMost
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.SPARK_RUNTIME_VERSION
 
 abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
@@ -112,7 +112,7 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
   override protected val catalogImpl: String = "hive"
 
   test("Function Call Query") {
-    assume(isSparkVersionAtMost("3.3"))
+    assume(SPARK_RUNTIME_VERSION <= "3.3")
     val plan = sql(s"SELECT kyuubi_fun_1('data'), " +
       s"kyuubi_fun_2(value), " +
       s"${reusedDb}.kyuubi_fun_0(value), " +
@@ -132,7 +132,7 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
   }
 
   test("Function Call Query with Quoted Name") {
-    assume(isSparkVersionAtMost("3.3"))
+    assume(SPARK_RUNTIME_VERSION <= "3.3")
     val plan = sql(s"SELECT `kyuubi_fun_1`('data'), " +
       s"`kyuubi_fun_2`(value), " +
       s"`${reusedDb}`.`kyuubi_fun_0`(value), " +
@@ -152,7 +152,7 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
   }
 
   test("Simple Function Call Query") {
-    assume(isSparkVersionAtMost("3.3"))
+    assume(SPARK_RUNTIME_VERSION <= "3.3")
     val plan = sql(s"SELECT kyuubi_fun_1('data'), " +
       s"kyuubi_fun_0('value'), " +
       s"${reusedDb}.kyuubi_fun_0('value'), " +
@@ -172,7 +172,7 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
   }
 
   test("Function Call In CAST Command") {
-    assume(isSparkVersionAtMost("3.3"))
+    assume(SPARK_RUNTIME_VERSION <= "3.3")
     val table = "castTable"
     withTable(table) { table =>
       val plan = sql(s"CREATE TABLE ${table} " +

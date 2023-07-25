@@ -258,7 +258,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   }
 
   test("result offset support") {
-    assume(SPARK_ENGINE_RUNTIME_VERSION > "3.3")
+    assume(SPARK_ENGINE_RUNTIME_VERSION >= "3.4")
     var numStages = 0
     val listener = new SparkListener {
       override def onJobStart(jobStart: SparkListenerJobStart): Unit = {

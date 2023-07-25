@@ -112,7 +112,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("AlterDatabasePropertiesCommand") {
-    assume(isSparkVersionAtMost("3.2"))
+    assume(SPARK_RUNTIME_VERSION <= "3.2")
     val plan = sql("ALTER DATABASE default SET DBPROPERTIES (abc = '123')").queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
     assertResult(plan.getClass.getName)(
@@ -160,7 +160,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("CreateDatabaseCommand") {
-    assume(isSparkVersionAtMost("3.2"))
+    assume(SPARK_RUNTIME_VERSION <= "3.2")
     withDatabase("CreateDatabaseCommand") { db =>
       val plan = sql(s"CREATE DATABASE $db").queryExecution.analyzed
       val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
@@ -182,7 +182,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("DropDatabaseCommand") {
-    assume(isSparkVersionAtMost("3.2"))
+    assume(SPARK_RUNTIME_VERSION <= "3.2")
     withDatabase("DropDatabaseCommand") { db =>
       sql(s"CREATE DATABASE $db")
       val plan = sql(s"DROP DATABASE DropDatabaseCommand").queryExecution.analyzed
@@ -759,7 +759,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("DescribeDatabaseCommand") {
-    assume(isSparkVersionAtMost("3.2"))
+    assume(SPARK_RUNTIME_VERSION <= "3.2")
     val plan = sql(s"DESC DATABASE $reusedDb").queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === DESCDATABASE)
@@ -1253,7 +1253,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
   // some hive version does not support set database location
   test("AlterDatabaseSetLocationCommand") {
-    assume(isSparkVersionAtMost("3.2"))
+    assume(SPARK_RUNTIME_VERSION <= "3.2")
     val newLoc = spark.conf.get("spark.sql.warehouse.dir") + "/new_db_location"
     val plan = sql(s"ALTER DATABASE default SET LOCATION '$newLoc'")
       .queryExecution.analyzed

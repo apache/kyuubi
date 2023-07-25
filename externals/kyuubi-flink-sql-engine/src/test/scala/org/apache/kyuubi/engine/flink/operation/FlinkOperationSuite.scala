@@ -30,7 +30,8 @@ import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.flink.{FlinkEngineUtils, WithFlinkTestResources}
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils.FLINK_RUNTIME_VERSION
+import org.apache.kyuubi.engine.flink.WithFlinkTestResources
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
@@ -635,7 +636,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
   }
 
   test("execute statement - show/stop jobs") {
-    if (FlinkEngineUtils.isFlinkVersionAtLeast("1.17")) {
+    if (FLINK_RUNTIME_VERSION >= "1.17") {
       withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "10"))(Map.empty) {
         withMultipleConnectionJdbcStatement()({ statement =>
           statement.executeQuery(
@@ -1055,7 +1056,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       val jobId = resultSet.getString(1)
       assert(jobId.length == 32)
 
-      if (FlinkEngineUtils.isFlinkVersionAtLeast("1.17")) {
+      if (FLINK_RUNTIME_VERSION >= "1.17") {
         val stopResult = statement.executeQuery(s"stop job '$jobId'")
         assert(stopResult.next())
         assert(stopResult.getString(1) === "OK")
@@ -1244,7 +1245,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       stmt.executeQuery("insert into tbl_a values (1)")
       val queryId = stmt.asInstanceOf[KyuubiStatement].getQueryId
       // Flink 1.16 doesn't support query id via ResultFetcher
-      if (FlinkEngineUtils.isFlinkVersionAtLeast("1.17")) {
+      if (FLINK_RUNTIME_VERSION >= "1.17") {
         assert(queryId !== null)
         // parse the string to check if it's valid Flink job id
         assert(JobID.fromHexString(queryId) !== null)

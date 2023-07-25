@@ -21,14 +21,14 @@ import org.apache.flink.table.gateway.api.session.{SessionEnvironment, SessionHa
 import org.apache.flink.table.gateway.service.context.DefaultContext
 import org.apache.flink.table.gateway.service.session.Session
 
-import org.apache.kyuubi.engine.flink.FlinkEngineUtils
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils.FLINK_RUNTIME_VERSION
 import org.apache.kyuubi.util.reflect._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class FlinkSessionManager(engineContext: DefaultContext) {
 
   val sessionManager: AnyRef = {
-    if (FlinkEngineUtils.isFlinkVersionEqualTo("1.16")) {
+    if (FLINK_RUNTIME_VERSION === "1.16") {
       DynConstructors.builder().impl(
         "org.apache.flink.table.gateway.service.session.SessionManager",
         classOf[DefaultContext])
