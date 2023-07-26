@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import java.text.SimpleDateFormat
 import java.util.{Date, Properties, TimeZone, UUID}
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.Lock
 
@@ -417,4 +418,15 @@ object Utils extends Logging {
       lock.unlock()
     }
   }
+
+  def terminateProcess(process: java.lang.Process, timeoutMs: Long): Option[Int] = {
+    process.destroy()
+    if (process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) {
+      Option(process.exitValue())
+    } else {
+      process.destroyForcibly()
+      None
+    }
+  }
+
 }
