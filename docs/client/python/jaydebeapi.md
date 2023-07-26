@@ -27,30 +27,36 @@ To install Python-JayDeBeApi, you can use pip, the Python package manager. Open 
 ```shell
 pip  install  'jaydebeapi'
 ```
+
 If you want to install JayDeBeApi in Jython, you'll need to ensure that you have either pip or EasyInstall available for Jython. These tools are used to install Python packages, including JayDeBeApi.
 Or you can get a copy of the source by cloning from the [JayDeBeApi github project](https://github.com/baztian/jaydebeapi) and install it.
 
 ```shell
 python setup.py install
 ```
+
 or if you are using Jython use
+
 ```shell
 jython setup.py install
 ```
 
 ## Preparation
-Using the Python-JayDeBeApi package to connect to Kyuubi, you need to install the library and configure the relevant JDBC driver. You can download JDBC driver from maven repository and specify its path in Python. Choose the matching driver `kyuubi-hive-jdbc-*-incubating.jar` package based on the Kyuubi server version.
+
+Using the Python-JayDeBeApi package to connect to Kyuubi, you need to install the library and configure the relevant JDBC driver. You can download JDBC driver from maven repository and specify its path in Python. Choose the matching driver `kyuubi-hive-jdbc-*.jar` package based on the Kyuubi server version.
 The driver class name is `org.apache.kyuubi.jdbc.KyuubiHiveDriver`.
 
-| Package            | Repo                                                                                                    |
-|--------------------|---------------------------------------------------------------------------------------------------------|
-| kyuubi jdbc driver | [kyuubi-hive-jdbc-*-incubating.jar](https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-hive-jdbc/) |
-| hadoop common      | [hadoop-common-*.jar](https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-common/)                  |
-| slf4j api          | [slf4j-api-*.jar](https://repo1.maven.org/maven2/org/slf4j/slf4j-api/)                                  |
-| slf4j jdk14        | [slf4j-jdk14-*.jar](https://repo1.maven.org/maven2/org/slf4j/slf4j-jdk14/)                              |
+|      Package       |                                             Repo                                             |
+|--------------------|----------------------------------------------------------------------------------------------|
+| kyuubi jdbc driver | [kyuubi-hive-jdbc-*.jar](https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-hive-jdbc/) |
+| hadoop common      | [hadoop-common-*.jar](https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-common/)       |
+| slf4j api          | [slf4j-api-*.jar](https://repo1.maven.org/maven2/org/slf4j/slf4j-api/)                       |
+| slf4j jdk14        | [slf4j-jdk14-*.jar](https://repo1.maven.org/maven2/org/slf4j/slf4j-jdk14/)                   |
 
 ## Usage
+
 Below is a simple example demonstrating how to use Python-JayDeBeApi to connect to Kyuubi database and execute a query:
+
 ```python
 import jaydebeapi
 
@@ -82,5 +88,6 @@ for row in result_set:
 cursor.close()
 conn.close()
 ```
+
 Make sure to replace the placeholders (host, port, user, password) with your actual Kyuubi configuration.
 With the above code, you can connect to Kyuubi and execute SQL queries in Python. Please handle exceptions and errors appropriately in real-world applications.
