@@ -25,11 +25,11 @@ It provides a Python DB-API v2.0 to that database.
 To install Python-JayDeBeApi, you can use pip, the Python package manager. Open your command-line interface or terminal and run the following command:
 
 ```shell
-pip  install  'jaydebeapi'
+pip install jaydebeapi
 ```
 
 If you want to install JayDeBeApi in Jython, you'll need to ensure that you have either pip or EasyInstall available for Jython. These tools are used to install Python packages, including JayDeBeApi.
-Or you can get a copy of the source by cloning from the [JayDeBeApi github project](https://github.com/baztian/jaydebeapi) and install it.
+Or you can get a copy of the source by cloning from the [JayDeBeApi GitHub project](https://github.com/baztian/jaydebeapi) and install it.
 
 ```shell
 python setup.py install
@@ -59,7 +59,7 @@ import jaydebeapi
 
 # Set JDBC driver path and connection URL
 driver = "org.apache.kyuubi.jdbc.KyuubiHiveDriver"
-url = "jdbc:hive2://host:port/default"
+url = "jdbc:kyuubi://host:port/default"
 jdbc_driver_path = ["/path/to/kyuubi-hive-jdbc-*.jar"]
 
 # Connect to the database using JayDeBeApi
@@ -69,7 +69,7 @@ conn = jaydebeapi.connect(driver, url, ["user", "password"], jdbc_driver_path)
 cursor = conn.cursor()
 
 # Execute the SQL query
-cursor.execute("'SELECT * FROM my_awesome_data LIMIT 10'")
+cursor.execute("SELECT * FROM example_table LIMIT 10")
 
 # Retrieve query results
 result_set = cursor.fetchall()
