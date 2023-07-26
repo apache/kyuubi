@@ -46,7 +46,7 @@ jython setup.py install
 Using the Python-JayDeBeApi package to connect to Kyuubi, you need to install the library and configure the relevant JDBC driver. You can download JDBC driver from maven repository and specify its path in Python. Choose the matching driver `kyuubi-hive-jdbc-*.jar` package based on the Kyuubi server version.
 The driver class name is `org.apache.kyuubi.jdbc.KyuubiHiveDriver`.
 
-|      Package       | Repo                                                                                                |
+|      Package       |                                                Repo                                                 |
 |--------------------|-----------------------------------------------------------------------------------------------------|
 | kyuubi jdbc driver | [kyuubi-hive-jdbc-*.jar](https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-hive-jdbc-shaded/) |
 | hadoop common      | [hadoop-common-*.jar](https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-common/)              |
