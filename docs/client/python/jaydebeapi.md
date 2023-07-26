@@ -61,7 +61,7 @@ Below is a simple example demonstrating how to use Python-JayDeBeApi to connect 
 import jaydebeapi
 
 # Set JDBC driver path and connection URL
-dirver = "org.apache.kyuubi.jdbc.KyuubiHiveDriver"
+driver = "org.apache.kyuubi.jdbc.KyuubiHiveDriver"
 url = "jdbc:hive2://host:port/default"
 jdbc_driver_path = ["/path/to/kyuubi-hive-jdbc-*.jar", 
            "/path/to/hadoop-common-*.jar", 
@@ -69,7 +69,7 @@ jdbc_driver_path = ["/path/to/kyuubi-hive-jdbc-*.jar",
            "/path/to/slf4j-jdk14-*.jar"]
 
 # Connect to the database using JayDeBeApi
-conn = jaydebeapi.connect(dirver, url, ["user", "password"], jdbc_driver_path)
+conn = jaydebeapi.connect(driver, url, ["user", "password"], jdbc_driver_path)
 
 # Create a cursor object
 cursor = conn.cursor()
