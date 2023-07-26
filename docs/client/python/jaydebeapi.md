@@ -46,12 +46,12 @@ jython setup.py install
 Using the Python-JayDeBeApi package to connect to Kyuubi, you need to install the library and configure the relevant JDBC driver. You can download JDBC driver from maven repository and specify its path in Python. Choose the matching driver `kyuubi-hive-jdbc-*.jar` package based on the Kyuubi server version.
 The driver class name is `org.apache.kyuubi.jdbc.KyuubiHiveDriver`.
 
-|      Package       |                                             Repo                                             |
-|--------------------|----------------------------------------------------------------------------------------------|
-| kyuubi jdbc driver | [kyuubi-hive-jdbc-*.jar](https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-hive-jdbc/) |
-| hadoop common      | [hadoop-common-*.jar](https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-common/)       |
-| slf4j api          | [slf4j-api-*.jar](https://repo1.maven.org/maven2/org/slf4j/slf4j-api/)                       |
-| slf4j jdk14        | [slf4j-jdk14-*.jar](https://repo1.maven.org/maven2/org/slf4j/slf4j-jdk14/)                   |
+|      Package       | Repo                                                                                                |
+|--------------------|-----------------------------------------------------------------------------------------------------|
+| kyuubi jdbc driver | [kyuubi-hive-jdbc-*.jar](https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-hive-jdbc-shaded/) |
+| hadoop common      | [hadoop-common-*.jar](https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-common/)              |
+| slf4j api          | [slf4j-api-*.jar](https://repo1.maven.org/maven2/org/slf4j/slf4j-api/)                              |
+| slf4j jdk14        | [slf4j-jdk14-*.jar](https://repo1.maven.org/maven2/org/slf4j/slf4j-jdk14/)                          |
 
 ## Usage
 
@@ -63,7 +63,7 @@ import jaydebeapi
 # Set JDBC driver path and connection URL
 dirver = "org.apache.kyuubi.jdbc.KyuubiHiveDriver"
 url = "jdbc:hive2://host:port/default"
-jdbc_driver_path = ["/path/to/kyuubi-hive-jdbc-shaded-*-SNAPSHOT.jar", 
+jdbc_driver_path = ["/path/to/kyuubi-hive-jdbc-*.jar", 
            "/path/to/hadoop-common-*.jar", 
            "/path/to/slf4j-api-*.jar", 
            "/path/to/slf4j-jdk14-*.jar"]
