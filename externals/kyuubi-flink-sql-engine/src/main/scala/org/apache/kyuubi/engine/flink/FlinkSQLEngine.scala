@@ -102,7 +102,7 @@ object FlinkSQLEngine extends Logging {
       info("Flink engine started")
 
       if ("yarn-application".equalsIgnoreCase(executionTarget)) {
-        bootstrapFlinkApplicationExecutor(flinkConf)
+        bootstrapFlinkApplicationExecutor()
       }
 
       // blocking main thread
@@ -119,6 +119,7 @@ object FlinkSQLEngine extends Logging {
   }
 
   def startEngine(engineContext: DefaultContext): Unit = {
+    debug(s"Starting Flink SQL engine with default configuration: ${engineContext.getFlinkConfig}")
     currentEngine = Some(new FlinkSQLEngine(engineContext))
     currentEngine.foreach { engine =>
       engine.initialize(kyuubiConf)
@@ -127,9 +128,10 @@ object FlinkSQLEngine extends Logging {
     }
   }
 
-  private def bootstrapFlinkApplicationExecutor(flinkConf: Configuration) = {
-    // trigger an execution to initiate EmbeddedExecutor
-    info("Running initial Flink SQL in application mode.")
+  private def bootstrapFlinkApplicationExecutor() = {
+    // trigger an execution to initiate EmbeddedExecutor with the default flink conf
+    val flinkConf = new Configuration()
+    debug(s"Running initial Flink SQL in application mode with flink conf: $flinkConf.")
     val tableEnv = TableEnvironment.create(flinkConf)
     val res = tableEnv.executeSql("select 'kyuubi'")
     res.await()
