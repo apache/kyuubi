@@ -24,6 +24,7 @@ import org.apache.hive.service.cli.session.{HiveSession, SessionManager => HiveS
 import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.hive.session.HiveSessionImpl
 import org.apache.kyuubi.operation.{AbstractOperation, FetchOrientation, OperationState, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -43,12 +44,14 @@ abstract class HiveOperation(session: Session) extends AbstractOperation(session
 
   override def beforeRun(): Unit = {
     setState(OperationState.RUNNING)
+    hive.getHiveConf.set(KYUUBI_SESSION_USER_KEY, session.user)
   }
 
   override def afterRun(): Unit = {
     withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
+        hive.getHiveConf.unset(KYUUBI_SESSION_USER_KEY)
       }
     }
   }
