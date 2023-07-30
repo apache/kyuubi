@@ -141,7 +141,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       assert(!process.logCaptureThreadReleased)
       subProcess.waitFor(3, TimeUnit.SECONDS)
     } finally {
-      process.close()
+      process.close(true)
     }
     eventually(timeout(3.seconds), interval(100.milliseconds)) {
       assert(process.logCaptureThreadReleased)
@@ -174,7 +174,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
                 val p = pb.start
                 p.waitFor()
               } finally {
-                pb.close()
+                pb.close(true)
               }
             }
           })

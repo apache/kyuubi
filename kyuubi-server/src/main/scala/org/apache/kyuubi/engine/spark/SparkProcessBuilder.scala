@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark
 
 import java.io.{File, IOException}
 import java.nio.file.Paths
+import java.util.Locale
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -183,26 +184,36 @@ class SparkProcessBuilder(
 
   override def shortName: String = "spark"
 
-  protected lazy val defaultMaster: Option[String] = {
+  protected lazy val defaultsConf: Map[String, String] = {
     val confDir = env.getOrElse(SPARK_CONF_DIR, s"$sparkHome${File.separator}conf")
-    val defaults =
-      try {
-        val confFile = new File(s"$confDir${File.separator}$SPARK_CONF_FILE_NAME")
-        if (confFile.exists()) {
-          Utils.getPropertiesFromFile(Some(confFile))
-        } else {
-          Map.empty[String, String]
-        }
-      } catch {
-        case _: Exception =>
-          warn(s"Failed to load spark configurations from $confDir")
-          Map.empty[String, String]
+    try {
+      val confFile = new File(s"$confDir${File.separator}$SPARK_CONF_FILE_NAME")
+      if (confFile.exists()) {
+        Utils.getPropertiesFromFile(Some(confFile))
+      } else {
+        Map.empty[String, String]
       }
-    defaults.get(MASTER_KEY)
+    } catch {
+      case _: Exception =>
+        warn(s"Failed to load spark configurations from $confDir")
+        Map.empty[String, String]
+    }
   }
 
   override def clusterManager(): Option[String] = {
-    conf.getOption(MASTER_KEY).orElse(defaultMaster)
+    conf.getOption(MASTER_KEY).orElse(defaultsConf.get(MASTER_KEY))
+  }
+
+  def deployMode(): Option[String] = {
+    conf.getOption(DEPLOY_MODE_KEY).orElse(defaultsConf.get(DEPLOY_MODE_KEY))
+  }
+
+  override def isClusterMode(): Boolean = {
+    clusterManager().map(_.toLowerCase(Locale.ROOT)) match {
+      case Some(m) if m.startsWith("yarn") || m.startsWith("k8s") =>
+        deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")
+      case _ => false
+    }
   }
 
   override def validateConf: Unit = Validator.validateConf(conf)
@@ -224,6 +235,7 @@ object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
+  final val DEPLOY_MODE_KEY = "spark.submit.deployMode"
   final val INTERNAL_RESOURCE = "spark-internal"
 
   /**
