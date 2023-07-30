@@ -221,6 +221,22 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     doAs(admin, assert(Try(sql(create0)).isSuccess))
   }
 
+  test("auth: functions usage") {
+    assume(isSparkVersionAtMost("3.3"))
+    val db = defaultDb
+    val func = "func"
+    val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS" +
+      s" 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'"
+    val select0 = s"SELECT $func('test')"
+    doAs(admin, assert(Try(sql(create0)).isSuccess))
+    doAs(
+      kent, {
+        val e = intercept[AccessControlException](sql(select0).collect())
+        assert(e.getMessage === errorMessage("select", s"$db/$func"))
+      })
+    doAs(admin, assert(Try(sql(select0).collect()).isSuccess))
+  }
+
   test("show tables") {
     val db = "default2"
     val table = "src"

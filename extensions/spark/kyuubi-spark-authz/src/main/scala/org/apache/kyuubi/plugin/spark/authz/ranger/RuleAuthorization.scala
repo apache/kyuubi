@@ -25,8 +25,9 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 
-import org.apache.kyuubi.plugin.spark.authz._
+import org.apache.kyuubi.plugin.spark.authz.{OperationType, _}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
+import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization._
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -47,13 +48,17 @@ object RuleAuthorization {
     val auditHandler = new SparkRangerAuditHandler
     val ugi = getAuthzUgi(spark.sparkContext)
     val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
+    val (functionInputs, _, functionOpType) = RuleFunctionAuthorization.getPrivileges
     val requests = new ArrayBuffer[AccessRequest]()
     if (inputs.isEmpty && opType == OperationType.SHOWDATABASES) {
       val resource = AccessResource(DATABASE, null, None)
       requests += AccessRequest(resource, ugi, opType, AccessType.USE)
     }
 
-    def addAccessRequest(objects: Seq[PrivilegeObject], isInput: Boolean): Unit = {
+    def addAccessRequest(
+        objects: Seq[PrivilegeObject],
+        isInput: Boolean,
+        opType: OperationType = opType): Unit = {
       objects.foreach { obj =>
         val resource = AccessResource(obj, opType)
         val accessType = ranger.AccessType(obj, opType, isInput)
@@ -66,6 +71,7 @@ object RuleAuthorization {
 
     addAccessRequest(inputs, isInput = true)
     addAccessRequest(outputs, isInput = false)
+    addAccessRequest(functionInputs, isInput = true, functionOpType)
 
     val requestArrays = requests.map { request =>
       val resource = request.getResource.asInstanceOf[AccessResource]
