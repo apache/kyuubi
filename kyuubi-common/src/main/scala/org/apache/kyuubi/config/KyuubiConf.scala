@@ -1554,14 +1554,6 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT5S")
 
-  val BATCH_APPLICATION_DESTROY_TIMEOUT: ConfigEntry[Long] =
-    buildConf("kyuubi.batch.application.destroy.timeout")
-      .doc("Batch job process destroy wait time after submission failure, " +
-        "if the process does not stop after this time, force destroy instead. ")
-      .version("1.8.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(5).toMillis)
-
   val BATCH_APPLICATION_STARVATION_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.batch.application.starvation.timeout")
       .doc("Threshold above which to warn batch application may be starved.")
