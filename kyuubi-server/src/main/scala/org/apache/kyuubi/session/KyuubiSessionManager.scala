@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.session
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Semaphore, TimeUnit}
 
 import scala.collection.JavaConverters._
 
@@ -63,6 +63,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private var batchLimiter: Option[SessionLimiter] = None
   lazy val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
 
+  var engineStartupProcessSemaphore: Option[Semaphore] = None
+
   private val engineConnectionAliveChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-engine-alive-checker")
 
@@ -72,6 +74,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     addService(credentialsManager)
     metadataManager.foreach(addService)
     initSessionLimiter(conf)
+    initEngineStartupProcessSemaphore(conf)
     super.initialize(conf)
   }
 
@@ -360,4 +363,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       TimeUnit.MILLISECONDS)
   }
 
+  private def initEngineStartupProcessSemaphore(conf: KyuubiConf): Unit = {
+    val engineCreationLimit = conf.get(KyuubiConf.SERVER_LIMIT_ENGINE_CREATION)
+    engineCreationLimit.filter(_ > 0).foreach { limit =>
+      engineStartupProcessSemaphore = Some(new Semaphore(limit))
+    }
+  }
 }
