@@ -109,8 +109,8 @@ object FlinkSQLEngine extends Logging {
       countDownLatch.await()
     } catch {
       case t: Throwable if currentEngine.isDefined =>
+        error("Fatal error occurs, thus stopping the engines", t)
         currentEngine.foreach { engine =>
-          error(t)
           engine.stop()
         }
       case t: Throwable =>
