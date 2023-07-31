@@ -58,6 +58,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private lazy val internalConnectTimeout =
     fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT).toInt
 
+  private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
+    reqConf.getOrElse(BATCH_IMPL_VERSION.key, fe.getConf.get(BATCH_IMPL_VERSION)) == "2"
+  }
+
   private def getInternalRestClient(kyuubiInstance: String): InternalRestClient = {
     internalRestClients.computeIfAbsent(
       kyuubiInstance,
@@ -233,6 +237,30 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
             KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
 
+        if (batchV2Enabled(request.getConf.asScala.toMap)) {
+          logger.info(s"Submit batch job $batchId using Batch API v2")
+          return Try {
+            sessionManager.initializeBatchState(
+              userName,
+              ipAddress,
+              request.getConf.asScala.toMap,
+              request)
+          } match {
+            case Success(batchId) =>
+              sessionManager.getBatchFromMetadataStore(batchId) match {
+                case Some(batch) => batch
+                case None => throw new IllegalStateException(
+                    s"can not find batch $batchId from metadata store")
+              }
+            case Failure(cause) if JdbcUtils.isDuplicatedKeyDBErr(cause) =>
+              sessionManager.getBatchFromMetadataStore(batchId) match {
+                case Some(batch) => markDuplicated(batch)
+                case None => throw new IllegalStateException(
+                    s"can not find duplicated batch $batchId from metadata store")
+              }
+          }
+        }
+
         Try {
           sessionManager.openBatchSession(
             userName,
@@ -278,7 +306,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       buildBatch(batchSession)
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
-        if (OperationState.isTerminal(OperationState.withName(metadata.state)) ||
+        if (batchV2Enabled(metadata.requestConf) ||
+          OperationState.isTerminal(OperationState.withName(metadata.state)) ||
           metadata.kyuubiInstance == fe.connectionUrl) {
           MetadataManager.buildBatch(metadata)
         } else {
@@ -376,7 +405,11 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       }
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
-        if (fe.connectionUrl != metadata.kyuubiInstance) {
+        if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED") {
+          info(s"Batch $batchId is waiting for scheduling")
+          val dummyLogs = List(s"Batch $batchId is waiting for scheduling").asJava
+          new OperationLog(dummyLogs, dummyLogs.size)
+        } else if (fe.connectionUrl != metadata.kyuubiInstance) {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           internalRestClient.getBatchLocalLog(userName, batchId, from, size)
         } else {
@@ -430,6 +463,16 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         checkPermission(userName, metadata.username)
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
+        } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED") {
+          if (batchService.get.cancelUnscheduledBatch(batchId)) {
+            new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
+          } else if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
+            new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
+          } else {
+            info(s"Cancel batch[$batchId] with state ${metadata.state} by killing application")
+            val (killed, msg) = forceKill(metadata.appMgrInfo, batchId)
+            new CloseBatchResponse(killed, msg)
+          }
         } else if (metadata.kyuubiInstance != fe.connectionUrl) {
           info(s"Redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}")
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)

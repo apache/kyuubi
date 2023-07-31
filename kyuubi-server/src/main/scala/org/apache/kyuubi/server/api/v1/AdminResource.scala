@@ -30,7 +30,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
-import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, ServerData, SessionData}
+import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
@@ -382,6 +382,31 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       s"${serverSpace}_${engine.getVersion}_${engine.getSharelevel}_${engine.getEngineType}",
       appUser,
       engine.getSubdomain)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[Count]))),
+    description = "get the batch count")
+  @GET
+  @Path("batch/count")
+  def countBatch(
+      @QueryParam("batchType") @DefaultValue("SPARK") batchType: String,
+      @QueryParam("batchUser") batchUser: String,
+      @QueryParam("batchState") batchState: String): Count = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received counting batches request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to count the batches")
+    }
+    val batchCount = batchService
+      .map(_.countBatch(batchType, Option(batchUser), Option(batchState)))
+      .getOrElse(0)
+    new Count(batchCount)
   }
 
   private def isAdministrator(userName: String): Boolean = {

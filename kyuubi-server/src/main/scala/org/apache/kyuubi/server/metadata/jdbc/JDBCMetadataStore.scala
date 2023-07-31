@@ -194,6 +194,43 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
+  override def pickMetadata(kyuubiInstance: String): Option[Metadata] = synchronized {
+    JdbcUtils.executeQueryWithRowMapper(
+      s"""SELECT identifier FROM $METADATA_TABLE
+         |WHERE state=?
+         |ORDER BY create_time DESC LIMIT 1
+         |""".stripMargin) { stmt =>
+      stmt.setString(1, OperationState.INITIALIZED.toString)
+    } { resultSet =>
+      resultSet.getString(1)
+    }.headOption.filter { preSelectedBatchId =>
+      JdbcUtils.executeUpdate(
+        s"""UPDATE $METADATA_TABLE
+           |SET kyuubi_instance=?, state=?
+           |WHERE identifier=? AND state=?
+           |""".stripMargin) { stmt =>
+        stmt.setString(1, kyuubiInstance)
+        stmt.setString(2, OperationState.PENDING.toString)
+        stmt.setString(3, preSelectedBatchId)
+        stmt.setString(4, OperationState.INITIALIZED.toString)
+      } == 1
+    }.map { pickedBatchId =>
+      getMetadata(pickedBatchId, stateOnly = false)
+    }
+  }
+
+  override def transformMetadataState(
+      identifier: String,
+      fromState: String,
+      targetState: String): Boolean = {
+    val query = s"UPDATE $METADATA_TABLE SET state = ? WHERE identifier = ? AND state = ?"
+    JdbcUtils.withConnection { connection =>
+      withUpdateCount(connection, query, fromState, identifier, targetState) { updateCount =>
+        updateCount == 1
+      }
+    }
+  }
+
   override def getMetadata(identifier: String, stateOnly: Boolean): Metadata = {
     val query =
       if (stateOnly) {
@@ -228,6 +265,19 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         buildMetadata(rs, stateOnly)
       }
     }
+  }
+
+  override def countMetadata(filter: MetadataFilter): Int = {
+    val queryBuilder = new StringBuilder
+    val params = ListBuffer[Any]()
+    queryBuilder.append(s"SELECT COUNT(1) FROM $METADATA_TABLE")
+    queryBuilder.append(s" ${assembleWhereClause(filter, params)}")
+    val query = queryBuilder.toString
+    JdbcUtils.executeQueryWithRowMapper(query) { stmt =>
+      setStatementParams(stmt, params)
+    } { resultSet =>
+      resultSet.getInt(1)
+    }.head
   }
 
   private def assembleWhereClause(
@@ -280,9 +330,21 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
     queryBuilder.append(s"UPDATE $METADATA_TABLE")
     val setClauses = ListBuffer[String]()
+    Option(metadata.kyuubiInstance).foreach { _ =>
+      setClauses += "kyuubi_instance = ?"
+      params += metadata.kyuubiInstance
+    }
     Option(metadata.state).foreach { _ =>
       setClauses += "state = ?"
       params += metadata.state
+    }
+    Option(metadata.requestConf).filter(_.nonEmpty).foreach { _ =>
+      setClauses += "request_conf =?"
+      params += valueAsString(metadata.requestConf)
+    }
+    metadata.clusterManager.foreach { cm =>
+      setClauses += "cluster_manager = ?"
+      params += cm
     }
     if (metadata.endTime > 0) {
       setClauses += "end_time = ?"
