@@ -21,6 +21,7 @@ import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_KEY;
 import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_TRUE;
 
+import com.google.common.util.concurrent.SimpleTimeLimiter;
 import java.io.*;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -34,6 +35,9 @@ import java.security.*;
 import java.sql.*;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -972,6 +976,45 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     } catch (TException e) {
       throw new KyuubiSQLException("Error while cleaning up the server resources", e);
     } finally {
+      isClosed = true;
+      client = null;
+      if (transport != null && transport.isOpen()) {
+        transport.close();
+        transport = null;
+      }
+    }
+  }
+
+  /**
+   * close the connection within timeout forcibly
+   *
+   * @param closeTimeout timeout for closing connection in seconds
+   * @throws SQLException
+   */
+  public void close(int closeTimeout) throws SQLException {
+    if (closeTimeout <= 0) {
+      throw new IllegalArgumentException("closeTimeout must be greater than 0");
+    }
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    try {
+      SimpleTimeLimiter.create(executor)
+          .runWithTimeout(
+              () -> {
+                if (!isClosed) {
+                  TCloseSessionReq closeReq = new TCloseSessionReq(sessHandle);
+                  try {
+                    client.CloseSession(closeReq);
+                  } catch (TException e) {
+                    throw new RuntimeException(e);
+                  }
+                }
+              },
+              closeTimeout,
+              TimeUnit.SECONDS);
+    } catch (Exception e) {
+      LOG.error("Error while closing connection with in timeout", e);
+    } finally {
+      executor.shutdownNow();
       isClosed = true;
       client = null;
       if (transport != null && transport.isOpen()) {
