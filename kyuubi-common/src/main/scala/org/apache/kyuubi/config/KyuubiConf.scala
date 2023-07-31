@@ -1613,7 +1613,7 @@ object KyuubiConf {
       .createWithDefault(true)
 
   val BATCH_API_VERSION: ConfigEntry[String] =
-    buildConf("kyuubi.batch.api.version")
+    buildConf("kyuubi.batch.impl.version")
       .internal
       .serverOnly
       .doc("Batch API version, candidates: 1, 2. " +
