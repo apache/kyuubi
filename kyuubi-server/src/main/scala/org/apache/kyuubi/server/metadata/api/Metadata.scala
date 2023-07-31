@@ -79,6 +79,7 @@ case class Metadata(
   def appMgrInfo: ApplicationManagerInfo = {
     ApplicationManagerInfo(
       clusterManager,
+      requestConf.get(ApplicationManagerInfo.SPARK_DEPLOY_MODE_KEY),
       requestConf.get(KyuubiConf.KUBERNETES_CONTEXT.key),
       requestConf.get(KyuubiConf.KUBERNETES_NAMESPACE.key))
   }

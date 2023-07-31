@@ -29,6 +29,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.ApplicationManagerInfo.SPARK_DEPLOY_MODE_KEY
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.ha.HighAvailabilityConf
@@ -204,6 +205,7 @@ class SparkProcessBuilder(
   override def appMgrInfo(): ApplicationManagerInfo = {
     ApplicationManagerInfo(
       clusterManager(),
+      deployMode(),
       kubernetesContext(),
       kubernetesNamespace())
   }
@@ -213,7 +215,7 @@ class SparkProcessBuilder(
   }
 
   def deployMode(): Option[String] = {
-    conf.getOption(DEPLOY_MODE_KEY).orElse(defaultsConf.get(DEPLOY_MODE_KEY))
+    conf.getOption(SPARK_DEPLOY_MODE_KEY).orElse(defaultsConf.get(SPARK_DEPLOY_MODE_KEY))
   }
 
   override def isClusterMode(): Boolean = {
@@ -255,7 +257,6 @@ object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
-  final val DEPLOY_MODE_KEY = "spark.submit.deployMode"
   final val KUBERNETES_CONTEXT_KEY = "spark.kubernetes.context"
   final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
   final val INTERNAL_RESOURCE = "spark-internal"
