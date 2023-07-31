@@ -39,7 +39,7 @@ kyuubi.authentication.ldap.url=ldap://hostname.com:389/
 
 ## User and Group Filter in LDAP
 
-Kyuubi also supports complex LDAP cases as https://cwiki.apache.org/confluence/display/Hive/User+and+Group+Filter+Support+with+LDAP+Atn+Provider+in+HiveServer2#UserandGroupFilterSupportwithLDAPAtnProviderinHiveServer2-UserandGroupFilterSupportwithLDAP does.
+Kyuubi also supports complex LDAP cases as [Apache Hive](https://cwiki.apache.org/confluence/display/Hive/User+and+Group+Filter+Support+with+LDAP+Atn+Provider+in+HiveServer2#UserandGroupFilterSupportwithLDAPAtnProviderinHiveServer2-UserandGroupFilterSupportwithLDAP) does.
 
 For example,
 
@@ -56,5 +56,5 @@ kyuubi.authentication.ldap.userFilter=hive-admin,hive,hive-test,hive-user
 kyuubi.authentication.ldap.customLDAPQuery=(&(objectClass=group)(objectClass=top)(instanceType=4)(cn=Domain*)), (&(objectClass=person)(|(sAMAccountName=admin)(|(memberOf=CN=Domain Admins,CN=Users,DC=domain,DC=com)(memberOf=CN=Administrators,CN=Builtin,DC=domain,DC=com))))
 ```
 
-Please refer to [Settings for LDAP authentication in Kyuubi](https://kyuubi.readthedocs.io/en/master/deployment/settings.html?highlight=LDAP#authentication)
+Please refer to [Settings for LDAP authentication in Kyuubi](../deployment/settings.html?highlight=LDAP#authentication)
 for all configurations.
