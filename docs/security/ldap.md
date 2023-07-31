@@ -15,21 +15,23 @@
 - limitations under the License.
 -->
 
-# Configure Kyuubi to Use LDAP Authentication
+# Configure Kyuubi to use LDAP Authentication
 
-Kyuubi supports authentication via LDAP. Users can log into Kyuubi using their credentials. Then, Kyuubi can request
-LDAP server to verify user's identity and grant right access permissions based on their LDAP roles and groups.
+Kyuubi can be configured to enable frontend LDAP authentication for clients, such as the BeeLine, or the JDBC and ODBC drivers.
+At present, only simple LDAP authentication mechanism involving username and password is supported. The client sends
+a username and password to the Kyuubi server, and the Kyuubi server validates these credentials using an external LDAP service.
 
 ## Enable LDAP Authentication
 
-To enable the LDAP authentication, we need to configure the following properties
-to `$KYUUBI_HOME/conf/kyuubi-defaults.conf`
-on each node where kyuubi server is installed.
+To enable LDAP authentication for Kyuubi, LDAP-related configurations is required to be configured in
+`$KYUUBI_HOME/conf/kyuubi-defaults.conf` on each node where Kyuubi server is installed.
+
+For example,
 
 ```properties example
 kyuubi.authentication=LDAP
-kyuubi.authentication.ldap.baseDN=dc=com
-kyuubi.authentication.ldap.domain=kyuubi.com
+kyuubi.authentication.ldap.baseDN=dc=org
+kyuubi.authentication.ldap.domain=apache.org
 kyuubi.authentication.ldap.binddn=uid=kyuubi,OU=Users,DC=apache,DC=org
 kyuubi.authentication.ldap.bindpw=kyuubi123123
 kyuubi.authentication.ldap.url=ldap://hostname.com:389/
@@ -37,26 +39,22 @@ kyuubi.authentication.ldap.url=ldap://hostname.com:389/
 
 ## User and Group Filter in LDAP
 
-LDAP supports various filters based on users and groups, which can restrict the set of users allowed to connect to
-Kyuubi.
-For more details
-[User and Group Filter Support with LDAP](https://cwiki.apache.org/confluence/display/Hive/User+and+Group+Filter+Support+with+LDAP+Atn+Provider+in+HiveServer2#UserandGroupFilterSupportwithLDAPAtnProviderinHiveServer2-UserandGroupFilterSupportwithLDAP)
+Kyuubi also supports complex LDAP cases as https://cwiki.apache.org/confluence/display/Hive/User+and+Group+Filter+Support+with+LDAP+Atn+Provider+in+HiveServer2#UserandGroupFilterSupportwithLDAPAtnProviderinHiveServer2-UserandGroupFilterSupportwithLDAP does.
 
-There are some extra optional properties to set up LDAP user and group filters in Kyuubi.
+For example,
 
 ```properties example
-#Group Membership
+# Group Membership
 kyuubi.authentication.ldap.groupClassKey=groupOfNames
 kyuubi.authentication.ldap.groupDNPattern=CN=%s,OU=Groups,DC=apache,DC=org
 kyuubi.authentication.ldap.groupFilter=group1,group2
 kyuubi.authentication.ldap.groupMembershipKey=memberUid
-#User Search List
+# User Search List
 kyuubi.authentication.ldap.userDNPattern=CN=%s,CN=Users,DC=apache,DC=org
-kyuubi.authentication.ldap.userFilter=hive-admin,hive,hivetest,hive-user
-#Custom Query
+kyuubi.authentication.ldap.userFilter=hive-admin,hive,hive-test,hive-user
+# Custom Query
 kyuubi.authentication.ldap.customLDAPQuery=(&(objectClass=group)(objectClass=top)(instanceType=4)(cn=Domain*)), (&(objectClass=person)(|(sAMAccountName=admin)(|(memberOf=CN=Domain Admins,CN=Users,DC=domain,DC=com)(memberOf=CN=Administrators,CN=Builtin,DC=domain,DC=com))))
 ```
 
-Please refer
-to [Settings for LDAP authentication in Kyuubi](https://kyuubi.readthedocs.io/en/master/deployment/settings.html?highlight=LDAP#authentication)
+Please refer to [Settings for LDAP authentication in Kyuubi](https://kyuubi.readthedocs.io/en/master/deployment/settings.html?highlight=LDAP#authentication)
 for all configurations.
