@@ -75,7 +75,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
       .set(KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER, "simple")
       .set(KyuubiConf.SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET, "ENGINE____SECRET")
-      .set(KyuubiConf.BATCH_API_VERSION, batchVersion)
+      .set(KyuubiConf.BATCH_IMPL_VERSION, batchVersion)
       .set(
         KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST,
         Seq(Paths.get(sparkBatchTestResource.get).getParent.toString))

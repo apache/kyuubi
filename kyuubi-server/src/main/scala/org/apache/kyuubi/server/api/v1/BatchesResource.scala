@@ -59,7 +59,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT).toInt
 
   private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
-    reqConf.getOrElse(BATCH_API_VERSION.key, fe.getConf.get(BATCH_API_VERSION)) == "2"
+    reqConf.getOrElse(BATCH_IMPL_VERSION.key, fe.getConf.get(BATCH_IMPL_VERSION)) == "2"
   }
 
   private def getInternalRestClient(kyuubiInstance: String): InternalRestClient = {

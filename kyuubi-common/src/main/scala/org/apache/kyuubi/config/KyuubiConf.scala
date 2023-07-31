@@ -1612,7 +1612,7 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  val BATCH_API_VERSION: ConfigEntry[String] =
+  val BATCH_IMPL_VERSION: ConfigEntry[String] =
     buildConf("kyuubi.batch.impl.version")
       .internal
       .serverOnly
