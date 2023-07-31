@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_KEY;
 import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_TRUE;
@@ -992,9 +993,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
    * @throws SQLException
    */
   public void close(int closeTimeout) throws SQLException {
-    if (closeTimeout <= 0) {
-      throw new IllegalArgumentException("closeTimeout must be greater than 0");
-    }
+    checkArgument(closeTimeout > 0, "closeTimeout must be greater than 0");
     ExecutorService executor = Executors.newSingleThreadExecutor();
     try {
       SimpleTimeLimiter.create(executor)
