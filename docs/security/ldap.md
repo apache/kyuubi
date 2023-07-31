@@ -35,10 +35,28 @@ kyuubi.authentication.ldap.bindpw=kyuubi123123
 kyuubi.authentication.ldap.url=ldap://hostname.com:389/
 ```
 
+## User and Group Filter in LDAP
+
 LDAP supports various filters based on users and groups, which can restrict the set of users allowed to connect to
 Kyuubi.
 For more details
-in [User and Group Filter Support with LDAP](https://cwiki.apache.org/confluence/display/Hive/User+and+Group+Filter+Support+with+LDAP+Atn+Provider+in+HiveServer2#UserandGroupFilterSupportwithLDAPAtnProviderinHiveServer2-UserandGroupFilterSupportwithLDAP)
+[User and Group Filter Support with LDAP](https://cwiki.apache.org/confluence/display/Hive/User+and+Group+Filter+Support+with+LDAP+Atn+Provider+in+HiveServer2#UserandGroupFilterSupportwithLDAPAtnProviderinHiveServer2-UserandGroupFilterSupportwithLDAP)
 
-There are some extra optional properties to set up LDAP user and group filters in Kyuubi. Please refer
+There are some extra optional properties to set up LDAP user and group filters in Kyuubi.
+
+```properties example
+#Group Membership
+kyuubi.authentication.ldap.groupClassKey=groupOfNames
+kyuubi.authentication.ldap.groupDNPattern=CN=%s,OU=Groups,DC=apache,DC=org
+kyuubi.authentication.ldap.groupFilter=group1,group2
+kyuubi.authentication.ldap.groupMembershipKey=memberUid
+#User Search List
+kyuubi.authentication.ldap.userDNPattern=CN=%s,CN=Users,DC=apache,DC=org
+kyuubi.authentication.ldap.userFilter=hive-admin,hive,hivetest,hive-user
+#Custom Query
+kyuubi.authentication.ldap.customLDAPQuery=(&(objectClass=group)(objectClass=top)(instanceType=4)(cn=Domain*)), (&(objectClass=person)(|(sAMAccountName=admin)(|(memberOf=CN=Domain Admins,CN=Users,DC=domain,DC=com)(memberOf=CN=Administrators,CN=Builtin,DC=domain,DC=com))))
+```
+
+Please refer
 to [Settings for LDAP authentication in Kyuubi](https://kyuubi.readthedocs.io/en/master/deployment/settings.html?highlight=LDAP#authentication)
+for all configurations.
