@@ -55,7 +55,7 @@ object KyuubiGetSqlClassification extends Logging {
    *    You need to make sure that the configuration item: SQL_CLASSIFICATION_ENABLED
    *   is true
    * @param simpleName: the analyzied_logical_plan's getSimpleName
-   * @return: This sql's classification
+   * @return This sql's classification
    */
   def getSqlClassification(simpleName: String): String = {
     jsonNode.map { json =>

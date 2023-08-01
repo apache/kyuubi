@@ -115,8 +115,7 @@ public class BatchRestApi {
 
   private void setClientVersion(BatchRequest request) {
     if (request != null) {
-      Map<String, String> newConf = new HashMap<>();
-      newConf.putAll(request.getConf());
+      Map<String, String> newConf = new HashMap<>(request.getConf());
       newConf.put(VersionUtils.KYUUBI_CLIENT_VERSION_KEY, VersionUtils.getVersion());
       request.setConf(newConf);
     }
