@@ -16,16 +16,23 @@
 */}}
 
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ .Release.Name }}
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       {{- include "kyuubi.selectorLabels" . | nindent 6 }}
+  serviceName: {{ .Release.Name }}-headless
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  podManagementPolicy: {{ .Values.podManagementPolicy }}
+  {{- with .Values.updateStrategy }}
+  updateStrategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
   template:
     metadata:
       labels:

@@ -22,6 +22,26 @@
 # Kyuubi server numbers
 replicaCount: 2
 
+# controls how Kyuubi server pods are created during initial scale up,
+# when replacing pods on nodes, or when scaling down.
+# The default policy is `OrderedReady`, alternative policy is `Parallel`.
+podManagementPolicy: OrderedReady
+
+# Minimum number of seconds for which a newly created kyuubi server
+# should be ready without any of its container crashing for it to be considered available.
+minReadySeconds: 30
+
+# maximum number of revisions that will be maintained in the StatefulSet's revision history.
+revisionHistoryLimit: 10
+
+# indicates the StatefulSetUpdateStrategy that will be employed to update Kyuubi server Pods in the StatefulSet
+# when a revision is made to Template.
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    partition: 0
+
 image:
   repository: apache/kyuubi
   pullPolicy: IfNotPresent
