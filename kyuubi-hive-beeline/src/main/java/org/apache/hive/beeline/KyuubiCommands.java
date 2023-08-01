@@ -86,10 +86,9 @@ public class KyuubiCommands extends Commands {
   }
 
   private boolean sourceFileInternal(File sourceFile) throws IOException {
-    BufferedReader reader = null;
-    try {
-      reader = new BufferedReader(new FileReader(sourceFile));
-      String lines = null, extra;
+    try (BufferedReader reader = new BufferedReader(new FileReader(sourceFile))) {
+      String lines = null;
+      String extra;
       while ((extra = reader.readLine()) != null) {
         if (beeLine.isComment(extra)) {
           continue;
@@ -106,10 +105,6 @@ public class KyuubiCommands extends Commands {
         if (!executeInternal(c, false)) {
           return false;
         }
-      }
-    } finally {
-      if (reader != null) {
-        reader.close();
       }
     }
     return true;
