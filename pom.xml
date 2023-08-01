@@ -145,7 +145,7 @@
         <grpc.version>1.53.0</grpc.version>
         <guava.version>32.0.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
-        <hadoop.version>3.3.5</hadoop.version>
+        <hadoop.version>3.3.6</hadoop.version>
         <hikaricp.version>4.0.3</hikaricp.version>
         <derby.version>10.14.2.0</derby.version>
         <fliptables.verion>1.0.2</fliptables.verion>
