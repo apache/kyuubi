@@ -23,7 +23,8 @@ import scala.util.{Failure, Success, Try}
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_JDBC_SESSION_INITIALIZE_SQL
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.engine.jdbc.util.KyuubiJdbcUtils
@@ -45,7 +46,16 @@ class JdbcSessionImpl(
 
   private var databaseMetaData: DatabaseMetaData = _
 
-  private val kyuubiConf = sessionManager.getConf
+  private val kyuubiConf: KyuubiConf = normalizeConf
+
+  private def normalizeConf: KyuubiConf = {
+    val kyuubiConf = sessionManager.getConf.clone
+    if (kyuubiConf.get(ENGINE_JDBC_CONNECTION_PROPAGATECREDENTIAL)) {
+      kyuubiConf.set(ENGINE_JDBC_CONNECTION_USER, user)
+      kyuubiConf.set(ENGINE_JDBC_CONNECTION_PASSWORD, password)
+    }
+    kyuubiConf
+  }
 
   override def open(): Unit = {
     info(s"Starting to open jdbc session.")
