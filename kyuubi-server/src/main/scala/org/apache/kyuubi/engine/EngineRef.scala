@@ -195,6 +195,7 @@ private[kyuubi] class EngineRef(
       case TRINO =>
         new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case HIVE_SQL =>
+        conf.setIfMissing(HiveProcessBuilder.HIVE_ENGINE_NAME, defaultEngineName)
         new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case JDBC =>
         new JdbcProcessBuilder(appUser, conf, engineRefId, extraEngineLog)

@@ -61,4 +61,21 @@ class KyuubiOperationHiveEnginePerUserSuite extends WithKyuubiServer with HiveEn
       }
     }
   }
+
+  test("kyuubi defined function - system_user, session_user") {
+    withJdbcStatement("hive_engine_test") { statement =>
+      val rs = statement.executeQuery("SELECT system_user(), session_user()")
+      assert(rs.next())
+      assert(rs.getString(1) === Utils.currentUser)
+      assert(rs.getString(2) === Utils.currentUser)
+    }
+  }
+
+  test("kyuubi defined function - engine_id") {
+    withJdbcStatement("hive_engine_test") { statement =>
+      val rs = statement.executeQuery("SELECT engine_id()")
+      assert(rs.next())
+      assert(rs.getString(1).nonEmpty)
+    }
+  }
 }
