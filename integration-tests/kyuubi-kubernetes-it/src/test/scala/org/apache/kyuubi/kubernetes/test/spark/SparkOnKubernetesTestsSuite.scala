@@ -45,7 +45,10 @@ abstract class SparkOnKubernetesSuiteBase
   }
 
   protected val appMgrInfo =
-    ApplicationManagerInfo(Some(s"k8s://$apiServerAddress"), Some("cluster") Some("minikube"), None)
+    ApplicationManagerInfo(
+      Some(s"k8s://$apiServerAddress"),
+      Some("cluster") Some ("minikube"),
+      None)
 
   protected def sparkOnK8sConf: KyuubiConf = {
     // TODO Support more Spark version
