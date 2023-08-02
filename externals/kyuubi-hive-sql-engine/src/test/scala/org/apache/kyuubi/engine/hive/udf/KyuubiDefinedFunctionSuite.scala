@@ -48,17 +48,16 @@ class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
   test("verify or update kyuubi hive sql functions") {
     val builder = MarkdownBuilder(licenced = true, getClass.getName)
 
-    builder
-      .line("# Auxiliary SQL Functions")
-      .line("""Kyuubi provides several auxiliary SQL functions as supplement to Hive's
+    builder += "# Auxiliary SQL Functions" +=
+      """Kyuubi provides several auxiliary SQL functions as supplement to Hive's
         | [Built-in Functions](https://cwiki.apache.org/confluence/display/hive/languagemanual+udf#
-        |LanguageManualUDF-Built-inFunctions)""")
-      .lines("""
+        |LanguageManualUDF-Built-inFunctions)""" ++=
+      """
         | Name | Description | Return Type | Since
         | --- | --- | --- | ---
-        |""")
+        |"""
     KDFRegistry.registeredFunctions.foreach { func =>
-      builder.line(s"${func.name} | ${func.description} | ${func.returnType} | ${func.since}")
+      builder += s"${func.name} | ${func.description} | ${func.returnType} | ${func.since}"
     }
 
     MarkdownUtils.verifyOutput(
