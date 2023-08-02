@@ -16,5 +16,9 @@
 # limitations under the License.
 #
 
-KYUUBI_UPDATE=1 build/mvn clean test \
-  -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -Dtest=none -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
+KYUUBI_UPDATE=1 \
+build/mvn clean test \
+  -pl :kyuubi-spark-authz_2.12 \
+  -Pgen-policy \
+  -Dtest=none \
+  -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.JsonSpecFileGenerator

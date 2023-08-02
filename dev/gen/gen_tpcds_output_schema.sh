@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
-KYUUBI_UPDATE=1 build/mvn clean install \
+KYUUBI_UPDATE=1 \
+build/mvn clean install \
   -Dmaven.plugin.scalatest.exclude.tags="" \
   -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite

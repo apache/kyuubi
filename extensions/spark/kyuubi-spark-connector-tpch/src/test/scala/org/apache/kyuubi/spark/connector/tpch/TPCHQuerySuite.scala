@@ -40,10 +40,7 @@ import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSessi
  *
  * To re-generate golden files for this suite:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn clean install \
- *     -pl extensions/spark/kyuubi-spark-connector-tpch -am \
- *     -Dmaven.plugin.scalatest.exclude.tags="" \
- *     -Dtest=none -DwildcardSuites=org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
+ *   sh dev/gen/gen_tpcdh_queries.sh
  * }}}
  */
 // scalastyle:on line.size.limit

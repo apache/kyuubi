@@ -16,5 +16,8 @@
 # limitations under the License.
 #
 
-KYUUBI_UPDATE=1 build/mvn clean test \
-  -pl externals/kyuubi-spark-sql-engine -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite
+KYUUBI_UPDATE=1 \
+build/mvn clean test \
+  -pl externals/kyuubi-spark-sql-engine -am \
+  -Pflink-provided,spark-provided,hive-provided \
+  -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite

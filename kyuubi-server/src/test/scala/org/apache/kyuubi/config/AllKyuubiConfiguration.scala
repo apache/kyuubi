@@ -40,7 +40,7 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
  *
  * To re-generate golden files for entire suite, run:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn clean test -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -Dtest=none -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
+ *   sh dev/gen/gen_all_config_docs.sh
  * }}}
  */
 // scalastyle:on line.size.limit
