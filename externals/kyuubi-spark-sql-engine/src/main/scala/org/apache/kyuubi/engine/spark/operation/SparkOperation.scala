@@ -50,7 +50,12 @@ abstract class SparkOperation(session: Session)
 
   private val timeZone: ZoneId = {
     spark.conf.getOption(TIMEZONE_KEY).map { timeZoneId =>
-      ZoneId.of(timeZoneId.replaceFirst("([+\\-])(\\d):", "$10$2:"), ZoneId.SHORT_IDS)
+      val formattedZoneId = timeZoneId
+        // To support the (+|-)h:mm format because it was supported before Spark 3.0.
+        .replaceFirst("([+\\-])(\\d):", "$10$2:")
+        // To support the (+|-)hh:m format because it was supported before Spark 3.0.
+        .replaceFirst("([+\\-])(\\d\\d):(\\d)$", "$1$2:0$3")
+      ZoneId.of(formattedZoneId, ZoneId.SHORT_IDS)
     }.getOrElse(ZoneId.systemDefault())
   }
 
