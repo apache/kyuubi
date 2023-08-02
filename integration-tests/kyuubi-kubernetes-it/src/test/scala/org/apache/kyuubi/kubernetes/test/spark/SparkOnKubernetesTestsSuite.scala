@@ -29,8 +29,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
-import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationOperation,
-  KubernetesApplicationOperation}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, KubernetesApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, NOT_FOUND, RUNNING}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
