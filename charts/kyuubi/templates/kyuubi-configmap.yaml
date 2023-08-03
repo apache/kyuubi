@@ -37,6 +37,10 @@ data:
     kyuubi.frontend.mysql.bind.port={{ .Values.server.mysql.port }}
     kyuubi.frontend.protocols={{ include "kyuubi.frontend.protocols" . }}
 
+    # Kyuubi Metrics
+    kyuubi.metrics.enabled={{ .Values.monitor.enable }}
+    kyuubi.metrics.reporters={{ .Values.monitor.reporters }}
+
     ## User provided Kyuubi configurations
     {{- with .Values.kyuubiConf.kyuubiDefaults }}
       {{- tpl . $ | nindent 4 }}

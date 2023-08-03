@@ -15,29 +15,17 @@
   limitations under the License.
 */}}
 
-{{- range $name, $frontend := .Values.server }}
-{{- if $frontend.enabled }}
-apiVersion: v1
-kind: Service
+{{- if and .Values.monitor.enable (eq .Values.monitor.reporters "PROMETHEUS") .Values.serviceMonitor.enable }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
 metadata:
-  name: {{ $.Release.Name }}-{{ $name | kebabcase }}
+  name: {{ $.Release.Name }}
   labels:
-    {{- include "kyuubi.labels" $ | nindent 4 }}
-  {{- with $frontend.service.annotations }}
-  annotations: {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- include "kyuubi.labels" . | nindent 4 }}
 spec:
-  type: {{ $frontend.service.type }}
-  ports:
-    - name: {{ $name | kebabcase }}
-      port: {{ tpl $frontend.service.port $ }}
-      targetPort: {{ $frontend.port }}
-      {{- if and (eq $frontend.service.type "NodePort") ($frontend.service.nodePort) }}
-      nodePort: {{ $frontend.service.nodePort }}
-      {{- end }}
-    {{- include "kyuubi.service.metrics" $ | nindent 4 }}
   selector:
-    {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
----
-{{- end }}
+    matchLabels:
+      app: {{ $.Release.Name }}
+  endpoints:
+    {{- toYaml .Values.serviceMonitor.endpoints | nindent 4 }}
 {{- end }}
