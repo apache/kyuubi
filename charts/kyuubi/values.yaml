@@ -195,24 +195,22 @@ securityContext: {}
 
 # Monitoring Kyuubi - Server Metrics
 # PROMETHEUS - PrometheusReporter which exposes metrics in Prometheus format
-metricsReporters: PROMETHEUS
+metricsReporters: ~
 
 # Prometheus pod monitor
 podMonitor:
   # If enabled, podMonitor for operator's pod will be created
   enabled: true
-  # port: prometheus metrics endpoint properties.
-  # interval: podMonitor scrape interval
-  # scheme: podMonitor will use http by default, but you can pick https as well
+  # The podMetricsEndpoint contains metrics information such as port, interval, scheme, and possibly other relevant details.
+  # This information is used to configure the endpoint from which Prometheus can scrape and collect metrics for a specific Pod in Kubernetes.
   podMetricsEndpoint: []
 
 # Prometheus service monitor
 serviceMonitor:
   # If enabled, ServiceMonitor resources for Prometheus Operator are created
   enabled: true
-  # port: port number of the target service to be monitored
-  # interval: serviceMonitor scrape interval
-  # scheme: serviceMonitor will use http by default, but you can pick https as well
+  # The endpoints section in a ServiceMonitor specifies the metrics information for each target endpoint.
+  # This allows you to collect metrics from multiple Services across your Kubernetes cluster in a standardized and automated way.
   endpoints: []
 
 # Rules for the Prometheus Operator
