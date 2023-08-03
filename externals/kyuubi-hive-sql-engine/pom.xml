@@ -163,6 +163,12 @@
             <artifactId>HikariCP</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-all</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
