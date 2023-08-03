@@ -133,6 +133,13 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
     }
   }
 
+  test("test list all engines") {
+    val args = Array("list", "allengines")
+    val opArgs = new AdminControlCliArguments(args)
+    assert(opArgs.cliConfig.action.toString === "LIST")
+    assert(opArgs.cliConfig.resource.toString === "ALLENGINES")
+  }
+
   test("test list server") {
     val args = Array("list", "server")
     val opArgs = new AdminControlCliArguments(args)
@@ -155,7 +162,7 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |  --hs2ProxyUser <value>   The value of hive.server2.proxy.user config.
          |  --conf <value>           Kyuubi config property pair, formatted key=value.
          |
-         |Command: list [engine|server]
+         |Command: list [engine|allengines|server]
          |	List information about resources.
          |Command: list engine [options]
          |	List all the engine nodes for a user
@@ -165,6 +172,8 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |                           The engine subdomain this engine belong to.
          |  -esl, --engine-share-level <value>
          |                           The engine share level this engine belong to.
+         |Command: list allengines
+         |	List all the engine nodes
          |Command: list server
          |	List all the server nodes
          |

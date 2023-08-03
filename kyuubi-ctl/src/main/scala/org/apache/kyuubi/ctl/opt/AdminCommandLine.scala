@@ -65,6 +65,7 @@ object AdminCommandLine extends CommonCommandLine {
         .action((_, c) => c.copy(action = ControlAction.LIST))
         .children(
           engineCmd(builder).text("\tList all the engine nodes for a user"),
+          allEnginesCmd(builder).text("\tList all the engine nodes"),
           serverCmd(builder).text("\tList all the server nodes")))
 
   }
@@ -93,6 +94,11 @@ object AdminCommandLine extends CommonCommandLine {
         opt[String]("engine-share-level").abbr("esl")
           .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(engineShareLevel = v)))
           .text("The engine share level this engine belong to."))
+  }
+
+  private def allEnginesCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("allengines").action((_, c) => c.copy(resource = ControlObject.ALLENGINES))
   }
 
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {

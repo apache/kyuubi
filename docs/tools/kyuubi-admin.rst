@@ -100,6 +100,14 @@ Usage: ``bin/kyuubi-admin list engine [options]``
    * - --hs2ProxyUser
      - The proxy user to impersonate. When specified, it will list engines for the hs2ProxyUser.
 
+.. _list_allengines:
+List AllEngines
+-------------------------------------
+
+Prints a table of the key information about the engines.
+
+Usage: ``bin/kyuubi-admin list allengines``
+
 .. _list_server:
 
 List Servers
