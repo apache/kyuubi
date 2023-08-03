@@ -68,10 +68,6 @@ spec:
               containerPort: {{ $frontend.port }}
             {{- end }}
             {{- end }}
-            {{- if and .Values.monitor.enable (eq .Values.monitor.reporters "PROMETHEUS") }}
-            - name: {{ .Values.monitor.metrics.name }}
-              containerPort: {{ .Values.monitor.metrics.port }}
-            {{- end }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             exec:

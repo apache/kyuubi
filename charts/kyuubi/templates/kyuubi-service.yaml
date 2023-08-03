@@ -35,7 +35,6 @@ spec:
       {{- if and (eq $frontend.service.type "NodePort") ($frontend.service.nodePort) }}
       nodePort: {{ $frontend.service.nodePort }}
       {{- end }}
-    {{- include "kyuubi.service.metrics" $ | nindent 4 }}
   selector:
     {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
 ---

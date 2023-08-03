@@ -33,20 +33,6 @@ For details, see 'kyuubi.frontend.protocols': https://kyuubi.readthedocs.io/en/m
 {{- end }}
 
 {{/*
-If enabled, Prometheus can use this service to collect metric data from the Kyuubi application.
-*/}}
-{{- define "kyuubi.service.metrics" -}}
-{{- if and (.Values.monitor.enable) (eq .Values.monitor.reporters "PROMETHEUS") -}}
-- name: {{ .Values.monitor.metrics.name }}
-  port: {{ .Values.monitor.metrics.port }}
-  targetPort: {{ .Values.monitor.metrics.targetPort }}
-  {{- if and (eq .Values.monitor.metrics.type "NodePort") .Values.monitor.metrics.nodePort }}
-  nodePort: {{ .Values.monitor.metrics.nodePort }}
-  {{- end }}
-{{- end }}
-{{- end }}
-
-{{/*
 Selector labels
 */}}
 {{- define "kyuubi.selectorLabels" -}}

@@ -96,6 +96,16 @@ server:
       nodePort: ~
       annotations: {}
 
+  # Exposes metrics in Prometheus format
+  prometheus:
+    enabled: true
+    port: 10019
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.prometheus.port }}"
+      nodePort: ~
+      annotations: {}
+
 # $KYUUBI_CONF_DIR directory
 kyuubiConfDir: /opt/kyuubi/conf
 # Kyuubi configurations files
@@ -184,21 +194,13 @@ affinity: {}
 securityContext: {}
 
 # Monitoring Kyuubi - Server Metrics
-monitor:
-  enable: true
-  # PROMETHEUS - PrometheusReporter which exposes metrics in Prometheus format
-  reporters: ~
-  metrics:
-    name: ~
-    port: 10019
-    targetPort: ~
-    nodePort: ~
-    type: ClusterIP
+# PROMETHEUS - PrometheusReporter which exposes metrics in Prometheus format
+metricsReporters: PROMETHEUS
 
 # Prometheus pod monitor
 podMonitor:
   # If enabled, podMonitor for operator's pod will be created
-  enable: true
+  enabled: true
   # port: prometheus metrics endpoint properties.
   # interval: podMonitor scrape interval
   # scheme: podMonitor will use http by default, but you can pick https as well
@@ -207,7 +209,7 @@ podMonitor:
 # Prometheus service monitor
 serviceMonitor:
   # If enabled, ServiceMonitor resources for Prometheus Operator are created
-  enable: true
+  enabled: true
   # port: port number of the target service to be monitored
   # interval: serviceMonitor scrape interval
   # scheme: serviceMonitor will use http by default, but you can pick https as well
@@ -216,6 +218,6 @@ serviceMonitor:
 # Rules for the Prometheus Operator
 prometheusRule:
   # If enabled, a PrometheusRule resource for Prometheus Operator is created
-  enable: true
+  enabled: true
   # Contents of Prometheus rules file
   groups: []
