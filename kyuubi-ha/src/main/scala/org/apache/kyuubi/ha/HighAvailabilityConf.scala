@@ -100,7 +100,6 @@ object HighAvailabilityConf {
 
   val HA_ZK_AUTH_PRINCIPAL: ConfigEntry[Option[String]] =
     buildConf("kyuubi.ha.zookeeper.auth.principal")
-      .withAlternative("kyuubi.ha.zookeeper.auth.principal")
       .doc("Name of the Kerberos principal is used for ZooKeeper authentication.")
       .version("1.3.2")
       .fallbackConf(KyuubiConf.SERVER_PRINCIPAL)
