@@ -30,6 +30,22 @@ import org.apache.kyuubi.util.reflect.DynFields;
 import org.apache.kyuubi.util.reflect.DynMethods;
 
 public class KyuubiBeeLine extends BeeLine {
+
+  static {
+    try {
+      // We use reflection here to handle the case where users remove the
+      // slf4j-to-jul bridge order to route their logs to JUL.
+      Class<?> bridgeClass = Class.forName("org.slf4j.bridge.SLF4JBridgeHandler");
+      bridgeClass.getMethod("removeHandlersForRootLogger").invoke(null);
+      boolean installed = (boolean) bridgeClass.getMethod("isInstalled").invoke(null);
+      if (!installed) {
+        bridgeClass.getMethod("install").invoke(null);
+      }
+    } catch (ReflectiveOperationException cnf) {
+      // can't log anything yet so just fail silently
+    }
+  }
+
   public static final String KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER =
       "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
   protected KyuubiCommands commands = new KyuubiCommands(this);
