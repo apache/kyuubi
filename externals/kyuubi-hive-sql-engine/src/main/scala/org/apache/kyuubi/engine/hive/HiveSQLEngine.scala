@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.hive
 
 import java.security.PrivilegedExceptionAction
+import java.time.Instant
 
 import scala.util.control.NonFatal
 
@@ -65,6 +66,7 @@ object HiveSQLEngine extends Logging {
   var currentEngine: Option[HiveSQLEngine] = None
   val hiveConf = new HiveConf()
   val kyuubiConf = new KyuubiConf()
+  val user = UserGroupInformation.getCurrentUser.getShortUserName
 
   def startEngine(): Unit = {
     try {
@@ -97,6 +99,8 @@ object HiveSQLEngine extends Logging {
     }
 
     val engine = new HiveSQLEngine()
+    val appName = s"kyuubi_${user}_hive_${Instant.now}"
+    hiveConf.setIfUnset("hive.engine.name", appName)
     info(s"Starting ${engine.getName}")
     engine.initialize(kyuubiConf)
     EventBus.post(HiveEngineEvent(engine))

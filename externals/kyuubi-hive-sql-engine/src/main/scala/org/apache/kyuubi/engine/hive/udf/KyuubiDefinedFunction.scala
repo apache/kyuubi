@@ -15,18 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.spark.connector.kudu
+package org.apache.kyuubi.engine.hive.udf
 
-import org.apache.kudu.client.KuduClient
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDF
 
-import org.apache.kyuubi.KyuubiFunSuite
-
-class KuduClientSuite extends KyuubiFunSuite with KuduMixin {
-
-  test("kudu client") {
-    val builder = new KuduClient.KuduClientBuilder(kuduMasterUrl)
-    val kuduClient = builder.build()
-
-    assert(kuduClient.findLeaderMasterServer().getPort === kuduMasterPort)
-  }
-}
+/**
+ * A wrapper for Hive's [[UserDefinedFunction]]
+ *
+ * @param name function name
+ * @param udf user-defined function
+ * @param description function description
+ */
+case class KyuubiDefinedFunction(
+    name: String,
+    udf: GenericUDF,
+    description: String,
+    returnType: String,
+    since: String)

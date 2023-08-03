@@ -1612,6 +1612,41 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val BATCH_IMPL_VERSION: ConfigEntry[String] =
+    buildConf("kyuubi.batch.impl.version")
+      .internal
+      .serverOnly
+      .doc("Batch API version, candidates: 1, 2. " +
+        "Note: Batch API v2 is experimental and under rapid development, this configuration " +
+        "is added to allow explorers conveniently testing the developing Batch v2 API, not " +
+        "intended exposing to end users, it may be removed in anytime.")
+      .version("1.8.0")
+      .stringConf
+      .createWithDefault("1")
+
+  val BATCH_SUBMITTER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.batch.submitter.enabled")
+      .internal
+      .serverOnly
+      .doc("When Batch API v2 is enabled, Kyuubi server requires to pick the INITIALIZED " +
+        "batch job from metastore and submits it to Resource Manager. " +
+        "Note: Batch API v2 is experimental and under rapid development, this configuration " +
+        "is added to allow explorers conveniently testing the developing Batch v2 API, not " +
+        "intended exposing to end users, it may be removed in anytime.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val BATCH_SUBMITTER_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.batch.submitter.threads")
+      .internal
+      .serverOnly
+      .doc("Number of threads in batch job submitter, this configuration only take effects " +
+        s"when ${BATCH_SUBMITTER_ENABLED.key} is enabled")
+      .version("1.8.0")
+      .intConf
+      .createWithDefault(100)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
@@ -2981,4 +3016,16 @@ object KyuubiConf {
       .version("1.8.0")
       .booleanConf
       .createWithDefault(false)
+
+  val SERVER_LIMIT_ENGINE_CREATION: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.limit.engine.startup")
+      .internal
+      .doc("The maximum engine startup concurrency of kyuubi server. Highly concurrent engine" +
+        " startup processes may lead to high load on the kyuubi server machine," +
+        " this configuration is used to limit the number of engine startup processes" +
+        " running at the same time to avoid it.")
+      .version("1.8.0")
+      .serverOnly
+      .intConf
+      .createOptional
 }

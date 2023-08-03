@@ -250,9 +250,6 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
       metadataResp = client.GetResultSetMetadata(metadataReq);
       Utils.verifySuccess(metadataResp.getStatus());
 
-      StringBuilder namesSb = new StringBuilder();
-      StringBuilder typesSb = new StringBuilder();
-
       TTableSchema schema = metadataResp.getSchema();
       if (schema == null || !schema.isSetColumns()) {
         // TODO: should probably throw an exception here.
@@ -262,10 +259,6 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
 
       List<TColumnDesc> columns = schema.getColumns();
       for (int pos = 0; pos < schema.getColumnsSize(); pos++) {
-        if (pos != 0) {
-          namesSb.append(",");
-          typesSb.append(",");
-        }
         String columnName = columns.get(pos).getColumnName();
         columnNames.add(columnName);
         normalizedColumnNames.add(columnName.toLowerCase());

@@ -21,6 +21,7 @@ import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.*;
+import java.nio.file.Files;
 import java.sql.*;
 import java.util.*;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
@@ -86,10 +87,9 @@ public class KyuubiCommands extends Commands {
   }
 
   private boolean sourceFileInternal(File sourceFile) throws IOException {
-    BufferedReader reader = null;
-    try {
-      reader = new BufferedReader(new FileReader(sourceFile));
-      String lines = null, extra;
+    try (BufferedReader reader = Files.newBufferedReader(sourceFile.toPath())) {
+      String lines = null;
+      String extra;
       while ((extra = reader.readLine()) != null) {
         if (beeLine.isComment(extra)) {
           continue;
@@ -106,10 +106,6 @@ public class KyuubiCommands extends Commands {
         if (!executeInternal(c, false)) {
           return false;
         }
-      }
-    } finally {
-      if (reader != null) {
-        reader.close();
       }
     }
     return true;

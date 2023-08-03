@@ -29,6 +29,23 @@ trait MetadataStore extends Closeable {
   def insertMetadata(metadata: Metadata): Unit
 
   /**
+   * Find unscheduled batch job metadata and pick up it to submit.
+   * @param kyuubiInstance the Kyuubi instance picked batch job
+   * @return selected metadata for submitting or None if no sufficient items
+   */
+  def pickMetadata(kyuubiInstance: String): Option[Metadata]
+
+  /**
+   * Transfer state of metadata from the existing state to another
+   * @param identifier the identifier.
+   * @param fromState the desired current state
+   * @param targetState the desired target state
+   * @return `true` if the metadata state was same as `fromState`, and successfully
+   *         transitioned to `targetState`, otherwise `false` is returned
+   */
+  def transformMetadataState(identifier: String, fromState: String, targetState: String): Boolean
+
+  /**
    * Get the persisted metadata by batch identifier.
    * @param identifier the identifier.
    * @param stateOnly only return the state related column values.
@@ -49,6 +66,13 @@ trait MetadataStore extends Closeable {
       from: Int,
       size: Int,
       stateOnly: Boolean): Seq[Metadata]
+
+  /**
+   * Count the metadata list with filter conditions.
+   * @param filter the metadata filter conditions.
+   * @return the count of metadata satisfied the filter condition.
+   */
+  def countMetadata(filter: MetadataFilter): Int
 
   /**
    * Update the metadata according to identifier.

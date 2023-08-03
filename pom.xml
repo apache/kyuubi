@@ -145,7 +145,7 @@
         <grpc.version>1.53.0</grpc.version>
         <guava.version>32.0.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
-        <hadoop.version>3.3.5</hadoop.version>
+        <hadoop.version>3.3.6</hadoop.version>
         <hikaricp.version>4.0.3</hikaricp.version>
         <derby.version>10.14.2.0</derby.version>
         <fliptables.verion>1.0.2</fliptables.verion>
@@ -169,7 +169,6 @@
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.4.0</kafka.version>
         <kubernetes-client.version>6.7.2</kubernetes-client.version>
-        <kudu.version>1.15.0</kudu.version>
         <kyuubi-shaded-zookeeper.artifacts>kyuubi-shaded-zookeeper-34</kyuubi-shaded-zookeeper.artifacts>
         <kyuubi-shaded-zookeeper.version>0.1.0</kyuubi-shaded-zookeeper.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
@@ -1462,11 +1461,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.apache.kudu</groupId>
-                <artifactId>kudu-client</artifactId>
-                <version>${kudu.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>net.sf.py4j</groupId>
                 <artifactId>py4j</artifactId>
                 <version>${py4j.version}</version>
@@ -2166,7 +2160,6 @@
                 <module>extensions/spark/kyuubi-extension-spark-common</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-3</module>
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
-                <module>extensions/spark/kyuubi-spark-connector-kudu</module>
             </modules>
             <properties>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
@@ -2178,7 +2171,6 @@
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-3-4</module>
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
-                <module>extensions/spark/kyuubi-spark-connector-kudu</module>
             </modules>
             <properties>
                 <delta.version>2.4.0</delta.version>

@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.session
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Semaphore, TimeUnit}
 
 import scala.collection.JavaConverters._
 
@@ -27,8 +27,10 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
+import org.apache.kyuubi.client.util.BatchUtils.KYUUBI_BATCH_ID_KEY
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_REAL_USER_KEY
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
@@ -63,6 +65,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private var batchLimiter: Option[SessionLimiter] = None
   lazy val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
 
+  var engineStartupProcessSemaphore: Option[Semaphore] = None
+
   private val engineConnectionAliveChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-engine-alive-checker")
 
@@ -72,6 +76,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     addService(credentialsManager)
     metadataManager.foreach(addService)
     initSessionLimiter(conf)
+    initEngineStartupProcessSemaphore(conf)
     super.initialize(conf)
   }
 
@@ -214,6 +219,34 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       None,
       shouldRunAsync)
     openBatchSession(batchSession)
+  }
+
+  def initializeBatchState(
+      user: String,
+      ipAddress: String,
+      conf: Map[String, String],
+      batchRequest: BatchRequest): String = {
+    val realUser = conf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
+    val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
+    val batchId = conf(KYUUBI_BATCH_ID_KEY)
+    val metadata = Metadata(
+      identifier = batchId,
+      sessionType = SessionType.BATCH,
+      realUser = realUser,
+      username = username,
+      ipAddress = ipAddress,
+      state = OperationState.INITIALIZED.toString,
+      resource = batchRequest.getResource,
+      className = batchRequest.getClassName,
+      requestName = batchRequest.getName,
+      requestConf = conf,
+      requestArgs = batchRequest.getArgs.asScala,
+      createTime = System.currentTimeMillis(),
+      engineType = batchRequest.getBatchType)
+
+    // there is a chance that operation failed w/ duplicated key error
+    metadataManager.foreach(_.insertMetadata(metadata, asyncRetryOnError = false))
+    batchId
   }
 
   def getBatchSession(sessionHandle: SessionHandle): Option[KyuubiBatchSession] = {
@@ -360,4 +393,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       TimeUnit.MILLISECONDS)
   }
 
+  private def initEngineStartupProcessSemaphore(conf: KyuubiConf): Unit = {
+    val engineCreationLimit = conf.get(KyuubiConf.SERVER_LIMIT_ENGINE_CREATION)
+    engineCreationLimit.filter(_ > 0).foreach { limit =>
+      engineStartupProcessSemaphore = Some(new Semaphore(limit))
+    }
+  }
 }

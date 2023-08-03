@@ -138,6 +138,27 @@ class MetadataManager extends AbstractService("MetadataManager") {
       buildBatch)
   }
 
+  def countBatch(
+      batchType: String,
+      batchUser: String,
+      batchState: String,
+      kyuubiInstance: String): Int = {
+    val filter = MetadataFilter(
+      sessionType = SessionType.BATCH,
+      engineType = batchType,
+      username = batchUser,
+      state = batchState,
+      kyuubiInstance = kyuubiInstance)
+    withMetadataRequestMetrics(_metadataStore.countMetadata(filter))
+  }
+
+  def pickBatchForSubmitting(kyuubiInstance: String): Option[Metadata] =
+    withMetadataRequestMetrics(_metadataStore.pickMetadata(kyuubiInstance))
+
+  def cancelUnscheduledBatch(batchId: String): Boolean = {
+    _metadataStore.transformMetadataState(batchId, "INITIALIZED", "CANCELED")
+  }
+
   def getBatchesRecoveryMetadata(
       state: String,
       kyuubiInstance: String,
