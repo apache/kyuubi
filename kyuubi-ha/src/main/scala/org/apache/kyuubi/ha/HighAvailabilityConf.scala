@@ -91,22 +91,33 @@ object HighAvailabilityConf {
       .checkValues(AuthTypes.values.map(_.toString))
       .createWithDefault(AuthTypes.NONE.toString)
 
+  val HA_ZK_AUTH_SERVER_PRINCIPAL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.ha.zookeeper.auth.serverPrincipal")
+      .doc("Kerberos principal name of ZooKeeper Server. It only takes effect when " +
+        "Zookeeper client's version at least 3.5.7 or 3.6.0 or applies ZOOKEEPER-1467. " +
+        "To use Zookeeper 3.6 client, compile Kyuubi with `-Pzookeeper-3.6`.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
   val HA_ZK_AUTH_PRINCIPAL: ConfigEntry[Option[String]] =
     buildConf("kyuubi.ha.zookeeper.auth.principal")
-      .doc("Name of the Kerberos principal is used for ZooKeeper authentication.")
+      .doc("Kerberos principal name that is used for ZooKeeper authentication.")
       .version("1.3.2")
       .fallbackConf(KyuubiConf.SERVER_PRINCIPAL)
 
-  val HA_ZK_AUTH_KEYTAB: ConfigEntry[Option[String]] = buildConf("kyuubi.ha.zookeeper.auth.keytab")
-    .doc("Location of the Kyuubi server's keytab is used for ZooKeeper authentication.")
-    .version("1.3.2")
-    .fallbackConf(KyuubiConf.SERVER_KEYTAB)
+  val HA_ZK_AUTH_KEYTAB: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.ha.zookeeper.auth.keytab")
+      .doc("Location of the Kyuubi server's keytab that is used for ZooKeeper authentication.")
+      .version("1.3.2")
+      .fallbackConf(KyuubiConf.SERVER_KEYTAB)
 
-  val HA_ZK_AUTH_DIGEST: OptionalConfigEntry[String] = buildConf("kyuubi.ha.zookeeper.auth.digest")
-    .doc("The digest auth string is used for ZooKeeper authentication, like: username:password.")
-    .version("1.3.2")
-    .stringConf
-    .createOptional
+  val HA_ZK_AUTH_DIGEST: OptionalConfigEntry[String] =
+    buildConf("kyuubi.ha.zookeeper.auth.digest")
+      .doc("The digest auth string is used for ZooKeeper authentication, like: username:password.")
+      .version("1.3.2")
+      .stringConf
+      .createOptional
 
   val HA_ZK_CONN_MAX_RETRIES: ConfigEntry[Int] =
     buildConf("kyuubi.ha.zookeeper.connection.max.retries")
