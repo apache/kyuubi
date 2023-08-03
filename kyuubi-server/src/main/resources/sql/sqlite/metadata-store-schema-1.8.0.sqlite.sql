@@ -32,3 +32,5 @@ CREATE UNIQUE INDEX IF NOT EXISTS metadata_unique_identifier_index ON metadata(i
 CREATE INDEX IF NOT EXISTS metadata_user_name_index ON metadata(user_name);
 
 CREATE INDEX IF NOT EXISTS metadata_engine_type_index ON metadata(engine_type);
+
+CREATE INDEX IF NOT EXISTS metadata_create_time_index ON metadata(create_time);

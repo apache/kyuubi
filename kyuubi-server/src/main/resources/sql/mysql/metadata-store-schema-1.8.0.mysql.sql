@@ -27,5 +27,6 @@ CREATE TABLE IF NOT EXISTS metadata(
     peer_instance_closed boolean default '0' COMMENT 'closed by peer kyuubi instance',
     UNIQUE INDEX unique_identifier_index(identifier),
     INDEX user_name_index(user_name),
-    INDEX engine_type_index(engine_type)
+    INDEX engine_type_index(engine_type),
+    INDEX create_time_index(create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
