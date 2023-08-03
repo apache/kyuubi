@@ -109,6 +109,7 @@ object ZookeeperClientProvider extends Logging {
         }
         System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
         conf.get(HA_ZK_AUTH_SERVER_PRINCIPAL).foreach { zkServerPrincipal =>
+          // ZOOKEEPER-1467 allows configuring SPN in client
           System.setProperty("zookeeper.server.principal", zkServerPrincipal)
         }
         val zkClientPrincipal = KyuubiHadoopUtils.getServerPrincipal(principal)
