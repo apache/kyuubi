@@ -34,3 +34,5 @@ CREATE UNIQUE INDEX metadata_unique_identifier_index ON metadata(identifier);
 CREATE INDEX metadata_user_name_index ON metadata(user_name);
 
 CREATE INDEX metadata_engine_type_index ON metadata(engine_type);
+
+CREATE INDEX metadata_create_time_index ON metadata(create_time);
