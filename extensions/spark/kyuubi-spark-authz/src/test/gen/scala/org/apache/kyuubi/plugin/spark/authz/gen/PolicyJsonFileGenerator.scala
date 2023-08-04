@@ -42,7 +42,7 @@ import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions._
  * Generates the policy file to test/main/resources dir.
  *
  * To run the test suite:
- * build/mvn clean test -Pgen-policy -pl :kyuubi-spark-authz_2.12 -Dtest=none
+ * build/mvn clean test -Pgen-policy -pl extensions/spark/kyuubi-spark-authz -Dtest=none
  * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator
  *
  * To regenerate the ranger policy file:

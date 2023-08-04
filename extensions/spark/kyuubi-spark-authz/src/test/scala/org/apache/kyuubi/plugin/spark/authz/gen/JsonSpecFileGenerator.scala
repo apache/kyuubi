@@ -30,7 +30,7 @@ import org.apache.kyuubi.plugin.spark.authz.serde.{mapper, CommandSpec}
  * Generates the default command specs to src/main/resources dir.
  *
  * To run the test suite:
- * build/mvn clean test -Pgen-policy -pl :kyuubi-spark-authz_2.12 -Dtest=none
+ * build/mvn clean test -Pgen-policy -pl extensions/spark/kyuubi-spark-authz -Dtest=none
  * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.JsonSpecFileGenerator
  *
  * To regenerate the ranger policy file:
