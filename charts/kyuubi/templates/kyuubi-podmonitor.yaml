@@ -15,7 +15,7 @@
   limitations under the License.
 */}}
 
-{{- if and .Values.server.prometheus.enabled (eq .Values.metricsReporters "PROMETHEUS")  }}
+{{- if and .Values.server.prometheus.enabled (eq .Values.metricsReporters "PROMETHEUS") -}}
 {{- if and (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1/PodMonitor") .Values.podMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
@@ -30,4 +30,4 @@ spec:
   podMetricsEndpoints:
     {{- toYaml .Values.podMonitor.podMetricsEndpoint | nindent 4 }}
 {{- end }}
-{{- end }}
+{{- end -}}
