@@ -110,7 +110,7 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
     listAllNamespaces(catalog).filter { ns =>
       val quoted = ns.map(quoteIfNeeded).mkString(".")
       p.matcher(quoted).matches()
-    }.distinct
+    }.map(_.toList).toList.distinct.map(_.toArray).toArray
   }
 
   private def getSchemasWithPattern(catalog: CatalogPlugin, schemaPattern: String): Seq[String] = {
