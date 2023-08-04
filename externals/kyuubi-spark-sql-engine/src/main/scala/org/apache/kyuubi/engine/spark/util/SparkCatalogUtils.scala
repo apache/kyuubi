@@ -137,7 +137,7 @@ object SparkCatalogUtils extends Logging {
     listAllNamespaces(catalog).filter { ns =>
       val quoted = ns.map(quoteIfNeeded).mkString(".")
       schemaPattern.r.pattern.matcher(quoted).matches()
-    }.distinct
+    }.map(_.toList).toList.distinct.map(_.toArray).toArray
   }
 
   private def getSchemasWithPattern(catalog: CatalogPlugin, schemaPattern: String): Seq[String] = {
