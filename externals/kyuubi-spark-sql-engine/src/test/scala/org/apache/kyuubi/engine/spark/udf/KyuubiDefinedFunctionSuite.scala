@@ -33,7 +33,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder, MarkdownUtils, Utils}
  *
  * To re-generate golden files for entire suite, run:
  * {{{
- *   sh dev/gen/gen_kdf.sh
+ *   dev/gen/gen_kdf.sh
  * }}}
  */
 // scalastyle:on line.size.limit

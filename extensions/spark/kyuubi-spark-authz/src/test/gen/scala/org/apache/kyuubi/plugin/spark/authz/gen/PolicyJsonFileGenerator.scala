@@ -47,7 +47,7 @@ import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions._
  *
  * To regenerate the ranger policy file:
  * {{{
- *   sh dev/gen/gen_ranger_policy_json.sh
+ *   dev/gen/gen_ranger_policy_json.sh
  * }}}
  */
 class PolicyJsonFileGenerator extends AnyFunSuite {
@@ -79,7 +79,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
       val existedFileContent =
         FileUtils.readFileToString(policyFilePath.toFile, StandardCharsets.UTF_8)
       withClue("Please regenerate the ranger policy file by running"
-        + "`sh dev/gen/gen_ranger_policy_json.sh`") {
+        + " `dev/gen/gen_ranger_policy_json.sh`") {
         assert(generatedStr.equals(existedFileContent))
       }
     }

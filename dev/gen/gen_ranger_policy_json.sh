@@ -18,7 +18,7 @@
 
 KYUUBI_UPDATE=1 \
 build/mvn clean test \
-  -pl :kyuubi-spark-authz_2.12 \
+  -pl extensions/spark/kyuubi-spark-authz \
   -Pgen-policy \
   -Dtest=none \
   -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.JsonSpecFileGenerator

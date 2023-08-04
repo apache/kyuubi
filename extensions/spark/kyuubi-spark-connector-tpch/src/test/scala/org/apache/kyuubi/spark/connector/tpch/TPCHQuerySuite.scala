@@ -40,7 +40,7 @@ import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSessi
  *
  * To re-generate golden files for this suite:
  * {{{
- *   sh dev/gen/gen_tpcdh_queries.sh
+ *   dev/gen/gen_tpcdh_queries.sh
  * }}}
  */
 // scalastyle:on line.size.limit

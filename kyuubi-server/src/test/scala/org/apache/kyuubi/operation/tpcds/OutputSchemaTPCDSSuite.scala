@@ -38,7 +38,7 @@ import org.apache.kyuubi.tags.DeltaTest
  *
  * To re-generate golden files for this suite:
  * {{{
- *   sh dev/gen/gen_tpcds_output_schema.sh
+ *   dev/gen/gen_tpcds_output_schema.sh
  * }}}
  */
 // scalastyle:on line.size.limit

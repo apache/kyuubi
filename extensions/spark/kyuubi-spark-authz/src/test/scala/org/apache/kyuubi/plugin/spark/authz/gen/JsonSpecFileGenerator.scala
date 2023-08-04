@@ -34,7 +34,9 @@ import org.apache.kyuubi.plugin.spark.authz.serde.{mapper, CommandSpec}
  * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.JsonSpecFileGenerator
  *
  * To regenerate the ranger policy file:
- * sh dev/gen/gen_ranger_spec_json.sh
+ * {{{
+ *   dev/gen/gen_ranger_spec_json.sh
+ * }}}
  */
 
 class JsonSpecFileGenerator extends AnyFunSuite {
@@ -70,7 +72,7 @@ class JsonSpecFileGenerator extends AnyFunSuite {
       val existedFileContent =
         FileUtils.readFileToString(filePath.toFile, StandardCharsets.UTF_8)
       withClue(s"Check $filename failed. Please regenerate the ranger policy file by running"
-        + "`sh dev/gen/gen_ranger_spec_json.sh`.") {
+        + " `dev/gen/gen_ranger_spec_json.sh`.") {
         assert(generatedStr.equals(existedFileContent))
       }
     }

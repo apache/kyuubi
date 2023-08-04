@@ -40,7 +40,7 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
  *
  * To re-generate golden files for entire suite, run:
  * {{{
- *   sh dev/gen/gen_all_config_docs.sh
+ *   dev/gen/gen_all_config_docs.sh
  * }}}
  */
 // scalastyle:on line.size.limit
