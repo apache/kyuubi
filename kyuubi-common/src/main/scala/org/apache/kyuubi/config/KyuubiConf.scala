@@ -2706,6 +2706,13 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_JDBC_CONNECTION_PROPAGATECREDENTIAL: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.jdbc.connection.propagateCredential")
+      .doc("Whether to use the session's user and password to connect to database")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_JDBC_CONNECTION_USER: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.connection.user")
       .doc("The user is used for connecting to server")
