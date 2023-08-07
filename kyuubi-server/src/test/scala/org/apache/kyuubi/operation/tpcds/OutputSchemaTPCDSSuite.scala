@@ -31,9 +31,7 @@ import org.apache.kyuubi.tags.DeltaTest
 /**
  * To run this test suite:
  * {{{
- *   build/mvn clean install \
- *     -Dmaven.plugin.scalatest.exclude.tags="" \
- *     -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite
+ *   KYUUBI_UPDATE=0 dev/gen/gen_tpcds_output_schema.sh
  * }}}
  *
  * To re-generate golden files for this suite:

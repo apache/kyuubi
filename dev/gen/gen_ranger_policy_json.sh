@@ -16,9 +16,9 @@
 # limitations under the License.
 #
 
-KYUUBI_UPDATE=1 \
+KYUUBI_UPDATE="${KYUUBI_UPDATE:-1}" \
 build/mvn clean test \
   -pl extensions/spark/kyuubi-spark-authz \
   -Pgen-policy \
   -Dtest=none \
-  -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.JsonSpecFileGenerator
+  -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator

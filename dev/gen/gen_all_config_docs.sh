@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-KYUUBI_UPDATE=1 \
+KYUUBI_UPDATE="${KYUUBI_UPDATE:-1}" \
 build/mvn clean test \
   -pl kyuubi-server -am \
   -Pflink-provided,spark-provided,hive-provided \

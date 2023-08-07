@@ -35,7 +35,7 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
  *
  * To run the entire test suite:
  * {{{
- *   build/mvn clean test -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -Dtest=none -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
+ *   KYUUBI_UPDATE=0 dev/gen/gen_all_config_docs.sh
  * }}}
  *
  * To re-generate golden files for entire suite, run:

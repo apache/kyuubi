@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-KYUUBI_UPDATE=1 \
+KYUUBI_UPDATE="${KYUUBI_UPDATE:-1}" \
 build/mvn clean install \
   -pl extensions/spark/kyuubi-spark-connector-tpch -am \
   -Dmaven.plugin.scalatest.exclude.tags="" \
