@@ -15,8 +15,7 @@
   limitations under the License.
 */}}
 
-{{- if and .Values.server.prometheus.enabled (eq .Values.metricsReporters "PROMETHEUS") -}}
-{{- if and (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1/PrometheusRule") .Values.prometheusRule.enabled }}
+{{- if and .Values.server.prometheus.enabled (eq .Values.metricsReporters "PROMETHEUS") .Values.prometheusRule.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -27,4 +26,3 @@ spec:
   groups:
     {{- toYaml .Values.prometheusRule.groups | nindent 4 }}
 {{- end }}
-{{- end -}}

@@ -15,19 +15,17 @@
   limitations under the License.
 */}}
 
-{{- if and .Values.server.prometheus.enabled (eq .Values.metricsReporters "PROMETHEUS") -}}
-{{- if and (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor") .Values.serviceMonitor.enabled }}
+{{- if and .Values.server.prometheus.enabled (eq .Values.metricsReporters "PROMETHEUS") .Values.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ $.Release.Name }}
+  name: {{ .Release.Name }}
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      app: {{ $.Release.Name }}
+      app: {{ .Release.Name }}
   endpoints:
     {{- toYaml .Values.serviceMonitor.endpoints | nindent 4 }}
 {{- end }}
-{{- end -}}

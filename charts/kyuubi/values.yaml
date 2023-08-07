@@ -220,7 +220,7 @@ metricsReporters: ~
 # Prometheus pod monitor
 podMonitor:
   # If enabled, podMonitor for operator's pod will be created
-  enabled: true
+  enabled: false
   # The podMetricsEndpoint contains metrics information such as port, interval, scheme, and possibly other relevant details.
   # This information is used to configure the endpoint from which Prometheus can scrape and collect metrics for a specific Pod in Kubernetes.
   podMetricsEndpoint: []
@@ -228,7 +228,7 @@ podMonitor:
 # Prometheus service monitor
 serviceMonitor:
   # If enabled, ServiceMonitor resources for Prometheus Operator are created
-  enabled: true
+  enabled: false
   # The endpoints section in a ServiceMonitor specifies the metrics information for each target endpoint.
   # This allows you to collect metrics from multiple Services across your Kubernetes cluster in a standardized and automated way.
   endpoints: []
@@ -236,6 +236,6 @@ serviceMonitor:
 # Rules for the Prometheus Operator
 prometheusRule:
   # If enabled, a PrometheusRule resource for Prometheus Operator is created
-  enabled: true
+  enabled: false
   # Contents of Prometheus rules file
   groups: []
