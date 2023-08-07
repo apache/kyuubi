@@ -20,4 +20,5 @@ KYUUBI_UPDATE="${KYUUBI_UPDATE:-1}" \
 build/mvn clean install \
   -pl extensions/spark/kyuubi-spark-connector-tpcds -am \
   -Dmaven.plugin.scalatest.exclude.tags="" \
-  -Dtest=none -DwildcardSuites=org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite
+  -Dtest=none \
+  -DwildcardSuites=org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite
