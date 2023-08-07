@@ -16,8 +16,12 @@
 # limitations under the License.
 #
 
+# Golden result file:
+# extensions/spark/kyuubi-spark-authz/src/test/resources/*.output.schema
+
 KYUUBI_UPDATE="${KYUUBI_UPDATE:-1}" \
 build/mvn clean install \
+  -pl kyuubi-server -am \
   -Dmaven.plugin.scalatest.exclude.tags="" \
   -Dtest=none \
   -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite

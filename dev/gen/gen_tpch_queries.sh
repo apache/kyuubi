@@ -16,6 +16,9 @@
 # limitations under the License.
 #
 
+# Golden result file:
+# kyuubi-spark-connector-tpcds/src/main/resources/kyuubi/tpcdh_*/*.sql
+
 KYUUBI_UPDATE="${KYUUBI_UPDATE:-1}" \
 build/mvn clean install \
   -pl extensions/spark/kyuubi-spark-connector-tpch -am \

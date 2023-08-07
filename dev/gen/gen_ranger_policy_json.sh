@@ -16,6 +16,9 @@
 # limitations under the License.
 #
 
+# Golden result file:
+# extensions/spark/kyuubi-spark-authz/src/test/resources/sparkSql_hive_jenkins.json
+
 KYUUBI_UPDATE="${KYUUBI_UPDATE:-1}" \
 build/mvn clean test \
   -pl extensions/spark/kyuubi-spark-authz \
