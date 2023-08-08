@@ -220,15 +220,25 @@ object PrivilegesBuilder {
       plan: LogicalPlan,
       spark: SparkSession): PrivilegesAndOpType = {
     val inputObjs = new ArrayBuffer[PrivilegeObject]
-    // TODO: add support for Spark 3.4.x
-    plan transformAllExpressions {
-      case hiveFunction: Expression if isKnownFunction(hiveFunction) =>
-        val functionSpec: ScanSpec = getFunctionSpec(hiveFunction)
-        if (functionSpec.functionDescs.exists(!_.functionTypeDesc.get.skip(hiveFunction, spark))) {
-          functionSpec.functions(hiveFunction).foreach(func =>
-            inputObjs += PrivilegeObject(func))
+    plan match {
+      case command: Command if isKnownTableCommand(command) =>
+        val spec = getTableCommandSpec(command)
+        val functionPrivAndOpType = spec.queries(plan)
+          .map(plan => buildFunctions(plan, spark))
+        functionPrivAndOpType.map(_._1)
+          .reduce(_ ++ _)
+          .foreach(functionPriv => inputObjs += functionPriv)
+
+      case plan => plan transformAllExpressions {
+          case hiveFunction: Expression if isKnownFunction(hiveFunction) =>
+            val functionSpec: ScanSpec = getFunctionSpec(hiveFunction)
+            if (functionSpec.functionDescs
+                .exists(!_.functionTypeDesc.get.skip(hiveFunction, spark))) {
+              functionSpec.functions(hiveFunction).foreach(func =>
+                inputObjs += PrivilegeObject(func))
+            }
+            hiveFunction
         }
-        hiveFunction
     }
     (inputObjs, Seq.empty, OperationType.QUERY)
   }

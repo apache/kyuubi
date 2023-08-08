@@ -21,7 +21,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 
-import org.apache.kyuubi.plugin.spark.authz.serde.FunctionExtractor.buildFunctionIdentFromQualifiedName
+import org.apache.kyuubi.plugin.spark.authz.serde.FunctionExtractor.buildFunctionFromQualifiedName
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionType.{FunctionType, PERMANENT, SYSTEM, TEMP}
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionTypeExtractor.getFunctionType
 
@@ -93,7 +93,7 @@ class FunctionNameFunctionTypeExtractor extends FunctionTypeExtractor {
   override def apply(v1: AnyRef, spark: SparkSession): FunctionType = {
     val catalog: SessionCatalog = spark.sessionState.catalog
     val qualifiedName: String = v1.asInstanceOf[String]
-    val (funcName, database) = buildFunctionIdentFromQualifiedName(qualifiedName)
-    getFunctionType(FunctionIdentifier(funcName, database), catalog)
+    val function = buildFunctionFromQualifiedName(qualifiedName)
+    getFunctionType(FunctionIdentifier(function.functionName, function.database), catalog)
   }
 }
