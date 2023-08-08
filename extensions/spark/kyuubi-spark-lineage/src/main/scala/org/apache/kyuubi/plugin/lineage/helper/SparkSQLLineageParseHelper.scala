@@ -482,12 +482,12 @@ trait LineageParser {
   private def getV2TableName(plan: NamedRelation): String = {
     plan match {
       case relation: DataSourceV2ScanRelation =>
-        val catalog = relation.relation.catalog.get.name()
+        val catalog = relation.relation.catalog.map(_.name()).getOrElse(LineageConf.DEFAULT_CATALOG)
         val database = relation.relation.identifier.get.namespace().mkString(".")
         val table = relation.relation.identifier.get.name()
         s"$catalog.$database.$table"
       case relation: DataSourceV2Relation =>
-        val catalog = relation.catalog.get.name()
+        val catalog = relation.catalog.map(_.name()).getOrElse(LineageConf.DEFAULT_CATALOG)
         val database = relation.identifier.get.namespace().mkString(".")
         val table = relation.identifier.get.name()
         s"$catalog.$database.$table"
@@ -496,8 +496,8 @@ trait LineageParser {
     }
   }
 
-  private def getV1TableName(tableName: String): String = {
-    Seq(LineageConf.DEFAULT_CATALOG, tableName).filter(_.nonEmpty).mkString(".")
+  private def getV1TableName(qualifiedName: String): String = {
+    Seq(LineageConf.DEFAULT_CATALOG, qualifiedName).filter(_.nonEmpty).mkString(".")
   }
 }
 
