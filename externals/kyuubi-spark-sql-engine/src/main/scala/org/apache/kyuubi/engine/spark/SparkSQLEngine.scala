@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.net.InetAddress
 import java.time.Instant
 import java.util.{Locale, UUID}
 import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
@@ -254,7 +253,7 @@ object SparkSQLEngine extends Logging {
 
       if (!isOnK8sClusterMode) {
         // set driver host to ip instead of kyuubi pod name
-        _sparkConf.set("spark.driver.host", InetAddress.getLocalHost.getHostAddress)
+        _sparkConf.setIfMissing("spark.driver.host", Utils.findLocalInetAddress.getHostAddress)
       }
     }
 
