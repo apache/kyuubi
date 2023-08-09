@@ -69,10 +69,12 @@ class ReflectUtilsSuite extends AnyFunSuite {
 
   test("test invokeAs method not found exception") {
     val exception = intercept[RuntimeException]{
-      invokeAs[String](ObjectA, "methodNotExists")
+      invokeAs[String](ObjectA, "methodNotExists", (classOf[String], "arg1"),
+        (classOf[String], "arg2"))
     }
     assert(exception.getMessage ===
-      "Method methodNotExists() not found in class org.apache.kyuubi.util.reflect.ObjectA$ " +
+      "Method methodNotExists(java.lang.String, java.lang.String) not found " +
+        "in class org.apache.kyuubi.util.reflect.ObjectA$ " +
         "[equals(java.lang.Object), field5(), field6(), getClass(), hashCode(), method5(), " +
         "method6(), notify(), notifyAll(), toString(), wait(), wait(long), wait(long, int)]")
   }
