@@ -199,7 +199,7 @@ trait LineageParser {
           } else {
             getQuery(plan)
           }
-        val view = getField[TableIdentifier](plan, "name").unquotedString
+        val view = getV1TableName(getField[TableIdentifier](plan, "name").unquotedString)
         extractColumnsLineage(query, parentColumnsLineage).map { case (k, v) =>
           k.withName(s"$view.${k.name}") -> v
         }
@@ -207,7 +207,7 @@ trait LineageParser {
       case p
           if p.nodeName == "CreateViewCommand"
             && getField[ViewType](plan, "viewType") == PersistedView =>
-        val view = getField[TableIdentifier](plan, "name").unquotedString
+        val view = getV1TableName(getField[TableIdentifier](plan, "name").unquotedString)
         val outputCols =
           getField[Seq[(String, Option[String])]](plan, "userSpecifiedColumns").map(_._1)
         val query =
@@ -223,7 +223,7 @@ trait LineageParser {
         }
 
       case p if p.nodeName == "CreateDataSourceTableAsSelectCommand" =>
-        val table = getField[CatalogTable](plan, "table").qualifiedName
+        val table = getV1TableName(getField[CatalogTable](plan, "table").qualifiedName)
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
@@ -231,7 +231,7 @@ trait LineageParser {
       case p
           if p.nodeName == "CreateHiveTableAsSelectCommand" ||
             p.nodeName == "OptimizedCreateHiveTableAsSelectCommand" =>
-        val table = getField[CatalogTable](plan, "tableDesc").qualifiedName
+        val table = getV1TableName(getField[CatalogTable](plan, "tableDesc").qualifiedName)
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
@@ -259,7 +259,8 @@ trait LineageParser {
 
       case p if p.nodeName == "InsertIntoDataSourceCommand" =>
         val logicalRelation = getField[LogicalRelation](plan, "logicalRelation")
-        val table = logicalRelation.catalogTable.map(_.qualifiedName).getOrElse("")
+        val table = logicalRelation
+          .catalogTable.map(t => getV1TableName(t.qualifiedName)).getOrElse("")
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map {
           case (k, v) if table.nonEmpty =>
             k.withName(s"$table.${k.name}") -> v
@@ -267,7 +268,8 @@ trait LineageParser {
 
       case p if p.nodeName == "InsertIntoHadoopFsRelationCommand" =>
         val table =
-          getField[Option[CatalogTable]](plan, "catalogTable").map(_.qualifiedName)
+          getField[Option[CatalogTable]](plan, "catalogTable")
+            .map(t => getV1TableName(t.qualifiedName))
             .getOrElse("")
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map {
           case (k, v) if table.nonEmpty =>
@@ -286,7 +288,7 @@ trait LineageParser {
         }
 
       case p if p.nodeName == "InsertIntoHiveTable" =>
-        val table = getField[CatalogTable](plan, "table").qualifiedName
+        val table = getV1TableName(getField[CatalogTable](plan, "table").qualifiedName)
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
@@ -298,7 +300,7 @@ trait LineageParser {
           if p.nodeName == "AppendData"
             || p.nodeName == "OverwriteByExpression"
             || p.nodeName == "OverwritePartitionsDynamic" =>
-        val table = getField[NamedRelation](plan, "table").name
+        val table = getV2TableName(getField[NamedRelation](plan, "table"))
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
@@ -409,22 +411,22 @@ trait LineageParser {
         joinColumnsLineage(parentColumnsLineage, childrenColumnsLineage)
 
       case p: LogicalRelation if p.catalogTable.nonEmpty =>
-        val tableName = p.catalogTable.get.qualifiedName
+        val tableName = getV1TableName(p.catalogTable.get.qualifiedName)
         joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(tableName))
 
       case p: HiveTableRelation =>
-        val tableName = p.tableMeta.qualifiedName
+        val tableName = getV1TableName(p.tableMeta.qualifiedName)
         joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(tableName))
 
       case p: DataSourceV2ScanRelation =>
-        val tableName = p.name
+        val tableName = getV2TableName(p)
         joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(tableName))
 
       // For creating the view from v2 table, the logical plan of table will
       // be the `DataSourceV2Relation` not the `DataSourceV2ScanRelation`.
       // because the view from the table is not going to read it.
       case p: DataSourceV2Relation =>
-        val tableName = p.name
+        val tableName = getV2TableName(p)
         joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(tableName))
 
       case p: LocalRelation =>
@@ -445,7 +447,7 @@ trait LineageParser {
       case p: View =>
         if (!p.isTempView && SparkContextHelper.getConf(
             LineageConf.SKIP_PARSING_PERMANENT_VIEW_ENABLED)) {
-          val viewName = p.desc.qualifiedName
+          val viewName = getV1TableName(p.desc.qualifiedName)
           joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(viewName))
         } else {
           val viewColumnsLineage =
@@ -476,6 +478,27 @@ trait LineageParser {
   }
 
   private def getQuery(plan: LogicalPlan): LogicalPlan = getField[LogicalPlan](plan, "query")
+
+  private def getV2TableName(plan: NamedRelation): String = {
+    plan match {
+      case relation: DataSourceV2ScanRelation =>
+        val catalog = relation.relation.catalog.map(_.name()).getOrElse(LineageConf.DEFAULT_CATALOG)
+        val database = relation.relation.identifier.get.namespace().mkString(".")
+        val table = relation.relation.identifier.get.name()
+        s"$catalog.$database.$table"
+      case relation: DataSourceV2Relation =>
+        val catalog = relation.catalog.map(_.name()).getOrElse(LineageConf.DEFAULT_CATALOG)
+        val database = relation.identifier.get.namespace().mkString(".")
+        val table = relation.identifier.get.name()
+        s"$catalog.$database.$table"
+      case _ =>
+        plan.name
+    }
+  }
+
+  private def getV1TableName(qualifiedName: String): String = {
+    Seq(LineageConf.DEFAULT_CATALOG, qualifiedName).filter(_.nonEmpty).mkString(".")
+  }
 }
 
 case class SparkSQLLineageParseHelper(sparkSession: SparkSession) extends LineageParser

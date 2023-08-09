@@ -19,8 +19,6 @@ package org.apache.kyuubi.plugin.lineage.events
 
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 
-import scala.collection.immutable.List
-
 import org.apache.spark.SparkConf
 import org.apache.spark.kyuubi.lineage.LineageConf._
 import org.apache.spark.scheduler.{SparkListener, SparkListenerEvent}
@@ -82,11 +80,11 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
       spark.sql("create table test_table0(a string, b string)")
       spark.sql("select a as col0, b as col1 from test_table0").collect()
       val expected = Lineage(
-        List("default.test_table0"),
+        List(s"$DEFAULT_CATALOG.default.test_table0"),
         List(),
         List(
-          ("col0", Set("default.test_table0.a")),
-          ("col1", Set("default.test_table0.b"))))
+          ("col0", Set(s"$DEFAULT_CATALOG.default.test_table0.a")),
+          ("col1", Set(s"$DEFAULT_CATALOG.default.test_table0.b"))))
       countDownLatch.await(20, TimeUnit.SECONDS)
       assert(actualSparkEventLineage == expected)
       assert(actualKyuubiEventLineage == expected)
@@ -97,11 +95,11 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
     val countDownLatch = new CountDownLatch(1)
     var executionId: Long = -1
     val expected = Lineage(
-      List("default.table1", "default.table0"),
+      List(s"$DEFAULT_CATALOG.default.table1", s"$DEFAULT_CATALOG.default.table0"),
       List(),
       List(
-        ("aa", Set("default.table1.a")),
-        ("bb", Set("default.table0.b"))))
+        ("aa", Set(s"$DEFAULT_CATALOG.default.table1.a")),
+        ("bb", Set(s"$DEFAULT_CATALOG.default.table0.b"))))
 
     spark.sparkContext.addSparkListener(new SparkListener {
       override def onOtherEvent(event: SparkListenerEvent): Unit = {
@@ -163,11 +161,11 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
           s" where a in ('HELLO') and c = 'HELLO'").collect()
 
       val expected = Lineage(
-        List("default.t2"),
+        List(s"$DEFAULT_CATALOG.default.t2"),
         List(),
         List(
-          ("k", Set("default.t2.a")),
-          ("b", Set("default.t2.b"))))
+          ("k", Set(s"$DEFAULT_CATALOG.default.t2.a")),
+          ("b", Set(s"$DEFAULT_CATALOG.default.t2.b"))))
       countDownLatch.await(20, TimeUnit.SECONDS)
       assert(actual == expected)
     }

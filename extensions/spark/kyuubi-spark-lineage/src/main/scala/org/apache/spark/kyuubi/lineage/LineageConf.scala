@@ -18,6 +18,7 @@
 package org.apache.spark.kyuubi.lineage
 
 import org.apache.spark.internal.config.ConfigBuilder
+import org.apache.spark.sql.internal.SQLConf
 
 import org.apache.kyuubi.plugin.lineage.LineageDispatcherType
 
@@ -44,5 +45,7 @@ object LineageConf {
       _.toSet.subsetOf(LineageDispatcherType.values.map(_.toString)),
       "Unsupported lineage dispatchers")
     .createWithDefault(Seq(LineageDispatcherType.SPARK_EVENT.toString))
+
+  val DEFAULT_CATALOG: String = SQLConf.get.getConf(SQLConf.DEFAULT_CATALOG)
 
 }
