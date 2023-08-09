@@ -43,17 +43,15 @@ object KyuubiServer extends Logging {
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-    var embeddedZkServerOpt: Option[EmbeddedZookeeper] = None
+    var embeddedZkServer: Option[EmbeddedZookeeper] = None
     if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
-      val embeddedZkServer = {
-        embeddedZkServerOpt = Some(new EmbeddedZookeeper())
-        val zkServer = embeddedZkServerOpt.get
+      embeddedZkServer = Some(new EmbeddedZookeeper())
+      embeddedZkServer.foreach(zkServer => {
         zkServer.initialize(conf)
         zkServer.start()
-        zkServer
-      }
-      conf.set(HA_ADDRESSES, embeddedZkServer.getConnectString)
-      conf.set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
+        conf.set(HA_ADDRESSES, zkServer.getConnectString)
+        conf.set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
+      })
     }
 
     val server = conf.get(KyuubiConf.SERVER_NAME) match {
@@ -64,7 +62,7 @@ object KyuubiServer extends Logging {
       server.initialize(conf)
     } catch {
       case e: Exception =>
-        embeddedZkServerOpt.filter(_.getServiceState == ServiceState.STARTED).foreach(_.stop())
+        embeddedZkServer.filter(_.getServiceState == ServiceState.STARTED).foreach(_.stop())
         throw e
     }
     server.start()
