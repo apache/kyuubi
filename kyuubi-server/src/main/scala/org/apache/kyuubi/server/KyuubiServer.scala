@@ -64,11 +64,7 @@ object KyuubiServer extends Logging {
       server.initialize(conf)
     } catch {
       case e: Exception =>
-        embeddedZkServerOpt match {
-          case Some(zkServer) if zkServer.getServiceState == ServiceState.STARTED =>
-            zkServer.stop()
-          case _ =>
-        }
+        embeddedZkServerOpt.filter(_.getServiceState == ServiceState.STARTED).foreach(_.stop())
         throw e
     }
     server.start()
