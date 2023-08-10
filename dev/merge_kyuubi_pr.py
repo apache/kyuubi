@@ -30,9 +30,9 @@ import os
 import re
 import subprocess
 import sys
-from urllib.request import urlopen
-from urllib.request import Request
 from urllib.error import HTTPError
+from urllib.request import Request
+from urllib.request import urlopen
 
 KYUUBI_HOME = os.environ.get("KYUUBI_HOME", os.getcwd())
 PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "apache")
@@ -248,6 +248,8 @@ def main():
     user_login = pr["user"]["login"]
     base_ref = pr["head"]["ref"]
     pr_repo_desc = "%s/%s" % (user_login, base_ref)
+    milestone = pr["milestone"]
+    assignees = pr["assignees"]
 
     # Merged pull requests don't appear as merged in the GitHub API;
     # Instead, they're closed by asfgit.
@@ -277,6 +279,16 @@ def main():
     print("title:\t%s\nsource:\t%s\ntarget:\t%s\nurl:\t%s\nbody:\n\n%s" %
           (title, pr_repo_desc, target_ref, url, body))
     continue_maybe("Proceed with merging pull request #%s?" % pr_num)
+
+    if (milestone is None):
+        continue_maybe("No milestone has been set. Continue?")
+    else:
+        print("Milestone: %s" % milestone["title"])
+
+    if (assignees is None or len(assignees)==0):
+        continue_maybe("No assignee has been set. Continue?")
+    else:
+        print("Assignees: %s" % [assignee["login"] for assignee in assignees])
 
     merged_refs = [target_ref]
 
