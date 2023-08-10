@@ -280,7 +280,7 @@ def main():
           (title, pr_repo_desc, target_ref, url, body))
 
     if assignees is None or len(assignees)==0:
-        continue_maybe("Assignees has NOT been set. Continue?")
+        continue_maybe("Assignees have NOT been set. Continue?")
     else:
         print("assignees: %s" % [assignee["login"] for assignee in assignees])
 
