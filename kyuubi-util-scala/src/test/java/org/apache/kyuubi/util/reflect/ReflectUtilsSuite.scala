@@ -66,6 +66,18 @@ class ReflectUtilsSuite extends AnyFunSuite {
     assertResult("field5")(getField[String](ObjectA, "field5"))
     assertResult("field6")(getField[String](ObjectA, "field6"))
   }
+
+  test("test invokeAs method not found exception") {
+    val exception = intercept[RuntimeException]{
+      invokeAs[String](ObjectA, "methodNotExists", (classOf[String], "arg1"),
+        (classOf[String], "arg2"))
+    }
+    assert(exception.getMessage ===
+      "Method methodNotExists(java.lang.String, java.lang.String) not found " +
+        "in class org.apache.kyuubi.util.reflect.ObjectA$ " +
+        "[equals(java.lang.Object), field5(), field6(), getClass(), hashCode(), method5(), " +
+        "method6(), notify(), notifyAll(), toString(), wait(), wait(long), wait(long, int)]")
+  }
 }
 
 class ClassA(val field0: String = "field0") {
