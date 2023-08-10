@@ -248,8 +248,8 @@ def main():
     user_login = pr["user"]["login"]
     base_ref = pr["head"]["ref"]
     pr_repo_desc = "%s/%s" % (user_login, base_ref)
-    milestone = pr["milestone"]
     assignees = pr["assignees"]
+    milestone = pr["milestone"]
 
     # Merged pull requests don't appear as merged in the GitHub API;
     # Instead, they're closed by asfgit.
@@ -278,17 +278,18 @@ def main():
     print("\n=== Pull Request #%s ===" % pr_num)
     print("title:\t%s\nsource:\t%s\ntarget:\t%s\nurl:\t%s\nbody:\n\n%s" %
           (title, pr_repo_desc, target_ref, url, body))
+
+    if assignees is None or len(assignees)==0:
+        continue_maybe("Assignees has NOT been set. Continue?")
+    else:
+        print("assignees: %s" % [assignee["login"] for assignee in assignees])
+
+    if milestone is None:
+        continue_maybe("Milestone has NOT been set. Continue?")
+    else:
+        print("milestone: %s" % milestone["title"])
+
     continue_maybe("Proceed with merging pull request #%s?" % pr_num)
-
-    if (milestone is None):
-        continue_maybe("No milestone has been set. Continue?")
-    else:
-        print("Milestone: %s" % milestone["title"])
-
-    if (assignees is None or len(assignees)==0):
-        continue_maybe("No assignee has been set. Continue?")
-    else:
-        print("Assignees: %s" % [assignee["login"] for assignee in assignees])
 
     merged_refs = [target_ref]
 
