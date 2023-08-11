@@ -38,17 +38,20 @@ import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
 object KyuubiServer extends Logging {
-  private val zkServer = new EmbeddedZookeeper()
   private[kyuubi] var kyuubiServer: KyuubiServer = _
   @volatile private[kyuubi] var hadoopConf: Configuration = _
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
+    var embeddedZkServer: Option[EmbeddedZookeeper] = None
     if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
-      zkServer.initialize(conf)
-      zkServer.start()
-      conf.set(HA_ADDRESSES, zkServer.getConnectString)
-      conf.set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
+      embeddedZkServer = Some(new EmbeddedZookeeper())
+      embeddedZkServer.foreach(zkServer => {
+        zkServer.initialize(conf)
+        zkServer.start()
+        conf.set(HA_ADDRESSES, zkServer.getConnectString)
+        conf.set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
+      })
     }
 
     val server = conf.get(KyuubiConf.SERVER_NAME) match {
@@ -59,9 +62,7 @@ object KyuubiServer extends Logging {
       server.initialize(conf)
     } catch {
       case e: Exception =>
-        if (zkServer.getServiceState == ServiceState.STARTED) {
-          zkServer.stop()
-        }
+        embeddedZkServer.filter(_.getServiceState == ServiceState.STARTED).foreach(_.stop())
         throw e
     }
     server.start()
