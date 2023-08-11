@@ -121,7 +121,7 @@ kyuubiConfDir: /opt/kyuubi/conf
 # Kyuubi configurations files
 kyuubiConf:
   # The value (templated string) is used for kyuubi-env.sh file
-  # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/deployment/settings.html#environments for more details
+  # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/configuration/settings.html#environments for more details
   kyuubiEnv: ~
   #  kyuubiEnv: |
   #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
@@ -130,7 +130,7 @@ kyuubiConf:
   #    export HIVE_HOME=/opt/hive
 
   # The value (templated string) is used for kyuubi-defaults.conf file
-  # See https://kyuubi.readthedocs.io/en/master/deployment/settings.html#kyuubi-configurations for more details
+  # See https://kyuubi.readthedocs.io/en/master/configuration/settings.html#kyuubi-configurations for more details
   kyuubiDefaults: ~
   #  kyuubiDefaults: |
   #    kyuubi.authentication=NONE
@@ -142,7 +142,7 @@ kyuubiConf:
   #    kyuubi.ha.namespace=kyuubi
 
   # The value (templated string) is used for log4j2.xml file
-  # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/deployment/settings.html#logging for more details
+  # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/configuration/settings.html#logging for more details
   log4j2: ~
 
 # Command to launch Kyuubi server (templated)
