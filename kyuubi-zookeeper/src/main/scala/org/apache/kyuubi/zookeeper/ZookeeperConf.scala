@@ -56,7 +56,7 @@ object ZookeeperConf {
         "to prevent potential network issues.")
       .version("1.7.2")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
 
   val ZK_DATA_DIR: ConfigEntry[String] = buildConf("kyuubi.zookeeper.embedded.data.dir")
     .doc("dataDir for the embedded zookeeper server where stores the in-memory database" +
