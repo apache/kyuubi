@@ -19,15 +19,6 @@ Deploying Kyuubi
 
 In this section, you will learn how to deploy Kyuubi against different platforms.
 
-Configurations
---------------
-
-.. toctree::
-    :maxdepth: 2
-    :glob:
-
-    settings
-
 Basics
 ------
 
