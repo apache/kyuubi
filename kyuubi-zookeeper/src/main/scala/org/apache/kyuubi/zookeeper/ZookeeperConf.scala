@@ -49,6 +49,15 @@ object ZookeeperConf {
       .stringConf
       .createOptional
 
+  val ZK_CLIENT_USE_HOSTNAME: ConfigEntry[Boolean] =
+    buildConf("kyuubi.zookeeper.embedded.client.use.hostname")
+      .doc("When true, embedded Zookeeper prefer to bind hostname, otherwise, ip address. " +
+        "Note that, the default value is set to `false` when engine running on Kubernetes " +
+        "to prevent potential network issues.")
+      .version("1.7.2")
+      .booleanConf
+      .createWithDefault(true)
+
   val ZK_DATA_DIR: ConfigEntry[String] = buildConf("kyuubi.zookeeper.embedded.data.dir")
     .doc("dataDir for the embedded zookeeper server where stores the in-memory database" +
       " snapshots and, unless specified otherwise, the transaction log of updates to the database.")
