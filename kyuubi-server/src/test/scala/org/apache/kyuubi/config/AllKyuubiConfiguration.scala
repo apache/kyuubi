@@ -64,7 +64,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
 
     builder ++=
       s"""
-         |# Introduction to the Kyuubi Configurations System
+         |# Configuring Kyuubi
          |
          |Kyuubi provides several ways to configure the system and corresponding engines.
          |
