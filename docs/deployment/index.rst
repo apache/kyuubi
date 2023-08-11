@@ -19,6 +19,15 @@ Deploying Kyuubi
 
 In this section, you will learn how to deploy Kyuubi against different platforms.
 
+Configurations
+--------------
+
+.. toctree::
+    :maxdepth: 2
+    :glob:
+
+    settings
+
 Basics
 ------
 
@@ -30,15 +39,6 @@ Basics
     hive_metastore
     high_availability_guide
     migration-guide
-
-Configurations
---------------
-
-.. toctree::
-    :maxdepth: 2
-    :glob:
-
-    settings
 
 Engines
 -------
