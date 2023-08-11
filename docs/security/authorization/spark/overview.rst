@@ -106,4 +106,4 @@ You can specify config `spark.kyuubi.conf.restricted.list` values to disable cha
    2. A set statement with key equal to `spark.sql.optimizer.excludedRules` and value containing `org.apache.kyuubi.plugin.spark.authz.ranger.*` also does not allow modification.
 
 .. _Apache Ranger: https://ranger.apache.org/
-.. _Spark Configurations: ../../../deployment/settings.html#spark-configurations
+.. _Spark Configurations: ../../../configuration/settings.html#spark-configurations

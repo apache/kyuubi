@@ -43,4 +43,4 @@ The related configurations can be found at `Authentication Configurations`_
     jdbc
     ../extensions/server/authentication
 
-.. _Authentication Configurations: ../deployment/settings.html#authentication
+.. _Authentication Configurations: ../configuration/settings.html#authentication

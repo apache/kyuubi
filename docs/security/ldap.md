@@ -56,5 +56,5 @@ kyuubi.authentication.ldap.userFilter=hive-admin,hive,hive-test,hive-user
 kyuubi.authentication.ldap.customLDAPQuery=(&(objectClass=group)(objectClass=top)(instanceType=4)(cn=Domain*)), (&(objectClass=person)(|(sAMAccountName=admin)(|(memberOf=CN=Domain Admins,CN=Users,DC=domain,DC=com)(memberOf=CN=Administrators,CN=Builtin,DC=domain,DC=com))))
 ```
 
-Please refer to [Settings for LDAP authentication in Kyuubi](../deployment/settings.html?highlight=LDAP#authentication)
+Please refer to [Settings for LDAP authentication in Kyuubi](../configuration/settings.html?highlight=LDAP#authentication)
 for all configurations.

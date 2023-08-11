@@ -31,7 +31,7 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
 // scalastyle:off line.size.limit
 /**
  * End-to-end test cases for configuration doc file
- * The golden result file is "docs/deployment/settings.md".
+ * The golden result file is "docs/configuration/settings.md".
  *
  * To run the entire test suite:
  * {{{
@@ -46,7 +46,7 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
 // scalastyle:on line.size.limit
 class AllKyuubiConfiguration extends KyuubiFunSuite {
   private val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")(0)
-  private val markdown = Paths.get(kyuubiHome, "docs", "deployment", "settings.md")
+  private val markdown = Paths.get(kyuubiHome, "docs", "configuration", "settings.md")
     .toAbsolutePath
 
   private def loadConfigs = Array(
@@ -64,7 +64,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
 
     builder ++=
       s"""
-         |# Introduction to the Kyuubi Configurations System
+         |# Configurations
          |
          |Kyuubi provides several ways to configure the system and corresponding engines.
          |
