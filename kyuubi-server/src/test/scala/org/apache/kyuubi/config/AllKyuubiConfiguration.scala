@@ -31,7 +31,7 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
 // scalastyle:off line.size.limit
 /**
  * End-to-end test cases for configuration doc file
- * The golden result file is "docs/deployment/settings.md".
+ * The golden result file is "docs/configuration/settings.md".
  *
  * To run the entire test suite:
  * {{{
