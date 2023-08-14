@@ -37,7 +37,6 @@ class FinalStageResourceManagerSuite extends KyuubiSparkSQLExtensionTest {
       .set(KyuubiSQLConf.FINAL_WRITE_STAGE_EAGERLY_KILL_EXECUTORS_ENABLED.key, "true")
   }
 
-
   test("[KYUUBI #5136][Bug] Final Stage hangs forever") {
     // Prerequisite to reproduce the bug:
     // 1. Dynamic allocation is enabled.
