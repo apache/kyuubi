@@ -69,7 +69,7 @@ case class Query(
           queryId.operationHandle,
           defaultFetchOrientation,
           defaultMaxRows,
-          false)
+          false).getResults
         TrinoContext.createQueryResults(
           queryId.getQueryId,
           nextUri,

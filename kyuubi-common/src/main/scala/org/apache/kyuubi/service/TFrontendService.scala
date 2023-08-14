@@ -520,23 +520,20 @@ abstract class TFrontendService(name: String)
 
   override def FetchResults(req: TFetchResultsReq): TFetchResultsResp = {
     debug(req.toString)
-    val resp = new TFetchResultsResp
     try {
       val operationHandle = OperationHandle(req.getOperationHandle)
       val orientation = FetchOrientation.getFetchOrientation(req.getOrientation)
       // 1 means fetching log
       val fetchLog = req.getFetchType == 1
       val maxRows = req.getMaxRows.toInt
-      val rowSet = be.fetchResults(operationHandle, orientation, maxRows, fetchLog)
-      resp.setResults(rowSet)
-      resp.setHasMoreRows(false)
-      resp.setStatus(OK_STATUS)
+      be.fetchResults(operationHandle, orientation, maxRows, fetchLog)
     } catch {
       case e: Exception =>
         error("Error fetching results: ", e)
+        val resp = new TFetchResultsResp
         resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp
     }
-    resp
   }
 
   protected def notSupportTokenErrorStatus = {

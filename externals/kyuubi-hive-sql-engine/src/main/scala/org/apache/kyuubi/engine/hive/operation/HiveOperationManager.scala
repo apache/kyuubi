@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.hive.operation
 import java.util.List
 
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
-import org.apache.hive.service.rpc.thrift.TRowSet
+import org.apache.hive.service.rpc.thrift.TFetchResultsResp
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.hive.session.HiveSessionImpl
@@ -154,7 +154,7 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,
-      maxRows: Int): TRowSet = {
+      maxRows: Int): TFetchResultsResp = {
     val operation = getOperation(opHandle).asInstanceOf[HiveOperation]
     operation.getOperationLogRowSet(order, maxRows)
   }
