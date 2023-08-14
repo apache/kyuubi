@@ -1319,6 +1319,15 @@ object KyuubiConf {
       .intConf
       .createWithDefault(1000000)
 
+  val ENGINE_FLINK_FETCH_TIMEOUT: OptionalConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.flink.fetch.timeout")
+      .doc("Result fetch timeout for Flink engine. If the timeout is reached, the result " +
+        "fetch would be stopped and the current fetched would be returned. If no data are " +
+        "fetched, a TimeoutException would be thrown.")
+      .version("1.8.0")
+      .timeConf
+      .createOptional
+
   val ENGINE_TRINO_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.engine.trino.main.resource")
       .doc("The package used to create Trino engine remote job. If it is undefined," +

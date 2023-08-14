@@ -50,6 +50,14 @@ case class ResultSet(
   def getColumns: util.List[Column] = columns
 
   def getData: FetchIterator[Row] = data
+
+  def close: Unit = {
+    data match {
+      case queryIte: QueryResultFetchIterator =>
+        queryIte.close()
+      case _ =>
+    }
+  }
 }
 
 /**
