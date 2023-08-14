@@ -67,7 +67,9 @@ class ExecuteStatement(
         iter =
           if (incrementalCollect) {
             info("Execute in incremental collect mode")
-            new IterableFetchIterator(resultSetWrapper.toIterable)
+            new IterableFetchIterator[Row](new Iterable[Row] {
+              override def iterator: Iterator[Row] = resultSetWrapper
+            })
           } else {
             warn(s"Execute in full collect mode")
             new ArrayFetchIterator(resultSetWrapper.toArray())
