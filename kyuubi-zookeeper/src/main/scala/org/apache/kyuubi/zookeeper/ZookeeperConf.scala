@@ -51,9 +51,7 @@ object ZookeeperConf {
 
   val ZK_CLIENT_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("kyuubi.zookeeper.embedded.client.use.hostname")
-      .doc("When true, embedded Zookeeper prefer to bind hostname, otherwise, ip address. " +
-        "Note that, the default value is set to `false` when engine running on Kubernetes " +
-        "to prevent potential network issues.")
+      .doc("When true, embedded Zookeeper prefer to bind hostname, otherwise, ip address.")
       .version("1.7.2")
       .booleanConf
       .createWithDefault(false)
