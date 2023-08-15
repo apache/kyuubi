@@ -55,6 +55,7 @@ abstract class JdbcOperation(session: Session) extends AbstractOperation(session
     resultRowSet.setStartRowOffset(iter.getPosition)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(resultRowSet)
+    resp.setHasMoreRows(false)
     resp
   }
 

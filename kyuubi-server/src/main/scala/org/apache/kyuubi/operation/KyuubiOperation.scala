@@ -188,6 +188,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     val rowset = client.fetchResults(_remoteOpHandle, order, rowSetSize, fetchLog = false)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(rowset)
+    resp.setHasMoreRows(false)
     resp
   }
 

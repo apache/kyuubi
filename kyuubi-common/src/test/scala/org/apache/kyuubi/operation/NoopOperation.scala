@@ -84,6 +84,7 @@ class NoopOperation(session: Session, shouldFail: Boolean = false)
     tRowSet.addToColumns(col)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(tRowSet)
+    resp.setHasMoreRows(false)
     resp
   }
 

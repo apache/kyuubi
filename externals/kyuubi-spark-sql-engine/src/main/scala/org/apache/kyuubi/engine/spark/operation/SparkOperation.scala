@@ -268,6 +268,7 @@ abstract class SparkOperation(session: Session)
 
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(resultRowSet)
+    resp.setHasMoreRows(false)
     resp
   }
 

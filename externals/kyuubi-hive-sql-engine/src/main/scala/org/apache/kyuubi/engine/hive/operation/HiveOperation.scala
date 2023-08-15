@@ -103,6 +103,7 @@ abstract class HiveOperation(session: Session) extends AbstractOperation(session
     val rowSet = internalHiveOperation.getNextRowSet(hiveOrder, rowSetSize)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(rowSet.toTRowSet)
+    resp.setHasMoreRows(false)
     resp
   }
 
