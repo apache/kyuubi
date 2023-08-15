@@ -23,6 +23,7 @@ import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.ResultSetWrapper
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState}
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -36,6 +37,9 @@ class ExecuteStatement(
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
+
+  val connection: Connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
+  var jdbcStatement: Statement = _
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
@@ -55,9 +59,7 @@ class ExecuteStatement(
 
   private def executeStatement(): Unit = {
     setState(OperationState.RUNNING)
-    var jdbcStatement: Statement = null
     try {
-      val connection: Connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
       jdbcStatement = dialect.createStatement(connection)
       val hasResult = jdbcStatement.execute(statement)
       if (hasResult) {
@@ -91,10 +93,23 @@ class ExecuteStatement(
     } catch {
       onError(true)
     } finally {
-      if (jdbcStatement != null) {
-        jdbcStatement.closeOnCompletion()
-      }
       shutdownTimeoutMonitor()
+    }
+  }
+
+  override def cleanup(targetState: OperationState): Unit = withLockRequired {
+    try {
+      if (!isTerminalState(state)) {
+        setState(targetState)
+        Option(getBackgroundHandle).foreach(_.cancel(true))
+      }
+    } finally {
+      if (jdbcStatement != null) {
+        jdbcStatement.close()
+      }
+      if (connection != null) {
+        connection.close()
+      }
     }
   }
 }
