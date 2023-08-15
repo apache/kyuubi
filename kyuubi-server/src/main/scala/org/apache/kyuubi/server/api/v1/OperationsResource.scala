@@ -145,10 +145,11 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       if (fetchOrientation != "FETCH_NEXT" && fetchOrientation != "FETCH_FIRST") {
         throw new BadRequestException(s"$fetchOrientation in operation log is not supported")
       }
-      val rowSet = fe.be.sessionManager.operationManager.getOperationLogRowSet(
+      val fetchResultsResp = fe.be.sessionManager.operationManager.getOperationLogRowSet(
         OperationHandle(operationHandleStr),
         FetchOrientation.withName(fetchOrientation),
         maxRows)
+      val rowSet = fetchResultsResp.getResults
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
       new OperationLog(logRowSet.asJava, logRowSet.size)
     } catch {
@@ -175,11 +176,12 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       @QueryParam("fetchorientation") @DefaultValue("FETCH_NEXT")
       fetchOrientation: String): ResultRowSet = {
     try {
-      val rowSet = fe.be.fetchResults(
+      val fetchResultsResp = fe.be.fetchResults(
         OperationHandle(operationHandleStr),
         FetchOrientation.withName(fetchOrientation),
         maxRows,
         fetchLog = false)
+      val rowSet = fetchResultsResp.getResults
       val rows = rowSet.getRows.asScala.map(i => {
         new Row(i.getColVals.asScala.map(i => {
           new Field(

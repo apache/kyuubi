@@ -21,7 +21,7 @@ import java.util.concurrent.Future
 
 import org.apache.hive.service.cli.operation.{Operation, OperationManager}
 import org.apache.hive.service.cli.session.{HiveSession, SessionManager => HiveSessionManager}
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
+import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
@@ -95,22 +95,31 @@ abstract class HiveOperation(session: Session) extends AbstractOperation(session
     resp
   }
 
-  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(
+      order: FetchOrientation,
+      rowSetSize: Int): TFetchResultsResp = {
     val tOrder = FetchOrientation.toTFetchOrientation(order)
     val hiveOrder = org.apache.hive.service.cli.FetchOrientation.getFetchOrientation(tOrder)
     val rowSet = internalHiveOperation.getNextRowSet(hiveOrder, rowSetSize)
-    rowSet.toTRowSet
+    val resp = new TFetchResultsResp(OK_STATUS)
+    resp.setResults(rowSet.toTRowSet)
+    resp.setHasMoreRows(false)
+    resp
   }
 
-  def getOperationLogRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  def getOperationLogRowSet(order: FetchOrientation, rowSetSize: Int): TFetchResultsResp = {
     val tOrder = FetchOrientation.toTFetchOrientation(order)
     val hiveOrder = org.apache.hive.service.cli.FetchOrientation.getFetchOrientation(tOrder)
     val handle = internalHiveOperation.getHandle
-    delegatedOperationManager.getOperationLogRowSet(
+    val rowSet = delegatedOperationManager.getOperationLogRowSet(
       handle,
       hiveOrder,
       rowSetSize,
       hive.getHiveConf).toTRowSet
+    val resp = new TFetchResultsResp(OK_STATUS)
+    resp.setResults(rowSet)
+    resp.setHasMoreRows(false)
+    resp
   }
 
   override def isTimedOut: Boolean = internalHiveOperation.isTimedOut(System.currentTimeMillis)

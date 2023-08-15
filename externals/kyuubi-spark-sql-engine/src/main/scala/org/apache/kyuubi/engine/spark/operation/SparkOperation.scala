@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.operation
 import java.io.IOException
 import java.time.ZoneId
 
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TProgressUpdateResp, TRowSet}
+import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TRowSet}
 import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
@@ -233,7 +233,9 @@ abstract class SparkOperation(session: Session)
     resp
   }
 
-  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(
+      order: FetchOrientation,
+      rowSetSize: Int): TFetchResultsResp = {
     var resultRowSet: TRowSet = null
     try {
       withLocalProperties {
@@ -264,7 +266,10 @@ abstract class SparkOperation(session: Session)
       }
     } catch onError(cancel = true)
 
-    resultRowSet
+    val resp = new TFetchResultsResp(OK_STATUS)
+    resp.setResults(resultRowSet)
+    resp.setHasMoreRows(false)
+    resp
   }
 
   override def shouldRunAsync: Boolean = false

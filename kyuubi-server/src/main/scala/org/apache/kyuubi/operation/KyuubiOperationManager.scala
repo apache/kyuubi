@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.TimeUnit
 
-import org.apache.hive.service.rpc.thrift.TRowSet
+import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TStatus, TStatusCode}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
@@ -214,11 +214,11 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,
-      maxRows: Int): TRowSet = {
-
+      maxRows: Int): TFetchResultsResp = {
+    val resp = new TFetchResultsResp(new TStatus(TStatusCode.SUCCESS_STATUS))
     val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
     val operationLog = operation.getOperationLog
-    operationLog match {
+    val rowSet = operationLog match {
       case Some(log) => log.read(order, maxRows)
       case None =>
         val remoteHandle = operation.remoteOpHandle()
@@ -229,6 +229,9 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
           ThriftUtils.EMPTY_ROW_SET
         }
     }
+    resp.setResults(rowSet)
+    resp.setHasMoreRows(false)
+    resp
   }
 
   override def start(): Unit = synchronized {

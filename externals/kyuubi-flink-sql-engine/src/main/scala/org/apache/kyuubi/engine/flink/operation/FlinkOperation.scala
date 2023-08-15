@@ -25,7 +25,7 @@ import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.gateway.service.context.SessionContext
 import org.apache.flink.table.gateway.service.operation.OperationExecutor
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.engine.flink.result.ResultSet
@@ -91,7 +91,9 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
     resp
   }
 
-  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(
+      order: FetchOrientation,
+      rowSetSize: Int): TFetchResultsResp = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
@@ -112,7 +114,10 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
       zoneId,
       getProtocolVersion)
     resultRowSet.setStartRowOffset(resultSet.getData.getPosition)
-    resultRowSet
+    val resp = new TFetchResultsResp(OK_STATUS)
+    resp.setResults(resultRowSet)
+    resp.setHasMoreRows(false)
+    resp
   }
 
   override def shouldRunAsync: Boolean = false

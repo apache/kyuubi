@@ -151,7 +151,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     }
 
     val resultColumns = batchJobSubmissionOp.getNextRowSet(FetchOrientation.FETCH_NEXT, 10)
-      .getColumns.asScala
+      .getResults.getColumns.asScala
 
     val keys = resultColumns.head.getStringVal.getValues.asScala
     val values = resultColumns.apply(1).getStringVal.getValues.asScala
