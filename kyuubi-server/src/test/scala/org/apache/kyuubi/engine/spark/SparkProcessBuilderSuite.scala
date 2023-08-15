@@ -305,6 +305,49 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       b1.toString.contains(
         s"$CONF spark.$KYUUBI_ENGINE_LOG_PATH_KEY=${b1.engineLog.getAbsolutePath}"))
   }
+
+  test("[KYUUBI #5165] Test SparkProcessBuilder#appendDriverPodPrefix") {
+    val engineRefId = "kyuubi-test-engine"
+    val appName = "test-app"
+    val b1 = new SparkProcessBuilder("kyuubi", conf, engineRefId)
+    val conf1 = Map(SparkProcessBuilder.APP_KEY -> "test-app")
+    val map1 = b1.appendDriverPodPrefix(conf1)
+    assert(s"kyuubi-$appName-$engineRefId-driver" == map1(
+      SparkProcessBuilder.KUBERNETES_DRIVER_POD_NAME))
+    val conf2 =
+      conf1 ++ Map(SparkProcessBuilder.KUBERNETES_DRIVER_POD_NAME -> "kyuubi-test-1-driver")
+    val map2 = b1.appendDriverPodPrefix(conf2)
+    assert("kyuubi-test-1-driver" == map2(SparkProcessBuilder.KUBERNETES_DRIVER_POD_NAME))
+    val longAppName = "thisisalonglonglonglonglonglonglonglonglonglonglonglong" +
+      "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
+      "longlonglonglonglonglonglonglonglonglonglonglonglongappname"
+    val conf3 = Map(SparkProcessBuilder.APP_KEY -> longAppName)
+    val map3 = b1.appendDriverPodPrefix(conf3)
+    assert(s"kyuubi-$engineRefId-driver" == map3(
+      SparkProcessBuilder.KUBERNETES_EXECUTOR_POD_NAME_PREFIX))
+  }
+
+  test("[KYUUBI #5165] Test SparkProcessBuilder#appendExecutorPodPrefix") {
+    val engineRefId = "kyuubi-test-engine"
+    val appName = "test-app"
+    val b1 = new SparkProcessBuilder("kyuubi", conf, engineRefId)
+    val conf1 = Map(SparkProcessBuilder.APP_KEY -> "test-app")
+    val map1 = b1.appendExecutorPodPrefix(conf1)
+    assert(s"kyuubi-$appName-$engineRefId" == map1(
+      SparkProcessBuilder.KUBERNETES_EXECUTOR_POD_NAME_PREFIX))
+    val conf2 =
+      conf1 ++ Map(SparkProcessBuilder.KUBERNETES_EXECUTOR_POD_NAME_PREFIX -> "kyuubi-test")
+    val map2 = b1.appendExecutorPodPrefix(conf2)
+    assert(s"kyuubi-test" == map1(
+      SparkProcessBuilder.KUBERNETES_EXECUTOR_POD_NAME_PREFIX))
+    val longAppName = "thisisalonglonglonglonglonglonglonglonglonglonglonglong" +
+      "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
+      "longlonglonglonglonglonglonglonglonglonglonglonglongappname"
+    val conf3 = Map(SparkProcessBuilder.APP_KEY -> longAppName)
+    val map3 = b1.appendExecutorPodPrefix(conf3)
+    assert(s"kyuubi-$engineRefId" == map3(
+      SparkProcessBuilder.KUBERNETES_EXECUTOR_POD_NAME_PREFIX))
+  }
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)
