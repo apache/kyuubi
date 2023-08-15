@@ -54,10 +54,9 @@ class SparkBatchProcessBuilder(
     (batchKyuubiConf.getAll ++
       sparkAppNameConf() ++
       engineLogPathConf() ++
-      appendPodNameConf(batchConf)).foreach {
-      case (k, v) =>
-        buffer += CONF
-        buffer += s"${convertConfigKey(k)}=$v"
+      appendPodNameConf(batchConf)).foreach { case (k, v) =>
+      buffer += CONF
+      buffer += s"${convertConfigKey(k)}=$v"
     }
 
     setupKerberos(buffer)
