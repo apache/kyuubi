@@ -224,7 +224,7 @@ class SparkProcessBuilder(
     conf.get(KUBERNETES_DRIVER_POD_NAME) match {
       // spark app name always be set
       case None => Map(KUBERNETES_DRIVER_POD_NAME ->
-        KubernetesUtils.generateDriverPodName(conf(APP_KEY), engineRefId))
+          KubernetesUtils.generateDriverPodName(conf(APP_KEY), engineRefId))
       case _ => Map()
     }
   }
@@ -232,7 +232,7 @@ class SparkProcessBuilder(
   def appendExecutorPodPrefix(conf: Map[String, String]): Map[String, String] = {
     conf.get(KUBERNETES_EXECUTOR_POD_NAME_PREFIX) match {
       case None => Map(KUBERNETES_EXECUTOR_POD_NAME_PREFIX ->
-        KubernetesUtils.generateExecutorPodNamePrefix(conf(APP_KEY), engineRefId))
+          KubernetesUtils.generateExecutorPodNamePrefix(conf(APP_KEY), engineRefId))
       case _ => Map()
     }
   }
