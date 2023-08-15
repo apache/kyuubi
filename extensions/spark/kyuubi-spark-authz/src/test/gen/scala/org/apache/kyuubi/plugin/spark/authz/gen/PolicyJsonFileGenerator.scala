@@ -42,12 +42,14 @@ import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions._
  * Generates the policy file to test/main/resources dir.
  *
  * To run the test suite:
- * build/mvn clean test -Pgen-policy -pl :kyuubi-spark-authz_2.12 -Dtest=none
- * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator
+ * {{{
+ *   KYUUBI_UPDATE=0 dev/gen/gen_ranger_policy_json.sh
+ * }}}
  *
  * To regenerate the ranger policy file:
- * KYUUBI_UPDATE=1 build/mvn clean test -Pgen-policy -pl :kyuubi-spark-authz_2.12 -Dtest=none
- * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator
+ * {{{
+ *   dev/gen/gen_ranger_policy_json.sh
+ * }}}
  */
 class PolicyJsonFileGenerator extends AnyFunSuite {
   // scalastyle:on
@@ -78,9 +80,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
       val existedFileContent =
         FileUtils.readFileToString(policyFilePath.toFile, StandardCharsets.UTF_8)
       withClue("Please regenerate the ranger policy file by running"
-        + "`KYUUBI_UPDATE=1 build/mvn clean test -Pgen-policy"
-        + " -pl :kyuubi-spark-authz_2.12 -Dtest=none"
-        + " -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.PolicyJsonFileGenerator`.") {
+        + " `dev/gen/gen_ranger_policy_json.sh`") {
         assert(generatedStr.equals(existedFileContent))
       }
     }

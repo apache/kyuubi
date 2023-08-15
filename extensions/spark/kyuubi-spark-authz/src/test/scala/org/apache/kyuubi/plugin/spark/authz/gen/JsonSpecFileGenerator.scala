@@ -30,12 +30,14 @@ import org.apache.kyuubi.plugin.spark.authz.serde.{mapper, CommandSpec}
  * Generates the default command specs to src/main/resources dir.
  *
  * To run the test suite:
- * build/mvn clean test -Pgen-policy -pl :kyuubi-spark-authz_2.12 -Dtest=none
- * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.JsonSpecFileGenerator
+ * {{{
+ *   KYUUBI_UPDATE=0 dev/gen/gen_ranger_spec_json.sh
+ * }}}
  *
  * To regenerate the ranger policy file:
- * KYUUBI_UPDATE=1 build/mvn clean test -Pgen-policy -pl :kyuubi-spark-authz_2.12 -Dtest=none
- * -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.JsonSpecFileGenerator
+ * {{{
+ *   dev/gen/gen_ranger_spec_json.sh
+ * }}}
  */
 
 class JsonSpecFileGenerator extends AnyFunSuite {
@@ -71,9 +73,7 @@ class JsonSpecFileGenerator extends AnyFunSuite {
       val existedFileContent =
         FileUtils.readFileToString(filePath.toFile, StandardCharsets.UTF_8)
       withClue(s"Check $filename failed. Please regenerate the ranger policy file by running"
-        + "`KYUUBI_UPDATE=1 build/mvn clean test -Pgen-policy"
-        + " -pl :kyuubi-spark-authz_2.12 -Dtest=none"
-        + " -DwildcardSuites=org.apache.kyuubi.plugin.spark.authz.gen.JsonSpecFileGenerator`.") {
+        + " `dev/gen/gen_ranger_spec_json.sh`.") {
         assert(generatedStr.equals(existedFileContent))
       }
     }
