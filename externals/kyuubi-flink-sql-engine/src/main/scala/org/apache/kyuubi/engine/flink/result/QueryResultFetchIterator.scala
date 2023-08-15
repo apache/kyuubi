@@ -18,12 +18,13 @@
 package org.apache.kyuubi.engine.flink.result
 
 import java.util
+import java.util.concurrent.Executors
 
 import scala.collection.convert.ImplicitConversions._
-import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.catalog.ResolvedSchema
 import org.apache.flink.table.data.RowData
@@ -56,6 +57,10 @@ class QueryResultFetchIterator(
   var hasNext: Boolean = true
 
   val FETCH_INTERVAL_MS: Long = 1000
+
+  private val executor = Executors.newSingleThreadScheduledExecutor(
+    new ThreadFactoryBuilder().setNameFormat("flink-query-iterator-%d").setDaemon(true).build)
+  private val executionContext = ExecutionContext.fromExecutor(executor)
 
   /**
    * Begin a fetch block, forward from the current position.
@@ -107,7 +112,7 @@ class QueryResultFetchIterator(
           }
           Thread.sleep(FETCH_INTERVAL_MS)
         }
-      }),
+      })(executionContext),
       resultFetchTimeout)
   }
 
@@ -160,6 +165,7 @@ class QueryResultFetchIterator(
 
   def close(): Unit = {
     resultFetcher.close()
+    executor.shutdown()
   }
 
   private[this] def convertToRow(r: RowData, dataTypes: List[DataType]): Row = {
