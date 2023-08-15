@@ -38,7 +38,6 @@ class ExecuteStatement(
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
-  val connection: Connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
   var jdbcStatement: Statement = _
 
   override protected def runInternal(): Unit = {
@@ -60,6 +59,7 @@ class ExecuteStatement(
   private def executeStatement(): Unit = {
     setState(OperationState.RUNNING)
     try {
+      val connection: Connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
       jdbcStatement = dialect.createStatement(connection)
       val hasResult = jdbcStatement.execute(statement)
       if (hasResult) {
@@ -106,9 +106,6 @@ class ExecuteStatement(
     } finally {
       if (jdbcStatement != null) {
         jdbcStatement.close()
-      }
-      if (connection != null) {
-        connection.close()
       }
     }
   }
