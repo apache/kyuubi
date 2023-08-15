@@ -122,7 +122,7 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
         // ignore and return the current batch if there's some data
         // otherwise, rethrow the timeout exception
         if (batch.nonEmpty) {
-          debug(s"Timeout fetching more data for $opType operation." +
+          debug(s"Timeout fetching more data for $opType operation. " +
             s"Returning the current fetched data.")
         } else {
           throw e
