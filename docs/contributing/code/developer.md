@@ -49,7 +49,7 @@ Kyuubi uses settings.md to explain available configurations.
 You can run `KYUUBI_UPDATE=1 build/mvn clean test -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration`
 to append descriptions of new configurations to settings.md.
 
-## Generative tooling usage
+## Generative Tooling Usage
 
 In general, the ASF allows contributions co-authored using generative AI tools. However, there are several considerations when you submit a patch containing generated content.
 
