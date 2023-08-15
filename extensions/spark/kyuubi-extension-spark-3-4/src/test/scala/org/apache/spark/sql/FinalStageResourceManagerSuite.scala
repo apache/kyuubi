@@ -21,7 +21,9 @@ import org.apache.spark.SparkConf
 import org.scalatest.time.{Minutes, Span}
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
+import org.apache.kyuubi.tags.SparkLocalClusterTest
 
+@SparkLocalClusterTest
 class FinalStageResourceManagerSuite extends KyuubiSparkSQLExtensionTest {
 
   override def sparkConf(): SparkConf = {
