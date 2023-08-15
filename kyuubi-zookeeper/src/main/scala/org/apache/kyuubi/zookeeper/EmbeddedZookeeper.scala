@@ -42,7 +42,13 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
     val maxClientCnxns = conf.get(ZK_MAX_CLIENT_CONNECTIONS)
     val minSessionTimeout = conf.get(ZK_MIN_SESSION_TIMEOUT)
     val maxSessionTimeout = conf.get(ZK_MAX_SESSION_TIMEOUT)
-    host = conf.get(ZK_CLIENT_PORT_ADDRESS).getOrElse(findLocalInetAddress.getCanonicalHostName)
+    host = conf.get(ZK_CLIENT_PORT_ADDRESS).getOrElse {
+      if (conf.get(ZK_CLIENT_USE_HOSTNAME)) {
+        findLocalInetAddress.getCanonicalHostName
+      } else {
+        findLocalInetAddress.getHostAddress
+      }
+    }
 
     try {
       zks = new ZooKeeperServer(dataDirectory, dataDirectory, tickTime)
