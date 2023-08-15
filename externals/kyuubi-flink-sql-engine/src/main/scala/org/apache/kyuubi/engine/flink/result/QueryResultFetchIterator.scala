@@ -60,6 +60,7 @@ class QueryResultFetchIterator(
 
   private val executor = Executors.newSingleThreadScheduledExecutor(
     new ThreadFactoryBuilder().setNameFormat("flink-query-iterator-%d").setDaemon(true).build)
+
   private val executionContext = ExecutionContext.fromExecutor(executor)
 
   /**
