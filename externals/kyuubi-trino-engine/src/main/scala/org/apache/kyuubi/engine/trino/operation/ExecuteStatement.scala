@@ -101,6 +101,7 @@ class ExecuteStatement(
     resultRowSet.setStartRowOffset(iter.getPosition)
     val fetchResultsResp = new TFetchResultsResp(OK_STATUS)
     fetchResultsResp.setResults(resultRowSet)
+    fetchResultsResp.setHasMoreRows(false)
     fetchResultsResp
   }
 

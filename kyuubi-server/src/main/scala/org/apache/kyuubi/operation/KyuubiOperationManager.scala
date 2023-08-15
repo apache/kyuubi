@@ -230,6 +230,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
         }
     }
     resp.setResults(rowSet)
+    resp.setHasMoreRows(false)
     resp
   }
 

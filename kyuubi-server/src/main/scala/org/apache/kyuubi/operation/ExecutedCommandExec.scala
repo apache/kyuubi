@@ -76,6 +76,7 @@ class ExecutedCommandExec(
     val rowSet = command.getNextRowSet(order, rowSetSize, getProtocolVersion)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(rowSet)
+    resp.setHasMoreRows(false)
     resp
   }
 

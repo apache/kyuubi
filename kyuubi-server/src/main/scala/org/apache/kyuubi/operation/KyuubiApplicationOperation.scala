@@ -68,6 +68,7 @@ abstract class KyuubiApplicationOperation(session: Session) extends KyuubiOperat
       tRow
     }.getOrElse(ThriftUtils.EMPTY_ROW_SET)
     resp.setResults(rowSet)
+    resp.setHasMoreRows(false)
     resp
   }
 }

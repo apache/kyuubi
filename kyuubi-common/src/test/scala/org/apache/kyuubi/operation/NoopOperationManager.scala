@@ -144,6 +144,7 @@ class NoopOperationManager extends OperationManager("noop") {
     tRow.addToColumns(tColumn)
     val resp = new TFetchResultsResp(new TStatus(TStatusCode.SUCCESS_STATUS))
     resp.setResults(tRow)
+    resp.setHasMoreRows(false)
     resp
   }
 

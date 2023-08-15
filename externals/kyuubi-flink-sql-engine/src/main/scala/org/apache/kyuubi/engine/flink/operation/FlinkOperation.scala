@@ -116,6 +116,7 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
     resultRowSet.setStartRowOffset(resultSet.getData.getPosition)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(resultRowSet)
+    resp.setHasMoreRows(false)
     resp
   }
 

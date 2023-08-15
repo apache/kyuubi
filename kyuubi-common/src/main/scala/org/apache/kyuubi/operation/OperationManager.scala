@@ -151,6 +151,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     }
     val resp = new TFetchResultsResp(new TStatus(TStatusCode.SUCCESS_STATUS))
     resp.setResults(rowSet)
+    resp.setHasMoreRows(false)
     resp
   }
 
