@@ -161,6 +161,10 @@
                 <artifactId>scalatest-maven-plugin</artifactId>
                 <configuration>
                     <environmentVariables>
+                        <!--
+                        Some tests run Spark in local-cluster mode.
+                        This mode uses SPARK_HOME and SPARK_SCALA_VERSION to build command to launch a Spark Standalone Cluster.
+                        -->
                         <SPARK_HOME>${spark.home}</SPARK_HOME>
                         <SPARK_SCALA_VERSION>${scala.binary.version}</SPARK_SCALA_VERSION>
                     </environmentVariables>
