@@ -21,6 +21,7 @@ import java.io.{File, IOException}
 import java.nio.file.Paths
 import java.util.Locale
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
@@ -34,6 +35,7 @@ import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.KubernetesUtils
 import org.apache.kyuubi.util.Validator
 
 class SparkProcessBuilder(
@@ -118,7 +120,7 @@ class SparkProcessBuilder(
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
     // pass spark engine log path to spark conf
-    (allConf ++ engineLogPathConf).foreach { case (k, v) =>
+    (allConf ++ engineLogPathConf ++ appendPodNameConf(allConf)).foreach { case (k, v) =>
       buffer += CONF
       buffer += s"${convertConfigKey(k)}=$v"
     }
@@ -208,6 +210,24 @@ class SparkProcessBuilder(
       kubernetesNamespace())
   }
 
+  def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
+    val appName = conf.getOrElse(APP_KEY, "spark")
+    val map = mutable.Map.newBuilder[String, String]
+    if (clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s"))) {
+      if (!conf.contains(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)) {
+        val prefix = KubernetesUtils.generateExecutorPodNamePrefix(appName, engineRefId)
+        map += (KUBERNETES_EXECUTOR_POD_NAME_PREFIX -> prefix)
+      }
+      if (deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")) {
+        if (!conf.contains(KUBERNETES_DRIVER_POD_NAME)) {
+          val name = KubernetesUtils.generateDriverPodName(appName, engineRefId)
+          map += (KUBERNETES_DRIVER_POD_NAME -> name)
+        }
+      }
+    }
+    map.result().toMap
+  }
+
   override def clusterManager(): Option[String] = {
     conf.getOption(MASTER_KEY).orElse(defaultsConf.get(MASTER_KEY))
   }
@@ -258,6 +278,8 @@ object SparkProcessBuilder {
   final val DEPLOY_MODE_KEY = "spark.submit.deployMode"
   final val KUBERNETES_CONTEXT_KEY = "spark.kubernetes.context"
   final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
+  final val KUBERNETES_DRIVER_POD_NAME = "spark.kubernetes.driver.pod.name"
+  final val KUBERNETES_EXECUTOR_POD_NAME_PREFIX = "spark.kubernetes.executor.podNamePrefix"
   final val INTERNAL_RESOURCE = "spark-internal"
 
   /**
