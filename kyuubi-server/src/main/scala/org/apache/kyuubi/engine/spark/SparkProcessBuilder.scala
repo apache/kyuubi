@@ -212,9 +212,9 @@ class SparkProcessBuilder(
 
   def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
     val map = mutable.Map.newBuilder[String, String]
-    def appendOptionPair(pair: Option[(String, String)]): Unit = {
-      pair match {
-        case Some(pair) => map += (pair._1, pair._2)
+    def appendOptionPair(pairOpt: Option[(String, String)]): Unit = {
+      pairOpt match {
+        case Some(pair) => map += (pair._1 -> pair._2)
         case _ =>
       }
     }
