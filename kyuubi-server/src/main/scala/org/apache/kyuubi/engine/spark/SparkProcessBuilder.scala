@@ -210,14 +210,14 @@ class SparkProcessBuilder(
   }
 
   def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
-    var result = Map[String, String]()
+    val map = scala.collection.mutable.Map.newBuilder[String, String]
     if (clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s"))) {
-      result = result ++ appendExecutorPodPrefix(conf)
+      map += appendExecutorPodPrefix(conf)
       if (deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")) {
-        result = result ++ appendDriverPodPrefix(conf)
+        map += appendDriverPodPrefix(conf)
       }
     }
-    result
+    map.result().toMap
   }
 
   def appendDriverPodPrefix(conf: Map[String, String]): Map[String, String] = {
@@ -225,7 +225,7 @@ class SparkProcessBuilder(
       // spark app name always be set
       case None => Map(KUBERNETES_DRIVER_POD_NAME ->
           KubernetesUtils.generateDriverPodName(conf(APP_KEY), engineRefId))
-      case _ => Map()
+      case _ => Map.empty
     }
   }
 
@@ -233,7 +233,7 @@ class SparkProcessBuilder(
     conf.get(KUBERNETES_EXECUTOR_POD_NAME_PREFIX) match {
       case None => Map(KUBERNETES_EXECUTOR_POD_NAME_PREFIX ->
           KubernetesUtils.generateExecutorPodNamePrefix(conf(APP_KEY), engineRefId))
-      case _ => Map()
+      case _ => Map.empty
     }
   }
 
