@@ -22,6 +22,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.{ExecutorAllocationClient, MapOutputTrackerMaster, SparkContext, SparkEnv}
+import org.apache.spark.internal.Logging
 import org.apache.spark.resource.ResourceProfile
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -217,7 +218,7 @@ case class FinalStageResourceManager(session: SparkSession)
       countFailures = false,
       force = false)
 
-    getAdjustedTargetExecutors(sc, executorAllocationClient)
+    FinalStageResourceManager.getAdjustedTargetExecutors(sc)
       .filter(_ < targetExecutors).foreach { adjustedExecutors =>
         val delta = targetExecutors - adjustedExecutors
         logInfo(s"Target executors after kill ($adjustedExecutors) is lower than required " +
@@ -226,10 +227,16 @@ case class FinalStageResourceManager(session: SparkSession)
       }
   }
 
-  private def getAdjustedTargetExecutors(
-      sc: SparkContext,
-      executorAllocationClient: ExecutorAllocationClient): Option[Int] = {
-    executorAllocationClient match {
+  @transient private val queryStageOptimizerRules: Seq[Rule[SparkPlan]] = Seq(
+    OptimizeSkewInRebalancePartitions,
+    CoalesceShufflePartitions(session),
+    OptimizeShuffleWithLocalRead)
+}
+
+object FinalStageResourceManager extends Logging {
+
+  private[sql] def getAdjustedTargetExecutors(sc: SparkContext): Option[Int] = {
+    sc.schedulerBackend match {
       case schedulerBackend: CoarseGrainedSchedulerBackend =>
         try {
           val field = classOf[CoarseGrainedSchedulerBackend]
@@ -249,11 +256,6 @@ case class FinalStageResourceManager(session: SparkSession)
       case _ => None
     }
   }
-
-  @transient private val queryStageOptimizerRules: Seq[Rule[SparkPlan]] = Seq(
-    OptimizeSkewInRebalancePartitions,
-    CoalesceShufflePartitions(session),
-    OptimizeShuffleWithLocalRead)
 }
 
 trait FinalRebalanceStageHelper extends AdaptiveSparkPlanHelper {

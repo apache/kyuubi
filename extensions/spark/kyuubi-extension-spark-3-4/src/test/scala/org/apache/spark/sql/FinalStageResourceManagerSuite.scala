@@ -55,6 +55,7 @@ class FinalStageResourceManagerSuite extends KyuubiSparkSQLExtensionTest {
           sql(
             "CREATE TABLE final_stage AS SELECT id, count(*) as num FROM (SELECT 0 id) GROUP BY id")
         }
+        assert(FinalStageResourceManager.getAdjustedTargetExecutors(spark.sparkContext).get == 1)
       }
     }
   }
