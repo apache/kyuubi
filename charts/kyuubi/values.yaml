@@ -116,6 +116,16 @@ server:
       nodePort: ~
       annotations: {}
 
+  # Exposes metrics in Prometheus format
+  prometheus:
+    enabled: true
+    port: 10019
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.prometheus.port }}"
+      nodePort: ~
+      annotations: {}
+
 # $KYUUBI_CONF_DIR directory
 kyuubiConfDir: /opt/kyuubi/conf
 # Kyuubi configurations files
@@ -202,3 +212,30 @@ affinity: {}
 
 # Kyuubi pods security context
 securityContext: {}
+
+# Monitoring Kyuubi - Server Metrics
+# PROMETHEUS - PrometheusReporter which exposes metrics in Prometheus format
+metricsReporters: ~
+
+# Prometheus pod monitor
+podMonitor:
+  # If enabled, podMonitor for operator's pod will be created
+  enabled: false
+  # The podMetricsEndpoint contains metrics information such as port, interval, scheme, and possibly other relevant details.
+  # This information is used to configure the endpoint from which Prometheus can scrape and collect metrics for a specific Pod in Kubernetes.
+  podMetricsEndpoint: []
+
+# Prometheus service monitor
+serviceMonitor:
+  # If enabled, ServiceMonitor resources for Prometheus Operator are created
+  enabled: false
+  # The endpoints section in a ServiceMonitor specifies the metrics information for each target endpoint.
+  # This allows you to collect metrics from multiple Services across your Kubernetes cluster in a standardized and automated way.
+  endpoints: []
+
+# Rules for the Prometheus Operator
+prometheusRule:
+  # If enabled, a PrometheusRule resource for Prometheus Operator is created
+  enabled: false
+  # Contents of Prometheus rules file
+  groups: []
