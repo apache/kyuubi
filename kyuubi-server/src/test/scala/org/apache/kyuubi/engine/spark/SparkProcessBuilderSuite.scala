@@ -311,27 +311,28 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val appName = "test-app"
     val processBuilder = new SparkProcessBuilder("kyuubi", conf, engineRefId)
     val conf1 = Map(SparkProcessBuilder.APP_KEY -> "test-app")
-    val map1 = processBuilder.appendDriverPodPrefix(conf1)
-    assert(s"kyuubi-$appName-$engineRefId-driver" == map1(
-      SparkProcessBuilder.KUBERNETES_DRIVER_POD_NAME))
+    val pair1 = processBuilder.getDriverPodPrefix(conf1)
+    assert(pair1.nonEmpty)
+    assert(s"kyuubi-$appName-$engineRefId-driver" == pair1.get._2)
+    // respect user specified driver pod name
     val conf2 =
       conf1 ++ Map(SparkProcessBuilder.KUBERNETES_DRIVER_POD_NAME -> "kyuubi-test-1-driver")
-    val map2 = processBuilder.appendDriverPodPrefix(conf2)
-    assert("kyuubi-test-1-driver" == map2(SparkProcessBuilder.KUBERNETES_DRIVER_POD_NAME))
+    val pair2 = processBuilder.getDriverPodPrefix(conf2)
+    assert(pair2.isEmpty)
     val longAppName = "thisisalonglonglonglonglonglonglonglonglonglonglonglong" +
       "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
       "longlonglonglonglonglonglonglonglonglonglonglonglongappname"
     val conf3 = Map(SparkProcessBuilder.APP_KEY -> longAppName)
-    val map3 = processBuilder.appendDriverPodPrefix(conf3)
-    assert(s"kyuubi-$engineRefId-driver" == map3(
-      SparkProcessBuilder.KUBERNETES_EXECUTOR_POD_NAME_PREFIX))
+    val pair3 = processBuilder.getDriverPodPrefix(conf3)
+    assert(pair3.nonEmpty)
+    assert(s"kyuubi-$engineRefId-driver" == pair3.get._2)
     // scalastyle:off
     val chineseAppName = "你好_test_任务"
     // scalastyle:on
     val conf4 = Map(SparkProcessBuilder.APP_KEY -> chineseAppName)
-    val map4 = processBuilder.appendDriverPodPrefix(conf4)
-    assert(s"kyuubi-test-$engineRefId-driver" == map4(
-      SparkProcessBuilder.KUBERNETES_EXECUTOR_POD_NAME_PREFIX))
+    val pair4 = processBuilder.getDriverPodPrefix(conf4)
+    assert(pair4.nonEmpty)
+    assert(s"kyuubi-test-$engineRefId-driver" == pair4.get._2)
   }
 
   test("[KYUUBI #5165] Test SparkProcessBuilder#appendExecutorPodPrefix") {
@@ -339,21 +340,20 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val appName = "test-app"
     val processBuilder = new SparkProcessBuilder("kyuubi", conf, engineRefId)
     val conf1 = Map(SparkProcessBuilder.APP_KEY -> "test-app")
-    val map1 = processBuilder.appendExecutorPodPrefix(conf1)
-    assert(s"kyuubi-$appName-$engineRefId" == map1(
-      SparkProcessBuilder.KUBERNETES_EXECUTOR_POD_NAME_PREFIX))
+    val pair1 = processBuilder.getExecutorPodPrefix(conf1)
+    assert(pair1.nonEmpty)
+    assert(s"kyuubi-$appName-$engineRefId" == pair1.get._2)
     val conf2 =
       conf1 ++ Map(SparkProcessBuilder.KUBERNETES_EXECUTOR_POD_NAME_PREFIX -> "kyuubi-test")
-    val map2 = processBuilder.appendExecutorPodPrefix(conf2)
-    assert(s"kyuubi-test" == map2(
-      SparkProcessBuilder.KUBERNETES_EXECUTOR_POD_NAME_PREFIX))
+    val pair2 = processBuilder.getExecutorPodPrefix(conf2)
+    assert(pair2.isEmpty)
     val longAppName = "thisisalonglonglonglonglonglonglonglonglonglonglonglong" +
       "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
       "longlonglonglonglonglonglonglonglonglonglonglonglongappname"
     val conf3 = Map(SparkProcessBuilder.APP_KEY -> longAppName)
-    val map3 = processBuilder.appendExecutorPodPrefix(conf3)
-    assert(s"kyuubi-$engineRefId" == map3(
-      SparkProcessBuilder.KUBERNETES_EXECUTOR_POD_NAME_PREFIX))
+    val pair3 = processBuilder.getExecutorPodPrefix(conf3)
+    assert(pair3.nonEmpty)
+    assert(s"kyuubi-$engineRefId" == pair3.get._2)
   }
 }
 
