@@ -211,6 +211,8 @@ class SparkProcessBuilder(
   }
 
   def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
+    if (!conf.contains(APP_KEY)) return Map.empty
+
     val map = mutable.Map.newBuilder[String, String]
     if (clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s"))) {
       if (!conf.contains(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)) {
