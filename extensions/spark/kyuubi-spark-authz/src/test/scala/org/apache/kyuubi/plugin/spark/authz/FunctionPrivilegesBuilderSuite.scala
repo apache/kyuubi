@@ -65,7 +65,7 @@ abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
   protected val OBJECT_NAME_SEPARATOR = "_"
 
   protected val reusedDb: String = getClass.getSimpleName
-  protected val reusedDb2: String =  s"${getClass.getSimpleName}${OBJECT_NAME_SEPARATOR}2"
+  protected val reusedDb2: String = s"${getClass.getSimpleName}${OBJECT_NAME_SEPARATOR}2"
   protected val reusedTable: String = reusedDb + "." + getClass.getSimpleName
   protected val reusedTableShort: String = reusedTable.split("\\.").last
   protected val reusedPartTable: String = reusedTable + "_part"
