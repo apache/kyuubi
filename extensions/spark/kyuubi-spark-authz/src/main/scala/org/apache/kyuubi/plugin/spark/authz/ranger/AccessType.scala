@@ -58,7 +58,12 @@ object AccessType extends Enumeration {
               SHOWPARTITIONS |
               ANALYZE_TABLE => SELECT
           case SHOWCOLUMNS | DESCTABLE => SELECT
-          case SHOWDATABASES | SWITCHDATABASE | DESCDATABASE | SHOWTABLES | SHOWFUNCTIONS => USE
+          case SHOWDATABASES |
+              SWITCHDATABASE |
+              DESCDATABASE |
+              SHOWTABLES |
+              SHOWFUNCTIONS |
+              DESCFUNCTION => USE
           case TRUNCATETABLE => UPDATE
           case _ => NONE
         }
