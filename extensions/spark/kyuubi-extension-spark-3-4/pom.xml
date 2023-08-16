@@ -56,6 +56,22 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-download</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
             <type>test-jar</type>
@@ -111,11 +127,49 @@
             <artifactId>jakarta.xml.bind-api</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
 
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>regex-property</id>
+                        <goals>
+                            <goal>regex-property</goal>
+                        </goals>
+                        <configuration>
+                            <name>spark.home</name>
+                            <value>${project.basedir}/../../../externals/kyuubi-download/target/${spark.archive.name}</value>
+                            <regex>(.+)\.tgz</regex>
+                            <replacement>$1</replacement>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.scalatest</groupId>
+                <artifactId>scalatest-maven-plugin</artifactId>
+                <configuration>
+                    <environmentVariables>
+                        <!--
+                        Some tests run Spark in local-cluster mode.
+                        This mode uses SPARK_HOME and SPARK_SCALA_VERSION to build command to launch a Spark Standalone Cluster.
+                        -->
+                        <SPARK_HOME>${spark.home}</SPARK_HOME>
+                        <SPARK_SCALA_VERSION>${scala.binary.version}</SPARK_SCALA_VERSION>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>

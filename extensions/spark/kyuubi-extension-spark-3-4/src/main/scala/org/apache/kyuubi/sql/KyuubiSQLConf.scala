@@ -210,6 +210,14 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val FINAL_WRITE_STAGE_EAGERLY_KILL_EXECUTORS_KILL_ALL =
+    buildConf("spark.sql.finalWriteStage.eagerlyKillExecutors.killAll")
+      .doc("When true, eagerly kill all executors before running final write stage. " +
+        "Mainly for test.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val FINAL_WRITE_STAGE_SKIP_KILLING_EXECUTORS_FOR_TABLE_CACHE =
     buildConf("spark.sql.finalWriteStage.skipKillingExecutorsForTableCache")
       .doc("When true, skip killing executors if the plan has table caches.")
