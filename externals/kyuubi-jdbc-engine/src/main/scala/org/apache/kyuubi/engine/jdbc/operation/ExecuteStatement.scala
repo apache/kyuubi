@@ -38,7 +38,7 @@ class ExecuteStatement(
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
-  var jdbcStatement: Statement = _
+  @volatile private var jdbcStatement: Statement = _
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
@@ -74,6 +74,7 @@ class ExecuteStatement(
             })
           } else {
             warn(s"Execute in full collect mode")
+            jdbcStatement.closeOnCompletion()
             new ArrayFetchIterator(resultSetWrapper.toArray())
           }
       } else {
@@ -99,13 +100,11 @@ class ExecuteStatement(
 
   override def cleanup(targetState: OperationState): Unit = withLockRequired {
     try {
-      if (!isTerminalState(state)) {
-        setState(targetState)
-        Option(getBackgroundHandle).foreach(_.cancel(true))
-      }
+      super.cleanup(targetState)
     } finally {
-      if (jdbcStatement != null) {
-        jdbcStatement.closeOnCompletion()
+      if (jdbcStatement != null && !jdbcStatement.isClosed) {
+        jdbcStatement.close()
+        jdbcStatement = null
       }
     }
   }
