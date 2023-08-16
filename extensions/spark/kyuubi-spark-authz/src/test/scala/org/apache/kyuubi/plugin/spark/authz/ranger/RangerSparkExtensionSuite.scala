@@ -442,6 +442,17 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
     doAs(admin, assert(sql("show tables from global_temp").collect().length == 0))
   }
+
+  test("[KYUUBI #5172] Check USE permissions for DESCRIBE FUNCTION") {
+    val fun = s"$defaultDb.function1"
+
+    withCleanTmpResources(Seq((s"$fun", "function"))) {
+      doAs(admin, sql(s"CREATE FUNCTION $fun AS 'Function1'"))
+      doAs(admin, sql(s"DESC FUNCTION $fun").collect().length == 1)
+      val e = intercept[AccessControlException](doAs(denyUser, sql(s"DESC FUNCTION $fun")))
+      assert(e.getMessage === errorMessage("_any", "default/function1", denyUser))
+    }
+  }
 }
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
