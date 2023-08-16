@@ -88,6 +88,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private JdbcConnectionParams connParams;
   private TTransport transport;
   private TCLIService.Iface client;
+  private CloseableHttpClient httpClient;
   private boolean isClosed = true;
   private SQLWarning warningChain = null;
   private TSessionHandle sessHandle = null;
@@ -413,7 +414,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private TTransport createHttpTransport() throws SQLException, TTransportException {
-    CloseableHttpClient httpClient;
     boolean useSsl = isSslConnection();
     // Create an http client from the configs
     httpClient = getHttpClient(useSsl);
@@ -977,6 +977,14 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       if (transport != null && transport.isOpen()) {
         transport.close();
         transport = null;
+      }
+      if (httpClient != null) {
+        try {
+          httpClient.close();
+        } catch (Exception e) {
+          LOG.error("Error while closing http client", e);
+        }
+        httpClient = null;
       }
     }
   }
