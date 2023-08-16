@@ -211,17 +211,16 @@ class SparkProcessBuilder(
   }
 
   def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
-    if (!conf.contains(APP_KEY)) return Map.empty
-
+    val appName = conf.getOrElse(APP_KEY, "spark")
     val map = mutable.Map.newBuilder[String, String]
     if (clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s"))) {
       if (!conf.contains(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)) {
-        val prefix = KubernetesUtils.generateExecutorPodNamePrefix(conf(APP_KEY), engineRefId)
+        val prefix = KubernetesUtils.generateExecutorPodNamePrefix(appName, engineRefId)
         map += (KUBERNETES_EXECUTOR_POD_NAME_PREFIX -> prefix)
       }
       if (deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")) {
         if (!conf.contains(KUBERNETES_DRIVER_POD_NAME)) {
-          val name = KubernetesUtils.generateDriverPodName(conf(APP_KEY), engineRefId)
+          val name = KubernetesUtils.generateDriverPodName(appName, engineRefId)
           map += (KUBERNETES_DRIVER_POD_NAME -> name)
         }
       }
