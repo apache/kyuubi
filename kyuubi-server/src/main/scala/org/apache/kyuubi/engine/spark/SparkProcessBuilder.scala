@@ -212,16 +212,10 @@ class SparkProcessBuilder(
 
   def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
     val map = mutable.Map.newBuilder[String, String]
-    def appendOptionPair(pairOpt: Option[(String, String)]): Unit = {
-      pairOpt match {
-        case Some(pair) => map += (pair._1 -> pair._2)
-        case _ =>
-      }
-    }
     if (clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s"))) {
-      appendOptionPair(getExecutorPodPrefix(conf))
+      getExecutorPodPrefix(conf).foreach { case (k, v) => map += (k, v) }
       if (deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")) {
-        appendOptionPair(getDriverPodPrefix(conf))
+        getDriverPodPrefix(conf).foreach { case (k, v) => map += (k, v) }
       }
     }
     map.result().toMap
@@ -229,19 +223,18 @@ class SparkProcessBuilder(
 
   def getDriverPodPrefix(conf: Map[String, String]): Option[(String, String)] = {
     conf.get(KUBERNETES_DRIVER_POD_NAME) match {
-      // spark app name always be set
-      case None => Some(
-          KUBERNETES_DRIVER_POD_NAME ->
-            KubernetesUtils.generateDriverPodName(conf(APP_KEY), engineRefId))
+      case None => // skip setting if provided
+        val name = KubernetesUtils.generateDriverPodName(conf(APP_KEY), engineRefId)
+        Some(KUBERNETES_DRIVER_POD_NAME -> name)
       case _ => None
     }
   }
 
   def getExecutorPodPrefix(conf: Map[String, String]): Option[(String, String)] = {
     conf.get(KUBERNETES_EXECUTOR_POD_NAME_PREFIX) match {
-      case None => Some(
-          KUBERNETES_EXECUTOR_POD_NAME_PREFIX ->
-            KubernetesUtils.generateExecutorPodNamePrefix(conf(APP_KEY), engineRefId))
+      case None => // skip setting if provided
+        val prefix = KubernetesUtils.generateExecutorPodNamePrefix(conf(APP_KEY), engineRefId)
+        Some(KUBERNETES_EXECUTOR_POD_NAME_PREFIX -> prefix)
       case _ => None
     }
   }
