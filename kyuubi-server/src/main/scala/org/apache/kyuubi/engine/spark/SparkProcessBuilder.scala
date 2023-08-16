@@ -21,6 +21,7 @@ import java.io.{File, IOException}
 import java.nio.file.Paths
 import java.util.Locale
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
@@ -210,7 +211,7 @@ class SparkProcessBuilder(
   }
 
   def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
-    val map = scala.collection.mutable.Map.newBuilder[String, String]
+    val map = mutable.Map.newBuilder[String, String]
     if (clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s"))) {
       map += appendExecutorPodPrefix(conf)
       if (deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")) {
