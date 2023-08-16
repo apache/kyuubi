@@ -273,7 +273,8 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
   test("SparkProcessBuilder build spark engine with SPARK_USER_NAME") {
     val proxyName = "kyuubi"
-    val conf1 = KyuubiConf(false).set("spark.master", "k8s://test:12345")
+    val conf1 =
+      KyuubiConf(false).set("spark.master", "k8s://test:12345").set("spark.app.name", "kyuubi-test")
     val b1 = new SparkProcessBuilder(proxyName, conf1)
     val c1 = b1.toString.split(' ')
     assert(c1.contains(s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$proxyName"))
@@ -321,6 +322,9 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     assert(pair2.isEmpty)
     val longAppName = "thisisalonglonglonglonglonglonglonglonglonglonglonglong" +
       "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
+      "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
+      "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
+      "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
       "longlonglonglonglonglonglonglonglonglonglonglonglongappname"
     val conf3 = Map(SparkProcessBuilder.APP_KEY -> longAppName)
     val pair3 = processBuilder.getDriverPodPrefix(conf3)
@@ -348,6 +352,9 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val pair2 = processBuilder.getExecutorPodPrefix(conf2)
     assert(pair2.isEmpty)
     val longAppName = "thisisalonglonglonglonglonglonglonglonglonglonglonglong" +
+      "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
+      "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
+      "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
       "longlonglonglonglonglonglonglonglonglonglonglonglonglong" +
       "longlonglonglonglonglonglonglonglonglonglonglonglongappname"
     val conf3 = Map(SparkProcessBuilder.APP_KEY -> longAppName)
