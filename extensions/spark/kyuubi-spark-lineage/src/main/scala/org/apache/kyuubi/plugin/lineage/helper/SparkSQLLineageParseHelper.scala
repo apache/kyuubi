@@ -53,7 +53,7 @@ trait LineageParser {
     val columnsLineage =
       extractColumnsLineage(plan, ListMap[Attribute, AttributeSet]()).toList.collect {
         case (k, attrs) =>
-          k.name -> attrs.map(_.qualifiedName).toSet
+          k.name -> attrs.map(attr => (attr.qualifier :+ attr.name).mkString(".")).toSet
       }
     val (inputTables, outputTables) = columnsLineage.foldLeft((List[String](), List[String]())) {
       case ((inputs, outputs), (out, in)) =>
@@ -324,7 +324,8 @@ trait LineageParser {
           nextColumnsLlineage.map { case (k, _) => (k, AttributeSet(k)) })
         val sourceColumnsLineage = extractColumnsLineage(sourceTable, nextColumnsLlineage)
         val targetColumnsWithTargetTable = targetColumnsLineage.values.flatten.map { column =>
-          column.withName(s"${column.qualifiedName}")
+          val unquotedQualifiedName = (column.qualifier :+ column.name).mkString(".")
+          column.withName(unquotedQualifiedName)
         }
         ListMap(targetColumnsWithTargetTable.zip(sourceColumnsLineage.values).toSeq: _*)
 
@@ -497,7 +498,11 @@ trait LineageParser {
   }
 
   private def getV1TableName(qualifiedName: String): String = {
-    Seq(LineageConf.DEFAULT_CATALOG, qualifiedName).filter(_.nonEmpty).mkString(".")
+    qualifiedName.split("\\.") match {
+      case Array(database, table) =>
+        Seq(LineageConf.DEFAULT_CATALOG, database, table).filter(_.nonEmpty).mkString(".")
+      case _ => qualifiedName
+    }
   }
 }
 
