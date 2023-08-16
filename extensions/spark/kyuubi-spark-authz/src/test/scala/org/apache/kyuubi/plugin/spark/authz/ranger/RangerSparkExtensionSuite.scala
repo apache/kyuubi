@@ -222,7 +222,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   }
 
   test("auth: functions usage") {
-    assume(isSparkVersionAtMost("3.3"))
     val db = defaultDb
     val func = "func"
     val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS" +
