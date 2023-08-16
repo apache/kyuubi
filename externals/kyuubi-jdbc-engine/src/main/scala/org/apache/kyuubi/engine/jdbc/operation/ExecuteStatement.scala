@@ -105,7 +105,7 @@ class ExecuteStatement(
       }
     } finally {
       if (jdbcStatement != null) {
-        jdbcStatement.close()
+        jdbcStatement.closeOnCompletion()
       }
     }
   }
