@@ -80,7 +80,7 @@ class OperationWithEngineSuite extends DorisOperationSuite with HiveJDBCTestHelp
   }
 
   test("test fetch orientation with incremental collect mode") {
-    val sql = "select e1 from (select 1 k1) as t lateral view explode([0,1]) tmp1 as e1"
+    val sql = "select id from (select 0 as id union select 1 as id) t;"
 
     withSessionConf(Map(KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true"))()() {
       withSessionHandle { (client, handle) =>
