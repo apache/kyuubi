@@ -223,7 +223,7 @@ class SparkProcessBuilder(
 
   def getDriverPodPrefix(conf: Map[String, String]): Option[(String, String)] = {
     conf.get(KUBERNETES_DRIVER_POD_NAME) match {
-      case None => // skip setting if provided
+      case None =>
         val name = KubernetesUtils.generateDriverPodName(conf(APP_KEY), engineRefId)
         Some(KUBERNETES_DRIVER_POD_NAME -> name)
       case _ => None
@@ -232,7 +232,7 @@ class SparkProcessBuilder(
 
   def getExecutorPodPrefix(conf: Map[String, String]): Option[(String, String)] = {
     conf.get(KUBERNETES_EXECUTOR_POD_NAME_PREFIX) match {
-      case None => // skip setting if provided
+      case None =>
         val prefix = KubernetesUtils.generateExecutorPodNamePrefix(conf(APP_KEY), engineRefId)
         Some(KUBERNETES_EXECUTOR_POD_NAME_PREFIX -> prefix)
       case _ => None
