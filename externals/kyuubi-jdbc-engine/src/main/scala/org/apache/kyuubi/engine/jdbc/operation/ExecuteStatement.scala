@@ -17,6 +17,7 @@
 package org.apache.kyuubi.engine.jdbc.operation
 
 import java.sql.{Connection, Statement, Types}
+import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
@@ -70,7 +71,18 @@ class ExecuteStatement(
           if (incrementalCollect) {
             info("Execute in incremental collect mode")
             new IterableFetchIterator[Row](new Iterable[Row] {
-              override def iterator: Iterator[Row] = resultSetWrapper
+              private val fetched = new AtomicBoolean(false)
+              override def iterator: Iterator[Row] = {
+                if (fetched.getAndSet(true)) {
+                  jdbcStatement.synchronized {
+                    jdbcStatement.cancel()
+                    jdbcStatement.execute(statement)
+                  }
+                  new ResultSetWrapper(jdbcStatement)
+                } else {
+                  resultSetWrapper
+                }
+              }
             })
           } else {
             warn(s"Execute in full collect mode")
