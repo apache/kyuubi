@@ -25,7 +25,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-trino-it_2.12</artifactId>
+    <artifactId>kyuubi-trino-it_${scala.binary.version}</artifactId>
     <name>Kyuubi Test Trino IT</name>
     <url>https://kyuubi.apache.org/</url>
 

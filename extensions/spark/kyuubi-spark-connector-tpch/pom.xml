@@ -25,7 +25,7 @@
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-spark-connector-tpch_2.12</artifactId>
+    <artifactId>kyuubi-spark-connector-tpch_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Spark TPC-H Connector</name>
     <url>https://kyuubi.apache.org/</url>

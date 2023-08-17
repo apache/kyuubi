@@ -26,7 +26,7 @@
 
     </parent>
 
-    <artifactId>kyuubi-spark-authz_2.12</artifactId>
+    <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Dev Spark Authorization Extension</name>
     <url>https://kyuubi.apache.org/</url>

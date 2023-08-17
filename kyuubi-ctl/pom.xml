@@ -25,7 +25,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-ctl_2.12</artifactId>
+    <artifactId>kyuubi-ctl_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Project Control</name>
     <url>https://kyuubi.apache.org/</url>
