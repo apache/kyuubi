@@ -105,9 +105,9 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
     order match {
-      case FETCH_NEXT =>
       case FETCH_PRIOR => resultSet.getData.fetchPrior(rowSetSize);
       case FETCH_FIRST => resultSet.getData.fetchAbsolute(0);
+      case FETCH_NEXT => // ignored because new data are fetched lazily
     }
     val batch = new ListBuffer[Row]
     try {
