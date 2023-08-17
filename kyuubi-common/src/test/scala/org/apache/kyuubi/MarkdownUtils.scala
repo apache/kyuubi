@@ -83,7 +83,7 @@ class MarkdownBuilder {
    * @return
    */
   def ++=(multiline: String, marginChar: Char = '|'): MarkdownBuilder = {
-    multiline.stripMargin(marginChar).linesIterator.foreach(this += _)
+    buffer ++= multiline.stripMargin(marginChar).linesIterator
     this
   }
 
