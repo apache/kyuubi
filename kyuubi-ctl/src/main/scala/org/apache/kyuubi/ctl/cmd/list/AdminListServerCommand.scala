@@ -27,18 +27,18 @@ import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ctl.util.Render
 
 class AdminListServerCommand(cliConfig: CliConfig)
-  extends AdminCtlCommand[Seq[ServerData]](cliConfig) {
+  extends AdminCtlCommand[Iterable[ServerData]](cliConfig) {
 
   override def validate(): Unit = {}
 
-  override def doRun(): Seq[ServerData] = {
+  override def doRun(): Iterable[ServerData] = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val adminRestApi = new AdminRestApi(kyuubiRestClient)
       adminRestApi.listServers().asScala
     }
   }
 
-  override def render(resp: Seq[ServerData]): Unit = {
+  override def render(resp: Iterable[ServerData]): Unit = {
     info(Render.renderServerNodesInfo(resp))
   }
 }

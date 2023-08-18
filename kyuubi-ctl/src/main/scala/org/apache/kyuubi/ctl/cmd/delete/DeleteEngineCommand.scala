@@ -34,7 +34,7 @@ class DeleteEngineCommand(cliConfig: CliConfig) extends DeleteCommand(cliConfig)
     }
   }
 
-  def doRun(): Seq[ServiceNodeInfo] = {
+  override def doRun(): Iterable[ServiceNodeInfo] = {
     withDiscoveryClient(conf) { discoveryClient =>
       val hostPortOpt =
         Some((cliConfig.zkOpts.host, cliConfig.zkOpts.port.toInt))
