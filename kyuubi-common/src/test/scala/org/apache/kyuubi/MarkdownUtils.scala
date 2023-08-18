@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardOpenOption}
 
 import scala.collection.JavaConverters._
-import scala.collection.generic.Growable
 import scala.collection.mutable.ListBuffer
 
 import com.vladsch.flexmark.formatter.Formatter
@@ -60,10 +59,8 @@ object MarkdownUtils {
   }
 }
 
-class MarkdownBuilder extends Growable[String] {
+class MarkdownBuilder {
   private val buffer = new ListBuffer[String]
-
-  override def clear: Unit = buffer.clear
 
   /**
    * append a single line
@@ -72,7 +69,7 @@ class MarkdownBuilder extends Growable[String] {
    * @param str single line
    * @return
    */
-  override def +=(str: String): MarkdownBuilder.this.type = {
+  def +=(str: String): MarkdownBuilder = {
     buffer += str.stripMargin.linesIterator.mkString
     this
   }
@@ -86,7 +83,8 @@ class MarkdownBuilder extends Growable[String] {
    * @return
    */
   def ++=(multiline: String, marginChar: Char = '|'): MarkdownBuilder = {
-    this ++= multiline.stripMargin(marginChar).linesIterator
+    buffer ++= multiline.stripMargin(marginChar).linesIterator
+    this
   }
 
   /**
