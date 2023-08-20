@@ -26,7 +26,7 @@
 
     </parent>
 
-    <artifactId>kyuubi-extension-spark-jdbc-dialect_2.12</artifactId>
+    <artifactId>kyuubi-extension-spark-jdbc-dialect_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Spark JDBC Dialect plugin</name>
     <url>https://kyuubi.apache.org/</url>

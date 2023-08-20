@@ -25,7 +25,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-flink-it_2.12</artifactId>
+    <artifactId>kyuubi-flink-it_${scala.binary.version}</artifactId>
     <name>Kyuubi Test Flink SQL IT</name>
     <url>https://kyuubi.apache.org/</url>
 

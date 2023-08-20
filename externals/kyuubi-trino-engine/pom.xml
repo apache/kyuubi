@@ -25,7 +25,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-trino-engine_2.12</artifactId>
+    <artifactId>kyuubi-trino-engine_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Project Engine Trino</name>
     <url>https://kyuubi.apache.org/</url>

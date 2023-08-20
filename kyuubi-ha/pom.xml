@@ -25,7 +25,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-ha_2.12</artifactId>
+    <artifactId>kyuubi-ha_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Project High Availability</name>
     <url>https://kyuubi.apache.org/</url>

@@ -24,7 +24,7 @@
         <version>1.8.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>kyuubi-util-scala_2.12</artifactId>
+    <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Project Util Scala</name>
     <url>https://kyuubi.apache.org/</url>

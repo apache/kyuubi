@@ -25,7 +25,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-spark-sql-engine_2.12</artifactId>
+    <artifactId>kyuubi-spark-sql-engine_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Project Engine Spark SQL</name>
     <url>https://kyuubi.apache.org/</url>
