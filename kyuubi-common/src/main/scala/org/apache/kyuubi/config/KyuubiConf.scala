@@ -483,13 +483,13 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val FRONTEND_THRIFT_BINARY_SSL_DISALLOWED_PROTOCOLS: ConfigEntry[Seq[String]] =
+  val FRONTEND_THRIFT_BINARY_SSL_DISALLOWED_PROTOCOLS: ConfigEntry[Set[String]] =
     buildConf("kyuubi.frontend.thrift.binary.ssl.disallowed.protocols")
       .doc("SSL versions to disallow for Kyuubi thrift binary frontend.")
       .version("1.7.0")
       .stringConf
-      .toSequence()
-      .createWithDefault(Seq("SSLv2", "SSLv3"))
+      .toSet()
+      .createWithDefault(Set("SSLv2", "SSLv3"))
 
   val FRONTEND_THRIFT_BINARY_SSL_INCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.frontend.thrift.binary.ssl.include.ciphersuites")
@@ -765,7 +765,7 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("X-Real-IP")
 
-  val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("kyuubi.authentication")
+  val AUTHENTICATION_METHOD: ConfigEntry[Set[String]] = buildConf("kyuubi.authentication")
     .doc("A comma-separated list of client authentication types." +
       "<ul>" +
       " <li>NOSASL: raw transport.</li>" +
@@ -801,11 +801,11 @@ object KyuubiConf {
     .serverOnly
     .stringConf
     .transformToUpperCase
-    .toSequence()
+    .toSet()
     .checkValue(
       _.forall(AuthTypes.values.map(_.toString).contains),
       s"the authentication type should be one or more of ${AuthTypes.values.mkString(",")}")
-    .createWithDefault(Seq(AuthTypes.NONE.toString))
+    .createWithDefault(Set(AuthTypes.NONE.toString))
 
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.custom.class")
@@ -861,25 +861,25 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val AUTHENTICATION_LDAP_GROUP_FILTER: ConfigEntry[Seq[String]] =
+  val AUTHENTICATION_LDAP_GROUP_FILTER: ConfigEntry[Set[String]] =
     buildConf("kyuubi.authentication.ldap.groupFilter")
       .doc("COMMA-separated list of LDAP Group names (short name not full DNs). " +
         "For example: HiveAdmins,HadoopAdmins,Administrators")
       .version("1.7.0")
       .serverOnly
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
-  val AUTHENTICATION_LDAP_USER_FILTER: ConfigEntry[Seq[String]] =
+  val AUTHENTICATION_LDAP_USER_FILTER: ConfigEntry[Set[String]] =
     buildConf("kyuubi.authentication.ldap.userFilter")
       .doc("COMMA-separated list of LDAP usernames (just short names, not full DNs). " +
         "For example: hiveuser,impalauser,hiveadmin,hadoopadmin")
       .version("1.7.0")
       .serverOnly
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
   val AUTHENTICATION_LDAP_GUID_KEY: ConfigEntry[String] =
     buildConf("kyuubi.authentication.ldap.guidKey")
@@ -1142,14 +1142,14 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val KUBERNETES_CONTEXT_ALLOW_LIST: ConfigEntry[Seq[String]] =
+  val KUBERNETES_CONTEXT_ALLOW_LIST: ConfigEntry[Set[String]] =
     buildConf("kyuubi.kubernetes.context.allow.list")
       .doc("The allowed kubernetes context list, if it is empty," +
         " there is no kubernetes context limitation.")
       .version("1.8.0")
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
   val KUBERNETES_NAMESPACE: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.namespace")
@@ -1158,14 +1158,14 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("default")
 
-  val KUBERNETES_NAMESPACE_ALLOW_LIST: ConfigEntry[Seq[String]] =
+  val KUBERNETES_NAMESPACE_ALLOW_LIST: ConfigEntry[Set[String]] =
     buildConf("kyuubi.kubernetes.namespace.allow.list")
       .doc("The allowed kubernetes namespace list, if it is empty," +
         " there is no kubernetes namespace limitation.")
       .version("1.8.0")
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
   val KUBERNETES_MASTER: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.master.address")
@@ -1517,7 +1517,7 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofMinutes(30L).toMillis)
 
-  val SESSION_CONF_IGNORE_LIST: ConfigEntry[Seq[String]] =
+  val SESSION_CONF_IGNORE_LIST: ConfigEntry[Set[String]] =
     buildConf("kyuubi.session.conf.ignore.list")
       .doc("A comma-separated list of ignored keys. If the client connection contains any of" +
         " them, the key and the corresponding value will be removed silently during engine" +
@@ -1527,10 +1527,10 @@ object KyuubiConf {
         " configurations via SET syntax.")
       .version("1.2.0")
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
-  val SESSION_CONF_RESTRICT_LIST: ConfigEntry[Seq[String]] =
+  val SESSION_CONF_RESTRICT_LIST: ConfigEntry[Set[String]] =
     buildConf("kyuubi.session.conf.restrict.list")
       .doc("A comma-separated list of restricted keys. If the client connection contains any of" +
         " them, the connection will be rejected explicitly during engine bootstrap and connection" +
@@ -1540,8 +1540,8 @@ object KyuubiConf {
         " configurations via SET syntax.")
       .version("1.2.0")
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
   val SESSION_USER_SIGN_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.user.sign.enabled")
@@ -1589,7 +1589,7 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  val SESSION_LOCAL_DIR_ALLOW_LIST: ConfigEntry[Seq[String]] =
+  val SESSION_LOCAL_DIR_ALLOW_LIST: ConfigEntry[Set[String]] =
     buildConf("kyuubi.session.local.dir.allow.list")
       .doc("The local dir list that are allowed to access by the kyuubi session application. " +
         " End-users might set some parameters such as `spark.files` and it will " +
@@ -1602,8 +1602,8 @@ object KyuubiConf {
       .stringConf
       .checkValue(dir => dir.startsWith(File.separator), "the dir should be absolute path")
       .transform(dir => dir.stripSuffix(File.separator) + File.separator)
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
   val BATCH_APPLICATION_CHECK_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.batch.application.check.interval")
@@ -1619,7 +1619,7 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofMinutes(3).toMillis)
 
-  val BATCH_CONF_IGNORE_LIST: ConfigEntry[Seq[String]] =
+  val BATCH_CONF_IGNORE_LIST: ConfigEntry[Set[String]] =
     buildConf("kyuubi.batch.conf.ignore.list")
       .doc("A comma-separated list of ignored keys for batch conf. If the batch conf contains" +
         " any of them, the key and the corresponding value will be removed silently during batch" +
@@ -1631,8 +1631,8 @@ object KyuubiConf {
         " for the Spark batch job with key `kyuubi.batchConf.spark.spark.master`.")
       .version("1.6.0")
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
   val BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.batch.internal.rest.client.socket.timeout")
@@ -2076,24 +2076,24 @@ object KyuubiConf {
       .toSequence(";")
       .createWithDefault(Nil)
 
-  val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Seq[String]] =
+  val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Set[String]] =
     buildConf("kyuubi.engine.deregister.exception.classes")
       .doc("A comma-separated list of exception classes. If there is any exception thrown," +
         " whose class matches the specified classes, the engine would deregister itself.")
       .version("1.2.0")
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
-  val ENGINE_DEREGISTER_EXCEPTION_MESSAGES: ConfigEntry[Seq[String]] =
+  val ENGINE_DEREGISTER_EXCEPTION_MESSAGES: ConfigEntry[Set[String]] =
     buildConf("kyuubi.engine.deregister.exception.messages")
       .doc("A comma-separated list of exception messages. If there is any exception thrown," +
         " whose message or stacktrace matches the specified message list, the engine would" +
         " deregister itself.")
       .version("1.2.0")
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
   val ENGINE_DEREGISTER_JOB_MAX_FAILURES: ConfigEntry[Int] =
     buildConf("kyuubi.engine.deregister.job.max.failures")
@@ -2400,7 +2400,7 @@ object KyuubiConf {
           "'plain', 'json'.")
       .createWithDefault(PlainStyle.name)
 
-  val OPERATION_PLAN_ONLY_EXCLUDES: ConfigEntry[Seq[String]] =
+  val OPERATION_PLAN_ONLY_EXCLUDES: ConfigEntry[Set[String]] =
     buildConf("kyuubi.operation.plan.only.excludes")
       .doc("Comma-separated list of query plan names, in the form of simple class names, i.e, " +
         "for `SET abc=xyz`, the value will be `SetCommand`. For those auxiliary plans, such as " +
@@ -2410,8 +2410,8 @@ object KyuubiConf {
         s"See also ${OPERATION_PLAN_ONLY_MODE.key}.")
       .version("1.5.0")
       .stringConf
-      .toSequence()
-      .createWithDefault(Seq(
+      .toSet()
+      .createWithDefault(Set(
         "ResetCommand",
         "SetCommand",
         "SetNamespaceCommand",
@@ -2614,14 +2614,14 @@ object KyuubiConf {
       .intConf
       .createOptional
 
-  val SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST: ConfigEntry[Seq[String]] =
+  val SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST: ConfigEntry[Set[String]] =
     buildConf("kyuubi.server.limit.connections.user.unlimited.list")
       .doc("The maximum connections of the user in the white list will not be limited.")
       .version("1.7.0")
       .serverOnly
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
   val SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.batch.connections.per.user")
@@ -2683,15 +2683,15 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT30M")
 
-  val SERVER_ADMINISTRATORS: ConfigEntry[Seq[String]] =
+  val SERVER_ADMINISTRATORS: ConfigEntry[Set[String]] =
     buildConf("kyuubi.server.administrators")
       .doc("Comma-separated list of Kyuubi service administrators. " +
         "We use this config to grant admin permission to any service accounts.")
       .version("1.8.0")
       .serverOnly
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
   val OPERATION_SPARK_LISTENER_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.spark.listener.enabled")

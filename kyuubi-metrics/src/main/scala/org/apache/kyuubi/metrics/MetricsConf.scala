@@ -32,7 +32,7 @@ object MetricsConf {
       .booleanConf
       .createWithDefault(true)
 
-  val METRICS_REPORTERS: ConfigEntry[Seq[String]] = buildConf("kyuubi.metrics.reporters")
+  val METRICS_REPORTERS: ConfigEntry[Set[String]] = buildConf("kyuubi.metrics.reporters")
     .doc("A comma-separated list for all metrics reporters" +
       "<ul>" +
       " <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE periodically.</li>" +
@@ -44,11 +44,11 @@ object MetricsConf {
     .version("1.2.0")
     .stringConf
     .transformToUpperCase
-    .toSequence()
+    .toSet()
     .checkValue(
       _.forall(ReporterType.values.map(_.toString).contains),
       s"the reporter type should be one or more of ${ReporterType.values.mkString(",")}")
-    .createWithDefault(Seq(JSON.toString))
+    .createWithDefault(Set(JSON.toString))
 
   val METRICS_CONSOLE_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.console.interval")
     .doc("How often should report metrics to console")

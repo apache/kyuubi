@@ -57,7 +57,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
     val spnegoKerberosEnabled = authTypes.contains(KERBEROS)
     val basicAuthTypeOpt = {
-      if (authTypes == Seq(NOSASL)) {
+      if (authTypes == Set(NOSASL)) {
         authTypes.headOption
       } else {
         authTypes.filterNot(_.equals(KERBEROS)).filterNot(_.equals(NOSASL)).headOption

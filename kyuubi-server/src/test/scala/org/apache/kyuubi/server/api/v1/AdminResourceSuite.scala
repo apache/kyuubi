@@ -48,7 +48,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   private val engineMgr = new KyuubiApplicationManager()
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
-    .set(KyuubiConf.SERVER_ADMINISTRATORS, Seq("admin001"))
+    .set(KyuubiConf.SERVER_ADMINISTRATORS, Set("admin001"))
 
   private val encodeAuthorization: String = {
     new String(

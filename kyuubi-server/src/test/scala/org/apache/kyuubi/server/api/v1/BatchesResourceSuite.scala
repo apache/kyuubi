@@ -78,7 +78,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .set(KyuubiConf.BATCH_IMPL_VERSION, batchVersion)
       .set(
         KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST,
-        Seq(Paths.get(sparkBatchTestResource.get).getParent.toString))
+        Set(Paths.get(sparkBatchTestResource.get).getParent.toString))
     customConf.foreach { case (k, v) => kyuubiConf.set(k, v) }
     kyuubiConf
   }
