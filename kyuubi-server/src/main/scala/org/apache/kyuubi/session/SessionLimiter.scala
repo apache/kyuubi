@@ -106,12 +106,12 @@ class SessionLimiterWithAccessControlListImpl(
     ipAddressLimit: Int,
     userIpAddressLimit: Int,
     var unlimitedUsers: Set[String],
-    var blacklistUsers: Set[String])
+    var limitedUsers: Set[String])
   extends SessionLimiterImpl(userLimit, ipAddressLimit, userIpAddressLimit) {
   override def increment(userIpAddress: UserIpAddress): Unit = {
     val user = userIpAddress.user
-    if (StringUtils.isNotBlank(user) && blacklistUsers.contains(user)) {
-      val errorMsg = s"Connection refused because the user is in the blacklist. (user: $user)"
+    if (StringUtils.isNotBlank(user) && limitedUsers.contains(user)) {
+      val errorMsg = s"Connection refused because the user is limited. (user: $user)"
       throw KyuubiSQLException(errorMsg)
     }
 
@@ -130,8 +130,8 @@ class SessionLimiterWithAccessControlListImpl(
     this.unlimitedUsers = unlimitedUsers
   }
 
-  private[kyuubi] def setBlacklistUsers(blacklistUsers: Set[String]): Unit = {
-    this.blacklistUsers = blacklistUsers
+  private[kyuubi] def setLimitedUsers(limitedUsers: Set[String]): Unit = {
+    this.limitedUsers = limitedUsers
   }
 }
 
@@ -142,13 +142,13 @@ object SessionLimiter {
       ipAddressLimit: Int,
       userIpAddressLimit: Int,
       unlimitedUsers: Set[String] = Set.empty,
-      blacklistUsers: Set[String] = Set.empty): SessionLimiter = {
+      limitedUsers: Set[String] = Set.empty): SessionLimiter = {
     new SessionLimiterWithAccessControlListImpl(
       userLimit,
       ipAddressLimit,
       userIpAddressLimit,
       unlimitedUsers,
-      blacklistUsers)
+      limitedUsers)
   }
 
   def resetUnlimitedUsers(limiter: SessionLimiter, unlimitedUsers: Set[String]): Unit =
@@ -162,14 +162,14 @@ object SessionLimiter {
     case _ => Set.empty
   }
 
-  def resetBlacklistUsers(limiter: SessionLimiter, blacklistUsers: Set[String]): Unit =
+  def resetLimitedUsers(limiter: SessionLimiter, limitedUsers: Set[String]): Unit =
     limiter match {
-      case l: SessionLimiterWithAccessControlListImpl => l.setBlacklistUsers(blacklistUsers)
+      case l: SessionLimiterWithAccessControlListImpl => l.setLimitedUsers(limitedUsers)
       case _ =>
     }
 
-  def getBlacklistUsers(limiter: SessionLimiter): Set[String] = limiter match {
-    case l: SessionLimiterWithAccessControlListImpl => l.blacklistUsers
+  def getLimitedUsers(limiter: SessionLimiter): Set[String] = limiter match {
+    case l: SessionLimiterWithAccessControlListImpl => l.limitedUsers
     case _ => Set.empty
   }
 }

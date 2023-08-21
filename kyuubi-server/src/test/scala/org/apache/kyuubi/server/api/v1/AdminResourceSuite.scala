@@ -125,13 +125,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response.getStatus)
   }
 
-  test("refresh blacklist users of the kyuubi server") {
-    var response = webTarget.path("api/v1/admin/refresh/blacklist_users")
+  test("refresh limited users of the kyuubi server") {
+    var response = webTarget.path("api/v1/admin/refresh/limited_users")
       .request()
       .post(null)
     assert(405 == response.getStatus)
 
-    response = webTarget.path("api/v1/admin/refresh/blacklist_users")
+    response = webTarget.path("api/v1/admin/refresh/limited_users")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .post(null)

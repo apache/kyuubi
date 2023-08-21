@@ -2614,9 +2614,9 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
-  val SERVER_LIMIT_CONNECTIONS_USER_BLACKLIST: ConfigEntry[Seq[String]] =
-    buildConf("kyuubi.server.limit.connections.user.blacklist")
-      .doc("The user in the blacklist will be refused to connect to kyuubi server.")
+  val SERVER_LIMIT_CONNECTIONS_USER_LIMITED_LIST: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.server.limit.connections.user.limited.list")
+      .doc("The user in the limited list will be refused to connect to kyuubi server.")
       .version("1.8.0")
       .serverOnly
       .stringConf
