@@ -286,7 +286,44 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("type") engineType: String,
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
-      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
+      @QueryParam("allengine") allengine: Boolean): Seq[Engine] = {
+    if (allengine) {
+      val engines = ListBuffer[Engine]()
+      val engineSpace = fe.getConf.get(HA_NAMESPACE)
+      val shareLevel = fe.getConf.get(ENGINE_SHARE_LEVEL)
+      val engineType = fe.getConf.get(ENGINE_TYPE)
+      withDiscoveryClient(fe.getConf) { discoveryClient =>
+        val commonParent = s"/${engineSpace}_${KYUUBI_VERSION}_$shareLevel/$engineType"
+        info(s"Listing engine nodes for $commonParent")
+        try {
+          discoveryClient.getChildren(commonParent).map {
+            user =>
+              val engine = getEngine(user, engineType, shareLevel, "", "")
+              val engineSpace = getEngineSpace(engine)
+              discoveryClient.getChildren(engineSpace).map { child =>
+                info(s"Listing engine nodes for $engineSpace/$child")
+                engines ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child").map(node =>
+                  new Engine(
+                    engine.getVersion,
+                    engine.getUser,
+                    engine.getEngineType,
+                    engine.getSharelevel,
+                    node.namespace.split("/").last,
+                    node.instance,
+                    node.namespace,
+                    node.attributes.asJava))
+              }
+          }
+        } catch {
+          case nne: NoNodeException =>
+            error(s"No such engine for engine type: $engineType, share level: $shareLevel", nne)
+            throw new NotFoundException(
+              s"No such engine for engine type: $engineType, share level: $shareLevel")
+        }
+      }
+      return engines
+    }
     val userName = if (isAdministrator(fe.getRealUser())) {
       Option(hs2ProxyUser).getOrElse(fe.getRealUser())
     } else {
@@ -331,51 +368,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.namespace,
         node.attributes.asJava))
       .toSeq
-  }
-
-  @ApiResponse(
-    responseCode = "200",
-    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
-    description = "list all kyuubi engines")
-  @GET
-  @Path("allengines")
-  def listAllEngines(): Seq[Engine] = {
-    val engines = ListBuffer[Engine]()
-    val engineSpace = fe.getConf.get(HA_NAMESPACE)
-    val shareLevel = fe.getConf.get(ENGINE_SHARE_LEVEL)
-    val engineType = fe.getConf.get(ENGINE_TYPE)
-    withDiscoveryClient(fe.getConf) { discoveryClient =>
-      val commonParent = s"/${engineSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType"
-      info(s"Listing engine nodes for $commonParent")
-      try {
-        discoveryClient.getChildren(commonParent).map {
-          user =>
-            val engine = getEngine(user, engineType, shareLevel, "", "")
-            val engineSpace = getEngineSpace(engine)
-            discoveryClient.getChildren(engineSpace).map { child =>
-              info(s"Listing engine nodes for $engineSpace/$child")
-              engines ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child").map(node =>
-                new Engine(
-                  engine.getVersion,
-                  engine.getUser,
-                  engine.getEngineType,
-                  engine.getSharelevel,
-                  node.namespace.split("/").last,
-                  node.instance,
-                  node.namespace,
-                  node.attributes.asJava))
-            }
-        }
-      } catch {
-        case nne: NoNodeException =>
-          error(
-            s"No engine for " + s"engine type: $engineType, share level: $shareLevel",
-            nne)
-          throw new NotFoundException(
-            s"No such engine for " + s"engine type: $engineType, share level: $shareLevel")
-      }
-    }
-    engines
   }
 
   @ApiResponse(
