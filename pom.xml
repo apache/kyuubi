@@ -199,7 +199,7 @@
         <spark.version>3.3.3</spark.version>
         <spark.binary.version>3.3</spark.binary.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
-        <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.3.3-rc1-bin/</spark.archive.mirror>
+        <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <sqlite.version>3.42.0.0</sqlite.version>
         <swagger.version>2.2.1</swagger.version>
@@ -2174,7 +2174,6 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.3.3-rc1-bin/</spark.archive.mirror>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
