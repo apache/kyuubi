@@ -26,11 +26,12 @@ import org.apache.kyuubi.ctl.cmd.AdminCtlCommand
 import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ctl.util.Render
 
-class AdminListEngineCommand(cliConfig: CliConfig) extends AdminCtlCommand[Seq[Engine]](cliConfig) {
+class AdminListEngineCommand(cliConfig: CliConfig)
+  extends AdminCtlCommand[Iterable[Engine]](cliConfig) {
 
   override def validate(): Unit = {}
 
-  def doRun(): Seq[Engine] = {
+  override def doRun(): Iterable[Engine] = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val adminRestApi = new AdminRestApi(kyuubiRestClient)
       adminRestApi.listEngines(
@@ -41,7 +42,7 @@ class AdminListEngineCommand(cliConfig: CliConfig) extends AdminCtlCommand[Seq[E
     }
   }
 
-  def render(resp: Seq[Engine]): Unit = {
+  override def render(resp: Iterable[Engine]): Unit = {
     info(Render.renderEngineNodesInfo(resp))
   }
 }
