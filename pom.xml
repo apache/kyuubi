@@ -2084,6 +2084,13 @@
 
     <profiles>
         <profile>
+            <id>scala-2.13</id>
+            <properties>
+                <scala.binary.version>2.13</scala.binary.version>
+                <scala.version>2.13.6</scala.version>
+            </properties>
+        </profile>
+        <profile>
             <id>mirror-cdn</id>
             <properties>
                 <!-- the apache cdn mirror works only for latest apache releases -->
