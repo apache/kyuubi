@@ -283,8 +283,6 @@
             -Djdk.reflect.useDirectMethodHandle=false
             -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
         <debugArgLine>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</debugArgLine>
-
-        <scala.compile.option.noAdaptedArgs>-Yno-adapted-args</scala.compile.option.noAdaptedArgs>
     </properties>
 
     <dependencyManagement>
@@ -1635,7 +1633,7 @@
                             <arg>-deprecation</arg>
                             <arg>-feature</arg>
                             <arg>-explaintypes</arg>
-                            <arg>${scala.compile.option.noAdaptedArgs}</arg>
+                            <arg>-Yno-adapted-args</arg>
                             <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
                             <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
                             <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
@@ -2132,8 +2130,49 @@
             <properties>
                 <scala.binary.version>2.13</scala.binary.version>
                 <scala.version>2.13.11</scala.version>
-                <scala.compile.option.noAdaptedArgs></scala.compile.option.noAdaptedArgs>
             </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>net.alchim31.maven</groupId>
+                            <artifactId>scala-maven-plugin</artifactId>
+                            <configuration>
+                                <scalaVersion>${scala.version}</scalaVersion>
+                                <recompileMode>incremental</recompileMode>
+                                <args>
+                                    <arg>-unchecked</arg>
+                                    <arg>-deprecation</arg>
+                                    <arg>-feature</arg>
+                                    <arg>-explaintypes</arg>
+                                    <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
+                                    <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
+                                    <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
+                                    <arg>-Xfatal-warnings</arg>
+                                    <arg>-Ywarn-unused:imports</arg>
+                                </args>
+                                <jvmArgs>
+                                    <jvmArg>-Xms1024m</jvmArg>
+                                    <jvmArg>-Xmx1024m</jvmArg>
+                                    <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
+                                </jvmArgs>
+                                <javacArgs>
+                                    <javacArg>-Xlint:all,-serial,-path,-try,-processing</javacArg>
+                                </javacArgs>
+                                <compilerPlugins>
+                                    <compilerPlugin>
+                                        <groupId>com.github.ghik</groupId>
+                                        <artifactId>silencer-plugin_${scala.version}</artifactId>
+                                        <version>${maven.plugin.silencer.version}</version>
+                                    </compilerPlugin>
+                                </compilerPlugins>
+                                <!-- only skipping `scala:doc-jar` -->
+                                <skip>${maven.scaladoc.skip}</skip>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
 
         <profile>
