@@ -284,7 +284,7 @@
             -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
         <debugArgLine>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</debugArgLine>
 
-        <scala-compile-no-adapted-args>-Yno-adapted-args</scala-compile-no-adapted-args>
+        <scala.compile.option.noAdaptedArgs>-Yno-adapted-args</scala.compile.option.noAdaptedArgs>
     </properties>
 
     <dependencyManagement>
@@ -1635,7 +1635,7 @@
                             <arg>-deprecation</arg>
                             <arg>-feature</arg>
                             <arg>-explaintypes</arg>
-                            <arg>${scala-compile-no-adapted-args}</arg>
+                            <arg>${scala.compile.option.noAdaptedArgs}</arg>
                             <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
                             <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
                             <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
@@ -2086,14 +2086,6 @@
 
     <profiles>
         <profile>
-            <id>scala-2.13</id>
-            <properties>
-                <scala.binary.version>2.13</scala.binary.version>
-                <scala.version>2.13.6</scala.version>
-                <scala-compile-no-adapted-args></scala-compile-no-adapted-args>
-            </properties>
-        </profile>
-        <profile>
             <id>mirror-cdn</id>
             <properties>
                 <!-- the apache cdn mirror works only for latest apache releases -->
@@ -2131,6 +2123,15 @@
                 <maven.compiler.target></maven.compiler.target>
                 <maven.compiler.release>${java.version}</maven.compiler.release>
                 <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>scala-2.13</id>
+            <properties>
+                <scala.binary.version>2.13</scala.binary.version>
+                <scala.version>2.13.6</scala.version>
+                <scala.compile.option.noAdaptedArgs></scala.compile.option.noAdaptedArgs>
             </properties>
         </profile>
 
