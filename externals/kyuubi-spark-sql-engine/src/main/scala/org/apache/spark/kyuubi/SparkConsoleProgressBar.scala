@@ -86,7 +86,7 @@ class SparkConsoleProgressBar(
       val w = width - header.length - tailer.length
       val bar =
         if (w > 0) {
-          val percent = w * s.numCompleteTasks.get() / total
+          val percent = w * s.numCompleteTasks.get / total
           (0 until w).map { i =>
             if (i < percent) "=" else if (i == percent) ">" else " "
           }.mkString("")
