@@ -17,12 +17,11 @@
 
 package org.apache.kyuubi.engine.spark.repl
 
-import java.io.{ByteArrayOutputStream, File}
+import java.io.{ByteArrayOutputStream, File, PrintWriter}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.tools.nsc.Settings
-import scala.tools.nsc.interpreter.IR
-import scala.tools.nsc.interpreter.JPrintWriter
+import scala.tools.nsc.interpreter.Results
 
 import org.apache.spark.SparkContext
 import org.apache.spark.repl.SparkILoop
@@ -34,7 +33,7 @@ import org.apache.kyuubi.Utils
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
     output: ByteArrayOutputStream)
-  extends SparkILoop(None, new JPrintWriter(output)) {
+  extends SparkILoop(None, new PrintWriter(output)) {
   import KyuubiSparkILoop._
 
   val result = new DataFrameHolder(spark)
@@ -102,7 +101,7 @@ private[spark] case class KyuubiSparkILoop private (
 
   def clearResult(statementId: String): Unit = result.unset(statementId)
 
-  def interpretWithRedirectOutError(statement: String): IR.Result = withLockRequired {
+  def interpretWithRedirectOutError(statement: String): Results.Result = withLockRequired {
     Console.withOut(output) {
       Console.withErr(output) {
         this.interpret(statement)
