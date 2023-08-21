@@ -2126,6 +2126,7 @@
             </properties>
         </profile>
 
+        <!-- For development only, not generally ready for all modules -->
         <profile>
             <id>scala-2.13</id>
             <properties>
