@@ -127,6 +127,25 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "refresh the blacklist users")
+  @POST
+  @Path("refresh/blacklist_users")
+  def refreshBlacklistUser(): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Receive refresh blacklist users request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to refresh the unlimited users")
+    }
+    info(s"Reloading blacklist users")
+    KyuubiServer.refreshBlacklistUsers()
+    Response.ok(s"Refresh the blacklist users successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       array = new ArraySchema(schema = new Schema(implementation = classOf[SessionData])))),

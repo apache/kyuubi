@@ -117,4 +117,36 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
       .foreach(c => assert(c.get() == 0))
   }
+
+  test("test session limiter with user blacklist") {
+    val ipAddress = "127.0.0.1"
+    val userLimit = 100
+    val ipAddressLimit = 100
+    val userIpAddressLimit = 100
+    val blacklistUsers = Set("user002", "user003")
+    val limiter =
+      SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, Set.empty, blacklistUsers)
+
+    for (i <- 0 until 50) {
+      val userIpAddress = UserIpAddress("user001", ipAddress)
+      limiter.increment(userIpAddress)
+    }
+    limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
+      .foreach(c => assert(c.get() == 50))
+
+    for (i <- 0 until 50) {
+      val userIpAddress = UserIpAddress("user001", ipAddress)
+      limiter.decrement(userIpAddress)
+    }
+    limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
+      .foreach(c => assert(c.get() == 0))
+
+    val caught = intercept[KyuubiSQLException] {
+      val userIpAddress = UserIpAddress("user002", ipAddress)
+      limiter.increment(userIpAddress)
+    }
+
+    assert(caught.getMessage.equals(
+      "Connection refused because the user is in the blacklist. (user: user002)"))
+  }
 }

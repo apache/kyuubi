@@ -148,10 +148,18 @@ object KyuubiServer extends Logging {
 
   private[kyuubi] def refreshUnlimitedUsers(): Unit = synchronized {
     val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
-    val existingUnlimitedUsers = sessionMgr.getUnlimitedUsers()
+    val existingUnlimitedUsers = sessionMgr.getUnlimitedUsers
     sessionMgr.refreshUnlimitedUsers(KyuubiConf().loadFileDefaults())
-    val refreshedUnlimitedUsers = sessionMgr.getUnlimitedUsers()
+    val refreshedUnlimitedUsers = sessionMgr.getUnlimitedUsers
     info(s"Refreshed unlimited users from $existingUnlimitedUsers to $refreshedUnlimitedUsers")
+  }
+
+  private[kyuubi] def refreshBlacklistUsers(): Unit = synchronized {
+    val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val existingBlacklistUsers = sessionMgr.getBlacklistUsers
+    sessionMgr.refreshBlacklistUsers(KyuubiConf().loadFileDefaults())
+    val refreshedBlacklistUsers = sessionMgr.getBlacklistUsers
+    info(s"Refreshed blacklist users from $existingBlacklistUsers to $refreshedBlacklistUsers")
   }
 }
 
