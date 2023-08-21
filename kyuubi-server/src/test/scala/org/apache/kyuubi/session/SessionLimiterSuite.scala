@@ -147,6 +147,6 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     }
 
     assert(caught.getMessage.equals(
-      "Connection refused because the user is limited. (user: user002)"))
+      "Connection limited because the user is in the limited user list. (user: user002)"))
   }
 }

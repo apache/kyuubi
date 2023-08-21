@@ -74,7 +74,7 @@ Usage: ``bin/kyuubi-admin refresh config [options] [<configType>]``
    * - unlimitedUsers
      - The users without maximum connections limitation.
    * - limitedUsers
-     - The user in the limited list will be refused to connect to kyuubi server.
+     - The user in the limited list will be limited to connect to kyuubi server.
 
 .. _list_engine:
 

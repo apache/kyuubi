@@ -111,7 +111,8 @@ class SessionLimiterWithAccessControlListImpl(
   override def increment(userIpAddress: UserIpAddress): Unit = {
     val user = userIpAddress.user
     if (StringUtils.isNotBlank(user) && limitedUsers.contains(user)) {
-      val errorMsg = s"Connection refused because the user is limited. (user: $user)"
+      val errorMsg =
+        s"Connection limited because the user is in the limited user list. (user: $user)"
       throw KyuubiSQLException(errorMsg)
     }
 
