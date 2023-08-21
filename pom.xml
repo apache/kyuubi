@@ -1512,18 +1512,6 @@
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
-
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>apache-staging</id>
-            <name>Apache Staging Repo</name>
-            <url>https://repository.apache.org/content/repositories/orgapachespark-1445</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
