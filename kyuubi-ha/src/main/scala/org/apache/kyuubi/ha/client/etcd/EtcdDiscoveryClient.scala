@@ -358,11 +358,11 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         client.getLeaseClient.keepAlive(
           leaseId,
           new StreamObserver[LeaseKeepAliveResponse] {
-            override def onNext(v: LeaseKeepAliveResponse): Unit = Unit // do nothing
+            override def onNext(v: LeaseKeepAliveResponse): Unit = () // do nothing
 
-            override def onError(throwable: Throwable): Unit = Unit // do nothing
+            override def onError(throwable: Throwable): Unit = () // do nothing
 
-            override def onCompleted(): Unit = Unit // do nothing
+            override def onCompleted(): Unit = () // do nothing
           })
         client.getKVClient.put(
           ByteSequence.from(realPath.getBytes()),
@@ -388,7 +388,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     override def onError(throwable: Throwable): Unit =
       throw new KyuubiException(throwable.getMessage, throwable.getCause)
 
-    override def onCompleted(): Unit = Unit
+    override def onCompleted(): Unit = ()
   }
 }
 
