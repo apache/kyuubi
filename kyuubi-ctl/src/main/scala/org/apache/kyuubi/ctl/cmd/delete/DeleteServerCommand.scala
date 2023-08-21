@@ -24,7 +24,7 @@ import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
 class DeleteServerCommand(cliConfig: CliConfig) extends DeleteCommand(cliConfig) {
-  override def doRun(): Seq[ServiceNodeInfo] = {
+  override def doRun(): Iterable[ServiceNodeInfo] = {
     withDiscoveryClient(conf) { discoveryClient =>
       val znodeRoot = CtlUtils.getZkServerNamespace(conf, normalizedCliConfig)
       val hostPortOpt =
