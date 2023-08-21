@@ -283,6 +283,8 @@
             -Djdk.reflect.useDirectMethodHandle=false
             -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
         <debugArgLine>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</debugArgLine>
+
+        <scala-compile-no-adapted-args>-Yno-adapted-args</scala-compile-no-adapted-args>
     </properties>
 
     <dependencyManagement>
@@ -1633,7 +1635,7 @@
                             <arg>-deprecation</arg>
                             <arg>-feature</arg>
                             <arg>-explaintypes</arg>
-                            <arg>-Yno-adapted-args</arg>
+                            <arg>${scala-compile-no-adapted-args}</arg>
                             <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
                             <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
                             <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
@@ -2088,6 +2090,7 @@
             <properties>
                 <scala.binary.version>2.13</scala.binary.version>
                 <scala.version>2.13.6</scala.version>
+                <scala-compile-no-adapted-args></scala-compile-no-adapted-args>
             </properties>
         </profile>
         <profile>
