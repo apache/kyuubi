@@ -42,7 +42,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   if (loadSysDefault) {
-    val fromSysDefaults = Utils.getSystemProperties.filterKeys(_.startsWith("kyuubi."))
+    val fromSysDefaults = Utils.getSystemProperties.filterKeys(_.startsWith("kyuubi.")).toMap
     loadFromMap(fromSysDefaults)
   }
 
