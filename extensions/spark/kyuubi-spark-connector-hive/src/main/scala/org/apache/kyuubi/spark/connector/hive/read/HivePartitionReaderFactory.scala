@@ -80,7 +80,7 @@ case class HivePartitionReaderFactory(
             partitionSchema,
             file.partitionValues))
       }
-    new FilePartitionReader[InternalRow](iter)
+    new SparkFilePartitionReader[InternalRow](iter)
   }
 
   def buildReaderInternal(

@@ -282,7 +282,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   private def toOptions(properties: Map[String, String]): Map[String, String] = {
-    properties.filterKeys(_.startsWith(TableCatalog.OPTION_PREFIX)).map {
+    properties.filterKeys(_.startsWith(TableCatalog.OPTION_PREFIX)).toMap.map {
       case (key, value) => key.drop(TableCatalog.OPTION_PREFIX.length) -> value
     }
   }
