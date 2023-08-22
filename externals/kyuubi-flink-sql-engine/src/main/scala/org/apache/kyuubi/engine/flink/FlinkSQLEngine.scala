@@ -24,7 +24,7 @@ import java.util.concurrent.CountDownLatch
 
 import scala.collection.JavaConverters._
 
-import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration}
+import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration, PipelineOptions}
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.gateway.service.context.DefaultContext
 
@@ -131,11 +131,12 @@ object FlinkSQLEngine extends Logging {
   private def bootstrapFlinkApplicationExecutor() = {
     // trigger an execution to initiate EmbeddedExecutor with the default flink conf
     val flinkConf = new Configuration()
-    debug(s"Running initial Flink SQL in application mode with flink conf: $flinkConf.")
+    flinkConf.set(PipelineOptions.NAME, "kyuubi-bootstrap-sql")
+    debug(s"Running bootstrap Flink SQL in application mode with flink conf: $flinkConf.")
     val tableEnv = TableEnvironment.create(flinkConf)
     val res = tableEnv.executeSql("select 'kyuubi'")
     res.await()
-    info("Initial Flink SQL finished.")
+    info("Bootstrap Flink SQL finished.")
   }
 
   private def setDeploymentConf(executionTarget: String, flinkConf: Configuration): Unit = {
