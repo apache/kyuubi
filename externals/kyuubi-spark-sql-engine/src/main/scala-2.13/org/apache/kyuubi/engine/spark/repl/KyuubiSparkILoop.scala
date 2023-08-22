@@ -17,29 +17,27 @@
 
 package org.apache.kyuubi.engine.spark.repl
 
-import java.io.{ByteArrayOutputStream, File, PrintWriter}
-import java.util.concurrent.locks.ReentrantLock
-
-import scala.tools.nsc.Settings
-import scala.tools.nsc.interpreter.Results
-
+import org.apache.kyuubi.Utils
 import org.apache.spark.SparkContext
 import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
 
-import org.apache.kyuubi.Utils
+import java.io.{ByteArrayOutputStream, File, PrintWriter}
+import java.util.concurrent.locks.ReentrantLock
+import scala.tools.nsc.Settings
+import scala.tools.nsc.interpreter.Results
 
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
     output: ByteArrayOutputStream)
-  extends SparkILoop(None, new PrintWriter(output)) {
+  extends SparkILoop(null, new PrintWriter(output)) {
   import KyuubiSparkILoop._
 
   val result = new DataFrameHolder(spark)
 
   private def initialize(): Unit = withLockRequired {
-    settings = new Settings
+    val settings = new Settings
     val interpArguments = List(
       "-Yrepl-class-based",
       "-Yrepl-outdir",
@@ -48,11 +46,12 @@ private[spark] case class KyuubiSparkILoop private (
     settings.usejavacp.value = true
     val currentClassLoader = Thread.currentThread().getContextClassLoader
     settings.embeddedDefaults(currentClassLoader)
-    this.createInterpreter()
-    this.initializeSynchronous()
+    this.createInterpreter(settings)
+    // this.initializeSynchronous()
+    this.intp.asInstanceOf[scala.tools.nsc.interpreter.IMain].initializeCompiler()
     try {
       this.compilerClasspath
-      this.ensureClassLoader()
+      this.intp.asInstanceOf[scala.tools.nsc.interpreter.IMain].ensureClassLoader()
       var classLoader: ClassLoader = Thread.currentThread().getContextClassLoader
       while (classLoader != null) {
         classLoader match {
