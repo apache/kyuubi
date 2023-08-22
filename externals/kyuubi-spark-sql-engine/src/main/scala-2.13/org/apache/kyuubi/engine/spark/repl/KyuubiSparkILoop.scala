@@ -26,7 +26,7 @@ import org.apache.spark.util.MutableURLClassLoader
 import java.io.{ByteArrayOutputStream, File, PrintWriter}
 import java.util.concurrent.locks.ReentrantLock
 import scala.tools.nsc.Settings
-import scala.tools.nsc.interpreter.Results
+import scala.tools.nsc.interpreter.{IMain, Results}
 
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
@@ -47,11 +47,11 @@ private[spark] case class KyuubiSparkILoop private (
     val currentClassLoader = Thread.currentThread().getContextClassLoader
     settings.embeddedDefaults(currentClassLoader)
     this.createInterpreter(settings)
-    // this.initializeSynchronous()
-    this.intp.asInstanceOf[scala.tools.nsc.interpreter.IMain].initializeCompiler()
+    val iMain = this.intp.asInstanceOf[IMain]
+    iMain.initializeCompiler()
     try {
       this.compilerClasspath
-      this.intp.asInstanceOf[scala.tools.nsc.interpreter.IMain].ensureClassLoader()
+      iMain.ensureClassLoader()
       var classLoader: ClassLoader = Thread.currentThread().getContextClassLoader
       while (classLoader != null) {
         classLoader match {
