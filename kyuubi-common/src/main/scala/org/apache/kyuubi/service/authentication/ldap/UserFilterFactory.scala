@@ -35,7 +35,7 @@ class UserFilter(_userFilter: Seq[String]) extends Filter with Logging {
 
   @throws[AuthenticationException]
   override def apply(ldap: DirSearch, user: String): Unit = {
-    info("Authenticating user '$user' using user filter")
+    info(s"Authenticating user '$user' using user filter")
     val userName = LdapUtils.extractUserName(user).toLowerCase
     if (!userFilter.contains(userName)) {
       info("Authentication failed based on user membership")
