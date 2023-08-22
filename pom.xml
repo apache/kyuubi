@@ -2129,7 +2129,7 @@
             <id>scala-2.13</id>
             <properties>
                 <scala.binary.version>2.13</scala.binary.version>
-                <scala.version>2.13.11</scala.version>
+                <scala.version>2.13.8</scala.version>
             </properties>
             <build>
                 <pluginManagement>
