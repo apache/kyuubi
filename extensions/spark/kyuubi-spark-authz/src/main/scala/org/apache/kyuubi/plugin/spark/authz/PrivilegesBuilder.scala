@@ -209,7 +209,7 @@ object PrivilegesBuilder {
     }
   }
 
-  type PrivilegesAndOpType = (Seq[PrivilegeObject], Seq[PrivilegeObject], OperationType)
+  type PrivilegesAndOpType = (Iterable[PrivilegeObject], Iterable[PrivilegeObject], OperationType)
 
   /**
    * Build input  privilege objects from a Spark's LogicalPlan for hive permanent udf

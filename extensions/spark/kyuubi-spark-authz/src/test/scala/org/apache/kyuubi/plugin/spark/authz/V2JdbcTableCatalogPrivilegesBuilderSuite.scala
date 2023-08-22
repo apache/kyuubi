@@ -79,7 +79,7 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
           val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
           var table: Table = null
           spec.tableDescs.find { d =>
-            Try(table = d.extract(plan, spark).get).isSuccess
+            Try { table = d.extract(plan, spark).get }.isSuccess
           }
           withClue(str) {
             assertEqualsIgnoreCase(Some(catalogV2))(table.catalog)
@@ -104,7 +104,7 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
         val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
         var table: Table = null
         spec.tableDescs.find { d =>
-          Try(table = d.extract(plan, spark).get).isSuccess
+          Try { table = d.extract(plan, spark).get }.isSuccess
         }
         withClue(sql1) {
           assertEqualsIgnoreCase(Some(catalogV2))(table.catalog)
@@ -127,7 +127,7 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
         val plan = executePlan(sql1).analyzed
         val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
         var table: Table = null
-        spec.tableDescs.find { d => Try(table = d.extract(plan, spark).get).isSuccess }
+        spec.tableDescs.find { d => Try { table = d.extract(plan, spark).get }.isSuccess }
         withClue(sql1) {
           assertEqualsIgnoreCase(Some(catalogV2))(table.catalog)
           assertEqualsIgnoreCase(Some(ns1))(table.database)
@@ -146,7 +146,7 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
       val spec = DB_COMMAND_SPECS(plan.getClass.getName)
       var db: Database = null
       spec.databaseDescs.find { d =>
-        Try(db = d.extract(plan)).isSuccess
+        Try { db = d.extract(plan) }.isSuccess
       }
       withClue(sql) {
         assertEqualsIgnoreCase(Some(catalogV2))(db.catalog)
@@ -165,7 +165,7 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
       val spec = DB_COMMAND_SPECS(plan.getClass.getName)
       var db: Database = null
       spec.databaseDescs.find { d =>
-        Try(db = d.extract(plan)).isSuccess
+        Try { db = d.extract(plan) }.isSuccess
       }
       withClue(sql1) {
         assertEqualsIgnoreCase(Some(catalogV2))(db.catalog)
