@@ -261,7 +261,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     queryBuilder.append(dialect.limitClause(size, from))
     val query = queryBuilder.toString
     JdbcUtils.withConnection { connection =>
-      withResultSet(connection, query, params: _*) { rs =>
+      withResultSet(connection, query, params.toSeq: _*) { rs =>
         buildMetadata(rs, stateOnly)
       }
     }
@@ -386,7 +386,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
     val query = queryBuilder.toString()
     JdbcUtils.withConnection { connection =>
-      withUpdateCount(connection, query, params: _*) { updateCount =>
+      withUpdateCount(connection, query, params.toSeq: _*) { updateCount =>
         if (updateCount == 0) {
           throw new KyuubiException(
             s"Error updating metadata for ${metadata.identifier} by SQL: $query, " +
@@ -470,7 +470,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           peerInstanceClosed = peerInstanceClosed)
         metadataList += metadata
       }
-      metadataList
+      metadataList.toSeq
     } finally {
       Utils.tryLogNonFatalError(resultSet.close())
     }

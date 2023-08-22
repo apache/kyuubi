@@ -46,6 +46,7 @@ object ServerEventHandlerRegister extends EventHandlerRegister {
       kyuubiConf.getAllWithPrefix(KAFKA_SERVER_EVENT_HANDLER_PREFIX, "")
         .filterKeys(
           !List(SERVER_EVENT_KAFKA_TOPIC, SERVER_EVENT_KAFKA_CLOSE_TIMEOUT).map(_.key).contains(_))
+        .toMap
     ServerKafkaLoggingEventHandler(
       topic,
       kafkaEventHandlerProducerConf,
