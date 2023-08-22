@@ -116,6 +116,7 @@ class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQ
     val zorderCols = ctx.zorderClause().order.asScala
       .map(visitMultipartIdentifier)
       .map(UnresolvedAttribute(_))
+      .toSeq
 
     val orderExpr =
       if (zorderCols.length == 1) {
@@ -130,16 +131,16 @@ class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQ
 
   override def visitMultipartIdentifier(ctx: MultipartIdentifierContext): Seq[String] =
     withOrigin(ctx) {
-      ctx.parts.asScala.map(_.getText)
+      ctx.parts.asScala.map(_.getText).toSeq
     }
 
   override def visitZorderClause(ctx: ZorderClauseContext): Seq[UnresolvedAttribute] =
     withOrigin(ctx) {
       val res = ListBuffer[UnresolvedAttribute]()
       ctx.multipartIdentifier().forEach { identifier =>
-        res += UnresolvedAttribute(identifier.parts.asScala.map(_.getText))
+        res += UnresolvedAttribute(identifier.parts.asScala.map(_.getText).toSeq)
       }
-      res
+      res.toSeq
     }
 
   private def typedVisit[T](ctx: ParseTree): T = {

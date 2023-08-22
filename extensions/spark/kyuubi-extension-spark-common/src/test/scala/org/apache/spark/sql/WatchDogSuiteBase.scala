@@ -376,7 +376,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
                |ORDER BY a
                |DESC
                |""".stripMargin)
-            .collect().head.get(0).equals(10))
+            .collect().head.get(0) === 10)
         }
       }
     }

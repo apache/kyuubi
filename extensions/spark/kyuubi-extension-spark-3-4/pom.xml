@@ -25,7 +25,7 @@
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-extension-spark-3-4_2.12</artifactId>
+    <artifactId>kyuubi-extension-spark-3-4_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Dev Spark Extensions (for Spark 3.4)</name>
     <url>https://kyuubi.apache.org/</url>
