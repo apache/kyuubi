@@ -217,10 +217,11 @@ trait LineageParser {
             getField[LogicalPlan](plan, "plan")
           }
 
-        extractColumnsLineage(query, parentColumnsLineage).zipWithIndex.map {
+        val lineages = extractColumnsLineage(query, parentColumnsLineage).zipWithIndex.map {
           case ((k, v), i) if outputCols.nonEmpty => k.withName(s"$view.${outputCols(i)}") -> v
           case ((k, v), _) => k.withName(s"$view.${k.name}") -> v
-        }
+        }.toSeq
+        ListMap[Attribute, AttributeSet](lineages: _*)
 
       case p if p.nodeName == "CreateDataSourceTableAsSelectCommand" =>
         val table = getV1TableName(getField[CatalogTable](plan, "table").qualifiedName)
