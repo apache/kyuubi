@@ -31,7 +31,7 @@ import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils
 // scalastyle:off line.size.limit
 // copy from https://github.com/apache/spark/blob/master/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/v2/FilePartitionReader.scala
 // scalastyle:on line.size.limit
-class FilePartitionReader[T](readers: Iterator[HivePartitionedFileReader[T]])
+class SparkFilePartitionReader[T](readers: Iterator[HivePartitionedFileReader[T]])
   extends PartitionReader[T] with Logging {
   private var currentReader: HivePartitionedFileReader[T] = _
 
