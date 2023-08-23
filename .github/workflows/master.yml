@@ -191,13 +191,14 @@ jobs:
           check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
-      - name: Build on Scala
+      - name: Build on Scala ${{ matrix.scala }}
         run: |
-          MODULES="kyuubi-server"
+          MODULES='!externals/kyuubi-flink-sql-engine'
           ./build/mvn clean install -pl ${MODULES} -am \
           -DskipTests -Pflink-provided,hive-provided,spark-provided \
           -Pjava-${{ matrix.java }} \
-          -Pscala-${{ matrix.scala }}
+          -Pscala-${{ matrix.scala }} \
+          -Pspark-3.3
 
   flink-it:
     name: Flink Test
