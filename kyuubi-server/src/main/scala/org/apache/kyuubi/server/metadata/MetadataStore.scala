@@ -65,7 +65,7 @@ trait MetadataStore extends Closeable {
       filter: MetadataFilter,
       from: Int,
       size: Int,
-      stateOnly: Boolean): Iterable[Metadata]
+      stateOnly: Boolean): Seq[Metadata]
 
   /**
    * Count the metadata list with filter conditions.
