@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ReturnAnswer}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 
@@ -114,11 +114,15 @@ class PlanOnlyStatement(
           SQLConf.get.maxToStringFields,
           printOperatorId = false))))
       case PhysicalMode =>
-        val physical = spark.sql(statement).queryExecution.sparkPlan
+        val analyzed = spark.sessionState.analyzer.execute(plan)
+        spark.sessionState.analyzer.checkAnalysis(analyzed)
+        val optimized = spark.sessionState.optimizer.execute(analyzed)
+        val physical = spark.sessionState.planner.plan(ReturnAnswer(optimized)).next()
         iter = new IterableFetchIterator(Seq(Row(physical.toString())))
       case ExecutionMode =>
-        val executed = spark.sql(statement).queryExecution.executedPlan
-        iter = new IterableFetchIterator(Seq(Row(executed.toString())))
+        val executed = spark.sql(s"explain formatted $statement").collect.map(x =>
+          Row(x.getString(0).replaceFirst("== Physical Plan ==\n", "")))
+        iter = new IterableFetchIterator(executed)
       case UnknownMode => throw unknownModeError(mode)
       case _ => throw notSupportedModeError(mode, "Spark SQL")
     }
@@ -138,11 +142,14 @@ class PlanOnlyStatement(
         val optimized = spark.sessionState.optimizer.execute(analyzed)
         iter = new IterableFetchIterator(Seq(Row(optimized.toJSON)))
       case PhysicalMode =>
-        val physical = spark.sql(statement).queryExecution.sparkPlan
+        val analyzed = spark.sessionState.analyzer.execute(plan)
+        spark.sessionState.analyzer.checkAnalysis(analyzed)
+        val optimized = spark.sessionState.optimizer.execute(analyzed)
+        val physical = spark.sessionState.planner.plan(ReturnAnswer(optimized)).next()
         iter = new IterableFetchIterator(Seq(Row(physical.toJSON)))
       case ExecutionMode =>
-        val executed = spark.sql(statement).queryExecution.executedPlan
-        iter = new IterableFetchIterator(Seq(Row(executed.toJSON)))
+        throw KyuubiSQLException(s"The operation mode $mode" +
+          " with json style doesn't support in Spark SQL engine.")
       case UnknownMode => throw unknownModeError(mode)
       case _ =>
         throw KyuubiSQLException(s"The operation mode $mode" +
