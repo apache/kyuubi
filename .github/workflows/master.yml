@@ -191,7 +191,7 @@ jobs:
           check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
-      - name: Build and test Kyuubi AuthZ with supported Spark versions
+      - name: Build on Scala
         run: |
           MODULES="kyuubi-server"
           ./build/mvn clean install -pl ${MODULES} -am \
