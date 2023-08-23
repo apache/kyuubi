@@ -250,7 +250,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       filter: MetadataFilter,
       from: Int,
       size: Int,
-      stateOnly: Boolean): Seq[Metadata] = {
+      stateOnly: Boolean): Iterable[Metadata] = {
     val queryBuilder = new StringBuilder
     val params = ListBuffer[Any]()
     queryBuilder.append("SELECT ")
@@ -411,7 +411,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
-  private def buildMetadata(resultSet: ResultSet, stateOnly: Boolean): Seq[Metadata] = {
+  private def buildMetadata(resultSet: ResultSet, stateOnly: Boolean): Iterable[Metadata] = {
     try {
       val metadataList = ListBuffer[Metadata]()
       while (resultSet.next()) {
@@ -470,7 +470,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           peerInstanceClosed = peerInstanceClosed)
         metadataList += metadata
       }
-      metadataList.toSeq
+      metadataList
     } finally {
       Utils.tryLogNonFatalError(resultSet.close())
     }
