@@ -144,7 +144,7 @@ class TPCHPartitionReader(
           case (value, dt) => throw new IllegalArgumentException(s"value: $value, type: $dt")
         }
       }
-      InternalRow.fromSeq(rowAny)
+      InternalRow.fromSeq(rowAny.toSeq)
     }
     hasNext
   }
