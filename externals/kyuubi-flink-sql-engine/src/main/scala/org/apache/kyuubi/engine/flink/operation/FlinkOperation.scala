@@ -115,7 +115,7 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
       // because Flink could return an EOS
       var rows = 0
       while (resultSet.getData.hasNext && rows < rowSetSize) {
-        Option(resultSet.getData.next()).foreach(r => { batch += r; rows += 1 })
+        Option(resultSet.getData.next()).foreach { r => batch += r; rows += 1 }
       }
     } catch {
       case e: TimeoutException =>
