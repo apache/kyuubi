@@ -560,11 +560,11 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       val result = response.readEntity(new GenericType[Seq[ServerData]]() {})
       assert(result.size == 1)
       val testServer = result.head
-      val export = fe.asInstanceOf[KyuubiRestFrontendService]
+      val restFrontendService = fe.asInstanceOf[KyuubiRestFrontendService]
 
       assert(namespace.equals(testServer.getNamespace.replaceFirst("/", "")))
-      assert(export.host.equals(testServer.getHost))
-      assert(export.connectionUrl.equals(testServer.getInstance()))
+      assert(restFrontendService.host.equals(testServer.getHost))
+      assert(restFrontendService.connectionUrl.equals(testServer.getInstance()))
       assert(!testServer.getAttributes.isEmpty)
       val attributes = testServer.getAttributes
       assert(attributes.containsKey("serviceUri") &&

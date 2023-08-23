@@ -258,6 +258,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
                 case None => throw new IllegalStateException(
                     s"can not find duplicated batch $batchId from metadata store")
               }
+            case Failure(cause) => throw new IllegalStateException(cause)
           }
         }
 
@@ -281,6 +282,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
               case None => throw new IllegalStateException(
                   s"can not find duplicated batch $batchId from metadata store")
             }
+          case Failure(cause) => throw new IllegalStateException(cause)
         }
     }
   }
