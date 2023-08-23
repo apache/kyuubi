@@ -191,7 +191,7 @@ jobs:
           check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
-      - name: Build on Scala
+      - name: Build on Scala ${{ matrix.scala }}
         run: |
           SPARK_EXTENSIONS="extensions/spark/kyuubi-spark-authz,extensions/spark/kyuubi-spark-lineage,extensions/spark/kyuubi-spark-connector-hive,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch,extensions/spark/kyuubi-extension-spark-jdbc-dialect"
           ENGINE_MODULES="externals/kyuubi-spark-sql-engine,externals/kyuubi-hive-sql-engine,externals/kyuubi-jdbc-engine,externals/kyuubi-trino-engine"
