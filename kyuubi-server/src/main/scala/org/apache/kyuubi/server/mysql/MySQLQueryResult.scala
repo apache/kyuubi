@@ -123,7 +123,7 @@ class MySQLThriftQueryResult(
       case tVal: TColumnValue if tVal.isSetI64Val => tVal.getI64Val.getValue
       case tVal: TColumnValue if tVal.isSetDoubleVal => tVal.getDoubleVal.getValue
       case tVal: TColumnValue if tVal.isSetStringVal => tVal.getStringVal.getValue
-    }.toSeq
+    }
     MySQLTextResultSetRowPacket(sequenceId = sequenceId, row = mysqlRow)
   }
 

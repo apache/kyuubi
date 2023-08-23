@@ -84,7 +84,7 @@ case class MySQLColumnDefinition41Packet(
 
 case class MySQLTextResultSetRowPacket(
     sequenceId: Int,
-    row: Seq[Any]) extends MySQLPacket with SupportsEncode {
+    row: Iterable[Any]) extends MySQLPacket with SupportsEncode {
 
   private def nullVal = 0xFB
 
