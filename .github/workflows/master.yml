@@ -193,9 +193,7 @@ jobs:
         uses: ./.github/actions/setup-maven
       - name: Build on Scala ${{ matrix.scala }}
         run: |
-          SPARK_EXTENSIONS="extensions/spark/kyuubi-spark-authz,extensions/spark/kyuubi-spark-lineage,extensions/spark/kyuubi-spark-connector-hive,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch,extensions/spark/kyuubi-extension-spark-jdbc-dialect"
-          ENGINE_MODULES="externals/kyuubi-spark-sql-engine,externals/kyuubi-hive-sql-engine,externals/kyuubi-jdbc-engine,externals/kyuubi-trino-engine"
-          MODULES="kyuubi-server,${SPARK_EXTENSIONS},${ENGINE_MODULES}"
+          MODULES='!externals/kyuubi-flink-sql-engine'
           ./build/mvn clean install -pl ${MODULES} -am \
           -DskipTests -Pflink-provided,hive-provided,spark-provided \
           -Pjava-${{ matrix.java }} \
