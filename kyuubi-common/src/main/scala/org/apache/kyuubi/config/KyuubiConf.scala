@@ -2616,7 +2616,9 @@ object KyuubiConf {
 
   val SERVER_LIMIT_CONNECTIONS_USER_LIMITED_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.server.limit.connections.user.limited.list")
-      .doc("The user in the limited list will be limited to connect to kyuubi server.")
+      .doc("The user in the limited list will be limited to connect to kyuubi server, " +
+        "if the user has configured both user.unlimited.list and user.limited.list, " +
+        "the priority of the latter is higher.")
       .version("1.8.0")
       .serverOnly
       .stringConf
