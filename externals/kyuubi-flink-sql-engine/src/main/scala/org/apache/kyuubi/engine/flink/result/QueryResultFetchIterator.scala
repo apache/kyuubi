@@ -21,7 +21,7 @@ import java.util
 import java.util.concurrent.Executors
 
 import scala.collection.convert.ImplicitConversions._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
@@ -61,7 +61,8 @@ class QueryResultFetchIterator(
   private val executor = Executors.newSingleThreadScheduledExecutor(
     new ThreadFactoryBuilder().setNameFormat("flink-query-iterator-%d").setDaemon(true).build)
 
-  private val executionContext = ExecutionContext.fromExecutor(executor)
+  implicit private val executionContext: ExecutionContextExecutor =
+    ExecutionContext.fromExecutor(executor)
 
   /**
    * Begin a fetch block, forward from the current position.
@@ -72,49 +73,48 @@ class QueryResultFetchIterator(
     if (!hasNext) {
       return
     }
-    Await.result(
-      Future(() -> {
-        var fetched = false
-        // if no timeout is set, this would block until some rows are fetched
-        debug(s"Fetching from result store with timeout $resultFetchTimeout ms")
-        while (!fetched && !Thread.interrupted()) {
-          val rs = resultFetcher.fetchResults(token, maxRows - bufferedRows.length)
-          val flinkRs = new FlinkResultSet(rs)
-          // TODO: replace string-based match when Flink 1.16 support is dropped
-          flinkRs.getResultType.name() match {
-            case "EOS" =>
-              debug("EOS received, no more data to fetch.")
+    val future = Future(() -> {
+      var fetched = false
+      // if no timeout is set, this would block until some rows are fetched
+      debug(s"Fetching from result store with timeout $resultFetchTimeout ms")
+      while (!fetched && !Thread.interrupted()) {
+        val rs = resultFetcher.fetchResults(token, maxRows - bufferedRows.length)
+        val flinkRs = new FlinkResultSet(rs)
+        // TODO: replace string-based match when Flink 1.16 support is dropped
+        flinkRs.getResultType.name() match {
+          case "EOS" =>
+            debug("EOS received, no more data to fetch.")
+            fetched = true
+            hasNext = false
+          case "NOT_READY" =>
+            // if flink jobs are not ready, continue to retry
+            debug("Result not ready, retrying...")
+          case "PAYLOAD" =>
+            val fetchedData = flinkRs.getData
+            // if no data fetched, continue to retry
+            if (!fetchedData.isEmpty) {
+              debug(s"Fetched ${fetchedData.length} rows from result store.")
               fetched = true
-              hasNext = false
-            case "NOT_READY" =>
-              // if flink jobs are not ready, continue to retry
-              debug("Result not ready, retrying...")
-            case "PAYLOAD" =>
-              val fetchedData = flinkRs.getData
-              // if no data fetched, continue to retry
-              if (!fetchedData.isEmpty) {
-                debug(s"Fetched ${fetchedData.length} rows from result store.")
-                fetched = true
-                bufferedRows ++= fetchedData.map(rd => convertToRow(rd, dataTypes.toList))
-                fetchStart = pos
-              } else {
-                debug("No data fetched, retrying...")
-              }
-            case _ =>
-              throw new RuntimeException(s"Unexpected result type: ${flinkRs.getResultType}")
-          }
-          if (hasNext) {
-            val nextToken = flinkRs.getNextToken
-            if (nextToken == null) {
-              hasNext = false
+              bufferedRows ++= fetchedData.map(rd => convertToRow(rd, dataTypes.toList))
+              fetchStart = pos
             } else {
-              token = nextToken
+              debug("No data fetched, retrying...")
             }
-          }
-          Thread.sleep(FETCH_INTERVAL_MS)
+          case _ =>
+            throw new RuntimeException(s"Unexpected result type: ${flinkRs.getResultType}")
         }
-      })(executionContext),
-      resultFetchTimeout)
+        if (hasNext) {
+          val nextToken = flinkRs.getNextToken
+          if (nextToken == null) {
+            hasNext = false
+          } else {
+            token = nextToken
+          }
+        }
+        Thread.sleep(FETCH_INTERVAL_MS)
+      }
+    })
+    Await.result(future, resultFetchTimeout)
   }
 
   /**
