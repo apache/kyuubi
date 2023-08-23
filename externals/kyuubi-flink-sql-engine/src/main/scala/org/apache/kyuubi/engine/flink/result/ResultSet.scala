@@ -53,8 +53,7 @@ case class ResultSet(
 
   def close: Unit = {
     data match {
-      case queryIte: QueryResultFetchIterator =>
-        queryIte.close()
+      case queryIte: QueryResultFetchIterator => queryIte.close()
       case _ =>
     }
   }
