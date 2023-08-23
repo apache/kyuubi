@@ -670,7 +670,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val spec = DB_COMMAND_SPECS(plan1.getClass.getName)
     var db: Database = null
     spec.databaseDescs.find { d =>
-      Try(db = d.extract(plan1)).isSuccess
+      Try { db = d.extract(plan1) }.isSuccess
     }
     withClue(sql1) {
       assert(db.catalog === None)
