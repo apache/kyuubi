@@ -19,12 +19,15 @@ package org.apache.kyuubi.engine.flink.operation
 
 import java.io.IOException
 import java.time.ZoneId
+import java.util.concurrent.TimeoutException
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
+import scala.collection.mutable.ListBuffer
 
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.gateway.service.context.SessionContext
 import org.apache.flink.table.gateway.service.operation.OperationExecutor
+import org.apache.flink.types.Row
 import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
@@ -72,6 +75,10 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
 
   override def close(): Unit = {
     cleanup(OperationState.CLOSED)
+    //  the result set may be null if the operation ends exceptionally
+    if (resultSet != null) {
+      resultSet.close
+    }
     try {
       getOperationLog.foreach(_.close())
     } catch {
@@ -98,25 +105,42 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
     order match {
-      case FETCH_NEXT => resultSet.getData.fetchNext()
       case FETCH_PRIOR => resultSet.getData.fetchPrior(rowSetSize);
       case FETCH_FIRST => resultSet.getData.fetchAbsolute(0);
+      case FETCH_NEXT => // ignored because new data are fetched lazily
     }
-    val token = resultSet.getData.take(rowSetSize)
+    val batch = new ListBuffer[Row]
+    try {
+      // there could be null values at the end of the batch
+      // because Flink could return an EOS
+      var rows = 0
+      while (resultSet.getData.hasNext && rows < rowSetSize) {
+        Option(resultSet.getData.next()).foreach { r => batch += r; rows += 1 }
+      }
+    } catch {
+      case e: TimeoutException =>
+        // ignore and return the current batch if there's some data
+        // otherwise, rethrow the timeout exception
+        if (batch.nonEmpty) {
+          debug(s"Timeout fetching more data for $opType operation. " +
+            s"Returning the current fetched data.")
+        } else {
+          throw e
+        }
+    }
     val timeZone = Option(flinkSession.getSessionConfig.get("table.local-time-zone"))
     val zoneId = timeZone match {
       case Some(tz) => ZoneId.of(tz)
       case None => ZoneId.systemDefault()
     }
     val resultRowSet = RowSet.resultSetToTRowSet(
-      token.toList,
+      batch.toList,
       resultSet,
       zoneId,
       getProtocolVersion)
-    resultRowSet.setStartRowOffset(resultSet.getData.getPosition)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(resultRowSet)
-    resp.setHasMoreRows(false)
+    resp.setHasMoreRows(resultSet.getData.hasNext)
     resp
   }
 

@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import scala.concurrent.duration.Duration
+
 import com.google.common.base.Preconditions
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.gateway.api.operation.OperationHandle
@@ -34,7 +36,10 @@ import org.apache.kyuubi.session.Session
 class PlanOnlyStatement(
     session: Session,
     override val statement: String,
-    mode: PlanOnlyMode) extends FlinkOperation(session) {
+    mode: PlanOnlyMode,
+    queryTimeout: Long,
+    resultMaxRows: Int,
+    resultFetchTimeout: Duration) extends FlinkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   private val lineSeparator: String = System.lineSeparator()
@@ -46,6 +51,7 @@ class PlanOnlyStatement(
   }
 
   override protected def runInternal(): Unit = {
+    addTimeoutMonitor(queryTimeout)
     try {
       val operations = executor.getTableEnvironment.getParser.parse(statement)
       Preconditions.checkArgument(
@@ -59,7 +65,8 @@ class PlanOnlyStatement(
           val resultFetcher = executor.executeStatement(
             new OperationHandle(getHandle.identifier),
             statement)
-          resultSet = ResultSetUtil.fromResultFetcher(resultFetcher);
+          resultSet =
+            ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows, resultFetchTimeout);
         case _ => explainOperation(statement)
       }
     } catch {
