@@ -287,8 +287,15 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
-      @QueryParam("allengine") allengine: Boolean): Seq[Engine] = {
-    if (allengine) {
+      @QueryParam("allengine") allEngine: Boolean): Seq[Engine] = {
+    if (allEngine) {
+      val userName = fe.getSessionUser(Map.empty[String, String])
+      val ipAddress = fe.getIpAddress
+      info(s"Received list all kyuubi engine request from $userName/$ipAddress")
+      if (!isAdministrator(userName)) {
+        throw new NotAllowedException(
+          s"$userName is not allowed to list all kyuubi engine")
+      }
       val engines = ListBuffer[Engine]()
       val engineSpace = fe.getConf.get(HA_NAMESPACE)
       val shareLevel = fe.getConf.get(ENGINE_SHARE_LEVEL)
