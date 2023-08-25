@@ -129,7 +129,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   def getBatchConf(batchType: String): Map[String, String] = {
     val normalizedBatchType = batchType.toLowerCase(Locale.ROOT) match {
       case "pyspark" => "spark"
-      case other => other
+      case other => other.toLowerCase(Locale.ROOT)
     }
     getAllWithPrefix(s"$KYUUBI_BATCH_CONF_PREFIX.$normalizedBatchType", "")
   }
