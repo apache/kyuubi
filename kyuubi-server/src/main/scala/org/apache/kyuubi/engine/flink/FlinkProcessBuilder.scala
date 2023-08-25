@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
 import java.nio.file.{Files, Paths}
+import java.time.Instant
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
@@ -106,6 +107,7 @@ class FlinkProcessBuilder(
         buffer += "-t"
         buffer += "yarn-application"
         buffer += s"-Dyarn.ship-files=${flinkExtraJars.mkString(";")}"
+        buffer += s"-Dyarn.application.name=${conf.getOption(APP_KEY).get}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
 
@@ -203,7 +205,7 @@ class FlinkProcessBuilder(
 
 object FlinkProcessBuilder {
   final val FLINK_EXEC_FILE = "flink"
-  final val YARN_APP_KEY = "yarn.application.name"
+  final val APP_KEY = "flink.app.name"
   final val YARN_TAG_KEY = "yarn.tags"
   final val FLINK_HADOOP_CLASSPATH_KEY = "FLINK_HADOOP_CLASSPATH"
   final val FLINK_PROXY_USER_KEY = "HADOOP_PROXY_USER"

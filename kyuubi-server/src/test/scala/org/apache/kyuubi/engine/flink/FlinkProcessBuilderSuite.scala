@@ -85,6 +85,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
       escapePaths(s"${builder.flinkExecutable} run-application ") +
         s"-t yarn-application " +
         s"-Dyarn.ship-files=.*\\/flink-sql-client.*jar;.*\\/flink-sql-gateway.*jar;$tempUdfJar " +
+        s"-Dyarn\\.application\\.name=kyuubi_.* " +
         s"-Dyarn\\.tags=KYUUBI " +
         s"-Dcontainerized\\.master\\.env\\.FLINK_CONF_DIR=\\. " +
         s"-Dexecution.target=yarn-application " +
