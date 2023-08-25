@@ -45,7 +45,7 @@ import org.apache.kyuubi.shaded.zookeeper.KeeperException.NoNodeException
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class AdminResource extends ApiRequestContext with Logging {
-  private lazy val administrators = fe.getConf.get(KyuubiConf.SERVER_ADMINISTRATORS).toSet +
+  private lazy val administrators = fe.getConf.get(KyuubiConf.SERVER_ADMINISTRATORS) +
     Utils.currentUser
 
   @ApiResponse(

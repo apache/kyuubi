@@ -80,7 +80,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
   override protected val conf: KyuubiConf = {
     new KyuubiConf()
       .set(s"$KYUUBI_BATCH_CONF_PREFIX.spark.spark.master", "yarn")
-      .set(BATCH_CONF_IGNORE_LIST, Seq("spark.master"))
+      .set(BATCH_CONF_IGNORE_LIST, Set("spark.master"))
       .set(BATCH_APPLICATION_CHECK_INTERVAL, 3000L)
   }
 

@@ -87,6 +87,12 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
       .createWithDefault(Seq("hehe"))
     assert(stringConfUpperSeq.defaultVal.get === Seq("HEHE"))
 
+    val stringConfSet = ConfigBuilder("kyuubi.string.conf.set")
+      .stringConf
+      .toSet()
+      .createWithDefault(Set("hehe", "haha"))
+    assert(stringConfSet.defaultVal.get === Set("hehe", "haha"))
+
     val stringConfLower = ConfigBuilder("kyuubi.string.conf.lower")
       .stringConf
       .transformToLowerCase

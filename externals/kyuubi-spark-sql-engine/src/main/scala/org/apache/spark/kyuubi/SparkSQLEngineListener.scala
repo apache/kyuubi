@@ -40,9 +40,9 @@ import org.apache.kyuubi.service.{Serverable, ServiceState}
 class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logging {
 
   // the conf of server is null before initialized, use lazy val here
-  private lazy val deregisterExceptions: Seq[String] =
+  private lazy val deregisterExceptions: Set[String] =
     server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_CLASSES)
-  private lazy val deregisterMessages: Seq[String] =
+  private lazy val deregisterMessages: Set[String] =
     server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_MESSAGES)
   private lazy val deregisterExceptionTTL: Long =
     server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_TTL)
@@ -74,7 +74,7 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
       case JobFailed(e) if e != null =>
         val cause = findCause(e)
         var deregisterInfo: Option[String] = None
-        if (deregisterExceptions.exists(_.equals(cause.getClass.getCanonicalName))) {
+        if (deregisterExceptions.contains(cause.getClass.getCanonicalName)) {
           deregisterInfo = Some("Job failed exception class is in the set of " +
             s"${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, deregistering the engine.")
         } else if (deregisterMessages.exists(stringifyException(cause).contains)) {

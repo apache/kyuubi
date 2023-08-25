@@ -29,9 +29,9 @@ object UserFilterFactory extends FilterFactory with Logging {
   }
 }
 
-class UserFilter(_userFilter: Seq[String]) extends Filter with Logging {
+class UserFilter(_userFilter: Set[String]) extends Filter with Logging {
 
-  lazy val userFilter: Seq[String] = _userFilter.map(_.toLowerCase)
+  lazy val userFilter: Set[String] = _userFilter.map(_.toLowerCase)
 
   @throws[AuthenticationException]
   override def apply(ldap: DirSearch, user: String): Unit = {

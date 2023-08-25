@@ -41,8 +41,8 @@ class PlanOnlyStatement(
   extends SparkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
-  private val planExcludes: Seq[String] = {
-    spark.conf.getOption(OPERATION_PLAN_ONLY_EXCLUDES.key).map(_.split(",").map(_.trim).toSeq)
+  private val planExcludes: Set[String] = {
+    spark.conf.getOption(OPERATION_PLAN_ONLY_EXCLUDES.key).map(_.split(",").map(_.trim).toSet)
       .getOrElse(session.sessionManager.getConf.get(OPERATION_PLAN_ONLY_EXCLUDES))
   }
 

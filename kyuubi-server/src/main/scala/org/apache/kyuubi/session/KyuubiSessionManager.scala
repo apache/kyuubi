@@ -356,7 +356,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   private[kyuubi] def refreshUnlimitedUsers(conf: KyuubiConf): Unit = {
-    val unlimitedUsers = conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).toSet
+    val unlimitedUsers = conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST)
     limiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
     batchLimiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
   }
@@ -365,9 +365,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       userLimit: Int,
       ipAddressLimit: Int,
       userIpAddressLimit: Int,
-      userUnlimitedList: Seq[String]): Option[SessionLimiter] = {
+      userUnlimitedList: Set[String]): Option[SessionLimiter] = {
     Seq(userLimit, ipAddressLimit, userIpAddressLimit).find(_ > 0).map(_ =>
-      SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, userUnlimitedList.toSet))
+      SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, userUnlimitedList))
   }
 
   private def startEngineAliveChecker(): Unit = {

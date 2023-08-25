@@ -25,7 +25,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.metrics.MetricsConf
+import org.apache.kyuubi.metrics.{MetricsConf, ReporterType}
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
@@ -36,7 +36,7 @@ class BackendServiceMetricSuite extends WithKyuubiServer with HiveJDBCTestHelper
   val reportPath: Path = Utils.createTempDir()
   override protected val conf: KyuubiConf = {
     KyuubiConf()
-      .set(MetricsConf.METRICS_REPORTERS, Seq("JSON"))
+      .set(MetricsConf.METRICS_REPORTERS, Set(ReporterType.JSON.toString))
       .set(MetricsConf.METRICS_JSON_LOCATION, reportPath.toString)
       .set(MetricsConf.METRICS_JSON_INTERVAL, Duration.ofMillis(100).toMillis)
   }
