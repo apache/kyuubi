@@ -24,7 +24,7 @@ import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQ
 class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
   test("application access path") {
     val localDirLimitConf = KyuubiConf()
-      .set(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST, Seq("/apache/kyuubi"))
+      .set(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST, Set("/apache/kyuubi"))
     val noLocalDirLimitConf = KyuubiConf()
 
     var path = "/apache/kyuubi/a.jar"

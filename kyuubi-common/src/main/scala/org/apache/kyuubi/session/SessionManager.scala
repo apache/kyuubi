@@ -265,10 +265,10 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
         conf.get(ENGINE_EXEC_KEEPALIVE_TIME)
       }
 
-    _confRestrictList = conf.get(SESSION_CONF_RESTRICT_LIST).toSet
-    _confIgnoreList = conf.get(SESSION_CONF_IGNORE_LIST).toSet +
+    _confRestrictList = conf.get(SESSION_CONF_RESTRICT_LIST)
+    _confIgnoreList = conf.get(SESSION_CONF_IGNORE_LIST) +
       s"${SESSION_USER_SIGN_ENABLED.key}"
-    _batchConfIgnoreList = conf.get(BATCH_CONF_IGNORE_LIST).toSet
+    _batchConfIgnoreList = conf.get(BATCH_CONF_IGNORE_LIST)
 
     execPool = ThreadUtils.newDaemonQueuedThreadPool(
       poolSize,

@@ -33,7 +33,7 @@ trait SparkSessionProvider {
   protected val catalogImpl: String
   protected def format: String = if (catalogImpl == "hive") "hive" else "parquet"
 
-  protected val extension: SparkSessionExtensions => Unit = _ => Unit
+  protected val extension: SparkSessionExtensions => Unit = _ => ()
   protected val sqlExtensions: String = ""
 
   protected val extraSparkConf: SparkConf = new SparkConf()

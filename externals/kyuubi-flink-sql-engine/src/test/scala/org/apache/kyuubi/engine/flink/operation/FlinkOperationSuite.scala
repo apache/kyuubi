@@ -34,7 +34,7 @@ import org.apache.kyuubi.engine.flink.FlinkEngineUtils.FLINK_RUNTIME_VERSION
 import org.apache.kyuubi.engine.flink.WithFlinkTestResources
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
-import org.apache.kyuubi.jdbc.hive.KyuubiStatement
+import org.apache.kyuubi.jdbc.hive.{KyuubiSQLException, KyuubiStatement}
 import org.apache.kyuubi.jdbc.hive.common.TimestampTZ
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
@@ -676,12 +676,10 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
           assert(stopResult1.next())
           assert(stopResult1.getString(1) === "OK")
 
-          val selectResult = statement.executeQuery("select * from tbl_a")
-          val jobId2 = statement.asInstanceOf[KyuubiStatement].getQueryId
-          assert(jobId2 !== null)
-          while (!selectResult.next()) {
-            Thread.sleep(1000L)
-          }
+          val insertResult2 = statement.executeQuery("insert into tbl_b select * from tbl_a")
+          assert(insertResult2.next())
+          val jobId2 = insertResult2.getString(1)
+
           val stopResult2 = statement.executeQuery(s"stop job '$jobId2' with savepoint")
           assert(stopResult2.getMetaData.getColumnName(1).equals("savepoint path"))
           assert(stopResult2.next())
@@ -1251,5 +1249,18 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
         assert(JobID.fromHexString(queryId) !== null)
       }
     }
+  }
+
+  test("test result fetch timeout") {
+    val exception = intercept[KyuubiSQLException](
+      withSessionConf()(Map(ENGINE_FLINK_FETCH_TIMEOUT.key -> "60000"))() {
+        withJdbcStatement("tbl_a") { stmt =>
+          stmt.executeQuery("create table tbl_a (a int) " +
+            "with ('connector' = 'datagen', 'rows-per-second'='0')")
+          val resultSet = stmt.executeQuery("select * from tbl_a")
+          while (resultSet.next()) {}
+        }
+      })
+    assert(exception.getMessage === "Futures timed out after [60000 milliseconds]")
   }
 }

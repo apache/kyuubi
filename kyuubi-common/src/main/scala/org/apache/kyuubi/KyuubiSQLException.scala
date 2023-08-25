@@ -156,7 +156,7 @@ object KyuubiSQLException {
     (i1, i2, i3)
   }
 
-  def toCause(details: Seq[String]): Throwable = {
+  def toCause(details: Iterable[String]): Throwable = {
     var ex: Throwable = null
     if (details != null && details.nonEmpty) {
       val head = details.head
@@ -172,7 +172,7 @@ object KyuubiSQLException {
         val lineNum = line.substring(i3 + 1).toInt
         new StackTraceElement(clzName, methodName, fileName, lineNum)
       }
-      ex = newInstance(exClz, msg, toCause(details.slice(length + 2, details.length)))
+      ex = newInstance(exClz, msg, toCause(details.slice(length + 2, details.size)))
       ex.setStackTrace(stackTraceElements.toArray)
     }
     ex

@@ -43,9 +43,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private var submitTimeout: Long = _
   private var kyuubiConf: KyuubiConf = _
 
-  private def allowedContexts: Seq[String] =
+  private def allowedContexts: Set[String] =
     kyuubiConf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
-  private def allowedNamespaces: Seq[String] =
+  private def allowedNamespaces: Set[String] =
     kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
 
   // key is kyuubi_unique_key

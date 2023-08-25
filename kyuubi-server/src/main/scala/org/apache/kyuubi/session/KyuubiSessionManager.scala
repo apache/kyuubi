@@ -215,7 +215,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       batchRequest.getResource,
       batchRequest.getClassName,
       batchRequest.getConf.asScala.toMap,
-      batchRequest.getArgs.asScala,
+      batchRequest.getArgs.asScala.toSeq,
       None,
       shouldRunAsync)
     openBatchSession(batchSession)
@@ -240,7 +240,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       className = batchRequest.getClassName,
       requestName = batchRequest.getName,
       requestConf = conf,
-      requestArgs = batchRequest.getArgs.asScala,
+      requestArgs = batchRequest.getArgs.asScala.toSeq,
       createTime = System.currentTimeMillis(),
       engineType = batchRequest.getBatchType)
 
@@ -365,7 +365,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   private[kyuubi] def refreshUnlimitedUsers(conf: KyuubiConf): Unit = {
     val unlimitedUsers =
-      conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty).toSet
+      conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
     limiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
     batchLimiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
   }
@@ -384,15 +384,15 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       userLimit: Int,
       ipAddressLimit: Int,
       userIpAddressLimit: Int,
-      userUnlimitedList: Seq[String],
-      userLimitedList: Seq[String]): Option[SessionLimiter] = {
+      userUnlimitedList: Set[String],
+      userLimitedList: Set[String]): Option[SessionLimiter] = {
     Seq(userLimit, ipAddressLimit, userIpAddressLimit).find(_ > 0).map(_ =>
       SessionLimiter(
         userLimit,
         ipAddressLimit,
         userIpAddressLimit,
-        userUnlimitedList.toSet,
-        userLimitedList.toSet))
+        userUnlimitedList,
+        userLimitedList))
   }
 
   private def startEngineAliveChecker(): Unit = {

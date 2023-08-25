@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import scala.concurrent.duration.Duration
+
 import org.apache.flink.api.common.JobID
 import org.apache.flink.table.gateway.api.operation.OperationHandle
 
@@ -32,7 +34,8 @@ class ExecuteStatement(
     override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
-    resultMaxRows: Int)
+    resultMaxRows: Int,
+    resultFetchTimeout: Duration)
   extends FlinkOperation(session) with Logging {
 
   private val operationLog: OperationLog =
@@ -48,10 +51,6 @@ class ExecuteStatement(
     setHasResultSet(true)
   }
 
-  override protected def afterRun(): Unit = {
-    OperationLog.removeCurrentOperationLog()
-  }
-
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
     executeStatement()
@@ -64,7 +63,7 @@ class ExecuteStatement(
         new OperationHandle(getHandle.identifier),
         statement)
       jobId = FlinkEngineUtils.getResultJobId(resultFetcher)
-      resultSet = ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows)
+      resultSet = ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows, resultFetchTimeout)
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)

@@ -21,7 +21,7 @@ import org.apache.kyuubi.ctl.util.CtlUtils
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
 class GetServerCommand(cliConfig: CliConfig) extends GetCommand(cliConfig) {
-  override def doRun(): Seq[ServiceNodeInfo] = {
+  override def doRun(): Iterable[ServiceNodeInfo] = {
     CtlUtils.listZkServerNodes(
       conf,
       normalizedCliConfig,

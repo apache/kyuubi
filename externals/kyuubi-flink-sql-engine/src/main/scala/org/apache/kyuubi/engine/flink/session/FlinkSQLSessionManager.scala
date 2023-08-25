@@ -77,9 +77,10 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
+    val fSession = super.getSessionOption(sessionHandle)
+    fSession.foreach(s =>
+      sessionManager.closeSession(s.asInstanceOf[FlinkSessionImpl].fSession.getSessionHandle))
     super.closeSession(sessionHandle)
-    sessionManager.closeSession(
-      new org.apache.flink.table.gateway.api.session.SessionHandle(sessionHandle.identifier))
   }
 
   override def stop(): Unit = synchronized {

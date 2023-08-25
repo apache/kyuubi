@@ -80,7 +80,7 @@ object HiveBridgeHelper {
             s"Unsupported partition transform: $transform")
       }
 
-      (identityCols, bucketSpec)
+      (identityCols.toSeq, bucketSpec)
     }
   }
 

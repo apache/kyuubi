@@ -39,7 +39,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
 
   private val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
   private val none = authTypes.contains(NONE)
-  private val noSasl = authTypes == Seq(NOSASL)
+  private val noSasl = authTypes == Set(NOSASL)
   private val kerberosEnabled = authTypes.contains(KERBEROS)
   private val plainAuthTypeOpt = authTypes.filterNot(_.equals(KERBEROS))
     .filterNot(_.equals(NOSASL)).headOption

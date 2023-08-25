@@ -168,6 +168,38 @@ jobs:
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
 
+  scala213:
+    name: Scala Compilation Test
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - '8'
+        scala:
+          - '2.13'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Tune Runner VM
+        uses: ./.github/actions/tune-runner-vm
+      - name: Setup JDK ${{ matrix.java }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+          check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
+      - name: Build on Scala ${{ matrix.scala }}
+        run: |
+          MODULES='!externals/kyuubi-flink-sql-engine'
+          ./build/mvn clean install -pl ${MODULES} -am \
+          -DskipTests -Pflink-provided,hive-provided,spark-provided \
+          -Pjava-${{ matrix.java }} \
+          -Pscala-${{ matrix.scala }} \
+          -Pspark-3.3
+
   flink-it:
     name: Flink Test
     runs-on: ubuntu-22.04

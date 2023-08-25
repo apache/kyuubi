@@ -26,38 +26,24 @@ import scala.collection.JavaConverters._
 
 import com.google.common.annotations.VisibleForTesting
 
-import org.apache.kyuubi.KYUUBI_VERSION
-import org.apache.kyuubi.KyuubiException
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_ID
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ENGINE_REF_ID
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NODE_TIMEOUT
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_PUBLISH_CONFIGS
-import org.apache.kyuubi.ha.client.DiscoveryClient
-import org.apache.kyuubi.ha.client.ServiceDiscovery
-import org.apache.kyuubi.ha.client.ServiceNodeInfo
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.buildZookeeperClient
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.getGracefulStopThreadDelay
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_ZK_NODE_TIMEOUT, HA_ZK_PUBLISH_CONFIGS}
+import org.apache.kyuubi.ha.client.{DiscoveryClient, ServiceDiscovery, ServiceNodeInfo}
+import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.{buildZookeeperClient, getGracefulStopThreadDelay}
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient.connectionChecker
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework
 import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.{AtomicValue, DistributedAtomicInteger}
 import org.apache.kyuubi.shaded.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.kyuubi.shaded.curator.framework.recipes.nodes.PersistentNode
-import org.apache.kyuubi.shaded.curator.framework.state.ConnectionState
-import org.apache.kyuubi.shaded.curator.framework.state.ConnectionState.CONNECTED
-import org.apache.kyuubi.shaded.curator.framework.state.ConnectionState.LOST
-import org.apache.kyuubi.shaded.curator.framework.state.ConnectionState.RECONNECTED
-import org.apache.kyuubi.shaded.curator.framework.state.ConnectionStateListener
+import org.apache.kyuubi.shaded.curator.framework.state.{ConnectionState, ConnectionStateListener}
+import org.apache.kyuubi.shaded.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
 import org.apache.kyuubi.shaded.curator.retry.RetryForever
 import org.apache.kyuubi.shaded.curator.utils.ZKPaths
-import org.apache.kyuubi.shaded.zookeeper.CreateMode
+import org.apache.kyuubi.shaded.zookeeper.{CreateMode, KeeperException, WatchedEvent, Watcher}
 import org.apache.kyuubi.shaded.zookeeper.CreateMode.PERSISTENT
-import org.apache.kyuubi.shaded.zookeeper.KeeperException
 import org.apache.kyuubi.shaded.zookeeper.KeeperException.NodeExistsException
-import org.apache.kyuubi.shaded.zookeeper.WatchedEvent
-import org.apache.kyuubi.shaded.zookeeper.Watcher
 import org.apache.kyuubi.util.ThreadUtils
 
 class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
@@ -226,7 +212,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         info(s"Get service instance:$instance$engineIdStr and version:${version.getOrElse("")} " +
           s"under $namespace")
         ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes)
-      }
+      }.toSeq
     } catch {
       case _: Exception if silent => Nil
       case e: Exception =>

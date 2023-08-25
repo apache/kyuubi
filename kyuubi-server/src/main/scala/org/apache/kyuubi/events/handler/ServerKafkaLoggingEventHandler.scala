@@ -21,7 +21,7 @@ import org.apache.kyuubi.config.KyuubiConf
 
 case class ServerKafkaLoggingEventHandler(
     topic: String,
-    producerConf: Map[String, String],
+    producerConf: Iterable[(String, String)],
     kyuubiConf: KyuubiConf,
     closeTimeoutInMs: Long)
   extends KafkaLoggingEventHandler(topic, producerConf, kyuubiConf, closeTimeoutInMs)

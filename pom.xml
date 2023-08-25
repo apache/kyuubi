@@ -196,7 +196,7 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.3.2</spark.version>
+        <spark.version>3.3.3</spark.version>
         <spark.binary.version>3.3</spark.binary.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
@@ -2122,6 +2122,57 @@
                 <maven.compiler.release>${java.version}</maven.compiler.release>
                 <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
+        </profile>
+
+        <!-- For development only, not generally applicable for all modules -->
+        <profile>
+            <id>scala-2.13</id>
+            <properties>
+                <scala.binary.version>2.13</scala.binary.version>
+                <scala.version>2.13.8</scala.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>net.alchim31.maven</groupId>
+                            <artifactId>scala-maven-plugin</artifactId>
+                            <configuration>
+                                <scalaVersion>${scala.version}</scalaVersion>
+                                <recompileMode>incremental</recompileMode>
+                                <args>
+                                    <arg>-unchecked</arg>
+                                    <arg>-deprecation</arg>
+                                    <arg>-feature</arg>
+                                    <arg>-explaintypes</arg>
+                                    <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
+                                    <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
+                                    <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
+                                    <arg>-Xfatal-warnings</arg>
+                                    <arg>-Ywarn-unused:imports</arg>
+                                </args>
+                                <jvmArgs>
+                                    <jvmArg>-Xms1024m</jvmArg>
+                                    <jvmArg>-Xmx1024m</jvmArg>
+                                    <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
+                                </jvmArgs>
+                                <javacArgs>
+                                    <javacArg>-Xlint:all,-serial,-path,-try,-processing</javacArg>
+                                </javacArgs>
+                                <compilerPlugins>
+                                    <compilerPlugin>
+                                        <groupId>com.github.ghik</groupId>
+                                        <artifactId>silencer-plugin_${scala.version}</artifactId>
+                                        <version>${maven.plugin.silencer.version}</version>
+                                    </compilerPlugin>
+                                </compilerPlugins>
+                                <!-- only skipping `scala:doc-jar` -->
+                                <skip>${maven.scaladoc.skip}</skip>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
 
         <profile>

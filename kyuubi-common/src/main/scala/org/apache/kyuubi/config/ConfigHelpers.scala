@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.config
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.Utils
 
 object ConfigHelpers {
@@ -25,7 +27,11 @@ object ConfigHelpers {
     Utils.strToSeq(str, sp).map(converter)
   }
 
-  def seqToStr[T](v: Seq[T], stringConverter: T => String): String = {
-    v.map(stringConverter).mkString(",")
+  def strToSet[T](str: String, converter: String => T, sp: String, skipBlank: Boolean): Set[T] = {
+    Utils.strToSeq(str, sp).filter(!skipBlank || StringUtils.isNotBlank(_)).map(converter).toSet
+  }
+
+  def iterableToStr[T](v: Iterable[T], stringConverter: T => String, sp: String = ","): String = {
+    v.map(stringConverter).mkString(sp)
   }
 }

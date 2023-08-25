@@ -22,7 +22,7 @@ import org.apache.kyuubi.ctl.util.{Render, Validator}
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
 abstract class DeleteCommand(cliConfig: CliConfig)
-  extends Command[Seq[ServiceNodeInfo]](cliConfig) {
+  extends Command[Iterable[ServiceNodeInfo]](cliConfig) {
 
   def validate(): Unit = {
     Validator.validateZkArguments(normalizedCliConfig)
@@ -33,9 +33,9 @@ abstract class DeleteCommand(cliConfig: CliConfig)
   /**
    * Delete zookeeper service node with specified host port.
    */
-  def doRun(): Seq[ServiceNodeInfo]
+  override def doRun(): Iterable[ServiceNodeInfo]
 
-  def render(nodes: Seq[ServiceNodeInfo]): Unit = {
+  override def render(nodes: Iterable[ServiceNodeInfo]): Unit = {
     val title = "Deleted zookeeper service nodes"
     info(Render.renderServiceNodesInfo(title, nodes))
   }

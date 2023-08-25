@@ -40,8 +40,8 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     .set(KyuubiConf.SESSION_CHECK_INTERVAL, Duration.ofSeconds(5).toMillis)
     .set(KyuubiConf.SESSION_IDLE_TIMEOUT, Duration.ofSeconds(5).toMillis)
     .set(KyuubiConf.OPERATION_IDLE_TIMEOUT, Duration.ofSeconds(20).toMillis)
-    .set(KyuubiConf.SESSION_CONF_RESTRICT_LIST, Seq("spark.*"))
-    .set(KyuubiConf.SESSION_CONF_IGNORE_LIST, Seq("session.engine.*"))
+    .set(KyuubiConf.SESSION_CONF_RESTRICT_LIST, Set("spark.*"))
+    .set(KyuubiConf.SESSION_CONF_IGNORE_LIST, Set("session.engine.*"))
 
   private def withSessionHandle(f: (TCLIService.Iface, TSessionHandle) => Unit): Unit = {
     TClientTestUtils.withSessionHandle(server.frontendServices.head.connectionUrl, Map.empty)(f)
