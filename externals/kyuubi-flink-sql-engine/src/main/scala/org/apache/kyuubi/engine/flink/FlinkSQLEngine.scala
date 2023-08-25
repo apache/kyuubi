@@ -140,7 +140,9 @@ object FlinkSQLEngine extends Logging {
 
   private def setDeploymentConf(executionTarget: String, flinkConf: Configuration): Unit = {
     // forward kyuubi engine variables to flink configuration
-    kyuubiConf.getOption("flink.app.name")
+    // yarn application mode removes the `flink.` prefix while the local mode keeps it
+    kyuubiConf.getOption("app.name")
+      .orElse(kyuubiConf.getOption("flink.app.name"))
       .foreach(flinkConf.setString(KYUUBI_ENGINE_NAME, _))
 
     kyuubiConf.getOption(KYUUBI_SESSION_USER_KEY)
