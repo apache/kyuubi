@@ -129,12 +129,12 @@ class MetadataManager extends AbstractService("MetadataManager") {
   }
 
   def getBatchSessionMetadata(batchId: String): Option[Metadata] = {
-    Option(withMetadataRequestMetrics(_metadataStore.getMetadata(batchId, true)))
+    Option(withMetadataRequestMetrics(_metadataStore.getMetadata(batchId)))
       .filter(_.sessionType == SessionType.BATCH)
   }
 
   def getBatches(filter: MetadataFilter, from: Int, size: Int): Seq[Batch] = {
-    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, true)).map(
+    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size)).map(
       buildBatch)
   }
 
@@ -168,7 +168,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
       sessionType = SessionType.BATCH,
       state = state,
       kyuubiInstance = kyuubiInstance)
-    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, false))
+    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size))
   }
 
   def getPeerInstanceClosedBatchesMetadata(
@@ -181,7 +181,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
       state = state,
       kyuubiInstance = kyuubiInstance,
       peerInstanceClosed = true)
-    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, true))
+    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size))
   }
 
   def updateMetadata(metadata: Metadata, asyncRetryOnError: Boolean = true): Unit = {
