@@ -106,7 +106,7 @@ jobs:
       - name: Code coverage
         if: |
           matrix.java == 8 &&
-          matrix.spark == '3.2' &&
+          matrix.spark == '3.4' &&
           matrix.spark-archive == ''
         uses: codecov/codecov-action@v3
         with:
