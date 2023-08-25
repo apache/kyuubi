@@ -1674,7 +1674,7 @@ object KyuubiConf {
     buildConf("kyuubi.batch.submitter.enabled")
       .internal
       .serverOnly
-      .doc("In Batch API v2, it requires batch submitter to pick the INITIALIZED batch job " +
+      .doc("Batch API v2 requires batch submitter to pick the INITIALIZED batch job " +
         "from metastore and submits it to Resource Manager. " +
         "Note: Batch API v2 is experimental and under rapid development, this configuration " +
         "is added to allow explorers conveniently testing the developing Batch v2 API, not " +
