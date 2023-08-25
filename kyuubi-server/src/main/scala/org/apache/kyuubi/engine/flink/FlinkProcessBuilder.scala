@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
 import java.nio.file.{Files, Paths}
-import java.time.Instant
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
