@@ -31,7 +31,11 @@ trait SessionLimiter {
 
 case class UserIpAddress(user: String, ipAddress: String)
 
-class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit: Int)
+class SessionLimiterImpl(
+    userLimit: Int,
+    ipAddressLimit: Int,
+    userIpAddressLimit: Int,
+    var limitedUsers: Set[String])
   extends SessionLimiter {
 
   private val _counters: java.util.Map[String, AtomicInteger] =
@@ -43,7 +47,7 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
     val user = userIpAddress.user
     val ipAddress = userIpAddress.ipAddress
     // increment userIpAddress count
-    if (userIpAddressLimit > 0 && StringUtils.isNotBlank(user) &&
+    if (userIpAddressLimit > 0 && isLimitedUser(user) &&
       StringUtils.isNotBlank(ipAddress)) {
       incrLimitCount(
         s"$user:$ipAddress",
@@ -52,7 +56,7 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
           s" (user:ipaddress: $user:$ipAddress limit: $userIpAddressLimit)")
     }
     // increment user count
-    if (userLimit > 0 && StringUtils.isNotBlank(user)) {
+    if (userLimit > 0 && isLimitedUser(user)) {
       incrLimitCount(
         user,
         userLimit,
@@ -71,7 +75,7 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
     val user = userIpAddress.user
     val ipAddress = userIpAddress.ipAddress
     // decrement user count
-    if (userLimit > 0 && StringUtils.isNotBlank(user)) {
+    if (userLimit > 0 && isLimitedUser(user)) {
       decrLimitCount(user)
     }
     // decrement ipAddress count
@@ -79,7 +83,7 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
       decrLimitCount(ipAddress)
     }
     // decrement userIpAddress count
-    if (userIpAddressLimit > 0 && StringUtils.isNotBlank(user) &&
+    if (userIpAddressLimit > 0 && isLimitedUser(user) &&
       StringUtils.isNotBlank(ipAddress)) {
       decrLimitCount(s"$user:$ipAddress")
     }
@@ -99,6 +103,18 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
       case _ =>
     }
   }
+
+  private def isLimitedUser(user: String): Boolean = {
+    StringUtils.isNotBlank(user) && limitedUsers.contains(user)
+  }
+
+  private[kyuubi] def setLimitedUsers(limitedUsers: Set[String]): Unit = {
+    this.limitedUsers = limitedUsers
+  }
+
+  private[kyuubi] def getLimitedUsers: Set[String] = {
+    limitedUsers
+  }
 }
 
 class SessionLimiterWithAccessControlListImpl(
@@ -106,33 +122,26 @@ class SessionLimiterWithAccessControlListImpl(
     ipAddressLimit: Int,
     userIpAddressLimit: Int,
     var unlimitedUsers: Set[String],
-    var limitedUsers: Set[String])
-  extends SessionLimiterImpl(userLimit, ipAddressLimit, userIpAddressLimit) {
+    limitedUsers: Set[String])
+  extends SessionLimiterImpl(userLimit, ipAddressLimit, userIpAddressLimit, limitedUsers) {
   override def increment(userIpAddress: UserIpAddress): Unit = {
-    val user = userIpAddress.user
-    if (StringUtils.isNotBlank(user) && limitedUsers.contains(user)) {
-      val errorMsg =
-        s"Connection limited because the user is in the limited user list. (user: $user)"
-      throw KyuubiSQLException(errorMsg)
-    }
-
-    if (!unlimitedUsers.contains(user)) {
+    if (!isUnlimitedUser(userIpAddress.user)) {
       super.increment(userIpAddress)
     }
   }
 
   override def decrement(userIpAddress: UserIpAddress): Unit = {
-    if (!unlimitedUsers.contains(userIpAddress.user)) {
+    if (!isUnlimitedUser(userIpAddress.user)) {
       super.decrement(userIpAddress)
     }
   }
 
-  private[kyuubi] def setUnlimitedUsers(unlimitedUsers: Set[String]): Unit = {
-    this.unlimitedUsers = unlimitedUsers
+  private[kyuubi] def isUnlimitedUser(user: String): Boolean = {
+    unlimitedUsers.contains(user) && !limitedUsers.contains(user)
   }
 
-  private[kyuubi] def setLimitedUsers(limitedUsers: Set[String]): Unit = {
-    this.limitedUsers = limitedUsers
+  private[kyuubi] def setUnlimitedUsers(unlimitedUsers: Set[String]): Unit = {
+    this.unlimitedUsers = unlimitedUsers
   }
 }
 
@@ -170,7 +179,7 @@ object SessionLimiter {
     }
 
   def getLimitedUsers(limiter: SessionLimiter): Set[String] = limiter match {
-    case l: SessionLimiterWithAccessControlListImpl => l.limitedUsers
+    case l: SessionLimiterWithAccessControlListImpl => l.getLimitedUsers
     case _ => Set.empty
   }
 }

@@ -31,12 +31,14 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     val userLimit = 30
     val ipAddressLimit = 20
     val userIpAddressLimit = 10
+    val limitedUsers = Set(user)
     val threadPool = Executors.newFixedThreadPool(10)
     def checkLimit(
         userIpAddress: UserIpAddress,
         expectedIndex: Int,
         expectedErrorMsg: String): Unit = {
-      val limiter = SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit)
+      val limiter =
+        SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, Set.empty, limitedUsers)
       val successAdder = new LongAdder
       val expectedErrorAdder = new LongAdder
       val count = 50
@@ -119,34 +121,78 @@ class SessionLimiterSuite extends KyuubiFunSuite {
   }
 
   test("test session limiter with user limited list") {
-    val ipAddress = "127.0.0.1"
-    val userLimit = 100
-    val ipAddressLimit = 100
-    val userIpAddressLimit = 100
-    val limitedUsers = Set("user002", "user003")
+    val userLimit = 500
+    val ipAddressLimit = 500
+    val userIpAddressLimit = 500
     val limiter =
-      SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, Set.empty, limitedUsers)
+      SessionLimiter(
+        userLimit,
+        ipAddressLimit,
+        userIpAddressLimit,
+        Set("user002", "user003"),
+        Set("user003", "user004"))
 
-    for (i <- 0 until 50) {
-      val userIpAddress = UserIpAddress("user001", ipAddress)
-      limiter.increment(userIpAddress)
+    def checkLimit(
+        userIpAddress: UserIpAddress,
+        count: Int,
+        isUserLimited: Boolean,
+        userCount: Int,
+        isIpAddressLimited: Boolean,
+        ipAddressCount: Int,
+        isUserIpAddressLimited: Boolean,
+        userIpAddressCount: Int): Unit = {
+      for (i <- 0 until count) {
+        limiter.increment(userIpAddress)
+      }
+      var counters = limiter.asInstanceOf[SessionLimiterImpl].counters().asScala
+
+      if (isUserLimited) {
+        assert(counters(userIpAddress.user).get() == userCount)
+      } else {
+        assert(!counters.contains(userIpAddress.user))
+      }
+
+      if (isIpAddressLimited) {
+        assert(counters(userIpAddress.ipAddress).get() == ipAddressCount)
+      } else {
+        assert(!counters.contains(userIpAddress.ipAddress))
+      }
+
+      if (isUserIpAddressLimited) {
+        assert(counters(s"${userIpAddress.user}:${userIpAddress.ipAddress}").get()
+          == userIpAddressCount)
+      } else {
+        assert(!counters.contains(s"${userIpAddress.user}:${userIpAddress.ipAddress}"))
+      }
+
+      for (i <- 0 until count) {
+        limiter.decrement(userIpAddress)
+      }
+      counters = limiter.asInstanceOf[SessionLimiterImpl].counters().asScala
+
+      if (isUserLimited) {
+        assert(counters(userIpAddress.user).get() == 0)
+      } else {
+        assert(!counters.contains(userIpAddress.user))
+      }
+
+      if (isIpAddressLimited) {
+        assert(counters(userIpAddress.ipAddress).get() == 0)
+      } else {
+        assert(!counters.contains(userIpAddress.ipAddress))
+      }
+
+      if (isUserIpAddressLimited) {
+        assert(counters(s"${userIpAddress.user}:${userIpAddress.ipAddress}").get()
+          == 0)
+      } else {
+        assert(!counters.contains(s"${userIpAddress.user}:${userIpAddress.ipAddress}"))
+      }
     }
-    limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
-      .foreach(c => assert(c.get() == 50))
 
-    for (i <- 0 until 50) {
-      val userIpAddress = UserIpAddress("user001", ipAddress)
-      limiter.decrement(userIpAddress)
-    }
-    limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
-      .foreach(c => assert(c.get() == 0))
-
-    val caught = intercept[KyuubiSQLException] {
-      val userIpAddress = UserIpAddress("user002", ipAddress)
-      limiter.increment(userIpAddress)
-    }
-
-    assert(caught.getMessage.equals(
-      "Connection limited because the user is in the limited user list. (user: user002)"))
+    checkLimit(UserIpAddress("user001", "127.0.0.1"), 50, false, 0, true, 50, false, 0)
+    checkLimit(UserIpAddress("user002", "127.0.0.2"), 50, false, 0, false, 50, false, 0)
+    checkLimit(UserIpAddress("user003", "127.0.0.3"), 50, true, 50, true, 50, true, 50)
+    checkLimit(UserIpAddress("user004", "127.0.0.4"), 50, true, 50, true, 50, true, 50)
   }
 }

@@ -2623,7 +2623,7 @@ object KyuubiConf {
       .toSet()
       .createWithDefault(Set.empty)
 
-  val SERVER_LIMIT_CONNECTIONS_USER_LIMITED_LIST: ConfigEntry[Seq[String]] =
+  val SERVER_LIMIT_CONNECTIONS_USER_LIMITED_LIST: ConfigEntry[Set[String]] =
     buildConf("kyuubi.server.limit.connections.user.limited.list")
       .doc("The user in the limited list will be limited to connect to kyuubi server, " +
         "if the user has configured both user.unlimited.list and user.limited.list, " +
@@ -2631,8 +2631,8 @@ object KyuubiConf {
       .version("1.8.0")
       .serverOnly
       .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .toSet()
+      .createWithDefault(Set.empty)
 
   val SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.batch.connections.per.user")
