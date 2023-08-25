@@ -101,10 +101,6 @@ jobs:
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
-          if [[ "${{ matrix.spark }}" == "3.4" ]]; then
-            # FIXME: Spark 3.4 supports lineage plugin
-            TEST_MODULES="$TEST_MODULES,!extensions/spark/kyuubi-spark-lineage"
-          fi
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
