@@ -48,24 +48,18 @@ trait MetadataStore extends Closeable {
   /**
    * Get the persisted metadata by batch identifier.
    * @param identifier the identifier.
-   * @param stateOnly only return the state related column values.
    * @return selected metadata.
    */
-  def getMetadata(identifier: String, stateOnly: Boolean): Metadata
+  def getMetadata(identifier: String): Metadata
 
   /**
    * Get the metadata list with filter conditions, offset and size.
    * @param filter the metadata filter conditions.
    * @param from the metadata offset.
    * @param size the size to get.
-   * @param stateOnly only return the state related column values.
    * @return selected metadata list.
    */
-  def getMetadataList(
-      filter: MetadataFilter,
-      from: Int,
-      size: Int,
-      stateOnly: Boolean): Seq[Metadata]
+  def getMetadataList(filter: MetadataFilter, from: Int, size: Int): Seq[Metadata]
 
   /**
    * Count the metadata list with filter conditions.
