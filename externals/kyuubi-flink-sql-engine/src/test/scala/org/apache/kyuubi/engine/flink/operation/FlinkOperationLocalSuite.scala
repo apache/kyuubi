@@ -36,6 +36,7 @@ class FlinkOperationLocalSuite extends FlinkOperationSuite
     Map(
       "flink.execution.target" -> "remote",
       "flink.high-availability.cluster-id" -> "flink-mini-cluster",
+      "flink.app.name" -> "kyuubi_connection_flink_paul",
       HA_NAMESPACE.key -> namespace,
       HA_ENGINE_REF_ID.key -> engineRefId,
       ENGINE_TYPE.key -> "FLINK_SQL",
