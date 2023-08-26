@@ -75,7 +75,7 @@ class SessionLimiterImpl(
     val user = userIpAddress.user
     val ipAddress = userIpAddress.ipAddress
     // decrement user count
-    if (userLimit > 0 && isLimitedUser(user)) {
+    if (userLimit > 0 && StringUtils.isNotBlank(user)) {
       decrLimitCount(user)
     }
     // decrement ipAddress count
@@ -83,7 +83,7 @@ class SessionLimiterImpl(
       decrLimitCount(ipAddress)
     }
     // decrement userIpAddress count
-    if (userIpAddressLimit > 0 && isLimitedUser(user) &&
+    if (userIpAddressLimit > 0 && StringUtils.isNotBlank(user) &&
       StringUtils.isNotBlank(ipAddress)) {
       decrLimitCount(s"$user:$ipAddress")
     }
@@ -131,9 +131,8 @@ class SessionLimiterWithAccessControlListImpl(
   }
 
   override def decrement(userIpAddress: UserIpAddress): Unit = {
-    if (!isUnlimitedUser(userIpAddress.user)) {
-      super.decrement(userIpAddress)
-    }
+    // Don't check any limit, let the already opened sessions decrement limit counter.
+    super.decrement(userIpAddress)
   }
 
   private[kyuubi] def isUnlimitedUser(user: String): Boolean = {
