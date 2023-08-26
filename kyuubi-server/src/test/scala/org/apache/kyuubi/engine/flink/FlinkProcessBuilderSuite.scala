@@ -41,6 +41,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def applicationModeConf = KyuubiConf()
     .set("flink.execution.target", "yarn-application")
     .set(ENGINE_FLINK_APPLICATION_JARS, tempUdfJar.toString)
+    .set(APP_KEY, "kyuubi_connection_flink_paul")
     .set("kyuubi.on", "off")
 
   private val tempFlinkHome = Files.createTempDirectory("flink-home").toFile
