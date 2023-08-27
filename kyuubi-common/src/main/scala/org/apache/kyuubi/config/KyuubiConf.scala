@@ -1670,24 +1670,12 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  val BATCH_IMPL_VERSION: ConfigEntry[String] =
-    buildConf("kyuubi.batch.impl.version")
-      .internal
-      .serverOnly
-      .doc("Batch API version, candidates: 1, 2. " +
-        "Note: Batch API v2 is experimental and under rapid development, this configuration " +
-        "is added to allow explorers conveniently testing the developing Batch v2 API, not " +
-        "intended exposing to end users, it may be removed in anytime.")
-      .version("1.8.0")
-      .stringConf
-      .createWithDefault("1")
-
   val BATCH_SUBMITTER_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.batch.submitter.enabled")
       .internal
       .serverOnly
-      .doc("When Batch API v2 is enabled, Kyuubi server requires to pick the INITIALIZED " +
-        "batch job from metastore and submits it to Resource Manager. " +
+      .doc("Batch API v2 requires batch submitter to pick the INITIALIZED batch job " +
+        "from metastore and submits it to Resource Manager. " +
         "Note: Batch API v2 is experimental and under rapid development, this configuration " +
         "is added to allow explorers conveniently testing the developing Batch v2 API, not " +
         "intended exposing to end users, it may be removed in anytime.")
@@ -1704,6 +1692,19 @@ object KyuubiConf {
       .version("1.8.0")
       .intConf
       .createWithDefault(100)
+
+  val BATCH_IMPL_VERSION: ConfigEntry[String] =
+    buildConf("kyuubi.batch.impl.version")
+      .internal
+      .serverOnly
+      .doc("Batch API version, candidates: 1, 2. Only take effect when " +
+        s"${BATCH_SUBMITTER_ENABLED.key} is true, otherwise always use v1 implementation. " +
+        "Note: Batch API v2 is experimental and under rapid development, this configuration " +
+        "is added to allow explorers conveniently testing the developing Batch v2 API, not " +
+        "intended exposing to end users, it may be removed in anytime.")
+      .version("1.8.0")
+      .stringConf
+      .createWithDefault("1")
 
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
