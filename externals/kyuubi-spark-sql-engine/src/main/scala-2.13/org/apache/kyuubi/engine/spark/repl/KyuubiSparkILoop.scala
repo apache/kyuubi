@@ -17,16 +17,18 @@
 
 package org.apache.kyuubi.engine.spark.repl
 
-import org.apache.kyuubi.Utils
+import java.io.{ByteArrayOutputStream, File, PrintWriter}
+import java.util.concurrent.locks.ReentrantLock
+
+import scala.tools.nsc.Settings
+import scala.tools.nsc.interpreter.{IMain, Results}
+
 import org.apache.spark.SparkContext
 import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
 
-import java.io.{ByteArrayOutputStream, File, PrintWriter}
-import java.util.concurrent.locks.ReentrantLock
-import scala.tools.nsc.Settings
-import scala.tools.nsc.interpreter.{IMain, Results}
+import org.apache.kyuubi.Utils
 
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,

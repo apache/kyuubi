@@ -1884,7 +1884,11 @@
                         <scala>
                             <includes>
                                 <include>src/main/scala/**/*.scala</include>
+                                <include>src/main/scala-2.12/**/*.scala</include>
+                                <include>src/main/scala-2.13/**/*.scala</include>
                                 <include>src/test/scala/**/*.scala</include>
+                                <include>src/test/scala-2.12/**/*.scala</include>
+                                <include>src/main/scala-2.13/**/*.scala</include>
                                 <include>src/test/gen/scala/**/*.scala</include>
                             </includes>
                             <scalafmt>
