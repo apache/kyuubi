@@ -17,18 +17,6 @@
 
 package org.apache.kyuubi.sql.watchdog
 
-import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.{PruneFileSourcePartitionHelper, SparkSession, Strategy}
-import org.apache.spark.sql.catalyst.SQLConfHelper
-import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
-import org.apache.spark.sql.catalyst.planning.ScanOperation
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
-import org.apache.spark.sql.types.StructType
-
-import org.apache.kyuubi.sql.KyuubiSQLConf
-
 /**
  * Add MaxScanStrategy to avoid scan excessive partitions or files
  * 1. Check if scan exceed maxPartition of partitioned table
@@ -117,6 +105,47 @@ case class MaxScanStrategy(session: SparkSession)
           }
         } else {
           lazy val scanFileSize = relation.tableMeta.stats.map(_.sizeInBytes).sum
+          if (maxFileSizeOpt.exists(_ < scanFileSize)) {
+            throw nonPartTableMaxFileExceedError(
+              scanFileSize,
+              maxFileSizeOpt.get,
+              Some(relation.tableMeta))
+          }
+        }
+      case ScanOperation(_, _, filters, relation: DataSourceV2Relation)
+          if isIcebergRelation(relation) =>
+        val icebergTable = relation.table.asInstanceOf[Table]
+        if (icebergTable.spec().isPartitioned) {
+          lazy val scanPartitions: Int =
+            SparkTableUtil.getPartitions(spark, icebergTable.name(), filters).size()
+          if (maxScanPartitionsOpt.exists(_ < scanPartitions)) {
+            throw new MaxPartitionExceedException(
+              s"""
+                 |Your SQL job scan a whole huge table without any partition filter,
+                 |You should optimize your SQL logical according partition structure
+                 |or shorten query scope such as p_date, detail as below:
+                 |Table: ${icebergTable.table.name()}
+                 |Partition Structure: ${icebergTable.spec().fields().toArray[PartitionField].map(
+                  _.name())}
+                 |""".stripMargin)
+          }
+
+          lazy val scanFileSize = relation.computeStats().sizeInBytes
+
+          if (maxFileSizeOpt.exists(_ < scanFileSize)) {
+            throw new MaxFileSizeExceedException(
+              s"""
+                 |Your SQL job scan a whole huge table without any partition filter,
+                 |You should optimize your SQL logical according partition structure
+                 |or shorten query scope such as p_date, detail as below:
+                 |Table: ${icebergTable.table.name()}
+                 |Partition Structure: ${icebergTable.spec().fields().toArray[PartitionField].map(
+                  _.name())}
+                 |""".stripMargin)
+          }
+        } else {
+          lazy val scanFileSize =
+            relation.table.asInstanceOf[Table].currentSnapshot().summary().get("total-files-size")
           if (maxFileSizeOpt.exists(_ < scanFileSize)) {
             throw nonPartTableMaxFileExceedError(
               scanFileSize,

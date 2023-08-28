@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.sql
 
-import org.apache.spark.sql.{FinalStageResourceManager, InjectCustomResourceProfile, SparkSessionExtensions}
-
-import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MaxScanStrategy}
-
 // scalastyle:off line.size.limit
 /**
  * Depend on Spark SQL Extension framework, we can use this extension follow steps
@@ -28,7 +24,7 @@ import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MaxScanStrategy}
  *   2. add config into `spark-defaults.conf`: `spark.sql.extensions=org.apache.kyuubi.sql.KyuubiSparkSQLExtension`
  */
 // scalastyle:on line.size.limit
-class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
+class KyuubiSparkSQLExtension extends (e => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
     KyuubiSparkSQLCommonExtension.injectCommonExtensions(extensions)
 
