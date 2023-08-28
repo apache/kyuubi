@@ -329,7 +329,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
               s"No such engine for engine type: $engineType, share level: $shareLevel")
         }
       }
-      return engines
+      return engines.toSeq
     }
     val userName = if (isAdministrator(fe.getRealUser())) {
       Option(hs2ProxyUser).getOrElse(fe.getRealUser())

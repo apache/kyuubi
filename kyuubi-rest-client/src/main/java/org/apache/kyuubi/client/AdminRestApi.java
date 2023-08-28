@@ -90,17 +90,6 @@ public class AdminRestApi {
     return Arrays.asList(result);
   }
 
-  public List<Engine> listAllEngines() {
-    Engine[] result =
-        this.getClient()
-            .get(
-                API_BASE_PATH + "/allengines",
-                new HashMap<>(),
-                Engine[].class,
-                client.getAuthHeader());
-    return Arrays.asList(result);
-  }
-
   public List<SessionData> listSessions() {
     SessionData[] result =
         this.getClient()
