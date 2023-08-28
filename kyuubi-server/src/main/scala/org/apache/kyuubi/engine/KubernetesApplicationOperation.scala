@@ -140,7 +140,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
                   s" application[appId: ${info.id} ,tag: $tag] is completed")
           }
         case None =>
-          debug(s"No application info found for tag[$tag]," +
+          warn(s"No application info found for tag[$tag]," +
             s" trying to delete pod with label [$LABEL_KYUUBI_UNIQUE_KEY -> $tag]")
           (
             !kubernetesClient.pods.withLabel(LABEL_KYUUBI_UNIQUE_KEY, tag).delete().isEmpty,
