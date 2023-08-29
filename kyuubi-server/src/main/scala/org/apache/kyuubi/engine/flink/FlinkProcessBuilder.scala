@@ -111,7 +111,7 @@ class FlinkProcessBuilder(
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
 
         val customFlinkConf = conf.getAllWithPrefix("flink", "")
-        customFlinkConf.foreach { case (k, v) =>
+        customFlinkConf.filter(_._1 != "app.name").foreach { case (k, v) =>
           buffer += s"-D$k=$v"
         }
 
