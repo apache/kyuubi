@@ -61,7 +61,7 @@ class FlinkOperationLocalSuite extends FlinkOperationSuite
 
       resultSet = statement.executeQuery("select kyuubi_engine_name() as engine_name")
       assert(resultSet.next())
-      assert(resultSet.getString(1).startsWith(s"kyuubi_${Utils.currentUser}_flink"))
+      assert(resultSet.getString(1).equals(s"kyuubi_connection_flink_paul"))
 
       resultSet = statement.executeQuery("select kyuubi_engine_id() as engine_id")
       assert(resultSet.next())

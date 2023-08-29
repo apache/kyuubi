@@ -140,7 +140,7 @@ object FlinkSQLEngine extends Logging {
 
   private def setDeploymentConf(executionTarget: String, flinkConf: Configuration): Unit = {
     // forward kyuubi engine variables to flink configuration
-    kyuubiConf.getOption("app.name")
+    kyuubiConf.getOption("flink.app.name")
       .foreach(flinkConf.setString(KYUUBI_ENGINE_NAME, _))
 
     kyuubiConf.getOption(KYUUBI_SESSION_USER_KEY)
