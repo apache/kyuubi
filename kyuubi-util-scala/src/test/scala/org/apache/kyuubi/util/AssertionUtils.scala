@@ -18,8 +18,10 @@ package org.apache.kyuubi.util
 
 import java.util.Locale
 
+import scala.reflect.ClassTag
+
 import org.scalactic.source
-import org.scalatest.Assertions.fail
+import org.scalatest.Assertions._
 
 object AssertionUtils {
 
@@ -50,5 +52,27 @@ object AssertionUtils {
     if (!actual.exists(_.equalsIgnoreCase(expected))) {
       fail(s"Expected containing '$expected' ignoring case, but got [$actual]")(pos)
     }
+  }
+
+  /**
+   * Asserts that the given function throws an exception of the given type
+   * and with the exception message equals to expected string
+   */
+  def interceptEquals[T <: Exception](f: => Any)(expected: String)(implicit
+      classTag: ClassTag[T],
+      pos: source.Position): Unit = {
+    val exception = intercept[T](f)(classTag, pos)
+    assertResult(expected)(exception.getMessage)
+  }
+
+  /**
+   * Asserts that the given function throws an exception of the given type
+   * and with the exception message equals to expected string
+   */
+  def interceptContains[T <: Exception](f: => Any)(contained: String)(implicit
+      classTag: ClassTag[T],
+      pos: source.Position): Unit = {
+    val exception = intercept[T](f)(classTag, pos)
+    assert(exception.getMessage.contains(contained))
   }
 }
