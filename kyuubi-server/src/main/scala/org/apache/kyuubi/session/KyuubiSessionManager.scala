@@ -339,13 +339,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
     val userUnlimitedList =
       conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
-    val userLimitedList = conf.get(SERVER_LIMIT_CONNECTIONS_USER_LIMITED_LIST).filter(_.nonEmpty)
+    val userDenyList = conf.get(SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST).filter(_.nonEmpty)
     limiter = applySessionLimiter(
       userLimit,
       ipAddressLimit,
       userIpAddressLimit,
       userUnlimitedList,
-      userLimitedList)
+      userDenyList)
 
     val userBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER).getOrElse(0)
     val ipAddressBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
@@ -356,7 +356,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddressBatchLimit,
       userIpAddressBatchLimit,
       userUnlimitedList,
-      userLimitedList)
+      userDenyList)
   }
 
   private[kyuubi] def getUnlimitedUsers: Set[String] = {
@@ -370,14 +370,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     batchLimiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
   }
 
-  private[kyuubi] def getLimitedUsers: Set[String] = {
-    limiter.orElse(batchLimiter).map(SessionLimiter.getLimitedUsers).getOrElse(Set.empty)
+  private[kyuubi] def getDenyUsers: Set[String] = {
+    limiter.orElse(batchLimiter).map(SessionLimiter.getDenyUsers).getOrElse(Set.empty)
   }
 
-  private[kyuubi] def refreshLimitedUsers(conf: KyuubiConf): Unit = {
-    val limitedUsers = conf.get(SERVER_LIMIT_CONNECTIONS_USER_LIMITED_LIST).filter(_.nonEmpty).toSet
-    limiter.foreach(SessionLimiter.resetLimitedUsers(_, limitedUsers))
-    batchLimiter.foreach(SessionLimiter.resetLimitedUsers(_, limitedUsers))
+  private[kyuubi] def refreshDenyUsers(conf: KyuubiConf): Unit = {
+    val denyUsers = conf.get(SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST).filter(_.nonEmpty)
+    limiter.foreach(SessionLimiter.resetDenyUsers(_, denyUsers))
+    batchLimiter.foreach(SessionLimiter.resetDenyUsers(_, denyUsers))
   }
 
   private def applySessionLimiter(

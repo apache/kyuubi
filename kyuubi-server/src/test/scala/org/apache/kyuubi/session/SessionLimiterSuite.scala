@@ -118,14 +118,14 @@ class SessionLimiterSuite extends KyuubiFunSuite {
       .foreach(c => assert(c.get() == 0))
   }
 
-  test("test session limiter with user limited list") {
+  test("test session limiter with user deny list") {
     val ipAddress = "127.0.0.1"
     val userLimit = 100
     val ipAddressLimit = 100
     val userIpAddressLimit = 100
-    val limitedUsers = Set("user002", "user003")
+    val denyUsers = Set("user002", "user003")
     val limiter =
-      SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, Set.empty, limitedUsers)
+      SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, Set.empty, denyUsers)
 
     for (i <- 0 until 50) {
       val userIpAddress = UserIpAddress("user001", ipAddress)
@@ -147,6 +147,6 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     }
 
     assert(caught.getMessage.equals(
-      "Connection limited because the user is in the limited user list. (user: user002)"))
+      "Connection denied because the user is in the deny user list. (user: user002)"))
   }
 }
