@@ -125,18 +125,27 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
     debug(s"[$kubernetesInfo] Deleting application info from Kubernetes cluster by $tag tag")
     try {
-      val info = appInfoStore.getOrDefault(tag, ApplicationInfo.NOT_FOUND)
-      debug(s"Application info[tag: $tag] is in ${info.state}")
-      info.state match {
-        case NOT_FOUND | FAILED | UNKNOWN =>
+      Option(appInfoStore.get(tag)) match {
+        case Some(info) =>
+          debug(s"Application info[tag: $tag] is in ${info.state}")
+          info.state match {
+            case NOT_FOUND | FAILED | UNKNOWN =>
+              (
+                false,
+                s"[$kubernetesInfo] Target application[tag: $tag] is in ${info.state} status")
+            case _ =>
+              (
+                !kubernetesClient.pods.withName(info.name).delete().isEmpty,
+                s"[$kubernetesInfo] Operation of deleted" +
+                  s" application[appId: ${info.id} ,tag: $tag] is completed")
+          }
+        case None =>
+          warn(s"No application info found for tag[$tag]," +
+            s" trying to delete pod with label [$LABEL_KYUUBI_UNIQUE_KEY -> $tag]")
           (
-            false,
-            s"[$kubernetesInfo] Target application[tag: $tag] is in ${info.state} status")
-        case _ =>
-          (
-            !kubernetesClient.pods.withName(info.name).delete().isEmpty,
+            !kubernetesClient.pods.withLabel(LABEL_KYUUBI_UNIQUE_KEY, tag).delete().isEmpty,
             s"[$kubernetesInfo] Operation of deleted" +
-              s" application[appId: ${info.id} ,tag: $tag] is completed")
+              s" pod with label [$LABEL_KYUUBI_UNIQUE_KEY -> $tag] is completed")
       }
     } catch {
       case e: Exception =>
