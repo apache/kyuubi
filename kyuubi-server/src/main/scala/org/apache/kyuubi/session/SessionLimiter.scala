@@ -101,14 +101,22 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
   }
 }
 
-class SessionLimiterWithUnlimitedUsersImpl(
+class SessionLimiterWithAccessControlListImpl(
     userLimit: Int,
     ipAddressLimit: Int,
     userIpAddressLimit: Int,
-    var unlimitedUsers: Set[String])
+    var unlimitedUsers: Set[String],
+    var denyUsers: Set[String])
   extends SessionLimiterImpl(userLimit, ipAddressLimit, userIpAddressLimit) {
   override def increment(userIpAddress: UserIpAddress): Unit = {
-    if (!unlimitedUsers.contains(userIpAddress.user)) {
+    val user = userIpAddress.user
+    if (StringUtils.isNotBlank(user) && denyUsers.contains(user)) {
+      val errorMsg =
+        s"Connection denied because the user is in the deny user list. (user: $user)"
+      throw KyuubiSQLException(errorMsg)
+    }
+
+    if (!unlimitedUsers.contains(user)) {
       super.increment(userIpAddress)
     }
   }
@@ -122,6 +130,10 @@ class SessionLimiterWithUnlimitedUsersImpl(
   private[kyuubi] def setUnlimitedUsers(unlimitedUsers: Set[String]): Unit = {
     this.unlimitedUsers = unlimitedUsers
   }
+
+  private[kyuubi] def setDenyUsers(denyUsers: Set[String]): Unit = {
+    this.denyUsers = denyUsers
+  }
 }
 
 object SessionLimiter {
@@ -130,22 +142,35 @@ object SessionLimiter {
       userLimit: Int,
       ipAddressLimit: Int,
       userIpAddressLimit: Int,
-      unlimitedUsers: Set[String] = Set.empty): SessionLimiter = {
-    new SessionLimiterWithUnlimitedUsersImpl(
+      unlimitedUsers: Set[String] = Set.empty,
+      denyUsers: Set[String] = Set.empty): SessionLimiter = {
+    new SessionLimiterWithAccessControlListImpl(
       userLimit,
       ipAddressLimit,
       userIpAddressLimit,
-      unlimitedUsers)
+      unlimitedUsers,
+      denyUsers)
   }
 
   def resetUnlimitedUsers(limiter: SessionLimiter, unlimitedUsers: Set[String]): Unit =
     limiter match {
-      case l: SessionLimiterWithUnlimitedUsersImpl => l.setUnlimitedUsers(unlimitedUsers)
+      case l: SessionLimiterWithAccessControlListImpl => l.setUnlimitedUsers(unlimitedUsers)
       case _ =>
     }
 
   def getUnlimitedUsers(limiter: SessionLimiter): Set[String] = limiter match {
-    case l: SessionLimiterWithUnlimitedUsersImpl => l.unlimitedUsers
+    case l: SessionLimiterWithAccessControlListImpl => l.unlimitedUsers
+    case _ => Set.empty
+  }
+
+  def resetDenyUsers(limiter: SessionLimiter, denyUsers: Set[String]): Unit =
+    limiter match {
+      case l: SessionLimiterWithAccessControlListImpl => l.setDenyUsers(denyUsers)
+      case _ =>
+    }
+
+  def getDenyUsers(limiter: SessionLimiter): Set[String] = limiter match {
+    case l: SessionLimiterWithAccessControlListImpl => l.denyUsers
     case _ => Set.empty
   }
 }
