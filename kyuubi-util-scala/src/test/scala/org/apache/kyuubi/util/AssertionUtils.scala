@@ -179,7 +179,10 @@ object AssertionUtils {
       pos: Position): Unit = {
     assert(contained != null)
     val exception = intercept[T](f)(classTag, pos)
-    assert(exception.getMessage.contains(contained))
+    val message = exception.getMessage
+    withClue(s"Got '$message', but") {
+      assert(message.contains(contained))
+    }
   }
 
   /**

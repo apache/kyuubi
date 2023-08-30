@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.config
 
+import java.time.Duration
+
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.util.AssertionUtils._
 
@@ -114,17 +116,99 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     assert(e.getMessage startsWith "The formats accepted are 1) based on the ISO-8601")
   }
 
-  test("invalid config") {
+  test("invalid config with negative value") {
     val intConf = ConfigBuilder("kyuubi.invalid.config")
       .intConf
-      .checkValue(t => t > 0, "must be positive integer")
+      .checkPositive
       .createWithDefault(3)
     assert(intConf.key === "kyuubi.invalid.config")
     assert(intConf.defaultVal.get === 3)
     val kyuubiConf = KyuubiConf().set(intConf.key, "-1")
     KyuubiConf.register(intConf)
-    val e = intercept[IllegalArgumentException](kyuubiConf.get(intConf))
-    assert(e.getMessage equals "'-1' in kyuubi.invalid.config is invalid. must be positive integer")
+    interceptEquals[IllegalArgumentException](kyuubiConf.get(intConf))(
+      "'-1' in kyuubi.invalid.config is invalid. Must be a positive Integer.")
+  }
+
+  test("invalid config with non-negative value") {
+    val longConf = ConfigBuilder("kyuubi.invalid.config.nonnegative")
+      .longConf
+      .checkNonNegative
+      .createWithDefault(3)
+    assert(longConf.key === "kyuubi.invalid.config.nonnegative")
+    assert(longConf.defaultVal.get === 3)
+    val kyuubiConf = KyuubiConf().set(longConf.key, "-1")
+    KyuubiConf.register(longConf)
+    interceptEquals[IllegalArgumentException](kyuubiConf.get(longConf))(
+      "'-1' in kyuubi.invalid.config.nonnegative is invalid. Must be a non-negative Long.")
+  }
+
+  test("invalid config out of range") {
+    val key1 = "kyuubi.invalid.config.range.exclusive"
+    val inRangeConf1 = ConfigBuilder(key1)
+      .longConf
+      .checkRange(1 until 10)
+      .createWithDefault(1)
+    assert(inRangeConf1.key === key1)
+    assert(inRangeConf1.defaultVal.get === 1)
+    val kyuubiConf1 = KyuubiConf().set(inRangeConf1.key, "10")
+    KyuubiConf.register(inRangeConf1)
+    interceptEquals[IllegalArgumentException](kyuubiConf1.get(inRangeConf1))(
+      "'10' in kyuubi.invalid.config.range.exclusive is invalid." +
+        " Must be a Long in the range of [1, 10).")
+
+    val key2 = "kyuubi.invalid.config.range.inclusive"
+    val inRangeConf2 = ConfigBuilder(key2)
+      .longConf
+      .checkRange(1 to 10)
+      .createWithDefault(10)
+    assert(inRangeConf2.key === key2)
+    assert(inRangeConf2.defaultVal.get === 10)
+    val kyuubiConf2 = KyuubiConf().set(inRangeConf2.key, "0")
+    KyuubiConf.register(inRangeConf2)
+    interceptEquals[IllegalArgumentException](kyuubiConf2.get(inRangeConf2))(
+      "'0' in kyuubi.invalid.config.range.inclusive is invalid." +
+        " Must be a Long in the range of [1, 10].")
+  }
+
+  test("invalid config out of duration range") {
+    val key1 = "kyuubi.invalid.config.duration.min"
+    val inRangeConf1 = ConfigBuilder(key1)
+      .timeConf
+      .checkDurationRange(min = Some(Duration.ofSeconds(2)))
+      .createWithDefault(Duration.ofSeconds(2).toMillis)
+    assert(inRangeConf1.key === key1)
+    assert(inRangeConf1.defaultVal.get === 2000)
+    val kyuubiConf1 = KyuubiConf().set(inRangeConf1.key, "PT1S")
+    KyuubiConf.register(inRangeConf1)
+    interceptEquals[IllegalArgumentException](kyuubiConf1.get(inRangeConf1))(
+      "'1000' in kyuubi.invalid.config.duration.min is invalid." +
+        " Must be a duration equals or greater than 2000ms.")
+
+    val key2 = "kyuubi.invalid.config.duration.max"
+    val inRangeConf2 = ConfigBuilder(key2)
+      .timeConf
+      .checkDurationRange(max = Some(Duration.ofSeconds(5)))
+      .createWithDefault(Duration.ofSeconds(4).toMillis)
+    assert(inRangeConf2.key === key2)
+    assert(inRangeConf2.defaultVal.get === 4000)
+    val kyuubiConf2 = KyuubiConf().set(inRangeConf2.key, "PT6S")
+    KyuubiConf.register(inRangeConf2)
+    interceptEquals[IllegalArgumentException](kyuubiConf2.get(inRangeConf2))(
+      "'6000' in kyuubi.invalid.config.duration.max is invalid." +
+        " Must be a duration equals or less than 5000ms.")
+
+    val key3 = "kyuubi.invalid.config.duration.between"
+    val inRangeConf3 = ConfigBuilder(key3)
+      .timeConf
+      .checkDurationRange(min = Some(Duration.ofSeconds(1)), max = Some(Duration.ofSeconds(5)))
+      .createWithDefault(Duration.ofSeconds(4).toMillis)
+    assert(inRangeConf3.key === key3)
+    assert(inRangeConf3.defaultVal.get === 4000)
+    val kyuubiConf3 = KyuubiConf().set(inRangeConf3.key, "PT6S")
+    KyuubiConf.register(inRangeConf3)
+    interceptEquals[IllegalArgumentException](kyuubiConf3.get(inRangeConf3))(
+      "'6000' in kyuubi.invalid.config.duration.between is invalid." +
+        " Must be a duration between 1000ms and 5000ms.")
   }
 
   test("invalid config for enum") {

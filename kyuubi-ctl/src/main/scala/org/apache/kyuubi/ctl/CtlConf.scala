@@ -52,7 +52,7 @@ object CtlConf {
         "A timeout value of zero is interpreted as an infinite timeout.")
       .version("1.6.0")
       .timeConf
-      .checkValue(_ >= 0, "must be 0 or positive number")
+      .checkNonNegative
       .createWithDefault(Duration.ofSeconds(30).toMillis)
 
   val CTL_REST_CLIENT_SOCKET_TIMEOUT: ConfigEntry[Long] =
@@ -61,7 +61,7 @@ object CtlConf {
         "A timeout value of zero is interpreted as an infinite timeout.")
       .version("1.6.0")
       .timeConf
-      .checkValue(_ >= 0, "must be 0 or positive number")
+      .checkNonNegative
       .createWithDefault(Duration.ofSeconds(120).toMillis)
 
   val CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS: ConfigEntry[Int] =

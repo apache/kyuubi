@@ -322,6 +322,7 @@ object KyuubiConf {
     .doc("How many times will `kinit` process retry")
     .version("1.0.0")
     .intConf
+    .checkPositive
     .createWithDefault(10)
 
   val OPERATION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.operation.idle.timeout")
@@ -342,7 +343,7 @@ object KyuubiConf {
       .doc("How long to wait before retrying to fetch new credentials after a failure.")
       .version("1.4.0")
       .timeConf
-      .checkValue(t => t > 0, "must be positive integer")
+      .checkPositive
       .createWithDefault(Duration.ofMinutes(1).toMillis)
 
   val CREDENTIALS_UPDATE_WAIT_TIMEOUT: ConfigEntry[Long] =
@@ -350,7 +351,7 @@ object KyuubiConf {
       .doc("How long to wait until the credentials are ready.")
       .version("1.5.0")
       .timeConf
-      .checkValue(t => t > 0, "must be positive integer")
+      .checkPositive
       .createWithDefault(Duration.ofMinutes(1).toMillis)
 
   val CREDENTIALS_CHECK_INTERVAL: ConfigEntry[Long] =
@@ -358,7 +359,7 @@ object KyuubiConf {
       .doc("The interval to check the expiration of cached <user, CredentialsRef> pairs.")
       .version("1.6.0")
       .timeConf
-      .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+      .checkDurationRange(min = Some(Duration.ofSeconds(3)))
       .createWithDefault(Duration.ofMinutes(5).toMillis)
 
   val CREDENTIALS_IDLE_TIMEOUT: ConfigEntry[Long] =
@@ -366,7 +367,7 @@ object KyuubiConf {
       .doc("The inactive users' credentials will be expired after a configured timeout")
       .version("1.6.0")
       .timeConf
-      .checkValue(_ >= Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+      .checkDurationRange(min = Some(Duration.ofSeconds(3)))
       .createWithDefault(Duration.ofHours(6).toMillis)
 
   val CREDENTIALS_HADOOP_FS_ENABLED: ConfigEntry[Boolean] =
@@ -538,6 +539,7 @@ object KyuubiConf {
         "the thrift frontend service")
       .version("1.0.0")
       .intConf
+      .checkPositive
       .createWithDefault(9)
 
   val FRONTEND_THRIFT_MIN_WORKER_THREADS: ConfigEntry[Int] =
@@ -553,6 +555,7 @@ object KyuubiConf {
         "the thrift frontend service")
       .version("1.0.0")
       .intConf
+      .checkPositive
       .createWithDefault(999)
 
   val FRONTEND_THRIFT_MAX_WORKER_THREADS: ConfigEntry[Int] =
@@ -588,6 +591,7 @@ object KyuubiConf {
       .doc("(deprecated) Maximum message size in bytes a Kyuubi server will accept.")
       .version("1.0.0")
       .intConf
+      .checkPositive
       .createWithDefault(104857600)
 
   val FRONTEND_THRIFT_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
@@ -629,6 +633,7 @@ object KyuubiConf {
       .doc("Request header size in bytes, when using HTTP transport mode. Jetty defaults used.")
       .version("1.6.0")
       .intConf
+      .checkPositive
       .createWithDefault(6 * 1024)
 
   val FRONTEND_THRIFT_HTTP_RESPONSE_HEADER_SIZE: ConfigEntry[Int] =
@@ -636,6 +641,7 @@ object KyuubiConf {
       .doc("Response header size in bytes, when using HTTP transport mode. Jetty defaults used.")
       .version("1.6.0")
       .intConf
+      .checkPositive
       .createWithDefault(6 * 1024)
 
   val FRONTEND_THRIFT_HTTP_MAX_IDLE_TIME: ConfigEntry[Long] =
@@ -1082,9 +1088,7 @@ object KyuubiConf {
         s"Use min(cpu_cores, $MAX_NETTY_THREADS) in default.")
       .version("1.4.0")
       .intConf
-      .checkValue(
-        n => n > 0 && n <= MAX_NETTY_THREADS,
-        s"Invalid thread number, must in (0, $MAX_NETTY_THREADS]")
+      .checkRange(1 to MAX_NETTY_THREADS)
       .createOptional
 
   val FRONTEND_MYSQL_MIN_WORKER_THREADS: ConfigEntry[Int] =
@@ -1228,7 +1232,7 @@ object KyuubiConf {
         "the application terminates.")
       .version("1.7.1")
       .timeConf
-      .checkValue(_ > 0, "must be positive number")
+      .checkPositive
       .createWithDefault(Duration.ofMinutes(5).toMillis)
 
   val KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD: ConfigEntry[String] =
@@ -1280,7 +1284,7 @@ object KyuubiConf {
         " the length of error message(characters).")
       .version("1.1.0")
       .intConf
-      .checkValue(v => v >= 200 && v <= 8192, s"must in [200, 8192]")
+      .checkRange(200 to 8192)
       .createWithDefault(8192)
 
   val ENGINE_LOG_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.engine.log.timeout")
@@ -1288,7 +1292,7 @@ object KyuubiConf {
       "spark-submit. We will retain the session submit log until over the config value.")
     .version("1.1.0")
     .timeConf
-    .checkValue(_ > 0, "must be positive number")
+    .checkPositive
     .createWithDefault(Duration.ofDays(1).toMillis)
 
   val ENGINE_SPARK_MAIN_RESOURCE: OptionalConfigEntry[String] =
@@ -1352,6 +1356,7 @@ object KyuubiConf {
         "is reached.")
       .version("1.5.0")
       .intConf
+      .checkPositive
       .createWithDefault(1000000)
 
   val ENGINE_FLINK_FETCH_TIMEOUT: OptionalConfigEntry[Long] =
@@ -1498,6 +1503,7 @@ object KyuubiConf {
       .doc("The number of times an open engine will retry when encountering a special error.")
       .version("1.7.0")
       .intConf
+      .checkPositive
       .createWithDefault(9)
 
   val ENGINE_OPEN_RETRY_WAIT: ConfigEntry[Long] =
@@ -1517,7 +1523,7 @@ object KyuubiConf {
     .doc("The check interval for session timeout.")
     .version("1.0.0")
     .timeConf
-    .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+    .checkDurationRange(min = Some(Duration.ofSeconds(3)))
     .createWithDefault(Duration.ofMinutes(5).toMillis)
 
   @deprecated("using kyuubi.session.idle.timeout instead", "1.2.0")
@@ -1525,7 +1531,7 @@ object KyuubiConf {
     .doc("(deprecated)session timeout, it will be closed when it's not accessed for this duration")
     .version("1.0.0")
     .timeConf
-    .checkValue(_ >= Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+    .checkDurationRange(min = Some(Duration.ofSeconds(3)))
     .createWithDefault(Duration.ofHours(6).toMillis)
 
   val SESSION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.idle.timeout")
@@ -1550,7 +1556,7 @@ object KyuubiConf {
     .doc("The check interval for engine timeout")
     .version("1.0.0")
     .timeConf
-    .checkValue(_ >= Duration.ofSeconds(1).toMillis, "Minimum 1 seconds")
+    .checkDurationRange(min = Some(Duration.ofSeconds(1)))
     .createWithDefault(Duration.ofMinutes(1).toMillis)
 
   val ENGINE_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.engine.idle.timeout")
@@ -1601,7 +1607,7 @@ object KyuubiConf {
         " help track engine startup issues.")
       .version("1.4.0")
       .intConf
-      .checkValue(_ > 0, "the maximum must be positive integer.")
+      .checkPositive
       .createWithDefault(10)
 
   val SESSION_ENGINE_STARTUP_WAIT_COMPLETION: ConfigEntry[Boolean] =
@@ -1643,7 +1649,7 @@ object KyuubiConf {
       .version("1.6.0")
       .serverOnly
       .stringConf
-      .checkValue(dir => dir.startsWith(File.separator), "the dir should be absolute path")
+      .checkValue(_.startsWith(File.separator), "the dir should be absolute path")
       .transform(dir => dir.stripSuffix(File.separator) + File.separator)
       .toSet()
       .createWithDefault(Set.empty)
@@ -1734,6 +1740,7 @@ object KyuubiConf {
         s"when ${BATCH_SUBMITTER_ENABLED.key} is enabled")
       .version("1.8.0")
       .intConf
+      .checkPositive
       .createWithDefault(16)
 
   val BATCH_IMPL_VERSION: ConfigEntry[String] =
@@ -1754,6 +1761,7 @@ object KyuubiConf {
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
       .version("1.0.0")
       .intConf
+      .checkPositive
       .createWithDefault(100)
 
   val ENGINE_EXEC_POOL_SIZE: ConfigEntry[Int] =
@@ -1767,6 +1775,7 @@ object KyuubiConf {
       .doc("Size of the wait queue for the operation execution thread pool of Kyuubi server")
       .version("1.0.0")
       .intConf
+      .checkPositive
       .createWithDefault(100)
 
   val METADATA_STORE_CLASS: ConfigEntry[String] =
@@ -1830,6 +1839,7 @@ object KyuubiConf {
         s"take affect when ${METADATA_REQUEST_ASYNC_RETRY_ENABLED.key} is `true`.")
       .version("1.6.0")
       .intConf
+      .checkPositive
       .createWithDefault(10)
 
   val METADATA_REQUEST_ASYNC_RETRY_QUEUE_SIZE: ConfigEntry[Int] =
@@ -1840,6 +1850,7 @@ object KyuubiConf {
         s" take affect when ${METADATA_REQUEST_ASYNC_RETRY_ENABLED.key} is `true`.")
       .version("1.6.0")
       .intConf
+      .checkPositive
       .createWithDefault(65536)
 
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
@@ -1912,7 +1923,7 @@ object KyuubiConf {
         s" consider enabling ${OPERATION_FORCE_CANCEL.key} together.")
       .version("1.2.0")
       .timeConf
-      .checkValue(_ >= 1000, "must >= 1s if set")
+      .checkDurationRange(min = Some(Duration.ofSeconds(1)))
       .createOptional
 
   val OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED: ConfigEntry[Boolean] =
@@ -2003,7 +2014,7 @@ object KyuubiConf {
       .version("1.2.0")
       .stringConf
       .transformToLowerCase
-      .checkValue(validZookeeperSubPath.matcher(_).matches(), "must be valid zookeeper sub path.")
+      .checkPattern(validZookeeperSubPath, "must be valid zookeeper sub path.")
       .createOptional
 
   val ENGINE_SHARE_LEVEL_SUBDOMAIN: ConfigEntry[Option[String]] =
@@ -2086,7 +2097,7 @@ object KyuubiConf {
     .doc("The name of the engine pool.")
     .version("1.5.0")
     .stringConf
-    .checkValue(validZookeeperSubPath.matcher(_).matches(), "must be valid zookeeper sub path.")
+    .checkPattern(validZookeeperSubPath, "must be valid zookeeper sub path.")
     .createWithDefault("engine-pool")
 
   val ENGINE_POOL_SIZE_THRESHOLD: ConfigEntry[Int] = buildConf("kyuubi.engine.pool.size.threshold")
@@ -2095,7 +2106,7 @@ object KyuubiConf {
     .version("1.4.0")
     .serverOnly
     .intConf
-    .checkValue(s => s > 0 && s < 33, "Invalid engine pool threshold, it should be in [1, 32]")
+    .checkRange(1 to 32)
     .createWithDefault(9)
 
   val ENGINE_POOL_SIZE: ConfigEntry[Int] = buildConf("kyuubi.engine.pool.size")
@@ -2164,7 +2175,7 @@ object KyuubiConf {
       .doc("Number of failures of job before deregistering the engine.")
       .version("1.2.0")
       .intConf
-      .checkValue(_ > 0, "must be positive number")
+      .checkPositive
       .createWithDefault(4)
 
   val ENGINE_DEREGISTER_EXCEPTION_TTL: ConfigEntry[Long] =
@@ -2177,7 +2188,7 @@ object KyuubiConf {
         s" that the engine has recovered from temporary failures.")
       .version("1.2.0")
       .timeConf
-      .checkValue(_ > 0, "must be positive number")
+      .checkPositive
       .createWithDefault(Duration.ofMinutes(30).toMillis)
 
   val OPERATION_SCHEDULER_POOL: OptionalConfigEntry[String] =
@@ -2320,7 +2331,7 @@ object KyuubiConf {
       .doc("The number of SQL client sessions kept in the Kyuubi Query Engine web UI.")
       .version("1.4.0")
       .intConf
-      .checkValue(_ > 0, "retained sessions must be positive.")
+      .checkPositive
       .createWithDefault(200)
 
   val ENGINE_UI_STATEMENT_LIMIT: ConfigEntry[Int] =
@@ -2328,7 +2339,7 @@ object KyuubiConf {
       .doc("The number of statements kept in the Kyuubi Query Engine web UI.")
       .version("1.4.0")
       .intConf
-      .checkValue(_ > 0, "retained statements must be positive.")
+      .checkPositive
       .createWithDefault(200)
 
   val ENGINE_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
@@ -2573,7 +2584,7 @@ object KyuubiConf {
       .doc("Update period of progress bar.")
       .version("1.6.0")
       .timeConf
-      .checkValue(_ >= 200, "Minimum 200 milliseconds")
+      .checkDurationRange(min = Some(Duration.ofMillis(200)))
       .createWithDefault(1000)
 
   val ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT: ConfigEntry[String] =
@@ -3077,7 +3088,7 @@ object KyuubiConf {
         "A timeout value of zero is interpreted as an infinite timeout.")
       .version("1.8.0")
       .timeConf
-      .checkValue(_ >= 0, "must be 0 or positive number")
+      .checkNonNegative
       .createWithDefault(Duration.ofSeconds(120).toMillis)
 
   val ENGINE_CHAT_GPT_HTTP_SOCKET_TIMEOUT: ConfigEntry[Long] =
@@ -3086,7 +3097,7 @@ object KyuubiConf {
         "connection is established. A timeout value of zero is interpreted as an infinite timeout.")
       .version("1.8.0")
       .timeConf
-      .checkValue(_ >= 0, "must be 0 or positive number")
+      .checkNonNegative
       .createWithDefault(Duration.ofSeconds(120).toMillis)
 
   val ENGINE_JDBC_MEMORY: ConfigEntry[String] =

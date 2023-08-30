@@ -19,12 +19,15 @@ package org.apache.kyuubi.config
 
 import java.time.Duration
 import java.util.Locale
-import java.util.regex.PatternSyntaxException
+import java.util.regex.{Pattern, PatternSyntaxException}
 
 import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.util.EnumUtils._
+import org.apache.kyuubi.util.MathUtils._
 
 private[kyuubi] case class ConfigBuilder(key: String) {
 
@@ -192,6 +195,72 @@ private[kyuubi] case class TypedConfigBuilder[T](
       }
       v
     }
+  }
+
+  private def printableUnderlyingType: String =
+    parent._type match {
+      case "int" => "Integer"
+      case "long" => "Long"
+      case "double" => "Double"
+      case "boolean" => "Boolean"
+      case "string" => "String"
+      case "duration" => "Duration"
+      case _ => "Unknown"
+    }
+
+  def checkPositive: TypedConfigBuilder[T] =
+    checkValue(isPositiveNumber(_), s"Must be a positive $printableUnderlyingType.")
+
+  def checkNonNegative: TypedConfigBuilder[T] =
+    checkValue(isNonNegativeNumber(_), s"Must be a non-negative $printableUnderlyingType.")
+
+  def checkPattern(pattern: Pattern, errMsg: String): TypedConfigBuilder[T] =
+    checkValue(v => pattern.matcher(v.toString).matches(), errMsg)
+
+  /**
+   * Check that user-provided values for the duration config
+   * with in the range of min and max.
+   * @param min inclusive min value, if provided
+   * @param max inclusive max value, if provided
+   * @param errMsg custom error message over default message if provided and not blank
+   */
+  def checkDurationRange(
+      min: Option[Duration] = None,
+      max: Option[Duration] = None,
+      errMsg: String = ""): TypedConfigBuilder[T] = {
+    require(parent._type == "duration")
+    require((min, max) match {
+      case (Some(min), Some(max)) => min.toMillis <= max.toMillis
+      case _ => true
+    })
+    checkValue(
+      v => {
+        val duration = Duration.ofMillis(v.toString.toLong)
+        min.forall(duration.compareTo(_) >= 0) &&
+        max.forall(duration.compareTo(_) <= 0)
+      }, {
+        StringUtils.defaultIfBlank(
+          errMsg, {
+            val hint = (min, max) match {
+              case (Some(min), Some(max)) => s"between ${min.toMillis}ms and ${max.toMillis}ms"
+              case (Some(min), None) => s"equals or greater than ${min.toMillis}ms"
+              case (None, Some(max)) => s"equals or less than ${max.toMillis}ms"
+              case (None, None) => ""
+            }
+            s"Must be a duration $hint."
+          })
+      })
+  }
+
+  def checkRange(range: Range): TypedConfigBuilder[T] = {
+    require(range != null)
+    require(parent._type == "int" || parent._type == "long" || parent._type == "double")
+    checkValue(
+      v => range.contains(v.toString.toDouble), {
+        val endQuote = s"${if (range.isInclusive) "]" else ")"}"
+        s"Must be a $printableUnderlyingType in the range of " +
+          s"[${range.start}, ${range.end}$endQuote."
+      })
   }
 
   /** Check that user-provided values for the config match a pre-defined set. */

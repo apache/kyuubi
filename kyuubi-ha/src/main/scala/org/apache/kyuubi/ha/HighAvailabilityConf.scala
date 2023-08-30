@@ -168,7 +168,7 @@ object HighAvailabilityConf {
       .doc("Timeout for creating ZooKeeper node")
       .version("1.2.0")
       .timeConf
-      .checkValue(_ > 0, "Must be positive")
+      .checkPositive
       .createWithDefault(Duration.ofSeconds(120).toMillis)
 
   val HA_ENGINE_REF_ID: OptionalConfigEntry[String] =
@@ -203,7 +203,7 @@ object HighAvailabilityConf {
         "the unexpected loss of engine after up to this seconds.")
       .version("1.6.0")
       .timeConf
-      .checkValue(_ > 0, "Must be positive")
+      .checkPositive
       .createWithDefault(Duration.ofSeconds(10).toMillis)
 
   val HA_ETCD_SSL_ENABLED: ConfigEntry[Boolean] =

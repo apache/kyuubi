@@ -20,6 +20,7 @@ package org.apache.kyuubi.config
 import java.time.Duration
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.util.AssertionUtils._
 
 class KyuubiConfSuite extends KyuubiFunSuite {
 
@@ -149,8 +150,8 @@ class KyuubiConfSuite extends KyuubiFunSuite {
         .toMillis))
 
     kyuubiConf.set(OPERATION_QUERY_TIMEOUT.key, "0")
-    val e1 = intercept[IllegalArgumentException](kyuubiConf.get(OPERATION_QUERY_TIMEOUT))
-    assert(e1.getMessage.contains("must >= 1s if set"))
+    interceptContains[IllegalArgumentException](kyuubiConf.get(OPERATION_QUERY_TIMEOUT))(
+      "Must be a duration equals or greater than 1000ms.")
   }
 
   test("kyuubi conf engine.share.level.subdomain valid path test") {

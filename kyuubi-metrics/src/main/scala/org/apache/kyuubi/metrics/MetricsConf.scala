@@ -77,7 +77,7 @@ object MetricsConf {
     .doc("URI context path of prometheus metrics HTTP server")
     .version("1.2.0")
     .stringConf
-    .checkValue(path => path.startsWith("/"), "Context path must start with '/'")
+    .checkValue(_.startsWith("/"), "Context path must start with '/'")
     .createWithDefault("/metrics")
 
   val METRICS_SLF4J_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.slf4j.interval")
