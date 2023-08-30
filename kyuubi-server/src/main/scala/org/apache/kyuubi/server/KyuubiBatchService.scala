@@ -103,11 +103,12 @@ class KyuubiBatchService(
               }
               // should we always treat metastore as the single of truth?
               //
-              // terminated = metadataManager.getBatchSessionMetadata(batchId) match {
+              // submitted = metadataManager.getBatchSessionMetadata(batchId) match {
               //   case Some(metadata) =>
-              //     OperationState.isTerminal(OperationState.withName(metadata.state))
+              //     val batchState = OperationState.withName(metadata.state)
+              //     batchState == OperationState.RUNNING || OperationState.isTerminal(batchState)
               //   case None =>
-              //     error(s"$batchId is not existed in metastore, assume it is finished")
+              //     error(s"$batchId does not existed in metastore, assume it is finished")
               //     true
               // }
               if (!submitted) Thread.sleep(1000)
