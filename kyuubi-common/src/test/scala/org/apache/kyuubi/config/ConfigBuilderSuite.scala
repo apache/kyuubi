@@ -140,7 +140,7 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     assert(stringConf.defaultVal.get === "ValA")
     val kyuubiConf = KyuubiConf().set(stringConf.key, "ValC")
     KyuubiConf.register(stringConf)
-    interceptEquals[IllegalArgumentException](kyuubiConf.get(stringConf))(
+    interceptEquals[IllegalArgumentException] { kyuubiConf.get(stringConf) }(
       "The value of kyuubi.invalid.config.enum should be one of ValA, ValB, but was ValC")
   }
 }
