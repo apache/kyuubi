@@ -95,7 +95,10 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
 
   private def decrLimitCount(key: String): Unit = {
     _counters.get(key) match {
-      case count: AtomicInteger => count.decrementAndGet()
+      case count: AtomicInteger =>
+        if (count.decrementAndGet() < 0) {
+          count.incrementAndGet()
+        }
       case _ =>
     }
   }
@@ -118,12 +121,6 @@ class SessionLimiterWithAccessControlListImpl(
 
     if (!unlimitedUsers.contains(user)) {
       super.increment(userIpAddress)
-    }
-  }
-
-  override def decrement(userIpAddress: UserIpAddress): Unit = {
-    if (!unlimitedUsers.contains(userIpAddress.user)) {
-      super.decrement(userIpAddress)
     }
   }
 
