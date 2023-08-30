@@ -24,7 +24,7 @@ import java.util.regex.PatternSyntaxException
 import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
 
-import org.apache.kyuubi.util.EnumUtils
+import org.apache.kyuubi.util.EnumUtils._
 
 private[kyuubi] case class ConfigBuilder(key: String) {
 
@@ -209,8 +209,8 @@ private[kyuubi] case class TypedConfigBuilder[T](
   def checkValues(enumeration: Enumeration): TypedConfigBuilder[T] = {
     transform { v =>
       val isValid = v match {
-        case iter: Iterable[Any] => iter.forall(EnumUtils.isValidEnum(enumeration, _))
-        case value => EnumUtils.isValidEnum(enumeration, value)
+        case iter: Iterable[Any] => isValidEnums(enumeration, iter)
+        case name => isValidEnum(enumeration, name)
       }
       if (!isValid) {
         val actualValueStr = v match {

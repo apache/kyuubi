@@ -19,8 +19,10 @@ package org.apache.kyuubi.util
 import scala.util.Try
 
 object EnumUtils {
-  def isValidEnum(enumeration: Enumeration, enumName: Any): Boolean =
-    Try {
-      enumeration.withName(enumName.toString)
-    }.isSuccess
+  def isValidEnum(enumeration: Enumeration, enumName: Any): Boolean = Try {
+    enumeration.withName(enumName.toString)
+  }.isSuccess
+
+  def isValidEnums(enumeration: Enumeration, enumNames: Iterable[Any]): Boolean =
+    enumNames.forall(isValidEnum(enumeration, _))
 }
