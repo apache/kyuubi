@@ -45,9 +45,7 @@ object MetricsConf {
     .stringConf
     .transformToUpperCase
     .toSet()
-    .checkValue(
-      _.forall(ReporterType.values.map(_.toString).contains),
-      s"the reporter type should be one or more of ${ReporterType.values.mkString(",")}")
+    .checkValues(ReporterType)
     .createWithDefault(Set(JSON.toString))
 
   val METRICS_CONSOLE_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.console.interval")

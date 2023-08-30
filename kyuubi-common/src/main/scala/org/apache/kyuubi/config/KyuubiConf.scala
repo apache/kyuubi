@@ -415,9 +415,7 @@ object KyuubiConf {
       .stringConf
       .transformToUpperCase
       .toSequence()
-      .checkValue(
-        _.forall(FrontendProtocols.values.map(_.toString).contains),
-        s"the frontend protocol should be one or more of ${FrontendProtocols.values.mkString(",")}")
+      .checkValues(FrontendProtocols)
       .createWithDefault(Seq(
         FrontendProtocols.THRIFT_BINARY.toString,
         FrontendProtocols.REST.toString))
@@ -802,9 +800,7 @@ object KyuubiConf {
     .stringConf
     .transformToUpperCase
     .toSet()
-    .checkValue(
-      _.forall(AuthTypes.values.map(_.toString).contains),
-      s"the authentication type should be one or more of ${AuthTypes.values.mkString(",")}")
+    .checkValues(AuthTypes)
     .createWithDefault(Set(AuthTypes.NONE.toString))
 
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
@@ -1036,7 +1032,7 @@ object KyuubiConf {
     .version("1.0.0")
     .serverOnly
     .stringConf
-    .checkValues(SaslQOP.values.map(_.toString))
+    .checkValues(SaslQOP)
     .transformToLowerCase
     .createWithDefault(SaslQOP.AUTH.toString)
 
@@ -1926,7 +1922,7 @@ object KyuubiConf {
       .version("1.0.0")
       .stringConf
       .transformToUpperCase
-      .checkValues(ShareLevel.values.map(_.toString))
+      .checkValues(ShareLevel)
       .createWithDefault(ShareLevel.USER.toString)
 
   // [ZooKeeper Data Model]
@@ -2007,7 +2003,7 @@ object KyuubiConf {
     .version("1.4.0")
     .stringConf
     .transformToUpperCase
-    .checkValues(EngineType.values.map(_.toString))
+    .checkValues(EngineType)
     .createWithDefault(EngineType.SPARK_SQL.toString)
 
   val ENGINE_POOL_IGNORE_SUBDOMAIN: ConfigEntry[Boolean] =
@@ -2395,10 +2391,7 @@ object KyuubiConf {
       .version("1.7.0")
       .stringConf
       .transformToUpperCase
-      .checkValue(
-        mode => Set("PLAIN", "JSON").contains(mode),
-        "Invalid value for 'kyuubi.operation.plan.only.output.style'. Valid values are " +
-          "'plain', 'json'.")
+      .checkValues(Set("PLAIN", "JSON"))
       .createWithDefault(PlainStyle.name)
 
   val OPERATION_PLAN_ONLY_EXCLUDES: ConfigEntry[Set[String]] =
@@ -2446,7 +2439,7 @@ object KyuubiConf {
       .version("1.5.0")
       .stringConf
       .transformToUpperCase
-      .checkValues(OperationLanguages.values.map(_.toString))
+      .checkValues(OperationLanguages)
       .createWithDefault(OperationLanguages.SQL.toString)
 
   val SESSION_CONF_ADVISOR: OptionalConfigEntry[String] =

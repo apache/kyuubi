@@ -14,27 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.util
 
-package org.apache.kyuubi.service.authentication
+import scala.util.Try
 
-import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.SASL_QOP
+object EnumUtils {
+  def isValidEnum(enumeration: Enumeration, enumName: Any): Boolean = Try {
+    enumeration.withName(enumName.toString)
+  }.isSuccess
 
-class SaslQOPSuite extends KyuubiFunSuite {
-
-  test("sasl qop") {
-    val conf = KyuubiConf(false)
-    assert(conf.get(SASL_QOP) === SaslQOP.AUTH.toString)
-    SaslQOP.values.foreach { q =>
-      conf.set(SASL_QOP, q.toString)
-      assert(SaslQOP.withName(conf.get(SASL_QOP)) === q)
-    }
-    conf.set(SASL_QOP, "abc")
-    val e = intercept[IllegalArgumentException](conf.get(SASL_QOP))
-    assert(e.getMessage ===
-      "The value of kyuubi.authentication.sasl.qop should be one of" +
-      " auth, auth-int, auth-conf, but was abc")
-  }
-
+  def isValidEnums(enumeration: Enumeration, enumNames: Iterable[Any]): Boolean =
+    enumNames.forall(isValidEnum(enumeration, _))
 }

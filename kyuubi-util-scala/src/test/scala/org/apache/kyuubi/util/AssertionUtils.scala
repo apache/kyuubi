@@ -61,6 +61,7 @@ object AssertionUtils {
   def interceptEquals[T <: Exception](f: => Any)(expected: String)(implicit
       classTag: ClassTag[T],
       pos: source.Position): Unit = {
+    assert(expected != null)
     val exception = intercept[T](f)(classTag, pos)
     assertResult(expected)(exception.getMessage)
   }
@@ -72,6 +73,7 @@ object AssertionUtils {
   def interceptContains[T <: Exception](f: => Any)(contained: String)(implicit
       classTag: ClassTag[T],
       pos: source.Position): Unit = {
+    assert(contained != null)
     val exception = intercept[T](f)(classTag, pos)
     assert(exception.getMessage.contains(contained))
   }
