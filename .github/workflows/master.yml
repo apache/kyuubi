@@ -189,8 +189,7 @@ jobs:
         uses: ./.github/actions/setup-maven
       - name: Build on Scala ${{ matrix.scala }}
         run: |
-          MODULES='!externals/kyuubi-flink-sql-engine'
-          ./build/mvn clean install -pl ${MODULES} -am \
+          ./build/mvn clean install -am \
           -DskipTests -Pflink-provided,hive-provided,spark-provided \
           -Pjava-${{ matrix.java }} \
           -Pscala-${{ matrix.scala }} \

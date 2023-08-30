@@ -19,6 +19,8 @@ package org.apache.kyuubi.engine.flink.util
 
 import java.util.regex.PatternSyntaxException
 
+import scala.collection.mutable
+
 object StringUtils {
 
   /**
@@ -30,8 +32,8 @@ object StringUtils {
    *                on both ends will be ignored
    * @return the filtered names list in order
    */
-  def filterPattern(names: Seq[String], pattern: String): Seq[String] = {
-    val funcNames = scala.collection.mutable.SortedSet.empty[String]
+  def filterPattern(names: Iterable[String], pattern: String): Seq[String] = {
+    val funcNames = mutable.SortedSet[String]()
     pattern.trim().split("\\|").foreach { subPattern =>
       try {
         val regex = ("(?i)" + subPattern.replaceAll("\\*", ".*")).r
