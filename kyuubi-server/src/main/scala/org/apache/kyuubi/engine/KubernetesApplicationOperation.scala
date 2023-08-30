@@ -29,8 +29,8 @@ import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndex
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.ApplicationState._
-import org.apache.kyuubi.engine.KubernetesApplicationOperation._
+import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationState, toLabel, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
 import org.apache.kyuubi.util.KubernetesUtils
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
