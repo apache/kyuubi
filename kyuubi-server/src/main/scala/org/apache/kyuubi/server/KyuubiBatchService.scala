@@ -92,11 +92,11 @@ class KyuubiBatchService(
               clusterManager = batchSession.batchJobSubmissionOp.builder.clusterManager())
             metadataManager.updateMetadata(metadataForUpdate, asyncRetryOnError = false)
             val sessionHandle = sessionManager.openBatchSession(batchSession)
-            var submitted = false
-            while (!submitted) { // block until batch job finished
-              submitted = sessionManager.getBatchSession(sessionHandle).map { batchSession =>
-                val batchState = batchSession.batchJobSubmissionOp.getStatus.state
-                batchState == OperationState.RUNNING || OperationState.isTerminal(batchState)
+            var terminated = false
+            while (!terminated) { // block until batch job finished
+              terminated = sessionManager.getBatchSession(sessionHandle).map { batchSession =>
+                val batchOp = batchSession.batchJobSubmissionOp
+                OperationState.isTerminal(batchOp.getStatus.state)
               }.getOrElse {
                 error(s"Batch Session $batchId is not existed, marked as finished")
                 true
@@ -110,9 +110,9 @@ class KyuubiBatchService(
               //     error(s"$batchId is not existed in metastore, assume it is finished")
               //     true
               // }
-              if (!submitted) Thread.sleep(1000)
+              if (!terminated) Thread.sleep(1000)
             }
-            info(s"$batchId is submitted.")
+            info(s"$batchId is finished.")
         }
       }
     }
