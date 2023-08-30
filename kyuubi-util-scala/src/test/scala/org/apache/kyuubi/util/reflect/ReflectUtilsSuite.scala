@@ -16,9 +16,10 @@
  */
 package org.apache.kyuubi.util.reflect
 
+// scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
-// scalastyle:off
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 class ReflectUtilsSuite extends AnyFunSuite {
   // scalastyle:on
@@ -68,15 +69,16 @@ class ReflectUtilsSuite extends AnyFunSuite {
   }
 
   test("test invokeAs method not found exception") {
-    val exception = intercept[RuntimeException]{
-      invokeAs[String](ObjectA, "methodNotExists", (classOf[String], "arg1"),
+    interceptEquals[RuntimeException] {
+      invokeAs[String](
+        ObjectA,
+        "methodNotExists",
+        (classOf[String], "arg1"),
         (classOf[String], "arg2"))
-    }
-    assert(exception.getMessage ===
-      "Method methodNotExists(java.lang.String, java.lang.String) not found " +
-        "in class org.apache.kyuubi.util.reflect.ObjectA$ " +
-        "[equals(java.lang.Object), field5(), field6(), getClass(), hashCode(), method5(), " +
-        "method6(), notify(), notifyAll(), toString(), wait(), wait(long), wait(long, int)]")
+    }("Method methodNotExists(java.lang.String, java.lang.String) not found " +
+      "in class org.apache.kyuubi.util.reflect.ObjectA$ " +
+      "[equals(java.lang.Object), field5(), field6(), getClass(), hashCode(), method5(), " +
+      "method6(), notify(), notifyAll(), toString(), wait(), wait(long), wait(long, int)]")
   }
 }
 
