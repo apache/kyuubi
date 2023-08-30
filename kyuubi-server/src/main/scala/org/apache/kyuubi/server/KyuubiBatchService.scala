@@ -93,7 +93,7 @@ class KyuubiBatchService(
             metadataManager.updateMetadata(metadataForUpdate, asyncRetryOnError = false)
             val sessionHandle = sessionManager.openBatchSession(batchSession)
             var submitted = false
-            while (!submitted) { // block until batch job finished
+            while (!submitted) { // block until batch job submitted
               submitted = sessionManager.getBatchSession(sessionHandle).map { batchSession =>
                 val batchState = batchSession.batchJobSubmissionOp.getStatus.state
                 batchState == OperationState.RUNNING || OperationState.isTerminal(batchState)
