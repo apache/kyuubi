@@ -386,8 +386,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       userIpAddressLimit: Int,
       userUnlimitedList: Set[String],
       userDenyList: Set[String]): Option[SessionLimiter] = {
-    if (Seq(userLimit, ipAddressLimit, userIpAddressLimit).exists(_ > 0) ||
-      Seq(userUnlimitedList, userDenyList).exists(_.nonEmpty)) {
+    if (Seq(userLimit, ipAddressLimit, userIpAddressLimit).exists(_ > 0) || userDenyList.nonEmpty) {
       Some(SessionLimiter(
         userLimit,
         ipAddressLimit,
