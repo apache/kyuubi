@@ -41,6 +41,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def applicationModeConf = KyuubiConf()
     .set("flink.execution.target", "yarn-application")
     .set(ENGINE_FLINK_APPLICATION_JARS, tempUdfJar.toString)
+    .set(APP_KEY, "kyuubi_connection_flink_paul")
     .set("kyuubi.on", "off")
 
   private val tempFlinkHome = Files.createTempDirectory("flink-home").toFile
@@ -85,6 +86,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
       escapePaths(s"${builder.flinkExecutable} run-application ") +
         s"-t yarn-application " +
         s"-Dyarn.ship-files=.*\\/flink-sql-client.*jar;.*\\/flink-sql-gateway.*jar;$tempUdfJar " +
+        s"-Dyarn\\.application\\.name=kyuubi_.* " +
         s"-Dyarn\\.tags=KYUUBI " +
         s"-Dcontainerized\\.master\\.env\\.FLINK_CONF_DIR=\\. " +
         s"-Dexecution.target=yarn-application " +
