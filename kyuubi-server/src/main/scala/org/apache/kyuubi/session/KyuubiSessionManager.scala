@@ -385,14 +385,17 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddressLimit: Int,
       userIpAddressLimit: Int,
       userUnlimitedList: Set[String],
-      userLimitedList: Set[String]): Option[SessionLimiter] = {
-    Seq(userLimit, ipAddressLimit, userIpAddressLimit).find(_ > 0).map(_ =>
-      SessionLimiter(
+      userDenyList: Set[String]): Option[SessionLimiter] = {
+    if (Seq(userLimit, ipAddressLimit, userIpAddressLimit).exists(_ > 0) || userDenyList.nonEmpty) {
+      Some(SessionLimiter(
         userLimit,
         ipAddressLimit,
         userIpAddressLimit,
         userUnlimitedList,
-        userLimitedList))
+        userDenyList))
+    } else {
+      None
+    }
   }
 
   private def startEngineAliveChecker(): Unit = {
