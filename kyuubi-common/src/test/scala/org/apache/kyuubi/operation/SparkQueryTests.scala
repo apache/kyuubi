@@ -226,14 +226,15 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
       withJdbcStatement("t0") { statement =>
         statement.execute(ddl)
         statement.execute("SET kyuubi.operation.plan.only.mode=lineage")
-        val lineageParserClassName = "org.apache.kyuubi.plugin.lineage.helper.LineageParser"
+        val lineageParserClassName = "org.apache.kyuubi.plugin.lineage.LineageParserProvider"
+
         try {
           val resultSet = statement.executeQuery(dql)
           assert(resultSet.next())
           val actualResult =
             """
-              |{"inputTables":["default.t0"],"outputTables":[],
-              |"columnLineage":[{"column":"a","originalColumns":["default.t0.a"]}]}
+              |{"inputTables":["spark_catalog.default.t0"],"outputTables":[],
+              |"columnLineage":[{"column":"a","originalColumns":["spark_catalog.default.t0.a"]}]}
               |""".stripMargin.split("\n").mkString("")
           assert(resultSet.getString(1) == actualResult)
         } catch {

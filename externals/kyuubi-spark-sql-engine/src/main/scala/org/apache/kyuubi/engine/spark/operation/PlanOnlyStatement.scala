@@ -17,14 +17,17 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.spark.sql.Row
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.apache.spark.kyuubi.SparkUtilsHelper
+import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.{OPERATION_PLAN_ONLY_EXCLUDES, OPERATION_PLAN_ONLY_OUT_STYLE}
-import org.apache.kyuubi.operation.{AnalyzeMode, ArrayFetchIterator, ExecutionMode, IterableFetchIterator, JsonStyle, OperationHandle, OptimizeMode, OptimizeWithStatsMode, ParseMode, PhysicalMode, PlainStyle, PlanOnlyMode, PlanOnlyStyle, UnknownMode, UnknownStyle}
+import org.apache.kyuubi.config.KyuubiConf.{LINEAGE_PARSER_PLUGIN_PROVIDER, OPERATION_PLAN_ONLY_EXCLUDES, OPERATION_PLAN_ONLY_OUT_STYLE}
+import org.apache.kyuubi.operation.{AnalyzeMode, ArrayFetchIterator, ExecutionMode, IterableFetchIterator, JsonStyle, LineageMode, OperationHandle, OptimizeMode, OptimizeWithStatsMode, ParseMode, PhysicalMode, PlainStyle, PlanOnlyMode, PlanOnlyStyle, UnknownMode, UnknownStyle}
 import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
 import org.apache.kyuubi.operation.PlanOnlyStyle.{notSupportedStyleError, unknownStyleError}
 import org.apache.kyuubi.operation.log.OperationLog
@@ -160,14 +163,19 @@ class PlanOnlyStatement(
     val analyzed = spark.sessionState.analyzer.execute(plan)
     spark.sessionState.analyzer.checkAnalysis(analyzed)
     val optimized = spark.sessionState.optimizer.execute(analyzed)
+    val parserProviderClass = session.sessionManager.getConf.get(LINEAGE_PARSER_PLUGIN_PROVIDER)
+
     try {
       if (!SparkUtilsHelper.classesArePresent(
-          "org.apache.kyuubi.plugin.lineage.helper.LineageParser")) {
-        throw new Exception("'org.apache.kyuubi.plugin.lineage.helper.LineageParser' not found," +
+          parserProviderClass)) {
+        throw new Exception(s"'$parserProviderClass' not found," +
           " need to install kyuubi-spark-lineage plugin before using the 'lineage' mode")
       }
-      val lineageParser = new LineageParser { def sparkSession = spark }
-      val lineage = lineageParser.parse(optimized)
+
+      val lineage = Class.forName(parserProviderClass)
+        .getMethod("parse", classOf[SparkSession], classOf[LogicalPlan])
+        .invoke(null, spark, optimized)
+
       val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
       mapper.writeValueAsString(lineage)
     } catch {
@@ -175,4 +183,5 @@ class PlanOnlyStatement(
         throw KyuubiSQLException(s"Extract columns lineage failed: ${e.getMessage}", e)
     }
   }
+
 }

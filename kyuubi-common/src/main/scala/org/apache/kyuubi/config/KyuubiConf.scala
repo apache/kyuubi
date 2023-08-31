@@ -2413,6 +2413,13 @@ object KyuubiConf {
         "UseStatement",
         "SetCatalogAndNamespace"))
 
+  val LINEAGE_PARSER_PLUGIN_PROVIDER: ConfigEntry[String] =
+    buildConf("kyuubi.lineage.parser.plugin.provider")
+      .doc("The provider for the Spark lineage parser plugin.")
+      .version("1.8.0")
+      .stringConf
+      .createWithDefault("org.apache.kyuubi.plugin.lineage.LineageParserProvider")
+
   object OperationLanguages extends Enumeration with Logging {
     type OperationLanguage = Value
     val PYTHON, SQL, SCALA, UNKNOWN = Value
