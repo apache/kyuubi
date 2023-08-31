@@ -1687,7 +1687,7 @@ object KyuubiConf {
         s"when ${BATCH_SUBMITTER_ENABLED.key} is enabled")
       .version("1.8.0")
       .intConf
-      .createWithDefault(100)
+      .createWithDefault(16)
 
   val BATCH_IMPL_VERSION: ConfigEntry[String] =
     buildConf("kyuubi.batch.impl.version")
