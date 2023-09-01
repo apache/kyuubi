@@ -2360,7 +2360,7 @@ object KyuubiConf {
   val OPERATION_PLAN_ONLY_MODE: ConfigEntry[String] =
     buildConf("kyuubi.operation.plan.only.mode")
       .doc("Configures the statement performed mode, The value can be 'parse', 'analyze', " +
-        "'optimize', 'optimize_with_stats', 'physical', 'execution', or 'none', " +
+        "'optimize', 'optimize_with_stats', 'physical', 'execution', 'lineage' or 'none', " +
         "when it is 'none', indicate to the statement will be fully executed, otherwise " +
         "only way without executing the query. different engines currently support different " +
         "modes, the Spark engine supports all modes, and the Flink engine supports 'parse', " +
@@ -2377,10 +2377,11 @@ object KyuubiConf {
             "OPTIMIZE_WITH_STATS",
             "PHYSICAL",
             "EXECUTION",
+            "LINEAGE",
             "NONE").contains(mode),
         "Invalid value for 'kyuubi.operation.plan.only.mode'. Valid values are" +
           "'parse', 'analyze', 'optimize', 'optimize_with_stats', 'physical', 'execution' and " +
-          "'none'.")
+          "'lineage', 'none'.")
       .createWithDefault(NoneMode.name)
 
   val OPERATION_PLAN_ONLY_OUT_STYLE: ConfigEntry[String] =
@@ -2411,6 +2412,13 @@ object KyuubiConf {
         "SetNamespaceCommand",
         "UseStatement",
         "SetCatalogAndNamespace"))
+
+  val LINEAGE_PARSER_PLUGIN_PROVIDER: ConfigEntry[String] =
+    buildConf("kyuubi.lineage.parser.plugin.provider")
+      .doc("The provider for the Spark lineage parser plugin.")
+      .version("1.8.0")
+      .stringConf
+      .createWithDefault("org.apache.kyuubi.plugin.lineage.LineageParserProvider")
 
   object OperationLanguages extends Enumeration with Logging {
     type OperationLanguage = Value
