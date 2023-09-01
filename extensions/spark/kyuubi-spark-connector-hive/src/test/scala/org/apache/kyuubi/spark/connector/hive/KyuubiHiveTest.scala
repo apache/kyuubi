@@ -44,7 +44,7 @@ abstract class KyuubiHiveTest extends QueryTest with Logging {
       SupportsNamespaces.PROP_LOCATION,
       SupportsNamespaces.PROP_OWNER)
 
-  protected def catalogName: String = "hive"
+  protected val catalogName: String = "hive"
 
   override def beforeEach(): Unit = {
     super.beforeAll()
