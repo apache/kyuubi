@@ -780,12 +780,15 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
     val e = intercept[Exception] {
+      val conf = Map(
+        KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString,
+        "spark.jars" -> "disAllowPath")
       sessionManager.openBatchSession(
         "kyuubi",
         "kyuubi",
         InetAddress.getLocalHost.getCanonicalHostName,
-        Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
-        newSparkBatchRequest(Map("spark.jars" -> "disAllowPath")))
+        conf,
+        newSparkBatchRequest(conf))
     }
     val sessionHandleRegex = "\\[\\S*]".r
     val batchId = sessionHandleRegex.findFirstMatchIn(e.getMessage).get.group(0)
