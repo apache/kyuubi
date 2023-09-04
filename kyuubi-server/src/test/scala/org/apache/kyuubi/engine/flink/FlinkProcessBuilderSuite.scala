@@ -68,7 +68,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     (FLINK_HADOOP_CLASSPATH_KEY -> s"${File.separator}hadoop")
   private def confStr: String = {
     sessionModeConf.clone.getAll
-      .filter(!_._1.equals("kyuubi.engine.credentials"))
+      .filter(!_._1.equals(KYUUBI_ENGINE_CREDENTIALS_KEY))
       .map { case (k, v) => s"\\\\\\n\\t--conf $k=$v" }
       .mkString(" ")
   }
