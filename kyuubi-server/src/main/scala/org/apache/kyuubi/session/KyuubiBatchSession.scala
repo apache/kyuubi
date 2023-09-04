@@ -43,7 +43,8 @@ class KyuubiBatchSession(
     className: String,
     batchConf: Map[String, String],
     batchArgs: Seq[String],
-    recoveryMetadata: Option[Metadata] = None,
+    metadata: Option[Metadata] = None,
+    fromRecovery: Boolean,
     shouldRunAsync: Boolean)
   extends KyuubiSession(
     TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
@@ -55,11 +56,11 @@ class KyuubiBatchSession(
   override val sessionType: SessionType = SessionType.BATCH
 
   override val handle: SessionHandle = {
-    val batchId = recoveryMetadata.map(_.identifier).getOrElse(conf(KYUUBI_BATCH_ID_KEY))
+    val batchId = metadata.map(_.identifier).getOrElse(conf(KYUUBI_BATCH_ID_KEY))
     SessionHandle.fromUUID(batchId)
   }
 
-  override def createTime: Long = recoveryMetadata.map(_.createTime).getOrElse(super.createTime)
+  override def createTime: Long = metadata.map(_.createTime).getOrElse(super.createTime)
 
   override def getNoOperationTime: Long = {
     if (batchJobSubmissionOp != null && !OperationState.isTerminal(
@@ -106,7 +107,7 @@ class KyuubiBatchSession(
       className,
       optimizedConf,
       batchArgs,
-      recoveryMetadata,
+      metadata,
       shouldRunAsync)
 
   private def waitMetadataRequestsRetryCompletion(): Unit = {
@@ -122,7 +123,9 @@ class KyuubiBatchSession(
   }
 
   private val sessionEvent = KyuubiSessionEvent(this)
-  recoveryMetadata.foreach(metadata => sessionEvent.engineId = metadata.engineId)
+  if (fromRecovery) {
+    metadata.foreach { m => sessionEvent.engineId = m.engineId }
+  }
   EventBus.post(sessionEvent)
 
   override def getSessionEvent: Option[KyuubiSessionEvent] = {
@@ -142,32 +145,47 @@ class KyuubiBatchSession(
   override def open(): Unit = handleSessionException {
     traceMetricsOnOpen()
 
-    if (recoveryMetadata.isEmpty) {
+    lazy val kubernetesInfo: Map[String, String] = {
       val appMgrInfo = batchJobSubmissionOp.builder.appMgrInfo()
-      val kubernetesInfo = appMgrInfo.kubernetesInfo.context.map { context =>
+      appMgrInfo.kubernetesInfo.context.map { context =>
         Map(KyuubiConf.KUBERNETES_CONTEXT.key -> context)
       }.getOrElse(Map.empty) ++ appMgrInfo.kubernetesInfo.namespace.map { namespace =>
         Map(KyuubiConf.KUBERNETES_NAMESPACE.key -> namespace)
       }.getOrElse(Map.empty)
-      val metaData = Metadata(
-        identifier = handle.identifier.toString,
-        sessionType = sessionType,
-        realUser = realUser,
-        username = user,
-        ipAddress = ipAddress,
-        kyuubiInstance = connectionUrl,
-        state = OperationState.PENDING.toString,
-        resource = resource,
-        className = className,
-        requestName = name.orNull,
-        requestConf = optimizedConf ++ kubernetesInfo, // save the kubernetes info into request conf
-        requestArgs = batchArgs,
-        createTime = createTime,
-        engineType = batchType,
-        clusterManager = batchJobSubmissionOp.builder.clusterManager())
+    }
 
-      // there is a chance that operation failed w/ duplicated key error
-      sessionManager.insertMetadata(metaData)
+    (metadata, fromRecovery) match {
+      case (Some(initialMetadata), false) =>
+        // new batch job created using batch impl v2
+        val metadataToUpdate = Metadata(
+          identifier = initialMetadata.identifier,
+          kyuubiInstance = connectionUrl,
+          requestName = name.orNull,
+          requestConf = optimizedConf ++ kubernetesInfo, // save the kubernetes info
+          clusterManager = batchJobSubmissionOp.builder.clusterManager())
+        sessionManager.updateMetadata(metadataToUpdate)
+      case (None, _) =>
+        // new batch job created using batch impl v1
+        val newMetadata = Metadata(
+          identifier = handle.identifier.toString,
+          sessionType = sessionType,
+          realUser = realUser,
+          username = user,
+          ipAddress = ipAddress,
+          kyuubiInstance = connectionUrl,
+          state = OperationState.PENDING.toString,
+          resource = resource,
+          className = className,
+          requestName = name.orNull,
+          requestConf = optimizedConf ++ kubernetesInfo, // save the kubernetes info
+          requestArgs = batchArgs,
+          createTime = createTime,
+          engineType = batchType,
+          clusterManager = batchJobSubmissionOp.builder.clusterManager())
+
+        // there is a chance that operation failed w/ duplicated key error
+        sessionManager.insertMetadata(newMetadata)
+      case _ =>
     }
 
     checkSessionAccessPathURIs()

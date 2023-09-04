@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.kyuubi.config.KyuubiConf.BATCH_SUBMITTER_THREADS
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataManager
-import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.service.{AbstractService, Serverable}
 import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.ThreadUtils
@@ -83,14 +82,9 @@ class KyuubiBatchService(
               metadata.className,
               metadata.requestConf,
               metadata.requestArgs,
-              Some(metadata), // TODO some logic need to fix since it's not from recovery
+              Some(metadata),
+              false,
               shouldRunAsync = true)
-            val metadataForUpdate = Metadata(
-              identifier = batchId,
-              kyuubiInstance = kyuubiInstance,
-              requestConf = batchSession.optimizedConf,
-              clusterManager = batchSession.batchJobSubmissionOp.builder.clusterManager())
-            metadataManager.updateMetadata(metadataForUpdate, asyncRetryOnError = false)
             val sessionHandle = sessionManager.openBatchSession(batchSession)
             var submitted = false
             while (!submitted) { // block until batch job submitted
