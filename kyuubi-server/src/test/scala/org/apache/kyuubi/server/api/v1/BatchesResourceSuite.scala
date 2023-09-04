@@ -31,7 +31,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.glassfish.jersey.media.multipart.FormDataMultiPart
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart
 
-import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelper}
+import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelper, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.util.BatchUtils
 import org.apache.kyuubi.client.util.BatchUtils._
@@ -42,7 +42,7 @@ import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
 import org.apache.kyuubi.operation.OperationState.OperationState
-import org.apache.kyuubi.server.KyuubiRestFrontendService
+import org.apache.kyuubi.server.{KyuubiBatchService, KyuubiRestFrontendService}
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.authentication.{InternalSecurityAccessor, KyuubiAuthenticationFactory}
@@ -60,6 +60,17 @@ class BatchesV2ResourceSuite extends BatchesResourceSuiteBase {
   override def customConf: Map[String, String] = Map(
     KyuubiConf.METADATA_REQUEST_ASYNC_RETRY_ENABLED.key -> "false",
     KyuubiConf.BATCH_SUBMITTER_ENABLED.key -> "true")
+
+  override def afterEach(): Unit = {
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val batchService = server.getServices.collectFirst { case b: KyuubiBatchService => b }.get
+    sessionManager.getBatchesFromMetadataStore(MetadataFilter(), 0, Int.MaxValue)
+      .foreach { batch => batchService.cancelUnscheduledBatch(batch.getId) }
+    super.afterEach()
+    sessionManager.allSessions().foreach { session =>
+      Utils.tryLogNonFatalError { sessionManager.closeSession(session.handle) }
+    }
+  }
 }
 
 abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
