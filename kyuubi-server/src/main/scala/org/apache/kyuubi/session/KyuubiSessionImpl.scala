@@ -289,7 +289,7 @@ class KyuubiSessionImpl(
   @volatile private var engineLastAlive: Long = _
   val engineAliveTimeout = sessionConf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
   val aliveProbeEnabled = sessionConf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
-  var engineAliveMaxFailCount = 3
+  var engineAliveMaxFailCount = sessionConf.get(KyuubiConf.ENGINE_ALIVE_MAX_FAIL_COUNT)
   var engineAliveFailCount = 0
 
   def checkEngineConnectionAlive(): Boolean = {
