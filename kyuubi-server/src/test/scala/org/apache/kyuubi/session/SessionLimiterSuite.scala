@@ -160,19 +160,19 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     val userIpAddressLimit = 100
     val limiter =
       SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, Set.empty, Set.empty)
-    val executor = ThreadUtils.newDaemonCachedThreadPool("test-refresh-config")
+    val threadPool = ThreadUtils.newDaemonCachedThreadPool("test-refresh-config")
 
     def checkUserLimit(userIpAddress: UserIpAddress): Unit = {
       for (i <- 0 until 200) {
-        executor.execute(() => {
+        threadPool.execute(() => {
           try {
             Thread.sleep(random.nextInt(200))
             limiter.increment(userIpAddress)
-            Thread.sleep(random.nextInt(500))
-            limiter.decrement(userIpAddress)
           } catch {
             case _: Throwable =>
           } finally {
+            Thread.sleep(random.nextInt(500))
+            limiter.decrement(userIpAddress)
             latch.countDown()
           }
         })
@@ -194,6 +194,7 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     SessionLimiter.resetDenyUsers(limiter, Set.empty)
 
     latch.await()
+    threadPool.shutdown()
     limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
       .foreach(c => assert(c.get() == 0))
   }
