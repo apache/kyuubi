@@ -54,6 +54,24 @@
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
+},{
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.Call",
+  "tableDescs" : [ {
+    "fieldName" : "args",
+    "fieldExtractor" : "IcebergCallArgsExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "INSERT"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AppendData",
   "tableDescs" : [ {

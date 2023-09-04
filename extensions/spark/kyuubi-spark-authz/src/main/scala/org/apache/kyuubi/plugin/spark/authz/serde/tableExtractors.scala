@@ -20,11 +20,14 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 import java.util.{Map => JMap}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
@@ -132,6 +135,32 @@ class IdentifierTableExtractor extends TableExtractor {
   }
 }
 
+class IcebergCallArgsExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, callStatementArgs: AnyRef): Option[Table] = {
+    val literals = callStatementArgs.asInstanceOf[ArrayBuffer[Literal]]
+    if(literals.isEmpty) {
+      throw new IllegalArgumentException(
+        s"Unknown parameters in iceberg call command: $callStatementArgs")
+    }
+    lookupExtractor[IcebergTableExtractor].apply(spark, literals.head)
+  }
+}
+class IcebergTableExtractor extends TableExtractor {
+
+  final private val LOG = LoggerFactory.getLogger(getClass)
+  override def apply(spark: SparkSession, tableFullName: AnyRef): Option[Table] = {
+    val fullTable = tableFullName.toString.split("\\.").map(quoteIfNeeded)
+    fullTable.length match {
+      case 1 => Some(Table(None, None, fullTable(0), None))
+      case 2 => Some(Table(None, Some(fullTable(0)), fullTable(1), None))
+      case 3 => Some(Table(Some(fullTable(0)), Some(fullTable(1)), fullTable(2), None))
+      case _ =>
+        LOG.warn(s"unrecognized table name [$fullTable], will ignore and continue.")
+        None
+    }
+  }
+}
+
 /**
  * org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
  */
@@ -145,12 +174,35 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
         val maybeCatalogPlugin = invokeAs[Option[AnyRef]](v2Relation, "catalog")
         val maybeCatalog = maybeCatalogPlugin.flatMap(catalogPlugin =>
           lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
-        val maybeIdentifier = invokeAs[Option[AnyRef]](v2Relation, "identifier")
-        maybeIdentifier.flatMap { id =>
-          val maybeTable = lookupExtractor[IdentifierTableExtractor].apply(spark, id)
-          val maybeOwner = TableExtractor.getOwner(v2Relation)
-          maybeTable.map(_.copy(catalog = maybeCatalog, owner = maybeOwner))
+        maybeCatalogPlugin.flatMap { catalogPlugin =>
+          resolveIcebergTable(spark, v2Relation, catalogPlugin)
+            .orElse(resolveDataSourceV2Table(spark, v2Relation, catalogPlugin))
+            .map(table => {
+              val maybeOwner = TableExtractor.getOwner(v2Relation)
+              table.copy(catalog = maybeCatalog, owner = maybeOwner)
+            })
         }
+    }
+  }
+
+  def resolveIcebergTable(
+      spark: SparkSession,
+      v2Relation: AnyRef,
+      catalogPlugin: AnyRef): Option[Table] = {
+    if (!catalogPlugin.getClass.getName.contains("org.apache.iceberg")) {
+      return None
+    }
+    val tableFullName = invokeAs[AnyRef](v2Relation, "table")
+    lookupExtractor[IcebergTableExtractor].apply(spark, tableFullName)
+  }
+
+  def resolveDataSourceV2Table(
+      spark: SparkSession,
+      v2Relation: AnyRef,
+      catalogPlugin: AnyRef): Option[Table] = {
+    val maybeIdentifier = invokeAs[Option[AnyRef]](v2Relation, "identifier")
+    maybeIdentifier.flatMap { id =>
+      lookupExtractor[IdentifierTableExtractor].apply(spark, id)
     }
   }
 }
