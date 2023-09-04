@@ -21,11 +21,6 @@ Requirement:
 
 1. Install [nodejs](https://nodejs.org/en/)[Recommend 18.x.x]
 
-Recommend:
-
-1. Using nodejs with version `18.x`
-2. Using pnpm for package management with version `8.x`
-
 ## Run Web UI in Development Mode
 
 Notice:
@@ -57,11 +52,11 @@ npm run build
 
 ## Code Style
 
-Kyuubi Web UI using prettier for code style, you can run `npm run prettier` to format the code.
+Kyuubi Web UI using prettier for code style, you should run `npm run prettier` to format the code.
 
 ## Recommendation
 
-If you want to save disk space and boost installation speed, we recommend using `pnpm 8.x.x` to instead of npm.
+We recommend using `pnpm 8.x.x` to instead of npm, for saving disk space and boost installation speed.
 You can learn how to install the corresponding version from its official website.
 
 ```shell
