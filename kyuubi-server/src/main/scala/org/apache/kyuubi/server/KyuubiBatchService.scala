@@ -80,11 +80,9 @@ class KyuubiBatchService(
               Option(metadata.requestName),
               metadata.resource,
               metadata.className,
-              metadata.requestConf,
               metadata.requestArgs,
               Some(metadata),
-              false,
-              shouldRunAsync = true)
+              fromRecovery = false)
             val sessionHandle = sessionManager.openBatchSession(batchSession)
             var submitted = false
             while (!submitted) { // block until batch job submitted
@@ -107,7 +105,7 @@ class KyuubiBatchService(
               // }
               if (!submitted) Thread.sleep(1000)
             }
-            info(s"$batchId is submitted.")
+            info(s"$batchId is submitted or finished.")
         }
       }
     }

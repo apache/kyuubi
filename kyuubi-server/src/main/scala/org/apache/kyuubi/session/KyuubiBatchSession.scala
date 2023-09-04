@@ -41,11 +41,9 @@ class KyuubiBatchSession(
     batchName: Option[String],
     resource: String,
     className: String,
-    batchConf: Map[String, String],
     batchArgs: Seq[String],
     metadata: Option[Metadata] = None,
-    fromRecovery: Boolean,
-    shouldRunAsync: Boolean)
+    fromRecovery: Boolean)
   extends KyuubiSession(
     TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
     user,
@@ -75,7 +73,7 @@ class KyuubiBatchSession(
     sessionManager.getConf.get(KyuubiConf.BATCH_SESSION_IDLE_TIMEOUT)
 
   override val normalizedConf: Map[String, String] =
-    sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(batchConf)
+    sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(conf)
 
   val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
@@ -96,7 +94,7 @@ class KyuubiBatchSession(
 
   // whether the resource file is from uploading
   private[kyuubi] val isResourceUploaded: Boolean =
-    batchConf.getOrElse(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
+    conf.getOrElse(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
@@ -107,8 +105,7 @@ class KyuubiBatchSession(
       className,
       optimizedConf,
       batchArgs,
-      metadata,
-      shouldRunAsync)
+      metadata)
 
   private def waitMetadataRequestsRetryCompletion(): Unit = {
     val batchId = batchJobSubmissionOp.batchId

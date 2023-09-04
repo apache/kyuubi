@@ -58,10 +58,11 @@ class BatchJobSubmission(
     className: String,
     batchConf: Map[String, String],
     batchArgs: Seq[String],
-    metadata: Option[Metadata],
-    override val shouldRunAsync: Boolean)
+    metadata: Option[Metadata])
   extends KyuubiApplicationOperation(session) {
   import BatchJobSubmission._
+
+  override def shouldRunAsync: Boolean = true
 
   private val _operationLog = OperationLog.createOperationLog(session, getHandle)
 
@@ -222,7 +223,6 @@ class BatchJobSubmission(
         updateBatchMetadata()
       }
     }
-    if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
   private def submitAndMonitorBatchJob(): Unit = {

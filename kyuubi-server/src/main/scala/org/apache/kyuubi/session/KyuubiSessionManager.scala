@@ -144,11 +144,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       batchName: Option[String],
       resource: String,
       className: String,
-      batchConf: Map[String, String],
       batchArgs: Seq[String],
       metadata: Option[Metadata] = None,
-      fromRecovery: Boolean,
-      shouldRunAsync: Boolean): KyuubiBatchSession = {
+      fromRecovery: Boolean): KyuubiBatchSession = {
     // scalastyle:on
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     val sessionConf = this.getConf.getUserDefaults(user)
@@ -163,11 +161,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       batchName,
       resource,
       className,
-      batchConf,
       batchArgs,
       metadata,
-      fromRecovery,
-      shouldRunAsync)
+      fromRecovery)
   }
 
   private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSession): SessionHandle = {
@@ -205,8 +201,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       password: String,
       ipAddress: String,
       conf: Map[String, String],
-      batchRequest: BatchRequest,
-      shouldRunAsync: Boolean = true): SessionHandle = {
+      batchRequest: BatchRequest): SessionHandle = {
     val batchSession = createBatchSession(
       user,
       password,
@@ -216,11 +211,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       Option(batchRequest.getName),
       batchRequest.getResource,
       batchRequest.getClassName,
-      batchRequest.getConf.asScala.toMap,
       batchRequest.getArgs.asScala.toSeq,
       None,
-      false,
-      shouldRunAsync)
+      fromRecovery = false)
     openBatchSession(batchSession)
   }
 
@@ -316,11 +309,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           Option(metadata.requestName),
           metadata.resource,
           metadata.className,
-          metadata.requestConf,
           metadata.requestArgs,
           Some(metadata),
-          true,
-          shouldRunAsync = true)
+          fromRecovery = true)
       }).getOrElse(Seq.empty)
     }
   }
