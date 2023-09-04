@@ -27,6 +27,7 @@ import scala.util.matching.Regex
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_APPLICATION_JARS, ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS, ENGINE_FLINK_MEMORY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
 
 class FlinkProcessBuilderSuite extends KyuubiFunSuite {
@@ -37,12 +38,14 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     .set(
       ENGINE_FLINK_JAVA_OPTIONS,
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
+    .set(KYUUBI_ENGINE_CREDENTIALS_KEY, "should-not-be-used")
 
   private def applicationModeConf = KyuubiConf()
     .set("flink.execution.target", "yarn-application")
     .set(ENGINE_FLINK_APPLICATION_JARS, tempUdfJar.toString)
     .set(APP_KEY, "kyuubi_connection_flink_paul")
     .set("kyuubi.on", "off")
+    .set(KYUUBI_ENGINE_CREDENTIALS_KEY, "should-not-be-used")
 
   private val tempFlinkHome = Files.createTempDirectory("flink-home").toFile
   private val tempOpt =
@@ -65,6 +68,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     (FLINK_HADOOP_CLASSPATH_KEY -> s"${File.separator}hadoop")
   private def confStr: String = {
     sessionModeConf.clone.getAll
+      .filter(!_._1.equals(KYUUBI_ENGINE_CREDENTIALS_KEY))
       .map { case (k, v) => s"\\\\\\n\\t--conf $k=$v" }
       .mkString(" ")
   }
