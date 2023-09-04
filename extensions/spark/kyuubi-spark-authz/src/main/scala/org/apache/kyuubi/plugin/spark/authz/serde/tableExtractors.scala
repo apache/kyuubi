@@ -138,7 +138,7 @@ class IdentifierTableExtractor extends TableExtractor {
 class IcebergCallArgsExtractor extends TableExtractor {
   override def apply(spark: SparkSession, callStatementArgs: AnyRef): Option[Table] = {
     val literals = callStatementArgs.asInstanceOf[ArrayBuffer[Literal]]
-    if(literals.isEmpty) {
+    if (literals.isEmpty) {
       throw new IllegalArgumentException(
         s"Unknown parameters in iceberg call command: $callStatementArgs")
     }
