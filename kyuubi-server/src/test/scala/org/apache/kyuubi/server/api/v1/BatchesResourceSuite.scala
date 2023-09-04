@@ -31,7 +31,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.glassfish.jersey.media.multipart.FormDataMultiPart
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart
 
-import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelper}
+import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelper, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.util.BatchUtils
 import org.apache.kyuubi.client.util.BatchUtils._
@@ -68,7 +68,7 @@ class BatchesV2ResourceSuite extends BatchesResourceSuiteBase {
       .foreach { batch => batchService.cancelUnscheduledBatch(batch.getId) }
     super.afterEach()
     sessionManager.allSessions().foreach { session =>
-      sessionManager.closeSession(session.handle)
+      Utils.tryLogNonFatalError { sessionManager.closeSession(session.handle) }
     }
   }
 }
