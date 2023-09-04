@@ -91,6 +91,11 @@
         <url>scm:git:git@github.com:apache/kyuubi.git</url>
     </scm>
 
+    <organization>
+        <name>Apache Software Foundation</name>
+        <url>https://www.apache.org</url>
+    </organization>
+
     <issueManagement>
         <system>GitHub Issues</system>
         <url>https://github.com/apache/kyuubi/issues</url>
