@@ -358,12 +358,12 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
         sparkBatchTestResource.get,
         "",
-        ""))
+        "",
+        Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString)))
     sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
       "",
@@ -380,22 +380,22 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
         sparkBatchTestResource.get,
         "",
-        ""))
+        "",
+        Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString)))
     sessionManager.openBatchSession(
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
         sparkBatchTestResource.get,
         "",
-        ""))
+        "",
+        Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString)))
 
     val response2 = webTarget.path("api/v1/batches")
       .queryParam("batchType", "spark")
@@ -787,7 +787,6 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         "kyuubi",
         "kyuubi",
         InetAddress.getLocalHost.getCanonicalHostName,
-        conf,
         newSparkBatchRequest(conf))
     }
     val sessionHandleRegex = "\\[\\S*]".r
@@ -806,12 +805,12 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
         sparkBatchTestResource.get,
         "",
-        uniqueName))
+        uniqueName,
+        Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString)))
 
     val response = webTarget.path("api/v1/batches")
       .queryParam("batchName", uniqueName)

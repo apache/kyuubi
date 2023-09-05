@@ -149,7 +149,6 @@ class KyuubiOperationKubernetesClusterClientModeSuite
       "kyuubi",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
@@ -217,7 +216,6 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       "runner",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     // wait for driver pod start

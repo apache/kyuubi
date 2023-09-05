@@ -200,13 +200,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String],
       batchRequest: BatchRequest): SessionHandle = {
     val batchSession = createBatchSession(
       user,
       password,
       ipAddress,
-      conf,
+      batchRequest.getConf.asScala.toMap,
       batchRequest.getBatchType,
       Option(batchRequest.getName),
       batchRequest.getResource,

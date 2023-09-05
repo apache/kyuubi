@@ -269,7 +269,6 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             userName,
             "anonymous",
             ipAddress,
-            request.getConf.asScala.toMap,
             request)
         } match {
           case Success(sessionHandle) =>
