@@ -19,7 +19,6 @@ package org.apache.kyuubi.kubernetes.test.spark
 
 import java.util.UUID
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 import org.apache.hadoop.conf.Configuration
