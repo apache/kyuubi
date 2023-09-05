@@ -51,7 +51,7 @@ object IcebergCommands {
 
   val IcebergCallCommand = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.Call"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(INSERT))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
     val tableDesc =
       TableDesc(
         "args",

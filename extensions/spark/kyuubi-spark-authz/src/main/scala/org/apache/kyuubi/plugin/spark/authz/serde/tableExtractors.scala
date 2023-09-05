@@ -175,8 +175,8 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
         val maybeCatalogPlugin = invokeAs[Option[AnyRef]](v2Relation, "catalog")
         val maybeCatalog = maybeCatalogPlugin.flatMap(catalogPlugin =>
           lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
-        val tableFullName = invokeAs[AnyRef](v2Relation, "table")
-        TableExtractor.getDataSourceV2Table(tableFullName).map { table =>
+        val table = invokeAs[org.apache.spark.sql.connector.catalog.Table](v2Relation, "table")
+        TableExtractor.getDataSourceV2Table(table.name()).map { table =>
           val maybeOwner = TableExtractor.getOwner(v2Relation)
           table.copy(catalog = maybeCatalog, owner = maybeOwner)
         }

@@ -100,7 +100,7 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "INSERT"
+      "actionType" : "UPDATE"
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
