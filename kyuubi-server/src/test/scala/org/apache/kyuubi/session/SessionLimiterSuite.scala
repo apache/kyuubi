@@ -156,8 +156,8 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     val random: Random = new Random()
     val latch = new CountDownLatch(600)
     val userLimit = 100
-    val ipAddressLimit = 100
-    val userIpAddressLimit = 100
+    val ipAddressLimit = 101
+    val userIpAddressLimit = 102
     val limiter =
       SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, Set.empty, Set.empty)
     val threadPool = ThreadUtils.newDaemonCachedThreadPool("test-refresh-config")
@@ -172,6 +172,7 @@ class SessionLimiterSuite extends KyuubiFunSuite {
             case _: Throwable =>
           } finally {
             Thread.sleep(random.nextInt(500))
+            // finally call limiter#decrement method.
             limiter.decrement(userIpAddress)
             latch.countDown()
           }

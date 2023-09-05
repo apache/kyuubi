@@ -96,12 +96,7 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
   private def decrLimitCount(key: String): Unit = {
     _counters.get(key) match {
       case count: AtomicInteger if count.get > 0 =>
-        count.synchronized {
-          val countValue = count.get
-          if (countValue > 0) {
-            count.compareAndSet(countValue, countValue - 1)
-          }
-        }
+        count.accumulateAndGet(1, (l, r) => if (l > 0) l - r else l)
       case _ =>
     }
   }
