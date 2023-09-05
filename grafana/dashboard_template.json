@@ -1,28 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "KYUUBI_METRIC_DS",
-      "label": "KYUUBI_METRIC_DS",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
-  "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "5.2.1"
-    },
-    {
-      "type": "datasource",
-      "id": "prometheus",
-      "name": "Prometheus",
-      "version": "5.0.0"
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -45,7 +21,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 3086,
+  "id": 1,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -116,7 +92,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
@@ -184,7 +160,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
@@ -225,7 +201,7 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 100
               }
             ]
           },
@@ -254,7 +230,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
@@ -296,7 +272,7 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 100
               }
             ]
           },
@@ -325,7 +301,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
@@ -383,7 +359,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -492,7 +468,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -615,7 +591,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -742,7 +718,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -869,7 +845,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -996,7 +972,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1123,7 +1099,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1250,7 +1226,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1403,7 +1379,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
@@ -1473,7 +1449,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
@@ -1585,14 +1561,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "orange",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 85
               }
             ]
           }
@@ -1618,7 +1586,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.7",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
@@ -1955,14 +1923,35 @@
       {
         "current": {
           "selected": true,
+          "text": "Prometheus",
+          "value": "Prometheus"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "datasource",
+        "multi": false,
+        "name": "KYUUBI_METRIC_DS",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "selected": true,
           "text": [
-            "172.17.18.114:10019"
+            "All"
           ],
           "value": [
-            "172.17.18.114:10019"
+            "$__all"
           ]
         },
-        "datasource": "${KYUUBI_METRIC_DS}",
+        "datasource": {
+          "uid": "${KYUUBI_METRIC_DS}"
+        },
         "definition": "label_values(kyuubi_memory_usage_total_init,instance)",
         "hide": 0,
         "includeAll": true,
@@ -2006,6 +1995,6 @@
   "timezone": "",
   "title": "Kyuubi",
   "uid": "S43WG_yVk",
-  "version": 21,
+  "version": 1,
   "weekStart": ""
 }
