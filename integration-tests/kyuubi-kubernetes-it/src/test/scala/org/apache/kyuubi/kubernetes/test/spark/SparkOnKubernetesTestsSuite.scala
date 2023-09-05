@@ -29,7 +29,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
-import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationOperation, KubernetesApplicationOperation}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, KubernetesApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, NOT_FOUND, RUNNING}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
@@ -45,7 +45,11 @@ abstract class SparkOnKubernetesSuiteBase
   }
 
   protected val appMgrInfo =
-    ApplicationManagerInfo(Some(s"k8s://$apiServerAddress"), Some("minikube"), None)
+    ApplicationManagerInfo(
+      Some(s"k8s://$apiServerAddress"),
+      Some("cluster"),
+      Some("minikube"),
+      None)
 
   protected def sparkOnK8sConf: KyuubiConf = {
     // TODO Support more Spark version
@@ -140,44 +144,6 @@ class KyuubiOperationKubernetesClusterClientModeSuite
 
   private def sessionManager: KyuubiSessionManager =
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
-
-  ignore("Spark Client Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
-    val batchRequest = newSparkBatchRequest(conf.getAll ++ Map(
-      KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
-
-    val sessionHandle = sessionManager.openBatchSession(
-      "kyuubi",
-      "passwd",
-      "localhost",
-      batchRequest.getConf.asScala.toMap,
-      batchRequest)
-
-    eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val state = k8sOperation.getApplicationInfoByTag(
-        appMgrInfo,
-        sessionHandle.identifier.toString)
-      assert(state.id != null)
-      assert(state.name != null)
-      assert(state.state == RUNNING)
-    }
-
-    val killResponse = k8sOperation.killApplicationByTag(
-      appMgrInfo,
-      sessionHandle.identifier.toString)
-    assert(killResponse._1)
-    assert(killResponse._2 startsWith "Succeeded to terminate:")
-
-    val appInfo = k8sOperation.getApplicationInfoByTag(
-      appMgrInfo,
-      sessionHandle.identifier.toString)
-    assert(appInfo == ApplicationInfo(null, null, NOT_FOUND))
-
-    val failKillResponse = k8sOperation.killApplicationByTag(
-      appMgrInfo,
-      sessionHandle.identifier.toString)
-    assert(!failKillResponse._1)
-    assert(failKillResponse._2 === ApplicationOperation.NOT_FOUND)
-  }
 }
 
 class KyuubiOperationKubernetesClusterClusterModeSuite

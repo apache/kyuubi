@@ -118,17 +118,21 @@ case class KubernetesInfo(context: Option[String] = None, namespace: Option[Stri
 
 case class ApplicationManagerInfo(
     resourceManager: Option[String],
+    deployMode: Option[String] = None,
     kubernetesInfo: KubernetesInfo = KubernetesInfo())
 
 object ApplicationManagerInfo {
   final val DEFAULT_KUBERNETES_NAMESPACE = "default"
+  final val SPARK_DEPLOY_MODE_KEY = "spark.submit.deployMode"
 
   def apply(
       resourceManager: Option[String],
+      deployMode: Option[String],
       kubernetesContext: Option[String],
       kubernetesNamespace: Option[String]): ApplicationManagerInfo = {
     new ApplicationManagerInfo(
       resourceManager,
+      deployMode,
       KubernetesInfo(kubernetesContext, kubernetesNamespace))
   }
 }
