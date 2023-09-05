@@ -58,10 +58,11 @@ class BatchJobSubmission(
     className: String,
     batchConf: Map[String, String],
     batchArgs: Seq[String],
-    recoveryMetadata: Option[Metadata],
-    override val shouldRunAsync: Boolean)
+    metadata: Option[Metadata])
   extends KyuubiApplicationOperation(session) {
   import BatchJobSubmission._
+
+  override def shouldRunAsync: Boolean = true
 
   private val _operationLog = OperationLog.createOperationLog(session, getHandle)
 
@@ -75,7 +76,7 @@ class BatchJobSubmission(
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
 
-  @volatile private var _appStartTime = recoveryMetadata.map(_.engineOpenTime).getOrElse(0L)
+  @volatile private var _appStartTime = metadata.map(_.engineOpenTime).getOrElse(0L)
   def appStartTime: Long = _appStartTime
   def appStarted: Boolean = _appStartTime > 0
 
@@ -184,21 +185,24 @@ class BatchJobSubmission(
   override protected def runInternal(): Unit = session.handleSessionException {
     val asyncOperation: Runnable = () => {
       try {
-        recoveryMetadata match {
+        metadata match {
           case Some(metadata) if metadata.peerInstanceClosed =>
             setState(OperationState.CANCELED)
           case Some(metadata) if metadata.state == OperationState.PENDING.toString =>
-            // In recovery mode, only submit batch job when previous state is PENDING
-            // and fail to fetch the status including appId from resource manager.
-            // Otherwise, monitor the submitted batch application.
+            // case 1: new batch job created using batch impl v2
+            // case 2: batch job from recovery, do submission only when previous state is
+            // PENDING and fail to fetch the status by appId from resource manager, which
+            // is similar with case 1; otherwise, monitor the submitted batch application.
             _applicationInfo = currentApplicationInfo()
             applicationId(_applicationInfo) match {
-              case Some(appId) => monitorBatchJob(appId)
               case None => submitAndMonitorBatchJob()
+              case Some(appId) => monitorBatchJob(appId)
             }
           case Some(metadata) =>
+            // batch job from recovery which was submitted
             monitorBatchJob(metadata.engineId)
           case None =>
+            // brand-new job created using batch impl v1
             submitAndMonitorBatchJob()
         }
         setStateIfNotCanceled(OperationState.FINISHED)
@@ -219,7 +223,6 @@ class BatchJobSubmission(
         updateBatchMetadata()
       }
     }
-    if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
   private def submitAndMonitorBatchJob(): Unit = {
@@ -295,19 +298,19 @@ class BatchJobSubmission(
     }
     if (_applicationInfo.isEmpty) {
       info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
-    } else if (applicationFailed(_applicationInfo)) {
+      return
+    }
+    if (applicationFailed(_applicationInfo)) {
       throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
-    } else {
-      updateBatchMetadata()
-      // TODO: add limit for max batch job submission lifetime
-      while (_applicationInfo.isDefined && !applicationTerminated(_applicationInfo)) {
-        Thread.sleep(applicationCheckInterval)
-        updateApplicationInfoMetadataIfNeeded()
-      }
-
-      if (applicationFailed(_applicationInfo)) {
-        throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
-      }
+    }
+    updateBatchMetadata()
+    // TODO: add limit for max batch job submission lifetime
+    while (_applicationInfo.isDefined && !applicationTerminated(_applicationInfo)) {
+      Thread.sleep(applicationCheckInterval)
+      updateApplicationInfoMetadataIfNeeded()
+    }
+    if (applicationFailed(_applicationInfo)) {
+      throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
     }
   }
 
