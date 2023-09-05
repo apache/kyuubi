@@ -49,10 +49,22 @@ object IcebergCommands {
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
   }
 
+  val IcebergCallCommand = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.Call"
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(INSERT))
+    val tableDesc =
+      TableDesc(
+        "args",
+        classOf[IcebergCallCommandTableExtractor],
+        actionTypeDesc = Some(actionTypeDesc))
+    TableCommandSpec(cmd, Seq(tableDesc))
+  }
+
   val data: Array[TableCommandSpec] = Array(
     DeleteFromIcebergTable,
     UpdateIcebergTable,
     MergeIntoIcebergTable,
     MergeIntoIcebergTable.copy(classname =
-      "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable"))
+      "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable"),
+    IcebergCallCommand)
 }

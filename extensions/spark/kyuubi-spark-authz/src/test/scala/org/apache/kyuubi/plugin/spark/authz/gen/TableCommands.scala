@@ -579,17 +579,6 @@ object TableCommands {
     TableCommandSpec(cmd, Seq(tableIdentDesc.copy(isInput = true)))
   }
 
-  val IcebergCallCommand = {
-    val cmd = "org.apache.spark.sql.catalyst.plans.logical.Call"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(INSERT))
-    val tableDesc =
-      TableDesc(
-        "args",
-        classOf[IcebergCallCommandTableExtractor],
-        actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc))
-  }
-
   val data: Array[TableCommandSpec] = Array(
     AddPartitions,
     DropPartitions,
@@ -675,6 +664,5 @@ object TableCommands {
     ShowTablePropertiesV2,
     TruncateTable,
     TruncateTableV2,
-    UpdateTable,
-    IcebergCallCommand)
+    UpdateTable)
 }

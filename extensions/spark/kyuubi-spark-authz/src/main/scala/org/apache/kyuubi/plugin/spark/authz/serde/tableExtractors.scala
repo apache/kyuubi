@@ -175,35 +175,11 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
         val maybeCatalogPlugin = invokeAs[Option[AnyRef]](v2Relation, "catalog")
         val maybeCatalog = maybeCatalogPlugin.flatMap(catalogPlugin =>
           lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
-        maybeCatalogPlugin.flatMap { catalogPlugin =>
-          resolveIcebergTable(spark, v2Relation, catalogPlugin)
-            .orElse(resolveDataSourceV2Table(spark, v2Relation, catalogPlugin))
-            .map(table => {
-              val maybeOwner = TableExtractor.getOwner(v2Relation)
-              table.copy(catalog = maybeCatalog, owner = maybeOwner)
-            })
+        val tableFullName = invokeAs[AnyRef](v2Relation, "table")
+        TableExtractor.getDataSourceV2Table(tableFullName).map { table =>
+          val maybeOwner = TableExtractor.getOwner(v2Relation)
+          table.copy(catalog = maybeCatalog, owner = maybeOwner)
         }
-    }
-  }
-
-  def resolveIcebergTable(
-      spark: SparkSession,
-      v2Relation: AnyRef,
-      catalogPlugin: AnyRef): Option[Table] = {
-    if (!catalogPlugin.getClass.getName.contains("org.apache.iceberg")) {
-      return None
-    }
-    val tableFullName = invokeAs[AnyRef](v2Relation, "table")
-    TableExtractor.getDataSourceV2Table(tableFullName)
-  }
-
-  def resolveDataSourceV2Table(
-      spark: SparkSession,
-      v2Relation: AnyRef,
-      catalogPlugin: AnyRef): Option[Table] = {
-    val maybeIdentifier = invokeAs[Option[AnyRef]](v2Relation, "identifier")
-    maybeIdentifier.flatMap { id =>
-      lookupExtractor[IdentifierTableExtractor].apply(spark, id)
     }
   }
 }
