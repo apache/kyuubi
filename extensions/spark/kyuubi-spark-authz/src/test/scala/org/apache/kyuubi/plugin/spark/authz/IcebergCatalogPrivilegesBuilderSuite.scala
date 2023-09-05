@@ -125,4 +125,40 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
       assert(accessType === AccessType.UPDATE)
     }
   }
+
+  test("CallCommandIcebergTable") {
+    val table = "CallCommandIcebergTable"
+    withV2Table(table) { tableId =>
+      sql(s"CREATE TABLE IF NOT EXISTS $tableId (key int, value String) USING iceberg")
+      sql(s"INSERT INTO $tableId VALUES (1, 'a'), (2, 'b'), (3, 'c')")
+      val plan = sql(s"CALL $catalogV2.system.rewrite_data_files " +
+        s"(table => '$tableId', options => map('min-input-files','2')) ").queryExecution.analyzed
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === QUERY)
+      assert(outputs.size === 1)
+      val po = outputs.head
+      assert(po.actionType === PrivilegeObjectActionType.INSERT)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assertEqualsIgnoreCase(namespace)(po.dbname)
+      assertEqualsIgnoreCase(tableId.split("\\.").last)(po.objectName)
+      assert(inputs.size === 0)
+      val accessType = AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.UPDATE)
+
+      val snapshotId = sql(s"select * from $tableId.snapshots limit 1")
+        .collect().apply(0).getAs[Long]("snapshot_id")
+
+      val plan2 = sql(s"CALL $catalogV2.system.set_current_snapshot " +
+        s"('$tableId', $snapshotId)").queryExecution.analyzed
+      val (inputs2, outputs2, _) = PrivilegesBuilder.build(plan2, spark)
+      assert(inputs2.size === 0)
+      assert(outputs2.size === 1)
+      val po2 = outputs.head
+      assert(po2.actionType === PrivilegeObjectActionType.INSERT)
+      assert(po2.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assertEqualsIgnoreCase(namespace)(po2.dbname)
+      val accessType2 = AccessType(po, operationType, isInput = false)
+      assert(accessType2 === AccessType.UPDATE)
+    }
+  }
 }
