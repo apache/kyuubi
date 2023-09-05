@@ -116,7 +116,6 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       "kyuubi",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSession]
@@ -180,7 +179,6 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       "kyuubi",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSession]
