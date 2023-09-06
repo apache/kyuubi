@@ -32,5 +32,5 @@ class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
 }
 
 object NamedThreadFactory {
-  private val kyuubiUncaughtExceptionHandler = new KyuubiUncaughtExceptionHandler
+  private[util] val kyuubiUncaughtExceptionHandler = new KyuubiUncaughtExceptionHandler
 }

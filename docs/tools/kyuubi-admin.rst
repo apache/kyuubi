@@ -73,6 +73,8 @@ Usage: ``bin/kyuubi-admin refresh config [options] [<configType>]``
      - The user defaults configs with key in format in the form of `___{username}___.{config key}` from default property file.
    * - unlimitedUsers
      - The users without maximum connections limitation.
+   * - denyUsers
+     - The user in the deny list will be denied to connect to kyuubi server.
 
 .. _list_engine:
 

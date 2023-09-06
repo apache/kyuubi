@@ -29,7 +29,7 @@ import org.apache.kyuubi.operation.Operation
 
 class SparkConsoleProgressBar(
     operation: Operation,
-    liveStages: ConcurrentHashMap[StageAttempt, StageInfo],
+    liveStages: ConcurrentHashMap[SparkStageAttempt, SparkStageInfo],
     updatePeriodMSec: Long,
     timeFormat: String)
   extends Logging {
@@ -77,7 +77,7 @@ class SparkConsoleProgressBar(
    * after your last output, keeps overwriting itself to hold in one line. The logging will follow
    * the progress bar, then progress bar will be showed in next line without overwrite logs.
    */
-  private def show(now: Long, stages: Seq[StageInfo]): Unit = {
+  private def show(now: Long, stages: Seq[SparkStageInfo]): Unit = {
     val width = TerminalWidth / stages.size
     val bar = stages.map { s =>
       val total = s.numTasks
@@ -86,7 +86,7 @@ class SparkConsoleProgressBar(
       val w = width - header.length - tailer.length
       val bar =
         if (w > 0) {
-          val percent = w * s.numCompleteTasks / total
+          val percent = w * s.numCompleteTasks.get / total
           (0 until w).map { i =>
             if (i < percent) "=" else if (i == percent) ">" else " "
           }.mkString("")

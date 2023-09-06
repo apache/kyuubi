@@ -68,19 +68,24 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       }
     }
 
+  private lazy val port: Int = conf.get(FRONTEND_REST_BIND_PORT)
+
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
     server = JettyServer(
       getName,
       host,
-      conf.get(FRONTEND_REST_BIND_PORT),
+      port,
       conf.get(FRONTEND_REST_MAX_WORKER_THREADS))
     super.initialize(conf)
   }
 
   override def connectionUrl: String = {
     checkInitialized()
-    server.getServerUri
+    conf.get(FRONTEND_ADVERTISED_HOST) match {
+      case Some(advertisedHost) => s"$advertisedHost:$port"
+      case None => server.getServerUri
+    }
   }
 
   private def startInternal(): Unit = {
@@ -235,7 +240,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       realUser
     } else {
       sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER).map { proxyUser =>
-        KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+        if (!getConf.get(KyuubiConf.SERVER_ADMINISTRATORS).contains(realUser)) {
+          KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+        }
         proxyUser
       }.getOrElse(realUser)
     }

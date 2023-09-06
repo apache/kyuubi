@@ -47,6 +47,7 @@ object HiveBridgeHelper {
   val HadoopTableReader = org.apache.spark.sql.hive.HadoopTableReader
   val SparkHadoopUtil = org.apache.spark.deploy.SparkHadoopUtil
   val Utils = org.apache.spark.util.Utils
+  val CatalogV2Implicits = org.apache.spark.sql.connector.catalog.CatalogV2Implicits
 
   def postExternalCatalogEvent(sc: SparkContext, event: ExternalCatalogEvent): Unit = {
     sc.listenerBus.post(event)
@@ -79,7 +80,7 @@ object HiveBridgeHelper {
             s"Unsupported partition transform: $transform")
       }
 
-      (identityCols, bucketSpec)
+      (identityCols.toSeq, bucketSpec)
     }
   }
 

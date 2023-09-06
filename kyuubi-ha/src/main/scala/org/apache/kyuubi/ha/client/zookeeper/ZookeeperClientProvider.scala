@@ -108,7 +108,11 @@ object ZookeeperClientProvider extends Logging {
           throw new IOException(s"${HA_ZK_AUTH_KEYTAB.key}: $keytab does not exists")
         }
         System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
-        val serverPrincipal = KyuubiHadoopUtils.getServerPrincipal(principal)
+        conf.get(HA_ZK_AUTH_SERVER_PRINCIPAL).foreach { zkServerPrincipal =>
+          // ZOOKEEPER-1467 allows configuring SPN in client
+          System.setProperty("zookeeper.server.principal", zkServerPrincipal)
+        }
+        val zkClientPrincipal = KyuubiHadoopUtils.getServerPrincipal(principal)
         // HDFS-16591 makes breaking change on JaasConfiguration
         val jaasConf = DynConstructors.builder()
           .impl( // Hadoop 3.3.5 and above
@@ -124,7 +128,7 @@ object ZookeeperClientProvider extends Logging {
             classOf[String],
             classOf[String])
           .build[Configuration]()
-          .newInstance("KyuubiZooKeeperClient", serverPrincipal, keytab)
+          .newInstance("KyuubiZooKeeperClient", zkClientPrincipal, keytab)
         Configuration.setConfiguration(jaasConf)
       case _ =>
     }

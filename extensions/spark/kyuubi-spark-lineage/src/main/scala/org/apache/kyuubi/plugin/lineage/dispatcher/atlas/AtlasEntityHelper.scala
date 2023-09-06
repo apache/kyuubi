@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.lineage.dispatcher.atlas
 import scala.collection.JavaConverters._
 
 import org.apache.atlas.model.instance.{AtlasEntity, AtlasObjectId, AtlasRelatedObjectId}
-import org.apache.spark.kyuubi.lineage.SparkContextHelper
+import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
 import org.apache.spark.sql.execution.QueryExecution
 
 import org.apache.kyuubi.plugin.lineage.Lineage
@@ -87,8 +87,9 @@ object AtlasEntityHelper {
 
       if (inputs.nonEmpty && outputs.nonEmpty) {
         val entity = new AtlasEntity(COLUMN_LINEAGE_TYPE)
+        val outputColumnName = buildColumnQualifiedName(columnLineage.column).get
         val qualifiedName =
-          s"${processEntity.getAttribute("qualifiedName")}:${columnLineage.column}"
+          s"${processEntity.getAttribute("qualifiedName")}:${outputColumnName}"
         entity.setAttribute("qualifiedName", qualifiedName)
         entity.setAttribute("name", qualifiedName)
         entity.setRelationshipAttribute("inputs", inputs.asJava)
@@ -104,33 +105,33 @@ object AtlasEntityHelper {
   }
 
   def tableObjectId(tableName: String): Option[AtlasObjectId] = {
-    val dbTb = tableName.split('.')
-    if (dbTb.length == 2) {
-      val qualifiedName = tableQualifiedName(cluster, dbTb(0), dbTb(1))
-      // TODO parse datasource type
-      Some(new AtlasObjectId(HIVE_TABLE_TYPE, "qualifiedName", qualifiedName))
-    } else {
-      None
-    }
+    buildTableQualifiedName(tableName)
+      .map(new AtlasObjectId(HIVE_TABLE_TYPE, "qualifiedName", _))
   }
 
-  def tableQualifiedName(cluster: String, db: String, table: String): String = {
-    s"${db.toLowerCase}.${table.toLowerCase}@$cluster"
+  def buildTableQualifiedName(tableName: String): Option[String] = {
+    val defaultCatalog = LineageConf.DEFAULT_CATALOG
+    tableName.split('.') match {
+      case Array(`defaultCatalog`, db, table) =>
+        Some(s"${db.toLowerCase}.${table.toLowerCase}@$cluster")
+      case _ =>
+        None
+    }
   }
 
   def columnObjectId(columnName: String): Option[AtlasObjectId] = {
-    val dbTbCol = columnName.split('.')
-    if (dbTbCol.length == 3) {
-      val qualifiedName = columnQualifiedName(cluster, dbTbCol(0), dbTbCol(1), dbTbCol(2))
-      // TODO parse datasource type
-      Some(new AtlasObjectId(HIVE_COLUMN_TYPE, "qualifiedName", qualifiedName))
-    } else {
-      None
-    }
+    buildColumnQualifiedName(columnName)
+      .map(new AtlasObjectId(HIVE_COLUMN_TYPE, "qualifiedName", _))
   }
 
-  def columnQualifiedName(cluster: String, db: String, table: String, column: String): String = {
-    s"${db.toLowerCase}.${table.toLowerCase}.${column.toLowerCase}@$cluster"
+  def buildColumnQualifiedName(columnName: String): Option[String] = {
+    val defaultCatalog = LineageConf.DEFAULT_CATALOG
+    columnName.split('.') match {
+      case Array(`defaultCatalog`, db, table, column) =>
+        Some(s"${db.toLowerCase}.${table.toLowerCase}.${column.toLowerCase}@$cluster")
+      case _ =>
+        None
+    }
   }
 
   def objectId(entity: AtlasEntity): AtlasObjectId = {

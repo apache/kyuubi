@@ -48,6 +48,12 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
 
   private static ScheduledExecutor retryExecutor;
 
+  private static final Object bootstrapLock = new Object();
+
+  private static final long BOOTSTRAP_WAIT_INTERVAL = 10_000L;
+
+  private static final int BOOTSTRAP_WAIT_RETRIES = 3;
+
   private static final Logger LOGGER = LoggerFactory.getLogger(EmbeddedExecutorFactory.class);
 
   public EmbeddedExecutorFactory() {
@@ -79,13 +85,17 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
     checkState(EmbeddedExecutorFactory.submittedJobIds == null);
     checkState(EmbeddedExecutorFactory.dispatcherGateway == null);
     checkState(EmbeddedExecutorFactory.retryExecutor == null);
-    // submittedJobIds would be always 1, because we create a new list to avoid concurrent access
-    // issues
-    EmbeddedExecutorFactory.submittedJobIds =
-        new ConcurrentLinkedQueue<>(checkNotNull(submittedJobIds));
-    EmbeddedExecutorFactory.bootstrapJobIds = submittedJobIds;
-    EmbeddedExecutorFactory.dispatcherGateway = checkNotNull(dispatcherGateway);
-    EmbeddedExecutorFactory.retryExecutor = checkNotNull(retryExecutor);
+    synchronized (bootstrapLock) {
+      // submittedJobIds would be always 1, because we create a new list to avoid concurrent access
+      // issues
+      LOGGER.debug("Bootstrapping EmbeddedExecutorFactory.");
+      EmbeddedExecutorFactory.submittedJobIds =
+          new ConcurrentLinkedQueue<>(checkNotNull(submittedJobIds));
+      EmbeddedExecutorFactory.bootstrapJobIds = submittedJobIds;
+      EmbeddedExecutorFactory.dispatcherGateway = checkNotNull(dispatcherGateway);
+      EmbeddedExecutorFactory.retryExecutor = checkNotNull(retryExecutor);
+      bootstrapLock.notifyAll();
+    }
   }
 
   @Override
@@ -96,7 +106,7 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
   @Override
   public boolean isCompatibleWith(final Configuration configuration) {
     // override Flink's implementation to allow usage in Kyuubi
-    LOGGER.debug("matching execution target: {}", configuration.get(DeploymentOptions.TARGET));
+    LOGGER.debug("Matching execution target: {}", configuration.get(DeploymentOptions.TARGET));
     return configuration.get(DeploymentOptions.TARGET).equalsIgnoreCase("yarn-application")
         && configuration.toMap().getOrDefault("yarn.tags", "").toLowerCase().contains("kyuubi");
   }
@@ -105,11 +115,30 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
   public PipelineExecutor getExecutor(final Configuration configuration) {
     checkNotNull(configuration);
     Collection<JobID> executorJobIDs;
+    synchronized (bootstrapLock) {
+      // wait in a loop to avoid spurious wakeups
+      int retry = 0;
+      while (bootstrapJobIds == null && retry < BOOTSTRAP_WAIT_RETRIES) {
+        try {
+          LOGGER.debug("Waiting for bootstrap to complete. Wait retries: {}.", retry);
+          bootstrapLock.wait(BOOTSTRAP_WAIT_INTERVAL);
+          retry++;
+        } catch (InterruptedException e) {
+          throw new RuntimeException("Interrupted while waiting for bootstrap.", e);
+        }
+      }
+      if (bootstrapJobIds == null) {
+        throw new RuntimeException(
+            "Bootstrap of Flink SQL engine timed out after "
+                + BOOTSTRAP_WAIT_INTERVAL * BOOTSTRAP_WAIT_RETRIES
+                + " ms. Please check the engine log for more details.");
+      }
+    }
     if (bootstrapJobIds.size() > 0) {
-      LOGGER.info("Submitting new Kyuubi job. Job already submitted: {}.", submittedJobIds.size());
+      LOGGER.info("Submitting new Kyuubi job. Job submitted: {}.", submittedJobIds.size());
       executorJobIDs = submittedJobIds;
     } else {
-      LOGGER.info("Bootstrapping Flink SQL engine.");
+      LOGGER.info("Bootstrapping Flink SQL engine with the initial SQL.");
       executorJobIDs = bootstrapJobIds;
     }
     return new EmbeddedExecutor(

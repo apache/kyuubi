@@ -77,7 +77,8 @@ class KyuubiSessionImpl(
     user,
     sessionManager.groupProvider,
     handle.identifier.toString,
-    sessionManager.applicationManager)
+    sessionManager.applicationManager,
+    sessionManager.engineStartupProcessSemaphore)
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
@@ -291,8 +292,9 @@ class KyuubiSessionImpl(
   var engineAliveMaxFailCount = 3
   var engineAliveFailCount = 0
 
-  def checkEngineAlive(): Boolean = {
+  def checkEngineConnectionAlive(): Boolean = {
     try {
+      if (Option(client).exists(_.engineConnectionClosed)) return false
       if (!aliveProbeEnabled) return true
       getInfo(TGetInfoType.CLI_DBMS_VER)
       engineLastAlive = System.currentTimeMillis()

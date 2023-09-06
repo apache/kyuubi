@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 /**
  * Borrowed from Apache Spark, see SPARK-33655
  */
-sealed trait FetchIterator[A] extends Iterator[A] {
+trait FetchIterator[A] extends Iterator[A] {
 
   /**
    * Begin a fetch block, forward from the current position.

@@ -32,12 +32,13 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle}
-import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 
 @Tag(name = "Operation")
 @Produces(Array(MediaType.APPLICATION_JSON))
 @Consumes(Array(MediaType.APPLICATION_JSON))
 private[v1] class OperationsResource extends ApiRequestContext with Logging {
+  import ApiUtils.logAndRefineErrorMsg
 
   @ApiResponse(
     responseCode = "200",
@@ -57,8 +58,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting an operation event"
-        error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
+        throw new NotFoundException(logAndRefineErrorMsg(errorMsg, e))
     }
   }
 
@@ -84,8 +84,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       case NonFatal(e) =>
         val errorMsg =
           s"Error applying ${request.getAction} for operation handle $operationHandleStr"
-        error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
+        throw new NotFoundException(logAndRefineErrorMsg(errorMsg, e))
     }
   }
 
@@ -124,8 +123,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
     } catch {
       case NonFatal(e) =>
         val errorMsg = s"Error getting result set metadata for operation handle $operationHandleStr"
-        error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
+        throw new NotFoundException(logAndRefineErrorMsg(errorMsg, e))
     }
   }
 
@@ -147,10 +145,11 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       if (fetchOrientation != "FETCH_NEXT" && fetchOrientation != "FETCH_FIRST") {
         throw new BadRequestException(s"$fetchOrientation in operation log is not supported")
       }
-      val rowSet = fe.be.sessionManager.operationManager.getOperationLogRowSet(
+      val fetchResultsResp = fe.be.sessionManager.operationManager.getOperationLogRowSet(
         OperationHandle(operationHandleStr),
         FetchOrientation.withName(fetchOrientation),
         maxRows)
+      val rowSet = fetchResultsResp.getResults
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
       new OperationLog(logRowSet.asJava, logRowSet.size)
     } catch {
@@ -158,8 +157,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
         throw e
       case NonFatal(e) =>
         val errorMsg = s"Error getting operation log for operation handle $operationHandleStr"
-        error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
+        throw new NotFoundException(logAndRefineErrorMsg(errorMsg, e))
     }
   }
 
@@ -178,11 +176,12 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       @QueryParam("fetchorientation") @DefaultValue("FETCH_NEXT")
       fetchOrientation: String): ResultRowSet = {
     try {
-      val rowSet = fe.be.fetchResults(
+      val fetchResultsResp = fe.be.fetchResults(
         OperationHandle(operationHandleStr),
         FetchOrientation.withName(fetchOrientation),
         maxRows,
         fetchLog = false)
+      val rowSet = fetchResultsResp.getResults
       val rows = rowSet.getRows.asScala.map(i => {
         new Row(i.getColVals.asScala.map(i => {
           new Field(
@@ -240,8 +239,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
         throw new BadRequestException(e.getMessage)
       case NonFatal(e) =>
         val errorMsg = s"Error getting result row set for operation handle $operationHandleStr"
-        error(errorMsg, e)
-        throw new NotFoundException(errorMsg)
+        throw new NotFoundException(logAndRefineErrorMsg(errorMsg, e))
     }
   }
 }

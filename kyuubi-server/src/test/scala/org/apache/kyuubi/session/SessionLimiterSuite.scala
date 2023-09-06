@@ -97,7 +97,7 @@ class SessionLimiterSuite extends KyuubiFunSuite {
       .foreach(c => assert(c.get() == 0))
   }
 
-  test("test session limiter with user unlimitted list") {
+  test("test session limiter with user unlimited list") {
     val user = "user001"
     val ipAddress = "127.0.0.1"
     val userLimit = 30
@@ -116,5 +116,37 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     }
     limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
       .foreach(c => assert(c.get() == 0))
+  }
+
+  test("test session limiter with user deny list") {
+    val ipAddress = "127.0.0.1"
+    val userLimit = 100
+    val ipAddressLimit = 100
+    val userIpAddressLimit = 100
+    val denyUsers = Set("user002", "user003")
+    val limiter =
+      SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, Set.empty, denyUsers)
+
+    for (i <- 0 until 50) {
+      val userIpAddress = UserIpAddress("user001", ipAddress)
+      limiter.increment(userIpAddress)
+    }
+    limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
+      .foreach(c => assert(c.get() == 50))
+
+    for (i <- 0 until 50) {
+      val userIpAddress = UserIpAddress("user001", ipAddress)
+      limiter.decrement(userIpAddress)
+    }
+    limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
+      .foreach(c => assert(c.get() == 0))
+
+    val caught = intercept[KyuubiSQLException] {
+      val userIpAddress = UserIpAddress("user002", ipAddress)
+      limiter.increment(userIpAddress)
+    }
+
+    assert(caught.getMessage.equals(
+      "Connection denied because the user is in the deny user list. (user: user002)"))
   }
 }

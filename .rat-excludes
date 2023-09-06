@@ -53,6 +53,7 @@ build/scala-*/**
 **/*.sqlite.sql
 **/node/**
 **/web-ui/dist/**
+**/web-ui/coverage/**
 **/pnpm-lock.yaml
 **/node_modules/**
 **/gen/*

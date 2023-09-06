@@ -22,7 +22,7 @@ import java.util.{ArrayList => JArrayList}
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TRow, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
+import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TFetchResultsResp, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TRow, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
 
 import org.apache.kyuubi.engine.ApplicationInfo
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -54,8 +54,11 @@ abstract class KyuubiApplicationOperation(session: Session) extends KyuubiOperat
     resp
   }
 
-  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
-    applicationInfoMap.map { state =>
+  override def getNextRowSetInternal(
+      order: FetchOrientation,
+      rowSetSize: Int): TFetchResultsResp = {
+    val resp = new TFetchResultsResp(OK_STATUS)
+    val rowSet = applicationInfoMap.map { state =>
       val tRow = new TRowSet(0, new JArrayList[TRow](state.size))
       Seq(state.keys, state.values.map(Option(_).getOrElse(""))).map(_.toSeq.asJava).foreach {
         col =>
@@ -64,5 +67,8 @@ abstract class KyuubiApplicationOperation(session: Session) extends KyuubiOperat
       }
       tRow
     }.getOrElse(ThriftUtils.EMPTY_ROW_SET)
+    resp.setResults(rowSet)
+    resp.setHasMoreRows(false)
+    resp
   }
 }

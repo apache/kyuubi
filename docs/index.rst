@@ -179,6 +179,7 @@ What's Next
    :glob:
 
    quick_start/index
+   configuration/settings
    deployment/index
    Security <security/index>
    monitor/index

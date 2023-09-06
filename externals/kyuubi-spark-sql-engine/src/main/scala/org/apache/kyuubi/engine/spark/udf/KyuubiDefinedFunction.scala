@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.udf
 import org.apache.spark.sql.expressions.UserDefinedFunction
 
 /**
- * A wrapper for Spark' [[UserDefinedFunction]]
+ * A wrapper for Spark's [[UserDefinedFunction]]
  *
  * @param name function name
  * @param udf user-defined function

@@ -25,15 +25,15 @@ import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
 private[ctl] object Render {
 
-  def renderServiceNodesInfo(title: String, serviceNodeInfo: Seq[ServiceNodeInfo]): String = {
+  def renderServiceNodesInfo(title: String, serviceNodeInfo: Iterable[ServiceNodeInfo]): String = {
     val header = Array("Namespace", "Host", "Port", "Version")
-    val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>
+    val rows = serviceNodeInfo.toSeq.sortBy(_.nodeName).map { sn =>
       Array(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
     }.toArray
     Tabulator.format(title, header, rows)
   }
 
-  def renderEngineNodesInfo(engineNodesInfo: Seq[Engine]): String = {
+  def renderEngineNodesInfo(engineNodesInfo: Iterable[Engine]): String = {
     val title = s"Engine Node List (total ${engineNodesInfo.size})"
     val header = Array("Namespace", "Instance", "Attributes")
     val rows = engineNodesInfo.map { engine =>
@@ -45,7 +45,7 @@ private[ctl] object Render {
     Tabulator.format(title, header, rows)
   }
 
-  def renderServerNodesInfo(serverNodesInfo: Seq[ServerData]): String = {
+  def renderServerNodesInfo(serverNodesInfo: Iterable[ServerData]): String = {
     val title = s"Server Node List (total ${serverNodesInfo.size})"
     val header = Array("Namespace", "Instance", "Attributes", "Status")
     val rows = serverNodesInfo.map { server =>
@@ -58,7 +58,7 @@ private[ctl] object Render {
     Tabulator.format(title, header, rows)
   }
 
-  def renderSessionDataListInfo(sessions: Seq[SessionData]): String = {
+  def renderSessionDataListInfo(sessions: Iterable[SessionData]): String = {
     val title = s"Live Session List (total ${sessions.size})"
     val header = Array(
       "Identifier",

@@ -31,7 +31,7 @@ class GetEngineCommand(cliConfig: CliConfig) extends GetCommand(cliConfig) {
     }
   }
 
-  override def doRun(): Seq[ServiceNodeInfo] = {
+  override def doRun(): Iterable[ServiceNodeInfo] = {
     CtlUtils.listZkEngineNodes(
       conf,
       normalizedCliConfig,

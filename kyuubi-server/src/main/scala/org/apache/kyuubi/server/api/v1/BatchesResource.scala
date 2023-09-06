@@ -42,11 +42,12 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, KillResponse, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
+import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.metadata.MetadataManager
-import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle}
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
 import org.apache.kyuubi.util.JdbcUtils
 
 @Tag(name = "Batch")
@@ -57,6 +58,11 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT).toInt
   private lazy val internalConnectTimeout =
     fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT).toInt
+
+  private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
+    KyuubiServer.kyuubiServer.getConf.get(BATCH_SUBMITTER_ENABLED) &&
+    reqConf.getOrElse(BATCH_IMPL_VERSION.key, fe.getConf.get(BATCH_IMPL_VERSION)) == "2"
+  }
 
   private def getInternalRestClient(kyuubiInstance: String): InternalRestClient = {
     internalRestClients.computeIfAbsent(
@@ -233,12 +239,36 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
             KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
 
+        if (batchV2Enabled(request.getConf.asScala.toMap)) {
+          logger.info(s"Submit batch job $batchId using Batch API v2")
+          return Try {
+            sessionManager.initializeBatchState(
+              userName,
+              ipAddress,
+              request.getConf.asScala.toMap,
+              request)
+          } match {
+            case Success(batchId) =>
+              sessionManager.getBatchFromMetadataStore(batchId) match {
+                case Some(batch) => batch
+                case None => throw new IllegalStateException(
+                    s"can not find batch $batchId from metadata store")
+              }
+            case Failure(cause) if JdbcUtils.isDuplicatedKeyDBErr(cause) =>
+              sessionManager.getBatchFromMetadataStore(batchId) match {
+                case Some(batch) => markDuplicated(batch)
+                case None => throw new IllegalStateException(
+                    s"can not find duplicated batch $batchId from metadata store")
+              }
+            case Failure(cause) => throw new IllegalStateException(cause)
+          }
+        }
+
         Try {
           sessionManager.openBatchSession(
             userName,
             "anonymous",
             ipAddress,
-            request.getConf.asScala.toMap,
             request)
         } match {
           case Success(sessionHandle) =>
@@ -253,6 +283,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
               case None => throw new IllegalStateException(
                   s"can not find duplicated batch $batchId from metadata store")
             }
+          case Failure(cause) => throw new IllegalStateException(cause)
         }
     }
   }
@@ -278,7 +309,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       buildBatch(batchSession)
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
-        if (OperationState.isTerminal(OperationState.withName(metadata.state)) ||
+        if (batchV2Enabled(metadata.requestConf) ||
+          OperationState.isTerminal(OperationState.withName(metadata.state)) ||
           metadata.kyuubiInstance == fe.connectionUrl) {
           MetadataManager.buildBatch(metadata)
         } else {
@@ -315,6 +347,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @QueryParam("batchType") batchType: String,
       @QueryParam("batchState") batchState: String,
       @QueryParam("batchUser") batchUser: String,
+      @QueryParam("batchName") batchName: String,
       @QueryParam("createTime") createTime: Long,
       @QueryParam("endTime") endTime: Long,
       @QueryParam("from") from: Int,
@@ -327,15 +360,16 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         validBatchState(batchState),
         s"The valid batch state can be one of the following: ${VALID_BATCH_STATES.mkString(",")}")
     }
-    val batches =
-      sessionManager.getBatchesFromMetadataStore(
-        batchType,
-        batchUser,
-        batchState,
-        createTime,
-        endTime,
-        from,
-        size)
+
+    val filter = MetadataFilter(
+      sessionType = SessionType.BATCH,
+      engineType = batchType,
+      username = batchUser,
+      state = batchState,
+      requestName = batchName,
+      createTime = createTime,
+      endTime = endTime)
+    val batches = sessionManager.getBatchesFromMetadataStore(filter, from, size)
     new GetBatchesResponse(from, batches.size, batches.asJava)
   }
 
@@ -374,7 +408,11 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       }
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
-        if (fe.connectionUrl != metadata.kyuubiInstance) {
+        if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED") {
+          info(s"Batch $batchId is waiting for scheduling")
+          val dummyLogs = List(s"Batch $batchId is waiting for scheduling").asJava
+          new OperationLog(dummyLogs, dummyLogs.size)
+        } else if (fe.connectionUrl != metadata.kyuubiInstance) {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           internalRestClient.getBatchLocalLog(userName, batchId, from, size)
         } else {
@@ -428,6 +466,16 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         checkPermission(userName, metadata.username)
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
+        } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED") {
+          if (batchService.get.cancelUnscheduledBatch(batchId)) {
+            new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
+          } else if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
+            new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
+          } else {
+            info(s"Cancel batch[$batchId] with state ${metadata.state} by killing application")
+            val (killed, msg) = forceKill(metadata.appMgrInfo, batchId)
+            new CloseBatchResponse(killed, msg)
+          }
         } else if (metadata.kyuubiInstance != fe.connectionUrl) {
           info(s"Redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}")
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)

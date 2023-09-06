@@ -80,7 +80,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
   override protected val conf: KyuubiConf = {
     new KyuubiConf()
       .set(s"$KYUUBI_BATCH_CONF_PREFIX.spark.spark.master", "yarn")
-      .set(BATCH_CONF_IGNORE_LIST, Seq("spark.master"))
+      .set(BATCH_CONF_IGNORE_LIST, Set("spark.master"))
       .set(BATCH_APPLICATION_CHECK_INTERVAL, 3000L)
   }
 
@@ -116,7 +116,6 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       "kyuubi",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSession]
@@ -151,7 +150,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     }
 
     val resultColumns = batchJobSubmissionOp.getNextRowSet(FetchOrientation.FETCH_NEXT, 10)
-      .getColumns.asScala
+      .getResults.getColumns.asScala
 
     val keys = resultColumns.head.getStringVal.getValues.asScala
     val values = resultColumns.apply(1).getStringVal.getValues.asScala
@@ -180,7 +179,6 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       "kyuubi",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSession]

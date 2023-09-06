@@ -30,7 +30,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
-import org.apache.kyuubi.client.api.v1.dto.{Engine, OperationData, ServerData, SessionData}
+import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
@@ -45,7 +45,7 @@ import org.apache.kyuubi.shaded.zookeeper.KeeperException.NoNodeException
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class AdminResource extends ApiRequestContext with Logging {
-  private lazy val administrators = fe.getConf.get(KyuubiConf.SERVER_ADMINISTRATORS).toSet +
+  private lazy val administrators = fe.getConf.get(KyuubiConf.SERVER_ADMINISTRATORS) +
     Utils.currentUser
 
   @ApiResponse(
@@ -123,6 +123,25 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     info(s"Reloading unlimited users")
     KyuubiServer.refreshUnlimitedUsers()
     Response.ok(s"Refresh the unlimited users successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "refresh the deny users")
+  @POST
+  @Path("refresh/deny_users")
+  def refreshDenyUser(): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Receive refresh deny users request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to refresh the deny users")
+    }
+    info(s"Reloading deny users")
+    KyuubiServer.refreshDenyUsers()
+    Response.ok(s"Refresh the deny users successfully.").build()
   }
 
   @ApiResponse(
@@ -311,6 +330,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.instance,
         node.namespace,
         node.attributes.asJava))
+      .toSeq
   }
 
   @ApiResponse(
@@ -339,7 +359,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         servers += ApiUtils.serverData(nodeInfo)
       })
     }
-    servers
+    servers.toSeq
   }
 
   private def getEngine(
@@ -382,6 +402,31 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       s"${serverSpace}_${engine.getVersion}_${engine.getSharelevel}_${engine.getEngineType}",
       appUser,
       engine.getSubdomain)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[Count]))),
+    description = "get the batch count")
+  @GET
+  @Path("batch/count")
+  def countBatch(
+      @QueryParam("batchType") @DefaultValue("SPARK") batchType: String,
+      @QueryParam("batchUser") batchUser: String,
+      @QueryParam("batchState") batchState: String): Count = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Received counting batches request from $userName/$ipAddress")
+    if (!isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to count the batches")
+    }
+    val batchCount = batchService
+      .map(_.countBatch(batchType, Option(batchUser), Option(batchState)))
+      .getOrElse(0)
+    new Count(batchCount)
   }
 
   private def isAdministrator(userName: String): Boolean = {

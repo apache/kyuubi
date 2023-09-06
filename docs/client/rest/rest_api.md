@@ -449,7 +449,7 @@ Refresh the Hadoop configurations of the Kyuubi server.
 
 ### POST /admin/refresh/user_defaults_conf
 
-Refresh the [user defaults configs](../../deployment/settings.html#user-defaults) with key in format in the form of `___{username}___.{config key}` from default property file.
+Refresh the [user defaults configs](../../configuration/settings.html#user-defaults) with key in format in the form of `___{username}___.{config key}` from default property file.
 
 ### POST /admin/refresh/kubernetes_conf
 

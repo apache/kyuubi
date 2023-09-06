@@ -245,7 +245,7 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
           assert(resultSet.next())
           val result = resultSet.getString("col")
           val metaData = resultSet.getMetaData
-          if (SPARK_ENGINE_RUNTIME_VERSION < "3.2") {
+          if (SPARK_ENGINE_RUNTIME_VERSION <= "3.1") {
             // for spark 3.1 and backwards
             assert(result === kv._2._2)
             assert(metaData.getPrecision(1) === Int.MaxValue)
@@ -276,7 +276,7 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
         assert(resultSet.next())
         val result = resultSet.getString("col")
         val metaData = resultSet.getMetaData
-        if (SPARK_ENGINE_RUNTIME_VERSION < "3.2") {
+        if (SPARK_ENGINE_RUNTIME_VERSION <= "3.1") {
           // for spark 3.1 and backwards
           assert(result === kv._2._2)
           assert(metaData.getPrecision(1) === Int.MaxValue)

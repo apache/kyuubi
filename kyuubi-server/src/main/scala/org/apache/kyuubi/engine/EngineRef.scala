@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Semaphore, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.util.Random
@@ -57,7 +57,8 @@ private[kyuubi] class EngineRef(
     user: String,
     groupProvider: GroupProvider,
     engineRefId: String,
-    engineManager: KyuubiApplicationManager)
+    engineManager: KyuubiApplicationManager,
+    startupProcessSemaphore: Option[Semaphore] = None)
   extends Logging {
   // The corresponding ServerSpace where the engine belongs to
   private val serverSpace: String = conf.get(HA_NAMESPACE)
@@ -189,11 +190,12 @@ private[kyuubi] class EngineRef(
         conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
         new SparkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case FLINK_SQL =>
-        conf.setIfMissing(FlinkProcessBuilder.YARN_APP_KEY, defaultEngineName)
+        conf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
         new FlinkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case TRINO =>
         new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case HIVE_SQL =>
+        conf.setIfMissing(HiveProcessBuilder.HIVE_ENGINE_NAME, defaultEngineName)
         new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case JDBC =>
         new JdbcProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
@@ -202,7 +204,15 @@ private[kyuubi] class EngineRef(
     }
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
+    var acquiredPermit = false
     try {
+      if (!startupProcessSemaphore.forall(_.tryAcquire(timeout, TimeUnit.MILLISECONDS))) {
+        MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
+        throw KyuubiSQLException(
+          s"Timeout($timeout ms, you can modify ${ENGINE_INIT_TIMEOUT.key} to change it) to" +
+            s" acquires a permit from engine builder semaphore.")
+      }
+      acquiredPermit = true
       val redactedCmd = builder.toString
       info(s"Launching engine:\n$redactedCmd")
       builder.validateConf
@@ -224,7 +234,7 @@ private[kyuubi] class EngineRef(
 
         if (started + timeout <= System.currentTimeMillis()) {
           val killMessage = engineManager.killApplication(builder.appMgrInfo(), engineRefId)
-          process.destroyForcibly()
+          builder.close(true)
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
             s"Timeout($timeout ms, you can modify ${ENGINE_INIT_TIMEOUT.key} to change it) to" +
@@ -267,9 +277,16 @@ private[kyuubi] class EngineRef(
       }
       engineRef.get
     } finally {
+      if (acquiredPermit) startupProcessSemaphore.foreach(_.release())
+      val waitCompletion = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
+      val destroyProcess = !waitCompletion && builder.isClusterMode()
+      if (destroyProcess) {
+        info("Destroy the builder process because waitCompletion is false" +
+          " and the engine is running in cluster mode.")
+      }
       // we must close the process builder whether session open is success or failure since
       // we have a log capture thread in process builder.
-      builder.close()
+      builder.close(destroyProcess)
     }
   }
 

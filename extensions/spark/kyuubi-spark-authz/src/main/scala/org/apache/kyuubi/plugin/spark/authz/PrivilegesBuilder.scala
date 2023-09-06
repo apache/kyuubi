@@ -209,7 +209,39 @@ object PrivilegesBuilder {
     }
   }
 
-  type PrivilegesAndOpType = (Seq[PrivilegeObject], Seq[PrivilegeObject], OperationType)
+  type PrivilegesAndOpType = (Iterable[PrivilegeObject], Iterable[PrivilegeObject], OperationType)
+
+  /**
+   * Build input  privilege objects from a Spark's LogicalPlan for hive permanent udf
+   *
+   * @param plan      A Spark LogicalPlan
+   */
+  def buildFunctions(
+      plan: LogicalPlan,
+      spark: SparkSession): PrivilegesAndOpType = {
+    val inputObjs = new ArrayBuffer[PrivilegeObject]
+    plan match {
+      case command: Command if isKnownTableCommand(command) =>
+        val spec = getTableCommandSpec(command)
+        val functionPrivAndOpType = spec.queries(plan)
+          .map(plan => buildFunctions(plan, spark))
+        functionPrivAndOpType.map(_._1)
+          .reduce(_ ++ _)
+          .foreach(functionPriv => inputObjs += functionPriv)
+
+      case plan => plan transformAllExpressions {
+          case hiveFunction: Expression if isKnownFunction(hiveFunction) =>
+            val functionSpec: ScanSpec = getFunctionSpec(hiveFunction)
+            if (functionSpec.functionDescs
+                .exists(!_.functionTypeDesc.get.skip(hiveFunction, spark))) {
+              functionSpec.functions(hiveFunction).foreach(func =>
+                inputObjs += PrivilegeObject(func))
+            }
+            hiveFunction
+        }
+    }
+    (inputObjs, Seq.empty, OperationType.QUERY)
+  }
 
   /**
    * Build input and output privilege objects from a Spark's LogicalPlan

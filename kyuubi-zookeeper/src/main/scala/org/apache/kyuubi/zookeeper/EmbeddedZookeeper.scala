@@ -42,16 +42,29 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
     val maxClientCnxns = conf.get(ZK_MAX_CLIENT_CONNECTIONS)
     val minSessionTimeout = conf.get(ZK_MIN_SESSION_TIMEOUT)
     val maxSessionTimeout = conf.get(ZK_MAX_SESSION_TIMEOUT)
-    host = conf.get(ZK_CLIENT_PORT_ADDRESS).getOrElse(findLocalInetAddress.getCanonicalHostName)
+    host = conf.get(ZK_CLIENT_PORT_ADDRESS).getOrElse {
+      if (conf.get(ZK_CLIENT_USE_HOSTNAME)) {
+        findLocalInetAddress.getCanonicalHostName
+      } else {
+        findLocalInetAddress.getHostAddress
+      }
+    }
 
-    zks = new ZooKeeperServer(dataDirectory, dataDirectory, tickTime)
-    zks.setMinSessionTimeout(minSessionTimeout)
-    zks.setMaxSessionTimeout(maxSessionTimeout)
+    try {
+      zks = new ZooKeeperServer(dataDirectory, dataDirectory, tickTime)
+      zks.setMinSessionTimeout(minSessionTimeout)
+      zks.setMaxSessionTimeout(maxSessionTimeout)
 
-    serverFactory = new NIOServerCnxnFactory
-    serverFactory.configure(new InetSocketAddress(host, clientPort), maxClientCnxns)
+      serverFactory = new NIOServerCnxnFactory
+      serverFactory.configure(new InetSocketAddress(host, clientPort), maxClientCnxns)
 
-    super.initialize(conf)
+      super.initialize(conf)
+    } catch {
+      case e: Exception =>
+        throw new RuntimeException(
+          s"Failed to initialize the embedded ZooKeeper server, binding to $host:$clientPort",
+          e)
+    }
   }
 
   override def start(): Unit = synchronized {

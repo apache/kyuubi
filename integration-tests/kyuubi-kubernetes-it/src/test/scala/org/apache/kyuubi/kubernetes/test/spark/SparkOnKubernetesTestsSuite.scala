@@ -19,7 +19,6 @@ package org.apache.kyuubi.kubernetes.test.spark
 
 import java.util.UUID
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 import org.apache.hadoop.conf.Configuration
@@ -51,7 +50,7 @@ abstract class SparkOnKubernetesSuiteBase
     // TODO Support more Spark version
     // Spark official docker image: https://hub.docker.com/r/apache/spark/tags
     KyuubiConf().set("spark.master", s"k8s://$apiServerAddress")
-      .set("spark.kubernetes.container.image", "apache/spark:v3.3.2")
+      .set("spark.kubernetes.container.image", "apache/spark:3.4.1")
       .set("spark.kubernetes.container.image.pullPolicy", "IfNotPresent")
       .set("spark.executor.instances", "1")
       .set("spark.executor.memory", "512M")
@@ -149,7 +148,6 @@ class KyuubiOperationKubernetesClusterClientModeSuite
       "kyuubi",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
@@ -217,7 +215,6 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       "runner",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     // wait for driver pod start

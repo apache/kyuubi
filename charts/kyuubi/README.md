@@ -50,7 +50,7 @@ helm install --dry-run --debug --generate-name ../kyuubi
 
 ## Documentation
 
-Configuration guide documentation for Kyuubi lives [on the website](https://kyuubi.readthedocs.io/en/master/deployment/settings.html#kyuubi-configurations). (Not just for Helm Chart)
+Configuration guide documentation for Kyuubi lives [on the website](https://kyuubi.readthedocs.io/en/master/configuration/settings.html#kyuubi-configurations). (Not just for Helm Chart)
 
 ## Contributing
 

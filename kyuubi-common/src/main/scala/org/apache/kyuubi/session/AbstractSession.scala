@@ -233,7 +233,7 @@ abstract class AbstractSession(
       operationHandle: OperationHandle,
       orientation: FetchOrientation,
       maxRows: Int,
-      fetchLog: Boolean): TRowSet = {
+      fetchLog: Boolean): TFetchResultsResp = {
     if (fetchLog) {
       sessionManager.operationManager.getOperationLogRowSet(operationHandle, orientation, maxRows)
     } else {

@@ -28,12 +28,12 @@ import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder, MarkdownUtils, Utils}
  *
  * To run the entire test suite:
  * {{{
- *   build/mvn clean test -pl externals/kyuubi-spark-sql-engine -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite
+ *   KYUUBI_UPDATE=0 dev/gen/gen_kdf.sh
  * }}}
  *
  * To re-generate golden files for entire suite, run:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn clean test -pl externals/kyuubi-spark-sql-engine -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite
+ *   dev/gen/gen_kdf.sh
  * }}}
  */
 // scalastyle:on line.size.limit
@@ -48,18 +48,16 @@ class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
   test("verify or update kyuubi spark sql functions") {
     val builder = MarkdownBuilder(licenced = true, getClass.getName)
 
-    builder
-      .line("# Auxiliary SQL Functions")
-      .line("""Kyuubi provides several auxiliary SQL functions as supplement to Spark's
+    builder += "# Auxiliary SQL Functions" +=
+      """Kyuubi provides several auxiliary SQL functions as supplement to Spark's
         | [Built-in Functions](https://spark.apache.org/docs/latest/api/sql/index.html#
-        |built-in-functions)""")
-      .lines("""
+        |built-in-functions)""" ++=
+      """
         | Name | Description | Return Type | Since
         | --- | --- | --- | ---
-        |
-        |""")
+        |"""
     KDFRegistry.registeredFunctions.foreach { func =>
-      builder.line(s"${func.name} | ${func.description} | ${func.returnType} | ${func.since}")
+      builder += s"${func.name} | ${func.description} | ${func.returnType} | ${func.since}"
     }
 
     MarkdownUtils.verifyOutput(

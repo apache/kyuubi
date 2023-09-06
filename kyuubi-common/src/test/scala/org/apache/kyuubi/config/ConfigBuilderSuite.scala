@@ -18,6 +18,7 @@
 package org.apache.kyuubi.config
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.util.AssertionUtils._
 
 class ConfigBuilderSuite extends KyuubiFunSuite {
 
@@ -87,6 +88,12 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
       .createWithDefault(Seq("hehe"))
     assert(stringConfUpperSeq.defaultVal.get === Seq("HEHE"))
 
+    val stringConfSet = ConfigBuilder("kyuubi.string.conf.set")
+      .stringConf
+      .toSet()
+      .createWithDefault(Set("hehe", "haha"))
+    assert(stringConfSet.defaultVal.get === Set("hehe", "haha"))
+
     val stringConfLower = ConfigBuilder("kyuubi.string.conf.lower")
       .stringConf
       .transformToLowerCase
@@ -118,5 +125,22 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     KyuubiConf.register(intConf)
     val e = intercept[IllegalArgumentException](kyuubiConf.get(intConf))
     assert(e.getMessage equals "'-1' in kyuubi.invalid.config is invalid. must be positive integer")
+  }
+
+  test("invalid config for enum") {
+    object TempEnum extends Enumeration {
+      type TempEnum = Value
+      val ValA, ValB = Value
+    }
+    val stringConf = ConfigBuilder("kyuubi.invalid.config.enum")
+      .stringConf
+      .checkValues(TempEnum)
+      .createWithDefault("ValA")
+    assert(stringConf.key === "kyuubi.invalid.config.enum")
+    assert(stringConf.defaultVal.get === "ValA")
+    val kyuubiConf = KyuubiConf().set(stringConf.key, "ValC")
+    KyuubiConf.register(stringConf)
+    interceptEquals[IllegalArgumentException] { kyuubiConf.get(stringConf) }(
+      "The value of kyuubi.invalid.config.enum should be one of ValA, ValB, but was ValC")
   }
 }

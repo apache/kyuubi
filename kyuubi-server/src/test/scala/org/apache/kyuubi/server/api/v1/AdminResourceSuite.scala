@@ -48,7 +48,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   private val engineMgr = new KyuubiApplicationManager()
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
-    .set(KyuubiConf.SERVER_ADMINISTRATORS, Seq("admin001"))
+    .set(KyuubiConf.SERVER_ADMINISTRATORS, Set("admin001"))
 
   private val encodeAuthorization: String = {
     new String(
@@ -119,6 +119,19 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(405 == response.getStatus)
 
     response = webTarget.path("api/v1/admin/refresh/unlimited_users")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .post(null)
+    assert(200 == response.getStatus)
+  }
+
+  test("refresh deny users of the kyuubi server") {
+    var response = webTarget.path("api/v1/admin/refresh/deny_users")
+      .request()
+      .post(null)
+    assert(405 == response.getStatus)
+
+    response = webTarget.path("api/v1/admin/refresh/deny_users")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .post(null)
@@ -560,11 +573,11 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       val result = response.readEntity(new GenericType[Seq[ServerData]]() {})
       assert(result.size == 1)
       val testServer = result.head
-      val export = fe.asInstanceOf[KyuubiRestFrontendService]
+      val restFrontendService = fe.asInstanceOf[KyuubiRestFrontendService]
 
       assert(namespace.equals(testServer.getNamespace.replaceFirst("/", "")))
-      assert(export.host.equals(testServer.getHost))
-      assert(export.connectionUrl.equals(testServer.getInstance()))
+      assert(restFrontendService.host.equals(testServer.getHost))
+      assert(restFrontendService.connectionUrl.equals(testServer.getInstance()))
       assert(!testServer.getAttributes.isEmpty)
       val attributes = testServer.getAttributes
       assert(attributes.containsKey("serviceUri") &&

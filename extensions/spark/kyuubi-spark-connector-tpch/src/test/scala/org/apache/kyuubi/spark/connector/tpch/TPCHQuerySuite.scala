@@ -32,18 +32,12 @@ import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSessi
 /**
  * To run this test suite:
  * {{{
- *   build/mvn clean install \
- *     -pl extensions/spark/kyuubi-spark-connector-tpch -am \
- *     -Dmaven.plugin.scalatest.exclude.tags="" \
- *     -Dtest=none -DwildcardSuites=org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
+ *   KYUUBI_UPDATE=0 dev/gen/gen_tpcdh_queries.sh
  * }}}
  *
  * To re-generate golden files for this suite:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn clean install \
- *     -pl extensions/spark/kyuubi-spark-connector-tpch -am \
- *     -Dmaven.plugin.scalatest.exclude.tags="" \
- *     -Dtest=none -DwildcardSuites=org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
+ *   dev/gen/gen_tpcdh_queries.sh
  * }}}
  */
 // scalastyle:on line.size.limit

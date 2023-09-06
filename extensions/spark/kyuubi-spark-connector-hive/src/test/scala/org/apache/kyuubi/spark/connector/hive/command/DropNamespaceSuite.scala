@@ -20,7 +20,9 @@ package org.apache.kyuubi.spark.connector.hive.command
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.types.{StringType, StructType}
 
+import org.apache.kyuubi.spark.connector.common.SparkUtils.SPARK_RUNTIME_VERSION
 import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{V1_COMMAND_VERSION, V2_COMMAND_VERSION}
+import org.apache.kyuubi.util.AssertionUtils.interceptContains
 
 trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
   override protected def command: String = "DROP NAMESPACE"
@@ -60,7 +62,8 @@ trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
     val message = intercept[AnalysisException] {
       sql(s"DROP NAMESPACE $catalogName.unknown")
     }.getMessage
-    assert(message.contains(s"'unknown' not found"))
+    assert(message.contains(s"'unknown' not found") ||
+      message.contains(s"The schema `unknown` cannot be found"))
   }
 
   test("drop non-empty namespace with a non-cascading mode") {
@@ -69,10 +72,14 @@ trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
     checkNamespace(Seq(namespace) ++ builtinNamespace)
 
     // $catalog.ns.table is present, thus $catalog.ns cannot be dropped.
-    val e = intercept[IllegalStateException] {
+    interceptContains[AnalysisException] {
       sql(s"DROP NAMESPACE $catalogName.$namespace")
-    }
-    assert(e.getMessage.contains(s"Namespace $namespace is not empty"))
+    }(if (SPARK_RUNTIME_VERSION >= "3.4") {
+      s"[SCHEMA_NOT_EMPTY] Cannot drop a schema `$namespace` because it contains objects"
+    } else {
+      "Use CASCADE option to drop a non-empty database"
+    })
+
     sql(s"DROP TABLE $catalogName.$namespace.table")
 
     // Now that $catalog.ns is empty, it can be dropped.
@@ -99,8 +106,6 @@ trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
 
 class DropNamespaceV2Suite extends DropNamespaceSuiteBase {
 
-  override protected def catalogName: String = super.catalogName
-
   override protected def catalogVersion: String = "Hive V2"
 
   override protected def commandVersion: String = V2_COMMAND_VERSION
@@ -110,7 +115,7 @@ class DropNamespaceV1Suite extends DropNamespaceSuiteBase {
 
   val SESSION_CATALOG_NAME: String = "spark_catalog"
 
-  override protected def catalogName: String = SESSION_CATALOG_NAME
+  override protected val catalogName: String = SESSION_CATALOG_NAME
 
   override protected def catalogVersion: String = "V1"
 

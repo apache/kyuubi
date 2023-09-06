@@ -179,11 +179,17 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     }
   }
 
-  override def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(
+      order: FetchOrientation,
+      rowSetSize: Int): TFetchResultsResp = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
-    client.fetchResults(_remoteOpHandle, order, rowSetSize, fetchLog = false)
+    val rowset = client.fetchResults(_remoteOpHandle, order, rowSetSize, fetchLog = false)
+    val resp = new TFetchResultsResp(OK_STATUS)
+    resp.setResults(rowset)
+    resp.setHasMoreRows(false)
+    resp
   }
 
   override def shouldRunAsync: Boolean = false

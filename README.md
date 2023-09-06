@@ -118,7 +118,7 @@ Ready? [Getting Started](https://kyuubi.readthedocs.io/en/master/quick_start/) w
     <img src="http://isitmaintained.com/badge/resolution/apache/kyuubi.svg" />
   </a>
   <a href="https://github.com/apache/kyuubi/issues">
-    <img src="http://isitmaintained.com/badge/open/apache/incubator-kyuubi.svg" />
+    <img src="http://isitmaintained.com/badge/open/apache/kyuubi.svg" />
   </a>
   <a href="https://github.com/apache/kyuubi/pulls">
     <img src="https://img.shields.io/github/issues-pr-closed/apache/kyuubi?style=plastic" />

@@ -30,7 +30,7 @@ import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndex
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationState, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationState, toLabel, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
 import org.apache.kyuubi.util.KubernetesUtils
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
@@ -43,9 +43,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private var submitTimeout: Long = _
   private var kyuubiConf: KyuubiConf = _
 
-  private def allowedContexts: Seq[String] =
+  private def allowedContexts: Set[String] =
     kyuubiConf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
-  private def allowedNamespaces: Seq[String] =
+  private def allowedNamespaces: Set[String] =
     kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
 
   // key is kyuubi_unique_key
@@ -83,7 +83,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         info(s"[$kubernetesInfo] Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
         val enginePodInformer = client.pods()
           .withLabel(LABEL_KYUUBI_UNIQUE_KEY)
-          .inform(new SparkEnginePodEventHandler)
+          .inform(new SparkEnginePodEventHandler(kubernetesInfo))
         info(s"[$kubernetesInfo] Start Kubernetes Client Informer.")
         enginePodInformers.put(kubernetesInfo, enginePodInformer)
         client
@@ -103,7 +103,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
         Option(appInfoStore.remove(notification.getKey)).foreach { removed =>
           info(s"Remove terminated application ${removed.id} with " +
-            s"tag ${notification.getKey} and state ${removed.state}")
+            s"[${toLabel(notification.getKey)}, state: ${removed.state}]")
         }
       })
       .build()
@@ -123,26 +123,34 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
     val kubernetesInfo = appMgrInfo.kubernetesInfo
     val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
-    debug(s"[$kubernetesInfo] Deleting application info from Kubernetes cluster by $tag tag")
+    debug(s"[$kubernetesInfo] Deleting application[${toLabel(tag)}]'s info from Kubernetes cluster")
     try {
-      val info = appInfoStore.getOrDefault(tag, ApplicationInfo.NOT_FOUND)
-      debug(s"Application info[tag: $tag] is in ${info.state}")
-      info.state match {
-        case NOT_FOUND | FAILED | UNKNOWN =>
+      Option(appInfoStore.get(tag)) match {
+        case Some(info) =>
+          debug(s"Application[${toLabel(tag)}] is in ${info.state} state")
+          info.state match {
+            case NOT_FOUND | FAILED | UNKNOWN =>
+              (
+                false,
+                s"[$kubernetesInfo] Target application[${toLabel(tag)}] is in ${info.state} state")
+            case _ =>
+              (
+                !kubernetesClient.pods.withName(info.name).delete().isEmpty,
+                s"[$kubernetesInfo] Operation of deleted" +
+                  s" application[appId: ${info.id}, ${toLabel(tag)}] is completed")
+          }
+        case None =>
+          warn(s"No application info found, trying to delete pod with ${toLabel(tag)}")
           (
-            false,
-            s"[$kubernetesInfo] Target application[tag: $tag] is in ${info.state} status")
-        case _ =>
-          (
-            !kubernetesClient.pods.withName(info.name).delete().isEmpty,
-            s"[$kubernetesInfo] Operation of deleted" +
-              s" application[appId: ${info.id} ,tag: $tag] is completed")
+            !kubernetesClient.pods.withLabel(LABEL_KYUUBI_UNIQUE_KEY, tag).delete().isEmpty,
+            s"[$kubernetesInfo] Operation of deleted pod with ${toLabel(tag)} is completed")
       }
     } catch {
       case e: Exception =>
         (
           false,
-          s"[$kubernetesInfo] Failed to terminate application with $tag, due to ${e.getMessage}")
+          s"[$kubernetesInfo] Failed to terminate application[${toLabel(tag)}], " +
+            s"due to ${e.getMessage}")
     }
   }
 
@@ -153,7 +161,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     if (kyuubiConf == null) {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
     }
-    debug(s"Getting application info from Kubernetes cluster by $tag tag")
+    debug(s"Getting application[${toLabel(tag)}]'s info from Kubernetes cluster")
     try {
       // need to initialize the kubernetes client if not exists
       getOrCreateKubernetesClient(appMgrInfo.kubernetesInfo)
@@ -163,23 +171,23 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         case (NOT_FOUND, Some(_submitTime)) =>
           val elapsedTime = System.currentTimeMillis - _submitTime
           if (elapsedTime > submitTimeout) {
-            error(s"Can't find target driver pod by tag: $tag, " +
+            error(s"Can't find target driver pod by ${toLabel(tag)}, " +
               s"elapsed time: ${elapsedTime}ms exceeds ${submitTimeout}ms.")
             ApplicationInfo.NOT_FOUND
           } else {
-            warn("Wait for driver pod to be created, " +
+            warn(s"Waiting for driver pod with ${toLabel(tag)} to be created, " +
               s"elapsed time: ${elapsedTime}ms, return UNKNOWN status")
             ApplicationInfo.UNKNOWN
           }
         case (NOT_FOUND, None) =>
           ApplicationInfo.NOT_FOUND
         case _ =>
-          debug(s"Successfully got application info by $tag: $appInfo")
+          debug(s"Successfully got application[${toLabel(tag)}]'s info: $appInfo")
           appInfo
       }
     } catch {
       case e: Exception =>
-        error(s"Failed to get application with $tag, due to ${e.getMessage}")
+        error(s"Failed to get application by ${toLabel(tag)}, due to ${e.getMessage}")
         ApplicationInfo.NOT_FOUND
     }
   }
@@ -201,11 +209,13 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  private class SparkEnginePodEventHandler extends ResourceEventHandler[Pod] {
+  private class SparkEnginePodEventHandler(kubernetesInfo: KubernetesInfo)
+    extends ResourceEventHandler[Pod] {
 
     override def onAdd(pod: Pod): Unit = {
       if (isSparkEnginePod(pod)) {
         updateApplicationState(pod)
+        KubernetesApplicationAuditLogger.audit(kubernetesInfo, pod)
       }
     }
 
@@ -216,6 +226,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         if (isTerminated(appState)) {
           markApplicationTerminated(newPod)
         }
+        KubernetesApplicationAuditLogger.audit(kubernetesInfo, newPod)
       }
     }
 
@@ -223,6 +234,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       if (isSparkEnginePod(pod)) {
         updateApplicationState(pod)
         markApplicationTerminated(pod)
+        KubernetesApplicationAuditLogger.audit(kubernetesInfo, pod)
       }
     }
   }
@@ -257,6 +269,8 @@ object KubernetesApplicationOperation extends Logging {
   val SPARK_APP_ID_LABEL = "spark-app-selector"
   val KUBERNETES_SERVICE_HOST = "KUBERNETES_SERVICE_HOST"
   val KUBERNETES_SERVICE_PORT = "KUBERNETES_SERVICE_PORT"
+
+  def toLabel(tag: String): String = s"label: $LABEL_KYUUBI_UNIQUE_KEY=$tag"
 
   def toApplicationState(state: String): ApplicationState = state match {
     // https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/types.go#L2396

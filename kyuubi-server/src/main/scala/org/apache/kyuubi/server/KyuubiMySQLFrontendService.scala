@@ -94,7 +94,10 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
 
   override def connectionUrl: String = {
     checkInitialized()
-    s"${serverAddr.getCanonicalHostName}:$port"
+    conf.get(FRONTEND_ADVERTISED_HOST) match {
+      case Some(advertisedHost) => s"$advertisedHost:$port"
+      case None => s"${serverAddr.getCanonicalHostName}:$port"
+    }
   }
 
   override def start(): Unit = synchronized {

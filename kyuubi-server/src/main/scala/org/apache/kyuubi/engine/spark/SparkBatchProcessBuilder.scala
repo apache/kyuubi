@@ -36,7 +36,7 @@ class SparkBatchProcessBuilder(
   extends SparkProcessBuilder(proxyUser, conf, batchId, extraEngineLog) {
   import SparkProcessBuilder._
 
-  override protected val commands: Array[String] = {
+  override protected lazy val commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
     Option(mainClass).foreach { cla =>
@@ -51,7 +51,10 @@ class SparkBatchProcessBuilder(
     // tag batch application
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
-    (batchKyuubiConf.getAll ++ sparkAppNameConf()).foreach { case (k, v) =>
+    (batchKyuubiConf.getAll ++
+      sparkAppNameConf() ++
+      engineLogPathConf() ++
+      appendPodNameConf(batchConf)).foreach { case (k, v) =>
       buffer += CONF
       buffer += s"${convertConfigKey(k)}=$v"
     }

@@ -52,6 +52,8 @@ class KyuubiSyncThriftClient private (
   @volatile private var _engineUrl: Option[String] = _
   @volatile private var _engineName: Option[String] = _
 
+  private[kyuubi] def engineConnectionClosed: Boolean = !protocol.getTransport.isOpen
+
   private val lock = new ReentrantLock()
 
   // Visible for testing.
@@ -59,7 +61,7 @@ class KyuubiSyncThriftClient private (
 
   @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
   @volatile private var remoteEngineBroken: Boolean = false
-  @volatile private var clientClosedOnEngineBroken: Boolean = false
+  @volatile private var clientClosedByAliveProbe: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
   private var engineAliveThreadPool: ScheduledExecutorService = _
   @volatile private var engineLastAlive: Long = _
@@ -84,7 +86,7 @@ class KyuubiSyncThriftClient private (
       "engine-alive-probe-" + _aliveProbeSessionHandle)
     val task = new Runnable {
       override def run(): Unit = {
-        if (!remoteEngineBroken) {
+        if (!remoteEngineBroken && !engineConnectionClosed) {
           engineAliveProbeClient.foreach { client =>
             val tGetInfoReq = new TGetInfoReq()
             tGetInfoReq.setSessionHandle(_aliveProbeSessionHandle)
@@ -114,7 +116,7 @@ class KyuubiSyncThriftClient private (
               }
             }
           }
-          clientClosedOnEngineBroken = true
+          clientClosedByAliveProbe = true
           shutdownAsyncRequestExecutor()
           Option(engineAliveThreadPool).foreach { pool =>
             ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
@@ -134,7 +136,7 @@ class KyuubiSyncThriftClient private (
    * Lock every rpc call to send them sequentially
    */
   private def withLockAcquired[T](block: => T): T = Utils.withLockRequired(lock) {
-    if (!protocol.getTransport.isOpen) {
+    if (engineConnectionClosed) {
       throw KyuubiSQLException.connectionDoesNotExist()
     }
     block
@@ -206,7 +208,7 @@ class KyuubiSyncThriftClient private (
   }
 
   def closeSession(): Unit = {
-    if (clientClosedOnEngineBroken) return
+    if (clientClosedByAliveProbe) return
     try {
       if (_remoteSessionHandle != null) {
         val req = new TCloseSessionReq(_remoteSessionHandle)

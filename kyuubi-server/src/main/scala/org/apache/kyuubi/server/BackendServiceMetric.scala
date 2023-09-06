@@ -183,9 +183,10 @@ trait BackendServiceMetric extends BackendService {
       operationHandle: OperationHandle,
       orientation: FetchOrientation,
       maxRows: Int,
-      fetchLog: Boolean): TRowSet = {
+      fetchLog: Boolean): TFetchResultsResp = {
     MetricsSystem.timerTracing(MetricsConstants.BS_FETCH_RESULTS) {
-      val rowSet = super.fetchResults(operationHandle, orientation, maxRows, fetchLog)
+      val fetchResultsResp = super.fetchResults(operationHandle, orientation, maxRows, fetchLog)
+      val rowSet = fetchResultsResp.getResults
       // TODO: the statistics are wrong when we enabled the arrow.
       val rowsSize =
         if (rowSet.getColumnsSize > 0) {
@@ -217,7 +218,7 @@ trait BackendServiceMetric extends BackendService {
         operation.increaseFetchResultsCount(rowsSize)
       }
 
-      rowSet
+      fetchResultsResp
     }
   }
 

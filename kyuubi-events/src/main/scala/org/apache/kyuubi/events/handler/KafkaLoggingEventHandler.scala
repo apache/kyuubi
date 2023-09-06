@@ -32,7 +32,7 @@ import org.apache.kyuubi.events.handler.KafkaLoggingEventHandler._
  */
 class KafkaLoggingEventHandler(
     topic: String,
-    producerConf: Map[String, String],
+    producerConf: Iterable[(String, String)],
     kyuubiConf: KyuubiConf,
     closeTimeoutInMs: Long) extends EventHandler[KyuubiEvent] with Logging {
   private def defaultProducerConf: Properties = {

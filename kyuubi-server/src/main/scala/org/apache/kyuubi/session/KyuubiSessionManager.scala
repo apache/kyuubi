@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.session
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Semaphore, TimeUnit}
 
 import scala.collection.JavaConverters._
 
@@ -27,8 +27,10 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
+import org.apache.kyuubi.client.util.BatchUtils.KYUUBI_BATCH_ID_KEY
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_REAL_USER_KEY
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
@@ -36,7 +38,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
-import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.util.{SignUtils, ThreadUtils}
 
@@ -63,7 +65,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private var batchLimiter: Option[SessionLimiter] = None
   lazy val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
 
-  private val engineAliveChecker =
+  var engineStartupProcessSemaphore: Option[Semaphore] = None
+
+  private val engineConnectionAliveChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-engine-alive-checker")
 
   override def initialize(conf: KyuubiConf): Unit = {
@@ -72,6 +76,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     addService(credentialsManager)
     metadataManager.foreach(addService)
     initSessionLimiter(conf)
+    initEngineStartupProcessSemaphore(conf)
     super.initialize(conf)
   }
 
@@ -139,10 +144,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       batchName: Option[String],
       resource: String,
       className: String,
-      batchConf: Map[String, String],
       batchArgs: Seq[String],
-      recoveryMetadata: Option[Metadata] = None,
-      shouldRunAsync: Boolean): KyuubiBatchSession = {
+      metadata: Option[Metadata] = None,
+      fromRecovery: Boolean): KyuubiBatchSession = {
     // scalastyle:on
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     val sessionConf = this.getConf.getUserDefaults(user)
@@ -157,10 +161,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       batchName,
       resource,
       className,
-      batchConf,
       batchArgs,
-      recoveryMetadata,
-      shouldRunAsync)
+      metadata,
+      fromRecovery)
   }
 
   private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSession): SessionHandle = {
@@ -197,23 +200,48 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String],
-      batchRequest: BatchRequest,
-      shouldRunAsync: Boolean = true): SessionHandle = {
+      batchRequest: BatchRequest): SessionHandle = {
     val batchSession = createBatchSession(
       user,
       password,
       ipAddress,
-      conf,
+      batchRequest.getConf.asScala.toMap,
       batchRequest.getBatchType,
       Option(batchRequest.getName),
       batchRequest.getResource,
       batchRequest.getClassName,
-      batchRequest.getConf.asScala.toMap,
-      batchRequest.getArgs.asScala,
+      batchRequest.getArgs.asScala.toSeq,
       None,
-      shouldRunAsync)
+      fromRecovery = false)
     openBatchSession(batchSession)
+  }
+
+  def initializeBatchState(
+      user: String,
+      ipAddress: String,
+      conf: Map[String, String],
+      batchRequest: BatchRequest): String = {
+    val realUser = conf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
+    val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
+    val batchId = conf(KYUUBI_BATCH_ID_KEY)
+    val metadata = Metadata(
+      identifier = batchId,
+      sessionType = SessionType.BATCH,
+      realUser = realUser,
+      username = username,
+      ipAddress = ipAddress,
+      state = OperationState.INITIALIZED.toString,
+      resource = batchRequest.getResource,
+      className = batchRequest.getClassName,
+      requestName = batchRequest.getName,
+      requestConf = conf,
+      requestArgs = batchRequest.getArgs.asScala.toSeq,
+      createTime = System.currentTimeMillis(),
+      engineType = batchRequest.getBatchType)
+
+    // there is a chance that operation failed w/ duplicated key error
+    metadataManager.foreach(_.insertMetadata(metadata, asyncRetryOnError = false))
+    batchId
   }
 
   def getBatchSession(sessionHandle: SessionHandle): Option[KyuubiBatchSession] = {
@@ -240,17 +268,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     metadataManager.flatMap(mm => mm.getBatch(batchId))
   }
 
-  def getBatchesFromMetadataStore(
-      batchType: String,
-      batchUser: String,
-      batchState: String,
-      createTime: Long,
-      endTime: Long,
-      from: Int,
-      size: Int): Seq[Batch] = {
-    metadataManager.map { mm =>
-      mm.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
-    }.getOrElse(Seq.empty)
+  def getBatchesFromMetadataStore(filter: MetadataFilter, from: Int, size: Int): Seq[Batch] = {
+    metadataManager.map(_.getBatches(filter, from, size)).getOrElse(Seq.empty)
   }
 
   def getBatchMetadata(batchId: String): Option[Metadata] = {
@@ -289,10 +308,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           Option(metadata.requestName),
           metadata.resource,
           metadata.className,
-          metadata.requestConf,
           metadata.requestArgs,
           Some(metadata),
-          shouldRunAsync = true)
+          fromRecovery = true)
       }).getOrElse(Seq.empty)
     }
   }
@@ -313,8 +331,15 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val userLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER).getOrElse(0)
     val ipAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
     val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
-    val userUnlimitedList = conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST)
-    limiter = applySessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, userUnlimitedList)
+    val userUnlimitedList =
+      conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
+    val userDenyList = conf.get(SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST).filter(_.nonEmpty)
+    limiter = applySessionLimiter(
+      userLimit,
+      ipAddressLimit,
+      userIpAddressLimit,
+      userUnlimitedList,
+      userDenyList)
 
     val userBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER).getOrElse(0)
     val ipAddressBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
@@ -324,33 +349,54 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       userBatchLimit,
       ipAddressBatchLimit,
       userIpAddressBatchLimit,
-      userUnlimitedList)
+      userUnlimitedList,
+      userDenyList)
   }
 
-  private[kyuubi] def getUnlimitedUsers(): Set[String] = {
+  private[kyuubi] def getUnlimitedUsers: Set[String] = {
     limiter.orElse(batchLimiter).map(SessionLimiter.getUnlimitedUsers).getOrElse(Set.empty)
   }
 
   private[kyuubi] def refreshUnlimitedUsers(conf: KyuubiConf): Unit = {
-    val unlimitedUsers = conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).toSet
+    val unlimitedUsers =
+      conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
     limiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
     batchLimiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
+  }
+
+  private[kyuubi] def getDenyUsers: Set[String] = {
+    limiter.orElse(batchLimiter).map(SessionLimiter.getDenyUsers).getOrElse(Set.empty)
+  }
+
+  private[kyuubi] def refreshDenyUsers(conf: KyuubiConf): Unit = {
+    val denyUsers = conf.get(SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST).filter(_.nonEmpty)
+    limiter.foreach(SessionLimiter.resetDenyUsers(_, denyUsers))
+    batchLimiter.foreach(SessionLimiter.resetDenyUsers(_, denyUsers))
   }
 
   private def applySessionLimiter(
       userLimit: Int,
       ipAddressLimit: Int,
       userIpAddressLimit: Int,
-      userUnlimitedList: Seq[String]): Option[SessionLimiter] = {
-    Seq(userLimit, ipAddressLimit, userIpAddressLimit).find(_ > 0).map(_ =>
-      SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, userUnlimitedList.toSet))
+      userUnlimitedList: Set[String],
+      userDenyList: Set[String]): Option[SessionLimiter] = {
+    if (Seq(userLimit, ipAddressLimit, userIpAddressLimit).exists(_ > 0) || userDenyList.nonEmpty) {
+      Some(SessionLimiter(
+        userLimit,
+        ipAddressLimit,
+        userIpAddressLimit,
+        userUnlimitedList,
+        userDenyList))
+    } else {
+      None
+    }
   }
 
   private def startEngineAliveChecker(): Unit = {
     val interval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL)
     val checkTask: Runnable = () => {
       allSessions().foreach { session =>
-        if (!session.asInstanceOf[KyuubiSessionImpl].checkEngineAlive()) {
+        if (!session.asInstanceOf[KyuubiSessionImpl].checkEngineConnectionAlive()) {
           try {
             closeSession(session.handle)
             logger.info(s"The session ${session.handle} has been closed " +
@@ -362,7 +408,17 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         }
       }
     }
-    engineAliveChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
+    engineConnectionAliveChecker.scheduleWithFixedDelay(
+      checkTask,
+      interval,
+      interval,
+      TimeUnit.MILLISECONDS)
   }
 
+  private def initEngineStartupProcessSemaphore(conf: KyuubiConf): Unit = {
+    val engineCreationLimit = conf.get(KyuubiConf.SERVER_LIMIT_ENGINE_CREATION)
+    engineCreationLimit.filter(_ > 0).foreach { limit =>
+      engineStartupProcessSemaphore = Some(new Semaphore(limit))
+    }
+  }
 }

@@ -25,7 +25,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols, KYUUBI_KUBERNETES_CONF_PREFIX}
+import org.apache.kyuubi.config.KyuubiConf.{BATCH_SUBMITTER_ENABLED, FRONTEND_PROTOCOLS, FrontendProtocols, KYUUBI_KUBERNETES_CONF_PREFIX}
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
 import org.apache.kyuubi.events.{EventBus, KyuubiServerInfoEvent, ServerEventHandlerRegister}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -38,17 +38,20 @@ import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
 object KyuubiServer extends Logging {
-  private val zkServer = new EmbeddedZookeeper()
   private[kyuubi] var kyuubiServer: KyuubiServer = _
   @volatile private[kyuubi] var hadoopConf: Configuration = _
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
+    var embeddedZkServer: Option[EmbeddedZookeeper] = None
     if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
-      zkServer.initialize(conf)
-      zkServer.start()
-      conf.set(HA_ADDRESSES, zkServer.getConnectString)
-      conf.set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
+      embeddedZkServer = Some(new EmbeddedZookeeper())
+      embeddedZkServer.foreach(zkServer => {
+        zkServer.initialize(conf)
+        zkServer.start()
+        conf.set(HA_ADDRESSES, zkServer.getConnectString)
+        conf.set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
+      })
     }
 
     val server = conf.get(KyuubiConf.SERVER_NAME) match {
@@ -59,9 +62,7 @@ object KyuubiServer extends Logging {
       server.initialize(conf)
     } catch {
       case e: Exception =>
-        if (zkServer.getServiceState == ServiceState.STARTED) {
-          zkServer.stop()
-        }
+        embeddedZkServer.filter(_.getServiceState == ServiceState.STARTED).foreach(_.stop())
         throw e
     }
     server.start()
@@ -147,10 +148,18 @@ object KyuubiServer extends Logging {
 
   private[kyuubi] def refreshUnlimitedUsers(): Unit = synchronized {
     val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
-    val existingUnlimitedUsers = sessionMgr.getUnlimitedUsers()
+    val existingUnlimitedUsers = sessionMgr.getUnlimitedUsers
     sessionMgr.refreshUnlimitedUsers(KyuubiConf().loadFileDefaults())
-    val refreshedUnlimitedUsers = sessionMgr.getUnlimitedUsers()
+    val refreshedUnlimitedUsers = sessionMgr.getUnlimitedUsers
     info(s"Refreshed unlimited users from $existingUnlimitedUsers to $refreshedUnlimitedUsers")
+  }
+
+  private[kyuubi] def refreshDenyUsers(): Unit = synchronized {
+    val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val existingDenyUsers = sessionMgr.getDenyUsers
+    sessionMgr.refreshDenyUsers(KyuubiConf().loadFileDefaults())
+    val refreshedDenyUsers = sessionMgr.getDenyUsers
+    info(s"Refreshed deny users from $existingDenyUsers to $refreshedDenyUsers")
   }
 }
 
@@ -187,6 +196,12 @@ class KyuubiServer(name: String) extends Serverable(name) {
 
     if (conf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)
+    }
+
+    if (conf.isRESTEnabled && conf.get(BATCH_SUBMITTER_ENABLED)) {
+      addService(new KyuubiBatchService(
+        this,
+        backendService.sessionManager.asInstanceOf[KyuubiSessionManager]))
     }
     super.initialize(conf)
 

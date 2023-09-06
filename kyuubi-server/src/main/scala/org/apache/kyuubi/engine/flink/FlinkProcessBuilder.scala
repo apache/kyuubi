@@ -26,7 +26,7 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi._
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
@@ -79,7 +79,8 @@ class FlinkProcessBuilder(
 
   override protected val commands: Array[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
-
+    // unset engine credentials because Flink doesn't support them at the moment
+    conf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
     // flink.execution.target are required in Kyuubi conf currently
     executionTarget match {
       case Some("yarn-application") =>
@@ -106,11 +107,12 @@ class FlinkProcessBuilder(
         buffer += "-t"
         buffer += "yarn-application"
         buffer += s"-Dyarn.ship-files=${flinkExtraJars.mkString(";")}"
+        buffer += s"-Dyarn.application.name=${conf.getOption(APP_KEY).get}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
 
         val customFlinkConf = conf.getAllWithPrefix("flink", "")
-        customFlinkConf.foreach { case (k, v) =>
+        customFlinkConf.filter(_._1 != "app.name").foreach { case (k, v) =>
           buffer += s"-D$k=$v"
         }
 
@@ -203,7 +205,7 @@ class FlinkProcessBuilder(
 
 object FlinkProcessBuilder {
   final val FLINK_EXEC_FILE = "flink"
-  final val YARN_APP_KEY = "yarn.application.name"
+  final val APP_KEY = "flink.app.name"
   final val YARN_TAG_KEY = "yarn.tags"
   final val FLINK_HADOOP_CLASSPATH_KEY = "FLINK_HADOOP_CLASSPATH"
   final val FLINK_PROXY_USER_KEY = "HADOOP_PROXY_USER"

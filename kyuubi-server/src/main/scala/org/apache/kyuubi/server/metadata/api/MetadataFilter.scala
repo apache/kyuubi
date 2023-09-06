@@ -27,6 +27,7 @@ case class MetadataFilter(
     engineType: String = null,
     username: String = null,
     state: String = null,
+    requestName: String = null,
     kyuubiInstance: String = null,
     createTime: Long = 0L,
     endTime: Long = 0L,

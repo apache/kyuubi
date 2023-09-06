@@ -551,7 +551,10 @@ public class Utils {
     if (KYUUBI_CLIENT_VERSION == null) {
       try {
         Properties prop = new Properties();
-        prop.load(Utils.class.getClassLoader().getResourceAsStream("version.properties"));
+        prop.load(
+            Utils.class
+                .getClassLoader()
+                .getResourceAsStream("org/apache/kyuubi/version.properties"));
         KYUUBI_CLIENT_VERSION = prop.getProperty(KYUUBI_CLIENT_VERSION_KEY, "unknown");
       } catch (Exception e) {
         LOG.error("Error getting kyuubi client version", e);

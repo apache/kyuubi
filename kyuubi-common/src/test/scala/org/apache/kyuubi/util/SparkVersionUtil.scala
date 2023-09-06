@@ -22,9 +22,7 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 trait SparkVersionUtil {
   this: HiveJDBCTestHelper =>
 
-  protected lazy val SPARK_ENGINE_RUNTIME_VERSION = sparkEngineMajorMinorVersion
-
-  def sparkEngineMajorMinorVersion: SemanticVersion = {
+  protected lazy val SPARK_ENGINE_RUNTIME_VERSION: SemanticVersion = {
     var sparkRuntimeVer = ""
     withJdbcStatement() { stmt =>
       val result = stmt.executeQuery("SELECT version()")
