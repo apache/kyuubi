@@ -251,7 +251,7 @@ trait LineageParser {
               invokeAs[Identifier](plan, "tableName").name(),
               invokeAs[Identifier](plan, "tableName").namespace().mkString("."),
               getField[CatalogPlugin](
-                invokeAs[LogicalPlan](plan, "left"),
+                invokeAs[LogicalPlan](plan, "name"),
                 "catalog").name())
           }
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map { case (k, v) =>
