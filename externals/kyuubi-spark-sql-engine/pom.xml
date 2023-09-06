@@ -160,6 +160,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.dimafeng</groupId>
+            <artifactId>testcontainers-scala-scalatest_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>io.etcd</groupId>
             <artifactId>jetcd-launcher</artifactId>
             <scope>test</scope>
