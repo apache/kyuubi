@@ -55,7 +55,7 @@ object IcebergCommands {
     val tableDesc =
       TableDesc(
         "args",
-        classOf[IcebergCallCommandTableExtractor],
+        classOf[IcebergCallArgsTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Seq(tableDesc))
   }

@@ -95,7 +95,7 @@
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.Call",
   "tableDescs" : [ {
     "fieldName" : "args",
-    "fieldExtractor" : "IcebergCallCommandTableExtractor",
+    "fieldExtractor" : "IcebergCallArgsTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : {
       "fieldName" : null,

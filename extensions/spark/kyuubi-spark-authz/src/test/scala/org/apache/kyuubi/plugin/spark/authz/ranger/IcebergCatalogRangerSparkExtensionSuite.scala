@@ -233,4 +233,62 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
       s" on [$namespace1/$table1]"))
   }
+
+  test("TABLE CALL COMMAND") {
+    val tableName = "call_command_table"
+    val table = s"$catalogV2.$namespace1.$tableName"
+    val rewriteCommand1 = s"CALL $catalogV2.system.rewrite_data_files " +
+      s"(table => '$table', options => map('min-input-files','2'))"
+    val rewriteCommand2 = s"CALL $catalogV2.system.rewrite_data_files " +
+      s"(table => '$table', options => map('min-input-files','3'))"
+    var snapshotId = 0L
+    var snapshotCommand = ""
+
+    withCleanTmpResources(Seq((table, "table"))) {
+      doAs(
+        admin, {
+          sql(s"CREATE TABLE IF NOT EXISTS $table  (id int, name string) USING iceberg")
+          sql(s"INSERT INTO $table VALUES (1, 'chenliang'), (2, 'tom')")
+          sql(s"INSERT INTO $table VALUES (3, 'julie'), (4, 'ross')")
+          snapshotId = sql(s"select * from $table.snapshots limit 1")
+            .collect().apply(0).getAs[Long]("snapshot_id")
+          snapshotCommand = s"CALL $catalogV2.system.set_current_snapshot ('$table', $snapshotId)"
+        })
+
+      val e1 = intercept[AccessControlException](doAs(someone, sql(rewriteCommand1)))
+      assert(e1.getMessage.contains(s"does not have [update] privilege" +
+        s" on [$namespace1/$tableName]"))
+      val e2 = intercept[AccessControlException](doAs(someone, sql(rewriteCommand2)))
+      assert(e2.getMessage.contains(s"does not have [update] privilege" +
+        s" on [$namespace1/$tableName]"))
+      val e3 = intercept[AccessControlException](
+        doAs(someone, sql(snapshotCommand).explain()))
+      assert(e3.getMessage.contains(s"does not have [update] privilege" +
+        s" on [$namespace1/$tableName]"))
+
+      doAs(
+        admin, {
+          // This triggers only one logical plan( input-files(2) < min-input-files(3) )
+          val commandResult1 = sql(rewriteCommand2).collect()
+          assert(commandResult1(0)(0) === 0)
+
+          /**
+           * This triggers two logical plans( input-files(2) >= min-input-files(2) ):
+           *
+           * == Physical Plan 1 ==
+           * (1) Call
+           *
+           * == Physical Plan 2 ==
+           * AppendData (3)
+           * +- * ColumnarToRow (2)
+           * +- BatchScan local.iceberg_ns.call_command_table (1)
+           */
+          val commandResult2 = sql(rewriteCommand1).collect()
+          // rewrite 2 files
+          assert(commandResult2(0)(0) === 2)
+          val commandResul3 = sql(snapshotCommand).collect()
+          assert(commandResul3(0)(1) === snapshotId)
+        })
+    }
+  }
 }

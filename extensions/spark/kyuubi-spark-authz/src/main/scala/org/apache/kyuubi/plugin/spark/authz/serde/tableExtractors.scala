@@ -39,8 +39,6 @@ trait TableExtractor extends ((SparkSession, AnyRef) => Option[Table]) with Extr
 
 object TableExtractor {
 
-  final private val LOG = LoggerFactory.getLogger(getClass)
-
   val tableExtractors: Map[String, TableExtractor] = {
     loadExtractorsToMap[TableExtractor]
   }
@@ -69,18 +67,6 @@ object TableExtractor {
     } catch {
       // Exception may occur due to invalid reflection or table not found
       case _: Exception => None
-    }
-  }
-
-  def getDataSourceV2Table(tableFullName: AnyRef): Option[Table] = {
-    val fullTable = tableFullName.toString.split("\\.").map(quoteIfNeeded)
-    fullTable.length match {
-      case 1 => Some(Table(None, None, fullTable(0), None))
-      case 2 => Some(Table(None, Some(fullTable(0)), fullTable(1), None))
-      case 3 => Some(Table(Some(fullTable(0)), Some(fullTable(1)), fullTable(2), None))
-      case _ =>
-        LOG.warn(s"unrecognized table name [$fullTable], will ignore and continue.")
-        None
     }
   }
 }
@@ -149,16 +135,33 @@ class IdentifierTableExtractor extends TableExtractor {
   }
 }
 
-class IcebergCallCommandTableExtractor extends TableExtractor {
-  override def apply(spark: SparkSession, callCommandArgs: AnyRef): Option[Table] = {
-    val literals = callCommandArgs.asInstanceOf[Seq[Literal]]
+class StringTableExtractor extends TableExtractor {
+
+  final private val LOG = LoggerFactory.getLogger(getClass)
+
+  override def apply(spark: SparkSession, tableFullName: AnyRef): Option[Table] = {
+    val fullTable = tableFullName.toString.split("\\.").map(quoteIfNeeded)
+    fullTable.length match {
+      case 1 => Some(Table(None, None, fullTable(0), None))
+      case 2 => Some(Table(None, Some(fullTable(0)), fullTable(1), None))
+      case 3 => Some(Table(Some(fullTable(0)), Some(fullTable(1)), fullTable(2), None))
+      case _ =>
+        LOG.warn(s"Unrecognized table [$fullTable], will ignore and return none.")
+        None
+    }
+  }
+}
+
+class IcebergCallArgsTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, commandArgs: AnyRef): Option[Table] = {
+    val literals = commandArgs.asInstanceOf[Seq[Literal]]
     if (literals.isEmpty) {
       throw new IllegalArgumentException(
-        s"Unknown parameters in iceberg call command: $callCommandArgs")
+        s"Unknown parameters in iceberg call command: $commandArgs")
     }
     // Iceberg will rearrange the parameters according to the parameter order
     // defined in the procedure, where the table parameters are currently always the first.
-    TableExtractor.getDataSourceV2Table(literals.head)
+    lookupExtractor[StringTableExtractor].apply(spark, literals.head)
   }
 }
 
@@ -176,7 +179,7 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
         val maybeCatalog = maybeCatalogPlugin.flatMap(catalogPlugin =>
           lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
         val table = invokeAs[org.apache.spark.sql.connector.catalog.Table](v2Relation, "table")
-        TableExtractor.getDataSourceV2Table(table.name()).map { table =>
+        lookupExtractor[StringTableExtractor].apply(spark, table.name()).map { table =>
           val maybeOwner = TableExtractor.getOwner(v2Relation)
           table.copy(catalog = maybeCatalog, owner = maybeOwner)
         }
