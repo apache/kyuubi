@@ -134,13 +134,12 @@ class IdentifierTableExtractor extends TableExtractor {
 }
 
 class StringTableExtractor extends TableExtractor {
-
-  override def apply(spark: SparkSession, tableFullName: AnyRef): Option[Table] = {
-    val fullTable = tableFullName.toString.split("\\.").map(quoteIfNeeded)
-    val maybeTable = fullTable.length match {
-      case 1 => Table(None, None, fullTable(0), None)
-      case 2 => Table(None, Some(fullTable(0)), fullTable(1), None)
-      case 3 => Table(Some(fullTable(0)), Some(fullTable(1)), fullTable(2), None)
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val tableNameArr = v1.toString.split("\\.")
+    val maybeTable = tableNameArr.length match {
+      case 1 => Table(None, None, tableNameArr(0), None)
+      case 2 => Table(None, Some(tableNameArr(0)), tableNameArr(1), None)
+      case 3 => Table(Some(tableNameArr(0)), Some(tableNameArr(1)), tableNameArr(2), None)
     }
     Option(maybeTable)
   }
