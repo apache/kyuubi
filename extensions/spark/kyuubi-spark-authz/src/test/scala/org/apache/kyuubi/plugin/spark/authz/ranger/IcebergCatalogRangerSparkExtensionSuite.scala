@@ -27,6 +27,7 @@ import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.IcebergTest
+import org.apache.kyuubi.util.AssertionUtils._
 
 /**
  * Tests for RangerSparkExtensionSuite
@@ -255,16 +256,12 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
           snapshotCommand = s"CALL $catalogV2.system.set_current_snapshot ('$table', $snapshotId)"
         })
 
-      val e1 = intercept[AccessControlException](doAs(someone, sql(rewriteCommand1)))
-      assert(e1.getMessage.contains(s"does not have [update] privilege" +
-        s" on [$namespace1/$tableName]"))
-      val e2 = intercept[AccessControlException](doAs(someone, sql(rewriteCommand2)))
-      assert(e2.getMessage.contains(s"does not have [update] privilege" +
-        s" on [$namespace1/$tableName]"))
-      val e3 = intercept[AccessControlException](
-        doAs(someone, sql(snapshotCommand).explain()))
-      assert(e3.getMessage.contains(s"does not have [update] privilege" +
-        s" on [$namespace1/$tableName]"))
+      interceptContains[AccessControlException](doAs(someone, sql(rewriteCommand1)))(
+        s"does not have [update] privilege on [$namespace1/$tableName]")
+      interceptContains[AccessControlException](doAs(someone, sql(rewriteCommand2)))(
+        s"does not have [update] privilege on [$namespace1/$tableName]")
+      interceptContains[AccessControlException](doAs(someone, sql(snapshotCommand).explain()))(
+        s"does not have [update] privilege on [$namespace1/$tableName]")
 
       doAs(
         admin, {
