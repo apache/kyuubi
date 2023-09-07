@@ -1427,9 +1427,9 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofSeconds(15).toMillis)
 
-  val ENGINE_ALIVE_MAX_FAIL_COUNT: ConfigEntry[Int] =
-    buildConf("kyuubi.session.engine.alive.max.fail.count")
-      .doc("The maximum number of failures allowed for the engine")
+  val ENGINE_ALIVE_MAX_FAILURES: ConfigEntry[Int] =
+    buildConf("kyuubi.session.engine.alive.max.failures")
+      .doc("The maximum number of failures allowed for the engine.")
       .version("1.8.0")
       .intConf
       .checkValue(_ > 0, "Must be positive")
