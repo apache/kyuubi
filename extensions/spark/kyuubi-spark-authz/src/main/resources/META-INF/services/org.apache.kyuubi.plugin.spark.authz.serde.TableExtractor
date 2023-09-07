@@ -25,4 +25,4 @@ org.apache.kyuubi.plugin.spark.authz.serde.ResolvedIdentifierTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.ResolvedTableTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.TableIdentifierTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.StringTableExtractor
-org.apache.kyuubi.plugin.spark.authz.serde.IcebergCallArgsTableExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.ExpressionSeqTableExtractor

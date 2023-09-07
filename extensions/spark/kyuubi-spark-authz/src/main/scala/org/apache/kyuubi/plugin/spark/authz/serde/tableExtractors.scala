@@ -19,17 +19,13 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 
 import java.util.{Map => JMap}
 
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.expressions.Literal
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 /**
  * A trait for extracting database and table as string tuple
@@ -137,31 +133,26 @@ class IdentifierTableExtractor extends TableExtractor {
 
 class StringTableExtractor extends TableExtractor {
 
-  final private val LOG = LoggerFactory.getLogger(getClass)
-
   override def apply(spark: SparkSession, tableFullName: AnyRef): Option[Table] = {
     val fullTable = tableFullName.toString.split("\\.").map(quoteIfNeeded)
-    fullTable.length match {
-      case 1 => Some(Table(None, None, fullTable(0), None))
-      case 2 => Some(Table(None, Some(fullTable(0)), fullTable(1), None))
-      case 3 => Some(Table(Some(fullTable(0)), Some(fullTable(1)), fullTable(2), None))
-      case _ =>
-        LOG.warn(s"Unrecognized table [$fullTable], will ignore and return none.")
-        None
+    val maybeTable = fullTable.length match {
+      case 1 => Table(None, None, fullTable(0), None)
+      case 2 => Table(None, Some(fullTable(0)), fullTable(1), None)
+      case 3 => Table(Some(fullTable(0)), Some(fullTable(1)), fullTable(2), None)
     }
+    Option(maybeTable)
   }
 }
 
-class IcebergCallArgsTableExtractor extends TableExtractor {
-  override def apply(spark: SparkSession, commandArgs: AnyRef): Option[Table] = {
-    val literals = commandArgs.asInstanceOf[Seq[Literal]]
-    if (literals.isEmpty) {
-      throw new IllegalArgumentException(
-        s"Unknown parameters in iceberg call command: $commandArgs")
-    }
+/**
+ * Seq[org.apache.spark.sql.catalyst.expressions.Expression]
+ */
+class ExpressionSeqTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val expressions = v1.asInstanceOf[Seq[Expression]]
     // Iceberg will rearrange the parameters according to the parameter order
     // defined in the procedure, where the table parameters are currently always the first.
-    lookupExtractor[StringTableExtractor].apply(spark, literals.head)
+    lookupExtractor[StringTableExtractor].apply(spark, expressions.head)
   }
 }
 
