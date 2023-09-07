@@ -37,7 +37,6 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
 trait TableExtractor extends ((SparkSession, AnyRef) => Option[Table]) with Extractor
 
 object TableExtractor {
-
   val tableExtractors: Map[String, TableExtractor] = {
     loadExtractorsToMap[TableExtractor]
   }
