@@ -234,7 +234,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s" on [$namespace1/$table1]"))
   }
 
-  test("TABLE CALL COMMAND") {
+  test("CALL REWRITE DATA FILES") {
     val tableName = "call_command_table"
     val table = s"$catalogV2.$namespace1.$tableName"
     val rewriteCommand1 = s"CALL $catalogV2.system.rewrite_data_files " +
