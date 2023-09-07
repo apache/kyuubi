@@ -51,13 +51,17 @@ object IcebergCommands {
 
   val CallProcedure = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.Call"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
-    val tableDesc =
+    val td1 =
       TableDesc(
         "args",
         classOf[ExpressionSeqTableExtractor],
-        actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc))
+        actionTypeDesc = Some(ActionTypeDesc(actionType = Some(INSERT_OVERWRITE))))
+    val td2 =
+      TableDesc(
+        "args",
+        classOf[ExpressionSeqTableExtractor],
+        isInput = true)
+    TableCommandSpec(cmd, Seq(td1, td2))
   }
 
   val data: Array[TableCommandSpec] = Array(

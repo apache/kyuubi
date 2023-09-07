@@ -136,13 +136,20 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
         s"(table => '$tableId', options => map('min-input-files','2')) ").queryExecution.analyzed
       val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
       assert(operationType === QUERY)
+
+      assert(inputs.size === 1)
+      val po0 = inputs.head
+      assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assertEqualsIgnoreCase(namespace)(po0.dbname)
+      assertEqualsIgnoreCase(table)(po0.objectName)
+
       assert(outputs.size === 1)
       val po = outputs.head
-      assert(po.actionType === PrivilegeObjectActionType.UPDATE)
+      assert(po.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assertEqualsIgnoreCase(namespace)(po.dbname)
-      assertEqualsIgnoreCase(tableId.split("\\.").last)(po.objectName)
-      assert(inputs.size === 0)
+      assertEqualsIgnoreCase(table)(po.objectName)
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.UPDATE)
     }

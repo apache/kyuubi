@@ -100,11 +100,20 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "UPDATE"
+      "actionType" : "INSERT_OVERWRITE"
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "args",
+    "fieldExtractor" : "ExpressionSeqTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",

@@ -256,12 +256,19 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
           snapshotCommand = s"CALL $catalogV2.system.set_current_snapshot ('$table', $snapshotId)"
         })
 
+//      interceptContains[AccessControlException](doAs(someone, sql(rewriteCommand1)))(
+//        s"does not have [update] privilege on [$namespace1/$tableName]")
+//      interceptContains[AccessControlException](doAs(someone, sql(rewriteCommand2)))(
+//        s"does not have [update] privilege on [$namespace1/$tableName]")
+//      interceptContains[AccessControlException](doAs(someone, sql(snapshotCommand).explain()))(
+//        s"does not have [update] privilege on [$namespace1/$tableName]")
+
       interceptContains[AccessControlException](doAs(someone, sql(rewriteCommand1)))(
-        s"does not have [update] privilege on [$namespace1/$tableName]")
+        s"does not have [select] privilege on [$namespace1/$tableName]")
       interceptContains[AccessControlException](doAs(someone, sql(rewriteCommand2)))(
-        s"does not have [update] privilege on [$namespace1/$tableName]")
+        s"does not have [select] privilege on [$namespace1/$tableName]")
       interceptContains[AccessControlException](doAs(someone, sql(snapshotCommand).explain()))(
-        s"does not have [update] privilege on [$namespace1/$tableName]")
+        s"does not have [select] privilege on [$namespace1/$tableName]")
 
       doAs(
         admin, {
