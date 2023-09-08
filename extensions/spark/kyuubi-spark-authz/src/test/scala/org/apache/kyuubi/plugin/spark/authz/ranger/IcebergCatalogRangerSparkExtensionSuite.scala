@@ -235,13 +235,15 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s" on [$namespace1/$table1]"))
   }
 
-  test("CALL RewriteDataFilesProcedure") {
-    val tableName = "call_command_table"
-    val table = s"$catalogV2.$namespace1.$tableName"
-    val rewriteCommand1 = s"CALL $catalogV2.system.rewrite_data_files " +
+  test("CALL RewriteProcedure") {
+    val tableName = "table_select_call_command_table"
+    val table = s"$catalogV2.$defaultBob.$tableName"
+    val rewriteDataFiles1 = s"CALL $catalogV2.system.rewrite_data_files " +
       s"(table => '$table', options => map('min-input-files','2'))"
-    val rewriteCommand2 = s"CALL $catalogV2.system.rewrite_data_files " +
+    val rewriteDataFiles2 = s"CALL $catalogV2.system.rewrite_data_files " +
       s"(table => '$table', options => map('min-input-files','3'))"
+    val rewriteManifests = s"CALL $catalogV2.system.rewrite_manifests ('$table')"
+    val rewritePosDeleteFiles = s"CALL $catalogV2.system.rewrite_manifests ('$table')"
     var snapshotId = 0L
     var snapshotCommand = ""
 
@@ -255,25 +257,36 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
             .collect().apply(0).getAs[Long]("snapshot_id")
           snapshotCommand = s"CALL $catalogV2.system.set_current_snapshot ('$table', $snapshotId)"
         })
+      // user bob has select permission on table `table_select_call_command_table`
+      interceptContains[AccessControlException](doAs(bob, sql(rewriteDataFiles1)))(
+        s"does not have [update] privilege on [$defaultBob/$tableName]")
+      interceptContains[AccessControlException](doAs(bob, sql(rewriteDataFiles2)))(
+        s"does not have [update] privilege on [$defaultBob/$tableName]")
+      interceptContains[AccessControlException](doAs(bob, sql(snapshotCommand).explain()))(
+        s"does not have [update] privilege on [$defaultBob/$tableName]")
+      interceptContains[AccessControlException](doAs(bob, sql(rewriteManifests).explain()))(
+        s"does not have [update] privilege on [$defaultBob/$tableName]")
+      interceptContains[AccessControlException](doAs(bob, sql(rewritePosDeleteFiles).explain()))(
+        s"does not have [update] privilege on [$defaultBob/$tableName]")
 
-//      interceptContains[AccessControlException](doAs(someone, sql(rewriteCommand1)))(
-//        s"does not have [update] privilege on [$namespace1/$tableName]")
-//      interceptContains[AccessControlException](doAs(someone, sql(rewriteCommand2)))(
-//        s"does not have [update] privilege on [$namespace1/$tableName]")
-//      interceptContains[AccessControlException](doAs(someone, sql(snapshotCommand).explain()))(
-//        s"does not have [update] privilege on [$namespace1/$tableName]")
-
-      interceptContains[AccessControlException](doAs(someone, sql(rewriteCommand1)))(
-        s"does not have [select] privilege on [$namespace1/$tableName]")
-      interceptContains[AccessControlException](doAs(someone, sql(rewriteCommand2)))(
-        s"does not have [select] privilege on [$namespace1/$tableName]")
+      // user someone does not have any permissions on `table_select_call_command_table`
+      interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1)))(
+        s"does not have [select] privilege on [$defaultBob/$tableName]")
+      interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles2)))(
+        s"does not have [select] privilege on [$defaultBob/$tableName]")
       interceptContains[AccessControlException](doAs(someone, sql(snapshotCommand).explain()))(
-        s"does not have [select] privilege on [$namespace1/$tableName]")
+        s"does not have [select] privilege on [$defaultBob/$tableName]")
+      interceptContains[AccessControlException](doAs(someone, sql(rewriteManifests).explain()))(
+        s"does not have [select] privilege on [$defaultBob/$tableName]")
+      interceptContains[AccessControlException](doAs(
+        someone,
+        sql(rewritePosDeleteFiles).explain()))(
+        s"does not have [select] privilege on [$defaultBob/$tableName]")
 
       doAs(
         admin, {
           // This triggers only one logical plan( input-files(2) < min-input-files(3) )
-          val commandResult1 = sql(rewriteCommand2).collect()
+          val commandResult1 = sql(rewriteDataFiles2).collect()
           assert(commandResult1(0)(0) === 0)
 
           /**
@@ -287,9 +300,12 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
            * +- * ColumnarToRow (2)
            * +- BatchScan local.iceberg_ns.call_command_table (1)
            */
-          val commandResult2 = sql(rewriteCommand1).collect()
+          val commandResult2 = sql(rewriteDataFiles1).collect()
           // rewrite 2 files
           assert(commandResult2(0)(0) === 2)
+          sql(rewriteManifests)
+          sql(rewriteManifests)
+          sql(rewritePosDeleteFiles)
           val commandResul3 = sql(snapshotCommand).collect()
           assert(commandResul3(0)(1) === snapshotId)
         })
