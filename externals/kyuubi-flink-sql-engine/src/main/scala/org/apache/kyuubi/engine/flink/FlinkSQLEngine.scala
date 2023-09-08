@@ -19,12 +19,14 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.File
 import java.nio.file.Paths
+import java.time.Duration
 import java.util.concurrent.CountDownLatch
 
 import scala.collection.JavaConverters._
 
 import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration, PipelineOptions}
 import org.apache.flink.table.api.TableEnvironment
+import org.apache.flink.table.gateway.api.config.SqlGatewayServiceConfigOptions
 import org.apache.flink.table.gateway.service.context.DefaultContext
 
 import org.apache.kyuubi.{Logging, Utils}
@@ -145,6 +147,11 @@ object FlinkSQLEngine extends Logging {
 
     kyuubiConf.getOption(KYUUBI_SESSION_USER_KEY)
       .foreach(flinkConf.setString(KYUUBI_SESSION_USER_KEY, _))
+
+    // force disable Flink's session timeout
+    flinkConf.set(
+      SqlGatewayServiceConfigOptions.SQL_GATEWAY_SESSION_IDLE_TIMEOUT,
+      Duration.ofMillis(0))
 
     executionTarget match {
       case "yarn-per-job" | "yarn-application" =>
