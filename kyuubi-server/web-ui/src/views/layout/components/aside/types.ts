@@ -84,6 +84,10 @@ export const MENUS = [
         router: '/operation/completedJobs'
       }
     ]
+  },{
+    label: 'Swagger',
+    icon: 'List',
+    router: '/swagger'
   },
   {
     label: 'Contact Us',
