@@ -126,8 +126,8 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
     }
   }
 
-  test("CallRewriteDataFilesProcedure") {
-    val table = "CallRewriteDataFilesProcedure"
+  test("RewriteDataFilesProcedure") {
+    val table = "RewriteDataFilesProcedure"
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE IF NOT EXISTS $tableId (key int, value String) USING iceberg")
       sql(s"INSERT INTO $tableId VALUES (1, 'a'), (2, 'b'), (3, 'c')")
