@@ -1423,6 +1423,14 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofSeconds(15).toMillis)
 
+  val ENGINE_ALIVE_MAX_FAILURES: ConfigEntry[Int] =
+    buildConf("kyuubi.session.engine.alive.max.failures")
+      .doc("The maximum number of failures allowed for the engine.")
+      .version("1.8.0")
+      .intConf
+      .checkValue(_ > 0, "Must be positive")
+      .createWithDefault(3)
+
   val ENGINE_ALIVE_PROBE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.alive.probe.enabled")
       .doc("Whether to enable the engine alive probe, it true, we will create a companion thrift" +
