@@ -20,4 +20,4 @@ RUN set -x && \
     mkdir /opt/busybox && \
     busybox --install /opt/busybox
 
-ENV PATH=${JAVA_HOME}/bin:${PATH}:/opt/busybox
+ENV ${PATH}:/opt/busybox
