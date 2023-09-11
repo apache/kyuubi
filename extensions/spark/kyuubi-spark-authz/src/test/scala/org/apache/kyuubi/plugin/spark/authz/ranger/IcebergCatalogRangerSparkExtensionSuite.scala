@@ -256,17 +256,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles2)))(
         s"does not have [select] privilege on [$namespace1/$tableName]")
 
-      try {
-        SparkRangerAdminPlugin.getRangerConf.setBoolean(
-          s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
-          true)
+      withSingleCallEnabled {
         interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1).explain()))(
           s"does not have [select] privilege on [$namespace1/$tableName]," +
             s" [update] privilege on [$namespace1/$tableName]")
-      } finally {
-        SparkRangerAdminPlugin.getRangerConf.setBoolean(
-          s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
-          false)
       }
 
       // This triggers only one logical plan( input-files(2) < min-input-files(3) )
