@@ -20,8 +20,10 @@ import java.util.concurrent.{CountDownLatch, Executors}
 import java.util.concurrent.atomic.LongAdder
 
 import scala.collection.JavaConverters._
+import scala.util.Random
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
+import org.apache.kyuubi.util.ThreadUtils
 
 class SessionLimiterSuite extends KyuubiFunSuite {
 
@@ -148,5 +150,53 @@ class SessionLimiterSuite extends KyuubiFunSuite {
 
     assert(caught.getMessage.equals(
       "Connection denied because the user is in the deny user list. (user: user002)"))
+  }
+
+  test("test refresh unlimited users and deny users") {
+    val random: Random = new Random()
+    val latch = new CountDownLatch(600)
+    val userLimit = 100
+    val ipAddressLimit = 101
+    val userIpAddressLimit = 102
+    val limiter =
+      SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, Set.empty, Set.empty)
+    val threadPool = ThreadUtils.newDaemonCachedThreadPool("test-refresh-config")
+
+    def checkUserLimit(userIpAddress: UserIpAddress): Unit = {
+      for (i <- 0 until 200) {
+        threadPool.execute(() => {
+          try {
+            Thread.sleep(random.nextInt(200))
+            limiter.increment(userIpAddress)
+          } catch {
+            case _: Throwable =>
+          } finally {
+            Thread.sleep(random.nextInt(500))
+            // finally call limiter#decrement method.
+            limiter.decrement(userIpAddress)
+            latch.countDown()
+          }
+        })
+      }
+    }
+
+    checkUserLimit(UserIpAddress("user001", "127.0.0.1"))
+    checkUserLimit(UserIpAddress("user002", "127.0.0.2"))
+    checkUserLimit(UserIpAddress("user003", "127.0.0.3"))
+
+    Thread.sleep(100)
+    // set unlimited users and deny users
+    SessionLimiter.resetUnlimitedUsers(limiter, Set("user001"))
+    SessionLimiter.resetDenyUsers(limiter, Set("user002"))
+
+    Thread.sleep(300)
+    // unset unlimited users and deny users
+    SessionLimiter.resetUnlimitedUsers(limiter, Set.empty)
+    SessionLimiter.resetDenyUsers(limiter, Set.empty)
+
+    latch.await()
+    threadPool.shutdown()
+    limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
+      .foreach(c => assert(c.get() == 0))
   }
 }
