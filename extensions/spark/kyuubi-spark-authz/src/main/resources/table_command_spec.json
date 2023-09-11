@@ -909,20 +909,6 @@
   "opType" : "ANALYZE_TABLE",
   "queryDescs" : [ ]
 }, {
-  "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
-  "tableDescs" : [ {
-    "fieldName" : "tableIdent",
-    "fieldExtractor" : "TableIdentifierTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
-  } ],
-  "opType" : "ANALYZE_TABLE",
-  "queryDescs" : [ ]
-}, {
   "classname" : "org.apache.spark.sql.execution.command.CacheTableCommand",
   "tableDescs" : [ ],
   "opType" : "CREATEVIEW",
