@@ -572,7 +572,7 @@
         "type" : "select",
         "isAllowed" : true
       } ],
-      "users" : [ "iceberg_table_read_only" ],
+      "users" : [ "user_read_only_on_iceberg" ],
       "groups" : [ ],
       "roles" : [ ],
       "conditions" : [ ],
