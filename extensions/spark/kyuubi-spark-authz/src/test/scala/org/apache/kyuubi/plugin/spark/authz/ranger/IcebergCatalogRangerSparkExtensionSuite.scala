@@ -262,15 +262,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
             s" [update] privilege on [$namespace1/$tableName]")
       }
 
-      // This triggers only one logical plan( input-files(2) < min-input-files(3) )
-      doAs(
-        admin, {
-          val result1 = sql(rewriteDataFiles2).collect()
-          assert(result1(0)(0) === 0)
-        })
-
       /**
-       * This triggers two logical plans( input-files(2) >= min-input-files(2) ):
+       * Situation 1:
+       * Two logical plans triggered ( input-files(2) >= min-input-files(2) ):
        *
        * == Physical Plan 1 ==
        * (1) Call
@@ -285,6 +279,16 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
           val result2 = sql(rewriteDataFiles1).collect()
           // rewrite 2 files
           assert(result2(0)(0) === 2)
+        })
+
+      /**
+       * Situation 2:
+       * Only one logical plan triggered ( input-files(2) < min-input-files(3) )
+       */
+      doAs(
+        admin, {
+          val result1 = sql(rewriteDataFiles2).collect()
+          assert(result1(0)(0) === 0)
         })
     }
   }
