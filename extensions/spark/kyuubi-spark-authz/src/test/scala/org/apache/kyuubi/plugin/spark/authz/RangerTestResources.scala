@@ -28,6 +28,7 @@ object RangerTestUsers {
   val createOnlyUser = "create_only_user"
   val defaultTableOwner = "default_table_owner"
   val permViewOnlyUser = "user_perm_view_only"
+  val icebergReadOnlyUser = "iceberg_table_read_only"
 
   // non-authorized users
   val invisibleUser = "i_am_invisible"

@@ -28,9 +28,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.io.FileUtils
 import org.apache.ranger.plugin.model.RangerPolicy
-// scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
+// scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess.allowTypes
@@ -109,6 +109,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
       policyAccessForDefaultBobUse,
       policyAccessForDefaultBobSelect,
       policyAccessForPermViewAccessOnly,
+      policyAccessReadOnlyForIcebergNamespace,
       // row filter
       policyFilterForSrcTableKeyLessThan20,
       policyFilterForPermViewKeyLessThan20,
@@ -344,6 +345,18 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     policyItems = List(
       KRangerPolicyItem(
         users = List(permViewOnlyUser),
+        accesses = allowTypes(select),
+        delegateAdmin = true)))
+
+  private val policyAccessReadOnlyForIcebergNamespace = KRangerPolicy(
+    name = "reaodnly_access_iceberg_namespace",
+    resources = Map(
+      databaseRes(icebergNamespace),
+      allTableRes,
+      allColumnRes),
+    policyItems = List(
+      KRangerPolicyItem(
+        users = List(icebergReadOnlyUser),
         accesses = allowTypes(select),
         delegateAdmin = true)))
 }

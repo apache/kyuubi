@@ -237,7 +237,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("CALL RewriteDataFilesProcedure") {
     val tableName = "table_select_call_command_table"
-    val table = s"$catalogV2.$defaultBob.$tableName"
+    val table = s"$catalogV2.$namespace1.$tableName"
     val rewriteDataFiles1 = s"CALL $catalogV2.system.rewrite_data_files " +
       s"(table => '$table', options => map('min-input-files','2'))"
     val rewriteDataFiles2 = s"CALL $catalogV2.system.rewrite_data_files " +
@@ -252,24 +252,24 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         })
 
       // user bob has select permission on table
-      interceptContains[AccessControlException](doAs(bob, sql(rewriteDataFiles1)))(
-        s"does not have [update] privilege on [$defaultBob/$tableName]")
-      interceptContains[AccessControlException](doAs(bob, sql(rewriteDataFiles2)))(
-        s"does not have [update] privilege on [$defaultBob/$tableName]")
+      interceptContains[AccessControlException](doAs(icebergReadOnlyUser, sql(rewriteDataFiles1)))(
+        s"does not have [update] privilege on [$namespace1/$tableName]")
+      interceptContains[AccessControlException](doAs(icebergReadOnlyUser, sql(rewriteDataFiles2)))(
+        s"does not have [update] privilege on [$namespace1/$tableName]")
 
       // user someone has no permission on table
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1)))(
-        s"does not have [select] privilege on [$defaultBob/$tableName]")
+        s"does not have [select] privilege on [$namespace1/$tableName]")
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles2)))(
-        s"does not have [select] privilege on [$defaultBob/$tableName]")
+        s"does not have [select] privilege on [$namespace1/$tableName]")
 
       try {
         SparkRangerAdminPlugin.getRangerConf.setBoolean(
           s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
           true)
         interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1).explain()))(
-          s"does not have [select] privilege on [$defaultBob/$tableName]," +
-            s" [update] privilege on [$defaultBob/$tableName]")
+          s"does not have [select] privilege on [$namespace1/$tableName]," +
+            s" [update] privilege on [$namespace1/$tableName]")
       } finally {
         SparkRangerAdminPlugin.getRangerConf.setBoolean(
           s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
