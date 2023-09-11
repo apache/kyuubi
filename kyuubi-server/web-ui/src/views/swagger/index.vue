@@ -23,6 +23,7 @@
   </main>
 </template>
 <script lang="ts">
+  import 'swagger-ui-dist/swagger-ui.css';
   import { SwaggerUIBundle, SwaggerUIStandalonePreset } from 'swagger-ui-dist'
   export default {
     name: 'ImportSwagger',
