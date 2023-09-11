@@ -244,13 +244,13 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
           sql(s"INSERT INTO $table VALUES (3, 'julie'), (4, 'ross')")
         })
 
-      // user bob has select permission on table
+      // user `user_read_only_on_iceberg` has select permission in database `iceberg_ns`
       interceptContains[AccessControlException](doAs(icebergReadOnlyUser, sql(rewriteDataFiles1)))(
         s"does not have [update] privilege on [$namespace1/$tableName]")
       interceptContains[AccessControlException](doAs(icebergReadOnlyUser, sql(rewriteDataFiles2)))(
         s"does not have [update] privilege on [$namespace1/$tableName]")
 
-      // user someone has no permission on table
+      // user `someone` has no permission on table
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1)))(
         s"does not have [select] privilege on [$namespace1/$tableName]")
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles2)))(
@@ -268,7 +268,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
        * when ( input-files(2) >= min-input-files(2) ):
        *
        * == Physical Plan 1 ==
-       * (1) Call
+       * Call (1)
        *
        * == Physical Plan 2 ==
        * AppendData (3)
@@ -286,6 +286,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
        * Situation 2:
        * Only one logical plan triggered
        * when ( input-files(2) < min-input-files(3) )
+       *
+       * == Physical Plan ==
+       *  Call (1)
        */
       doAs(
         admin, {
