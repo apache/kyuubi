@@ -133,9 +133,13 @@ class IdentifierTableExtractor extends TableExtractor {
   }
 }
 
+/**
+ * java.lang.String
+ * with concat parts by "."
+ */
 class StringTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val tableNameArr = v1.toString.split("\\.")
+    val tableNameArr = v1.asInstanceOf[String].split("\\.")
     val maybeTable = tableNameArr.length match {
       case 1 => Table(None, None, tableNameArr(0), None)
       case 2 => Table(None, Some(tableNameArr(0)), tableNameArr(1), None)
@@ -153,7 +157,7 @@ class ExpressionSeqTableExtractor extends TableExtractor {
     val expressions = v1.asInstanceOf[Seq[Expression]]
     // Iceberg will rearrange the parameters according to the parameter order
     // defined in the procedure, where the table parameters are currently always the first.
-    lookupExtractor[StringTableExtractor].apply(spark, expressions.head)
+    lookupExtractor[StringTableExtractor].apply(spark, expressions.head.toString())
   }
 }
 
