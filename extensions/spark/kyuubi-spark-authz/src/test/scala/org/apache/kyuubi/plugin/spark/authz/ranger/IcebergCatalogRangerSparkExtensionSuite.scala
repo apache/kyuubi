@@ -103,10 +103,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
       s" on [$namespace1/$table1/id]"))
 
-    try {
-      SparkRangerAdminPlugin.getRangerConf.setBoolean(
-        s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
-        true)
+    withSingleCallEnabled {
       val e2 = intercept[AccessControlException](
         doAs(
           someone,
@@ -115,10 +112,6 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         s" [select] privilege" +
         s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
         s" [update] privilege on [$namespace1/$outputTable1]"))
-    } finally {
-      SparkRangerAdminPlugin.getRangerConf.setBoolean(
-        s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
-        false)
     }
 
     doAs(admin, sql(mergeIntoSql))

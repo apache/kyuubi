@@ -36,7 +36,6 @@ import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
-
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll {
   // scalastyle:on
@@ -87,6 +86,21 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           case _: NoSuchTableException =>
         }
       }
+    }
+  }
+
+  /**
+   * Enables authorizing in single call mode,
+   * and disables authorizing in single call mode after calling `f`
+   */
+  protected def withSingleCallEnabled(f: => Unit): Unit = {
+    val singleCallConfig =
+      s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call"
+    try {
+      SparkRangerAdminPlugin.getRangerConf.setBoolean(singleCallConfig, true)
+      f
+    } finally {
+      SparkRangerAdminPlugin.getRangerConf.setBoolean(singleCallConfig, false)
     }
   }
 
@@ -628,10 +642,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       val e1 = intercept[AccessControlException](doAs(someone, sql(insertSql1)))
       assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
 
-      try {
-        SparkRangerAdminPlugin.getRangerConf.setBoolean(
-          s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
-          true)
+      withSingleCallEnabled {
         val e2 = intercept[AccessControlException](doAs(someone, sql(insertSql1)))
         assert(e2.getMessage.contains(s"does not have" +
           s" [select] privilege on" +
@@ -639,11 +650,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
           s" [update] privilege on [$db1/$sinkTable1/id,$db1/$sinkTable1/age," +
           s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]"))
-      } finally {
-        // revert to default value
-        SparkRangerAdminPlugin.getRangerConf.setBoolean(
-          s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
-          false)
       }
     }
   }
