@@ -250,13 +250,14 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
           sql(s"INSERT INTO $table VALUES (1, 'chenliang'), (2, 'tom')")
           sql(s"INSERT INTO $table VALUES (3, 'julie'), (4, 'ross')")
         })
-      // user bob has select permission on table `table_select_call_command_table`
+
+      // user bob has select permission on table
       interceptContains[AccessControlException](doAs(bob, sql(rewriteDataFiles1)))(
         s"does not have [update] privilege on [$defaultBob/$tableName]")
       interceptContains[AccessControlException](doAs(bob, sql(rewriteDataFiles2)))(
         s"does not have [update] privilege on [$defaultBob/$tableName]")
 
-      // user someone does not have any permission on `table_select_call_command_table`
+      // user someone has no permission on table
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1)))(
         s"does not have [select] privilege on [$defaultBob/$tableName]")
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles2)))(
