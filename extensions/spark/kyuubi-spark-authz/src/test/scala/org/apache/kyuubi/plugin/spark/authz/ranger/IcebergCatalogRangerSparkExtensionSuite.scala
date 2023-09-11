@@ -242,7 +242,6 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s"(table => '$table', options => map('min-input-files','2'))"
     val rewriteDataFiles2 = s"CALL $catalogV2.system.rewrite_data_files " +
       s"(table => '$table', options => map('min-input-files','3'))"
-    var snapshotId = 0L
 
     withCleanTmpResources(Seq((table, "table"))) {
       doAs(
@@ -250,8 +249,6 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
           sql(s"CREATE TABLE IF NOT EXISTS $table  (id int, name string) USING iceberg")
           sql(s"INSERT INTO $table VALUES (1, 'chenliang'), (2, 'tom')")
           sql(s"INSERT INTO $table VALUES (3, 'julie'), (4, 'ross')")
-          snapshotId = sql(s"select * from $table.snapshots limit 1")
-            .collect().apply(0).getAs[Long]("snapshot_id")
         })
       // user bob has select permission on table `table_select_call_command_table`
       interceptContains[AccessControlException](doAs(bob, sql(rewriteDataFiles1)))(
