@@ -25,6 +25,7 @@
 <script lang="ts">
   import 'swagger-ui-dist/swagger-ui.css'
   import { SwaggerUIBundle, SwaggerUIStandalonePreset } from 'swagger-ui-dist'
+
   export default {
     name: 'ImportSwagger',
     data() {
@@ -41,22 +42,4 @@
     }
   }
 </script>
-<style scoped>
-  @import 'swagger-ui-dist/swagger-ui.css';
-  html {
-    box-sizing: border-box;
-    overflow: -moz-scrollbars-vertical;
-    overflow-y: scroll;
-  }
-
-  *,
-  *:before,
-  *:after {
-    box-sizing: inherit;
-  }
-
-  body {
-    margin: 0;
-    background: #fafafa;
-  }
-</style>
+<style scoped></style>
