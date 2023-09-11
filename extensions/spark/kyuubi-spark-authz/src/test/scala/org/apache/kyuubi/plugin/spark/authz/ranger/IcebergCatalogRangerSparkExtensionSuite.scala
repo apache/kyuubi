@@ -244,7 +244,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
           sql(s"INSERT INTO $table VALUES (3, 'julie'), (4, 'ross')")
         })
 
-      // user `user_read_only_on_iceberg` has select permission in database `iceberg_ns`
+      // user `user_read_only_on_iceberg` has select permission on database `iceberg_ns`
       interceptContains[AccessControlException](doAs(icebergReadOnlyUser, sql(rewriteDataFiles1)))(
         s"does not have [update] privilege on [$namespace1/$tableName]")
       interceptContains[AccessControlException](doAs(icebergReadOnlyUser, sql(rewriteDataFiles2)))(
