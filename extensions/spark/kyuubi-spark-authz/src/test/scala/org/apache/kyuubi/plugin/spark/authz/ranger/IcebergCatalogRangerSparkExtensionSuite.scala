@@ -264,7 +264,8 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
       /**
        * Situation 1:
-       * Two logical plans triggered ( input-files(2) >= min-input-files(2) ):
+       * Two logical plans triggered
+       * when ( input-files(2) >= min-input-files(2) ):
        *
        * == Physical Plan 1 ==
        * (1) Call
@@ -283,7 +284,8 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
       /**
        * Situation 2:
-       * Only one logical plan triggered ( input-files(2) < min-input-files(3) )
+       * Only one logical plan triggered
+       * when ( input-files(2) < min-input-files(3) )
        */
       doAs(
         admin, {
