@@ -271,6 +271,19 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       interceptContains[AccessControlException](doAs(someone, sql(snapshotCommand).explain()))(
         s"does not have [select] privilege on [$defaultBob/$tableName]")
 
+      try {
+        SparkRangerAdminPlugin.getRangerConf.setBoolean(
+          s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+          true)
+        interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1).explain()))(
+          s"does not have [select] privilege on [$defaultBob/$tableName]," +
+            s" [update] privilege on [$defaultBob/$tableName]")
+      } finally {
+        SparkRangerAdminPlugin.getRangerConf.setBoolean(
+          s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+          false)
+      }
+
       // This triggers only one logical plan( input-files(2) < min-input-files(3) )
       doAs(
         admin, {
