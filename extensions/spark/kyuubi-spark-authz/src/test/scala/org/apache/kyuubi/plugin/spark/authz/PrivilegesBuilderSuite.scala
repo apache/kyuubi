@@ -434,7 +434,17 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
-    assert(out.size === 0)
+    assert(out.size === 1)
+    val po1 = out.head
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assertEqualsIgnoreCase(reusedDb)(po1.dbname)
+    assertEqualsIgnoreCase(reusedPartTableShort)(po1.objectName)
+    // ignore this check as it behaves differently across spark versions
+    assert(po1.columns.isEmpty)
+    checkTableOwner(po1)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
+    assert(accessType1 === AccessType.SELECT)
   }
 
   test("AnalyzeTablesCommand") {

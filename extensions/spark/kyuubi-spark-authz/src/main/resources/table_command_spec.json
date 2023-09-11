@@ -905,6 +905,15 @@
     "catalogDesc" : null,
     "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "ANALYZE_TABLE",
   "queryDescs" : [ ]
