@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
-import org.apache.kyuubi.plugin.spark.authz.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
@@ -62,7 +61,7 @@ object IcebergCommands {
         "args",
         classOf[ExpressionSeqTableExtractor],
         isInput = true)
-    TableCommandSpec(cmd, Seq(td1, td2), opType = OperationType.ALTERTABLE_ADDPARTS)
+    TableCommandSpec(cmd, Seq(td1, td2))
   }
 
   val data: Array[TableCommandSpec] = Array(

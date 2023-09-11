@@ -116,7 +116,7 @@
     "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ALTERTABLE_ADDPARTS",
+  "opType" : "QUERY",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CommentOnTable",
