@@ -65,10 +65,10 @@ object IcebergCommands {
   }
 
   val data: Array[TableCommandSpec] = Array(
+    CallProcedure,
     DeleteFromIcebergTable,
     UpdateIcebergTable,
     MergeIntoIcebergTable,
     MergeIntoIcebergTable.copy(classname =
-      "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable"),
-    CallProcedure)
+      "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable"))
 }

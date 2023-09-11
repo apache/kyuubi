@@ -263,7 +263,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       interceptContains[AccessControlException](doAs(bob, sql(snapshotCommand).explain()))(
         s"does not have [update] privilege on [$defaultBob/$tableName]")
 
-      // user someone does not have any permissions on `table_select_call_command_table`
+      // user someone does not have any permission on `table_select_call_command_table`
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1)))(
         s"does not have [select] privilege on [$defaultBob/$tableName]")
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles2)))(
@@ -271,23 +271,26 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       interceptContains[AccessControlException](doAs(someone, sql(snapshotCommand).explain()))(
         s"does not have [select] privilege on [$defaultBob/$tableName]")
 
+      // This triggers only one logical plan( input-files(2) < min-input-files(3) )
       doAs(
         admin, {
-          // This triggers only one logical plan( input-files(2) < min-input-files(3) )
           val commandResult1 = sql(rewriteDataFiles2).collect()
           assert(commandResult1(0)(0) === 0)
+        })
 
-          /**
-           * This triggers two logical plans( input-files(2) >= min-input-files(2) ):
-           *
-           * == Physical Plan 1 ==
-           * (1) Call
-           *
-           * == Physical Plan 2 ==
-           * AppendData (3)
-           * +- * ColumnarToRow (2)
-           * +- BatchScan local.iceberg_ns.call_command_table (1)
-           */
+      /**
+       * This triggers two logical plans( input-files(2) >= min-input-files(2) ):
+       *
+       * == Physical Plan 1 ==
+       * (1) Call
+       *
+       * == Physical Plan 2 ==
+       * AppendData (3)
+       * +- * ColumnarToRow (2)
+       * +- BatchScan local.iceberg_ns.call_command_table (1)
+       */
+      doAs(
+        admin, {
           val commandResult2 = sql(rewriteDataFiles1).collect()
           // rewrite 2 files
           assert(commandResult2(0)(0) === 2)
