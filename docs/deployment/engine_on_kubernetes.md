@@ -36,6 +36,17 @@ Spark on Kubernetes config master by using a special format.
 
 You can use cmd `kubectl cluster-info` to get api-server host and port.
 
+### Deploy Mode
+
+One of the main advantages of the Kyuubi server compared to other interactive Spark clients is that it supports cluster deploy mode.
+It is highly recommended to run Spark in k8s in cluster mode.
+
+The minimum required configurations are:
+
+* spark.submit.deployMode (cluster)
+* spark.kubernetes.file.upload.path (path on s3 or hdfs)
+* spark.kubernetes.authenticate.driver.serviceAccountName ([viz ServiceAccount](#serviceaccount))
+
 ### Docker Image
 
 Spark ships a `./bin/docker-image-tool.sh` script to build and publish the Docker images for running Spark applications on Kubernetes.

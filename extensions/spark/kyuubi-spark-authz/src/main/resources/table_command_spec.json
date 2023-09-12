@@ -936,29 +936,6 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
-  "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
-  "tableDescs" : [ {
-    "fieldName" : "tableIdent",
-    "fieldExtractor" : "TableIdentifierTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
-  }, {
-    "fieldName" : "tableIdent",
-    "fieldExtractor" : "TableIdentifierTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
-  } ],
-  "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
-}, {
   "classname" : "org.apache.spark.sql.execution.command.CacheTableCommand",
   "tableDescs" : [ ],
   "opType" : "CREATEVIEW",

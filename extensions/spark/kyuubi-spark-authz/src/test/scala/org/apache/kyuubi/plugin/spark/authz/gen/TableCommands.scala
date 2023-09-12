@@ -607,8 +607,6 @@ object TableCommands {
     AnalyzeColumn,
     AnalyzePartition,
     AnalyzeTable,
-    AnalyzeTable.copy(classname =
-      "org.apache.spark.sql.execution.command.AnalyzeTablesCommand"),
     AppendDataV2,
     CacheTable,
     CacheTableAsSelect,
