@@ -379,7 +379,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val plan = sql(s"ANALYZE TABLE $reusedPartTable PARTITION (pid=1)" +
       s" COMPUTE STATISTICS FOR COLUMNS key").queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
-    assert(operationType === ANALYZE_TABLE)
+    assert(operationType === ALTERTABLE_PROPERTIES)
     assert(in.size === 1)
     val po0 = in.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
@@ -390,49 +390,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.columns === Seq("key"))
     checkTableOwner(po0)
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
-
-    assert(out.size === 0)
-  }
-
-  test("AnalyzePartitionCommand") {
-    val plan = sql(s"ANALYZE TABLE $reusedPartTable" +
-      s" PARTITION (pid = 1) COMPUTE STATISTICS").queryExecution.analyzed
-    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
-    assert(operationType === ANALYZE_TABLE)
-
-    assert(in.size === 1)
-    val po0 = in.head
-    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assertEqualsIgnoreCase(reusedDb)(po0.dbname)
-    assertEqualsIgnoreCase(reusedPartTableShort)(po0.objectName)
-    // ignore this check as it behaves differently across spark versions
-    assert(po0.columns === Seq("pid"))
-    checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
-
-    assert(out.size === 0)
-  }
-
-  test("AnalyzeTableCommand") {
-    val plan = sql(s"ANALYZE TABLE $reusedPartTable COMPUTE STATISTICS")
-      .queryExecution.analyzed
-    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
-
-    assert(operationType === ANALYZE_TABLE)
-    assert(in.size === 1)
-    val po0 = in.head
-    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assertEqualsIgnoreCase(reusedDb)(po0.dbname)
-    assertEqualsIgnoreCase(reusedPartTableShort)(po0.objectName)
-    // ignore this check as it behaves differently across spark versions
-    assert(po0.columns.isEmpty)
-    checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    assert(accessType0 === AccessType.ALTER)
 
     assert(out.size === 1)
     val po1 = out.head
@@ -444,7 +402,70 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po1.columns.isEmpty)
     checkTableOwner(po1)
     val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
-    assert(accessType1 === AccessType.SELECT)
+    assert(accessType1 === AccessType.ALTER)
+
+  }
+
+  test("AnalyzePartitionCommand") {
+    val plan = sql(s"ANALYZE TABLE $reusedPartTable" +
+      s" PARTITION (pid = 1) COMPUTE STATISTICS").queryExecution.analyzed
+    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === ALTERTABLE_PROPERTIES)
+
+    assert(in.size === 1)
+    val po0 = in.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assertEqualsIgnoreCase(reusedDb)(po0.dbname)
+    assertEqualsIgnoreCase(reusedPartTableShort)(po0.objectName)
+    // ignore this check as it behaves differently across spark versions
+    assert(po0.columns === Seq("pid"))
+    checkTableOwner(po0)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.ALTER)
+
+    assert(out.size === 1)
+    val po1 = out.head
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assertEqualsIgnoreCase(reusedDb)(po1.dbname)
+    assertEqualsIgnoreCase(reusedPartTableShort)(po1.objectName)
+    // ignore this check as it behaves differently across spark versions
+    assert(po1.columns.isEmpty)
+    checkTableOwner(po1)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
+    assert(accessType1 === AccessType.ALTER)
+  }
+
+  test("AnalyzeTableCommand") {
+    val plan = sql(s"ANALYZE TABLE $reusedPartTable COMPUTE STATISTICS")
+      .queryExecution.analyzed
+    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+
+    assert(operationType === ALTERTABLE_PROPERTIES)
+    assert(in.size === 1)
+    val po0 = in.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assertEqualsIgnoreCase(reusedDb)(po0.dbname)
+    assertEqualsIgnoreCase(reusedPartTableShort)(po0.objectName)
+    // ignore this check as it behaves differently across spark versions
+    assert(po0.columns.isEmpty)
+    checkTableOwner(po0)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.ALTER)
+
+    assert(out.size === 1)
+    val po1 = out.head
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assertEqualsIgnoreCase(reusedDb)(po1.dbname)
+    assertEqualsIgnoreCase(reusedPartTableShort)(po1.objectName)
+    // ignore this check as it behaves differently across spark versions
+    assert(po1.columns.isEmpty)
+    checkTableOwner(po1)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
+    assert(accessType1 === AccessType.ALTER)
   }
 
   test("AnalyzeTablesCommand") {
