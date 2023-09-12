@@ -191,6 +191,7 @@ The tag pattern is `v${RELEASE_VERSION}-rc${RELEASE_RC_NO}`, e.g. `v1.7.0-rc0`
 ```shell
 # Bump to the release version
 build/mvn versions:set -DgenerateBackupPoms=false -DnewVersion="${RELEASE_VERSION}"
+(cd kyuubi-server/web-ui && npm version "${RELEASE_VERSION}")
 git commit -am "[RELEASE] Bump ${RELEASE_VERSION}"
 
 # Create tag
@@ -198,6 +199,7 @@ git tag v${RELEASE_VERSION}-rc${RELEASE_RC_NO}
 
 # Prepare for the next development version
 build/mvn versions:set -DgenerateBackupPoms=false -DnewVersion="${NEXT_VERSION}-SNAPSHOT"
+(cd kyuubi-server/web-ui && npm version "${NEXT_VERSION}-SNAPSHOT")
 git commit -am "[RELEASE] Bump ${NEXT_VERSION}-SNAPSHOT"
 
 # Push branch to apache remote repo
@@ -299,6 +301,9 @@ svn delete https://dist.apache.org/repos/dist/dev/kyuubi/{RELEASE_TAG} \
   --message "Remove deprecated Apache Kyuubi ${RELEASE_TAG}" 
 ```
 
-## Publish docker image
+## Keep other artifacts up-to-date
 
-See steps in `https://github.com/apache/kyuubi-docker/blob/master/release/release_guide.md`
+- Docker Image: https://github.com/apache/kyuubi-docker/blob/master/release/release_guide.md
+- Helm Charts: https://github.com/apache/kyuubi/blob/master/charts/kyuubi/Chart.yaml
+- Playground: https://github.com/apache/kyuubi/blob/master/docker/playground/.env
+
