@@ -306,3 +306,4 @@ svn delete https://dist.apache.org/repos/dist/dev/kyuubi/{RELEASE_TAG} \
 - Docker Image: https://github.com/apache/kyuubi-docker/blob/master/release/release_guide.md
 - Helm Charts: https://github.com/apache/kyuubi/blob/master/charts/kyuubi/Chart.yaml
 - Playground: https://github.com/apache/kyuubi/blob/master/docker/playground/.env
+
