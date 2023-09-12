@@ -231,17 +231,19 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   test("CALL RewriteDataFilesProcedure") {
     val tableName = "table_select_call_command_table"
     val table = s"$catalogV2.$namespace1.$tableName"
+    val initDataFilesCount = 2
     val rewriteDataFiles1 = s"CALL $catalogV2.system.rewrite_data_files " +
-      s"(table => '$table', options => map('min-input-files','2'))"
+      s"(table => '$table', options => map('min-input-files','$initDataFilesCount'))"
     val rewriteDataFiles2 = s"CALL $catalogV2.system.rewrite_data_files " +
-      s"(table => '$table', options => map('min-input-files','3'))"
+      s"(table => '$table', options => map('min-input-files','${initDataFilesCount + 1}'))"
 
     withCleanTmpResources(Seq((table, "table"))) {
       doAs(
         admin, {
           sql(s"CREATE TABLE IF NOT EXISTS $table  (id int, name string) USING iceberg")
-          sql(s"INSERT INTO $table VALUES (1, 'chenliang'), (2, 'tom')")
-          sql(s"INSERT INTO $table VALUES (3, 'julie'), (4, 'ross')")
+          // insert 2 data files
+          (0 until initDataFilesCount)
+            .foreach(i => sql(s"INSERT INTO $table VALUES ($i, 'user_$i')"))
         })
 
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1)))(
@@ -250,7 +252,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         s"does not have [alter] privilege on [$namespace1/$tableName]")
 
       /**
-       * Situation 1:
+       * Case 1: Number of input data files equals or greater than minimum expected.
        * Two logical plans triggered
        * when ( input-files(2) >= min-input-files(2) ):
        *
@@ -266,11 +268,11 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         admin, {
           val result1 = sql(rewriteDataFiles1).collect()
           // rewritten results into 2 data files
-          assert(result1(0)(0) === 2)
+          assert(result1(0)(0) === initDataFilesCount)
         })
 
       /**
-       * Situation 2:
+       * Case 2: Number of input data files less than minimum expected.
        * Only one logical plan triggered
        * when ( input-files(2) < min-input-files(3) )
        *

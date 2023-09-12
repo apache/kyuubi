@@ -132,8 +132,8 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
       sql(s"CREATE TABLE IF NOT EXISTS $tableId (key int, value String) USING iceberg")
       sql(s"INSERT INTO $tableId VALUES (1, 'a'), (2, 'b'), (3, 'c')")
 
-      val plan = sql(s"CALL $catalogV2.system.rewrite_data_files " +
-        s"(table => '$tableId', options => map('min-input-files','2')) ").queryExecution.analyzed
+      val plan = sql(s"CALL $catalogV2.system.rewrite_data_files (table => '$tableId')")
+        .queryExecution.analyzed
       val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
       assert(operationType === ALTERTABLE_PROPERTIES)
       assert(inputs.size === 0)
