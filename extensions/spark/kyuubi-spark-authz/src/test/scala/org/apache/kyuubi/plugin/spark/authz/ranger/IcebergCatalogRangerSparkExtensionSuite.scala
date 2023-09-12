@@ -277,9 +277,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
        */
       doAs(
         admin, {
-          val result2 = sql(rewriteDataFiles1).collect()
+          val result1 = sql(rewriteDataFiles1).collect()
           // rewrite 2 files
-          assert(result2(0)(0) === 2)
+          assert(result1(0)(0) === 2)
         })
 
       /**
@@ -292,8 +292,8 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
        */
       doAs(
         admin, {
-          val result1 = sql(rewriteDataFiles2).collect()
-          assert(result1(0)(0) === 0)
+          val result2 = sql(rewriteDataFiles2).collect()
+          assert(result2(0)(0) === 0)
         })
     }
   }
