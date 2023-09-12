@@ -282,7 +282,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       doAs(
         admin, {
           val result1 = sql(rewriteDataFiles1).collect()
-          // rewrite 2 files
+          // rewritten results into 2 data files
           assert(result1(0)(0) === 2)
         })
 
