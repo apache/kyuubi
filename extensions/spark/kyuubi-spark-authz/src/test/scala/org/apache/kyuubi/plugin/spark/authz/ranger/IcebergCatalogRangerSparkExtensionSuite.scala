@@ -259,11 +259,11 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       withSingleCallEnabled {
         interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1).explain()))(
           s"does not have [select] privilege on [$namespace1/$tableName]," +
-            s" [update] privilege on [$namespace1/$tableName]")
+            s" [alter] privilege on [$namespace1/$tableName]")
 
         interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles2).explain()))(
           s"does not have [select] privilege on [$namespace1/$tableName]," +
-            s" [update] privilege on [$namespace1/$tableName]")
+            s" [alter] privilege on [$namespace1/$tableName]")
       }
 
       /**
