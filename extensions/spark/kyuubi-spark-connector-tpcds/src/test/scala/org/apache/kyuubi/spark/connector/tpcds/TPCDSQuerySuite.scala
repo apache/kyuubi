@@ -28,7 +28,6 @@ import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.spark.connector.common.GoldenFileUtils._
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 
-// scalastyle:off line.size.limit
 /**
  * To run this test suite:
  * {{{
@@ -40,8 +39,6 @@ import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSessi
  *   dev/gen/gen_tpcds_queries.sh
  * }}}
  */
-// scalastyle:on line.size.limit
-
 @Slow
 class TPCDSQuerySuite extends KyuubiFunSuite {
 

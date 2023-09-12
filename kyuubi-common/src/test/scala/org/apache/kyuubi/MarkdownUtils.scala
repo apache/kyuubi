@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, StandardOpenOption}
-
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import com.vladsch.flexmark.formatter.Formatter
@@ -28,36 +24,6 @@ import com.vladsch.flexmark.parser.{Parser, ParserEmulationProfile, PegdownExten
 import com.vladsch.flexmark.profile.pegdown.PegdownOptionsAdapter
 import com.vladsch.flexmark.util.data.{MutableDataHolder, MutableDataSet}
 import com.vladsch.flexmark.util.sequence.SequenceUtils.EOL
-import org.scalatest.Assertions.{assertResult, withClue}
-
-object MarkdownUtils {
-
-  def verifyOutput(
-      markdown: Path,
-      newOutput: MarkdownBuilder,
-      agent: String,
-      module: String): Unit = {
-    val formatted = newOutput.toMarkdown
-    if (System.getenv("KYUUBI_UPDATE") == "1") {
-      Files.write(
-        markdown,
-        formatted.asJava,
-        StandardOpenOption.CREATE,
-        StandardOpenOption.TRUNCATE_EXISTING)
-    } else {
-      Files.readAllLines(markdown, StandardCharsets.UTF_8).asScala.toStream
-        .zipWithIndex.zip(formatted).foreach { case ((lineInFile, lineIndex), formattedLine) =>
-          withClue(
-            s""" The markdown file ($markdown:${lineIndex + 1}) is out of date.
-               | Please update doc with KYUUBI_UPDATE=1 build/mvn clean test
-               | -pl $module -am -Pflink-provided,spark-provided,hive-provided
-               | -Dtest=none -DwildcardSuites=$agent \n""".stripMargin) {
-            assertResult(formattedLine)(lineInFile)
-          }
-        }
-    }
-  }
-}
 
 class MarkdownBuilder {
   private val buffer = new ListBuffer[String]

@@ -17,7 +17,7 @@
 #
 
 # Golden result file:
-# docs/sql/functions.md
+# docs/extensions/engines/spark/functions.md
 
 KYUUBI_UPDATE="${KYUUBI_UPDATE:-1}" \
 build/mvn clean test \

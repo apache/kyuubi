@@ -19,24 +19,23 @@ package org.apache.kyuubi.engine.hive.udf
 
 import java.nio.file.Paths
 
-import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder, MarkdownUtils, Utils}
+import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder, Utils}
+import org.apache.kyuubi.util.GoldenFileUtils._
 
-// scalastyle:off line.size.limit
 /**
  * End-to-end test cases for configuration doc file
- * The golden result file is "docs/sql/functions.md".
+ * The golden result file is "docs/extensions/engines/hive/functions.md".
  *
  * To run the entire test suite:
  * {{{
- *   build/mvn clean test -pl externals/kyuubi-hive-sql-engine -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.engine.hive.udf.KyuubiDefinedFunctionSuite
+ *   KYUUBI_UPDATE=0 dev/gen/gen_hive_kdf_docs.sh
  * }}}
  *
  * To re-generate golden files for entire suite, run:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn clean test -pl externals/kyuubi-hive-sql-engine -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.engine.hive.udf.KyuubiDefinedFunctionSuite
+ *   dev/gen/gen_hive_kdf_docs.sh
  * }}}
  */
-// scalastyle:on line.size.limit
 class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
 
   private val kyuubiHome: String = Utils.getCodeSourceLocation(getClass)
@@ -60,10 +59,6 @@ class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
       builder += s"${func.name} | ${func.description} | ${func.returnType} | ${func.since}"
     }
 
-    MarkdownUtils.verifyOutput(
-      markdown,
-      builder,
-      getClass.getCanonicalName,
-      "externals/kyuubi-hive-sql-engine")
+    verifyOrRegenerateGoldenFile(markdown, builder.toMarkdown, "dev/gen/gen_hive_kdf_docs.sh")
   }
 }
