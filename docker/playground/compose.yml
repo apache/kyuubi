@@ -21,7 +21,7 @@ services:
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio_minio
-      MINIO_DEFAULT_BUCKETS: spark-bucket,iceberg-bucket
+      MINIO_DEFAULT_BUCKETS: spark-bucket
     container_name: minio
     hostname: minio
     ports:
