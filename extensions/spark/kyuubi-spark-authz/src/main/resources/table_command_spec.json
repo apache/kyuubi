@@ -97,14 +97,10 @@
     "fieldName" : "args",
     "fieldExtractor" : "ExpressionSeqTableExtractor",
     "columnDesc" : null,
-    "actionTypeDesc" : {
-      "fieldName" : null,
-      "fieldExtractor" : null,
-      "actionType" : "INSERT_OVERWRITE"
-    },
+    "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
-    "isInput" : false,
+    "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   }, {
     "fieldName" : "args",
@@ -113,10 +109,10 @@
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
-    "isInput" : true,
+    "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "QUERY",
+  "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CommentOnTable",

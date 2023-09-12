@@ -246,15 +246,15 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
       // user `user_read_only_on_iceberg` has select permission on database `iceberg_ns`
       interceptContains[AccessControlException](doAs(icebergReadOnlyUser, sql(rewriteDataFiles1)))(
-        s"does not have [update] privilege on [$namespace1/$tableName]")
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
       interceptContains[AccessControlException](doAs(icebergReadOnlyUser, sql(rewriteDataFiles2)))(
-        s"does not have [update] privilege on [$namespace1/$tableName]")
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
 
       // user `someone` has no permission on table
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1)))(
-        s"does not have [select] privilege on [$namespace1/$tableName]")
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
       interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles2)))(
-        s"does not have [select] privilege on [$namespace1/$tableName]")
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
 
       withSingleCallEnabled {
         interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1).explain()))(
