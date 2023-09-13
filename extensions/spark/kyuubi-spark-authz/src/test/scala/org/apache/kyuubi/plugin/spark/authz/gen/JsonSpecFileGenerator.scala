@@ -20,11 +20,11 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths, StandardOpenOption}
 
-import org.apache.commons.io.FileUtils
 //scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.serde.{mapper, CommandSpec}
+import org.apache.kyuubi.util.AssertionUtils._
 
 /**
  * Generates the default command specs to src/main/resources dir.
@@ -39,7 +39,6 @@ import org.apache.kyuubi.plugin.spark.authz.serde.{mapper, CommandSpec}
  *   dev/gen/gen_ranger_spec_json.sh
  * }}}
  */
-
 class JsonSpecFileGenerator extends AnyFunSuite {
   // scalastyle:on
   test("check spec json files") {
@@ -70,12 +69,11 @@ class JsonSpecFileGenerator extends AnyFunSuite {
         StandardOpenOption.CREATE,
         StandardOpenOption.TRUNCATE_EXISTING)
     } else {
-      val existedFileContent =
-        FileUtils.readFileToString(filePath.toFile, StandardCharsets.UTF_8)
-      withClue(s"Check $filename failed. Please regenerate the ranger policy file by running"
-        + " `dev/gen/gen_ranger_spec_json.sh`.") {
-        assert(generatedStr.equals(existedFileContent))
-      }
+      assertFileContent(
+        filePath,
+        Seq(generatedStr),
+        "dev/gen/gen_ranger_spec_json.sh",
+        splitFirstExpectedLine = true)
     }
   }
 }
