@@ -92,6 +92,20 @@
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ]
 }, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.Call",
+  "tableDescs" : [ {
+    "fieldName" : "args",
+    "fieldExtractor" : "ExpressionSeqTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CommentOnTable",
   "tableDescs" : [ {
     "fieldName" : "child",

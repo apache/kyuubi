@@ -27,6 +27,7 @@ import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.IcebergTest
+import org.apache.kyuubi.util.AssertionUtils._
 
 /**
  * Tests for RangerSparkExtensionSuite
@@ -225,5 +226,64 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       doAs(someone, sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain()))
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
       s" on [$namespace1/$table1]"))
+  }
+
+  test("CALL RewriteDataFilesProcedure") {
+    val tableName = "table_select_call_command_table"
+    val table = s"$catalogV2.$namespace1.$tableName"
+    val initDataFilesCount = 2
+    val rewriteDataFiles1 = s"CALL $catalogV2.system.rewrite_data_files " +
+      s"(table => '$table', options => map('min-input-files','$initDataFilesCount'))"
+    val rewriteDataFiles2 = s"CALL $catalogV2.system.rewrite_data_files " +
+      s"(table => '$table', options => map('min-input-files','${initDataFilesCount + 1}'))"
+
+    withCleanTmpResources(Seq((table, "table"))) {
+      doAs(
+        admin, {
+          sql(s"CREATE TABLE IF NOT EXISTS $table  (id int, name string) USING iceberg")
+          // insert 2 data files
+          (0 until initDataFilesCount)
+            .foreach(i => sql(s"INSERT INTO $table VALUES ($i, 'user_$i')"))
+        })
+
+      interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1)))(
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
+      interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles2)))(
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
+
+      /**
+       * Case 1: Number of input data files equals or greater than minimum expected.
+       * Two logical plans triggered
+       * when ( input-files(2) >= min-input-files(2) ):
+       *
+       * == Physical Plan 1 ==
+       * Call (1)
+       *
+       * == Physical Plan 2 ==
+       * AppendData (3)
+       * +- * ColumnarToRow (2)
+       * +- BatchScan local.iceberg_ns.call_command_table (1)
+       */
+      doAs(
+        admin, {
+          val result1 = sql(rewriteDataFiles1).collect()
+          // rewritten results into 2 data files
+          assert(result1(0)(0) === initDataFilesCount)
+        })
+
+      /**
+       * Case 2: Number of input data files less than minimum expected.
+       * Only one logical plan triggered
+       * when ( input-files(2) < min-input-files(3) )
+       *
+       * == Physical Plan ==
+       *  Call (1)
+       */
+      doAs(
+        admin, {
+          val result2 = sql(rewriteDataFiles2).collect()
+          assert(result2(0)(0) === 0)
+        })
+    }
   }
 }
