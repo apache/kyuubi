@@ -63,7 +63,15 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
     val plan = sql(s"DELETE FROM $catalogTable WHERE key = 1 ").queryExecution.analyzed
     val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
-    assert(inputs.isEmpty)
+    if (isSparkV34OrGreater) {
+      assert(inputs.size === 1)
+      val po = inputs.head
+      assertEqualsIgnoreCase(namespace)(po.dbname)
+      assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
+      // assert(po.columns === Seq("key"))
+    } else {
+      assert(inputs.size === 0)
+    }
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.UPDATE)

@@ -254,6 +254,17 @@ object TableCommands {
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
   }
 
+  val ReplaceData = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.ReplaceData"
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val tableDesc =
+      TableDesc(
+        "table",
+        classOf[DataSourceV2RelationTableExtractor],
+        actionTypeDesc = Some(actionTypeDesc))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
+  }
+
   val UpdateTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.UpdateTable"
     val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
@@ -652,6 +663,7 @@ object TableCommands {
     RefreshTable,
     RefreshTableV2,
     RefreshTable3d0,
+    ReplaceData,
     ShowColumns,
     ShowCreateTable,
     ShowCreateTable.copy(classname =

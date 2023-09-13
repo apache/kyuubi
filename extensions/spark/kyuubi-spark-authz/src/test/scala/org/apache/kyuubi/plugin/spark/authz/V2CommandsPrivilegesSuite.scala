@@ -24,6 +24,7 @@ import org.apache.spark.sql.execution.QueryExecution
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
+import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers.defaultTableOwner
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 import org.apache.kyuubi.plugin.spark.authz.serde.{Database, DB_COMMAND_SPECS}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -147,7 +148,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   test("ReplaceTable") {
     val table = "ReplaceTable"
     withV2Table(table) { tableId =>
-      sql(s"CREATE TABLE IF NOT EXISTS $tableId (i int)")
+      doAs(defaultTableOwner, sql(s"CREATE TABLE IF NOT EXISTS $tableId (i int)"))
       val plan = executePlan(s"REPLACE TABLE $tableId (j int)").analyzed
 
       val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
@@ -161,7 +162,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(namespace)(po.dbname)
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
-      assert(po.owner.isEmpty)
+      checkV2TableOwner(po)
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.CREATE)
     }
@@ -170,7 +171,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   test("ReplaceTableAsSelect") {
     val table = "ReplaceTableAsSelect"
     withV2Table(table) { tableId =>
-      sql(s"CREATE TABLE IF NOT EXISTS $tableId (i int)")
+      doAs(defaultTableOwner, sql(s"CREATE TABLE IF NOT EXISTS $tableId (i int)"))
       val plan =
         executePlan(s"REPLACE TABLE $tableId AS SELECT * FROM $reusedTable").analyzed
       val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
@@ -193,7 +194,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(namespace)(po.dbname)
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
-      assert(po.owner.isEmpty)
+      checkV2TableOwner(po)
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.CREATE)
     }

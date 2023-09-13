@@ -16,11 +16,11 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-// scalastyle:off
 import scala.util.Try
 
 import org.scalatest.Outcome
 
+// scalastyle:off
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
@@ -138,8 +138,13 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     // DeleteFromTable
     val e6 = intercept[AccessControlException](
       doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2")))
-    assert(e6.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$namespace1/$table1]"))
+    if (isSparkV34OrGreater) {
+      assert(e6.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$namespace1/$table1/id]"))
+    } else {
+      assert(e6.getMessage.contains(s"does not have [update] privilege" +
+        s" on [$namespace1/$table1]"))
+    }
 
     doAs(admin, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
   }
