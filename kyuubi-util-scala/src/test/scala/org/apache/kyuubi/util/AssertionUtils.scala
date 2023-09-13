@@ -16,11 +16,15 @@
  */
 package org.apache.kyuubi.util
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 import java.util.Locale
 
+import scala.collection.Traversable
+import scala.io.Source
 import scala.reflect.ClassTag
 
-import org.scalactic.source
+import org.scalactic.{source, Prettifier}
 import org.scalatest.Assertions._
 
 object AssertionUtils {
@@ -51,6 +55,52 @@ object AssertionUtils {
       implicit pos: source.Position): Unit = {
     if (!actual.exists(_.equalsIgnoreCase(expected))) {
       fail(s"Expected containing '$expected' ignoring case, but got [$actual]")(pos)
+    }
+  }
+
+  /**
+   * Assert the file content is equal to the expected lines.
+   * If not, throws assertion error with the given regeneration hint.
+   * @param expectedLines expected lines
+   * @param path source file path
+   * @param regenScript regeneration script
+   * @param splitFirstExpectedLine whether to split the first expected line
+   *                               into multiple lines by EOL
+   */
+  def assertFileContent(
+      path: Path,
+      expectedLines: Traversable[String],
+      regenScript: String,
+      splitFirstExpectedLine: Boolean = false)(implicit
+      prettifier: Prettifier,
+      pos: source.Position): Unit = {
+    val fileSource = Source.fromFile(path.toUri, StandardCharsets.UTF_8.name())
+    try {
+      def expectedLinesIter = if (splitFirstExpectedLine) {
+        Source.fromString(expectedLines.head).getLines()
+      } else {
+        expectedLines.toIterator
+      }
+      val fileLinesIter = fileSource.getLines()
+      val regenerationHint = s"The file ($path) is out of date. " + {
+        if (regenScript != null && regenScript.nonEmpty) {
+          s" Please regenerate it by running `${regenScript.stripMargin}`. "
+        } else ""
+      }
+      var fileLineCount = 0
+      fileLinesIter.zipWithIndex.zip(expectedLinesIter)
+        .foreach { case ((lineInFile, lineIndex), expectedLine) =>
+          val lineNum = lineIndex + 1
+          withClue(s"Line $lineNum is not expected. $regenerationHint") {
+            assertResult(expectedLine)(lineInFile)(prettifier, pos)
+          }
+          fileLineCount = Math.max(lineNum, fileLineCount)
+        }
+      withClue(s"Line number is not expected. $regenerationHint") {
+        assertResult(expectedLinesIter.size)(fileLineCount)(prettifier, pos)
+      }
+    } finally {
+      fileSource.close()
     }
   }
 
