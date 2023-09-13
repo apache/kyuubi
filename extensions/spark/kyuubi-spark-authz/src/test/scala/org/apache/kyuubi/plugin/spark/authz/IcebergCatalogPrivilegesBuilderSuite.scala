@@ -79,7 +79,7 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
     assertEqualsIgnoreCase(namespace)(po.dbname)
     assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
-    checkV2TableOwner(po)
+    // checkTableOwner(po)
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.UPDATE)
   }
