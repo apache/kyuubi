@@ -181,7 +181,8 @@ object TableCommands {
     val cd2 = cd1.copy(fieldExtractor = classOf[StringSeqOptionColumnExtractor])
     val td1 = tableIdentDesc.copy(columnDesc = Some(cd1), isInput = true)
     val td2 = td1.copy(columnDesc = Some(cd2))
-    TableCommandSpec(cmd, Seq(td1, td2), ANALYZE_TABLE)
+    // AnalyzeColumn will update table properties, here we use ALTERTABLE_PROPERTIES
+    TableCommandSpec(cmd, Seq(tableIdentDesc, td1, td2), ALTERTABLE_PROPERTIES)
   }
 
   val AnalyzePartition = {
@@ -189,16 +190,18 @@ object TableCommands {
     val columnDesc = ColumnDesc("partitionSpec", classOf[PartitionColumnExtractor])
     TableCommandSpec(
       cmd,
-      Seq(tableIdentDesc.copy(columnDesc = Some(columnDesc), isInput = true)),
-      ANALYZE_TABLE)
+      // AnalyzePartition will update table properties, here we use ALTERTABLE_PROPERTIES
+      Seq(tableIdentDesc, tableIdentDesc.copy(columnDesc = Some(columnDesc), isInput = true)),
+      ALTERTABLE_PROPERTIES)
   }
 
   val AnalyzeTable = {
     val cmd = "org.apache.spark.sql.execution.command.AnalyzeTableCommand"
     TableCommandSpec(
       cmd,
-      Seq(tableIdentDesc.copy(isInput = true)),
-      ANALYZE_TABLE)
+      // AnalyzeTable will update table properties, here we use ALTERTABLE_PROPERTIES
+      Seq(tableIdentDesc, tableIdentDesc.copy(isInput = true)),
+      ALTERTABLE_PROPERTIES)
   }
 
   val CreateTableV2 = {

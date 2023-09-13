@@ -867,6 +867,15 @@
   "tableDescs" : [ {
     "fieldName" : "tableIdent",
     "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "columnNames",
       "fieldExtractor" : "StringSeqColumnExtractor"
@@ -889,11 +898,20 @@
     "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ANALYZE_TABLE",
+  "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzePartitionCommand",
   "tableDescs" : [ {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
     "fieldName" : "tableIdent",
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
@@ -906,7 +924,7 @@
     "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ANALYZE_TABLE",
+  "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTableCommand",
@@ -917,10 +935,19 @@
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
     "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ANALYZE_TABLE",
+  "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CacheTableCommand",
