@@ -21,14 +21,14 @@ import java.nio.file.Paths
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder, MarkdownUtils, Utils}
+import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder, Utils}
 import org.apache.kyuubi.ctl.CtlConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.metrics.MetricsConf
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf
+import org.apache.kyuubi.util.GoldenFileUtils._
 import org.apache.kyuubi.zookeeper.ZookeeperConf
 
-// scalastyle:off line.size.limit
 /**
  * End-to-end test cases for configuration doc file
  * The golden result file is "docs/configuration/settings.md".
@@ -43,7 +43,6 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
  *   dev/gen/gen_all_config_docs.sh
  * }}}
  */
-// scalastyle:on line.size.limit
 class AllKyuubiConfiguration extends KyuubiFunSuite {
   private val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")(0)
   private val markdown = Paths.get(kyuubiHome, "docs", "configuration", "settings.md")
@@ -229,6 +228,6 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
         | executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand,
         | for those users who do not have custom configurations will use system defaults."""
 
-    MarkdownUtils.verifyOutput(markdown, builder, getClass.getCanonicalName, "kyuubi-server")
+    verifyOrRegenerateGoldenFile(markdown, builder.toMarkdown, "dev/gen/gen_all_config_docs.sh")
   }
 }

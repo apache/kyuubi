@@ -86,6 +86,11 @@ export const MENUS = [
     ]
   },
   {
+    label: 'Swagger',
+    icon: 'List',
+    router: '/swagger'
+  },
+  {
     label: 'Contact Us',
     icon: 'PhoneFilled',
     router: '/contact'

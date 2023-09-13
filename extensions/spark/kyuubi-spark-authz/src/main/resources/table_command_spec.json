@@ -92,6 +92,20 @@
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ]
 }, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.Call",
+  "tableDescs" : [ {
+    "fieldName" : "args",
+    "fieldExtractor" : "ExpressionSeqTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CommentOnTable",
   "tableDescs" : [ {
     "fieldName" : "child",
@@ -853,6 +867,15 @@
   "tableDescs" : [ {
     "fieldName" : "tableIdent",
     "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "columnNames",
       "fieldExtractor" : "StringSeqColumnExtractor"
@@ -875,11 +898,20 @@
     "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ANALYZE_TABLE",
+  "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzePartitionCommand",
   "tableDescs" : [ {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
     "fieldName" : "tableIdent",
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
@@ -892,7 +924,7 @@
     "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ANALYZE_TABLE",
+  "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTableCommand",
@@ -903,14 +935,9 @@
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
-    "isInput" : true,
+    "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
-  } ],
-  "opType" : "ANALYZE_TABLE",
-  "queryDescs" : [ ]
-}, {
-  "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
-  "tableDescs" : [ {
+  }, {
     "fieldName" : "tableIdent",
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : null,
@@ -920,7 +947,7 @@
     "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ANALYZE_TABLE",
+  "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CacheTableCommand",

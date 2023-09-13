@@ -125,4 +125,26 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
       assert(accessType === AccessType.UPDATE)
     }
   }
+
+  test("RewriteDataFilesProcedure") {
+    val table = "RewriteDataFilesProcedure"
+    withV2Table(table) { tableId =>
+      sql(s"CREATE TABLE IF NOT EXISTS $tableId (key int, value String) USING iceberg")
+      sql(s"INSERT INTO $tableId VALUES (1, 'a'), (2, 'b'), (3, 'c')")
+
+      val plan = sql(s"CALL $catalogV2.system.rewrite_data_files (table => '$tableId')")
+        .queryExecution.analyzed
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === ALTERTABLE_PROPERTIES)
+      assert(inputs.size === 0)
+      assert(outputs.size === 1)
+      val po = outputs.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assertEqualsIgnoreCase(namespace)(po.dbname)
+      assertEqualsIgnoreCase(table)(po.objectName)
+      val accessType = AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.ALTER)
+    }
+  }
 }

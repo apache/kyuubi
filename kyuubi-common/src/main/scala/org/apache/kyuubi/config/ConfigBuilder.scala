@@ -24,6 +24,8 @@ import java.util.regex.PatternSyntaxException
 import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
 
+import org.apache.kyuubi.util.EnumUtils._
+
 private[kyuubi] case class ConfigBuilder(key: String) {
 
   private[config] var _doc = ""
@@ -198,6 +200,26 @@ private[kyuubi] case class TypedConfigBuilder[T](
       if (!validValues.contains(v)) {
         throw new IllegalArgumentException(
           s"The value of ${parent.key} should be one of ${validValues.mkString(", ")}, but was $v")
+      }
+      v
+    }
+  }
+
+  /** Checks if the user-provided value for the config matches the value set of the enumeration. */
+  def checkValues(enumeration: Enumeration): TypedConfigBuilder[T] = {
+    transform { v =>
+      val isValid = v match {
+        case iter: Iterable[Any] => isValidEnums(enumeration, iter)
+        case name => isValidEnum(enumeration, name)
+      }
+      if (!isValid) {
+        val actualValueStr = v match {
+          case iter: Iterable[Any] => iter.mkString(",")
+          case value => value.toString
+        }
+        throw new IllegalArgumentException(
+          s"The value of ${parent.key} should be one of ${enumeration.values.mkString(", ")}," +
+            s" but was $actualValueStr")
       }
       v
     }

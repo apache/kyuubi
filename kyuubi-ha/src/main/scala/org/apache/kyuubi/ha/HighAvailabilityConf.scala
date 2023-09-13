@@ -79,7 +79,7 @@ object HighAvailabilityConf {
         s"${AuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.3.2")
       .stringConf
-      .checkValues(AuthTypes.values.map(_.toString))
+      .checkValues(AuthTypes)
       .createWithDefault(AuthTypes.NONE.toString)
 
   val HA_ZK_ENGINE_AUTH_TYPE: ConfigEntry[String] =
@@ -88,7 +88,7 @@ object HighAvailabilityConf {
         s"${AuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.3.2")
       .stringConf
-      .checkValues(AuthTypes.values.map(_.toString))
+      .checkValues(AuthTypes)
       .createWithDefault(AuthTypes.NONE.toString)
 
   val HA_ZK_AUTH_SERVER_PRINCIPAL: OptionalConfigEntry[String] =
@@ -160,7 +160,7 @@ object HighAvailabilityConf {
         s" ${RetryPolicies.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.0.0")
       .stringConf
-      .checkValues(RetryPolicies.values.map(_.toString))
+      .checkValues(RetryPolicies)
       .createWithDefault(RetryPolicies.EXPONENTIAL_BACKOFF.toString)
 
   val HA_ZK_NODE_TIMEOUT: ConfigEntry[Long] =

@@ -26,17 +26,17 @@ import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import org.apache.commons.io.FileUtils
 import org.apache.ranger.plugin.model.RangerPolicy
-// scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
+// scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess.allowTypes
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyResource._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerAccessType._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions._
+import org.apache.kyuubi.util.AssertionUtils._
 
 /**
  * Generates the policy file to test/main/resources dir.
@@ -77,12 +77,11 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
         StandardOpenOption.CREATE,
         StandardOpenOption.TRUNCATE_EXISTING)
     } else {
-      val existedFileContent =
-        FileUtils.readFileToString(policyFilePath.toFile, StandardCharsets.UTF_8)
-      withClue("Please regenerate the ranger policy file by running"
-        + " `dev/gen/gen_ranger_policy_json.sh`") {
-        assert(generatedStr.equals(existedFileContent))
-      }
+      assertFileContent(
+        policyFilePath,
+        Seq(generatedStr),
+        "dev/gen/gen_ranger_policy_json.sh",
+        splitFirstExpectedLine = true)
     }
   }
 

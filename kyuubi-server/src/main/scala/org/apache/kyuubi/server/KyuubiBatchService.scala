@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.kyuubi.config.KyuubiConf.BATCH_SUBMITTER_THREADS
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataManager
-import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.service.{AbstractService, Serverable}
 import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.ThreadUtils
@@ -81,38 +80,32 @@ class KyuubiBatchService(
               Option(metadata.requestName),
               metadata.resource,
               metadata.className,
-              metadata.requestConf,
               metadata.requestArgs,
-              Some(metadata), // TODO some logic need to fix since it's not from recovery
-              shouldRunAsync = true)
-            val metadataForUpdate = Metadata(
-              identifier = batchId,
-              kyuubiInstance = kyuubiInstance,
-              requestConf = batchSession.optimizedConf,
-              clusterManager = batchSession.batchJobSubmissionOp.builder.clusterManager())
-            metadataManager.updateMetadata(metadataForUpdate, asyncRetryOnError = false)
+              Some(metadata),
+              fromRecovery = false)
             val sessionHandle = sessionManager.openBatchSession(batchSession)
-            var terminated = false
-            while (!terminated) { // block until batch job finished
-              terminated = sessionManager.getBatchSession(sessionHandle).map { batchSession =>
-                val batchOp = batchSession.batchJobSubmissionOp
-                OperationState.isTerminal(batchOp.getStatus.state)
+            var submitted = false
+            while (!submitted) { // block until batch job submitted
+              submitted = sessionManager.getBatchSession(sessionHandle).map { batchSession =>
+                val batchState = batchSession.batchJobSubmissionOp.getStatus.state
+                batchState == OperationState.RUNNING || OperationState.isTerminal(batchState)
               }.getOrElse {
                 error(s"Batch Session $batchId is not existed, marked as finished")
                 true
               }
               // should we always treat metastore as the single of truth?
               //
-              // terminated = metadataManager.getBatchSessionMetadata(batchId) match {
+              // submitted = metadataManager.getBatchSessionMetadata(batchId) match {
               //   case Some(metadata) =>
-              //     OperationState.isTerminal(OperationState.withName(metadata.state))
+              //     val batchState = OperationState.withName(metadata.state)
+              //     batchState == OperationState.RUNNING || OperationState.isTerminal(batchState)
               //   case None =>
-              //     error(s"$batchId is not existed in metastore, assume it is finished")
+              //     error(s"$batchId does not existed in metastore, assume it is finished")
               //     true
               // }
-              if (!terminated) Thread.sleep(1000)
+              if (!submitted) Thread.sleep(1000)
             }
-            info(s"$batchId is finished.")
+            info(s"$batchId is submitted or finished.")
         }
       }
     }

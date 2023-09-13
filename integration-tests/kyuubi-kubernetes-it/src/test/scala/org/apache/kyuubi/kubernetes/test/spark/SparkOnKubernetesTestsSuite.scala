@@ -19,7 +19,6 @@ package org.apache.kyuubi.kubernetes.test.spark
 
 import java.util.UUID
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 import org.apache.hadoop.conf.Configuration
@@ -149,7 +148,6 @@ class KyuubiOperationKubernetesClusterClientModeSuite
       "kyuubi",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
@@ -217,7 +215,6 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       "runner",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     // wait for driver pod start

@@ -25,6 +25,7 @@ import org.apache.thrift.transport.TSaslServerTransport
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
@@ -57,9 +58,9 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
 
   test("AuthType Other") {
     val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Set("INVALID"))
-    val e = intercept[IllegalArgumentException](new KyuubiAuthenticationFactory(conf))
-    assert(e.getMessage contains "the authentication type should be one or more of" +
-      " NOSASL,NONE,LDAP,JDBC,KERBEROS,CUSTOM")
+    interceptEquals[IllegalArgumentException] { new KyuubiAuthenticationFactory(conf) }(
+      "The value of kyuubi.authentication should be one of" +
+        " NOSASL, NONE, LDAP, JDBC, KERBEROS, CUSTOM, but was INVALID")
   }
 
   test("AuthType LDAP") {

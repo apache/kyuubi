@@ -27,7 +27,7 @@
 
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
-    <version>1.8.0-SNAPSHOT</version>
+    <version>1.9.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
@@ -131,7 +131,7 @@
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <commons-lang3.version>3.13.0</commons-lang3.version>
         <etcd.version>0.7.3</etcd.version>
         <delta.version>2.4.0</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
@@ -158,13 +158,13 @@
         <hive.archive.download.skip>false</hive.archive.download.skip>
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
-        <iceberg.version>1.3.0</iceberg.version>
+        <iceberg.version>1.3.1</iceberg.version>
         <jackson.version>2.15.0</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jersey.version>2.39.1</jersey.version>
-        <jetty.version>9.4.51.v20230217</jetty.version>
+        <jetty.version>9.4.52.v20230823</jetty.version>
         <jline.version>0.9.94</jline.version>
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.4.0</kafka.version>
@@ -204,7 +204,7 @@
         <sqlite.version>3.42.0.0</sqlite.version>
         <swagger.version>2.2.1</swagger.version>
         <swagger-ui.version>4.9.1</swagger-ui.version>
-        <testcontainers-scala.version>0.40.12</testcontainers-scala.version>
+        <testcontainers-scala.version>0.41.0</testcontainers-scala.version>
         <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
         <threeten.version>1.7.0</threeten.version>
         <thrift.version>0.9.3</thrift.version>
@@ -1122,6 +1122,12 @@
                 <groupId>io.etcd</groupId>
                 <artifactId>jetcd-launcher</artifactId>
                 <version>${etcd.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.testcontainers</groupId>
+                        <artifactId>testcontainers</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -1393,21 +1399,9 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
-                <version>${flink.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.flink</groupId>
                 <artifactId>flink-table-runtime</artifactId>
                 <version>${flink.version}</version>
                 <scope>provided</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.flink</groupId>
-                <artifactId>flink-sql-parser</artifactId>
-                <version>${flink.version}</version>
             </dependency>
 
             <dependency>

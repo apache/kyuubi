@@ -415,9 +415,7 @@ object KyuubiConf {
       .stringConf
       .transformToUpperCase
       .toSequence()
-      .checkValue(
-        _.forall(FrontendProtocols.values.map(_.toString).contains),
-        s"the frontend protocol should be one or more of ${FrontendProtocols.values.mkString(",")}")
+      .checkValues(FrontendProtocols)
       .createWithDefault(Seq(
         FrontendProtocols.THRIFT_BINARY.toString,
         FrontendProtocols.REST.toString))
@@ -802,9 +800,7 @@ object KyuubiConf {
     .stringConf
     .transformToUpperCase
     .toSet()
-    .checkValue(
-      _.forall(AuthTypes.values.map(_.toString).contains),
-      s"the authentication type should be one or more of ${AuthTypes.values.mkString(",")}")
+    .checkValues(AuthTypes)
     .createWithDefault(Set(AuthTypes.NONE.toString))
 
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
@@ -1036,7 +1032,7 @@ object KyuubiConf {
     .version("1.0.0")
     .serverOnly
     .stringConf
-    .checkValues(SaslQOP.values.map(_.toString))
+    .checkValues(SaslQOP)
     .transformToLowerCase
     .createWithDefault(SaslQOP.AUTH.toString)
 
@@ -1427,6 +1423,14 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofSeconds(15).toMillis)
 
+  val ENGINE_ALIVE_MAX_FAILURES: ConfigEntry[Int] =
+    buildConf("kyuubi.session.engine.alive.max.failures")
+      .doc("The maximum number of failures allowed for the engine.")
+      .version("1.8.0")
+      .intConf
+      .checkValue(_ > 0, "Must be positive")
+      .createWithDefault(3)
+
   val ENGINE_ALIVE_PROBE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.alive.probe.enabled")
       .doc("Whether to enable the engine alive probe, it true, we will create a companion thrift" +
@@ -1691,7 +1695,7 @@ object KyuubiConf {
         s"when ${BATCH_SUBMITTER_ENABLED.key} is enabled")
       .version("1.8.0")
       .intConf
-      .createWithDefault(100)
+      .createWithDefault(16)
 
   val BATCH_IMPL_VERSION: ConfigEntry[String] =
     buildConf("kyuubi.batch.impl.version")
@@ -1926,7 +1930,7 @@ object KyuubiConf {
       .version("1.0.0")
       .stringConf
       .transformToUpperCase
-      .checkValues(ShareLevel.values.map(_.toString))
+      .checkValues(ShareLevel)
       .createWithDefault(ShareLevel.USER.toString)
 
   // [ZooKeeper Data Model]
@@ -2007,7 +2011,7 @@ object KyuubiConf {
     .version("1.4.0")
     .stringConf
     .transformToUpperCase
-    .checkValues(EngineType.values.map(_.toString))
+    .checkValues(EngineType)
     .createWithDefault(EngineType.SPARK_SQL.toString)
 
   val ENGINE_POOL_IGNORE_SUBDOMAIN: ConfigEntry[Boolean] =
@@ -2364,7 +2368,7 @@ object KyuubiConf {
   val OPERATION_PLAN_ONLY_MODE: ConfigEntry[String] =
     buildConf("kyuubi.operation.plan.only.mode")
       .doc("Configures the statement performed mode, The value can be 'parse', 'analyze', " +
-        "'optimize', 'optimize_with_stats', 'physical', 'execution', or 'none', " +
+        "'optimize', 'optimize_with_stats', 'physical', 'execution', 'lineage' or 'none', " +
         "when it is 'none', indicate to the statement will be fully executed, otherwise " +
         "only way without executing the query. different engines currently support different " +
         "modes, the Spark engine supports all modes, and the Flink engine supports 'parse', " +
@@ -2381,10 +2385,11 @@ object KyuubiConf {
             "OPTIMIZE_WITH_STATS",
             "PHYSICAL",
             "EXECUTION",
+            "LINEAGE",
             "NONE").contains(mode),
         "Invalid value for 'kyuubi.operation.plan.only.mode'. Valid values are" +
           "'parse', 'analyze', 'optimize', 'optimize_with_stats', 'physical', 'execution' and " +
-          "'none'.")
+          "'lineage', 'none'.")
       .createWithDefault(NoneMode.name)
 
   val OPERATION_PLAN_ONLY_OUT_STYLE: ConfigEntry[String] =
@@ -2395,10 +2400,7 @@ object KyuubiConf {
       .version("1.7.0")
       .stringConf
       .transformToUpperCase
-      .checkValue(
-        mode => Set("PLAIN", "JSON").contains(mode),
-        "Invalid value for 'kyuubi.operation.plan.only.output.style'. Valid values are " +
-          "'plain', 'json'.")
+      .checkValues(Set("PLAIN", "JSON"))
       .createWithDefault(PlainStyle.name)
 
   val OPERATION_PLAN_ONLY_EXCLUDES: ConfigEntry[Set[String]] =
@@ -2418,6 +2420,13 @@ object KyuubiConf {
         "SetNamespaceCommand",
         "UseStatement",
         "SetCatalogAndNamespace"))
+
+  val LINEAGE_PARSER_PLUGIN_PROVIDER: ConfigEntry[String] =
+    buildConf("kyuubi.lineage.parser.plugin.provider")
+      .doc("The provider for the Spark lineage parser plugin.")
+      .version("1.8.0")
+      .stringConf
+      .createWithDefault("org.apache.kyuubi.plugin.lineage.LineageParserProvider")
 
   object OperationLanguages extends Enumeration with Logging {
     type OperationLanguage = Value
@@ -2446,7 +2455,7 @@ object KyuubiConf {
       .version("1.5.0")
       .stringConf
       .transformToUpperCase
-      .checkValues(OperationLanguages.values.map(_.toString))
+      .checkValues(OperationLanguages)
       .createWithDefault(OperationLanguages.SQL.toString)
 
   val SESSION_CONF_ADVISOR: OptionalConfigEntry[String] =
@@ -2619,6 +2628,17 @@ object KyuubiConf {
     buildConf("kyuubi.server.limit.connections.user.unlimited.list")
       .doc("The maximum connections of the user in the white list will not be limited.")
       .version("1.7.0")
+      .serverOnly
+      .stringConf
+      .toSet()
+      .createWithDefault(Set.empty)
+
+  val SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST: ConfigEntry[Set[String]] =
+    buildConf("kyuubi.server.limit.connections.user.deny.list")
+      .doc("The user in the deny list will be denied to connect to kyuubi server, " +
+        "if the user has configured both user.unlimited.list and user.deny.list, " +
+        "the priority of the latter is higher.")
+      .version("1.8.0")
       .serverOnly
       .stringConf
       .toSet()

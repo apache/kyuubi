@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.util
 // scalastyle:off
+
 import org.scalatest.funsuite.AnyFunSuite
+
+import org.apache.kyuubi.util.AssertionUtils._
 // scalastyle:on
 
 // scalastyle:off
@@ -42,8 +45,12 @@ class SemanticVersionSuite extends AnyFunSuite {
   }
 
   test("reject parsing illegal formatted version") {
-    assertThrows[IllegalArgumentException](SemanticVersion("v1.0"))
-    assertThrows[IllegalArgumentException](SemanticVersion(".1.0"))
+    interceptContains[IllegalArgumentException](SemanticVersion("v1.0"))(
+      "Tried to parse 'v1.0' as a project version string, " +
+        "but it could not find the major and minor version numbers")
+    interceptContains[IllegalArgumentException](SemanticVersion(".1.0"))(
+      "Tried to parse '.1.0' as a project version string, " +
+        "but it could not find the major and minor version numbers")
   }
 
   test("companion class compare version at most") {

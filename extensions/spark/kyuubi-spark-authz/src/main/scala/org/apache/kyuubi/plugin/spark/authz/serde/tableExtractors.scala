@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -133,6 +134,34 @@ class IdentifierTableExtractor extends TableExtractor {
 }
 
 /**
+ * java.lang.String
+ * with concat parts by "."
+ */
+class StringTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val tableNameArr = v1.asInstanceOf[String].split("\\.")
+    val maybeTable = tableNameArr.length match {
+      case 1 => Table(None, None, tableNameArr(0), None)
+      case 2 => Table(None, Some(tableNameArr(0)), tableNameArr(1), None)
+      case 3 => Table(Some(tableNameArr(0)), Some(tableNameArr(1)), tableNameArr(2), None)
+    }
+    Option(maybeTable)
+  }
+}
+
+/**
+ * Seq[org.apache.spark.sql.catalyst.expressions.Expression]
+ */
+class ExpressionSeqTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val expressions = v1.asInstanceOf[Seq[Expression]]
+    // Iceberg will rearrange the parameters according to the parameter order
+    // defined in the procedure, where the table parameters are currently always the first.
+    lookupExtractor[StringTableExtractor].apply(spark, expressions.head.toString())
+  }
+}
+
+/**
  * org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
  */
 class DataSourceV2RelationTableExtractor extends TableExtractor {
@@ -145,12 +174,11 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
         val maybeCatalogPlugin = invokeAs[Option[AnyRef]](v2Relation, "catalog")
         val maybeCatalog = maybeCatalogPlugin.flatMap(catalogPlugin =>
           lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
-        val maybeIdentifier = invokeAs[Option[AnyRef]](v2Relation, "identifier")
-        maybeIdentifier.flatMap { id =>
-          val maybeTable = lookupExtractor[IdentifierTableExtractor].apply(spark, id)
-          val maybeOwner = TableExtractor.getOwner(v2Relation)
-          maybeTable.map(_.copy(catalog = maybeCatalog, owner = maybeOwner))
-        }
+        lookupExtractor[TableTableExtractor].apply(spark, invokeAs[AnyRef](v2Relation, "table"))
+          .map { table =>
+            val maybeOwner = TableExtractor.getOwner(v2Relation)
+            table.copy(catalog = maybeCatalog, owner = maybeOwner)
+          }
     }
   }
 }
@@ -196,5 +224,15 @@ class ResolvedIdentifierTableExtractor extends TableExtractor {
         maybeTable.map(_.copy(catalog = catalog, owner = owner))
       case _ => None
     }
+  }
+}
+
+/**
+ * org.apache.spark.sql.connector.catalog.Table
+ */
+class TableTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val tableName = invokeAs[String](v1, "name")
+    lookupExtractor[StringTableExtractor].apply(spark, tableName)
   }
 }
