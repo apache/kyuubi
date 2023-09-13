@@ -24,7 +24,7 @@ import scala.collection.Traversable
 import scala.io.Source
 import scala.reflect.ClassTag
 
-import org.scalactic.source
+import org.scalactic.{source, Prettifier}
 import org.scalatest.Assertions._
 
 object AssertionUtils {
@@ -71,7 +71,9 @@ object AssertionUtils {
       path: Path,
       expectedLines: Traversable[String],
       regenScript: String,
-      splitFirstExpectedLine: Boolean = false): Unit = {
+      splitFirstExpectedLine: Boolean = false)(implicit
+      prettifier: Prettifier,
+      pos: source.Position): Unit = {
     val fileSource = Source.fromFile(path.toUri, StandardCharsets.UTF_8.name())
     try {
       def expectedLinesIter = if (splitFirstExpectedLine) {
@@ -90,12 +92,12 @@ object AssertionUtils {
         .foreach { case ((lineInFile, lineIndex), expectedLine) =>
           val lineNum = lineIndex + 1
           withClue(s"Line $lineNum is not expected. $regenerationHint") {
-            assertResult(expectedLine)(lineInFile)
+            assertResult(expectedLine)(lineInFile)(prettifier, pos)
           }
           fileLineCount = Math.max(lineNum, fileLineCount)
         }
       withClue(s"Line number is not expected. $regenerationHint") {
-        assertResult(expectedLinesIter.size)(fileLineCount)
+        assertResult(expectedLinesIter.size)(fileLineCount)(prettifier, pos)
       }
     } finally {
       fileSource.close()

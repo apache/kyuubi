@@ -21,7 +21,7 @@ import java.nio.file.{Files, Path, StandardOpenOption}
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.util.AssertionUtils.assertFileContent
+import org.apache.kyuubi.util.AssertionUtils._
 
 object GoldenFileUtils {
   def isRegenerateGoldenFiles: Boolean = sys.env.get("KYUUBI_UPDATE").contains("1")
