@@ -25,7 +25,7 @@ spec:
   type: ClusterIP
   clusterIP: None
   ports:
-    {{- range $name, $frontend := .Values.server }}
+    {{- range $name, $frontend := merge .Values.server .Values.monitoring }}
     - name: {{ $name | kebabcase }}
       port: {{ tpl $frontend.service.port $ }}
       targetPort: {{ $frontend.port }}
