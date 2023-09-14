@@ -22,7 +22,7 @@ import javax.security.sasl.AuthenticationException
 import javax.servlet.{Filter, FilterChain, FilterConfig, ServletException, ServletRequest, ServletResponse}
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
-import scala.collection.mutable.HashMap
+import scala.collection.mutable
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
@@ -35,7 +35,8 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthenticationHandler._
   import AuthSchemes._
 
-  private[authentication] val authSchemeHandlers = new HashMap[AuthScheme, AuthenticationHandler]()
+  private[authentication] val authSchemeHandlers =
+    new mutable.HashMap[AuthScheme, AuthenticationHandler]()
 
   private[authentication] def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
     authHandler.init(conf)
@@ -109,32 +110,31 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.set(
       httpRequest.getHeader(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
 
-    if (matchedHandler == null) {
-      debug(s"No auth scheme matched for url: ${httpRequest.getRequestURL}")
-      httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
-      AuthenticationAuditLogger.audit(httpRequest, httpResponse)
-      httpResponse.sendError(
-        HttpServletResponse.SC_UNAUTHORIZED,
-        s"No auth scheme matched for $authorization")
-    } else {
-      HTTP_AUTH_TYPE.set(matchedHandler.authScheme.toString)
-      try {
+    try {
+      if (matchedHandler == null) {
+        debug(s"No auth scheme matched for url: ${httpRequest.getRequestURL}")
+        httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
+        httpResponse.sendError(
+          HttpServletResponse.SC_UNAUTHORIZED,
+          s"No auth scheme matched for $authorization")
+      } else {
+        HTTP_AUTH_TYPE.set(matchedHandler.authScheme.toString)
         val authUser = matchedHandler.authenticate(httpRequest, httpResponse)
         if (authUser != null) {
           HTTP_CLIENT_USER_NAME.set(authUser)
           doFilter(filterChain, httpRequest, httpResponse)
         }
-        AuthenticationAuditLogger.audit(httpRequest, httpResponse)
-      } catch {
-        case e: AuthenticationException =>
-          httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN)
-          AuthenticationAuditLogger.audit(httpRequest, httpResponse)
-          HTTP_CLIENT_USER_NAME.remove()
-          HTTP_CLIENT_IP_ADDRESS.remove()
-          HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.remove()
-          HTTP_AUTH_TYPE.remove()
-          httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage)
       }
+    } catch {
+      case e: AuthenticationException =>
+        httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN)
+        HTTP_CLIENT_USER_NAME.remove()
+        HTTP_CLIENT_IP_ADDRESS.remove()
+        HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.remove()
+        HTTP_AUTH_TYPE.remove()
+        httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage)
+    } finally {
+      AuthenticationAuditLogger.audit(httpRequest, httpResponse)
     }
   }
 
