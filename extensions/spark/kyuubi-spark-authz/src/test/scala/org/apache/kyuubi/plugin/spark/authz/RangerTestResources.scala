@@ -40,6 +40,7 @@ object RangerTestNamespace {
   val defaultDb = "default"
   val sparkCatalog = "spark_catalog"
   val icebergNamespace = "iceberg_ns"
+  val hoodieNamespace = "hoodie_ns"
   val namespace1 = "ns1"
   val namespace2 = "ns2"
 }
