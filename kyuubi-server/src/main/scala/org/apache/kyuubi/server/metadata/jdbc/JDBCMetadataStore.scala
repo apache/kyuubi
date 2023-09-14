@@ -198,7 +198,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     JdbcUtils.executeQueryWithRowMapper(
       s"""SELECT identifier FROM $METADATA_TABLE
          |WHERE state=?
-         |ORDER BY create_time DESC LIMIT 1
+         |ORDER BY create_time ASC LIMIT 1
          |""".stripMargin) { stmt =>
       stmt.setString(1, OperationState.INITIALIZED.toString)
     } { resultSet =>
