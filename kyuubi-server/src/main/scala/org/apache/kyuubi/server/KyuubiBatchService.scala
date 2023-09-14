@@ -20,6 +20,7 @@ package org.apache.kyuubi.server
 import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.kyuubi.config.KyuubiConf.BATCH_SUBMITTER_THREADS
+import org.apache.kyuubi.engine.ApplicationState
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.service.{AbstractService, Serverable}
@@ -83,26 +84,28 @@ class KyuubiBatchService(
               metadata.requestArgs,
               Some(metadata),
               fromRecovery = false)
-            val sessionHandle = sessionManager.openBatchSession(batchSession)
+            sessionManager.openBatchSession(batchSession)
             var submitted = false
             while (!submitted) { // block until batch job submitted
-              submitted = sessionManager.getBatchSession(sessionHandle).map { batchSession =>
-                val batchState = batchSession.batchJobSubmissionOp.getStatus.state
-                batchState == OperationState.RUNNING || OperationState.isTerminal(batchState)
-              }.getOrElse {
-                error(s"Batch Session $batchId is not existed, marked as finished")
-                true
+              submitted = metadataManager.getBatchSessionMetadata(batchId) match {
+                case Some(metadata) if OperationState.isTerminal(metadata.opState) =>
+                  true
+                case Some(metadata) if metadata.opState == OperationState.RUNNING =>
+                  metadata.appState match {
+                    // app that is not submitted to resource manager
+                    case None | Some(ApplicationState.NOT_FOUND) => false
+                    // app that is pending in resource manager
+                    case Some(ApplicationState.PENDING) => false
+                    // not sure, added for safe
+                    case Some(ApplicationState.UNKNOWN) => false
+                    case _ => true
+                  }
+                case Some(_) =>
+                  false
+                case None =>
+                  error(s"$batchId does not existed in metastore, assume it is finished")
+                  true
               }
-              // should we always treat metastore as the single of truth?
-              //
-              // submitted = metadataManager.getBatchSessionMetadata(batchId) match {
-              //   case Some(metadata) =>
-              //     val batchState = OperationState.withName(metadata.state)
-              //     batchState == OperationState.RUNNING || OperationState.isTerminal(batchState)
-              //   case None =>
-              //     error(s"$batchId does not existed in metastore, assume it is finished")
-              //     true
-              // }
               if (!submitted) Thread.sleep(1000)
             }
             info(s"$batchId is submitted or finished.")

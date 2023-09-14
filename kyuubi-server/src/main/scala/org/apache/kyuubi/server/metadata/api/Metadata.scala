@@ -18,7 +18,10 @@
 package org.apache.kyuubi.server.metadata.api
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.ApplicationManagerInfo
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState}
+import org.apache.kyuubi.engine.ApplicationState.ApplicationState
+import org.apache.kyuubi.operation.OperationState
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.session.SessionType.SessionType
 
 /**
@@ -82,4 +85,11 @@ case class Metadata(
       requestConf.get(KyuubiConf.KUBERNETES_CONTEXT.key),
       requestConf.get(KyuubiConf.KUBERNETES_NAMESPACE.key))
   }
+
+  def opState: OperationState = {
+    assert(state != null, "invalid state, a normal batch record must have non-null state")
+    OperationState.withName(state)
+  }
+
+  def appState: Option[ApplicationState] = Option(engineState).map(ApplicationState.withName)
 }
