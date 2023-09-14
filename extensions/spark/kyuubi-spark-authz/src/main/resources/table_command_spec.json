@@ -1481,7 +1481,7 @@
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterTableCommand",
   "tableDescs" : [ {
-    "fieldName" : "tableIdentifier",
+    "fieldName" : "table",
     "fieldExtractor" : "CatalogTableTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : null,
