@@ -16,9 +16,8 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import org.scalatest.Outcome
-
 import org.apache.spark.SparkConf
+import org.scalatest.Outcome
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
@@ -26,7 +25,6 @@ import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.IcebergTest
-
 
 /**
  * Tests for RangerSparkExtensionSuite
@@ -83,8 +81,7 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              | 'hoodie.datasource.hive_sync.enable' = 'false'
              |)
              |PARTITIONED BY(city)
-             |""".stripMargin)
-      )
+             |""".stripMargin))
     }
   }
 
@@ -113,7 +110,6 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
     assert(e3.contains(s"does not have [alter] privilege" +
       s" on [$namespace1/$table1/city]"))
-
 
     val e4 = intercept[AccessControlException] {
       doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 RENAME TO $namespace1.$table2"))
