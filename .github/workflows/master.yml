@@ -170,16 +170,18 @@ jobs:
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
 
-  scala213:
-    name: Scala Compilation Test
+  scala-test:
+    name: Scala Test
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        java:
-          - '8'
         scala:
           - '2.13'
+        java:
+          - '8'
+        spark:
+          - '3.4'
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM
@@ -193,14 +195,24 @@ jobs:
           check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
       - name: Build on Scala ${{ matrix.scala }}
         run: |
-          MODULES='!externals/kyuubi-flink-sql-engine'
-          ./build/mvn clean install -pl ${MODULES} -am \
-          -DskipTests -Pflink-provided,hive-provided,spark-provided \
-          -Pjava-${{ matrix.java }} \
-          -Pscala-${{ matrix.scala }} \
-          -Pspark-3.3
+          TEST_MODULES="!externals/kyuubi-flink-sql-engine,!integration-tests/kyuubi-flink-it"
+          ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
+          -Pscala-${{ matrix.scala }} -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }}
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-tests-log-scala-${{ matrix.scala }}-java-${{ matrix.java }}-spark-${{ matrix.spark }}
+          path: |
+            **/target/unit-tests.log
+            **/kyuubi-spark-sql-engine.log*
+            **/kyuubi-spark-batch-submit.log*
+            **/kyuubi-jdbc-engine.log*
+            **/kyuubi-hive-sql-engine.log*
 
   flink-it:
     name: Flink Test

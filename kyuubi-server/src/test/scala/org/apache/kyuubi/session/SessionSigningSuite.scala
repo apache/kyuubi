@@ -86,8 +86,9 @@ class SessionSigningSuite extends WithKyuubiServer with HiveJDBCTestHelper {
         assert(rs2.next())
 
         // skipping prefix "res0: String = " of returned scala result
-        val publicKeyStr = rs1.getString(1).substring(15)
-        val sessionUserSign = rs2.getString(1).substring(15)
+        val sep = " = "
+        val publicKeyStr = StringUtils.substringAfter(rs1.getString(1), sep)
+        val sessionUserSign = StringUtils.substringAfter(rs2.getString(1), sep)
 
         assert(StringUtils.isNotBlank(publicKeyStr))
         assert(StringUtils.isNotBlank(sessionUserSign))
