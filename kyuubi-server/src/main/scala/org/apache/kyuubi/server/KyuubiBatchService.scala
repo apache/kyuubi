@@ -93,12 +93,12 @@ class KyuubiBatchService(
                 case Some(metadata) if metadata.opState == OperationState.RUNNING =>
                   metadata.appState match {
                     // app that is not submitted to resource manager
-                    case None | Some(ApplicationState.NOT_FOUND) => true
+                    case None | Some(ApplicationState.NOT_FOUND) => false
                     // app that is pending in resource manager
-                    case Some(ApplicationState.PENDING) => true
+                    case Some(ApplicationState.PENDING) => false
                     // not sure, added for safe
-                    case Some(ApplicationState.UNKNOWN) => true
-                    case _ => false
+                    case Some(ApplicationState.UNKNOWN) => false
+                    case _ => true
                   }
                 case Some(_) =>
                   false
