@@ -128,10 +128,10 @@ object ApplicationManagerInfo {
       resourceManager: Option[String],
       kubernetesContext: Option[String],
       kubernetesNamespace: Option[String],
-      userName: Option[String]): ApplicationManagerInfo = {
+      proxyUser: Option[String]): ApplicationManagerInfo = {
     new ApplicationManagerInfo(
       resourceManager,
       KubernetesInfo(kubernetesContext, kubernetesNamespace),
-      userName)
+      proxyUser)
   }
 }
