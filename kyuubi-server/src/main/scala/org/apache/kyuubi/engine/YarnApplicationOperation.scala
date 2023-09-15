@@ -17,10 +17,12 @@
 
 package org.apache.kyuubi.engine
 
+import java.security.PrivilegedExceptionAction
 import java.util.Locale
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.{FinalApplicationStatus, YarnApplicationState}
 import org.apache.hadoop.yarn.client.api.YarnClient
 
@@ -63,7 +65,18 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
         } else {
           try {
             val applicationId = reports.get(0).getApplicationId
-            yarnClient.killApplication(applicationId)
+            appMgrInfo.proxyUser match {
+              case Some(proxyUser) =>
+                UserGroupInformation
+                  .createProxyUser(proxyUser, UserGroupInformation.getCurrentUser)
+                  .doAs(new PrivilegedExceptionAction[Unit]() {
+                    override def run(): Unit = {
+                      yarnClient.killApplication(applicationId)
+                    }
+                  })
+              case None =>
+                yarnClient.killApplication(applicationId)
+            }
             (true, s"Succeeded to terminate: $applicationId with $tag")
           } catch {
             case e: Exception =>
@@ -95,12 +108,14 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
           case Some(_submitTime) =>
             val elapsedTime = System.currentTimeMillis - _submitTime
             if (elapsedTime > submitTimeout) {
-              error(s"Can't find target yarn application by tag: $tag, " +
-                s"elapsed time: ${elapsedTime}ms exceeds ${submitTimeout}ms.")
+              error(
+                s"Can't find target yarn application by tag: $tag, " +
+                  s"elapsed time: ${elapsedTime}ms exceeds ${submitTimeout}ms.")
               ApplicationInfo.NOT_FOUND
             } else {
-              warn("Wait for yarn application to be submitted, " +
-                s"elapsed time: ${elapsedTime}ms, return UNKNOWN status")
+              warn(
+                "Wait for yarn application to be submitted, " +
+                  s"elapsed time: ${elapsedTime}ms, return UNKNOWN status")
               ApplicationInfo.UNKNOWN
             }
           case _ => ApplicationInfo.NOT_FOUND

@@ -118,7 +118,8 @@ case class KubernetesInfo(context: Option[String] = None, namespace: Option[Stri
 
 case class ApplicationManagerInfo(
     resourceManager: Option[String],
-    kubernetesInfo: KubernetesInfo = KubernetesInfo())
+    kubernetesInfo: KubernetesInfo = KubernetesInfo(),
+    proxyUser: Option[String] = None)
 
 object ApplicationManagerInfo {
   final val DEFAULT_KUBERNETES_NAMESPACE = "default"
@@ -126,9 +127,11 @@ object ApplicationManagerInfo {
   def apply(
       resourceManager: Option[String],
       kubernetesContext: Option[String],
-      kubernetesNamespace: Option[String]): ApplicationManagerInfo = {
+      kubernetesNamespace: Option[String],
+      userName: Option[String]): ApplicationManagerInfo = {
     new ApplicationManagerInfo(
       resourceManager,
-      KubernetesInfo(kubernetesContext, kubernetesNamespace))
+      KubernetesInfo(kubernetesContext, kubernetesNamespace),
+      userName)
   }
 }

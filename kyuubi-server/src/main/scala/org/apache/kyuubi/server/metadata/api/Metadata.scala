@@ -83,7 +83,8 @@ case class Metadata(
     ApplicationManagerInfo(
       clusterManager,
       requestConf.get(KyuubiConf.KUBERNETES_CONTEXT.key),
-      requestConf.get(KyuubiConf.KUBERNETES_NAMESPACE.key))
+      requestConf.get(KyuubiConf.KUBERNETES_NAMESPACE.key),
+      Some(username))
   }
 
   def opState: OperationState = {

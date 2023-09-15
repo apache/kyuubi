@@ -207,7 +207,8 @@ class SparkProcessBuilder(
     ApplicationManagerInfo(
       clusterManager(),
       kubernetesContext(),
-      kubernetesNamespace())
+      kubernetesNamespace(),
+      Some(proxyUser))
   }
 
   def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
