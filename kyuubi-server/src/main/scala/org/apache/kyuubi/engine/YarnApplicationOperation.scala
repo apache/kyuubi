@@ -109,11 +109,11 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
             val elapsedTime = System.currentTimeMillis - _submitTime
             if (elapsedTime > submitTimeout) {
               error(s"Can't find target yarn application by tag: $tag, " +
-                  s"elapsed time: ${elapsedTime}ms exceeds ${submitTimeout}ms.")
+                s"elapsed time: ${elapsedTime}ms exceeds ${submitTimeout}ms.")
               ApplicationInfo.NOT_FOUND
             } else {
               warn("Wait for yarn application to be submitted, " +
-                  s"elapsed time: ${elapsedTime}ms, return UNKNOWN status")
+                s"elapsed time: ${elapsedTime}ms, return UNKNOWN status")
               ApplicationInfo.UNKNOWN
             }
           case _ => ApplicationInfo.NOT_FOUND
