@@ -183,7 +183,7 @@ simpleclient_tracer_otel/0.16.0//simpleclient_tracer_otel-0.16.0.jar
 simpleclient_tracer_otel_agent/0.16.0//simpleclient_tracer_otel_agent-0.16.0.jar
 slf4j-api/1.7.36//slf4j-api-1.7.36.jar
 snakeyaml-engine/2.6//snakeyaml-engine-2.6.jar
-snakeyaml/1.33//snakeyaml-1.33.jar
+snakeyaml/2.2//snakeyaml-2.2.jar
 snappy-java/1.1.8.4//snappy-java-1.1.8.4.jar
 sqlite-jdbc/3.42.0.0//sqlite-jdbc-3.42.0.0.jar
 swagger-annotations/2.2.1//swagger-annotations-2.2.1.jar
