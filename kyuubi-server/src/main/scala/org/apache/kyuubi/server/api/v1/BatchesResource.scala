@@ -416,11 +416,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           internalRestClient.getBatchLocalLog(userName, batchId, from, size)
         } else if (batchV2Enabled(metadata.requestConf) &&
-          // Aims to cover the case that batch job been picked by current instance
-          // but the batch id not been handled by this SessionManager.
-          // Ref to we open session first then hand the session
-          // and mark operation RUNNING also has code gap with handler session,
-          // we consider RUNNING state too
+          // in batch v2 impl, the operation state is changed from PENDING to RUNNING
+          // before being added to SessionManager.
           (metadata.state == "PENDING" || metadata.state == "RUNNING")) {
           info(s"Batch $batchId is waiting for submitting")
           val dummyLogs = List(s"Batch $batchId is waiting for submitting").asJava
