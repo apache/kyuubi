@@ -88,6 +88,6 @@ class HiveDialect extends JdbcDialect {
   }
 
   override def name(): String = {
-    "hive2"
+    "hive"
   }
 }
