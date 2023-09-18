@@ -2826,6 +2826,32 @@ object KyuubiConf {
       .version("1.7.2")
       .fallbackConf(ENGINE_SUBMIT_TIMEOUT)
 
+  object YARNClientProxyUserStrategy extends Enumeration {
+    type YARNClientProxyUser = Value
+    val NONE, ADMIN, OWNER = Value
+  }
+
+  val YARN_PROXY_USER_STRATEGY: ConfigEntry[String] =
+    buildConf("kyuubi.yarn.proxyUser.strategy")
+      .doc("Determine which user to use to construct YARN client for application management, " +
+        "e.g. kill application. Options: <ul>" +
+        "<li>NONE. Use Kyuubi server user;</li>" +
+        "<li>ADMIN. Use admin user configured in `kyuubi.yarn.proxyUser.adminUser`.</li>" +
+        "<li>OWNER. Use session user, typically is application owner;</li>" +
+        "</ul>")
+      .version("1.8.0")
+      .stringConf
+      .checkValues(YARNClientProxyUserStrategy)
+      .createWithDefault("NONE")
+
+  val YARN_PROXY_USER_ADMIN_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.yarn.proxyUser.adminUser")
+      .doc(s"When ${YARN_PROXY_USER_STRATEGY.key} is set to ADMIN, use this admin user to " +
+        "construct YARN client for application management, e.g. kill application.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
   /**
    * Holds information about keys that have been deprecated.
    *

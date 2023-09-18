@@ -117,7 +117,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   override def killApplicationByTag(
       appMgrInfo: ApplicationManagerInfo,
-      tag: String): KillResponse = {
+      tag: String,
+      proxyUser: Option[String] = None): KillResponse = {
     if (kyuubiConf == null) {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
     }
@@ -157,7 +158,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   override def getApplicationInfoByTag(
       appMgrInfo: ApplicationManagerInfo,
       tag: String,
-      submitTime: Option[Long]): ApplicationInfo = {
+      proxyUser: Option[String] = None,
+      submitTime: Option[Long] = None): ApplicationInfo = {
     if (kyuubiConf == null) {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
     }

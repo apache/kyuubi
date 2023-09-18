@@ -460,6 +460,13 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 | kyuubi.spnego.keytab    | &lt;undefined&gt; | Keytab file for SPNego principal                                                                                                                                                                                                       | string | 1.6.0 |
 | kyuubi.spnego.principal | &lt;undefined&gt; | SPNego service principal, typical value would look like HTTP/_HOST@EXAMPLE.COM. SPNego service principal would be used when restful Kerberos security is enabled. This needs to be set only if SPNEGO is to be used in authentication. | string | 1.6.0 |
 
+### Yarn
+
+|               Key               |      Default      |                                                                                                                                                     Meaning                                                                                                                                                      |  Type  | Since |
+|---------------------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|-------|
+| kyuubi.yarn.proxyUser.adminUser | &lt;undefined&gt; | When kyuubi.yarn.proxyUser.strategy is set to ADMIN, use this admin user to construct YARN client for application management, e.g. kill application.                                                                                                                                                             | string | 1.8.0 |
+| kyuubi.yarn.proxyUser.strategy  | NONE              | Determine which user to use to construct YARN client for application management, e.g. kill application. Options: <ul><li>NONE. Use Kyuubi server user;</li><li>ADMIN. Use admin user configured in `kyuubi.yarn.proxyUser.adminUser`.</li><li>OWNER. Use session user, typically is application owner;</li></ul> | string | 1.8.0 |
+
 ### Zookeeper
 
 |                       Key                        |      Default       |                                                                                 Meaning                                                                                  |  Type   | Since |
