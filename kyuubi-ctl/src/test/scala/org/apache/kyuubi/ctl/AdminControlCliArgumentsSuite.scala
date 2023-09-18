@@ -165,8 +165,7 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |                           The engine subdomain this engine belong to.
          |  -esl, --engine-share-level <value>
          |                           The engine share level this engine belong to.
-         |  -ae, --all-engine <value>
-         |                           All the engine.
+         |  -ae, --all <value>       All the engine.
          |Command: list server
          |	List all the server nodes
          |

@@ -78,6 +78,6 @@ case class EngineOpts(
     engineType: String = null,
     engineSubdomain: String = null,
     engineShareLevel: String = null,
-    allEngine: Boolean = false)
+    all: String = null)
 
 case class AdminConfigOpts(configType: String = null)

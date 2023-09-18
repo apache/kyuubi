@@ -287,8 +287,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
-      @QueryParam("allengine") allEngine: Boolean): Seq[Engine] = {
-    if (allEngine) {
+      @QueryParam("all") @DefaultValue("false") all: String): Seq[Engine] = {
+    if (all.toBoolean) {
       val userName = fe.getSessionUser(Map.empty[String, String])
       val ipAddress = fe.getIpAddress
       info(s"Received list all kyuubi engine request from $userName/$ipAddress")
@@ -301,7 +301,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       val shareLevel = fe.getConf.get(ENGINE_SHARE_LEVEL)
       val engineType = fe.getConf.get(ENGINE_TYPE)
       withDiscoveryClient(fe.getConf) { discoveryClient =>
-        val commonParent = s"/${engineSpace}_${KYUUBI_VERSION}_$shareLevel/$engineType"
+        val commonParent = s"/${engineSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType"
         info(s"Listing engine nodes for $commonParent")
         try {
           discoveryClient.getChildren(commonParent).map {

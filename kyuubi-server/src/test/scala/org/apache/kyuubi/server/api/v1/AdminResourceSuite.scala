@@ -612,7 +612,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.getChildren(engineSpace).size == 1)
 
       val response = webTarget.path("api/v1/admin/engine")
-        .queryParam("all-engine", "true")
+        .queryParam("all", "true")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
         .get
@@ -659,7 +659,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.getChildren(engineSpace).size == 1)
 
       val response = webTarget.path("api/v1/admin/engine")
-        .queryParam("all-engine", "true")
+        .queryParam("all", "true")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
         .get
@@ -719,7 +719,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace2))
 
       val response = webTarget.path("api/v1/admin/engine")
-        .queryParam("all-engine", "true")
+        .queryParam("all", "true")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
         .get

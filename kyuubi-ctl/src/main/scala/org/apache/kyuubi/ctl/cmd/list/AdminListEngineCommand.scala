@@ -39,7 +39,7 @@ class AdminListEngineCommand(cliConfig: CliConfig)
         normalizedCliConfig.engineOpts.engineShareLevel,
         normalizedCliConfig.engineOpts.engineSubdomain,
         normalizedCliConfig.commonOpts.hs2ProxyUser,
-        normalizedCliConfig.engineOpts.allEngine).asScala
+        normalizedCliConfig.engineOpts.all).asScala
     }
   }
 

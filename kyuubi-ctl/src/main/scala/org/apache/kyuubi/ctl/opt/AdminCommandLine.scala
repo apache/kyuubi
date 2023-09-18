@@ -108,8 +108,8 @@ object AdminCommandLine extends CommonCommandLine {
         opt[String]("engine-share-level").abbr("esl")
           .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(engineShareLevel = v)))
           .text("The engine share level this engine belong to."),
-        opt[String]("all-engine").abbr("ae")
-          .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(allEngine = v.toBoolean)))
+        opt[String]("all").abbr("ae")
+          .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(all = v)))
           .text("All the engine."))
   }
 
