@@ -189,7 +189,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
         // block until the HTTP server is started, otherwise, we may get
         // the wrong HTTP server port -1
         while (server.getState != "STARTED") {
-          debug(s"Wait for $getName server start")
+          info(s"Waiting for $getName's HTTP server getting started")
           Thread.sleep(1000)
         }
         recoverBatchSessions()
