@@ -52,7 +52,6 @@ if [[ ${RELEASE_VERSION} =~ .*-SNAPSHOT ]]; then
   exit 1
 fi
 
-# Find the java binary
 if [ -n "${JAVA_HOME}" ]; then
   JAVA="${JAVA_HOME}/bin/java"
 elif [ "$(command -v java)" ]; then
@@ -62,10 +61,9 @@ else
   exit 1
 fi
 
-# Required java 1.8 version
 JAVA_VERSION=$($JAVA -version 2>&1 | awk -F '"' '/version/ {print $2}')
 if [[ $JAVA_VERSION != 1.8.* ]]; then
-  echo "Java version $JAVA_VERSION is not required 1.8"
+  echo "Unexpected Java version: $JAVA_VERSION. Java 8 is required for release."
   exit 1
 fi
 
