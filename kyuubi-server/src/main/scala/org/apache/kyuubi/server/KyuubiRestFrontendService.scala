@@ -186,8 +186,8 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
         isStarted.set(true)
         startBatchChecker()
         startInternal()
-        // if the server is not started, we should wait for it to start
-        // otherwise, we may get wrong server port with default -1
+        // block until the HTTP server is started, otherwise, we may get
+        // the wrong HTTP server port -1
         while (server.getState != "STARTED") {
           debug(s"Wait for $getName server start")
           Thread.sleep(1000)
