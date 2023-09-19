@@ -55,6 +55,8 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private[kyuubi] def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   private val batchChecker = ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-checker")
+  private val batchRecoveryPicker =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-recovery-picker")
 
   lazy val host: String = conf.get(FRONTEND_REST_BIND_HOST)
     .getOrElse {
@@ -142,6 +144,12 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   @VisibleForTesting
   private[kyuubi] def recoverBatchSessions(): Unit = {
+    // if the server is not started, we should wait for it to start
+    // otherwise, we may get wrong server port with default -1
+    while (server.getState != "STARTED") {
+      debug(s"Wait for $getName server start to recover batch session for current kyuubi server")
+      Thread.sleep(1000)
+    }
     val recoveryNumThreads = conf.get(METADATA_RECOVERY_THREADS)
     val batchRecoveryExecutor =
       ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
@@ -183,7 +191,14 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     if (!isStarted.get) {
       try {
         server.start()
-        recoverBatchSessions()
+        batchRecoveryPicker.schedule(
+          new Runnable {
+            override def run(): Unit = {
+              recoverBatchSessions()
+            }
+          },
+          0,
+          TimeUnit.MILLISECONDS)
         isStarted.set(true)
         startBatchChecker()
         startInternal()
@@ -197,6 +212,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   override def stop(): Unit = synchronized {
     ThreadUtils.shutdown(batchChecker)
+    ThreadUtils.shutdown(batchRecoveryPicker)
     if (isStarted.getAndSet(false)) {
       server.stop()
     }
