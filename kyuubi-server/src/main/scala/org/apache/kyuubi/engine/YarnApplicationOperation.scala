@@ -27,8 +27,8 @@ import org.apache.hadoop.yarn.client.api.YarnClient
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.YARNClientProxyUserStrategy
-import org.apache.kyuubi.config.KyuubiConf.YARNClientProxyUserStrategy._
+import org.apache.kyuubi.config.KyuubiConf.YarnClientProxyUserStrategy
+import org.apache.kyuubi.config.KyuubiConf.YarnClientProxyUserStrategy._
 import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
 import org.apache.kyuubi.engine.YarnApplicationOperation.toApplicationState
@@ -44,26 +44,30 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
     submitTimeout = conf.get(KyuubiConf.ENGINE_YARN_SUBMIT_TIMEOUT)
     yarnConf = KyuubiHadoopUtils.newYarnConfiguration(conf)
 
-    YARNClientProxyUserStrategy.withName(conf.get(KyuubiConf.YARN_PROXY_USER_STRATEGY)) match {
-      case NONE =>
-        val c = createYarnClient(yarnConf)
-        info(s"Successfully initialized admin YARN client.")
-        adminYarnClient = Some(c)
+    def createYarnClientWithCurrentUser(): Unit = {
+      val c = createYarnClient(yarnConf)
+      info(s"Creating admin YARN client with current user: ${Utils.currentUser}.")
+      adminYarnClient = Some(c)
+    }
+
+    def createYarnClientWithProxyUser(proxyUser: String): Unit = Utils.doAs(proxyUser) { () =>
+      val c = createYarnClient(yarnConf)
+      info(s"Creating admin YARN client with proxy user: $proxyUser.")
+      adminYarnClient = Some(c)
+    }
+
+    YarnClientProxyUserStrategy.withName(conf.get(KyuubiConf.YARN_PROXY_USER_STRATEGY)) match {
+      case NONE => createYarnClientWithCurrentUser()
       case ADMIN =>
         conf.get(KyuubiConf.YARN_PROXY_USER_ADMIN_USER) match {
-          case None || Some(Utils.currentUser) =>
-            val c = createYarnClient(yarnConf)
-            info(s"Successfully initialized admin YARN client with user: ${Utils.currentUser}.")
-            adminYarnClient = Some(c)
+          case None =>
+            createYarnClientWithCurrentUser()
+          case Some(currentUser) if currentUser == Utils.currentUser =>
+            createYarnClientWithCurrentUser()
           case Some(adminUser) =>
-            Utils.doAs(adminUser) { () =>
-              val c = createYarnClient(yarnConf)
-              info(s"Successfully initialized admin YARN client with proxy user: $adminUser.")
-              adminYarnClient = Some(c)
-            }
+            createYarnClientWithProxyUser(adminUser)
         }
-      case OWNER =>
-        info("Skip initializing admin YARN client")
+      case OWNER => info("Skip initializing admin YARN client")
     }
   }
 

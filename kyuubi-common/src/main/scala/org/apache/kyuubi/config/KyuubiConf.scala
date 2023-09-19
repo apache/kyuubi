@@ -2826,7 +2826,7 @@ object KyuubiConf {
       .version("1.7.2")
       .fallbackConf(ENGINE_SUBMIT_TIMEOUT)
 
-  object YARNClientProxyUserStrategy extends Enumeration {
+  object YarnClientProxyUserStrategy extends Enumeration {
     type YARNClientProxyUser = Value
     val NONE, ADMIN, OWNER = Value
   }
@@ -2836,12 +2836,12 @@ object KyuubiConf {
       .doc("Determine which user to use to construct YARN client for application management, " +
         "e.g. kill application. Options: <ul>" +
         "<li>NONE. Use Kyuubi server user;</li>" +
-        "<li>ADMIN. Use admin user configured in `kyuubi.yarn.proxyUser.adminUser`.</li>" +
+        "<li>ADMIN. Use admin user configured in `kyuubi.yarn.proxyUser.adminUser`;</li>" +
         "<li>OWNER. Use session user, typically is application owner;</li>" +
         "</ul>")
       .version("1.8.0")
       .stringConf
-      .checkValues(YARNClientProxyUserStrategy)
+      .checkValues(YarnClientProxyUserStrategy)
       .createWithDefault("NONE")
 
   val YARN_PROXY_USER_ADMIN_USER: OptionalConfigEntry[String] =
