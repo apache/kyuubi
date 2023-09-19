@@ -632,7 +632,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         assert(logResponse.readEntity(classOf[String]).contains(
           s"Batch ${metadata.identifier} is waiting for submitting"))
       case _ =>
-        fail("unexpected batch version")
+        fail(s"unexpected batch version: $batchVersion")
     }
 
     // get local batch log that is not existing
