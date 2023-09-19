@@ -50,11 +50,17 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
         info(s"Successfully initialized admin YARN client.")
         adminYarnClient = Some(c)
       case ADMIN =>
-        val adminUser = conf.get(KyuubiConf.YARN_PROXY_USER_ADMIN_USER).getOrElse(Utils.currentUser)
-        Utils.doAs(adminUser) { () =>
-          val c = createYarnClient(yarnConf)
-          info(s"Successfully initialized admin YARN client with user: $adminUser.")
-          adminYarnClient = Some(c)
+        conf.get(KyuubiConf.YARN_PROXY_USER_ADMIN_USER) match {
+          case None || Some(Utils.currentUser) =>
+            val c = createYarnClient(yarnConf)
+            info(s"Successfully initialized admin YARN client with user: ${Utils.currentUser}.")
+            adminYarnClient = Some(c)
+          case Some(adminUser) =>
+            Utils.doAs(adminUser) { () =>
+              val c = createYarnClient(yarnConf)
+              info(s"Successfully initialized admin YARN client with proxy user: $adminUser.")
+              adminYarnClient = Some(c)
+            }
         }
       case OWNER =>
         info("Skip initializing admin YARN client")
@@ -64,7 +70,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
   private def createYarnClient(_yarnConf: Configuration): YarnClient = {
     // YarnClient is thread-safe
     val yarnClient = YarnClient.createYarnClient()
-    yarnClient.init(yarnConf)
+    yarnClient.init(_yarnConf)
     yarnClient.start()
     yarnClient
   }
