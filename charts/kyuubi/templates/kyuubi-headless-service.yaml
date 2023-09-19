@@ -25,10 +25,15 @@ spec:
   type: ClusterIP
   clusterIP: None
   ports:
-    {{- range $name, $frontend := merge .Values.server .Values.monitoring }}
+    {{- range $name, $frontend := .Values.server }}
     - name: {{ $name | kebabcase }}
       port: {{ tpl $frontend.service.port $ }}
       targetPort: {{ $frontend.port }}
+    {{- end }}
+    {{- if .Values.monitoring.prometheus.enabled }}
+    - name: prometheus
+      port: {{ .Values.monitoring.prometheus.port}}
+      targetPort: {{ .Values.monitoring.prometheus.port}}
     {{- end }}
   selector:
     {{- include "kyuubi.selectorLabels" $ | nindent 4 }}

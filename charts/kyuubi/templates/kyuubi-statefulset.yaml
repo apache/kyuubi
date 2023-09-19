@@ -69,11 +69,15 @@ spec:
           envFrom: {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
           ports:
-            {{- range $name, $frontend := merge .Values.server .Values.monitoring }}
+            {{- range $name, $frontend := .Values.server }}
             {{- if $frontend.enabled }}
             - name: {{ $name | kebabcase }}
               containerPort: {{ $frontend.port }}
             {{- end }}
+            {{- end }}
+            {{- if .Values.monitoring.prometheus.enabled }}
+            - name: prometheus
+              containerPort: {{ .Values.monitoring.prometheus.port}}
             {{- end }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
