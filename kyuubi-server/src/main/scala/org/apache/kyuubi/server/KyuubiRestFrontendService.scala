@@ -55,8 +55,6 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private[kyuubi] def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   private val batchChecker = ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-checker")
-  private val batchRecoveryPicker =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-recovery-picker")
 
   lazy val host: String = conf.get(FRONTEND_REST_BIND_HOST)
     .getOrElse {
@@ -205,7 +203,6 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   override def stop(): Unit = synchronized {
     ThreadUtils.shutdown(batchChecker)
-    ThreadUtils.shutdown(batchRecoveryPicker)
     if (isStarted.getAndSet(false)) {
       server.stop()
     }
