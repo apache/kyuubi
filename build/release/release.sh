@@ -52,6 +52,20 @@ if [[ ${RELEASE_VERSION} =~ .*-SNAPSHOT ]]; then
   exit 1
 fi
 
+if [[ -z ${JAVA_HOME} ]]; then
+  if [[ $(command -v java) ]]; then
+    # shellcheck disable=SC2046
+    export JAVA_HOME="$(dirname $(dirname $(which java)))"
+  fi
+fi
+
+# Required java 1.8 version
+JAVA_VERSION=$("$JAVA_HOME"/bin/java -version 2>&1 | awk -F '"' '/version/ {print $2}')
+if [[ $JAVA_VERSION != 1.8.* ]]; then
+  echo "Java version $JAVA_VERSION is not required 1.8"
+  exit 1
+fi
+
 RELEASE_TAG="v${RELEASE_VERSION}-rc${RELEASE_RC_NO}"
 
 SVN_STAGING_REPO="https://dist.apache.org/repos/dist/dev/kyuubi"
