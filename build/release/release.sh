@@ -52,15 +52,18 @@ if [[ ${RELEASE_VERSION} =~ .*-SNAPSHOT ]]; then
   exit 1
 fi
 
-if [[ -z ${JAVA_HOME} ]]; then
-  if [[ $(command -v java) ]]; then
-    # shellcheck disable=SC2046
-    export JAVA_HOME="$(dirname $(dirname $(which java)))"
-  fi
+# Find the java binary
+if [ -n "${JAVA_HOME}" ]; then
+  JAVA="${JAVA_HOME}/bin/java"
+elif [ "$(command -v java)" ]; then
+  JAVA="java"
+else
+  echo "JAVA_HOME is not set" >&2
+  exit 1
 fi
 
 # Required java 1.8 version
-JAVA_VERSION=$("$JAVA_HOME"/bin/java -version 2>&1 | awk -F '"' '/version/ {print $2}')
+JAVA_VERSION=$($JAVA -version 2>&1 | awk -F '"' '/version/ {print $2}')
 if [[ $JAVA_VERSION != 1.8.* ]]; then
   echo "Java version $JAVA_VERSION is not required 1.8"
   exit 1
