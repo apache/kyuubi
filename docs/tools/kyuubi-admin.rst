@@ -99,7 +99,7 @@ Usage: ``bin/kyuubi-admin list engine [options]``
      - The subdomain for the share level of an engine. If not specified, it will read the configuration item kyuubi.engine.share.level.subdomain from kyuubi-defaults.conf.
    * - --hs2ProxyUser
      - The proxy user to impersonate. When specified, it will list engines for the hs2ProxyUser.
-   * - -ae --all
+   * - -a --all
      - All the engine.
 
 .. _list_server:
