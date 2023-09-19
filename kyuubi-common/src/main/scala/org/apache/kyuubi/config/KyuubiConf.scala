@@ -2827,7 +2827,7 @@ object KyuubiConf {
       .fallbackConf(ENGINE_SUBMIT_TIMEOUT)
 
   object YarnClientProxyUserStrategy extends Enumeration {
-    type YARNClientProxyUser = Value
+    type YarnClientProxyUserStrategy = Value
     val NONE, ADMIN, OWNER = Value
   }
 
