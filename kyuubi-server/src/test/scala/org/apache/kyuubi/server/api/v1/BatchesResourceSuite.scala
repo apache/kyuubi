@@ -623,8 +623,17 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("size", "1")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .get()
-    assert(logResponse.getStatus === 404)
-    assert(logResponse.readEntity(classOf[String]).contains("No local log found"))
+    batchVersion match {
+      case "1" =>
+        assert(logResponse.getStatus === 404)
+        assert(logResponse.readEntity(classOf[String]).contains("No local log found"))
+      case "2" =>
+        assert(logResponse.getStatus === 200)
+        assert(logResponse.readEntity(classOf[String]).contains(
+          s"Batch ${metadata.identifier} is waiting for submitting"))
+      case _ =>
+        fail(s"unexpected batch version: $batchVersion")
+    }
 
     // get local batch log that is not existing
     logResponse = webTarget.path(s"api/v1/batches/${UUID.randomUUID.toString}/localLog")
