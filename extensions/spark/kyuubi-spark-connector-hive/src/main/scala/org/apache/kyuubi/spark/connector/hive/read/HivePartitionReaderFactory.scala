@@ -31,10 +31,11 @@ import org.apache.spark.TaskContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.connector.read.{InputPartition, PartitionReader, PartitionReaderFactory}
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.datasources.v2._
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.NextIterator
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{HiveClientImpl, NextIterator}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types._
@@ -49,7 +50,7 @@ case class HivePartitionReaderFactory(
     dataSchema: StructType,
     readDataSchema: StructType,
     partitionSchema: StructType,
-    partFileToHivePart: Map[PartitionedFile, HivePartition],
+    partFileToHivePart: Map[PartitionedFile, CatalogTablePartition],
     pushedFilters: Array[Filter] = Array.empty)
   extends PartitionReaderFactory with Logging {
 
@@ -65,16 +66,17 @@ case class HivePartitionReaderFactory(
     val iter: Iterator[HivePartitionedFileReader[InternalRow]] =
       filePartition.files.toIterator.map { file =>
         val bindHivePart = partFileToHivePart.getOrElse(file, null)
+        val hivePartition = HiveClientImpl.toHivePartition(bindHivePart, hiveTable)
         HivePartitionedFileReader(
           file,
           new PartitionReaderWithPartitionValues(
             HivePartitionedReader(
               file,
-              buildReaderInternal(file, bindHivePart),
+              buildReaderInternal(file, hivePartition),
               tableDesc,
               broadcastHiveConf,
               nonPartitionReadDataKeys,
-              bindHivePart,
+              hivePartition,
               charset),
             readDataSchema,
             partitionSchema,

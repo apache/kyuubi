@@ -33,12 +33,15 @@ class HiveQuerySuite extends KyuubiHiveTest {
     finally spark.sql(s"DROP TABLE $table")
   }
 
-  def withTempPartitionedTable(spark: SparkSession, table: String)(f: => Unit): Unit = {
+  def withTempPartitionedTable(
+      spark: SparkSession,
+      table: String,
+      format: String = "PARQUET")(f: => Unit): Unit = {
     spark.sql(
       s"""
          | CREATE TABLE IF NOT EXISTS
          | $table (id String, year String, month string)
-         | USING PARQUET
+         | USING $format
          | PARTITIONED BY (year, month)
          |""".stripMargin).collect()
     try f
@@ -183,6 +186,21 @@ class HiveQuerySuite extends KyuubiHiveTest {
         // 2. thrown `Partition spec is invalid`, should be consist with spark v1.
         assert(exception.message.contains("Partition spec is invalid. The spec (year='') " +
           "contains an empty partition column value"))
+      }
+    }
+  }
+
+  test("read partitioned avro table") {
+    withSparkSession() { spark =>
+      val table = "hive.default.employee"
+      withTempPartitionedTable(spark, table, "AVRO") {
+        spark.sql(
+          s"""
+             | INSERT OVERWRITE
+             | $table PARTITION(year = '2022')
+             | VALUES("yi", "08")
+             |""".stripMargin)
+        checkQueryResult(s"select * from $table", spark, Array(Row.apply("yi", "2022", "08")))
       }
     }
   }
