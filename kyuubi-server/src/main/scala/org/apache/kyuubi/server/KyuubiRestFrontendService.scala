@@ -170,7 +170,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       v2Metadata.foreach { m =>
         sessionManager.updateMetadata(Metadata(
           identifier = m.identifier,
-          state = OperationState.INITIALIZED.name()))
+          state = OperationState.INITIALIZED.toString))
       }
 
       val batchSessionsToRecover =

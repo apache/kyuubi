@@ -576,23 +576,44 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     val restFe = fe.asInstanceOf[KyuubiRestFrontendService]
     restFe.recoverBatchSessions()
-    assert(sessionManager.getOpenSessionCount === 2)
+    batchVersion match {
+      case "1" =>
+        assert(sessionManager.getOpenSessionCount === 2)
 
-    val sessionHandle1 = SessionHandle.fromUUID(batchId1)
-    val sessionHandle2 = SessionHandle.fromUUID(batchId2)
-    val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSession]
-    val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSession]
-    assert(session1.createTime === batchMetadata.createTime)
-    assert(session2.createTime === batchMetadata2.createTime)
+        val sessionHandle1 = SessionHandle.fromUUID(batchId1)
+        val sessionHandle2 = SessionHandle.fromUUID(batchId2)
+        val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSession]
+        val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSession]
+        assert(session1.createTime === batchMetadata.createTime)
+        assert(session2.createTime === batchMetadata2.createTime)
 
-    eventually(timeout(10.seconds)) {
-      assert(session1.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
-        session1.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
-      assert(session1.batchJobSubmissionOp.builder.processLaunched)
+        eventually(timeout(10.seconds)) {
+          assert(session1.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
+            session1.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
+          assert(session1.batchJobSubmissionOp.builder.processLaunched)
 
-      assert(session2.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
-        session2.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
-      assert(!session2.batchJobSubmissionOp.builder.processLaunched)
+          assert(session2.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
+            session2.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
+          assert(!session2.batchJobSubmissionOp.builder.processLaunched)
+        }
+      case "2" =>
+        assert(sessionManager.getBatchMetadata(batchId1).nonEmpty)
+        assert(sessionManager.getBatchMetadata(batchId1).nonEmpty)
+
+        eventually(timeout(20.seconds)) {
+          assert(sessionManager.getBatchMetadata(batchId1).exists(m =>
+            m.state === OperationState.INITIALIZED.toString ||
+              m.state === OperationState.PENDING.toString ||
+              m.state === OperationState.RUNNING.toString ||
+              m.state === OperationState.FINISHED.toString))
+          assert(sessionManager.getBatchMetadata(batchId2).exists(m =>
+            m.state === OperationState.INITIALIZED.toString ||
+              m.state === OperationState.PENDING.toString ||
+              m.state === OperationState.RUNNING.toString ||
+              m.state === OperationState.FINISHED.toString))
+        }
+      case "_" =>
+        fail(s"unexpected batch version: $batchVersion")
     }
 
     assert(sessionManager.getBatchesFromMetadataStore(
