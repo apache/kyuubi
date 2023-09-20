@@ -39,10 +39,11 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
   def getSchemasOperation(session: Session): Operation
 
   def getTablesQuery(
+      session: Session,
       catalog: String,
       schema: String,
       tableName: String,
-      tableTypes: util.List[String]): String
+      tableTypes: util.List[String]): Operation
 
   def getTableTypesOperation(session: Session): Operation
 
@@ -51,13 +52,15 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
       catalogName: String,
       schemaName: String,
       tableName: String,
-      columnName: String): String
+      columnName: String): Operation
 
   def getFunctionsOperation(session: Session): Operation
 
   def getPrimaryKeysOperation(session: Session): Operation
 
   def getCrossReferenceOperation(session: Session): Operation
+
+  def getCurrentDatabaseOperation(session: Session): Operation
 
   def getRowSetHelper(): RowSetHelper
 

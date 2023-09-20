@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.kyuubi.engine.jdbc.dialect
+
 import java.sql.{Connection, ResultSet, Statement}
 import java.util
 
@@ -25,6 +26,7 @@ import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.jdbc.doris.{DorisRowSetHelper, DorisSchemaHelper}
+import org.apache.kyuubi.engine.jdbc.operation.ExecuteStatement
 import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
@@ -52,10 +54,11 @@ class DorisDialect extends JdbcDialect {
   }
 
   override def getTablesQuery(
+      session: Session,
       catalog: String,
       schema: String,
       tableName: String,
-      tableTypes: util.List[String]): String = {
+      tableTypes: util.List[String]): Operation = {
     val tTypes =
       if (tableTypes == null || tableTypes.isEmpty) {
         Set("BASE TABLE", "SYSTEM VIEW", "VIEW")
@@ -84,8 +87,10 @@ class DorisDialect extends JdbcDialect {
     }
 
     if (tTypes.nonEmpty) {
-      filters += s"(${tTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
-          .mkString(" OR ")})"
+      filters += s"(${
+          tTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
+            .mkString(" OR ")
+        })"
     }
 
     if (filters.nonEmpty) {
@@ -93,7 +98,9 @@ class DorisDialect extends JdbcDialect {
       query.append(filters.mkString(" AND "))
     }
 
-    query.toString()
+    val executeStatement =
+      new ExecuteStatement(session, query.toString(), false, 0L, true)
+    executeStatement
   }
 
   override def getTableTypesOperation(session: Session): Operation = {
@@ -105,7 +112,7 @@ class DorisDialect extends JdbcDialect {
       catalogName: String,
       schemaName: String,
       tableName: String,
-      columnName: String): String = {
+      columnName: String): Operation = {
     val query = new StringBuilder(
       """
         |SELECT
@@ -136,7 +143,9 @@ class DorisDialect extends JdbcDialect {
       query.append(filters.mkString(" AND "))
     }
 
-    query.toString()
+    val executeStatement =
+      new ExecuteStatement(session, query.toString(), false, 0L, true)
+    executeStatement
   }
 
   override def getFunctionsOperation(session: Session): Operation = {
@@ -148,6 +157,10 @@ class DorisDialect extends JdbcDialect {
   }
 
   override def getCrossReferenceOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
+
+  override def getCurrentDatabaseOperation(session: Session): Operation = {
     throw KyuubiSQLException.featureNotSupported()
   }
 

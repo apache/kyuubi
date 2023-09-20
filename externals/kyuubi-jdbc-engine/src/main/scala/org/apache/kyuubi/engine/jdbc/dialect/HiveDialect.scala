@@ -19,8 +19,11 @@ package org.apache.kyuubi.engine.jdbc.dialect
 import java.sql.{Connection, ResultSet, Statement}
 import java.util
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.jdbc.hive.{HiveRowSetHelper, HiveSchemaHelper}
+import org.apache.kyuubi.engine.jdbc.operation.ExecuteStatement
 import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.session.Session
@@ -43,15 +46,38 @@ class HiveDialect extends JdbcDialect {
   }
 
   override def getSchemasOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val query = new StringBuilder(
+      s"""
+         |SHOW DATABASES
+         |""".stripMargin).toString()
+    val executeStatement = {
+      new ExecuteStatement(session, query, false, 0L, false)
+    }
+    executeStatement
   }
 
   override def getTablesQuery(
+      session: Session,
       catalog: String,
       schema: String,
       tableName: String,
-      tableTypes: util.List[String]): String = {
-    throw KyuubiSQLException.featureNotSupported()
+      tableTypes: util.List[String]): Operation = {
+    val query = new StringBuilder(
+      s"""
+         |SHOW TABLES
+         |""".stripMargin)
+    if (StringUtils.isNotBlank(schema) && !schema.equals("%")) {
+      query.append("IN ").append(schema)
+    }
+
+    if (StringUtils.isNotBlank(tableName)) {
+      query.append("'").append(tableName).append("'")
+    }
+
+    val executeStatement = {
+      new ExecuteStatement(session, query.toString(), false, 0L, false)
+    }
+    executeStatement
   }
 
   override def getTableTypesOperation(session: Session): Operation = {
@@ -63,12 +89,33 @@ class HiveDialect extends JdbcDialect {
       catalogName: String,
       schemaName: String,
       tableName: String,
-      columnName: String): String = {
-    throw KyuubiSQLException.featureNotSupported()
+      columnName: String): Operation = {
+    val query = new StringBuilder(
+      s"""
+         |SHOW COLUMNS
+         |""".stripMargin)
+
+    if (StringUtils.isNotBlank(tableName)) {
+      query.append(" IN ").append(tableName)
+    }
+    if (StringUtils.isNotBlank(schemaName)) {
+      query.append(" IN ").append(schemaName)
+    }
+    val executeStatement = {
+      new ExecuteStatement(session, query.toString(), false, 0L, false)
+    }
+    executeStatement
   }
 
   override def getFunctionsOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val query = new StringBuilder(
+      s"""
+         |SHOW FUNCTIONS
+         |""".stripMargin).toString()
+    val executeStatement = {
+      new ExecuteStatement(session, query, false, 0L, false)
+    }
+    executeStatement
   }
 
   override def getPrimaryKeysOperation(session: Session): Operation = {
@@ -77,6 +124,17 @@ class HiveDialect extends JdbcDialect {
 
   override def getCrossReferenceOperation(session: Session): Operation = {
     throw KyuubiSQLException.featureNotSupported()
+  }
+
+  override def getCurrentDatabaseOperation(session: Session): Operation = {
+    val query = new StringBuilder(
+      s"""
+         |SELECT CURRENT_DATABASE()
+         |""".stripMargin).toString()
+    val executeStatement = {
+      new ExecuteStatement(session, query, false, 0L, false)
+    }
+    executeStatement
   }
 
   override def getRowSetHelper(): RowSetHelper = {

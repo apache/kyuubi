@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.jdbc.operation
 import java.sql.{Connection, Statement, Types}
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.engine.jdbc.dialect.HiveDialect
 import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.ResultSetWrapper
@@ -35,6 +36,7 @@ class ExecuteStatement(
   extends JdbcOperation(session) with Logging {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
+
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def runInternal(): Unit = {
@@ -89,7 +91,7 @@ class ExecuteStatement(
     } catch {
       onError(true)
     } finally {
-      if (jdbcStatement != null) {
+      if (jdbcStatement != null && !dialect.isInstanceOf[HiveDialect]) {
         jdbcStatement.closeOnCompletion()
       }
       shutdownTimeoutMonitor()

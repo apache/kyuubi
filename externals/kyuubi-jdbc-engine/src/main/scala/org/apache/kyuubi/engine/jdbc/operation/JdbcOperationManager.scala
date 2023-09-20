@@ -78,10 +78,8 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       schemaName: String,
       tableName: String,
       tableTypes: util.List[String]): Operation = {
-    val query = dialect.getTablesQuery(catalogName, schemaName, tableName, tableTypes)
-    val executeStatement =
-      new ExecuteStatement(session, query, false, 0L, true)
-    addOperation(executeStatement)
+    val operation = dialect.getTablesQuery(session, catalogName, schemaName, tableName, tableTypes)
+    addOperation(operation)
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
@@ -95,10 +93,8 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       schemaName: String,
       tableName: String,
       columnName: String): Operation = {
-    val query = dialect.getColumnsQuery(session, catalogName, schemaName, tableName, columnName)
-    val executeStatement =
-      new ExecuteStatement(session, query, false, 0L, true)
-    addOperation(executeStatement)
+    val operation = dialect.getColumnsQuery(session, catalogName, schemaName, tableName, columnName)
+    addOperation(operation)
   }
 
   override def newGetFunctionsOperation(
@@ -148,6 +144,7 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
   }
 
   override def newGetCurrentDatabaseOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = dialect.getCurrentDatabaseOperation(session)
+    addOperation(operation)
   }
 }

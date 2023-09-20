@@ -25,6 +25,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.engine.jdbc.operation.ExecuteStatement
 import org.apache.kyuubi.engine.jdbc.phoenix.{PhoenixRowSetHelper, PhoenixSchemaHelper}
 import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
 import org.apache.kyuubi.operation.Operation
@@ -53,10 +54,11 @@ class PhoenixDialect extends JdbcDialect {
   }
 
   override def getTablesQuery(
+      session: Session,
       catalog: String,
       schema: String,
       tableName: String,
-      tableTypes: util.List[String]): String = {
+      tableTypes: util.List[String]): Operation = {
     val tTypes =
       if (tableTypes == null || tableTypes.isEmpty) {
         Set("s", "u")
@@ -79,8 +81,10 @@ class PhoenixDialect extends JdbcDialect {
     }
 
     if (tTypes.nonEmpty) {
-      filters += s"(${tTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
-          .mkString(" OR ")})"
+      filters += s"(${
+          tTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
+            .mkString(" OR ")
+        })"
     }
 
     if (filters.nonEmpty) {
@@ -88,7 +92,9 @@ class PhoenixDialect extends JdbcDialect {
       query.append(filters.mkString(" AND "))
     }
 
-    query.toString()
+    val executeStatement =
+      new ExecuteStatement(session, query.toString(), false, 0L, true)
+    executeStatement
   }
 
   override def getTableTypesOperation(session: Session): Operation = {
@@ -100,7 +106,7 @@ class PhoenixDialect extends JdbcDialect {
       catalogName: String,
       schemaName: String,
       tableName: String,
-      columnName: String): String = {
+      columnName: String): Operation = {
     val query = new StringBuilder(
       """
         |SELECT TENANT_ID, TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, COLUMN_FAMILY,
@@ -124,7 +130,9 @@ class PhoenixDialect extends JdbcDialect {
       query.append(filters.mkString(" AND "))
     }
 
-    query.toString()
+    val executeStatement =
+      new ExecuteStatement(session, query.toString(), false, 0L, true)
+    executeStatement
   }
 
   override def getFunctionsOperation(session: Session): Operation = {
@@ -136,6 +144,10 @@ class PhoenixDialect extends JdbcDialect {
   }
 
   override def getCrossReferenceOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
+
+  override def getCurrentDatabaseOperation(session: Session): Operation = {
     throw KyuubiSQLException.featureNotSupported()
   }
 
