@@ -597,20 +597,16 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
           assert(!session2.batchJobSubmissionOp.builder.processLaunched)
         }
       case "2" =>
-        assert(sessionManager.getBatchMetadata(batchId1).nonEmpty)
-        assert(sessionManager.getBatchMetadata(batchId1).nonEmpty)
-
         eventually(timeout(20.seconds)) {
-          assert(sessionManager.getBatchMetadata(batchId1).exists(m =>
-            m.state === OperationState.INITIALIZED.toString ||
-              m.state === OperationState.PENDING.toString ||
-              m.state === OperationState.RUNNING.toString ||
-              m.state === OperationState.FINISHED.toString))
-          assert(sessionManager.getBatchMetadata(batchId2).exists(m =>
-            m.state === OperationState.INITIALIZED.toString ||
-              m.state === OperationState.PENDING.toString ||
-              m.state === OperationState.RUNNING.toString ||
-              m.state === OperationState.FINISHED.toString))
+          Seq(batchId1, batchId2).foreach { batchId =>
+            val metadata = sessionManager.getBatchMetadata(batchId).getOrElse(fail(
+              s"Can't find metadata for recovery batch: $batchId"))
+            assert(
+                metadata.state === OperationState.PENDING.toString ||
+                metadata.state === OperationState.RUNNING.toString ||
+                metadata.state === OperationState.FINISHED.toString)
+            assert(metadata.kyuubiInstance === fe.connectionUrl)
+          }
         }
       case "_" =>
         fail(s"unexpected batch version: $batchVersion")
