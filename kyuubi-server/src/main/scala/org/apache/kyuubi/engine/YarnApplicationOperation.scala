@@ -27,8 +27,8 @@ import org.apache.hadoop.yarn.client.api.YarnClient
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.YarnClientProxyUserStrategy
-import org.apache.kyuubi.config.KyuubiConf.YarnClientProxyUserStrategy._
+import org.apache.kyuubi.config.KyuubiConf.YarnUserStrategy
+import org.apache.kyuubi.config.KyuubiConf.YarnUserStrategy._
 import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
 import org.apache.kyuubi.engine.YarnApplicationOperation.toApplicationState
@@ -56,18 +56,15 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
       adminYarnClient = Some(c)
     }
 
-    YarnClientProxyUserStrategy.withName(conf.get(KyuubiConf.YARN_PROXY_USER_STRATEGY)) match {
-      case NONE => createYarnClientWithCurrentUser()
+    YarnUserStrategy.withName(conf.get(KyuubiConf.YARN_USER_STRATEGY)) match {
+      case NONE =>
+        createYarnClientWithCurrentUser()
+      case ADMIN if conf.get(KyuubiConf.YARN_USER_ADMIN) == Utils.currentUser =>
+        createYarnClientWithCurrentUser()
       case ADMIN =>
-        conf.get(KyuubiConf.YARN_PROXY_USER_ADMIN_USER) match {
-          case None =>
-            createYarnClientWithCurrentUser()
-          case Some(currentUser) if currentUser == Utils.currentUser =>
-            createYarnClientWithCurrentUser()
-          case Some(adminUser) =>
-            createYarnClientWithProxyUser(adminUser)
-        }
-      case OWNER => info("Skip initializing admin YARN client")
+        createYarnClientWithProxyUser(conf.get(KyuubiConf.YARN_USER_ADMIN))
+      case OWNER =>
+        info("Skip initializing admin YARN client")
     }
   }
 

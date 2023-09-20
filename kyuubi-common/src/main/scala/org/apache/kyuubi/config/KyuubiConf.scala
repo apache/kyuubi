@@ -2826,31 +2826,31 @@ object KyuubiConf {
       .version("1.7.2")
       .fallbackConf(ENGINE_SUBMIT_TIMEOUT)
 
-  object YarnClientProxyUserStrategy extends Enumeration {
-    type YarnClientProxyUserStrategy = Value
+  object YarnUserStrategy extends Enumeration {
+    type YarnUserStrategy = Value
     val NONE, ADMIN, OWNER = Value
   }
 
-  val YARN_PROXY_USER_STRATEGY: ConfigEntry[String] =
-    buildConf("kyuubi.yarn.proxyUser.strategy")
+  val YARN_USER_STRATEGY: ConfigEntry[String] =
+    buildConf("kyuubi.yarn.user.strategy")
       .doc("Determine which user to use to construct YARN client for application management, " +
         "e.g. kill application. Options: <ul>" +
-        "<li>NONE. Use Kyuubi server user;</li>" +
-        "<li>ADMIN. Use admin user configured in `kyuubi.yarn.proxyUser.adminUser`;</li>" +
-        "<li>OWNER. Use session user, typically is application owner;</li>" +
+        "<li>NONE: use Kyuubi server user.</li>" +
+        "<li>ADMIN: use admin user configured in `kyuubi.yarn.user.admin`.</li>" +
+        "<li>OWNER: use session user, typically is application owner.</li>" +
         "</ul>")
       .version("1.8.0")
       .stringConf
-      .checkValues(YarnClientProxyUserStrategy)
+      .checkValues(YarnUserStrategy)
       .createWithDefault("NONE")
 
-  val YARN_PROXY_USER_ADMIN_USER: OptionalConfigEntry[String] =
-    buildConf("kyuubi.yarn.proxyUser.adminUser")
-      .doc(s"When ${YARN_PROXY_USER_STRATEGY.key} is set to ADMIN, use this admin user to " +
+  val YARN_USER_ADMIN: ConfigEntry[String] =
+    buildConf("kyuubi.yarn.user.admin")
+      .doc(s"When ${YARN_USER_STRATEGY.key} is set to ADMIN, use this admin user to " +
         "construct YARN client for application management, e.g. kill application.")
       .version("1.8.0")
       .stringConf
-      .createOptional
+      .createWithDefault("yarn")
 
   /**
    * Holds information about keys that have been deprecated.
