@@ -150,7 +150,6 @@ class HiveRowSetHelper extends RowSetHelper {
         formatLocalDateTime(dateTime)
       case (decimal: java.math.BigDecimal, Types.DECIMAL) =>
         decimal.toPlainString
-      // TODO support bitmap and hll
       case (other, _) =>
         other.toString
     }
