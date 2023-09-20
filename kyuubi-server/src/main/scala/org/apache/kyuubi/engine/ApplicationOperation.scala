@@ -47,11 +47,18 @@ trait ApplicationOperation {
    *            For example,
    *            if the Hadoop Yarn is used, for spark applications,
    *            the tag will be preset via spark.yarn.tags
+   * @param proxyUser the proxy user to use for executing kill commands.
+   *                  For secured YARN cluster, the Kyuubi Server's user typically
+   *                  has no permission to kill the application. Admin user or
+   *                  application owner should be used instead.
    * @return a message contains response describing how the kill process.
    *
    * @note For implementations, please suppress exceptions and always return KillResponse
    */
-  def killApplicationByTag(appMgrInfo: ApplicationManagerInfo, tag: String): KillResponse
+  def killApplicationByTag(
+      appMgrInfo: ApplicationManagerInfo,
+      tag: String,
+      proxyUser: Option[String] = None): KillResponse
 
   /**
    * Get the engine/application status by the unique application tag
@@ -59,11 +66,16 @@ trait ApplicationOperation {
    * @param appMgrInfo the application manager information
    * @param tag the unique application tag for engine instance.
    * @param submitTime engine submit to resourceManager time
+   * @param proxyUser  the proxy user to use for creating YARN client
+   *                   For secured YARN cluster, the Kyuubi Server's user may have no permission
+   *                   to operate the application. Admin user or application owner could be used
+   *                   instead.
    * @return [[ApplicationInfo]]
    */
   def getApplicationInfoByTag(
       appMgrInfo: ApplicationManagerInfo,
       tag: String,
+      proxyUser: Option[String] = None,
       submitTime: Option[Long] = None): ApplicationInfo
 }
 
