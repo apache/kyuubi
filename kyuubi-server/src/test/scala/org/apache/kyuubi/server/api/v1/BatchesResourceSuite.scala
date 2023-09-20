@@ -602,7 +602,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
             val metadata = sessionManager.getBatchMetadata(batchId).getOrElse(fail(
               s"Can't find metadata for recovery batch: $batchId"))
             assert(
-                metadata.state === OperationState.PENDING.toString ||
+              metadata.state === OperationState.PENDING.toString ||
                 metadata.state === OperationState.RUNNING.toString ||
                 metadata.state === OperationState.FINISHED.toString)
             assert(metadata.kyuubiInstance === fe.connectionUrl)
