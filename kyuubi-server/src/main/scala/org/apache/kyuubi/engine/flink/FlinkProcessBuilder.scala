@@ -104,12 +104,26 @@ class FlinkProcessBuilder(
         val userJars = conf.get(ENGINE_FLINK_APPLICATION_JARS)
         userJars.foreach(jars => flinkExtraJars ++= jars.split(","))
 
+        val hiveConfDirOpt = env.get("HIVE_CONF_DIR")
+        hiveConfDirOpt.foreach { hiveConfDir =>
+          val hiveConfFile = Paths.get(hiveConfDir).resolve("hive-site.xml")
+          if (!Files.exists(hiveConfFile)) {
+            throw new KyuubiException(s"The file $hiveConfFile does not exists. " +
+              s"Please put hive-site.xml when HIVE_CONF_DIR env $hiveConfDir is configured.")
+          }
+          flinkExtraJars += s"$hiveConfFile"
+        }
+
         buffer += "-t"
         buffer += "yarn-application"
         buffer += s"-Dyarn.ship-files=${flinkExtraJars.mkString(";")}"
         buffer += s"-Dyarn.application.name=${conf.getOption(APP_KEY).get}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
+
+        hiveConfDirOpt.foreach { _ =>
+          buffer += "-Dcontainerized.master.env.HIVE_CONF_DIR=."
+        }
 
         val customFlinkConf = conf.getAllWithPrefix("flink", "")
         customFlinkConf.filter(_._1 != "app.name").foreach { case (k, v) =>
@@ -166,6 +180,7 @@ class FlinkProcessBuilder(
         env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)
         env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
         env.get("HBASE_CONF_DIR").foreach(classpathEntries.add)
+        env.get("HIVE_CONF_DIR").foreach(classpathEntries.add)
         val hadoopCp = env.get(FLINK_HADOOP_CLASSPATH_KEY)
         hadoopCp.foreach(classpathEntries.add)
         val extraCp = conf.get(ENGINE_FLINK_EXTRA_CLASSPATH)
