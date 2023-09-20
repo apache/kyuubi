@@ -256,10 +256,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     metadataManager.foreach(_.updateMetadata(metadata))
   }
 
-  def markMetadataInitialized(identifier: String): Unit = {
-    metadataManager.foreach(_.markMetadataInitialized(identifier))
-  }
-
   def getMetadataRequestsRetryRef(identifier: String): Option[MetadataRequestsRetryRef] = {
     metadataManager.flatMap(mm => Option(mm.getMetadataRequestsRetryRef(identifier)))
   }
