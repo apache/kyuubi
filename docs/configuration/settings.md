@@ -553,7 +553,6 @@ Setting them in the JDBC Connection URL supplies session-specific for each SQL e
 
 Please refer to the Trino official online documentation for [SET Statements](https://trino.io/docs/current/sql/set-session.html)
 
-
 ## Logging
 
 Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can configure it using `$KYUUBI_HOME/conf/log4j2.xml`, see `$KYUUBI_HOME/conf/log4j2.xml.template` as an example.

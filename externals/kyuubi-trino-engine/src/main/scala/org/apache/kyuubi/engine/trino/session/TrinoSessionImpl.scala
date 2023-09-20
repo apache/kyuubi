@@ -177,7 +177,7 @@ class TrinoSessionImpl(
   private def getTrinoSessionConf(sessionConf: KyuubiConf): Map[String, String] = {
     val trinoSessionConf = sessionConf.getAll.filterKeys(_.startsWith("trino."))
       .map { case (k, v) => (k.stripPrefix("trino."), v) }
-    trinoSessionConf
+    trinoSessionConf.toMap
   }
 
   override def close(): Unit = {
