@@ -65,8 +65,12 @@ case class HivePartitionReaderFactory(
     val filePartition = partition.asInstanceOf[FilePartition]
     val iter: Iterator[HivePartitionedFileReader[InternalRow]] =
       filePartition.files.toIterator.map { file =>
-        val bindHivePart = partFileToHivePart.getOrElse(file, null)
-        val hivePartition = HiveClientImpl.toHivePartition(bindHivePart, hiveTable)
+        val bindHivePart = partFileToHivePart.get(file)
+        val hivePartition = if (bindHivePart.isDefined) {
+          HiveClientImpl.toHivePartition(bindHivePart.get, hiveTable)
+        } else {
+          null
+        }
         HivePartitionedFileReader(
           file,
           new PartitionReaderWithPartitionValues(
