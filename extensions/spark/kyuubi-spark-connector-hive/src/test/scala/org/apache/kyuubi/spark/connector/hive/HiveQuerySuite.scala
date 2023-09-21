@@ -27,16 +27,11 @@ class HiveQuerySuite extends KyuubiHiveTest {
       table: String,
       format: String = "PARQUET",
       hiveTable: Boolean = false)(f: => Unit): Unit = {
-    val clause = if (hiveTable) {
-      "STORED AS"
-    } else {
-      "USING"
-    }
     spark.sql(
       s"""
          | CREATE TABLE IF NOT EXISTS
          | $table (id String, date String)
-         | $clause $format
+         | ${if (hiveTable) "STORED AS" else "USING"} $format
          |""".stripMargin).collect()
     try f
     finally spark.sql(s"DROP TABLE $table")
@@ -47,16 +42,11 @@ class HiveQuerySuite extends KyuubiHiveTest {
       table: String,
       format: String = "PARQUET",
       hiveTable: Boolean = false)(f: => Unit): Unit = {
-    val clause = if (hiveTable) {
-      "STORED AS"
-    } else {
-      "USING"
-    }
     spark.sql(
       s"""
          | CREATE TABLE IF NOT EXISTS
          | $table (id String, year String, month string)
-         | $clause $format
+         | ${if (hiveTable) "STORED AS" else "USING"} $format
          | PARTITIONED BY (year, month)
          |""".stripMargin).collect()
     try f
