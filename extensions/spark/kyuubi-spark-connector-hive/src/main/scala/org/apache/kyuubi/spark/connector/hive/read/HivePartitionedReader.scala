@@ -42,7 +42,7 @@ case class HivePartitionedReader(
     tableDesc: TableDesc,
     broadcastHiveConf: Broadcast[SerializableConfiguration],
     nonPartitionReadDataKeys: Seq[Attribute],
-    bindPartition: Option[HivePartition],
+    bindPartitionOpt: Option[HivePartition],
     charset: String = "utf-8") extends PartitionReader[InternalRow] with Logging {
 
   private val hiveConf = broadcastHiveConf.value.value
@@ -50,18 +50,16 @@ case class HivePartitionedReader(
   private val tableDeser = tableDesc.getDeserializerClass.newInstance()
   tableDeser.initialize(hiveConf, tableDesc.getProperties)
 
-  private val localDeser: Deserializer =
-    if (bindPartition.isDefined &&
-      bindPartition.get.getDeserializer != null) {
+  private val localDeser: Deserializer = bindPartitionOpt match {
+    case Some(bindPartition) if bindPartition.getDeserializer != null =>
       val tableProperties = tableDesc.getProperties
       val props = new Properties(tableProperties)
       val deserializer =
-        bindPartition.get.getDeserializer.getClass.asInstanceOf[Class[Deserializer]].newInstance()
+        bindPartition.getDeserializer.getClass.asInstanceOf[Class[Deserializer]].newInstance()
       deserializer.initialize(hiveConf, props)
       deserializer
-    } else {
-      tableDeser
-    }
+    case _ => tableDeser
+  }
 
   private val internalRow = new SpecificInternalRow(nonPartitionReadDataKeys.map(_.dataType))
 
