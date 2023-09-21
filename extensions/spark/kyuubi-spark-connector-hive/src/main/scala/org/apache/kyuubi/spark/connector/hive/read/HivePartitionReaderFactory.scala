@@ -101,17 +101,14 @@ case class HivePartitionReaderFactory(
       file: PartitionedFile,
       bindPartition: Option[HivePartition]): Iterator[Writable] = {
     // Obtain binding HivePartition from input partitioned file
-    val partDesc =
-      if (bindPartition.isDefined) {
-        Utilities.getPartitionDesc(bindPartition.get)
-      } else null
+    val partDesc = bindPartition.map(Utilities.getPartitionDesc)
 
     val ifc =
-      if (partDesc == null) {
+      if (partDesc.isEmpty) {
         hiveTable.getInputFormatClass
           .asInstanceOf[java.lang.Class[InputFormat[Writable, Writable]]]
       } else {
-        partDesc.getInputFileFormatClass
+        partDesc.get.getInputFileFormatClass
           .asInstanceOf[java.lang.Class[InputFormat[Writable, Writable]]]
       }
 
