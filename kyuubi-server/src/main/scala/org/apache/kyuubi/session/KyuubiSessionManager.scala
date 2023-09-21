@@ -122,8 +122,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     val session = getSession(sessionHandle)
+    val close = conf.get(SERVER_CLOSE_SESSION_ON_DISCONNECT)
     try {
-      super.closeSession(sessionHandle)
+      if (close) super.closeSession(sessionHandle)
     } finally {
       session match {
         case _: KyuubiBatchSession =>

@@ -3140,4 +3140,14 @@ object KyuubiConf {
       .serverOnly
       .intConf
       .createOptional
+
+  val SERVER_CLOSE_SESSION_ON_DISCONNECT: ConfigEntry[Boolean] =
+    buildConf("kyuubi.server.close.session.on.disconnect")
+      .internal
+      .doc("Session will be closed when connection is closed. " +
+        " Set this to false to have session outlive its parent connection.")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(true)
+
 }
