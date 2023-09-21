@@ -19,7 +19,6 @@ package org.apache.kyuubi.spark.connector.hive.read
 
 import java.util.Properties
 
-import org.apache.hadoop.hive.ql.exec.Utilities
 import org.apache.hadoop.hive.ql.metadata.{Partition => HivePartition}
 import org.apache.hadoop.hive.ql.plan.TableDesc
 import org.apache.hadoop.hive.serde2.Deserializer
@@ -43,25 +42,21 @@ case class HivePartitionedReader(
     tableDesc: TableDesc,
     broadcastHiveConf: Broadcast[SerializableConfiguration],
     nonPartitionReadDataKeys: Seq[Attribute],
-    bindPartition: HivePartition,
+    bindPartition: Option[HivePartition],
     charset: String = "utf-8") extends PartitionReader[InternalRow] with Logging {
 
-  private val partDesc =
-    if (bindPartition != null) {
-      Utilities.getPartitionDesc(bindPartition)
-    } else null
   private val hiveConf = broadcastHiveConf.value.value
 
   private val tableDeser = tableDesc.getDeserializerClass.newInstance()
   tableDeser.initialize(hiveConf, tableDesc.getProperties)
 
   private val localDeser: Deserializer =
-    if (bindPartition != null &&
-      bindPartition.getDeserializer != null) {
+    if (bindPartition.isDefined &&
+      bindPartition.get.getDeserializer != null) {
       val tableProperties = tableDesc.getProperties
       val props = new Properties(tableProperties)
       val deserializer =
-        bindPartition.getDeserializer.getClass.asInstanceOf[Class[Deserializer]].newInstance()
+        bindPartition.get.getDeserializer.getClass.asInstanceOf[Class[Deserializer]].newInstance()
       deserializer.initialize(hiveConf, props)
       deserializer
     } else {

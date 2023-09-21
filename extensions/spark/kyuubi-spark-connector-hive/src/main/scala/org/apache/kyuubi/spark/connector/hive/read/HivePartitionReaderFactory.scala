@@ -66,7 +66,7 @@ case class HivePartitionReaderFactory(
     val iter: Iterator[HivePartitionedFileReader[InternalRow]] =
       filePartition.files.toIterator.map { file =>
         val bindHivePart = partFileToHivePart.get(file)
-        val hivePartition = bindHivePart.map(HiveClientImpl.toHivePartition(_, hiveTable)).orNull
+        val hivePartition = bindHivePart.map(HiveClientImpl.toHivePartition(_, hiveTable))
         HivePartitionedFileReader(
           file,
           new PartitionReaderWithPartitionValues(
@@ -85,9 +85,9 @@ case class HivePartitionReaderFactory(
     new SparkFilePartitionReader[InternalRow](iter)
   }
 
-  def buildReaderInternal(
+  private def buildReaderInternal(
       file: PartitionedFile,
-      bindPartition: HivePartition): PartitionReader[Writable] = {
+      bindPartition: Option[HivePartition]): PartitionReader[Writable] = {
     val reader = createPartitionWritableReader(file, bindPartition)
     val fileReader = new PartitionReader[Writable] {
       override def next(): Boolean = reader.hasNext
@@ -99,11 +99,11 @@ case class HivePartitionReaderFactory(
 
   private def createPartitionWritableReader[T](
       file: PartitionedFile,
-      bindPartition: HivePartition): Iterator[Writable] = {
+      bindPartition: Option[HivePartition]): Iterator[Writable] = {
     // Obtain binding HivePartition from input partitioned file
     val partDesc =
-      if (bindPartition != null) {
-        Utilities.getPartitionDesc(bindPartition)
+      if (bindPartition.isDefined) {
+        Utilities.getPartitionDesc(bindPartition.get)
       } else null
 
     val ifc =
