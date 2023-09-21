@@ -15,7 +15,7 @@
   limitations under the License.
 */}}
 
-{{- range $name, $frontend := merge .Values.server .Values.monitoring }}
+{{- range $name, $frontend := .Values.server }}
 {{- if $frontend.enabled }}
 apiVersion: v1
 kind: Service

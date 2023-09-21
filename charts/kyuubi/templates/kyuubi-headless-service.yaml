@@ -32,8 +32,8 @@ spec:
     {{- end }}
     {{- if .Values.monitoring.prometheus.enabled }}
     - name: prometheus
-      port: {{ .Values.monitoring.prometheus.port}}
-      targetPort: {{ .Values.monitoring.prometheus.port}}
+      port: {{ .Values.monitoring.prometheus.port }}
+      targetPort: {{ .Values.monitoring.prometheus.port }}
     {{- end }}
   selector:
     {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
