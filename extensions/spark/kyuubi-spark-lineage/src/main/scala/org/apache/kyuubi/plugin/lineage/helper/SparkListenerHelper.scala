@@ -17,25 +17,20 @@
 
 package org.apache.kyuubi.plugin.lineage.helper
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SPARK_VERSION
+import org.apache.spark.kyuubi.lineage.SparkContextHelper
+
+import org.apache.kyuubi.util.SemanticVersion
 
 object SparkListenerHelper {
 
-  lazy val sparkMajorMinorVersion: (Int, Int) = {
-    val runtimeSparkVer = org.apache.spark.SPARK_VERSION
-    val runtimeVersion = SemanticVersion(runtimeSparkVer)
-    (runtimeVersion.majorVersion, runtimeVersion.minorVersion)
-  }
+  lazy val SPARK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(SPARK_VERSION)
 
-  def isSparkVersionAtMost(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionAtMost(targetVersionString)
-  }
+  def currentUser: String = UserGroupInformation.getCurrentUser.getShortUserName
 
-  def isSparkVersionAtLeast(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionAtLeast(targetVersionString)
-  }
+  def sessionUser: Option[String] =
+    Option(SparkContextHelper.globalSparkContext.getLocalProperty(KYUUBI_SESSION_USER))
 
-  def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
-  }
+  final val KYUUBI_SESSION_USER = "kyuubi.session.user"
 }

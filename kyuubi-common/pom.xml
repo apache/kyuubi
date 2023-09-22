@@ -21,20 +21,20 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.8.0-SNAPSHOT</version>
+        <version>1.9.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-common_2.12</artifactId>
+    <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Project Common</name>
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>
-            <groupId>com.vladsch.flexmark</groupId>
-            <artifactId>flexmark-all</artifactId>
-            <scope>test</scope>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -129,6 +129,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-minikdc</artifactId>
             <scope>test</scope>
@@ -148,7 +155,7 @@
 
         <dependency>
             <groupId>org.scalatestplus</groupId>
-            <artifactId>mockito-4-6_${scala.binary.version}</artifactId>
+            <artifactId>mockito-4-11_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -165,8 +172,20 @@
         </dependency>
 
         <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.jakewharton.fliptables</groupId>
             <artifactId>fliptables</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-all</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

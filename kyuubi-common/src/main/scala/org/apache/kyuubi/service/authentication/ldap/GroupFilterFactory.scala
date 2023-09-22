@@ -38,7 +38,7 @@ object GroupFilterFactory extends FilterFactory {
   }
 }
 
-class GroupMembershipKeyFilter(groupFilter: Seq[String]) extends Filter with Logging {
+class GroupMembershipKeyFilter(groupFilter: Set[String]) extends Filter with Logging {
 
   @throws[AuthenticationException]
   override def apply(ldap: DirSearch, user: String): Unit = {
@@ -70,7 +70,7 @@ class GroupMembershipKeyFilter(groupFilter: Seq[String]) extends Filter with Log
   }
 }
 
-class UserMembershipKeyFilter(groupFilter: Seq[String]) extends Filter with Logging {
+class UserMembershipKeyFilter(groupFilter: Set[String]) extends Filter with Logging {
   @throws[AuthenticationException]
   override def apply(ldap: DirSearch, user: String): Unit = {
     info(s"Authenticating user '$user' using $classOf[UserMembershipKeyFilter].getSimpleName")

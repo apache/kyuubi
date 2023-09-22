@@ -52,6 +52,21 @@ if [[ ${RELEASE_VERSION} =~ .*-SNAPSHOT ]]; then
   exit 1
 fi
 
+if [ -n "${JAVA_HOME}" ]; then
+  JAVA="${JAVA_HOME}/bin/java"
+elif [ "$(command -v java)" ]; then
+  JAVA="java"
+else
+  echo "JAVA_HOME is not set" >&2
+  exit 1
+fi
+
+JAVA_VERSION=$($JAVA -version 2>&1 | awk -F '"' '/version/ {print $2}')
+if [[ $JAVA_VERSION != 1.8.* ]]; then
+  echo "Unexpected Java version: $JAVA_VERSION. Java 8 is required for release."
+  exit 1
+fi
+
 RELEASE_TAG="v${RELEASE_VERSION}-rc${RELEASE_RC_NO}"
 
 SVN_STAGING_REPO="https://dist.apache.org/repos/dist/dev/kyuubi"
@@ -101,6 +116,9 @@ upload_nexus_staging() {
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
     -pl extensions/spark/kyuubi-extension-spark-3-2 -am
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.3 \
+    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
+    -pl extensions/spark/kyuubi-extension-spark-3-3 -am
+  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.4 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml"
 }
 

@@ -32,7 +32,6 @@
 NOTICE*
 docs/**
 build/apache-maven-*/**
-build/maven-mvnd-*/**
 build/scala-*/**
 **/**/operation_logs/**/**
 **/**/server_operation_logs/**/**
@@ -51,8 +50,10 @@ build/scala-*/**
 **/metadata-store-schema*.sql
 **/*.derby.sql
 **/*.mysql.sql
+**/*.sqlite.sql
 **/node/**
 **/web-ui/dist/**
+**/web-ui/coverage/**
 **/pnpm-lock.yaml
 **/node_modules/**
 **/gen/*

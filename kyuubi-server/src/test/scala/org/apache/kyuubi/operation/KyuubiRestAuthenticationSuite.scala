@@ -37,10 +37,18 @@ import org.apache.kyuubi.session.KyuubiSession
 class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
 
   override protected val otherConfigs: Map[String, String] = {
-    // allow to impersonate other users with spnego authentication
     Map(
+      KyuubiConf.ENGINE_SECURITY_ENABLED.key -> "true",
+      KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER.key -> "simple",
+      KyuubiConf.SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET.key -> "_KYUUBI_REST_",
+      // allow to impersonate other users with spnego authentication
       s"hadoop.proxyuser.$clientPrincipalUser.groups" -> "*",
       s"hadoop.proxyuser.$clientPrincipalUser.hosts" -> "*")
+  }
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    InternalSecurityAccessor.initialize(conf, true)
   }
 
   test("test with LDAP authorization") {

@@ -15,11 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.result;
+package org.apache.kyuubi.engine.flink.result
+
+import scala.concurrent.duration.Duration
 
 import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.catalog.Column
+import org.apache.flink.table.gateway.service.result.ResultFetcher
 import org.apache.flink.types.Row
 
 /** Utility object for building ResultSet. */
@@ -54,4 +57,20 @@ object ResultSetUtil {
       .columns(Column.physical("result", DataTypes.STRING))
       .data(Array[Row](Row.of("OK")))
       .build
+
+  def fromResultFetcher(
+      resultFetcher: ResultFetcher,
+      maxRows: Int,
+      resultFetchTimeout: Duration): ResultSet = {
+    if (maxRows <= 0) {
+      throw new IllegalArgumentException("maxRows should be positive")
+    }
+    val schema = resultFetcher.getResultSchema
+    val ite = new QueryResultFetchIterator(resultFetcher, maxRows, resultFetchTimeout)
+    ResultSet.builder
+      .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(schema.getColumns)
+      .data(ite)
+      .build
+  }
 }

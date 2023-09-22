@@ -31,14 +31,17 @@ import org.apache.spark.TaskContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.connector.read.{InputPartition, PartitionReader}
+import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
+import org.apache.spark.sql.connector.read.{InputPartition, PartitionReader, PartitionReaderFactory}
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.datasources.v2._
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.NextIterator
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{HiveClientImpl, NextIterator}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types._
 import org.apache.spark.util.SerializableConfiguration
+
+import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils
 
 case class HivePartitionReaderFactory(
     sqlConf: SQLConf,
@@ -47,9 +50,9 @@ case class HivePartitionReaderFactory(
     dataSchema: StructType,
     readDataSchema: StructType,
     partitionSchema: StructType,
-    partFileToHivePart: Map[PartitionedFile, HivePartition],
+    partFileToHivePart: Map[PartitionedFile, CatalogTablePartition],
     pushedFilters: Array[Filter] = Array.empty)
-  extends FilePartitionReaderFactory with Logging {
+  extends PartitionReaderFactory with Logging {
 
   private val charset: String =
     sqlConf.getConfString("hive.exec.default.charset", "utf-8")
@@ -57,37 +60,34 @@ case class HivePartitionReaderFactory(
   val tableDesc = HiveReader.getTableDec(hiveTable)
   val nonPartitionReadDataKeys = HiveReader.toAttributes(readDataSchema)
 
-  override def buildReader(partitionedFile: PartitionedFile): PartitionReader[InternalRow] = {
-    throw new UnsupportedOperationException("Cannot use buildReader directly.")
-  }
-
   override def createReader(partition: InputPartition): PartitionReader[InternalRow] = {
     assert(partition.isInstanceOf[FilePartition])
     val filePartition = partition.asInstanceOf[FilePartition]
     val iter: Iterator[HivePartitionedFileReader[InternalRow]] =
       filePartition.files.toIterator.map { file =>
-        val bindHivePart = partFileToHivePart.getOrElse(file, null)
+        val bindHivePart = partFileToHivePart.get(file)
+        val hivePartition = bindHivePart.map(HiveClientImpl.toHivePartition(_, hiveTable))
         HivePartitionedFileReader(
           file,
           new PartitionReaderWithPartitionValues(
             HivePartitionedReader(
               file,
-              buildReaderInternal(file, bindHivePart),
+              buildReaderInternal(file, hivePartition),
               tableDesc,
               broadcastHiveConf,
               nonPartitionReadDataKeys,
-              bindHivePart,
+              hivePartition,
               charset),
             readDataSchema,
             partitionSchema,
             file.partitionValues))
       }
-    new FilePartitionReader[InternalRow](iter)
+    new SparkFilePartitionReader[InternalRow](iter)
   }
 
-  def buildReaderInternal(
+  private def buildReaderInternal(
       file: PartitionedFile,
-      bindPartition: HivePartition): PartitionReader[Writable] = {
+      bindPartition: Option[HivePartition]): PartitionReader[Writable] = {
     val reader = createPartitionWritableReader(file, bindPartition)
     val fileReader = new PartitionReader[Writable] {
       override def next(): Boolean = reader.hasNext
@@ -99,25 +99,20 @@ case class HivePartitionReaderFactory(
 
   private def createPartitionWritableReader[T](
       file: PartitionedFile,
-      bindPartition: HivePartition): Iterator[Writable] = {
+      bindPartition: Option[HivePartition]): Iterator[Writable] = {
     // Obtain binding HivePartition from input partitioned file
-    val partDesc =
-      if (bindPartition != null) {
-        Utilities.getPartitionDesc(bindPartition)
-      } else null
-
-    val ifc =
-      if (partDesc == null) {
-        hiveTable.getInputFormatClass
-          .asInstanceOf[java.lang.Class[InputFormat[Writable, Writable]]]
-      } else {
+    val ifc = bindPartition.map(Utilities.getPartitionDesc) match {
+      case Some(partDesc) =>
         partDesc.getInputFileFormatClass
           .asInstanceOf[java.lang.Class[InputFormat[Writable, Writable]]]
-      }
+      case None =>
+        hiveTable.getInputFormatClass
+          .asInstanceOf[java.lang.Class[InputFormat[Writable, Writable]]]
+    }
 
     val jobConf = new JobConf(broadcastHiveConf.value.value)
 
-    val filePath = new Path(new URI(file.filePath))
+    val filePath = new Path(new URI(HiveConnectorUtils.partitionedFilePath(file)))
 
     if (tableDesc != null) {
       configureJobPropertiesForStorageHandler(tableDesc, jobConf, true)

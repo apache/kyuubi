@@ -28,33 +28,24 @@ import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.spark.connector.common.GoldenFileUtils._
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 
-// scalastyle:off line.size.limit
 /**
  * To run this test suite:
  * {{{
- *   build/mvn clean install \
- *     -pl extensions/spark/kyuubi-spark-connector-tpch -am \
- *     -Dmaven.plugin.scalatest.exclude.tags="" \
- *     -Dtest=none -DwildcardSuites=org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
+ *   KYUUBI_UPDATE=0 dev/gen/gen_tpcdh_queries.sh
  * }}}
  *
  * To re-generate golden files for this suite:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn clean install \
- *     -pl extensions/spark/kyuubi-spark-connector-tpch -am \
- *     -Dmaven.plugin.scalatest.exclude.tags="" \
- *     -Dtest=none -DwildcardSuites=org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
+ *   dev/gen/gen_tpcdh_queries.sh
  * }}}
  */
-// scalastyle:on line.size.limit
-
 @Slow
 class TPCHQuerySuite extends KyuubiFunSuite {
 
   val queries: Set[String] = (1 to 22).map(i => s"q$i").toSet
 
   test("run query on tiny") {
-    val viewSuffix = "view";
+    val viewSuffix = "view"
     val sparkConf = new SparkConf().setMaster("local[*]")
       .set("spark.ui.enabled", "false")
       .set("spark.sql.catalogImplementation", "in-memory")

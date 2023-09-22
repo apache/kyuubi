@@ -22,4 +22,4 @@ Python
 
     pyhive
     pyspark
-
+    jaydebeapi

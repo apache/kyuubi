@@ -18,14 +18,16 @@
 package org.apache.kyuubi.server.rest.client
 
 import java.util
+import java.util.Collections
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.DurationInt
 
 import org.apache.hive.service.rpc.thrift.TGetInfoType
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 
 import org.apache.kyuubi.RestClientTestHelper
 import org.apache.kyuubi.client.{KyuubiRestClient, SessionRestApi}
-import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiConf
@@ -70,7 +72,7 @@ class SessionRestApiSuite extends RestClientTestHelper {
 
       // get session event
       val kyuubiEvent = sessionRestApi.getSessionEvent(
-        sessionHandle.getIdentifier.toString).asInstanceOf[dto.KyuubiSessionEvent]
+        sessionHandle.getIdentifier.toString)
       assert(kyuubiEvent.getConf.get("testConfig").equals("testValue"))
       assert(kyuubiEvent.getSessionType.equals(SessionType.INTERACTIVE.toString))
     }
@@ -159,6 +161,37 @@ class SessionRestApiSuite extends RestClientTestHelper {
         "default")
       assertThrows[KyuubiRestException] {
         sessionRestApi.getCrossReference(sessionHandleStr, getCrossReferenceReq)
+      }
+    }
+  }
+
+  test("fix kyuubi session leak caused by engine stop") {
+    withSessionRestApi { sessionRestApi =>
+      // close all sessions
+      val sessions = sessionRestApi.listSessions().asScala
+      sessions.foreach(session => sessionRestApi.closeSession(session.getIdentifier))
+
+      // open new session
+      val sessionOpenRequest = new SessionOpenRequest(Map(
+        KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
+        KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "5000",
+        KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "3000").asJava)
+      val sessionHandle = sessionRestApi.openSession(sessionOpenRequest)
+
+      // get open session count
+      val sessionCount = sessionRestApi.getOpenSessionCount
+      assert(sessionCount == 1)
+
+      val statementReq = new StatementRequest(
+        "spark.stop()",
+        true,
+        3000,
+        Collections.singletonMap(KyuubiConf.OPERATION_LANGUAGE.key, "SCALA"))
+      sessionRestApi.executeStatement(sessionHandle.getIdentifier.toString, statementReq)
+
+      eventually(Timeout(30.seconds), interval(1.seconds)) {
+        assert(sessionRestApi.getOpenSessionCount == 0)
+        assert(sessionRestApi.listSessions().asScala.isEmpty)
       }
     }
   }

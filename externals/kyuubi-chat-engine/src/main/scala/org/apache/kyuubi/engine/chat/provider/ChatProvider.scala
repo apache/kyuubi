@@ -24,11 +24,11 @@ import com.fasterxml.jackson.module.scala.{ClassTagExtensions, DefaultScalaModul
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.reflection.DynConstructors
+import org.apache.kyuubi.util.reflect.DynConstructors
 
 trait ChatProvider {
 
-  def open(sessionId: String): Unit
+  def open(sessionId: String, user: Option[String] = None): Unit
 
   def ask(sessionId: String, q: String): String
 

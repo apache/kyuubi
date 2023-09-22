@@ -22,10 +22,13 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.{ExecutorAllocationClient, MapOutputTrackerMaster, SparkContext, SparkEnv}
+import org.apache.spark.internal.Logging
+import org.apache.spark.resource.ResourceProfile
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{FilterExec, ProjectExec, SortExec, SparkPlan}
 import org.apache.spark.sql.execution.adaptive._
+import org.apache.spark.sql.execution.columnar.InMemoryTableScanExec
 import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExchangeExec}
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, MarkNumOutputColumnsRule}
@@ -69,6 +72,14 @@ case class FinalStageResourceManager(session: SparkSession)
       return plan
     }
 
+    // It's not safe to kill executors if this plan contains table cache.
+    // If the executor loses then the rdd would re-compute those partition.
+    if (hasTableCache(plan) &&
+      conf.getConf(KyuubiSQLConf.FINAL_WRITE_STAGE_SKIP_KILLING_EXECUTORS_FOR_TABLE_CACHE)) {
+      return plan
+    }
+
+    // TODO: move this to query stage optimizer when updating Spark to 3.5.x
     // Since we are in `prepareQueryStage`, the AQE shuffle read has not been applied.
     // So we need to apply it by self.
     val shuffleRead = queryStageOptimizerRules.foldLeft(stageOpt.get.asInstanceOf[SparkPlan]) {
@@ -119,7 +130,11 @@ case class FinalStageResourceManager(session: SparkSession)
       shuffleId: Int,
       numReduce: Int): Seq[String] = {
     val tracker = SparkEnv.get.mapOutputTracker.asInstanceOf[MapOutputTrackerMaster]
-    val shuffleStatus = tracker.shuffleStatuses(shuffleId)
+    val shuffleStatusOpt = tracker.shuffleStatuses.get(shuffleId)
+    if (shuffleStatusOpt.isEmpty) {
+      return Seq.empty
+    }
+    val shuffleStatus = shuffleStatusOpt.get
     val executorToBlockSize = new mutable.HashMap[String, Long]
     shuffleStatus.withMapStatuses { mapStatus =>
       mapStatus.foreach { status =>
@@ -157,7 +172,7 @@ case class FinalStageResourceManager(session: SparkSession)
 
     // Evict the rest executors according to the shuffle block size
     executorToBlockSize.toSeq.sortBy(_._2).foreach { case (id, _) =>
-      if (executorIdsToKill.length < expectedNumExecutorToKill) {
+      if (executorIdsToKill.length < expectedNumExecutorToKill && existedExecutors.contains(id)) {
         executorIdsToKill.append(id)
       }
     }
@@ -172,19 +187,44 @@ case class FinalStageResourceManager(session: SparkSession)
       numReduce: Int): Unit = {
     val executorAllocationClient = sc.schedulerBackend.asInstanceOf[ExecutorAllocationClient]
 
-    val executorsToKill = findExecutorToKill(sc, targetExecutors, shuffleId, numReduce)
+    val executorsToKill =
+      if (conf.getConf(KyuubiSQLConf.FINAL_WRITE_STAGE_EAGERLY_KILL_EXECUTORS_KILL_ALL)) {
+        executorAllocationClient.getExecutorIds()
+      } else {
+        findExecutorToKill(sc, targetExecutors, shuffleId, numReduce)
+      }
     logInfo(s"Request to kill executors, total count ${executorsToKill.size}, " +
       s"[${executorsToKill.mkString(", ")}].")
+    if (executorsToKill.isEmpty) {
+      return
+    }
 
     // Note, `SparkContext#killExecutors` does not allow with DRA enabled,
     // see `https://github.com/apache/spark/pull/20604`.
     // It may cause the status in `ExecutorAllocationManager` inconsistent with
     // `CoarseGrainedSchedulerBackend` for a while. But it should be synchronous finally.
+    //
+    // We should adjust target num executors, otherwise `YarnAllocator` might re-request original
+    // target executors if DRA has not updated target executors yet.
+    // Note, DRA would re-adjust executors if there are more tasks to be executed, so we are safe.
+    //
+    //  * We kill executor
+    //      * YarnAllocator re-request target executors
+    //         * DRA can not release executors since they are new added
+    // ----------------------------------------------------------------> timeline
     executorAllocationClient.killExecutors(
       executorIds = executorsToKill,
-      adjustTargetNumExecutors = false,
+      adjustTargetNumExecutors = true,
       countFailures = false,
       force = false)
+
+    FinalStageResourceManager.getAdjustedTargetExecutors(sc)
+      .filter(_ < targetExecutors).foreach { adjustedExecutors =>
+        val delta = targetExecutors - adjustedExecutors
+        logInfo(s"Target executors after kill ($adjustedExecutors) is lower than required " +
+          s"($targetExecutors). Requesting $delta additional executor(s).")
+        executorAllocationClient.requestExecutors(delta)
+      }
   }
 
   @transient private val queryStageOptimizerRules: Seq[Rule[SparkPlan]] = Seq(
@@ -193,7 +233,32 @@ case class FinalStageResourceManager(session: SparkSession)
     OptimizeShuffleWithLocalRead)
 }
 
-trait FinalRebalanceStageHelper {
+object FinalStageResourceManager extends Logging {
+
+  private[sql] def getAdjustedTargetExecutors(sc: SparkContext): Option[Int] = {
+    sc.schedulerBackend match {
+      case schedulerBackend: CoarseGrainedSchedulerBackend =>
+        try {
+          val field = classOf[CoarseGrainedSchedulerBackend]
+            .getDeclaredField("requestedTotalExecutorsPerResourceProfile")
+          field.setAccessible(true)
+          schedulerBackend.synchronized {
+            val requestedTotalExecutorsPerResourceProfile =
+              field.get(schedulerBackend).asInstanceOf[mutable.HashMap[ResourceProfile, Int]]
+            val defaultRp = sc.resourceProfileManager.defaultResourceProfile
+            requestedTotalExecutorsPerResourceProfile.get(defaultRp)
+          }
+        } catch {
+          case e: Exception =>
+            logWarning("Failed to get requestedTotalExecutors of Default ResourceProfile", e)
+            None
+        }
+      case _ => None
+    }
+  }
+}
+
+trait FinalRebalanceStageHelper extends AdaptiveSparkPlanHelper {
   @tailrec
   final protected def findFinalRebalanceStage(plan: SparkPlan): Option[ShuffleQueryStageExec] = {
     plan match {
@@ -201,11 +266,18 @@ trait FinalRebalanceStageHelper {
       case f: FilterExec => findFinalRebalanceStage(f.child)
       case s: SortExec if !s.global => findFinalRebalanceStage(s.child)
       case stage: ShuffleQueryStageExec
-          if stage.isMaterialized &&
+          if stage.isMaterialized && stage.mapStats.isDefined &&
             stage.plan.isInstanceOf[ShuffleExchangeExec] &&
             stage.plan.asInstanceOf[ShuffleExchangeExec].shuffleOrigin != ENSURE_REQUIREMENTS =>
         Some(stage)
       case _ => None
     }
+  }
+
+  final protected def hasTableCache(plan: SparkPlan): Boolean = {
+    find(plan) {
+      case _: InMemoryTableScanExec => true
+      case _ => false
+    }.isDefined
   }
 }

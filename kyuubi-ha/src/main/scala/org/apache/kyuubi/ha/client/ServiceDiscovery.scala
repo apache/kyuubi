@@ -60,6 +60,7 @@ abstract class ServiceDiscovery(
 
   override def start(): Unit = {
     discoveryClient.registerService(conf, namespace, this)
+    info(s"Registered $name in namespace ${_namespace}.")
     super.start()
   }
 

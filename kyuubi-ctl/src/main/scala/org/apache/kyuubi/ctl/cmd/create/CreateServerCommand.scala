@@ -25,7 +25,8 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 
-class CreateServerCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](cliConfig) {
+class CreateServerCommand(cliConfig: CliConfig)
+  extends Command[Iterable[ServiceNodeInfo]](cliConfig) {
 
   def validate(): Unit = {
     if (normalizedCliConfig.resource != ControlObject.SERVER) {
@@ -49,7 +50,7 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeI
   /**
    * Expose Kyuubi server instance to another domain.
    */
-  def doRun(): Seq[ServiceNodeInfo] = {
+  override def doRun(): Iterable[ServiceNodeInfo] = {
     val kyuubiConf = conf
 
     kyuubiConf.setIfMissing(HA_ADDRESSES, normalizedCliConfig.zkOpts.zkQuorum)
@@ -89,7 +90,7 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeI
     }
   }
 
-  def render(nodes: Seq[ServiceNodeInfo]): Unit = {
+  override def render(nodes: Iterable[ServiceNodeInfo]): Unit = {
     val title = "Created zookeeper service nodes"
     info(Render.renderServiceNodesInfo(title, nodes))
   }

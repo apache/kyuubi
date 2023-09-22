@@ -23,8 +23,6 @@ import java.security.interfaces.ECPublicKey
 import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 
-import scala.util.{Failure, Success, Try}
-
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.ranger.plugin.service.RangerBasePlugin
@@ -33,66 +31,11 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
+import org.apache.kyuubi.util.SemanticVersion
+import org.apache.kyuubi.util.reflect.DynConstructors
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 private[authz] object AuthZUtils {
-
-  /**
-   * fixme error handling need improve here
-   */
-  def getFieldVal[T](o: Any, name: String): T = {
-    Try {
-      val field = o.getClass.getDeclaredField(name)
-      field.setAccessible(true)
-      field.get(o)
-    } match {
-      case Success(value) => value.asInstanceOf[T]
-      case Failure(e) =>
-        val candidates = o.getClass.getDeclaredFields.map(_.getName).mkString("[", ",", "]")
-        throw new RuntimeException(s"$name not in ${o.getClass} $candidates", e)
-    }
-  }
-
-  def getFieldValOpt[T](o: Any, name: String): Option[T] = Try(getFieldVal[T](o, name)).toOption
-
-  def invoke(
-      obj: AnyRef,
-      methodName: String,
-      args: (Class[_], AnyRef)*): AnyRef = {
-    try {
-      val (types, values) = args.unzip
-      val method = obj.getClass.getMethod(methodName, types: _*)
-      method.setAccessible(true)
-      method.invoke(obj, values: _*)
-    } catch {
-      case e: NoSuchMethodException =>
-        val candidates = obj.getClass.getMethods.map(_.getName).mkString("[", ",", "]")
-        throw new RuntimeException(s"$methodName not in ${obj.getClass} $candidates", e)
-    }
-  }
-
-  def invokeAs[T](
-      obj: AnyRef,
-      methodName: String,
-      args: (Class[_], AnyRef)*): T = {
-    invoke(obj, methodName, args: _*).asInstanceOf[T]
-  }
-
-  def invokeStatic(
-      obj: Class[_],
-      methodName: String,
-      args: (Class[_], AnyRef)*): AnyRef = {
-    val (types, values) = args.unzip
-    val method = obj.getMethod(methodName, types: _*)
-    method.setAccessible(true)
-    method.invoke(obj, values: _*)
-  }
-
-  def invokeStaticAs[T](
-      obj: Class[_],
-      methodName: String,
-      args: (Class[_], AnyRef)*): T = {
-    invokeStatic(obj, methodName, args: _*).asInstanceOf[T]
-  }
 
   /**
    * Get the active session user
@@ -118,8 +61,8 @@ private[authz] object AuthZUtils {
 
   def hasResolvedPermanentView(plan: LogicalPlan): Boolean = {
     plan match {
-      case view: View if view.resolved && isSparkVersionAtLeast("3.1.0") =>
-        !getFieldVal[Boolean](view, "isTempView")
+      case view: View if view.resolved && isSparkV31OrGreater =>
+        !getField[Boolean](view, "isTempView")
       case _ =>
         false
     }
@@ -127,7 +70,12 @@ private[authz] object AuthZUtils {
 
   lazy val isRanger21orGreater: Boolean = {
     try {
-      classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
+      DynConstructors.builder().impl(
+        classOf[RangerBasePlugin],
+        classOf[String],
+        classOf[String],
+        classOf[String])
+        .buildChecked[RangerBasePlugin]()
       true
     } catch {
       case _: NoSuchMethodException =>
@@ -135,30 +83,10 @@ private[authz] object AuthZUtils {
     }
   }
 
-  def isSparkVersionAtMost(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionAtMost(targetVersionString)
-  }
-
-  def isSparkVersionAtLeast(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionAtLeast(targetVersionString)
-  }
-
-  def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
-  }
-
-  /**
-   * check if spark version satisfied
-   * first param is option of supported most  spark version,
-   * and secont param is option of supported least spark version
-   *
-   * @return
-   */
-  def passSparkVersionCheck: (Option[String], Option[String]) => Boolean =
-    (mostSparkVersion, leastSparkVersion) => {
-      mostSparkVersion.forall(isSparkVersionAtMost) &&
-      leastSparkVersion.forall(isSparkVersionAtLeast)
-    }
+  lazy val SPARK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(SPARK_VERSION)
+  lazy val isSparkV31OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.1"
+  lazy val isSparkV32OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.2"
+  lazy val isSparkV33OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.3"
 
   def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {

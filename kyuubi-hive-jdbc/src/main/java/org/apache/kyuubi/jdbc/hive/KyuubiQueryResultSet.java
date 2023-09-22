@@ -26,6 +26,7 @@ import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.hive.cli.RowSet;
 import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
 import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
+import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +48,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
   private boolean emptyResultSet = false;
   private boolean isScrollable = false;
   private boolean fetchFirst = false;
+  private boolean hasMoreToFetch = false;
 
   private final TProtocolVersion protocol;
 
@@ -223,9 +225,6 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
       metadataResp = client.GetResultSetMetadata(metadataReq);
       Utils.verifySuccess(metadataResp.getStatus());
 
-      StringBuilder namesSb = new StringBuilder();
-      StringBuilder typesSb = new StringBuilder();
-
       TTableSchema schema = metadataResp.getSchema();
       if (schema == null || !schema.isSetColumns()) {
         // TODO: should probably throw an exception here.
@@ -235,10 +234,6 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
 
       List<TColumnDesc> columns = schema.getColumns();
       for (int pos = 0; pos < schema.getColumnsSize(); pos++) {
-        if (pos != 0) {
-          namesSb.append(",");
-          typesSb.append(",");
-        }
         String columnName = columns.get(pos).getColumnName();
         columnNames.add(columnName);
         normalizedColumnNames.add(columnName.toLowerCase());
@@ -324,25 +319,20 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     try {
       TFetchOrientation orientation = TFetchOrientation.FETCH_NEXT;
       if (fetchFirst) {
-        // If we are asked to start from begining, clear the current fetched resultset
+        // If we are asked to start from beginning, clear the current fetched resultset
         orientation = TFetchOrientation.FETCH_FIRST;
         fetchedRows = null;
         fetchedRowsItr = null;
         fetchFirst = false;
       }
       if (fetchedRows == null || !fetchedRowsItr.hasNext()) {
-        TFetchResultsReq fetchReq = new TFetchResultsReq(stmtHandle, orientation, fetchSize);
-        TFetchResultsResp fetchResp;
-        fetchResp = client.FetchResults(fetchReq);
-        Utils.verifySuccessWithInfo(fetchResp.getStatus());
-
-        TRowSet results = fetchResp.getResults();
-        fetchedRows = RowSetFactory.create(results, protocol);
-        fetchedRowsItr = fetchedRows.iterator();
+        fetchResult(orientation);
       }
 
       if (fetchedRowsItr.hasNext()) {
         row = fetchedRowsItr.next();
+      } else if (hasMoreToFetch) {
+        fetchResult(orientation);
       } else {
         return false;
       }
@@ -355,6 +345,18 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     }
     // NOTE: fetchOne doesn't throw new SQLFeatureNotSupportedException("Method not supported").
     return true;
+  }
+
+  private void fetchResult(TFetchOrientation orientation) throws SQLException, TException {
+    TFetchResultsReq fetchReq = new TFetchResultsReq(stmtHandle, orientation, fetchSize);
+    TFetchResultsResp fetchResp;
+    fetchResp = client.FetchResults(fetchReq);
+    Utils.verifySuccessWithInfo(fetchResp.getStatus());
+    hasMoreToFetch = fetchResp.isSetHasMoreRows() && fetchResp.isHasMoreRows();
+
+    TRowSet results = fetchResp.getResults();
+    fetchedRows = RowSetFactory.create(results, protocol);
+    fetchedRowsItr = fetchedRows.iterator();
   }
 
   @Override

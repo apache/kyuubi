@@ -38,7 +38,7 @@ class ChatSessionImpl(
 
   override def open(): Unit = {
     info(s"Starting to open chat session.")
-    chatProvider.open(handle.identifier.toString)
+    chatProvider.open(handle.identifier.toString, Some(user))
     super.open()
     info(s"The chat session is started.")
   }

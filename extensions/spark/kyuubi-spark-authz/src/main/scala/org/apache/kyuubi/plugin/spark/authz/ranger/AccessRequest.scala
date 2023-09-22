@@ -27,7 +27,7 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{invoke, invokeAs}
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
 
@@ -50,7 +50,7 @@ object AccessRequest {
         "getRolesFromUserAndGroups",
         (classOf[String], userName),
         (classOf[JSet[String]], userGroups))
-      invoke(req, "setUserRoles", (classOf[JSet[String]], roles))
+      invokeAs[Unit](req, "setUserRoles", (classOf[JSet[String]], roles))
     } catch {
       case _: Exception =>
     }
@@ -61,7 +61,7 @@ object AccessRequest {
     }
     try {
       val clusterName = invokeAs[String](SparkRangerAdminPlugin, "getClusterName")
-      invoke(req, "setClusterName", (classOf[String], clusterName))
+      invokeAs[Unit](req, "setClusterName", (classOf[String], clusterName))
     } catch {
       case _: Exception =>
     }
@@ -74,8 +74,8 @@ object AccessRequest {
 
   private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[JSet[String]] = {
     try {
-      val storeEnricher = invoke(SparkRangerAdminPlugin, "getUserStoreEnricher")
-      val userStore = invoke(storeEnricher, "getRangerUserStore")
+      val storeEnricher = invokeAs[AnyRef](SparkRangerAdminPlugin, "getUserStoreEnricher")
+      val userStore = invokeAs[AnyRef](storeEnricher, "getRangerUserStore")
       val userGroupMapping =
         invokeAs[JHashMap[String, JSet[String]]](userStore, "getUserGroupMapping")
       Some(userGroupMapping.get(user.getShortUserName))

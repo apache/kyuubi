@@ -53,7 +53,7 @@ object RuleAuthorization {
       requests += AccessRequest(resource, ugi, opType, AccessType.USE)
     }
 
-    def addAccessRequest(objects: Seq[PrivilegeObject], isInput: Boolean): Unit = {
+    def addAccessRequest(objects: Iterable[PrivilegeObject], isInput: Boolean): Unit = {
       objects.foreach { obj =>
         val resource = AccessResource(obj, opType)
         val accessType = ranger.AccessType(obj, opType, isInput)
@@ -84,7 +84,7 @@ object RuleAuthorization {
           }
         case _ => Seq(request)
       }
-    }
+    }.toSeq
 
     if (authorizeInSingleCall) {
       verify(requestArrays.flatten, auditHandler)

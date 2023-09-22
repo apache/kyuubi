@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.lineage
 import org.apache.spark.sql.execution.QueryExecution
 
 import org.apache.kyuubi.plugin.lineage.dispatcher.{KyuubiEventDispatcher, SparkEventDispatcher}
+import org.apache.kyuubi.plugin.lineage.dispatcher.atlas.AtlasLineageDispatcher
 
 trait LineageDispatcher {
 
@@ -35,6 +36,7 @@ object LineageDispatcher {
     LineageDispatcherType.withName(dispatcherType) match {
       case LineageDispatcherType.SPARK_EVENT => new SparkEventDispatcher()
       case LineageDispatcherType.KYUUBI_EVENT => new KyuubiEventDispatcher()
+      case LineageDispatcherType.ATLAS => new AtlasLineageDispatcher()
       case _ => throw new UnsupportedOperationException(
           s"Unsupported lineage dispatcher: $dispatcherType.")
     }

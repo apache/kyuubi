@@ -20,7 +20,7 @@ package org.apache.kyuubi.server
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
-import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
+import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.session.SessionHandle
@@ -183,9 +183,10 @@ trait BackendServiceMetric extends BackendService {
       operationHandle: OperationHandle,
       orientation: FetchOrientation,
       maxRows: Int,
-      fetchLog: Boolean): TRowSet = {
+      fetchLog: Boolean): TFetchResultsResp = {
     MetricsSystem.timerTracing(MetricsConstants.BS_FETCH_RESULTS) {
-      val rowSet = super.fetchResults(operationHandle, orientation, maxRows, fetchLog)
+      val fetchResultsResp = super.fetchResults(operationHandle, orientation, maxRows, fetchLog)
+      val rowSet = fetchResultsResp.getResults
       // TODO: the statistics are wrong when we enabled the arrow.
       val rowsSize =
         if (rowSet.getColumnsSize > 0) {
@@ -207,7 +208,17 @@ trait BackendServiceMetric extends BackendService {
         else MetricsConstants.BS_FETCH_RESULT_ROWS_RATE,
         rowsSize))
 
-      rowSet
+      val operation = sessionManager.operationManager
+        .getOperation(operationHandle)
+        .asInstanceOf[KyuubiOperation]
+
+      if (fetchLog) {
+        operation.increaseFetchLogCount(rowsSize)
+      } else {
+        operation.increaseFetchResultsCount(rowsSize)
+      }
+
+      fetchResultsResp
     }
   }
 

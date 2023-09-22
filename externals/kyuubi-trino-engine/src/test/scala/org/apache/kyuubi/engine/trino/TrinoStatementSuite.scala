@@ -30,15 +30,15 @@ class TrinoStatementSuite extends WithTrinoContainerServer {
       assert(schema.size === 1)
       assert(schema(0).getName === "_col0")
 
-      assert(resultSet.toIterator.hasNext)
-      assert(resultSet.toIterator.next() === List(1))
+      assert(resultSet.hasNext)
+      assert(resultSet.next() === List(1))
 
       val trinoStatement2 = TrinoStatement(trinoContext, kyuubiConf, "show schemas")
       val schema2 = trinoStatement2.getColumns
       val resultSet2 = trinoStatement2.execute()
 
       assert(schema2.size === 1)
-      assert(resultSet2.toIterator.hasNext)
+      assert(resultSet2.hasNext)
     }
   }
 

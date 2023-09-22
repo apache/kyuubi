@@ -36,6 +36,7 @@ echo kyuubi_trino_version=%~9
 echo user=%username%
 
 FOR /F %%i IN ('git rev-parse HEAD') DO SET "revision=%%i"
+FOR /F "delims=" %%i IN ('git show -s --format^=%%ci HEAD') DO SET "revision_time=%%i"
 FOR /F %%i IN ('git rev-parse --abbrev-ref HEAD') DO SET "branch=%%i"
 FOR /F %%i IN ('git config --get remote.origin.url') DO SET "url=%%i"
 
@@ -44,6 +45,7 @@ FOR /f %%i IN ("%TIME%") DO SET current_time=%%i
 set date=%current_date%_%current_time%
 
 echo revision=%revision%
+echo revision_time=%revision_time%
 echo branch=%branch%
 echo date=%date%
 echo url=%url%

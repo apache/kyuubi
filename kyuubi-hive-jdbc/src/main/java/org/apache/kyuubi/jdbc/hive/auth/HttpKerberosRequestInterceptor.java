@@ -65,7 +65,7 @@ public class HttpKerberosRequestInterceptor extends HttpRequestInterceptorBase {
       httpRequest.addHeader(
           HttpAuthUtils.AUTHORIZATION, HttpAuthUtils.NEGOTIATE + " " + kerberosAuthHeader);
     } catch (Exception e) {
-      throw new HttpException(e.getMessage(), e);
+      throw new HttpException(e.getMessage() == null ? "" : e.getMessage(), e);
     } finally {
       kerberosLock.unlock();
     }

@@ -17,16 +17,85 @@
 
 package org.apache.spark.sql.kyuubi
 
+import scala.collection.mutable.ArrayBuffer
+
+import org.apache.spark.SparkContext
+import org.apache.spark.internal.Logging
+import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
+import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
+import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
+import org.apache.spark.sql.execution.metric.{SQLMetric, SQLMetrics}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.schema.RowSet
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils.quoteIfNeeded
+import org.apache.kyuubi.util.reflect.DynMethods
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
-object SparkDatasetHelper {
+object SparkDatasetHelper extends Logging {
+
+  def executeCollect(df: DataFrame): Array[Array[Byte]] = withNewExecutionId(df) {
+    executeArrowBatchCollect(df.queryExecution.executedPlan)
+  }
+
+  def executeArrowBatchCollect: SparkPlan => Array[Array[Byte]] = {
+    case adaptiveSparkPlan: AdaptiveSparkPlanExec =>
+      executeArrowBatchCollect(finalPhysicalPlan(adaptiveSparkPlan))
+    // TODO: avoid extra shuffle if `offset` > 0
+    case collectLimit: CollectLimitExec if offset(collectLimit) > 0 =>
+      logWarning("unsupported offset > 0, an extra shuffle will be introduced.")
+      toArrowBatchRdd(collectLimit).collect()
+    case collectLimit: CollectLimitExec if collectLimit.limit >= 0 =>
+      doCollectLimit(collectLimit)
+    case collectLimit: CollectLimitExec if collectLimit.limit < 0 =>
+      executeArrowBatchCollect(collectLimit.child)
+    // TODO: replace with pattern match once we drop Spark 3.1 support.
+    case command: SparkPlan if isCommandResultExec(command) =>
+      doCommandResultExec(command)
+    case localTableScan: LocalTableScanExec =>
+      doLocalTableScan(localTableScan)
+    case plan: SparkPlan =>
+      toArrowBatchRdd(plan).collect()
+  }
+
   def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
     ds.toArrowBatchRdd
+  }
+
+  /**
+   * Forked from [[Dataset.toArrowBatchRdd(plan: SparkPlan)]].
+   * Convert to an RDD of serialized ArrowRecordBatches.
+   */
+  def toArrowBatchRdd(plan: SparkPlan): RDD[Array[Byte]] = {
+    val schemaCaptured = plan.schema
+    // TODO: SparkPlan.session introduced in SPARK-35798, replace with SparkPlan.session once we
+    // drop Spark 3.1 support.
+    val maxRecordsPerBatch = SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch
+    val timeZoneId = SparkSession.active.sessionState.conf.sessionLocalTimeZone
+    // note that, we can't pass the lazy variable `maxBatchSize` directly, this is because input
+    // arguments are serialized and sent to the executor side for execution.
+    val maxBatchSizePerBatch = maxBatchSize
+    plan.execute().mapPartitionsInternal { iter =>
+      KyuubiArrowConverters.toBatchIterator(
+        iter,
+        schemaCaptured,
+        maxRecordsPerBatch,
+        maxBatchSizePerBatch,
+        -1,
+        timeZoneId)
+    }
+  }
+
+  def toArrowBatchLocalIterator(df: DataFrame): Iterator[Array[Byte]] = {
+    withNewExecutionId(df) {
+      toArrowBatchRdd(df).toLocalIterator
+    }
   }
 
   def convertTopLevelComplexTypeToHiveString(
@@ -64,15 +133,149 @@ object SparkDatasetHelper {
     df.select(cols: _*)
   }
 
-  /**
-   * Fork from Apache Spark-3.3.1 org.apache.spark.sql.catalyst.util.quoteIfNeeded to adapt to
-   * Spark-3.1.x
-   */
-  def quoteIfNeeded(part: String): String = {
-    if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
-      part
-    } else {
-      s"`${part.replace("`", "``")}`"
+  private lazy val maxBatchSize: Long = {
+    // respect spark connect config
+    KyuubiSparkUtil.globalSparkContext
+      .getConf
+      .getOption("spark.connect.grpc.arrow.maxBatchSize")
+      .orElse(Option("4m"))
+      .map(JavaUtils.byteStringAs(_, ByteUnit.MiB))
+      .get
+  }
+
+  private def doCollectLimit(collectLimit: CollectLimitExec): Array[Array[Byte]] = {
+    // TODO: SparkPlan.session introduced in SPARK-35798, replace with SparkPlan.session once we
+    // drop Spark-3.1.x support.
+    val timeZoneId = SparkSession.active.sessionState.conf.sessionLocalTimeZone
+    val maxRecordsPerBatch = SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch
+
+    val batches = KyuubiArrowConverters.takeAsArrowBatches(
+      collectLimit,
+      maxRecordsPerBatch,
+      maxBatchSize,
+      timeZoneId)
+
+    // note that the number of rows in the returned arrow batches may be >= `limit`, perform
+    // the slicing operation of result
+    val result = ArrayBuffer[Array[Byte]]()
+    var i = 0
+    var rest = collectLimit.limit
+    while (i < batches.length && rest > 0) {
+      val (batch, size) = batches(i)
+      if (size <= rest) {
+        result += batch
+        // returned ArrowRecordBatch has less than `limit` row count, safety to do conversion
+        rest -= size.toInt
+      } else { // size > rest
+        result += KyuubiArrowConverters.slice(collectLimit.schema, timeZoneId, batch, 0, rest)
+        rest = 0
+      }
+      i += 1
     }
+    result.toArray
+  }
+
+  private lazy val commandResultExecRowsMethod = DynMethods.builder("rows")
+    .impl("org.apache.spark.sql.execution.CommandResultExec")
+    .build()
+
+  private def doCommandResultExec(command: SparkPlan): Array[Array[Byte]] = {
+    val spark = SparkSession.active
+    // TODO: replace with `command.rows` once we drop Spark 3.1 support.
+    val rows = commandResultExecRowsMethod.invoke[Seq[InternalRow]](command)
+    command.longMetric("numOutputRows").add(rows.size)
+    sendDriverMetrics(spark.sparkContext, command.metrics)
+    KyuubiArrowConverters.toBatchIterator(
+      rows.iterator,
+      command.schema,
+      spark.sessionState.conf.arrowMaxRecordsPerBatch,
+      maxBatchSize,
+      -1,
+      spark.sessionState.conf.sessionLocalTimeZone).toArray
+  }
+
+  private def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
+    val spark = SparkSession.active
+    localTableScan.longMetric("numOutputRows").add(localTableScan.rows.size)
+    sendDriverMetrics(spark.sparkContext, localTableScan.metrics)
+    KyuubiArrowConverters.toBatchIterator(
+      localTableScan.rows.iterator,
+      localTableScan.schema,
+      spark.sessionState.conf.arrowMaxRecordsPerBatch,
+      maxBatchSize,
+      -1,
+      spark.sessionState.conf.sessionLocalTimeZone).toArray
+  }
+
+  /**
+   * This method provides a reflection-based implementation of
+   * [[AdaptiveSparkPlanExec.finalPhysicalPlan]] that enables us to adapt to the Spark runtime
+   * without patching SPARK-41914.
+   *
+   * TODO: Once we drop support for Spark 3.1.x, we can directly call
+   * [[AdaptiveSparkPlanExec.finalPhysicalPlan]].
+   */
+  def finalPhysicalPlan(adaptiveSparkPlanExec: AdaptiveSparkPlanExec): SparkPlan = {
+    withFinalPlanUpdate(adaptiveSparkPlanExec, identity)
+  }
+
+  /**
+   * A reflection-based implementation of [[AdaptiveSparkPlanExec.withFinalPlanUpdate]].
+   */
+  private def withFinalPlanUpdate[T](
+      adaptiveSparkPlanExec: AdaptiveSparkPlanExec,
+      fun: SparkPlan => T): T = {
+    val plan = invokeAs[SparkPlan](adaptiveSparkPlanExec, "getFinalPhysicalPlan")
+    val result = fun(plan)
+    invokeAs[Unit](adaptiveSparkPlanExec, "finalPlanUpdate")
+    result
+  }
+
+  /**
+   * offset support was add since Spark-3.4(set SPARK-28330), to ensure backward compatibility with
+   * earlier versions of Spark, this function uses reflective calls to the "offset".
+   */
+  private def offset(collectLimitExec: CollectLimitExec): Int = {
+    Option(
+      DynMethods.builder("offset")
+        .impl(collectLimitExec.getClass)
+        .orNoop()
+        .build()
+        .invoke[Int](collectLimitExec))
+      .getOrElse(0)
+  }
+
+  private def isCommandResultExec(sparkPlan: SparkPlan): Boolean = {
+    // scalastyle:off line.size.limit
+    // the CommandResultExec was introduced in SPARK-35378 (Spark 3.2), after SPARK-35378 the
+    // physical plan of runnable command is CommandResultExec.
+    // for instance:
+    // ```
+    // scala> spark.sql("show tables").queryExecution.executedPlan
+    // res0: org.apache.spark.sql.execution.SparkPlan =
+    // CommandResult <empty>, [namespace#0, tableName#1, isTemporary#2]
+    //   +- ShowTables [namespace#0, tableName#1, isTemporary#2], V2SessionCatalog(spark_catalog), [default]
+    //
+    // scala > spark.sql("show tables").queryExecution.executedPlan.getClass
+    // res1: Class[_ <: org.apache.spark.sql.execution.SparkPlan] = class org.apache.spark.sql.execution.CommandResultExec
+    // ```
+    // scalastyle:on line.size.limit
+    sparkPlan.getClass.getName == "org.apache.spark.sql.execution.CommandResultExec"
+  }
+
+  /**
+   * refer to org.apache.spark.sql.Dataset#withAction(), assign a new execution id for arrow-based
+   * operation, so that we can track the arrow-based queries on the UI tab.
+   */
+  private def withNewExecutionId[T](df: DataFrame)(body: => T): T = {
+    SQLExecution.withNewExecutionId(df.queryExecution, Some("collectAsArrow")) {
+      df.queryExecution.executedPlan.resetMetrics()
+      body
+    }
+  }
+
+  private def sendDriverMetrics(sc: SparkContext, metrics: Map[String, SQLMetric]): Unit = {
+    val executionId = sc.getLocalProperty(SQLExecution.EXECUTION_ID_KEY)
+    SQLMetrics.postDriverMetricUpdates(sc, executionId, metrics.values.toSeq)
   }
 }

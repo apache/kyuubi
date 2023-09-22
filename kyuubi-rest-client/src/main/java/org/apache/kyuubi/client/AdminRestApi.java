@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.kyuubi.client.api.v1.dto.Engine;
 import org.apache.kyuubi.client.api.v1.dto.OperationData;
+import org.apache.kyuubi.client.api.v1.dto.ServerData;
 import org.apache.kyuubi.client.api.v1.dto.SessionData;
 
 public class AdminRestApi {
@@ -46,8 +47,18 @@ public class AdminRestApi {
     return this.getClient().post(path, null, client.getAuthHeader());
   }
 
+  public String refreshKubernetesConf() {
+    String path = String.format("%s/%s", API_BASE_PATH, "refresh/kubernetes_conf");
+    return this.getClient().post(path, null, client.getAuthHeader());
+  }
+
   public String refreshUnlimitedUsers() {
     String path = String.format("%s/%s", API_BASE_PATH, "refresh/unlimited_users");
+    return this.getClient().post(path, null, client.getAuthHeader());
+  }
+
+  public String refreshDenyUsers() {
+    String path = String.format("%s/%s", API_BASE_PATH, "refresh/deny_users");
     return this.getClient().post(path, null, client.getAuthHeader());
   }
 
@@ -97,6 +108,13 @@ public class AdminRestApi {
   public String closeOperation(String operationHandleStr) {
     String url = String.format("%s/operations/%s", API_BASE_PATH, operationHandleStr);
     return this.getClient().delete(url, null, client.getAuthHeader());
+  }
+
+  public List<ServerData> listServers() {
+    ServerData[] result =
+        this.getClient()
+            .get(API_BASE_PATH + "/server", null, ServerData[].class, client.getAuthHeader());
+    return Arrays.asList(result);
   }
 
   private IRestClient getClient() {

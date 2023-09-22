@@ -18,13 +18,14 @@
 package org.apache.kyuubi.operation
 
 import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TProgressUpdateResp, TProtocolVersion, TRowSet, TStatus, TStatusCode}
+import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TProtocolVersion, TStatus, TStatusCode}
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
@@ -45,7 +46,11 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
-  protected def cleanup(targetState: OperationState): Unit = state.synchronized {
+  private val lock: ReentrantLock = new ReentrantLock()
+
+  protected def withLockRequired[T](block: => T): T = Utils.withLockRequired(lock)(block)
+
+  protected def cleanup(targetState: OperationState): Unit = withLockRequired {
     if (!isTerminalState(state)) {
       setState(targetState)
       Option(getBackgroundHandle).foreach(_.cancel(true))
@@ -110,7 +115,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
         info(s"Processing ${session.user}'s query[$statementId]: " +
           s"${state.name} -> ${newState.name}, statement:\n$redactedStatement")
         startTime = System.currentTimeMillis()
-      case ERROR | FINISHED | CANCELED | TIMEOUT =>
+      case ERROR | FINISHED | CANCELED | TIMEOUT | CLOSED =>
         completedTime = System.currentTimeMillis()
         val timeCost = s", time taken: ${(completedTime - startTime) / 1000.0} seconds"
         info(s"Processing ${session.user}'s query[$statementId]: " +
@@ -177,7 +182,12 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   override def getResultSetMetadata: TGetResultSetMetadataResp
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet
+  def getNextRowSetInternal(order: FetchOrientation, rowSetSize: Int): TFetchResultsResp
+
+  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TFetchResultsResp =
+    withLockRequired {
+      getNextRowSetInternal(order, rowSetSize)
+    }
 
   /**
    * convert SQL 'like' pattern to a Java regular expression.

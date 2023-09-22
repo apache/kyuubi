@@ -196,11 +196,12 @@ class MySQLCommandHandler(
           .getOrElse(KyuubiSQLException(s"Error operator state ${opStatus.state}"))
       }
       val resultSetMetadata = be.getResultSetMetadata(opHandle)
-      val rowSet = be.fetchResults(
+      val fetchResultResp = be.fetchResults(
         opHandle,
         FetchOrientation.FETCH_NEXT,
         Int.MaxValue,
         fetchLog = false)
+      val rowSet = fetchResultResp.getResults
       MySQLQueryResult(resultSetMetadata.getSchema, rowSet)
     } catch {
       case rethrow: Exception =>

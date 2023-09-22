@@ -19,13 +19,17 @@
 
 ## Instructions
 
-Kyuubi does not provide its own JDBC Driver so far,
-as it is fully compatible with Hive JDBC and ODBC drivers that let you connect to popular Business Intelligence (BI) tools to query,
-analyze and visualize data though Spark SQL engines.
+Kyuubi is fully compatible with Hive JDBC and ODBC drivers that let you connect to popular Business Intelligence (BI)
+tools to query, analyze and visualize data though Spark SQL engines.
+
+It's recommended to use [Kyuubi JDBC driver](./kyuubi_jdbc.html) for new applications.
 
 ## Install Hive JDBC
 
 For programing, the easiest way to get `hive-jdbc` is from [the maven central](https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc). For example,
+
+The following sections demonstrate how to use Hive JDBC driver 2.3.8 to connect Kyuubi Server, actually, any version
+less or equals 3.1.x should work fine.
 
 - **maven**
 
@@ -75,8 +79,4 @@ jdbc:hive2://<host>:<port>/<dbName>;<sessionVars>?<kyuubiConfs>#<[spark|hive]Var
 ```
 jdbc:hive2://localhost:10009/default;hive.server2.proxy.user=proxy_user?kyuubi.engine.share.level=CONNECTION;spark.ui.enabled=false#var_x=y
 ```
-
-## Unsupported Hive Features
-
-- Connect to HiveServer2 using HTTP transport. ```transportMode=http```
 

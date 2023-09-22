@@ -24,9 +24,8 @@ import org.apache.spark.sql.internal.SQLConf.ANSI_ENABLED
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.sparkMajorMinorVersion
-import org.apache.kyuubi.engine.spark.WithDiscoverySparkSQLEngine
-import org.apache.kyuubi.engine.spark.WithEmbeddedZookeeper
+import org.apache.kyuubi.engine.spark.{WithDiscoverySparkSQLEngine, WithEmbeddedZookeeper}
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 import org.apache.kyuubi.service.ServiceState
 
 abstract class SparkSQLEngineDeregisterSuite
@@ -61,10 +60,11 @@ abstract class SparkSQLEngineDeregisterSuite
 class SparkSQLEngineDeregisterExceptionSuite extends SparkSQLEngineDeregisterSuite {
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> {
-      sparkMajorMinorVersion match {
+      if (SPARK_ENGINE_RUNTIME_VERSION >= "3.3") {
         // see https://issues.apache.org/jira/browse/SPARK-35958
-        case (3, minor) if minor > 2 => "org.apache.spark.SparkArithmeticException"
-        case _ => classOf[ArithmeticException].getCanonicalName
+        "org.apache.spark.SparkArithmeticException"
+      } else {
+        classOf[ArithmeticException].getCanonicalName
       }
     })
 
@@ -94,10 +94,11 @@ class SparkSQLEngineDeregisterExceptionTTLSuite
       zookeeperConf ++ Map(
         ANSI_ENABLED.key -> "true",
         ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> {
-          sparkMajorMinorVersion match {
+          if (SPARK_ENGINE_RUNTIME_VERSION >= "3.3") {
             // see https://issues.apache.org/jira/browse/SPARK-35958
-            case (3, minor) if minor > 2 => "org.apache.spark.SparkArithmeticException"
-            case _ => classOf[ArithmeticException].getCanonicalName
+            "org.apache.spark.SparkArithmeticException"
+          } else {
+            classOf[ArithmeticException].getCanonicalName
           }
         },
         ENGINE_DEREGISTER_JOB_MAX_FAILURES.key -> maxJobFailures.toString,

@@ -23,6 +23,8 @@ import scala.util.Try
 import org.apache.spark.SparkConf
 import org.scalatest.Outcome
 
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+
 class DataMaskingForJDBCV2Suite extends DataMaskingTestBase {
   override protected val extraSparkConf: SparkConf = {
     val conf = new SparkConf()

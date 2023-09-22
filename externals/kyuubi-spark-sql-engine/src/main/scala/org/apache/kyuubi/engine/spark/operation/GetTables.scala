@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.operation
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
@@ -73,9 +73,8 @@ class GetTables(
     try {
       val schemaPattern = toJavaRegex(schema)
       val tablePattern = toJavaRegex(tableName)
-      val sparkShim = SparkCatalogShim()
       val catalogTablesAndViews =
-        sparkShim.getCatalogTablesOrViews(
+        SparkCatalogUtils.getCatalogTablesOrViews(
           spark,
           catalog,
           schemaPattern,
@@ -86,7 +85,7 @@ class GetTables(
       val allTableAndViews =
         if (tableTypes.exists("VIEW".equalsIgnoreCase)) {
           catalogTablesAndViews ++
-            sparkShim.getTempViews(spark, catalog, schemaPattern, tablePattern)
+            SparkCatalogUtils.getTempViews(spark, catalog, schemaPattern, tablePattern)
         } else {
           catalogTablesAndViews
         }

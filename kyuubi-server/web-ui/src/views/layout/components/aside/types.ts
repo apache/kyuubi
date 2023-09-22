@@ -22,12 +22,24 @@ export const MENUS = [
     router: '/overview'
   },
   {
-    label: 'Session Management',
+    label: 'Management',
     icon: 'List',
     children: [
       {
-        label: 'Session Statistics',
-        router: '/session/session-statistics'
+        label: 'Session',
+        router: '/management/session'
+      },
+      {
+        label: 'Operation',
+        router: '/management/operation'
+      },
+      {
+        label: 'Engine',
+        router: '/management/engine'
+      },
+      {
+        label: 'Server',
+        router: '/management/server'
       }
     ]
   },
@@ -72,6 +84,11 @@ export const MENUS = [
         router: '/operation/completedJobs'
       }
     ]
+  },
+  {
+    label: 'Swagger',
+    icon: 'List',
+    router: '/swagger'
   },
   {
     label: 'Contact Us',

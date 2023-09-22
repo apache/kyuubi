@@ -102,6 +102,47 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     val logRowSet = response.readEntity(classOf[OperationLog])
     assert(logRowSet.getLogRowSet.asScala.exists(_.contains("show tables")))
     assert(logRowSet.getRowCount === 10)
+
+    val response2 = webTarget.path(
+      s"api/v1/operations/$opHandleStr/log")
+      .queryParam("maxrows", "1000")
+      .queryParam("fetchorientation", "FETCH_NEXT")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response2.getStatus)
+    val logCount = response2.readEntity(classOf[OperationLog]).getRowCount
+    val totalLogCoung = logCount + 10
+    assert(logCount > 0)
+
+    val response3 = webTarget.path(
+      s"api/v1/operations/$opHandleStr/log")
+      .queryParam("maxrows", "1000")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response3.getStatus)
+    assert(response3.readEntity(classOf[OperationLog]).getRowCount == 0)
+
+    val response4 = webTarget.path(
+      s"api/v1/operations/$opHandleStr/log")
+      .queryParam("maxrows", "10")
+      .queryParam("fetchorientation", "FETCH_FIRST")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response4.getStatus)
+    assert(response4.readEntity(classOf[OperationLog]).getRowCount == 10)
+
+    val response5 = webTarget.path(
+      s"api/v1/operations/$opHandleStr/log")
+      .queryParam("maxrows", "10")
+      .queryParam("fetchorientation", "FETCH_PRIOR")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(400 == response5.getStatus)
+    assert(response5.getStatusInfo.getReasonPhrase == "Bad Request")
+
+    val response6 = webTarget.path(
+      s"api/v1/operations/$opHandleStr/log")
+      .queryParam("maxrows", "1000")
+      .queryParam("fetchorientation", "FETCH_NEXT")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response6.getStatus)
+    assert(response6.readEntity(classOf[OperationLog]).getRowCount == totalLogCoung - 10)
   }
 
   test("test get result row set") {

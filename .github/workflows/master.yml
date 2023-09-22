@@ -32,7 +32,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded -Dmaven.plugin.download.cache.path=/tmp/engine-archives
+  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
   KUBERNETES_VERSION: v1.26.1
   MINIKUBE_VERSION: v1.29.0
 
@@ -46,24 +46,42 @@ jobs:
         java:
           - 8
           - 11
+          - 17
         spark:
           - '3.1'
           - '3.2'
           - '3.3'
+          - '3.4'
         spark-archive: [""]
         exclude-tags: [""]
         comment: ["normal"]
         include:
           - java: 8
-            spark: '3.3'
-            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.3 -Dspark.archive.name=spark-3.1.3-bin-hadoop3.2.tgz'
-            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
+            spark: '3.4'
+            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.3 -Dspark.archive.name=spark-3.1.3-bin-hadoop3.2.tgz -Pzookeeper-3.6'
+            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-3.1-binary'
           - java: 8
-            spark: '3.3'
-            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.3 -Dspark.archive.name=spark-3.2.3-bin-hadoop3.2.tgz'
-            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
+            spark: '3.4'
+            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.4 -Dspark.archive.name=spark-3.2.4-bin-hadoop3.2.tgz -Pzookeeper-3.6'
+            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-3.2-binary'
+          - java: 8
+            spark: '3.4'
+            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.3.3 -Dspark.archive.name=spark-3.3.3-bin-hadoop3.tgz -Pzookeeper-3.6'
+            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
+            comment: 'verify-on-spark-3.3-binary'
+          - java: 8
+            spark: '3.4'
+            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.5.0 -Dspark.archive.name=spark-3.5.0-bin-hadoop3.tgz -Pzookeeper-3.6'
+            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
+            comment: 'verify-on-spark-3.5-binary'
+        exclude:
+          # SPARK-33772: Spark supports JDK 17 since 3.3.0
+          - java: 17
+            spark: '3.1'
+          - java: 17
+            spark: '3.2'
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -77,10 +95,10 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
-      - name: Setup Maven and Mvnd
-        uses: ./.github/actions/setup-mvnd
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -93,7 +111,7 @@ jobs:
       - name: Code coverage
         if: |
           matrix.java == 8 &&
-          matrix.spark == '3.2' &&
+          matrix.spark == '3.4' &&
           matrix.spark-archive == ''
         uses: codecov/codecov-action@v3
         with:
@@ -133,8 +151,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
-      - name: Setup Maven and Mvnd
-        uses: ./.github/actions/setup-mvnd
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Build and test Kyuubi AuthZ with supported Spark versions
@@ -151,25 +169,16 @@ jobs:
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
 
-  flink-it:
-    name: Flink Test
+  scala213:
+    name: Scala Compilation Test
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         java:
-          - 8
-          - 11
-        flink:
-          - '1.15'
-          - '1.16'
-        flink-archive: [ "" ]
-        comment: [ "normal" ]
-        include:
-          - java: 8
-            flink: '1.16'
-            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.4 -Dflink.archive.name=flink-1.15.4-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.15-binary'
+          - '8'
+        scala:
+          - '2.13'
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM
@@ -181,8 +190,49 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
-      - name: Setup Maven and Mvnd
-        uses: ./.github/actions/setup-mvnd
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
+      - name: Build on Scala ${{ matrix.scala }}
+        run: |
+          MODULES='!externals/kyuubi-flink-sql-engine'
+          ./build/mvn clean install -pl ${MODULES} -am \
+          -DskipTests -Pflink-provided,hive-provided,spark-provided \
+          -Pjava-${{ matrix.java }} \
+          -Pscala-${{ matrix.scala }} \
+          -Pspark-3.3
+
+  flink-it:
+    name: Flink Test
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - 8
+          - 11
+        flink:
+          - '1.16'
+          - '1.17'
+        flink-archive: [ "" ]
+        comment: [ "normal" ]
+        include:
+          - java: 8
+            flink: '1.17'
+            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.16.1 -Dflink.archive.name=flink-1.16.1-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-1.16-binary'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Tune Runner VM
+        uses: ./.github/actions/tune-runner-vm
+      - name: Setup JDK ${{ matrix.java }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+          check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Build Flink with maven w/o linters
@@ -229,8 +279,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
-      - name: Setup Maven and Mvnd
-        uses: ./.github/actions/setup-mvnd
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Build and test Hive with maven w/o linters
@@ -268,8 +318,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
-      - name: Setup Maven and Mvnd
-        uses: ./.github/actions/setup-mvnd
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Build and test JDBC with maven w/o linters
@@ -307,8 +357,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
-      - name: Setup Maven and Mvnd
-        uses: ./.github/actions/setup-mvnd
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Build and test Trino with maven w/o linters
@@ -341,8 +391,8 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
-      - name: Setup Maven and Mvnd
-        uses: ./.github/actions/setup-mvnd
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Run TPC-DS Tests
@@ -480,8 +530,8 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
-      - name: Setup Maven and Mvnd
-        uses: ./.github/actions/setup-mvnd
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: zookeeper integration tests

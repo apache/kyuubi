@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
 import com.theokanning.openai.OpenAiApi
-import com.theokanning.openai.completion.chat.{ChatCompletionRequest, ChatMessage}
+import com.theokanning.openai.completion.chat.{ChatCompletionRequest, ChatMessage, ChatMessageRole}
 import com.theokanning.openai.service.OpenAiService
 import com.theokanning.openai.service.OpenAiService.{defaultClient, defaultObjectMapper, defaultRetrofit}
 
@@ -60,6 +60,8 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
     new OpenAiService(api)
   }
 
+  private var sessionUser: Option[String] = None
+
   private val chatHistory: LoadingCache[String, util.ArrayDeque[ChatMessage]] =
     CacheBuilder.newBuilder()
       .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -68,20 +70,23 @@ class ChatGPTProvider(conf: KyuubiConf) extends ChatProvider {
           new util.ArrayDeque[ChatMessage]
       })
 
-  override def open(sessionId: String): Unit = {
+  override def open(sessionId: String, user: Option[String]): Unit = {
+    sessionUser = user
     chatHistory.getIfPresent(sessionId)
   }
 
   override def ask(sessionId: String, q: String): String = {
     val messages = chatHistory.get(sessionId)
     try {
-      messages.addLast(new ChatMessage("user", q))
+      messages.addLast(new ChatMessage(ChatMessageRole.USER.value(), q))
       val completionRequest = ChatCompletionRequest.builder()
         .model(conf.get(KyuubiConf.ENGINE_CHAT_GPT_MODEL))
         .messages(messages.asScala.toList.asJava)
+        .user(sessionUser.orNull)
+        .n(1)
         .build()
-      val responseText = openAiService.createChatCompletion(completionRequest).getChoices.asScala
-        .map(c => c.getMessage.getContent).mkString
+      val responseText = openAiService.createChatCompletion(completionRequest)
+        .getChoices.get(0).getMessage.getContent
       responseText
     } catch {
       case e: Throwable =>

@@ -47,15 +47,17 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   private val dbType = DatabaseType.withName(conf.get(METADATA_STORE_JDBC_DATABASE_TYPE))
   private val driverClassOpt = conf.get(METADATA_STORE_JDBC_DRIVER)
   private val driverClass = dbType match {
+    case SQLITE => driverClassOpt.getOrElse("org.sqlite.JDBC")
     case DERBY => driverClassOpt.getOrElse("org.apache.derby.jdbc.AutoloadedDriver")
     case MYSQL => driverClassOpt.getOrElse("com.mysql.jdbc.Driver")
     case CUSTOM => driverClassOpt.getOrElse(
         throw new IllegalArgumentException("No jdbc driver defined"))
   }
 
-  private val databaseAdaptor = dbType match {
+  private val dialect = dbType match {
     case DERBY => new DerbyDatabaseDialect
-    case MYSQL => new MysqlDatabaseDialect
+    case SQLITE => new SQLiteDatabaseDialect
+    case MYSQL => new MySQLDatabaseDialect
     case CUSTOM => new GenericDatabaseDialect
   }
 
@@ -80,12 +82,14 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
   private def initSchema(): Unit = {
     getInitSchema(dbType).foreach { schema =>
-      val ddlStatements = schema.trim.split(";")
+      val ddlStatements = schema.trim.split(";").map(_.trim)
       JdbcUtils.withConnection { connection =>
         Utils.tryLogNonFatalError {
           ddlStatements.foreach { ddlStatement =>
             execute(connection, ddlStatement)
-            info(s"Execute init schema ddl: $ddlStatement successfully.")
+            info(s"""Execute init schema ddl successfully.
+                    |$ddlStatement
+                    |""".stripMargin)
           }
         }
       }
@@ -190,34 +194,87 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
-  override def getMetadata(identifier: String, stateOnly: Boolean): Metadata = {
-    val query =
-      if (stateOnly) {
-        s"SELECT $METADATA_STATE_ONLY_COLUMNS FROM $METADATA_TABLE WHERE identifier = ?"
-      } else {
-        s"SELECT $METADATA_ALL_COLUMNS FROM $METADATA_TABLE WHERE identifier = ?"
-      }
+  override def pickMetadata(kyuubiInstance: String): Option[Metadata] = synchronized {
+    JdbcUtils.executeQueryWithRowMapper(
+      s"""SELECT identifier FROM $METADATA_TABLE
+         |WHERE state=?
+         |ORDER BY create_time ASC LIMIT 1
+         |""".stripMargin) { stmt =>
+      stmt.setString(1, OperationState.INITIALIZED.toString)
+    } { resultSet =>
+      resultSet.getString(1)
+    }.headOption.filter { preSelectedBatchId =>
+      JdbcUtils.executeUpdate(
+        s"""UPDATE $METADATA_TABLE
+           |SET kyuubi_instance=?, state=?
+           |WHERE identifier=? AND state=?
+           |""".stripMargin) { stmt =>
+        stmt.setString(1, kyuubiInstance)
+        stmt.setString(2, OperationState.PENDING.toString)
+        stmt.setString(3, preSelectedBatchId)
+        stmt.setString(4, OperationState.INITIALIZED.toString)
+      } == 1
+    }.map { pickedBatchId =>
+      getMetadata(pickedBatchId)
+    }
+  }
 
+  override def transformMetadataState(
+      identifier: String,
+      fromState: String,
+      targetState: String): Boolean = {
+    val query = s"UPDATE $METADATA_TABLE SET state = ? WHERE identifier = ? AND state = ?"
     JdbcUtils.withConnection { connection =>
-      withResultSet(connection, query, identifier) { rs =>
-        buildMetadata(rs, stateOnly).headOption.orNull
+      withUpdateCount(connection, query, fromState, identifier, targetState) { updateCount =>
+        updateCount == 1
       }
     }
   }
 
-  override def getMetadataList(
-      filter: MetadataFilter,
-      from: Int,
-      size: Int,
-      stateOnly: Boolean): Seq[Metadata] = {
+  override def getMetadata(identifier: String): Metadata = {
+    val query = s"SELECT $METADATA_COLUMNS FROM $METADATA_TABLE WHERE identifier = ?"
+
+    JdbcUtils.withConnection { connection =>
+      withResultSet(connection, query, identifier) { rs =>
+        buildMetadata(rs).headOption.orNull
+      }
+    }
+  }
+
+  override def getMetadataList(filter: MetadataFilter, from: Int, size: Int): Seq[Metadata] = {
     val queryBuilder = new StringBuilder
     val params = ListBuffer[Any]()
-    if (stateOnly) {
-      queryBuilder.append(s"SELECT $METADATA_STATE_ONLY_COLUMNS FROM $METADATA_TABLE")
-    } else {
-      queryBuilder.append(s"SELECT $METADATA_ALL_COLUMNS FROM $METADATA_TABLE")
+    queryBuilder.append("SELECT ")
+    queryBuilder.append(METADATA_COLUMNS)
+    queryBuilder.append(s" FROM $METADATA_TABLE")
+    queryBuilder.append(s" ${assembleWhereClause(filter, params)}")
+    queryBuilder.append(" ORDER BY key_id ")
+    queryBuilder.append(dialect.limitClause(size, from))
+    val query = queryBuilder.toString
+    JdbcUtils.withConnection { connection =>
+      withResultSet(connection, query, params.toSeq: _*) { rs =>
+        buildMetadata(rs)
+      }
     }
-    val whereConditions = ListBuffer[String]()
+  }
+
+  override def countMetadata(filter: MetadataFilter): Int = {
+    val queryBuilder = new StringBuilder
+    val params = ListBuffer[Any]()
+    queryBuilder.append(s"SELECT COUNT(1) FROM $METADATA_TABLE")
+    queryBuilder.append(s" ${assembleWhereClause(filter, params)}")
+    val query = queryBuilder.toString
+    JdbcUtils.executeQueryWithRowMapper(query) { stmt =>
+      setStatementParams(stmt, params)
+    } { resultSet =>
+      resultSet.getInt(1)
+    }.head
+  }
+
+  private def assembleWhereClause(
+      filter: MetadataFilter,
+      params: ListBuffer[Any]): String = {
+    val whereConditions = ListBuffer[String]("1 = 1")
     Option(filter.sessionType).foreach { sessionType =>
       whereConditions += "session_type = ?"
       params += sessionType.toString
@@ -233,6 +290,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     Option(filter.state).filter(_.nonEmpty).foreach { state =>
       whereConditions += "state = ?"
       params += state.toUpperCase(Locale.ROOT)
+    }
+    Option(filter.requestName).filter(_.nonEmpty).foreach { requestName =>
+      whereConditions += "request_name = ?"
+      params += requestName
     }
     Option(filter.kyuubiInstance).filter(_.nonEmpty).foreach { kyuubiInstance =>
       whereConditions += "kyuubi_instance = ?"
@@ -251,16 +312,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       whereConditions += "peer_instance_closed = ?"
       params += filter.peerInstanceClosed
     }
-    if (whereConditions.nonEmpty) {
-      queryBuilder.append(whereConditions.mkString(" WHERE ", " AND ", ""))
-    }
-    queryBuilder.append(" ORDER BY key_id")
-    val query = databaseAdaptor.addLimitAndOffsetToQuery(queryBuilder.toString(), size, from)
-    JdbcUtils.withConnection { connection =>
-      withResultSet(connection, query, params: _*) { rs =>
-        buildMetadata(rs, stateOnly)
-      }
-    }
+    whereConditions.mkString("WHERE ", " AND ", "")
   }
 
   override def updateMetadata(metadata: Metadata): Unit = {
@@ -269,9 +321,21 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
     queryBuilder.append(s"UPDATE $METADATA_TABLE")
     val setClauses = ListBuffer[String]()
+    Option(metadata.kyuubiInstance).foreach { _ =>
+      setClauses += "kyuubi_instance = ?"
+      params += metadata.kyuubiInstance
+    }
     Option(metadata.state).foreach { _ =>
       setClauses += "state = ?"
       params += metadata.state
+    }
+    Option(metadata.requestConf).filter(_.nonEmpty).foreach { _ =>
+      setClauses += "request_conf =?"
+      params += valueAsString(metadata.requestConf)
+    }
+    metadata.clusterManager.foreach { cm =>
+      setClauses += "cluster_manager = ?"
+      params += cm
     }
     if (metadata.endTime > 0) {
       setClauses += "end_time = ?"
@@ -313,10 +377,11 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
     val query = queryBuilder.toString()
     JdbcUtils.withConnection { connection =>
-      withUpdateCount(connection, query, params: _*) { updateCount =>
+      withUpdateCount(connection, query, params.toSeq: _*) { updateCount =>
         if (updateCount == 0) {
           throw new KyuubiException(
-            s"Error updating metadata for ${metadata.identifier} with $query")
+            s"Error updating metadata for ${metadata.identifier} by SQL: $query, " +
+              s"with params: ${params.mkString(", ")}")
         }
       }
     }
@@ -337,7 +402,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
-  private def buildMetadata(resultSet: ResultSet, stateOnly: Boolean): Seq[Metadata] = {
+  private def buildMetadata(resultSet: ResultSet): Seq[Metadata] = {
     try {
       val metadataList = ListBuffer[Metadata]()
       while (resultSet.next()) {
@@ -348,7 +413,11 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         val ipAddress = resultSet.getString("ip_address")
         val kyuubiInstance = resultSet.getString("kyuubi_instance")
         val state = resultSet.getString("state")
+        val resource = resultSet.getString("resource")
+        val className = resultSet.getString("class_name")
         val requestName = resultSet.getString("request_name")
+        val requestConf = string2Map(resultSet.getString("request_conf"))
+        val requestArgs = string2Seq(resultSet.getString("request_args"))
         val createTime = resultSet.getLong("create_time")
         val engineType = resultSet.getString("engine_type")
         val clusterManager = Option(resultSet.getString("cluster_manager"))
@@ -360,17 +429,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         val endTime = resultSet.getLong("end_time")
         val peerInstanceClosed = resultSet.getBoolean("peer_instance_closed")
 
-        var resource: String = null
-        var className: String = null
-        var requestConf: Map[String, String] = Map.empty
-        var requestArgs: Seq[String] = Seq.empty
-
-        if (!stateOnly) {
-          resource = resultSet.getString("resource")
-          className = resultSet.getString("class_name")
-          requestConf = string2Map(resultSet.getString("request_conf"))
-          requestArgs = string2Seq(resultSet.getString("request_args"))
-        }
         val metadata = Metadata(
           identifier = identifier,
           sessionType = sessionType,
@@ -396,7 +454,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           peerInstanceClosed = peerInstanceClosed)
         metadataList += metadata
       }
-      metadataList
+      metadataList.toSeq
     } finally {
       Utils.tryLogNonFatalError(resultSet.close())
     }
@@ -509,7 +567,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 object JDBCMetadataStore {
   private val SCHEMA_URL_PATTERN = """^metadata-store-schema-(\d+)\.(\d+)\.(\d+)\.(.*)\.sql$""".r
   private val METADATA_TABLE = "metadata"
-  private val METADATA_STATE_ONLY_COLUMNS = Seq(
+  private val METADATA_COLUMNS = Seq(
     "identifier",
     "session_type",
     "real_user",
@@ -517,7 +575,11 @@ object JDBCMetadataStore {
     "ip_address",
     "kyuubi_instance",
     "state",
+    "resource",
+    "class_name",
     "request_name",
+    "request_conf",
+    "request_args",
     "create_time",
     "engine_type",
     "cluster_manager",
@@ -528,10 +590,4 @@ object JDBCMetadataStore {
     "engine_error",
     "end_time",
     "peer_instance_closed").mkString(",")
-  private val METADATA_ALL_COLUMNS = Seq(
-    METADATA_STATE_ONLY_COLUMNS,
-    "resource",
-    "class_name",
-    "request_conf",
-    "request_args").mkString(",")
 }

@@ -21,11 +21,11 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.8.0-SNAPSHOT</version>
+        <version>1.9.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-extension-spark-3-1_2.12</artifactId>
+    <artifactId>kyuubi-extension-spark-3-1_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Dev Spark Extensions (for Spark 3.1)</name>
     <url>https://kyuubi.apache.org/</url>
@@ -125,10 +125,21 @@
             <artifactId>jakarta.xml.bind-api</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -137,7 +148,7 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
-                            <include>org.apache.kyuubi:kyuubi-extension-spark-common_${scala.binary.version}</include>
+                            <include>org.apache.kyuubi:*</include>
                         </includes>
                     </artifactSet>
                 </configuration>

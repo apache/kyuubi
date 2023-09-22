@@ -21,7 +21,8 @@ import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ctl.util.{Render, Validator}
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
-abstract class GetCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](cliConfig) {
+abstract class GetCommand(cliConfig: CliConfig)
+  extends Command[Iterable[ServiceNodeInfo]](cliConfig) {
 
   def validate(): Unit = {
     Validator.validateZkArguments(normalizedCliConfig)
@@ -29,9 +30,9 @@ abstract class GetCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeI
     mergeArgsIntoKyuubiConf()
   }
 
-  def doRun(): Seq[ServiceNodeInfo]
+  override def doRun(): Iterable[ServiceNodeInfo]
 
-  def render(nodes: Seq[ServiceNodeInfo]): Unit = {
+  override def render(nodes: Iterable[ServiceNodeInfo]): Unit = {
     val title = "Zookeeper service nodes"
     info(Render.renderServiceNodesInfo(title, nodes))
   }

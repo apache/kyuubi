@@ -17,32 +17,27 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.sql.DriverManager
 import java.util.Properties
 import javax.security.sasl.AuthenticationException
 import javax.sql.DataSource
 
 import com.zaxxer.hikari.util.DriverDataSource
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.util.JdbcUtils
 
 class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
-  protected val dbUser: String = "bowenliang123"
-  protected val dbPasswd: String = "bowenliang123@kyuubi"
-  protected val authDbName: String = "auth_db"
-  protected val dbUrl: String = s"jdbc:derby:memory:$authDbName"
-  protected val jdbcUrl: String = s"$dbUrl;create=true"
-  private val authDbDriverClz = "org.apache.derby.jdbc.AutoloadedDriver"
+  protected val jdbcUrl: String = "jdbc:sqlite:file:test_auth.db"
+  private val authDbDriverClz = "org.sqlite.JDBC"
 
   implicit private val ds: DataSource = new DriverDataSource(
     jdbcUrl,
     authDbDriverClz,
     new Properties,
-    dbUser,
-    dbPasswd)
+    null,
+    null)
 
   protected val authUser: String = "kyuubiuser"
   protected val authPasswd: String = "kyuubiuuserpassword"
@@ -50,15 +45,13 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   protected val conf: KyuubiConf = new KyuubiConf()
     .set(AUTHENTICATION_JDBC_DRIVER, authDbDriverClz)
     .set(AUTHENTICATION_JDBC_URL, jdbcUrl)
-    .set(AUTHENTICATION_JDBC_USER, dbUser)
-    .set(AUTHENTICATION_JDBC_PASSWORD, dbPasswd)
     .set(
       AUTHENTICATION_JDBC_QUERY,
       "SELECT 1 FROM user_auth WHERE username=${user} and passwd=${password}")
 
   override def beforeAll(): Unit = {
+    JdbcUtils.execute("DROP TABLE IF EXISTS user_auth")()
     // init db
-    JdbcUtils.execute(s"CREATE SCHEMA $dbUser")()
     JdbcUtils.execute(
       """CREATE TABLE user_auth (
         |  username VARCHAR(64) NOT NULL PRIMARY KEY,
@@ -70,15 +63,6 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     }
 
     super.beforeAll()
-  }
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-
-    // cleanup db
-    Utils.tryLogNonFatalError {
-      DriverManager.getConnection(s"$dbUrl;shutdown=true")
-    }
   }
 
   test("authenticate tests") {
@@ -144,6 +128,6 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     val e12 = intercept[AuthenticationException] {
       new JdbcAuthenticationProviderImpl(_conf).authenticate(authUser, authPasswd)
     }
-    assert(e12.getCause.getMessage.contains("Column 'UNKNOWN_COLUMN' is either not in any table"))
+    assert(e12.getCause.getMessage.contains("no such column: unknown_column"))
   }
 }

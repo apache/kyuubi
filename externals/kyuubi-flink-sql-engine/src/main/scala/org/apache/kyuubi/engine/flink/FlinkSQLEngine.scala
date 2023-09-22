@@ -18,23 +18,21 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.File
-import java.net.URL
 import java.nio.file.Paths
-import java.time.Instant
+import java.time.Duration
 import java.util.concurrent.CountDownLatch
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 
-import org.apache.flink.client.cli.{DefaultCLI, GenericCLI}
-import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration}
-import org.apache.flink.table.client.SqlClientException
-import org.apache.flink.table.client.gateway.context.DefaultContext
-import org.apache.flink.util.JarUtils
+import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration, PipelineOptions}
+import org.apache.flink.table.api.TableEnvironment
+import org.apache.flink.table.gateway.api.config.SqlGatewayServiceConfigOptions
+import org.apache.flink.table.gateway.service.context.DefaultContext
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, currentUser, FLINK_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_NAME, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
@@ -71,9 +69,12 @@ object FlinkSQLEngine extends Logging {
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
 
+    info(s"Flink SQL engine classpath: ${System.getProperty("java.class.path")}")
+
     FlinkEngineUtils.checkFlinkVersion()
 
     try {
+      kyuubiConf.loadFileDefaults()
       Utils.fromCommandLineArgs(args, kyuubiConf)
       val flinkConfDir = sys.env.getOrElse(
         "FLINK_CONF_DIR", {
@@ -93,51 +94,33 @@ object FlinkSQLEngine extends Logging {
       flinkConf.addAll(Configuration.fromMap(flinkConfFromArgs.asJava))
 
       val executionTarget = flinkConf.getString(DeploymentOptions.TARGET)
-      // set cluster name for per-job and application mode
-      executionTarget match {
-        case "yarn-per-job" | "yarn-application" =>
-          if (!flinkConf.containsKey("yarn.application.name")) {
-            val appName = s"kyuubi_${user}_flink_${Instant.now}"
-            flinkConf.setString("yarn.application.name", appName)
-          }
-        case "kubernetes-application" =>
-          if (!flinkConf.containsKey("kubernetes.cluster-id")) {
-            val appName = s"kyuubi-${user}-flink-${Instant.now}"
-            flinkConf.setString("kubernetes.cluster-id", appName)
-          }
-        case other =>
-          debug(s"Skip generating app name for execution target $other")
-      }
-
-      val cliOptions = FlinkEngineUtils.parseCliOptions(args)
-      val jars = if (cliOptions.getJars != null) cliOptions.getJars.asScala else List.empty
-      val libDirs =
-        if (cliOptions.getLibraryDirs != null) cliOptions.getLibraryDirs.asScala else List.empty
-      val dependencies = discoverDependencies(jars, libDirs)
-      val engineContext = new DefaultContext(
-        dependencies.asJava,
-        flinkConf,
-        Seq(new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava)
+      setDeploymentConf(executionTarget, flinkConf)
 
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
+      val engineContext = FlinkEngineUtils.getDefaultContext(args, flinkConf, flinkConfDir)
       startEngine(engineContext)
-      info("started engine...")
+      info("Flink engine started")
+
+      if ("yarn-application".equalsIgnoreCase(executionTarget)) {
+        bootstrapFlinkApplicationExecutor()
+      }
 
       // blocking main thread
       countDownLatch.await()
     } catch {
       case t: Throwable if currentEngine.isDefined =>
+        error("Fatal error occurs, thus stopping the engines", t)
         currentEngine.foreach { engine =>
-          error(t)
           engine.stop()
         }
       case t: Throwable =>
-        error("Create FlinkSQL Engine Failed", t)
+        error("Failed to create FlinkSQL Engine", t)
     }
   }
 
   def startEngine(engineContext: DefaultContext): Unit = {
+    debug(s"Starting Flink SQL engine with default configuration: ${engineContext.getFlinkConfig}")
     currentEngine = Some(new FlinkSQLEngine(engineContext))
     currentEngine.foreach { engine =>
       engine.initialize(kyuubiConf)
@@ -146,36 +129,39 @@ object FlinkSQLEngine extends Logging {
     }
   }
 
-  private def discoverDependencies(
-      jars: Seq[URL],
-      libraries: Seq[URL]): List[URL] = {
-    try {
-      var dependencies: ListBuffer[URL] = ListBuffer()
-      // find jar files
-      jars.foreach { url =>
-        JarUtils.checkJarFile(url)
-        dependencies = dependencies += url
-      }
-      // find jar files in library directories
-      libraries.foreach { libUrl =>
-        val dir: File = new File(libUrl.toURI)
-        if (!dir.isDirectory) throw new SqlClientException("Directory expected: " + dir)
-        else if (!dir.canRead) throw new SqlClientException("Directory cannot be read: " + dir)
-        val files: Array[File] = dir.listFiles
-        if (files == null) throw new SqlClientException("Directory cannot be read: " + dir)
-        files.foreach { f =>
-          // only consider jars
-          if (f.isFile && f.getAbsolutePath.toLowerCase.endsWith(".jar")) {
-            val url: URL = f.toURI.toURL
-            JarUtils.checkJarFile(url)
-            dependencies = dependencies += url
-          }
+  private def bootstrapFlinkApplicationExecutor() = {
+    // trigger an execution to initiate EmbeddedExecutor with the default flink conf
+    val flinkConf = new Configuration()
+    flinkConf.set(PipelineOptions.NAME, "kyuubi-bootstrap-sql")
+    debug(s"Running bootstrap Flink SQL in application mode with flink conf: $flinkConf.")
+    val tableEnv = TableEnvironment.create(flinkConf)
+    val res = tableEnv.executeSql("select 'kyuubi'")
+    res.await()
+    info("Bootstrap Flink SQL finished.")
+  }
+
+  private def setDeploymentConf(executionTarget: String, flinkConf: Configuration): Unit = {
+    // forward kyuubi engine variables to flink configuration
+    kyuubiConf.getOption("flink.app.name")
+      .foreach(flinkConf.setString(KYUUBI_ENGINE_NAME, _))
+
+    kyuubiConf.getOption(KYUUBI_SESSION_USER_KEY)
+      .foreach(flinkConf.setString(KYUUBI_SESSION_USER_KEY, _))
+
+    // force disable Flink's session timeout
+    flinkConf.set(
+      SqlGatewayServiceConfigOptions.SQL_GATEWAY_SESSION_IDLE_TIMEOUT,
+      Duration.ofMillis(0))
+
+    executionTarget match {
+      case "yarn-per-job" | "yarn-application" =>
+        if (flinkConf.containsKey("high-availability.cluster-id")) {
+          flinkConf.setString(
+            "yarn.application.id",
+            flinkConf.toMap.get("high-availability.cluster-id"))
         }
-      }
-      dependencies.toList
-    } catch {
-      case e: Exception =>
-        throw KyuubiSQLException(s"Could not load all required JAR files.", e)
+      case other =>
+        debug(s"Skip setting deployment conf for execution target $other")
     }
   }
 }

@@ -21,7 +21,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.sparkMajorMinorVersion
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 
 trait WithSparkSQLEngine extends KyuubiFunSuite {
   protected var spark: SparkSession = _
@@ -34,14 +34,8 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
 
   // Affected by such configuration' default value
   //    engine.initialize.sql='SHOW DATABASES'
-  protected var initJobId: Int = {
-    sparkMajorMinorVersion match {
-      case (3, minor) if minor >= 2 => 1 // SPARK-35378
-      case (3, _) => 0
-      case _ =>
-        throw new IllegalArgumentException(s"Not Support spark version $sparkMajorMinorVersion")
-    }
-  }
+  // SPARK-35378
+  protected lazy val initJobId: Int = if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") 1 else 0
 
   override def beforeAll(): Unit = {
     startSparkEngine()

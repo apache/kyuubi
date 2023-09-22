@@ -27,6 +27,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceUtils
 import org.apache.kyuubi.service.authentication.LdapAuthenticationProviderImpl.FILTER_FACTORIES
 import org.apache.kyuubi.service.authentication.ldap._
+import org.apache.kyuubi.service.authentication.ldap.LdapUtils.getUserName
 
 class LdapAuthenticationProviderImpl(
     conf: KyuubiConf,
@@ -70,7 +71,8 @@ class LdapAuthenticationProviderImpl(
       if (usedBind) {
         // If we used the bind user, then we need to authenticate again,
         // this time using the full user name we got during the bind process.
-        createDirSearch(search.findUserDn(user), password)
+        val username = getUserName(user)
+        createDirSearch(search.findUserDn(username), password)
       }
     } catch {
       case e: NamingException =>
@@ -108,8 +110,7 @@ class LdapAuthenticationProviderImpl(
 
   @throws[AuthenticationException]
   private def applyFilter(client: DirSearch, user: String): Unit = filterOpt.foreach { filter =>
-    val username = if (LdapUtils.hasDomain(user)) LdapUtils.extractUserName(user) else user
-    filter.apply(client, username)
+    filter.apply(client, getUserName(user))
   }
 }
 

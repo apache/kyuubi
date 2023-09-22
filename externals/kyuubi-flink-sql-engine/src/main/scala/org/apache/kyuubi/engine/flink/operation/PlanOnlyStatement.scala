@@ -17,10 +17,13 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import scala.concurrent.duration.Duration
+
+import com.google.common.base.Preconditions
 import org.apache.flink.table.api.TableEnvironment
+import org.apache.flink.table.gateway.api.operation.OperationHandle
 import org.apache.flink.table.operations.command._
 
-import org.apache.kyuubi.engine.flink.FlinkEngineUtils.isFlinkVersionAtMost
 import org.apache.kyuubi.engine.flink.result.ResultSetUtil
 import org.apache.kyuubi.operation.{ExecutionMode, ParseMode, PhysicalMode, PlanOnlyMode, UnknownMode}
 import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
@@ -33,7 +36,10 @@ import org.apache.kyuubi.session.Session
 class PlanOnlyStatement(
     session: Session,
     override val statement: String,
-    mode: PlanOnlyMode) extends FlinkOperation(session) {
+    mode: PlanOnlyMode,
+    queryTimeout: Long,
+    resultMaxRows: Int,
+    resultFetchTimeout: Duration) extends FlinkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   private val lineSeparator: String = System.lineSeparator()
@@ -45,19 +51,22 @@ class PlanOnlyStatement(
   }
 
   override protected def runInternal(): Unit = {
+    addTimeoutMonitor(queryTimeout)
     try {
-      val operation = executor.parseStatement(sessionId, statement)
+      val operations = executor.getTableEnvironment.getParser.parse(statement)
+      Preconditions.checkArgument(
+        operations.size() == 1,
+        "Plan-only mode supports single statement only",
+        null)
+      val operation = operations.get(0)
       operation match {
-        case setOperation: SetOperation =>
-          resultSet = OperationUtils.runSetOperation(setOperation, executor, sessionId)
-        case resetOperation: ResetOperation =>
-          resultSet = OperationUtils.runResetOperation(resetOperation, executor, sessionId)
-        case addJarOperation: AddJarOperation if isFlinkVersionAtMost("1.15") =>
-          resultSet = OperationUtils.runAddJarOperation(addJarOperation, executor, sessionId)
-        case removeJarOperation: RemoveJarOperation =>
-          resultSet = OperationUtils.runRemoveJarOperation(removeJarOperation, executor, sessionId)
-        case showJarsOperation: ShowJarsOperation if isFlinkVersionAtMost("1.15") =>
-          resultSet = OperationUtils.runShowJarOperation(showJarsOperation, executor, sessionId)
+        case _: SetOperation | _: ResetOperation | _: AddJarOperation | _: RemoveJarOperation |
+            _: ShowJarsOperation =>
+          val resultFetcher = executor.executeStatement(
+            new OperationHandle(getHandle.identifier),
+            statement)
+          resultSet =
+            ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows, resultFetchTimeout);
         case _ => explainOperation(statement)
       }
     } catch {
@@ -66,7 +75,7 @@ class PlanOnlyStatement(
   }
 
   private def explainOperation(statement: String): Unit = {
-    val tableEnv: TableEnvironment = sessionContext.getExecutionContext.getTableEnvironment
+    val tableEnv: TableEnvironment = executor.getTableEnvironment
     val explainPlans =
       tableEnv.explainSql(statement).split(s"$lineSeparator$lineSeparator")
     val operationPlan = mode match {

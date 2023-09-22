@@ -31,7 +31,7 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
   override val conf: KyuubiConf = KyuubiConf()
     .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
     .set(ENGINE_TYPE, "FLINK_SQL")
-    .set("flink.parallelism.default", "6")
+    .set("flink.parallelism.default", "2")
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -72,7 +72,7 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
       var success = false
       while (resultSet.next() && !success) {
         if (resultSet.getString(1) == "parallelism.default" &&
-          resultSet.getString(2) == "6") {
+          resultSet.getString(2) == "2") {
           success = true
         }
       }

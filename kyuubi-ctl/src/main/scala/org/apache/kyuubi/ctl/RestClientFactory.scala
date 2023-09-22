@@ -18,6 +18,8 @@ package org.apache.kyuubi.ctl
 
 import java.util.{Map => JMap}
 
+import scala.collection.JavaConverters._
+
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.KyuubiException
@@ -45,7 +47,9 @@ object RestClientFactory {
       kyuubiRestClient: KyuubiRestClient,
       kyuubiInstance: String)(f: KyuubiRestClient => Unit): Unit = {
     val kyuubiInstanceRestClient = kyuubiRestClient.clone()
-    kyuubiInstanceRestClient.setHostUrls(s"http://${kyuubiInstance}")
+    val hostUrls = Option(kyuubiInstance).map(instance => s"http://$instance").toSeq ++
+      kyuubiRestClient.getHostUrls.asScala
+    kyuubiInstanceRestClient.setHostUrls(hostUrls.asJava)
     try {
       f(kyuubiInstanceRestClient)
     } finally {

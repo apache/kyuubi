@@ -155,7 +155,10 @@ trait ProcBuilder {
   @volatile private var error: Throwable = UNCAUGHT_ERROR
 
   private val engineLogMaxLines = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_MAX_LOG_LINES)
-  private val waitCompletion = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
+
+  private val engineStartupDestroyTimeout =
+    conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_DESTROY_TIMEOUT)
+
   protected val lastRowsOfLog: EvictingQueue[String] = EvictingQueue.create(engineLogMaxLines)
   // Visible for test
   @volatile private[kyuubi] var logCaptureThreadReleased: Boolean = true
@@ -249,14 +252,15 @@ trait ProcBuilder {
     process
   }
 
-  def close(destroyProcess: Boolean = !waitCompletion): Unit = synchronized {
+  def isClusterMode(): Boolean = false
+
+  def close(destroyProcess: Boolean): Unit = synchronized {
     if (logCaptureThread != null) {
       logCaptureThread.interrupt()
       logCaptureThread = null
     }
     if (destroyProcess && process != null) {
-      info("Destroy the process, since waitCompletion is false.")
-      process.destroyForcibly()
+      Utils.terminateProcess(process, engineStartupDestroyTimeout)
       process = null
     }
   }
@@ -336,15 +340,18 @@ trait ProcBuilder {
   protected def validateEnv(requiredEnv: String): Throwable = {
     KyuubiSQLException(s"$requiredEnv is not set! For more information on installing and " +
       s"configuring $requiredEnv, please visit https://kyuubi.readthedocs.io/en/master/" +
-      s"deployment/settings.html#environments")
+      s"configuration/settings.html#environments")
   }
 
   def clusterManager(): Option[String] = None
 
+  def appMgrInfo(): ApplicationManagerInfo = ApplicationManagerInfo(None)
 }
 
 object ProcBuilder extends Logging {
   private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
 
   private val UNCAUGHT_ERROR = new RuntimeException("Uncaught error")
+
+  private[engine] val KYUUBI_ENGINE_LOG_PATH_KEY = "kyuubi.engine.engineLog.path"
 }

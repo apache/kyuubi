@@ -67,6 +67,8 @@ private[kyuubi] case class JettyServer(
       dest: String): Unit = {
     addHandler(JettyUtils.createRedirectHandler(src, dest))
   }
+
+  def getState: String = server.getState
 }
 
 object JettyServer {

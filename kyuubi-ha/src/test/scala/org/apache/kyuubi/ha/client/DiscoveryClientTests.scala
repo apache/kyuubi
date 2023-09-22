@@ -135,17 +135,17 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
 
     new Thread(() => {
       withDiscoveryClient(conf) { discoveryClient =>
-        discoveryClient.tryWithLock(lockPath, 3000) {
+        discoveryClient.tryWithLock(lockPath, 10000) {
           lockLatch.countDown()
-          Thread.sleep(5000)
+          Thread.sleep(15000)
         }
       }
     }).start()
 
     withDiscoveryClient(conf) { discoveryClient =>
-      assert(lockLatch.await(5000, TimeUnit.MILLISECONDS))
+      assert(lockLatch.await(20000, TimeUnit.MILLISECONDS))
       val e = intercept[KyuubiSQLException] {
-        discoveryClient.tryWithLock(lockPath, 2000) {}
+        discoveryClient.tryWithLock(lockPath, 5000) {}
       }
       assert(e.getMessage contains s"Timeout to lock on path [$lockPath]")
     }
@@ -162,7 +162,7 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
 
   test("setData method test") {
     withDiscoveryClient(conf) { discoveryClient =>
-      val data = "abc";
+      val data = "abc"
       val path = "/setData_test"
       discoveryClient.create(path, "PERSISTENT")
       discoveryClient.setData(path, data.getBytes)

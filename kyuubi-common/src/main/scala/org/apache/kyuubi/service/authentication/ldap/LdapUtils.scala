@@ -105,11 +105,24 @@ object LdapUtils extends Logging {
    * </pre>
    *
    * @param userName username
-   * @return true if `userName`` contains `@<domain>` part
+   * @return true if `userName` contains `@<domain>` part
    */
   def hasDomain(userName: String): Boolean = {
     ServiceUtils.indexOfDomainMatch(userName) > 0
   }
+
+  /**
+   * Get the username part in the provided user.
+   * <br>
+   * <b>Example:</b>
+   * <br>
+   * For user "user1@mycorp.com" this method will return "user1"
+   *
+   * @param user user
+   * @return the username part in the provided user
+   */
+  def getUserName(user: String): String =
+    if (LdapUtils.hasDomain(user)) LdapUtils.extractUserName(user) else user
 
   /**
    * Detects DN names.

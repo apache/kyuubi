@@ -22,7 +22,11 @@ import org.scalatest.Outcome
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.tags.IcebergTest
+import org.apache.kyuubi.util.AssertionUtils._
 
+@IcebergTest
 class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
@@ -64,8 +68,8 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.UPDATE)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.dbname === namespace)
-    assert(po.objectName === catalogTableShort)
+    assertEqualsIgnoreCase(namespace)(po.dbname)
+    assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
     val accessType = AccessType(po, operationType, isInput = false)
@@ -81,8 +85,8 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.UPDATE)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.dbname === namespace)
-    assert(po.objectName === catalogTableShort)
+    assertEqualsIgnoreCase(namespace)(po.dbname)
+    assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
     val accessType = AccessType(po, operationType, isInput = false)
@@ -104,8 +108,8 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
       val po0 = inputs.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
       assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-      assert(po0.dbname === namespace)
-      assert(po0.objectName === catalogTableShort)
+      assertEqualsIgnoreCase(namespace)(po0.dbname)
+      assertEqualsIgnoreCase(catalogTableShort)(po0.objectName)
       assert(po0.columns === Seq("key", "value"))
       checkV2TableOwner(po0)
 
@@ -113,12 +117,34 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.UPDATE)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-      assert(po.dbname === namespace)
-      assert(po.objectName === table)
+      assertEqualsIgnoreCase(namespace)(po.dbname)
+      assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.UPDATE)
+    }
+  }
+
+  test("RewriteDataFilesProcedure") {
+    val table = "RewriteDataFilesProcedure"
+    withV2Table(table) { tableId =>
+      sql(s"CREATE TABLE IF NOT EXISTS $tableId (key int, value String) USING iceberg")
+      sql(s"INSERT INTO $tableId VALUES (1, 'a'), (2, 'b'), (3, 'c')")
+
+      val plan = sql(s"CALL $catalogV2.system.rewrite_data_files (table => '$tableId')")
+        .queryExecution.analyzed
+      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
+      assert(operationType === ALTERTABLE_PROPERTIES)
+      assert(inputs.size === 0)
+      assert(outputs.size === 1)
+      val po = outputs.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assertEqualsIgnoreCase(namespace)(po.dbname)
+      assertEqualsIgnoreCase(table)(po.objectName)
+      val accessType = AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.ALTER)
     }
   }
 }

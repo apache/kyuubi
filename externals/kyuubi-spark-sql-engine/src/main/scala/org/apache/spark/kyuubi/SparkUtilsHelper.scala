@@ -43,4 +43,13 @@ object SparkUtilsHelper extends Logging {
   def getLocalDir(conf: SparkConf): String = {
     Utils.getLocalDir(conf)
   }
+
+  def classesArePresent(className: String): Boolean = {
+    try {
+      Utils.classForName(className)
+      true
+    } catch {
+      case _: ClassNotFoundException | _: NoClassDefFoundError => false
+    }
+  }
 }

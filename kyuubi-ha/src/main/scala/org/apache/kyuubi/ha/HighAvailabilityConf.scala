@@ -79,7 +79,7 @@ object HighAvailabilityConf {
         s"${AuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.3.2")
       .stringConf
-      .checkValues(AuthTypes.values.map(_.toString))
+      .checkValues(AuthTypes)
       .createWithDefault(AuthTypes.NONE.toString)
 
   val HA_ZK_ENGINE_AUTH_TYPE: ConfigEntry[String] =
@@ -88,25 +88,36 @@ object HighAvailabilityConf {
         s"${AuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.3.2")
       .stringConf
-      .checkValues(AuthTypes.values.map(_.toString))
+      .checkValues(AuthTypes)
       .createWithDefault(AuthTypes.NONE.toString)
+
+  val HA_ZK_AUTH_SERVER_PRINCIPAL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.ha.zookeeper.auth.serverPrincipal")
+      .doc("Kerberos principal name of ZooKeeper Server. It only takes effect when " +
+        "Zookeeper client's version at least 3.5.7 or 3.6.0 or applies ZOOKEEPER-1467. " +
+        "To use Zookeeper 3.6 client, compile Kyuubi with `-Pzookeeper-3.6`.")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
 
   val HA_ZK_AUTH_PRINCIPAL: ConfigEntry[Option[String]] =
     buildConf("kyuubi.ha.zookeeper.auth.principal")
-      .doc("Name of the Kerberos principal is used for ZooKeeper authentication.")
+      .doc("Kerberos principal name that is used for ZooKeeper authentication.")
       .version("1.3.2")
       .fallbackConf(KyuubiConf.SERVER_PRINCIPAL)
 
-  val HA_ZK_AUTH_KEYTAB: ConfigEntry[Option[String]] = buildConf("kyuubi.ha.zookeeper.auth.keytab")
-    .doc("Location of the Kyuubi server's keytab is used for ZooKeeper authentication.")
-    .version("1.3.2")
-    .fallbackConf(KyuubiConf.SERVER_KEYTAB)
+  val HA_ZK_AUTH_KEYTAB: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.ha.zookeeper.auth.keytab")
+      .doc("Location of the Kyuubi server's keytab that is used for ZooKeeper authentication.")
+      .version("1.3.2")
+      .fallbackConf(KyuubiConf.SERVER_KEYTAB)
 
-  val HA_ZK_AUTH_DIGEST: OptionalConfigEntry[String] = buildConf("kyuubi.ha.zookeeper.auth.digest")
-    .doc("The digest auth string is used for ZooKeeper authentication, like: username:password.")
-    .version("1.3.2")
-    .stringConf
-    .createOptional
+  val HA_ZK_AUTH_DIGEST: OptionalConfigEntry[String] =
+    buildConf("kyuubi.ha.zookeeper.auth.digest")
+      .doc("The digest auth string is used for ZooKeeper authentication, like: username:password.")
+      .version("1.3.2")
+      .stringConf
+      .createOptional
 
   val HA_ZK_CONN_MAX_RETRIES: ConfigEntry[Int] =
     buildConf("kyuubi.ha.zookeeper.connection.max.retries")
@@ -149,7 +160,7 @@ object HighAvailabilityConf {
         s" ${RetryPolicies.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.0.0")
       .stringConf
-      .checkValues(RetryPolicies.values.map(_.toString))
+      .checkValues(RetryPolicies)
       .createWithDefault(RetryPolicies.EXPONENTIAL_BACKOFF.toString)
 
   val HA_ZK_NODE_TIMEOUT: ConfigEntry[Long] =
@@ -209,14 +220,14 @@ object HighAvailabilityConf {
       .stringConf
       .createOptional
 
-  val HA_ETCD_SSL_CLINET_CRT_PATH: OptionalConfigEntry[String] =
+  val HA_ETCD_SSL_CLIENT_CRT_PATH: OptionalConfigEntry[String] =
     buildConf("kyuubi.ha.etcd.ssl.client.certificate.path")
       .doc("Where the etcd SSL certificate file is stored.")
       .version("1.6.0")
       .stringConf
       .createOptional
 
-  val HA_ETCD_SSL_CLINET_KEY_PATH: OptionalConfigEntry[String] =
+  val HA_ETCD_SSL_CLIENT_KEY_PATH: OptionalConfigEntry[String] =
     buildConf("kyuubi.ha.etcd.ssl.client.key.path")
       .doc("Where the etcd SSL key file is stored.")
       .version("1.6.0")

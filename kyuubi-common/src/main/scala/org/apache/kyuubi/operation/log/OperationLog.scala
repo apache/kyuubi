@@ -29,6 +29,7 @@ import scala.collection.mutable.ListBuffer
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FetchOrientation}
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThriftUtils
@@ -86,7 +87,7 @@ object OperationLog extends Logging {
 class OperationLog(path: Path) {
 
   private lazy val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
-  private lazy val reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
+  private var reader: BufferedReader = _
 
   @volatile private var initialized: Boolean = false
 
@@ -94,6 +95,15 @@ class OperationLog(path: Path) {
   private lazy val extraReaders: ListBuffer[BufferedReader] = ListBuffer()
   private var lastSeekReadPos = 0
   private var seekableReader: SeekableBufferedReader = _
+
+  def getReader(): BufferedReader = {
+    if (reader == null) {
+      try {
+        reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
+      } catch handleFileNotFound
+    }
+    reader
+  }
 
   def addExtraLog(path: Path): Unit = synchronized {
     try {
@@ -130,19 +140,23 @@ class OperationLog(path: Path) {
     val logs = new JArrayList[String]
     var i = 0
     try {
-      var line: String = reader.readLine()
-      while ((i < lastRows || maxRows <= 0) && line != null) {
-        logs.add(line)
+      var line: String = null
+      do {
         line = reader.readLine()
-        i += 1
-      }
-      (logs, i)
-    } catch {
-      case e: IOException =>
-        val absPath = path.toAbsolutePath
-        val opHandle = absPath.getFileName
-        throw KyuubiSQLException(s"Operation[$opHandle] log file $absPath is not found", e)
-    }
+        if (line != null) {
+          logs.add(line)
+          i += 1
+        }
+      } while ((i < lastRows || maxRows <= 0) && line != null)
+    } catch handleFileNotFound
+    (logs, i)
+  }
+
+  private def handleFileNotFound: PartialFunction[Throwable, Unit] = {
+    case e: IOException =>
+      val absPath = path.toAbsolutePath
+      val opHandle = absPath.getFileName
+      throw KyuubiSQLException(s"Operation[$opHandle] log file $absPath is not found", e)
   }
 
   private def toRowSet(logs: JList[String]): TRowSet = {
@@ -152,14 +166,25 @@ class OperationLog(path: Path) {
     tRow
   }
 
+  def read(maxRows: Int): TRowSet = synchronized {
+    read(FETCH_NEXT, maxRows)
+  }
+
   /**
    * Read to log file line by line
    *
    * @param maxRows maximum result number can reach
+   * @param order   the  fetch orientation of the result, can be FETCH_NEXT, FETCH_FIRST
    */
-  def read(maxRows: Int): TRowSet = synchronized {
+  def read(order: FetchOrientation = FETCH_NEXT, maxRows: Int): TRowSet = synchronized {
     if (!initialized) return ThriftUtils.newEmptyRowSet
-    val (logs, lines) = readLogs(reader, maxRows, maxRows)
+    if (order != FETCH_NEXT && order != FETCH_FIRST) {
+      throw KyuubiSQLException(s"$order in operation log is not supported")
+    }
+    if (order == FETCH_FIRST) {
+      resetReader()
+    }
+    val (logs, lines) = readLogs(getReader(), maxRows, maxRows)
     var lastRows = maxRows - lines
     for (extraReader <- extraReaders if lastRows > 0 || maxRows <= 0) {
       val (extraLogs, extraRows) = readLogs(extraReader, lastRows, maxRows)
@@ -168,6 +193,19 @@ class OperationLog(path: Path) {
     }
 
     toRowSet(logs)
+  }
+
+  private def resetReader(): Unit = {
+    trySafely {
+      if (reader != null) {
+        reader.close()
+      }
+    }
+    reader = null
+    closeExtraReaders()
+    extraReaders.clear()
+    extraPaths.foreach(path =>
+      extraReaders += Files.newBufferedReader(path, StandardCharsets.UTF_8))
   }
 
   def read(from: Int, size: Int): TRowSet = synchronized {
@@ -195,10 +233,14 @@ class OperationLog(path: Path) {
   }
 
   def close(): Unit = synchronized {
+    if (!initialized) return
+
     closeExtraReaders()
 
     trySafely {
-      reader.close()
+      if (reader != null) {
+        reader.close()
+      }
     }
     trySafely {
       writer.close()
@@ -212,7 +254,7 @@ class OperationLog(path: Path) {
     }
 
     trySafely {
-      Files.delete(path)
+      Files.deleteIfExists(path)
     }
   }
 

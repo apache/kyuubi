@@ -28,7 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.metrics.MetricsConstants._
-import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.session.SessionType
 
 class MetadataManagerSuite extends KyuubiFunSuite {
@@ -66,7 +66,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       retryRef.addRetryingMetadataRequest(UpdateMetadata(metadataToUpdate))
       eventually(timeout(3.seconds)) {
         assert(retryRef.hasRemainingRequests())
-        assert(metadataManager.getBatch(metadata.identifier).getState === "PENDING")
+        assert(metadataManager.getBatch(metadata.identifier).map(_.getState).contains("PENDING"))
       }
 
       val metadata2 = metadata.copy(identifier = UUID.randomUUID().toString)
@@ -84,7 +84,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
 
       eventually(timeout(3.seconds)) {
         assert(!retryRef2.hasRemainingRequests())
-        assert(metadataManager.getBatch(metadata2.identifier).getState === "RUNNING")
+        assert(metadataManager.getBatch(metadata2.identifier).map(_.getState).contains("RUNNING"))
       }
 
       metadataManager.identifierRequestsAsyncRetryRefs.clear()
@@ -116,7 +116,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
         MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_RETRYING)
           .getOrElse(0L) - retryingRequests === 0)
 
-      val invalidMetadata = metadata.copy(kyuubiInstance = null)
+      val invalidMetadata = metadata.copy(state = null)
       intercept[Exception](metadataManager.insertMetadata(invalidMetadata, false))
       assert(
         MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_TOTAL)
@@ -157,7 +157,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       metadataManager.start()
       f(metadataManager)
     } finally {
-      metadataManager.getBatches(null, null, null, 0, 0, 0, Int.MaxValue).foreach { batch =>
+      metadataManager.getBatches(MetadataFilter(), 0, Int.MaxValue).foreach { batch =>
         metadataManager.cleanupMetadataById(batch.getId)
       }
       // ensure no metadata request leak

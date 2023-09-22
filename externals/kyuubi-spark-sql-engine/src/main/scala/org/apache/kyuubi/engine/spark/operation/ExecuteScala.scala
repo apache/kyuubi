@@ -31,7 +31,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
-import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -51,7 +51,8 @@ class ExecuteScala(
     repl: KyuubiSparkILoop,
     override val statement: String,
     override val shouldRunAsync: Boolean,
-    queryTimeout: Long)
+    queryTimeout: Long,
+    override protected val handle: OperationHandle)
   extends SparkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
@@ -76,59 +77,60 @@ class ExecuteScala(
     OperationLog.removeCurrentOperationLog()
   }
 
-  private def executeScala(): Unit = withLocalProperties {
+  private def executeScala(): Unit =
     try {
-      setState(OperationState.RUNNING)
-      info(diagnostics)
-      Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-      addOperationListener()
-      val legacyOutput = repl.getOutput
-      if (legacyOutput.nonEmpty) {
-        warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
-      }
-      val replUrls = repl.classLoader.getParent.asInstanceOf[URLClassLoader].getURLs
-      spark.sharedState.jarClassLoader.getURLs.filterNot(replUrls.contains).foreach { jar =>
-        try {
-          if ("file".equals(jar.toURI.getScheme)) {
-            repl.addUrlsToClassPath(jar)
-          } else {
-            spark.sparkContext.addFile(jar.toString)
-            val localJarFile = new File(SparkFiles.get(new Path(jar.toURI.getPath).getName))
-            val localJarUrl = localJarFile.toURI.toURL
-            if (!replUrls.contains(localJarUrl)) {
-              repl.addUrlsToClassPath(localJarUrl)
-            }
-          }
-        } catch {
-          case e: Throwable => error(s"Error adding $jar to repl class path", e)
+      withLocalProperties {
+        setState(OperationState.RUNNING)
+        info(diagnostics)
+        Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+        addOperationListener()
+        val legacyOutput = repl.getOutput
+        if (legacyOutput.nonEmpty) {
+          warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
         }
-      }
-
-      repl.interpretWithRedirectOutError(statement) match {
-        case Success =>
-          iter = {
-            result = repl.getResult(statementId)
-            if (result != null) {
-              new ArrayFetchIterator[Row](result.collect())
+        val replUrls = repl.classLoader.getParent.asInstanceOf[URLClassLoader].getURLs
+        spark.sharedState.jarClassLoader.getURLs.filterNot(replUrls.contains).foreach { jar =>
+          try {
+            if ("file".equals(jar.toURI.getScheme)) {
+              repl.addUrlsToClassPath(jar)
             } else {
-              val output = repl.getOutput
-              debug("scala repl output:\n" + output)
-              new ArrayFetchIterator[Row](Array(Row(output)))
+              spark.sparkContext.addFile(jar.toString)
+              val localJarFile = new File(SparkFiles.get(new Path(jar.toURI.getPath).getName))
+              val localJarUrl = localJarFile.toURI.toURL
+              if (!replUrls.contains(localJarUrl)) {
+                repl.addUrlsToClassPath(localJarUrl)
+              }
             }
+          } catch {
+            case e: Throwable => error(s"Error adding $jar to repl class path", e)
           }
-        case Error =>
-          throw KyuubiSQLException(s"Interpret error:\n$statement\n ${repl.getOutput}")
-        case Incomplete =>
-          throw KyuubiSQLException(s"Incomplete code:\n$statement")
+        }
+
+        repl.interpretWithRedirectOutError(statement) match {
+          case Success =>
+            iter = {
+              result = repl.getResult(statementId)
+              if (result != null) {
+                new ArrayFetchIterator[Row](result.collect())
+              } else {
+                val output = repl.getOutput
+                debug("scala repl output:\n" + output)
+                new ArrayFetchIterator[Row](Array(Row(output)))
+              }
+            }
+          case Error =>
+            throw KyuubiSQLException(s"Interpret error:\n$statement\n ${repl.getOutput}")
+          case Incomplete =>
+            throw KyuubiSQLException(s"Incomplete code:\n$statement")
+        }
+        setState(OperationState.FINISHED)
       }
-      setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
     } finally {
       repl.clearResult(statementId)
       shutdownTimeoutMonitor()
     }
-  }
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)

@@ -35,7 +35,7 @@ fi
 ## Arg2 - Tarball Name
 ## Arg3 - Checkable Binary
 install_app() {
-  local remote_tarball="$1/$2"
+  local remote_tarball="$1/$2$4"
   local local_tarball="${_DIR}/$2"
   local binary="${_DIR}/$3"
 
@@ -77,12 +77,25 @@ install_mvn() {
   # See simple version normalization: http://stackoverflow.com/questions/16989598/bash-comparing-version-numbers
   function version { echo "$@" | awk -F. '{ printf("%03d%03d%03d\n", $1,$2,$3); }'; }
   if [ $(version $MVN_DETECTED_VERSION) -ne $(version $MVN_VERSION) ]; then
-    local APACHE_MIRROR=${APACHE_MIRROR:-'https://archive.apache.org/dist/'}
+    local APACHE_MIRROR=${APACHE_MIRROR:-'https://www.apache.org/dyn/closer.lua'}
+    local MIRROR_URL_QUERY="?action=download"
+    local MVN_TARBALL="apache-maven-${MVN_VERSION}-bin.tar.gz"
+    local FILE_PATH="maven/maven-3/${MVN_VERSION}/binaries"
+
+    if [ $(command -v curl) ]; then
+      if ! curl -L --output /dev/null --silent --head --fail "${APACHE_MIRROR}/${FILE_PATH}/${MVN_TARBALL}${MIRROR_URL_QUERY}" ; then
+        # Fall back to archive.apache.org for older Maven
+        echo "Falling back to archive.apache.org to download Maven"
+        APACHE_MIRROR="https://archive.apache.org/dist"
+        MIRROR_URL_QUERY=""
+      fi
+    fi
 
     install_app \
-      "${APACHE_MIRROR}/maven/maven-3/${MVN_VERSION}/binaries" \
-      "apache-maven-${MVN_VERSION}-bin.tar.gz" \
-      "apache-maven-${MVN_VERSION}/bin/mvn"
+      "${APACHE_MIRROR}/${FILE_PATH}" \
+      "${MVN_TARBALL}" \
+      "apache-maven-${MVN_VERSION}/bin/mvn" \
+      "${MIRROR_URL_QUERY}"
 
     MVN_BIN="${_DIR}/apache-maven-${MVN_VERSION}/bin/mvn"
   fi

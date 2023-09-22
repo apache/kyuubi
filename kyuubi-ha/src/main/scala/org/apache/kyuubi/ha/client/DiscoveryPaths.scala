@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.ha.client
 
-import org.apache.curator.utils.ZKPaths
+import org.apache.kyuubi.shaded.curator.utils.ZKPaths
 
 object DiscoveryPaths {
   def makePath(parent: String, firstChild: String, restChildren: String*): String = {

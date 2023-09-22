@@ -210,7 +210,7 @@ Kyuubi is a long-running service to make it easier for end-users to use Spark SQ
 
 ### Setting Default Configurations
 
-[Configuring by `spark-defaults.conf`](settings.html#via-spark-defaults-conf) at the engine side is the best way to set up Kyuubi with AQE. All engines will be instantiated with AQE enabled.
+[Configuring by `spark-defaults.conf`](../settings.html#via-spark-defaults-conf) at the engine side is the best way to set up Kyuubi with AQE. All engines will be instantiated with AQE enabled.
 
 Here is a config setting that we use in our platform when deploying Kyuubi.
 

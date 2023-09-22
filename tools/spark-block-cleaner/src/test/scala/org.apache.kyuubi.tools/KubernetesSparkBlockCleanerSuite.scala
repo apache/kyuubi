@@ -19,9 +19,11 @@ package org.apache.kyuubi.tools
 
 import java.io.File
 import java.nio.file.Files
+import java.util.{Map => JMap}
 import java.util.UUID
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class KubernetesSparkBlockCleanerSuite extends KyuubiFunSuite {
   import KubernetesSparkBlockCleanerConstants._
@@ -83,10 +85,7 @@ class KubernetesSparkBlockCleanerSuite extends KyuubiFunSuite {
   }
 
   private def updateEnv(name: String, value: String): Unit = {
-    val env = System.getenv
-    val field = env.getClass.getDeclaredField("m")
-    field.setAccessible(true)
-    field.get(env).asInstanceOf[java.util.Map[String, String]].put(name, value)
+    getField[JMap[String, String]](System.getenv, "m").put(name, value)
   }
 
   test("test clean") {

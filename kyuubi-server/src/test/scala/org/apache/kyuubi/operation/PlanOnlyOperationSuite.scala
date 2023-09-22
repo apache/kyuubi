@@ -201,6 +201,34 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
+  test("kyuubi #3444: Plan only mode with lineage mode") {
+
+    val ddl = "create table if not exists t0(a int) using parquet"
+    val dql = "select * from t0"
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> NoneMode.name))() {
+      withJdbcStatement("t0") { statement =>
+        statement.execute(ddl)
+        statement.execute("SET kyuubi.operation.plan.only.mode=lineage")
+        val lineageParserClassName = "org.apache.kyuubi.plugin.lineage.LineageParserProvider"
+        try {
+          val resultSet = statement.executeQuery(dql)
+          assert(resultSet.next())
+          val actualResult =
+            """
+              |{"inputTables":["spark_catalog.default.t0"],"outputTables":[],
+              |"columnLineage":[{"column":"a","originalColumns":["spark_catalog.default.t0.a"]}]}
+              |""".stripMargin.split("\n").mkString("")
+          assert(resultSet.getString(1) == actualResult)
+        } catch {
+          case e: Throwable =>
+            assert(e.getMessage.contains(s"'$lineageParserClassName' not found"))
+        } finally {
+          statement.execute("SET kyuubi.operation.plan.only.mode=none")
+        }
+      }
+    }
+  }
+
   private def getOperationPlanWithStatement(statement: Statement): String = {
     val resultSet = statement.executeQuery("select 1 where true")
     assert(resultSet.next())

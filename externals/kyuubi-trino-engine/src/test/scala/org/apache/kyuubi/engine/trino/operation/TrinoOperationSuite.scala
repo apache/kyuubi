@@ -590,14 +590,14 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
       val tFetchResultsReq1 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
       val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq1)
       assert(tFetchResultsResp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
+      val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0).getI32Val.getValues.asScala
       assertResult(Seq(0L))(idSeq1)
 
       // fetch next from first row
       val tFetchResultsReq2 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
       val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
       assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
+      val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0).getI32Val.getValues.asScala
       assertResult(Seq(1L))(idSeq2)
 
       val tFetchResultsReq3 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_PRIOR, 1)
@@ -607,7 +607,7 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
       } else {
         assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         val idSeq3 =
-          tFetchResultsResp3.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
+          tFetchResultsResp3.getResults.getColumns.get(0).getI32Val.getValues.asScala
         assertResult(Seq(0L))(idSeq3)
       }
 
@@ -618,7 +618,7 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
       } else {
         assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         val idSeq4 =
-          tFetchResultsResp4.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
+          tFetchResultsResp4.getResults.getColumns.get(0).getI32Val.getValues.asScala
         assertResult(Seq(0L, 1L))(idSeq4)
       }
     }
@@ -771,8 +771,8 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
         assert(schema.size === 1)
         assert(schema(0).getName === "_col0")
 
-        assert(resultSet.toIterator.hasNext)
-        version = resultSet.toIterator.next().head.toString
+        assert(resultSet.hasNext)
+        version = resultSet.next().head.toString
       }
       version
     }

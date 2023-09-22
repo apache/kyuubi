@@ -19,14 +19,28 @@ import request from '@/utils/request'
 
 export function getAllSessions() {
   return request({
-    url: 'api/v1/sessions',
+    url: 'api/v1/admin/sessions',
     method: 'get'
   })
 }
 
 export function deleteSession(sessionId: string) {
   return request({
-    url: `api/v1/sessions/${sessionId}`,
+    url: `api/v1/admin/sessions/${sessionId}`,
     method: 'delete'
+  })
+}
+
+export function getSession(sessionId: string) {
+  return request({
+    url: `api/v1/sessions/${sessionId}`,
+    method: 'get'
+  })
+}
+
+export function getAllTypeOperation(sessionId: string) {
+  return request({
+    url: `api/v1/sessions/${sessionId}/operations`,
+    method: 'get'
   })
 }

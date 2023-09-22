@@ -27,14 +27,16 @@ import scala.util.Try
 import com.google.common.collect.Maps
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException, TableAlreadyExistsException}
+import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException, TableAlreadyExistsException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.parser.CatalystSqlParser
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
+import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper._
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.IdentifierHelper
+import org.apache.kyuubi.spark.connector.hive.read.HiveScan
 
 class HiveCatalogSuite extends KyuubiHiveTest {
 
@@ -95,7 +97,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
   }
 
   test("get catalog name") {
-    withSparkSession() { spark =>
+    withSparkSession() { _ =>
       val catalog = new HiveTableCatalog
       val catalogName = "hive"
       catalog.initialize(catalogName, CaseInsensitiveStringMap.empty())
@@ -119,7 +121,9 @@ class HiveCatalogSuite extends KyuubiHiveTest {
       val exception = intercept[AnalysisException] {
         spark.table("hive.ns1.nonexistent_table")
       }
-      assert(exception.message === "Table or view not found: hive.ns1.nonexistent_table")
+      assert(exception.plan.exists { p =>
+        p.exists(child => child.isInstanceOf[UnresolvedRelation])
+      })
     }
   }
 
@@ -131,13 +135,13 @@ class HiveCatalogSuite extends KyuubiHiveTest {
 
     assert(catalog.listTables(Array("ns")).isEmpty)
 
-    catalog.createTable(ident1, schema, Array.empty, emptyProps)
+    catalog.createTable(ident1, schema, Array.empty[Transform], emptyProps)
 
     assert(catalog.listTables(Array("ns")).toSet == Set(ident1))
     assert(catalog.listTables(Array("ns2")).isEmpty)
 
-    catalog.createTable(ident3, schema, Array.empty, emptyProps)
-    catalog.createTable(ident2, schema, Array.empty, emptyProps)
+    catalog.createTable(ident3, schema, Array.empty[Transform], emptyProps)
+    catalog.createTable(ident2, schema, Array.empty[Transform], emptyProps)
 
     assert(catalog.listTables(Array("ns")).toSet == Set(ident1, ident2))
     assert(catalog.listTables(Array("ns2")).toSet == Set(ident3))
@@ -157,7 +161,8 @@ class HiveCatalogSuite extends KyuubiHiveTest {
   test("createTable") {
     assert(!catalog.tableExists(testIdent))
 
-    val table = catalog.createTable(testIdent, schema, Array.empty, emptyProps)
+    val table =
+      catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
 
     val parsed = CatalystSqlParser.parseMultipartIdentifier(table.name)
     assert(parsed == Seq("db", "test_table"))
@@ -174,7 +179,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
 
     assert(!catalog.tableExists(testIdent))
 
-    val table = catalog.createTable(testIdent, schema, Array.empty, properties)
+    val table = catalog.createTable(testIdent, schema, Array.empty[Transform], properties)
 
     val parsed = CatalystSqlParser.parseMultipartIdentifier(table.name)
     assert(parsed == Seq("db", "test_table"))
@@ -188,13 +193,13 @@ class HiveCatalogSuite extends KyuubiHiveTest {
   test("createTable: table already exists") {
     assert(!catalog.tableExists(testIdent))
 
-    val table = catalog.createTable(testIdent, schema, Array.empty, emptyProps)
+    val table = catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
 
     val exc = intercept[TableAlreadyExistsException] {
-      catalog.createTable(testIdent, schema, Array.empty, emptyProps)
+      catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
     }
 
-    assert(exc.message.contains(table.name()))
+    assert(exc.message.contains(testIdent.name()))
     assert(exc.message.contains("already exists"))
 
     assert(catalog.tableExists(testIdent))
@@ -204,7 +209,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
   test("tableExists") {
     assert(!catalog.tableExists(testIdent))
 
-    catalog.createTable(testIdent, schema, Array.empty, emptyProps)
+    catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
 
     assert(catalog.tableExists(testIdent))
 
@@ -215,35 +220,52 @@ class HiveCatalogSuite extends KyuubiHiveTest {
 
   test("createTable: location") {
     val properties = new util.HashMap[String, String]()
+    properties.put(TableCatalog.PROP_PROVIDER, "parquet")
     assert(!catalog.tableExists(testIdent))
 
     // default location
-    val t1 = catalog.createTable(testIdent, schema, Array.empty, properties).asInstanceOf[HiveTable]
+    val t1 = catalog.createTable(
+      testIdent,
+      schema,
+      Array.empty[Transform],
+      properties).asInstanceOf[HiveTable]
     assert(t1.catalogTable.location ===
       catalog.catalog.defaultTablePath(testIdent.asTableIdentifier))
     catalog.dropTable(testIdent)
 
     // relative path
     properties.put(TableCatalog.PROP_LOCATION, "relative/path")
-    val t2 = catalog.createTable(testIdent, schema, Array.empty, properties).asInstanceOf[HiveTable]
+    val t2 = catalog.createTable(
+      testIdent,
+      schema,
+      Array.empty[Transform],
+      properties).asInstanceOf[HiveTable]
     assert(t2.catalogTable.location === makeQualifiedPathWithWarehouse("db.db/relative/path"))
     catalog.dropTable(testIdent)
 
     // absolute path without scheme
     properties.put(TableCatalog.PROP_LOCATION, "/absolute/path")
-    val t3 = catalog.createTable(testIdent, schema, Array.empty, properties).asInstanceOf[HiveTable]
+    val t3 = catalog.createTable(
+      testIdent,
+      schema,
+      Array.empty[Transform],
+      properties).asInstanceOf[HiveTable]
     assert(t3.catalogTable.location.toString === "file:/absolute/path")
     catalog.dropTable(testIdent)
 
     // absolute path with scheme
     properties.put(TableCatalog.PROP_LOCATION, "file:/absolute/path")
-    val t4 = catalog.createTable(testIdent, schema, Array.empty, properties).asInstanceOf[HiveTable]
+    val t4 = catalog.createTable(
+      testIdent,
+      schema,
+      Array.empty[Transform],
+      properties).asInstanceOf[HiveTable]
     assert(t4.catalogTable.location.toString === "file:/absolute/path")
     catalog.dropTable(testIdent)
   }
 
   test("loadTable") {
-    val table = catalog.createTable(testIdent, schema, Array.empty, emptyProps)
+    val table = catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
     val loaded = catalog.loadTable(testIdent)
 
     assert(table.name == loaded.name)
@@ -253,15 +275,13 @@ class HiveCatalogSuite extends KyuubiHiveTest {
   }
 
   test("loadTable: table does not exist") {
-    val exc = intercept[NoSuchTableException] {
+    intercept[NoSuchTableException] {
       catalog.loadTable(testIdent)
     }
-
-    assert(exc.message.contains("Table or view 'test_table' not found in database 'db'"))
   }
 
   test("invalidateTable") {
-    val table = catalog.createTable(testIdent, schema, Array.empty, emptyProps)
+    val table = catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
     // Hive v2 don't cache table
     catalog.invalidateTable(testIdent)
 
@@ -320,5 +340,23 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     checkMetadata(metadata.asScala.toMap, emptyProps.asScala.toMap)
 
     catalog.dropNamespace(testNs, cascade = false)
+  }
+
+  test("Support Parquet/Orc provider is splitable") {
+    val parquet_table = Identifier.of(testNs, "parquet_table")
+    val parProps: util.Map[String, String] = new util.HashMap[String, String]()
+    parProps.put(TableCatalog.PROP_PROVIDER, "parquet")
+    val pt = catalog.createTable(parquet_table, schema, Array.empty[Transform], parProps)
+    val parScan = pt.asInstanceOf[HiveTable]
+      .newScanBuilder(CaseInsensitiveStringMap.empty()).build().asInstanceOf[HiveScan]
+    assert(parScan.isSplitable(new Path("empty")))
+
+    val orc_table = Identifier.of(testNs, "orc_table")
+    val orcProps: util.Map[String, String] = new util.HashMap[String, String]()
+    orcProps.put(TableCatalog.PROP_PROVIDER, "orc")
+    val ot = catalog.createTable(orc_table, schema, Array.empty[Transform], orcProps)
+    val orcScan = ot.asInstanceOf[HiveTable]
+      .newScanBuilder(CaseInsensitiveStringMap.empty()).build().asInstanceOf[HiveScan]
+    assert(orcScan.isSplitable(new Path("empty")))
   }
 }

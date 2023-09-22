@@ -19,7 +19,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Map;
 
-public class KyuubiSessionEvent implements KyuubiEvent {
+public class KyuubiSessionEvent {
 
   private String sessionId;
 
