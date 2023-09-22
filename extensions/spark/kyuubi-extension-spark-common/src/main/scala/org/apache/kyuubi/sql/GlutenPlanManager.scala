@@ -17,44 +17,75 @@
 
 package org.apache.kyuubi.sql
 
+import scala.util.control.Breaks.{break, breakable}
+
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.{ColumnarRule, SparkPlan}
+import org.apache.spark.sql.execution.{ColumnarRule, FileSourceScanExec, SparkPlan}
+import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
 
 /**
  */
 case class GlutenPlanManager(session: SparkSession) extends ColumnarRule {
   private val GLUTEN_DRIVER_PLUGIN_CLASS = "io.glutenproject.GlutenDriverPlugin"
 
-  val unSupportOperators = Option(System.getProperty("gluten.version")) match {
-    case Some(version) if version == "1.1.0" =>
-      Seq("")
-    case None =>
-      Seq("")
-  }
-
   override def preColumnarTransitions: Rule[SparkPlan] =
-    if (session.sparkContext.getConf.get("spark.plugins", "")
-        .contains(GLUTEN_DRIVER_PLUGIN_CLASS)) {
-      GlutenPlanAnalysis(unSupportOperators)
+    if (glutenEnabled(session.sparkContext.getConf)) {
+      GlutenPlanAnalysis
     } else {
       (plan: SparkPlan) => plan
     }
+
+  private def glutenEnabled(conf: SparkConf): Boolean = {
+    conf.get("spark.plugins", "").contains(GLUTEN_DRIVER_PLUGIN_CLASS) &&
+    conf.get("spark.gluten.enabled", "true") == "true"
+  }
 }
 
-case class GlutenPlanAnalysis(unSupportOperators: Seq[String]) extends Rule[SparkPlan] {
+object GlutenPlanAnalysis extends Rule[SparkPlan] {
   private var count = 0
+  private val unSupportExpressions = Seq(
+    "CaseWhen",
+    "BitAndAgg",
+    "BitOrAgg",
+    "BitXorAgg")
   override def apply(plan: SparkPlan): SparkPlan = {
     // count un-supported plan
-    if (unSupportOperators.contains(plan.getClass.getSimpleName)) {
-      count += 1
+    plan foreach {
+      case FileSourceScanExec(relation, _, _, _, _, _, _, _, _)
+          if !relation.fileFormat.isInstanceOf[ParquetFileFormat] =>
+        count += 1
+      // if plan has one un-support operator,
+      // break to economize and mark as un-support
+      case p: SparkPlan => breakable {
+          p.expressions.foreach {
+            case e: Expression if unSupportExpressions.contains(e.getClass.getSimpleName) =>
+              incAndCheck()
+            case _ =>
+          }
+        }
     }
 
-    // fallback to non-gluten mode
+    check()
+    // do nothing with plan
+    plan
+  }
+
+  private def incAndCheck(): Unit = {
+    count += 1
+    check()
+    break
+  }
+
+  /**
+   * Check whether the count of un-support operator is over threshold.
+   */
+  private def check(): Unit = {
     if (count >= conf.getConf(KyuubiSQLConf.GLUTEN_FALLBACK_OPERATOR_THRESHOLD)) {
       throw TooMuchGlutenUnsupportedOperationException("")
     }
-    plan
   }
 }
 
