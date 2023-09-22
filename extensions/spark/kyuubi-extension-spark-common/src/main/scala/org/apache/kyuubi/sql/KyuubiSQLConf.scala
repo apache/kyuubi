@@ -273,4 +273,12 @@ object KyuubiSQLConf {
       .version("1.8.0")
       .stringConf
       .createOptional
+
+  val GLUTEN_FALLBACK_OPERATOR_THRESHOLD =
+    buildConf("spark.sql.gluten.fallbackOperatorThreshold")
+      .doc("The threshold of fallback operator. If the number of fallback operator is " +
+        "bigger than this threshold, we will fallback to original plan.")
+      .version("1.8.0")
+      .intConf
+      .createWithDefault(3)
 }
