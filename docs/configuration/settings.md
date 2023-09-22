@@ -528,7 +528,7 @@ Please refer to the Flink official online documentation for [SET Statements](htt
 
 ## Trino Configurations
 
-### Via config.properties
+### Via  config.properties
 
 Setting them in `$TRINO_HOME/etc/config.properties` supplies with default values for SQL engine application. Available properties can be found at Trino official online documentation for [Trino Configurations](https://trino.io/docs/current/admin/properties.html)
 
