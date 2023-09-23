@@ -73,12 +73,13 @@ public class AdminRestApi {
   }
 
   public List<Engine> listEngines(
-      String engineType, String shareLevel, String subdomain, String hs2ProxyUser) {
+      String engineType, String shareLevel, String subdomain, String hs2ProxyUser, String all) {
     Map<String, Object> params = new HashMap<>();
     params.put("type", engineType);
     params.put("sharelevel", shareLevel);
     params.put("subdomain", subdomain);
     params.put("hive.server2.proxy.user", hs2ProxyUser);
+    params.put("all", all);
     Engine[] result =
         this.getClient()
             .get(API_BASE_PATH + "/engine", params, Engine[].class, client.getAuthHeader());
