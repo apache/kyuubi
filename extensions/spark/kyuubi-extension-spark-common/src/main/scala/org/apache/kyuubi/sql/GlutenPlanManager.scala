@@ -17,11 +17,9 @@
 
 package org.apache.kyuubi.sql
 
-import scala.util.control.Breaks.{break, breakable}
-
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.UserDefinedExpression
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{ColumnarRule, FileSourceScanExec, SparkPlan}
 import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
@@ -45,44 +43,43 @@ case class GlutenPlanManager(session: SparkSession) extends ColumnarRule {
 }
 
 object GlutenPlanAnalysis extends Rule[SparkPlan] {
-  private var count = 0
   private val unSupportExpressions = Seq(
     "CaseWhen",
     "BitAndAgg",
     "BitOrAgg",
-    "BitXorAgg")
-  override def apply(plan: SparkPlan): SparkPlan = {
-    // count un-supported plan
-    plan foreach {
-      case FileSourceScanExec(relation, _, _, _, _, _, _, _, _)
-          if !relation.fileFormat.isInstanceOf[ParquetFileFormat] =>
-        count += 1
-      // if plan has one un-support operator,
-      // break to economize and mark as un-support
-      case p: SparkPlan => breakable {
-          p.expressions.foreach {
-            case e: Expression if unSupportExpressions.contains(e.getClass.getSimpleName) =>
-              incAndCheck()
-            case _ =>
-          }
-        }
-    }
+    "BitXorAgg",
+    "Base64",
+    "Bin",
+    "BitLength",
+    "Contains")
 
-    check()
-    // do nothing with plan
+  override def apply(plan: SparkPlan): SparkPlan = {
+    var count = 0
+
+    plan foreach { p =>
+      if (containsUnsupportedOperator(p)) {
+        count += 1
+        check(count)
+      }
+    }
     plan
   }
 
-  private def incAndCheck(): Unit = {
-    count += 1
-    check()
-    break
+  private def containsUnsupportedOperator(plan: SparkPlan): Boolean = {
+    plan match {
+      case FileSourceScanExec(relation, _, _, _, _, _, _, _, _) =>
+        !relation.fileFormat.isInstanceOf[ParquetFileFormat]
+      case _: UserDefinedExpression =>
+        true
+      case p: SparkPlan =>
+        p.expressions.exists(e => unSupportExpressions.contains(e.getClass.getSimpleName))
+    }
   }
 
   /**
    * Check whether the count of un-support operator is over threshold.
    */
-  private def check(): Unit = {
+  private def check(count: Int): Unit = {
     if (count >= conf.getConf(KyuubiSQLConf.GLUTEN_FALLBACK_OPERATOR_THRESHOLD)) {
       throw TooMuchGlutenUnsupportedOperationException("")
     }
