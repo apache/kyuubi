@@ -179,7 +179,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
 
     builder ++=
       """## Trino Configurations
-        |### Via  config.properties""" += """Setting them in `$TRINO_HOME/etc/config.properties`
+        |### Via config.properties""" += """Setting them in `$TRINO_HOME/etc/config.properties`
         |
         | supplies with default values for SQL engine application.
         | Available properties can be found at Trino official online documentation for
