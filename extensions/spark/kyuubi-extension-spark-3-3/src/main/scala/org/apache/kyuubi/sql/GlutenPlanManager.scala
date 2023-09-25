@@ -21,16 +21,23 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.UserDefinedExpression
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.{ColumnarRule, FileSourceScanExec, SparkPlan}
+import org.apache.spark.sql.execution._
+import org.apache.spark.sql.execution.aggregate.{ObjectHashAggregateExec, SortAggregateExec}
+import org.apache.spark.sql.execution.columnar.InMemoryTableScanExec
 import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
+import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
+import org.apache.spark.sql.execution.joins.{BroadcastNestedLoopJoinExec, CartesianProductExec}
 
 /**
+ * Kyuubi extension for gluten enabled case.
+ * 1. check whether the plan contains too much unsupported operator
  */
 case class GlutenPlanManager(session: SparkSession) extends ColumnarRule {
   private val GLUTEN_DRIVER_PLUGIN_CLASS = "io.glutenproject.GlutenDriverPlugin"
 
   override def preColumnarTransitions: Rule[SparkPlan] =
-    if (glutenEnabled(session.sparkContext.getConf)) {
+    if (sys.props.get("spark.testing").nonEmpty ||
+      glutenEnabled(session.sparkContext.getConf)) {
       GlutenPlanAnalysis
     } else {
       (plan: SparkPlan) => plan
@@ -43,15 +50,6 @@ case class GlutenPlanManager(session: SparkSession) extends ColumnarRule {
 }
 
 object GlutenPlanAnalysis extends Rule[SparkPlan] {
-  private val unSupportExpressions = Seq(
-    "CaseWhen",
-    "BitAndAgg",
-    "BitOrAgg",
-    "BitXorAgg",
-    "Base64",
-    "Bin",
-    "BitLength",
-    "Contains")
 
   override def apply(plan: SparkPlan): SparkPlan = {
     var count = 0
@@ -59,9 +57,9 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
     plan foreach { p =>
       if (containsUnsupportedOperator(p)) {
         count += 1
-        check(count)
       }
     }
+    check(count)
     plan
   }
 
@@ -69,10 +67,35 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
     plan match {
       case FileSourceScanExec(relation, _, _, _, _, _, _, _, _) =>
         !relation.fileFormat.isInstanceOf[ParquetFileFormat]
+      case _: RowDataSourceScanExec =>
+        true
       case _: UserDefinedExpression =>
         true
-      case p: SparkPlan =>
-        p.expressions.exists(e => unSupportExpressions.contains(e.getClass.getSimpleName))
+      case _: CartesianProductExec =>
+        true
+      case _: ShuffleExchangeExec =>
+        true
+      case _: CollectLimitExec =>
+        true
+      case _: ObjectHashAggregateExec =>
+        true
+      case _: SortAggregateExec =>
+        true
+      case _: CoalesceExec =>
+        true
+      case _: GenerateExec =>
+        true
+      case _: RangeExec =>
+        true
+      case _: SampleExec =>
+        true
+      case _: InMemoryTableScanExec =>
+        true
+      case _: BroadcastNestedLoopJoinExec =>
+        true
+      case _: SparkPlan =>
+        // TODO check whether the plan contains unsupported expressions
+        false
     }
   }
 
@@ -81,7 +104,9 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
    */
   private def check(count: Int): Unit = {
     if (count >= conf.getConf(KyuubiSQLConf.GLUTEN_FALLBACK_OPERATOR_THRESHOLD)) {
-      throw TooMuchGlutenUnsupportedOperationException("")
+      throw TooMuchGlutenUnsupportedOperationException(
+        s"Here contains too much Gluten un-support operators: $count," +
+          s"recommend to disabled Gluten for this SQL or raise the threshold.")
     }
   }
 }
