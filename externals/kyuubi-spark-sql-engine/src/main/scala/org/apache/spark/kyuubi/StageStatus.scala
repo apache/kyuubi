@@ -23,7 +23,11 @@ case class SparkStageAttempt(stageId: Int, stageAttemptId: Int) {
   override def toString: String = s"Stage $stageId (Attempt $stageAttemptId)"
 }
 
-class SparkStageInfo(val stageId: Int, val numTasks: Int) {
-  var numActiveTasks = new AtomicInteger(0)
-  var numCompleteTasks = new AtomicInteger(0)
+class JobInfo(val numStages: Int, val stageIds: Seq[Int]) {
+  var numCompleteStages = 0
+}
+
+class StageInfo(val stageId: Int, val numTasks: Int) {
+  var numActiveTasks = 0
+  var numCompleteTasks = 0
 }
