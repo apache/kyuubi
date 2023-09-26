@@ -28,7 +28,7 @@ import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.execution.joins.{BroadcastNestedLoopJoinExec, CartesianProductExec}
 
 /**
- * Kyuubi extension for gluten enabled case.
+ * [Experimental]Kyuubi extension for gluten enabled case.
  * 1. check whether the plan contains too much unsupported operator
  */
 case class GlutenPlanManager(session: SparkSession) extends ColumnarRule {
