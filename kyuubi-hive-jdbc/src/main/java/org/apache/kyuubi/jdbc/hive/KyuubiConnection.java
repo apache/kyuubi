@@ -104,6 +104,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private Thread engineLogThread;
   private boolean engineLogInflight = true;
   private volatile boolean launchEngineOpCompleted = false;
+  private boolean launchEngineOpSupportResult = false;
   private String engineId = "";
   private String engineName = "";
   private String engineUrl = "";
@@ -770,6 +771,10 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       String launchEngineOpHandleSecret =
           openRespConf.get("kyuubi.session.engine.launch.handle.secret");
 
+      launchEngineOpSupportResult =
+          Boolean.parseBoolean(
+              openRespConf.getOrDefault("kyuubi.session.engine.launch.support.result", "false"));
+
       if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null) {
         try {
           byte[] guidBytes = Base64.getMimeDecoder().decode(launchEngineOpHandleGuid);
@@ -1353,7 +1358,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private void fetchLaunchEngineResult() {
-    if (launchEngineOpHandle == null) return;
+    if (launchEngineOpHandle == null || !launchEngineOpSupportResult) return;
 
     TFetchResultsReq tFetchResultsReq =
         new TFetchResultsReq(
