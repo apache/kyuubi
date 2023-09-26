@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS metadata(
     request_name varchar(1024) COMMENT 'the request name',
     request_conf mediumtext COMMENT 'the request config map',
     request_args mediumtext COMMENT 'the request arguments',
-    create_time bigint NOT NULL COMMENT 'the metadata create time',
+    create_time BIGINT NOT NULL COMMENT 'the metadata create time',
     engine_type varchar(32) NOT NULL COMMENT 'the engine type',
     cluster_manager varchar(128) COMMENT 'the engine cluster manager',
     engine_open_time bigint COMMENT 'the engine open time',
@@ -24,14 +24,12 @@ CREATE TABLE IF NOT EXISTS metadata(
     engine_state varchar(32) COMMENT 'the engine application state',
     engine_error mediumtext COMMENT 'the engine application diagnose',
     end_time bigint COMMENT 'the metadata end time',
-    priority int DEFAULT 10  COMMENT 'the application priority, high value means high priority',
+    priority int DEFAULT 10 COMMENT 'the application priority, high value means high priority',
     peer_instance_closed boolean default '0' COMMENT 'closed by peer kyuubi instance',
     UNIQUE INDEX unique_identifier_index(identifier),
     INDEX user_name_index(user_name),
     INDEX engine_type_index(engine_type),
     INDEX create_time_index(create_time),
-    -- mysql 5.7 does not support mix order index
-    -- mysql 8 allow create mix order index and can be used in order by
-    -- here create it in 5.7 won't cause error
+    -- See more detail about this index in ./005-KYUUBI-5327.mysql.sql
     INDEX priority_create_time_index(priority DESC, create_time ASC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
