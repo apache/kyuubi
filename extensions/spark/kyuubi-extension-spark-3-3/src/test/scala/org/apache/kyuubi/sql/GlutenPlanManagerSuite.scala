@@ -25,12 +25,14 @@ class GlutenPlanManagerSuite extends KyuubiSparkSQLExtensionTest {
     withSQLConf(
       KyuubiSQLConf.GLUTEN_FALLBACK_OPERATOR_THRESHOLD.key -> "1") {
       withTable("gluten_tmp_1") {
-        sql("CREATE TABLE gluten_tmp_1 (c1 int) PARTITIONED BY (c2 string)")
-        sql("INSERT INTO TABLE gluten_tmp_1 PARTITION (c2='1') SELECT 1")
+        sql("CREATE TABLE gluten_tmp_1 (c1 int) USING JSON PARTITIONED BY (c2 string)")
         assertThrows[TooMuchGlutenUnsupportedOperationException] {
-          sql("SELECT * FROM gluten_tmp_1 LIMIT 1").collect()
+          sql("SELECT * FROM gluten_tmp_1").collect()
         }
-        sql("SELECT * FROM gluten_tmp_1").collect()
+      }
+      withTable("gluten_tmp_2") {
+        sql("CREATE TABLE gluten_tmp_2 (c1 int) USING PARQUET PARTITIONED BY (c2 string)")
+        sql("SELECT * FROM gluten_tmp_2").collect()
       }
     }
   }
