@@ -280,5 +280,5 @@ object KyuubiSQLConf {
         "bigger than this threshold, we will fallback to original plan.")
       .version("1.8.0")
       .intConf
-      .createWithDefault(3)
+      .createWithDefault(5)
 }

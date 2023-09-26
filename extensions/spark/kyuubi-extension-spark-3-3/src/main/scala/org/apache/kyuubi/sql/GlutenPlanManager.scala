@@ -59,7 +59,6 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
           _: UserDefinedExpression |
           _: CartesianProductExec |
           _: ShuffleExchangeExec |
-          _: CollectLimitExec |
           _: ObjectHashAggregateExec |
           _: SortAggregateExec |
           _: CoalesceExec |
