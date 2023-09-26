@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit
 
 import io.airlift.units.Duration
 import io.trino.client.ClientSession
+import io.trino.client.OkHttpUtil
 import okhttp3.OkHttpClient
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
@@ -35,7 +36,7 @@ import org.apache.kyuubi.engine.trino.{TrinoConf, TrinoContext, TrinoStatement}
 import org.apache.kyuubi.engine.trino.event.TrinoSessionEvent
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_CATALOG, USE_DATABASE}
 
 class TrinoSessionImpl(
     protocol: TProtocolVersion,
@@ -46,50 +47,51 @@ class TrinoSessionImpl(
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
+  val sessionConf: KyuubiConf = sessionManager.getConf
+
   override val handle: SessionHandle =
     conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
+  private val username: String = sessionConf
+    .getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY).getOrElse(currentUser)
+
   var trinoContext: TrinoContext = _
   private var clientSession: ClientSession = _
-  private var catalogName: String = null
-  private var databaseName: String = null
-
+  private var catalogName: String = _
+  private var databaseName: String = _
   private val sessionEvent = TrinoSessionEvent(this)
 
   override def open(): Unit = {
-    normalizedConf.foreach {
-      case ("use:catalog", catalog) => catalogName = catalog
-      case ("use:database", database) => databaseName = database
-      case _ => // do nothing
+
+    val (useCatalogAndDatabaseConf, _) = normalizedConf.partition { case (k, _) =>
+      Array(USE_CATALOG, USE_DATABASE).contains(k)
     }
 
-    val httpClient = new OkHttpClient.Builder().build()
+    useCatalogAndDatabaseConf.foreach {
+      case (USE_CATALOG, catalog) => catalogName = catalog
+      case (USE_DATABASE, database) => databaseName = database
+    }
+    if (catalogName == null) {
+      catalogName = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG)
+        .getOrElse(throw KyuubiSQLException("Trino default catalog can not be null!"))
+    }
 
     clientSession = createClientSession()
-    trinoContext = TrinoContext(httpClient, clientSession)
+    trinoContext = TrinoContext(createHttpClient(), clientSession)
 
     super.open()
     EventBus.post(sessionEvent)
   }
 
   private def createClientSession(): ClientSession = {
-    val sessionConf = sessionManager.getConf
     val connectionUrl = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_URL).getOrElse(
       throw KyuubiSQLException("Trino server url can not be null!"))
 
-    if (catalogName == null) {
-      catalogName = sessionConf.get(
-        KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG).getOrElse(
-        throw KyuubiSQLException("Trino default catalog can not be null!"))
-    }
-
-    val user = sessionConf
-      .getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY).getOrElse(currentUser)
     val clientRequestTimeout = sessionConf.get(TrinoConf.CLIENT_REQUEST_TIMEOUT)
 
     new ClientSession(
       URI.create(connectionUrl),
-      user,
+      username,
       Optional.empty(),
       "kyuubi",
       Optional.empty(),
@@ -108,6 +110,37 @@ class TrinoSessionImpl(
       null,
       new Duration(clientRequestTimeout, TimeUnit.MILLISECONDS),
       true)
+  }
+
+  private def createHttpClient(): OkHttpClient = {
+    val keystorePath = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_PATH)
+    val keystorePassword = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD)
+    val keystoreType = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_TYPE)
+    val truststorePath = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_PATH)
+    val truststorePassword = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD)
+    val truststoreType = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_TYPE)
+
+    val serverScheme = clientSession.getServer.getScheme
+
+    val builder = new OkHttpClient.Builder()
+
+    OkHttpUtil.setupSsl(
+      builder,
+      Optional.ofNullable(keystorePath.orNull),
+      Optional.ofNullable(keystorePassword.orNull),
+      Optional.ofNullable(keystoreType.orNull),
+      Optional.ofNullable(truststorePath.orNull),
+      Optional.ofNullable(truststorePassword.orNull),
+      Optional.ofNullable(truststoreType.orNull))
+
+    sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_PASSWORD).foreach { password =>
+      require(
+        serverScheme.equalsIgnoreCase("https"),
+        "Trino engine using username/password requires HTTPS to be enabled")
+      builder.addInterceptor(OkHttpUtil.basicAuth(username, password))
+    }
+
+    builder.build()
   }
 
   override protected def runOperation(operation: Operation): OperationHandle = {

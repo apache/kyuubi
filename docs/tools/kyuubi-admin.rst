@@ -73,6 +73,8 @@ Usage: ``bin/kyuubi-admin refresh config [options] [<configType>]``
      - The user defaults configs with key in format in the form of `___{username}___.{config key}` from default property file.
    * - unlimitedUsers
      - The users without maximum connections limitation.
+   * - denyUsers
+     - The user in the deny list will be denied to connect to kyuubi server.
 
 .. _list_engine:
 
@@ -97,6 +99,17 @@ Usage: ``bin/kyuubi-admin list engine [options]``
      - The subdomain for the share level of an engine. If not specified, it will read the configuration item kyuubi.engine.share.level.subdomain from kyuubi-defaults.conf.
    * - --hs2ProxyUser
      - The proxy user to impersonate. When specified, it will list engines for the hs2ProxyUser.
+   * - -a --all
+     - All the engine.
+
+.. _list_server:
+
+List Servers
+-------------------------------------
+
+Prints a table of the key information about the servers.
+
+Usage: ``bin/kyuubi-admin list server``
 
 .. _delete_engine:
 

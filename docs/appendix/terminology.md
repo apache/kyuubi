@@ -129,9 +129,9 @@ As an enterprise service, SLA commitment is essential. Deploying Kyuubi in High 
 </em>
 </p>
 
-## DataLake & LakeHouse
+## DataLake & Lakehouse
 
-Kyuubi unifies DataLake & LakeHouse access in the simplest pure SQL way, meanwhile it's also the securest way with authentication and SQL standard authorization.
+Kyuubi unifies DataLake & Lakehouse access in the simplest pure SQL way, meanwhile it's also the securest way with authentication and SQL standard authorization.
 
 ### Apache Iceberg
 

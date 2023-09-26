@@ -30,7 +30,7 @@ import org.glassfish.jersey.servlet.ServletContainer
 import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.api.{ApiRequestContext, FrontendServiceContext, OpenAPIConfig}
+import org.apache.kyuubi.server.api.{ApiRequestContext, EngineUIProxyServlet, FrontendServiceContext, OpenAPIConfig}
 
 @Path("/v1")
 private[v1] class ApiRootResource extends ApiRequestContext {
@@ -81,5 +81,14 @@ private[server] object ApiRootResource {
     FrontendServiceContext.set(handler, fe)
     handler.addServlet(holder, "/*")
     handler
+  }
+
+  def getEngineUIProxyHandler(fe: KyuubiRestFrontendService): ServletContextHandler = {
+    val proxyServlet = new EngineUIProxyServlet()
+    val holder = new ServletHolder(proxyServlet)
+    val proxyHandler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
+    proxyHandler.setContextPath("/engine-ui")
+    proxyHandler.addServlet(holder, "/*")
+    proxyHandler
   }
 }

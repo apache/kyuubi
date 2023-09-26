@@ -52,32 +52,40 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
 
-  private def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
+  private[kyuubi] def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   private val batchChecker = ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-checker")
 
   lazy val host: String = conf.get(FRONTEND_REST_BIND_HOST)
     .getOrElse {
-      if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
+      if (Utils.isWindows || Utils.isMac) {
+        warn(s"Kyuubi Server run in Windows or Mac environment, binding $getName to 0.0.0.0")
+        "0.0.0.0"
+      } else if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
         Utils.findLocalInetAddress.getCanonicalHostName
       } else {
         Utils.findLocalInetAddress.getHostAddress
       }
     }
 
+  private lazy val port: Int = conf.get(FRONTEND_REST_BIND_PORT)
+
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
     server = JettyServer(
       getName,
       host,
-      conf.get(FRONTEND_REST_BIND_PORT),
+      port,
       conf.get(FRONTEND_REST_MAX_WORKER_THREADS))
     super.initialize(conf)
   }
 
   override def connectionUrl: String = {
     checkInitialized()
-    server.getServerUri
+    conf.get(FRONTEND_ADVERTISED_HOST) match {
+      case Some(advertisedHost) => s"$advertisedHost:$port"
+      case None => server.getServerUri
+    }
   }
 
   private def startInternal(): Unit = {
@@ -86,6 +94,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     contextHandler.addFilter(holder, "/v1/*", EnumSet.allOf(classOf[DispatcherType]))
     val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))
+
+    val proxyHandler = ApiRootResource.getEngineUIProxyHandler(this)
+    server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(proxyHandler))
 
     server.addStaticHandler("org/apache/kyuubi/ui/static", "/static/")
     server.addRedirectHandler("/", "/static/")
@@ -117,7 +128,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
           sessionManager.getPeerInstanceClosedBatchSessions(connectionUrl).foreach { batch =>
             Utils.tryLogNonFatalError {
               val sessionHandle = SessionHandle.fromUUID(batch.identifier)
-              Option(sessionManager.getBatchSessionImpl(sessionHandle)).foreach(_.close())
+              sessionManager.getBatchSession(sessionHandle).foreach(_.close())
             }
           }
         } catch {
@@ -172,16 +183,22 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     if (!isStarted.get) {
       try {
         server.start()
-        recoverBatchSessions()
         isStarted.set(true)
-        info(s"$getName has started at ${server.getServerUri}")
         startBatchChecker()
         startInternal()
+        // block until the HTTP server is started, otherwise, we may get
+        // the wrong HTTP server port -1
+        while (server.getState != "STARTED") {
+          info(s"Waiting for $getName's HTTP server getting started")
+          Thread.sleep(1000)
+        }
+        recoverBatchSessions()
       } catch {
         case e: Exception => throw new KyuubiException(s"Cannot start $getName", e)
       }
     }
     super.start()
+    info(s"Exposing REST endpoint at: http://${server.getServerUri}")
   }
 
   override def stop(): Unit = synchronized {
@@ -229,7 +246,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       realUser
     } else {
       sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER).map { proxyUser =>
-        KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+        if (!getConf.get(KyuubiConf.SERVER_ADMINISTRATORS).contains(realUser)) {
+          KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+        }
         proxyUser
       }.getOrElse(realUser)
     }

@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_OPERATION_HANDLE_KEY
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.{NoneMode, Operation, OperationHandle, OperationManager, PlanOnlyMode}
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
@@ -106,18 +106,18 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
                     opHandle)
               }
             case mode =>
-              new PlanOnlyStatement(session, statement, mode)
+              new PlanOnlyStatement(session, statement, mode, opHandle)
           }
         case OperationLanguages.SCALA =>
           val repl = sessionToRepl.getOrElseUpdate(session.handle, KyuubiSparkILoop(spark))
-          new ExecuteScala(session, repl, statement, runAsync, queryTimeout)
+          new ExecuteScala(session, repl, statement, runAsync, queryTimeout, opHandle)
         case OperationLanguages.PYTHON =>
           try {
             ExecutePython.init()
             val worker = sessionToPythonProcess.getOrElseUpdate(
               session.handle,
               ExecutePython.createSessionPythonWorker(spark, session))
-            new ExecutePython(session, statement, runAsync, queryTimeout, worker)
+            new ExecutePython(session, statement, runAsync, queryTimeout, worker, opHandle)
           } catch {
             case e: Throwable =>
               spark.conf.set(OPERATION_LANGUAGE.key, OperationLanguages.SQL.toString)
@@ -179,7 +179,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       tableTypes: java.util.List[String]): Operation = {
     val tTypes =
       if (tableTypes == null || tableTypes.isEmpty) {
-        SparkCatalogShim.sparkTableTypes
+        SparkCatalogUtils.sparkTableTypes
       } else {
         tableTypes.asScala.toSet
       }
@@ -231,6 +231,6 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
   }
 
   override def getQueryId(operation: Operation): String = {
-    throw KyuubiSQLException.featureNotSupported()
+    operation.getHandle.identifier.toString
   }
 }

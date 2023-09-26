@@ -23,7 +23,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
-import org.apache.kyuubi.spark.connector.common.SparkUtils
+import org.apache.kyuubi.spark.connector.common.SparkUtils.SPARK_RUNTIME_VERSION
 
 class TPCHCatalogSuite extends KyuubiFunSuite {
 
@@ -35,7 +35,7 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
       .set("spark.sql.catalog.tpch", classOf[TPCHCatalog].getName)
       .set("spark.sql.cbo.enabled", "true")
       .set("spark.sql.cbo.planStats.enabled", "true")
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { _ =>
       val catalog = new TPCHCatalog
       val catalogName = "test"
       catalog.initialize(catalogName, CaseInsensitiveStringMap.empty())
@@ -130,7 +130,7 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
         val stats = spark.table(tableName).queryExecution.analyzed.stats
         assert(stats.sizeInBytes == sizeInBytes)
         // stats.rowCount only has value after SPARK-33954
-        if (SparkUtils.isSparkVersionAtLeast("3.2")) {
+        if (SPARK_RUNTIME_VERSION >= "3.2") {
           assert(stats.rowCount.contains(rowCount), tableName)
         }
       }
@@ -158,7 +158,8 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
       val exception = intercept[AnalysisException] {
         spark.table("tpch.sf1.nonexistent_table")
       }
-      assert(exception.message === "Table or view not found: tpch.sf1.nonexistent_table")
+      assert(exception.message.contains("Table or view not found")
+        || exception.message.contains("TABLE_OR_VIEW_NOT_FOUND"))
     }
   }
 }

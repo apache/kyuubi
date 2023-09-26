@@ -65,7 +65,7 @@ class JsonReporterService(registry: MetricRegistry)
             Files.setPosixFilePermissions(tmpPath, PosixFilePermissions.fromString("rwxr--r--"))
             Files.move(tmpPath, reportPath, StandardCopyOption.REPLACE_EXISTING)
           } catch {
-            case NonFatal(e) => error("Error writing metrics to json file" + reportPath, e)
+            case NonFatal(e) => error(s"Error writing metrics to json file: $reportPath", e)
           } finally {
             if (writer != null) writer.close()
           }

@@ -49,7 +49,7 @@ class MetricsSystemSuite extends KyuubiFunSuite {
 
     val conf = KyuubiConf()
       .set(MetricsConf.METRICS_ENABLED, true)
-      .set(MetricsConf.METRICS_REPORTERS, Seq(ReporterType.PROMETHEUS.toString))
+      .set(MetricsConf.METRICS_REPORTERS, Set(ReporterType.PROMETHEUS.toString))
       .set(MetricsConf.METRICS_PROMETHEUS_PORT, 0) // random port
       .set(MetricsConf.METRICS_PROMETHEUS_PATH, testContextPath)
     val metricsSystem = new MetricsSystem()
@@ -77,7 +77,7 @@ class MetricsSystemSuite extends KyuubiFunSuite {
       .set(MetricsConf.METRICS_ENABLED, true)
       .set(
         MetricsConf.METRICS_REPORTERS,
-        ReporterType.values.filterNot(_ == ReporterType.PROMETHEUS).map(_.toString).toSeq)
+        ReporterType.values.filterNot(_ == ReporterType.PROMETHEUS).map(_.toString))
       .set(MetricsConf.METRICS_JSON_INTERVAL, Duration.ofSeconds(1).toMillis)
       .set(MetricsConf.METRICS_JSON_LOCATION, reportPath.toString)
     val metricsSystem = new MetricsSystem()

@@ -32,6 +32,10 @@ public interface IRestClient extends AutoCloseable {
 
   String post(String path, String body, String authHeader);
 
+  <T> T put(String path, String body, Class<T> type, String authHeader);
+
+  String put(String path, String body, String authHeader);
+
   <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader);
 
   String delete(String path, Map<String, Object> params, String authHeader);

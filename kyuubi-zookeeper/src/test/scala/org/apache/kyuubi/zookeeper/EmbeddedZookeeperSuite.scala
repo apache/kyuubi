@@ -17,12 +17,11 @@
 
 package org.apache.kyuubi.zookeeper
 
-import org.apache.curator.framework.CuratorFrameworkFactory
-import org.apache.curator.framework.imps.CuratorFrameworkState
-import org.apache.curator.retry.ExponentialBackoffRetry
-
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.shaded.curator.framework.CuratorFrameworkFactory
+import org.apache.kyuubi.shaded.curator.framework.imps.CuratorFrameworkState
+import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry
 import org.apache.kyuubi.zookeeper.ZookeeperConf.{ZK_CLIENT_PORT, ZK_CLIENT_PORT_ADDRESS}
 
 class EmbeddedZookeeperSuite extends KyuubiFunSuite {

@@ -25,7 +25,8 @@ import javax.ws.rs.ext.{ExceptionMapper, Provider}
 
 import org.eclipse.jetty.server.handler.ContextHandler
 
-import org.apache.kyuubi.server.KyuubiRestFrontendService
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.server.{KyuubiBatchService, KyuubiRestFrontendService, KyuubiServer}
 
 private[api] trait ApiRequestContext {
 
@@ -35,22 +36,28 @@ private[api] trait ApiRequestContext {
   @Context
   protected var httpRequest: HttpServletRequest = _
 
+  protected lazy val batchService: Option[KyuubiBatchService] =
+    KyuubiServer.kyuubiServer.getServices
+      .find(_.isInstanceOf[KyuubiBatchService])
+      .map(_.asInstanceOf[KyuubiBatchService])
+
   final protected def fe: KyuubiRestFrontendService = FrontendServiceContext.get(servletContext)
 }
 
 @Provider
-class RestExceptionMapper extends ExceptionMapper[Exception] {
+class RestExceptionMapper extends ExceptionMapper[Exception] with Logging {
   override def toResponse(exception: Exception): Response = {
+    warn("Error occurs on accessing REST API.", exception)
     exception match {
       case e: WebApplicationException =>
         Response.status(e.getResponse.getStatus)
-          .`type`(e.getResponse.getMediaType)
-          .entity(e.getMessage)
+          .`type`(MediaType.APPLICATION_JSON)
+          .entity(Map("message" -> e.getMessage))
           .build()
       case e =>
         Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .`type`(MediaType.APPLICATION_JSON)
-          .entity(e.getMessage)
+          .entity(Map("message" -> e.getMessage))
           .build()
     }
   }

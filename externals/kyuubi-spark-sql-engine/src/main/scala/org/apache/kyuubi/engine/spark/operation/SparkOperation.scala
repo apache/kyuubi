@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.operation
 import java.io.IOException
 import java.time.ZoneId
 
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TProgressUpdateResp, TRowSet}
+import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TRowSet}
 import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
@@ -101,13 +101,13 @@ abstract class SparkOperation(session: Session)
     super.getStatus
   }
 
-  override def cleanup(targetState: OperationState): Unit = state.synchronized {
+  override def cleanup(targetState: OperationState): Unit = withLockRequired {
     operationListener.foreach(_.cleanup())
     if (!isTerminalState(state)) {
       setState(targetState)
       Option(getBackgroundHandle).foreach(_.cancel(true))
-      if (!spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
     }
+    if (!spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
   }
 
   protected val forceCancel =
@@ -174,15 +174,16 @@ abstract class SparkOperation(session: Session)
     // could be thrown.
     case e: Throwable =>
       if (cancel && !spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
-      state.synchronized {
+      withLockRequired {
         val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {
           val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")
           setOperationException(ke)
           throw ke
         } else if (isTerminalState(state)) {
-          setOperationException(KyuubiSQLException(errMsg))
-          warn(s"Ignore exception in terminal state with $statementId: $errMsg")
+          val ke = KyuubiSQLException(errMsg)
+          setOperationException(ke)
+          throw ke
         } else {
           error(s"Error operating $opType: $errMsg", e)
           val ke = KyuubiSQLException(s"Error operating $opType: $errMsg", e)
@@ -200,7 +201,7 @@ abstract class SparkOperation(session: Session)
   }
 
   override protected def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }
@@ -232,10 +233,12 @@ abstract class SparkOperation(session: Session)
     resp
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet =
-    withLocalProperties {
-      var resultRowSet: TRowSet = null
-      try {
+  override def getNextRowSetInternal(
+      order: FetchOrientation,
+      rowSetSize: Int): TFetchResultsResp = {
+    var resultRowSet: TRowSet = null
+    try {
+      withLocalProperties {
         validateDefaultFetchOrientation(order)
         assertState(OperationState.FINISHED)
         setHasResultSet(true)
@@ -260,10 +263,14 @@ abstract class SparkOperation(session: Session)
               getProtocolVersion)
           }
         resultRowSet.setStartRowOffset(iter.getPosition)
-      } catch onError(cancel = true)
+      }
+    } catch onError(cancel = true)
 
-      resultRowSet
-    }
+    val resp = new TFetchResultsResp(OK_STATUS)
+    resp.setResults(resultRowSet)
+    resp.setHasMoreRows(false)
+    resp
+  }
 
   override def shouldRunAsync: Boolean = false
 

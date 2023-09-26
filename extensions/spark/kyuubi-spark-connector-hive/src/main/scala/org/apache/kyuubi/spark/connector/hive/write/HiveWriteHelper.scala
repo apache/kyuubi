@@ -27,8 +27,8 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.hive.common.FileUtils
 import org.apache.hadoop.hive.ql.exec.TaskRunner
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils
+import org.apache.spark.sql.catalyst.catalog.ExternalCatalogWithListener
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hive, HiveExternalCatalog, HiveVersion}
 
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorException
@@ -47,7 +47,7 @@ object HiveWriteHelper extends Logging {
   private val hiveScratchDir = "hive.exec.scratchdir"
 
   def getExternalTmpPath(
-      sparkSession: SparkSession,
+      externalCatalog: ExternalCatalogWithListener,
       hadoopConf: Configuration,
       path: Path): Path = {
 
@@ -70,7 +70,6 @@ object HiveWriteHelper extends Logging {
     assert(hiveVersionsUsingNewExternalTempPath ++ hiveVersionsUsingOldExternalTempPath ==
       allSupportedHiveVersions)
 
-    val externalCatalog = sparkSession.sharedState.externalCatalog
     val hiveVersion = externalCatalog.unwrapped.asInstanceOf[HiveExternalCatalog].client.version
     val stagingDir = hadoopConf.get(hiveStagingDir, ".hive-staging")
     val scratchDir = hadoopConf.get(hiveScratchDir, "/tmp/hive")

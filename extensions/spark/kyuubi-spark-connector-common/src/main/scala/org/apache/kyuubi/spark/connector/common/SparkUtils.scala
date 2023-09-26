@@ -19,17 +19,8 @@ package org.apache.kyuubi.spark.connector.common
 
 import org.apache.spark.SPARK_VERSION
 
+import org.apache.kyuubi.util.SemanticVersion
+
 object SparkUtils {
-
-  def isSparkVersionAtMost(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionAtMost(targetVersionString)
-  }
-
-  def isSparkVersionAtLeast(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionAtLeast(targetVersionString)
-  }
-
-  def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
-  }
+  lazy val SPARK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(SPARK_VERSION)
 }

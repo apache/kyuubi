@@ -31,7 +31,7 @@ import org.apache.thrift.transport.TTransport
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
-import org.apache.kyuubi.config.KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, SESSION_CLOSE_ON_DISCONNECT}
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -112,12 +112,12 @@ abstract class TFrontendService(name: String)
 
   override def connectionUrl: String = {
     checkInitialized()
-    val host = serverHost match {
-      case Some(h) => h // respect user's setting ahead
-      case None if conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME) =>
+    val host = (conf.get(FRONTEND_ADVERTISED_HOST), serverHost) match {
+      case (Some(advertisedHost), _) => advertisedHost
+      case (None, Some(h)) => h
+      case (None, None) if conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME) =>
         serverAddr.getCanonicalHostName
-      case None =>
-        serverAddr.getHostAddress
+      case (None, None) => serverAddr.getHostAddress
     }
 
     host + ":" + actualPort
@@ -520,23 +520,20 @@ abstract class TFrontendService(name: String)
 
   override def FetchResults(req: TFetchResultsReq): TFetchResultsResp = {
     debug(req.toString)
-    val resp = new TFetchResultsResp
     try {
       val operationHandle = OperationHandle(req.getOperationHandle)
       val orientation = FetchOrientation.getFetchOrientation(req.getOrientation)
       // 1 means fetching log
       val fetchLog = req.getFetchType == 1
       val maxRows = req.getMaxRows.toInt
-      val rowSet = be.fetchResults(operationHandle, orientation, maxRows, fetchLog)
-      resp.setResults(rowSet)
-      resp.setHasMoreRows(false)
-      resp.setStatus(OK_STATUS)
+      be.fetchResults(operationHandle, orientation, maxRows, fetchLog)
     } catch {
       case e: Exception =>
         error("Error fetching results: ", e)
+        val resp = new TFetchResultsResp
         resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp
     }
-    resp
   }
 
   protected def notSupportTokenErrorStatus = {
@@ -608,7 +605,14 @@ abstract class TFrontendService(name: String)
       if (handle != null) {
         info(s"Session [$handle] disconnected without closing properly, close it now")
         try {
-          be.closeSession(handle)
+          val needToClose = be.sessionManager.getSession(handle).conf
+            .getOrElse(SESSION_CLOSE_ON_DISCONNECT.key, "true").toBoolean
+          if (needToClose) {
+            be.closeSession(handle)
+          } else {
+            warn(s"Session not actually closed because configuration " +
+              s"${SESSION_CLOSE_ON_DISCONNECT.key} is set to false")
+          }
         } catch {
           case e: KyuubiSQLException =>
             error("Failed closing session", e)

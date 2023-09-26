@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.UUID
+import java.util.{Properties, UUID}
 
 import org.apache.hadoop.fs.{FileSystem, FileUtil, Path}
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetInfoReq, TGetInfoType, TStatusCode}
@@ -26,10 +26,11 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
-import org.apache.kyuubi.engine.SemanticVersion
-import org.apache.kyuubi.jdbc.hive.KyuubiStatement
+import org.apache.kyuubi.jdbc.KyuubiHiveDriver
+import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiStatement}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
-import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
+import org.apache.kyuubi.util.SemanticVersion
 import org.apache.kyuubi.zookeeper.ZookeeperConf
 
 class KyuubiOperationPerUserSuite
@@ -65,6 +66,19 @@ class KyuubiOperationPerUserSuite
       assert(rs.next())
       assert(rs.getString(1) === Utils.currentUser)
       assert(rs.getString(2) === Utils.currentUser)
+    }
+  }
+
+  test("kyuubi defined function - engine_url") {
+    withSessionConf(Map.empty)(Map.empty)(Map(
+      "spark.ui.enabled" -> "true")) {
+      val driver = new KyuubiHiveDriver()
+      val connection = driver.connect(jdbcUrlWithConf, new Properties())
+        .asInstanceOf[KyuubiConnection]
+      val stmt = connection.createStatement()
+      val rs = stmt.executeQuery("SELECT engine_url()")
+      assert(rs.next())
+      assert(rs.getString(1).nonEmpty)
     }
   }
 
@@ -164,50 +178,6 @@ class KyuubiOperationPerUserSuite
     assert(r2 contains "abc")
 
     assert(r1 !== r2)
-  }
-
-  test("support to interrupt the thrift request if remote engine is broken") {
-    assume(!httpMode)
-    withSessionConf(Map(
-      KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
-      KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "1000",
-      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "1000"))(Map.empty)(
-      Map.empty) {
-      withSessionHandle { (client, handle) =>
-        val preReq = new TExecuteStatementReq()
-        preReq.setStatement("select engine_name()")
-        preReq.setSessionHandle(handle)
-        preReq.setRunAsync(false)
-        client.ExecuteStatement(preReq)
-
-        val sessionHandle = SessionHandle(handle)
-        val session = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
-          .getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
-        session.client.getEngineAliveProbeProtocol.foreach(_.getTransport.close())
-
-        val exitReq = new TExecuteStatementReq()
-        exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 1000L)," +
-          "java_method('java.lang.System', 'exit', 1)")
-        exitReq.setSessionHandle(handle)
-        exitReq.setRunAsync(true)
-        client.ExecuteStatement(exitReq)
-
-        val executeStmtReq = new TExecuteStatementReq()
-        executeStmtReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 30000l)")
-        executeStmtReq.setSessionHandle(handle)
-        executeStmtReq.setRunAsync(false)
-        val startTime = System.currentTimeMillis()
-        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
-        assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-        assert(executeStmtResp.getStatus.getErrorMessage.contains(
-          "java.net.SocketException: Connection reset") ||
-          executeStmtResp.getStatus.getErrorMessage.contains(
-            "Caused by: java.net.SocketException: Broken pipe (Write failed)"))
-        val elapsedTime = System.currentTimeMillis() - startTime
-        assert(elapsedTime < 20 * 1000)
-        assert(session.client.asyncRequestInterrupted)
-      }
-    }
   }
 
   test("max result rows") {
@@ -374,12 +344,48 @@ class KyuubiOperationPerUserSuite
         eventually(timeout(10.seconds)) {
           assert(session.handle === SessionHandle.apply(session.client.remoteSessionHandle))
         }
-        val opHandle = session.executeStatement("SELECT engine_id()", Map.empty, true, 0L)
-        eventually(timeout(10.seconds)) {
-          val operation = session.sessionManager.operationManager.getOperation(
-            opHandle).asInstanceOf[KyuubiOperation]
-          assert(opHandle == OperationHandle.apply(operation.remoteOpHandle()))
+
+        def checkOpHandleAlign(statement: String, confOverlay: Map[String, String]): Unit = {
+          val opHandle = session.executeStatement(statement, confOverlay, true, 0L)
+          eventually(timeout(10.seconds)) {
+            val operation = session.sessionManager.operationManager.getOperation(
+              opHandle).asInstanceOf[KyuubiOperation]
+            assert(opHandle == OperationHandle.apply(operation.remoteOpHandle()))
+          }
         }
+
+        val statement = "SELECT engine_id()"
+
+        val confOverlay = Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> "PARSE")
+        checkOpHandleAlign(statement, confOverlay)
+
+        Map(
+          statement -> "SQL",
+          s"""spark.sql("$statement")""" -> "SCALA",
+          s"spark.sql('$statement')" -> "PYTHON").foreach { case (statement, lang) =>
+          val confOverlay = Map(KyuubiConf.OPERATION_LANGUAGE.key -> lang)
+          checkOpHandleAlign(statement, confOverlay)
+        }
+      }
+    }
+  }
+
+  test("support to expose kyuubi operation metrics") {
+    withSessionConf()(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val uuid = UUID.randomUUID().toString
+        val query = s"select '$uuid'"
+        val res = statement.executeQuery(query)
+        assert(res.next())
+        assert(!res.next())
+
+        val operationMetrics =
+          server.backendService.sessionManager.operationManager.allOperations()
+            .map(_.asInstanceOf[KyuubiOperation])
+            .filter(_.statement == query)
+            .head.metrics
+        assert(operationMetrics.get("fetchResultsCount") == Some("1"))
+        assert(operationMetrics.get("fetchLogCount") == Some("0"))
       }
     }
   }

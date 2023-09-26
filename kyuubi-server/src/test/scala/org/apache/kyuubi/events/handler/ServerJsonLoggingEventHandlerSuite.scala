@@ -33,6 +33,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi._
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.events.ServerEventHandlerRegister
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.KyuubiServer
@@ -134,13 +135,12 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
       }
     }
 
-    val batchRequest = newSparkBatchRequest()
+    val batchRequest = newSparkBatchRequest(Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
     val sessionMgr = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
     val batchSessionHandle = sessionMgr.openBatchSession(
       Utils.currentUser,
       "kyuubi",
       "127.0.0.1",
-      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       batchRequest)
     withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
       withJdbcStatement() { statement =>
@@ -197,6 +197,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
     server.initialize(conf)
     server.start()
     server.stop()
+    ServerEventHandlerRegister.registerEventLoggers(conf) // register event loggers again
 
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val kyuubiServerInfoPath =

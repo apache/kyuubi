@@ -17,5 +17,11 @@
 package org.apache.kyuubi.ctl.cmd.list
 
 import org.apache.kyuubi.ctl.opt.CliConfig
+import org.apache.kyuubi.ctl.util.CtlUtils
+import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
-class ListServerCommand(cliConfig: CliConfig) extends ListCommand(cliConfig) {}
+class ListServerCommand(cliConfig: CliConfig) extends ListCommand(cliConfig) {
+  override def doRun(): Iterable[ServiceNodeInfo] = {
+    CtlUtils.listZkServerNodes(conf, normalizedCliConfig, None)
+  }
+}

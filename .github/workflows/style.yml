@@ -34,10 +34,12 @@ jobs:
     strategy:
       matrix:
         profiles:
-          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds'
+          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds,kubernetes-it'
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Setup JDK 8
         uses: actions/setup-java@v3
         with:
@@ -45,16 +47,16 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
-      - name: Setup Mvnd
-        uses: ./.github/actions/setup-mvnd
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Setup Python 3
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
           cache: 'pip'
-      - name: Check kyuubi modules available
+      - name: Check kyuubi modules avaliable
         id: modules-check
-        run: build/mvnd dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true -q ${{ matrix.profiles }}
+        run: build/mvn dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true ${{ matrix.profiles }}
         continue-on-error: true
 
       - name: Install
@@ -63,13 +65,14 @@ jobs:
         if: steps.modules-check.conclusion == 'success' && steps.modules-check.outcome == 'failure'
         run: |
           MVN_OPT="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip"
-          build/mvnd clean install ${MVN_OPT} -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.2,tpcds
-          build/mvnd clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-1 -Pspark-3.1
-          build/mvnd clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-3,extensions/spark/kyuubi-spark-connector-kudu,extensions/spark/kyuubi-spark-connector-hive -Pspark-3.3
+          build/mvn clean install ${MVN_OPT} -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.2,tpcds
+          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-1 -Pspark-3.1
+          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-3,extensions/spark/kyuubi-spark-connector-hive -Pspark-3.3
+          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-4 -Pspark-3.4
 
       - name: Scalastyle with maven
         id: scalastyle-check
-        run: build/mvnd scalastyle:check -q ${{ matrix.profiles }}
+        run: build/mvn scalastyle:check ${{ matrix.profiles }}
       - name: Print scalastyle error report
         if: failure() && steps.scalastyle-check.outcome != 'success'
         run: >-
@@ -83,15 +86,15 @@ jobs:
         run: |
           SPOTLESS_BLACK_VERSION=$(build/mvn help:evaluate -Dexpression=spotless.python.black.version -q -DforceStdout)
           pip install black==$SPOTLESS_BLACK_VERSION
-          build/mvnd spotless:check -q ${{ matrix.profiles }} -Pspotless-python
+          build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python
       - name: setup npm
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
       - name: Web UI Style with node
         run: |
           cd ./kyuubi-server/web-ui
-          npm install pnpm -g
+          npm install pnpm@8 -g
           pnpm install
           pnpm run lint
           echo "---------------------------------------Notice------------------------------------"
@@ -104,10 +107,32 @@ jobs:
           echo "---------------------------------------------------------------------------------"
 
   shellcheck:
-    name: Shellcheck
+    name: Super Linter and Shellcheck
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - name: Super Linter Checks
+        uses: github/super-linter/slim@v5
+        env:
+          CREATE_LOG_FILE: true
+          ERROR_ON_MISSING_EXEC_BIT: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IGNORE_GENERATED_FILES: true
+          IGNORE_GITIGNORED_FILES: true
+          LINTER_RULES_PATH: /
+          LOG_LEVEL: NOTICE
+          SUPPRESS_POSSUM: true
+          VALIDATE_BASH_EXEC: true
+          VALIDATE_ENV: true
+          VALIDATE_JSONC: true
+          VALIDATE_POWERSHELL: true
+          VALIDATE_XML: true
+      - name: Upload Super Linter logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: super-linter-log
+          path: super-linter.log
       - name: check bin directory
         uses: ludeeus/action-shellcheck@1.1.0
         with:

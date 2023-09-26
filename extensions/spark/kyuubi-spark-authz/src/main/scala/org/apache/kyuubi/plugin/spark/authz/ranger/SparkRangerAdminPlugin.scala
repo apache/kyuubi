@@ -79,7 +79,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
       () => {
         if (plugin != null) {
           LOG.info(s"clean up ranger plugin, appId: ${plugin.getAppId}")
-          this.cleanup()
+          plugin.cleanup()
         }
       },
       Integer.MAX_VALUE)
@@ -109,7 +109,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
       } else if (result.getMaskTypeDef != null) {
         result.getMaskTypeDef.getName match {
           case "MASK" => regexp_replace(col)
-          case "MASK_SHOW_FIRST_4" if isSparkVersionAtLeast("3.1") =>
+          case "MASK_SHOW_FIRST_4" if isSparkV31OrGreater =>
             regexp_replace(col, hasLen = true)
           case "MASK_SHOW_FIRST_4" =>
             val right = regexp_replace(s"substr($col, 5)")
@@ -136,7 +136,8 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
     val upper = s"regexp_replace($expr, '[A-Z]', 'X'$pos)"
     val lower = s"regexp_replace($upper, '[a-z]', 'x'$pos)"
     val digits = s"regexp_replace($lower, '[0-9]', 'n'$pos)"
-    digits
+    val other = s"regexp_replace($digits, '[^A-Za-z0-9]', 'U'$pos)"
+    other
   }
 
   /**

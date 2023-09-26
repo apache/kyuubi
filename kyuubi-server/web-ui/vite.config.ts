@@ -15,24 +15,35 @@
  * limitations under the License.
  */
 
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import Vue from '@vitejs/plugin-vue'
 import path from 'path'
 
-export default defineConfig({
-  base: '/ui/',
-  plugins: [Vue()],
-  resolve: {
-    alias: [
-      {
-        find: '@',
-        replacement: path.resolve(__dirname, 'src')
-      },
-      // resolve warning of vue-i18n
-      {
-        find: 'vue-i18n',
-        replacement: 'vue-i18n/dist/vue-i18n.cjs.js'
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  return {
+    base: '/ui/',
+    plugins: [Vue()],
+    resolve: {
+      alias: [
+        {
+          find: '@',
+          replacement: path.resolve(__dirname, 'src')
+        },
+        // resolve warning of vue-i18n
+        {
+          find: 'vue-i18n',
+          replacement: 'vue-i18n/dist/vue-i18n.cjs.js'
+        }
+      ]
+    },
+    server: {
+      proxy: {
+        '/api': {
+          target: env['VITE_APP_DEV_WEB_URL'],
+          changeOrigin: true
+        }
       }
-    ]
+    }
   }
 })

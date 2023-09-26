@@ -48,5 +48,9 @@
         <Logger name="org.apache.kyuubi.server.http.authentication.AuthenticationAuditLogger" additivity="false">
             <AppenderRef ref="restAudit" />
         </Logger>
+        <Logger name="org.apache.kyuubi.server.metadata.jdbc" level="DEBUG" additivity="false">
+            <AppenderRef ref="stdout" />
+            <AppenderRef ref="file"/>
+        </Logger>
     </Loggers>
 </Configuration>

@@ -22,7 +22,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class SparkCatalogDatabaseOperationSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
@@ -37,7 +37,7 @@ class SparkCatalogDatabaseOperationSuite extends WithSparkSQLEngine with HiveJDB
   test("set/get current catalog") {
     withJdbcStatement() { statement =>
       val catalog = statement.getConnection.getCatalog
-      assert(catalog == SparkCatalogShim.SESSION_CATALOG)
+      assert(catalog == SparkCatalogUtils.SESSION_CATALOG)
       statement.getConnection.setCatalog("dummy")
       val changedCatalog = statement.getConnection.getCatalog
       assert(changedCatalog == "dummy")
@@ -61,7 +61,7 @@ class DummyCatalog extends CatalogPlugin {
     _name = name
   }
 
-  private var _name: String = null
+  private var _name: String = _
 
   override def name(): String = _name
 

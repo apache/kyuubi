@@ -1,30 +1,26 @@
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+{{/*
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/}}
 
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}
   labels:
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- include "kyuubi.labels" . | nindent 4 }}
 data:
   {{- with .Values.kyuubiConf.kyuubiEnv }}
   kyuubi-env.sh: |
@@ -34,16 +30,20 @@ data:
   kyuubi-defaults.conf: |
     ## Helm chart provided Kyuubi configurations
     kyuubi.kubernetes.namespace={{ .Release.Namespace }}
-    kyuubi.frontend.bind.host=localhost
+    kyuubi.frontend.connection.url.use.hostname=false
     kyuubi.frontend.thrift.binary.bind.port={{ .Values.server.thriftBinary.port }}
     kyuubi.frontend.thrift.http.bind.port={{ .Values.server.thriftHttp.port }}
     kyuubi.frontend.rest.bind.port={{ .Values.server.rest.port }}
     kyuubi.frontend.mysql.bind.port={{ .Values.server.mysql.port }}
     kyuubi.frontend.protocols={{ include "kyuubi.frontend.protocols" . }}
 
+    # Kyuubi Metrics
+    kyuubi.metrics.enabled={{ .Values.server.prometheus.enabled }}
+    kyuubi.metrics.reporters={{ .Values.metricsReporters }}
+
     ## User provided Kyuubi configurations
     {{- with .Values.kyuubiConf.kyuubiDefaults }}
-    {{- tpl . $ | nindent 4 }}
+      {{- tpl . $ | nindent 4 }}
     {{- end }}
   {{- with .Values.kyuubiConf.log4j2 }}
   log4j2.xml: |

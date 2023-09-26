@@ -20,9 +20,10 @@ package org.apache.kyuubi.engine.flink.operation
 import java.sql.DatabaseMetaData
 
 import scala.collection.JavaConverters._
+import scala.collection.convert.ImplicitConversions._
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.flink.table.api.{DataTypes, ResultKind, TableEnvironment}
+import org.apache.flink.table.api.{DataTypes, ResultKind}
 import org.apache.flink.table.catalog.Column
 import org.apache.flink.types.Row
 
@@ -42,17 +43,20 @@ class GetFunctions(
     try {
       val schemaPattern = toJavaRegex(schemaName)
       val functionPattern = toJavaRegex(functionName)
-      val tableEnv: TableEnvironment = sessionContext.getExecutionContext.getTableEnvironment
+      val functionCatalog = sessionContext.getSessionState.functionCatalog
+      val catalogManager = sessionContext.getSessionState.catalogManager
+
       val systemFunctions = filterPattern(
-        tableEnv.listFunctions().diff(tableEnv.listUserDefinedFunctions()),
+        functionCatalog.getFunctions
+          .diff(functionCatalog.getUserDefinedFunctions),
         functionPattern)
         .map { f =>
           Row.of(null, null, f, null, Integer.valueOf(DatabaseMetaData.functionResultUnknown), null)
-        }
-      val catalogFunctions = tableEnv.listCatalogs()
+        }.toArray
+      val catalogFunctions = catalogManager.listCatalogs()
         .filter { c => StringUtils.isEmpty(catalogName) || c == catalogName }
         .flatMap { c =>
-          val catalog = tableEnv.getCatalog(c).get()
+          val catalog = catalogManager.getCatalog(c).get()
           filterPattern(catalog.listDatabases().asScala, schemaPattern)
             .flatMap { d =>
               filterPattern(catalog.listFunctions(d).asScala, functionPattern)
@@ -66,7 +70,7 @@ class GetFunctions(
                     null)
                 }
             }
-        }
+        }.toArray
       resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
         .columns(
           Column.physical(FUNCTION_CAT, DataTypes.STRING()),

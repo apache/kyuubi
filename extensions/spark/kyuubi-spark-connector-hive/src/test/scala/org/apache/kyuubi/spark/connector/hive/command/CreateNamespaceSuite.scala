@@ -62,7 +62,8 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
         val e = intercept[IllegalArgumentException] {
           sql(s"CREATE NAMESPACE $ns LOCATION ''")
         }
-        assert(e.getMessage.contains("Can not create a Path from an empty string"))
+        assert(e.getMessage.contains("Can not create a Path from an empty string") ||
+          e.getMessage.contains("The location name cannot be empty string"))
 
         val uri = new Path(path).toUri
         sql(s"CREATE NAMESPACE $ns LOCATION '$uri'")
@@ -83,7 +84,8 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
       val e = intercept[NamespaceAlreadyExistsException] {
         sql(s"CREATE NAMESPACE $ns")
       }
-      assert(e.getMessage.contains(s"Namespace '$namespace' already exists"))
+      assert(e.getMessage.contains(s"Namespace '$namespace' already exists") ||
+        e.getMessage.contains(s"Cannot create schema `fakens` because it already exists"))
 
       // The following will be no-op since the namespace already exists.
       Try { sql(s"CREATE NAMESPACE IF NOT EXISTS $ns") }.isSuccess
@@ -131,8 +133,6 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
 
 class CreateNamespaceV2Suite extends CreateNamespaceSuiteBase {
 
-  override protected def catalogName: String = super.catalogName
-
   override protected def catalogVersion: String = "Hive V2"
 
   override protected def commandVersion: String = V2_COMMAND_VERSION
@@ -142,7 +142,7 @@ class CreateNamespaceV1Suite extends CreateNamespaceSuiteBase {
 
   val SESSION_CATALOG_NAME: String = "spark_catalog"
 
-  override protected def catalogName: String = SESSION_CATALOG_NAME
+  override protected val catalogName: String = SESSION_CATALOG_NAME
 
   override protected def catalogVersion: String = "V1"
 

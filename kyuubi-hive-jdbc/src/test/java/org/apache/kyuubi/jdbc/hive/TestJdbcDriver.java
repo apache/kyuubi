@@ -24,6 +24,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import org.junit.AfterClass;
@@ -67,14 +68,14 @@ public class TestJdbcDriver {
   public static void setUpBeforeClass() throws Exception {
     file = new File(System.getProperty("user.dir") + File.separator + "Init.sql");
     if (!file.exists()) {
-      file.createNewFile();
+      Files.createFile(file.toPath());
     }
   }
 
   @AfterClass
   public static void cleanUpAfterClass() throws Exception {
     if (file != null) {
-      file.delete();
+      Files.deleteIfExists(file.toPath());
     }
   }
 

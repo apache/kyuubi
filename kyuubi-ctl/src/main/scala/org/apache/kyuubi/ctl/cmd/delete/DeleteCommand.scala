@@ -16,15 +16,13 @@
  */
 package org.apache.kyuubi.ctl.cmd.delete
 
-import scala.collection.mutable.ListBuffer
-
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.opt.CliConfig
-import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
-import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
+import org.apache.kyuubi.ctl.util.{Render, Validator}
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
-class DeleteCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](cliConfig) {
+abstract class DeleteCommand(cliConfig: CliConfig)
+  extends Command[Iterable[ServiceNodeInfo]](cliConfig) {
 
   def validate(): Unit = {
     Validator.validateZkArguments(normalizedCliConfig)
@@ -35,30 +33,9 @@ class DeleteCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](
   /**
    * Delete zookeeper service node with specified host port.
    */
-  def doRun(): Seq[ServiceNodeInfo] = {
-    withDiscoveryClient(conf) { discoveryClient =>
-      val znodeRoot = CtlUtils.getZkNamespace(conf, normalizedCliConfig)
-      val hostPortOpt =
-        Some((normalizedCliConfig.zkOpts.host, normalizedCliConfig.zkOpts.port.toInt))
-      val nodesToDelete = CtlUtils.getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
+  override def doRun(): Iterable[ServiceNodeInfo]
 
-      val deletedNodes = ListBuffer[ServiceNodeInfo]()
-      nodesToDelete.foreach { node =>
-        val nodePath = s"$znodeRoot/${node.nodeName}"
-        info(s"Deleting zookeeper service node:$nodePath")
-        try {
-          discoveryClient.delete(nodePath)
-          deletedNodes += node
-        } catch {
-          case e: Exception =>
-            error(s"Failed to delete zookeeper service node:$nodePath", e)
-        }
-      }
-      deletedNodes
-    }
-  }
-
-  def render(nodes: Seq[ServiceNodeInfo]): Unit = {
+  override def render(nodes: Iterable[ServiceNodeInfo]): Unit = {
     val title = "Deleted zookeeper service nodes"
     info(Render.renderServiceNodesInfo(title, nodes))
   }

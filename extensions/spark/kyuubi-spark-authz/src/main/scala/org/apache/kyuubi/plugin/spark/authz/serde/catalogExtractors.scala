@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 trait CatalogExtractor extends (AnyRef => Option[String]) with Extractor
 
@@ -43,7 +43,7 @@ class CatalogPluginOptionCatalogExtractor extends CatalogExtractor {
   override def apply(v1: AnyRef): Option[String] = {
     v1 match {
       case Some(catalogPlugin: AnyRef) =>
-        new CatalogPluginCatalogExtractor().apply(catalogPlugin)
+        lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin)
       case _ => None
     }
   }

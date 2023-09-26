@@ -19,7 +19,6 @@ package org.apache.kyuubi.spark.connector.hive.read
 
 import java.util.Properties
 
-import org.apache.hadoop.hive.ql.exec.Utilities
 import org.apache.hadoop.hive.ql.metadata.{Partition => HivePartition}
 import org.apache.hadoop.hive.ql.plan.TableDesc
 import org.apache.hadoop.hive.serde2.Deserializer
@@ -33,7 +32,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, SpecificInternalRow
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.sql.execution.datasources.PartitionedFile
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hadoopTableReader, hiveShim}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{HadoopTableReader, HiveShim}
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.SerializableConfiguration
 
@@ -43,30 +42,24 @@ case class HivePartitionedReader(
     tableDesc: TableDesc,
     broadcastHiveConf: Broadcast[SerializableConfiguration],
     nonPartitionReadDataKeys: Seq[Attribute],
-    bindPartition: HivePartition,
+    bindPartitionOpt: Option[HivePartition],
     charset: String = "utf-8") extends PartitionReader[InternalRow] with Logging {
 
-  private val partDesc =
-    if (bindPartition != null) {
-      Utilities.getPartitionDesc(bindPartition)
-    } else null
   private val hiveConf = broadcastHiveConf.value.value
 
   private val tableDeser = tableDesc.getDeserializerClass.newInstance()
   tableDeser.initialize(hiveConf, tableDesc.getProperties)
 
-  private val localDeser: Deserializer =
-    if (bindPartition != null &&
-      bindPartition.getDeserializer != null) {
+  private val localDeser: Deserializer = bindPartitionOpt match {
+    case Some(bindPartition) if bindPartition.getDeserializer != null =>
       val tableProperties = tableDesc.getProperties
       val props = new Properties(tableProperties)
       val deserializer =
         bindPartition.getDeserializer.getClass.asInstanceOf[Class[Deserializer]].newInstance()
       deserializer.initialize(hiveConf, props)
       deserializer
-    } else {
-      tableDeser
-    }
+    case _ => tableDeser
+  }
 
   private val internalRow = new SpecificInternalRow(nonPartitionReadDataKeys.map(_.dataType))
 
@@ -108,7 +101,7 @@ case class HivePartitionedReader(
           row.update(ordinal, UTF8String.fromString(oi.getPrimitiveJavaObject(value).getValue))
       case oi: HiveDecimalObjectInspector =>
         (value: Any, row: InternalRow, ordinal: Int) =>
-          row.update(ordinal, hiveShim.toCatalystDecimal(oi, value))
+          row.update(ordinal, HiveShim.toCatalystDecimal(oi, value))
       case oi: TimestampObjectInspector =>
         (value: Any, row: InternalRow, ordinal: Int) =>
           row.setLong(ordinal, DateTimeUtils.fromJavaTimestamp(oi.getPrimitiveJavaObject(value)))
@@ -120,7 +113,7 @@ case class HivePartitionedReader(
           row.update(ordinal, oi.getPrimitiveJavaObject(value))
       case oi =>
         logDebug("HiveInspector class: " + oi.getClass.getName + ", charset: " + charset)
-        val unwrapper = hadoopTableReader.unwrapperFor(oi)
+        val unwrapper = HadoopTableReader.unwrapperFor(oi)
         (value: Any, row: InternalRow, ordinal: Int) => row(ordinal) = unwrapper(value)
     }
   }

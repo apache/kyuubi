@@ -1,0 +1,96 @@
+.. Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+..    http://www.apache.org/licenses/LICENSE-2.0
+
+.. Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+Building Documentation
+======================
+
+Follow the steps below and learn how to build the Kyuubi documentation as the
+one you are watching now.
+
+Setup Environment
+-----------------
+
+- Firstly, install ``virtualenv``, this is optional but recommended as it is useful
+  to create an independent environment to resolve dependency issues for building
+  the documentation.
+
+.. code-block:: sh
+   :caption: Install virtualenv
+
+   $ pip install virtualenv
+
+- Switch to the ``docs`` root directory.
+
+.. code-block:: sh
+   :caption: Switch to docs
+
+   $ cd $KYUUBI_SOURCE_PATH/docs
+
+- Create a virtual environment named 'kyuubi' or anything you like using ``virtualenv``
+  if it's not existing.
+
+.. code-block:: sh
+   :caption: New virtual environment
+
+   $ virtualenv kyuubi
+
+- Activate the virtual environment,
+
+.. code-block:: sh
+   :caption: Activate virtual environment
+
+   $ source ./kyuubi/bin/activate
+
+Install All Dependencies
+------------------------
+
+Install all dependencies enumerated in the ``requirements.txt``.
+
+.. code-block:: sh
+   :caption: Install dependencies
+
+   $ pip install -r requirements.txt
+
+
+Create Documentation
+--------------------
+
+Make sure you are in the ``$KYUUBI_SOURCE_PATH/docs`` directory.
+
+Linux & MacOS
+~~~~~~~~~~~~~
+
+.. code-block:: sh
+   :caption: Sphinx build on Unix-like OS
+
+   $ make html
+
+Windows
+~~~~~~~
+
+.. code-block:: sh
+   :caption: Sphinx build on Windows
+
+   $ make.bat html
+
+
+If the build process succeed, the HTML pages are in
+``$KYUUBI_SOURCE_PATH/docs/_build/html``.
+
+View Locally
+------------
+
+Open the `$KYUUBI_SOURCE_PATH/docs/_build/html/index.html` file in your
+favorite web browser.

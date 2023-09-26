@@ -29,12 +29,12 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{KYUUBI_VERSION, WithKyuubiServer}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
-import org.apache.kyuubi.engine.ApplicationState
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState}
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
-import org.apache.kyuubi.jdbc.hive.KyuubiConnection
+import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiSQLException}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.plugin.SessionConfAdvisor
-import org.apache.kyuubi.session.{KyuubiSessionManager, SessionType}
+import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
 
 /**
  * UT with Connection level engine shared cost much time, only run basic jdbc tests.
@@ -48,6 +48,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "connection")
       .set(SESSION_CONF_ADVISOR.key, classOf[TestSessionConfAdvisor].getName)
+      .set(KyuubiConf.ENGINE_SPARK_MAX_INITIAL_WAIT.key, "0")
   }
 
   test("KYUUBI #647 - async query causes engine crash") {
@@ -77,8 +78,9 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val executeStmtResp = client.ExecuteStatement(executeStmtReq)
       assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
       assert(executeStmtResp.getOperationHandle === null)
-      assert(executeStmtResp.getStatus.getErrorMessage contains
-        "Caused by: java.net.SocketException: Connection reset")
+      val errMsg = executeStmtResp.getStatus.getErrorMessage
+      assert(errMsg.contains("Caused by: java.net.SocketException: Connection reset") ||
+        errMsg.contains(s"Socket for ${SessionHandle(handle)} is closed"))
     }
   }
 
@@ -137,6 +139,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       assert(connection.getEngineId.startsWith("local-"))
       assert(connection.getEngineName.startsWith("kyuubi"))
       assert(connection.getEngineUrl.nonEmpty)
+      assert(connection.getEngineRefId.nonEmpty)
       val stmt = connection.createStatement()
       try {
         stmt.execute("select engine_name()")
@@ -231,9 +234,11 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         }
         val engineId = sessionManager.allSessions().head.handle.identifier.toString
         // kill the engine application and wait the engine terminate
-        sessionManager.applicationManager.killApplication(None, engineId)
+        sessionManager.applicationManager.killApplication(ApplicationManagerInfo(None), engineId)
         eventually(timeout(30.seconds), interval(100.milliseconds)) {
-          assert(sessionManager.applicationManager.getApplicationInfo(None, engineId)
+          assert(sessionManager.applicationManager.getApplicationInfo(
+            ApplicationManagerInfo(None),
+            engineId)
             .exists(_.state == ApplicationState.NOT_FOUND))
         }
         assert(!conn.isValid(3000))
@@ -278,6 +283,64 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val rs = stmt.executeQuery(s"set spark.${KyuubiReservedKeys.KYUUBI_CLIENT_VERSION_KEY}")
       assert(rs.next())
       assert(rs.getString(2) === KYUUBI_VERSION)
+    }
+  }
+
+  test("JDBC client should catch task failed exception in the incremental mode") {
+    withJdbcStatement() { statement =>
+      statement.executeQuery(s"set ${KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key}=true;")
+      val resultSet = statement.executeQuery(
+        "SELECT raise_error('client should catch this exception');")
+      val e = intercept[KyuubiSQLException](resultSet.next())
+      assert(e.getMessage.contains("client should catch this exception"))
+    }
+  }
+
+  test("support to interrupt the thrift request if remote engine is broken") {
+    withSessionConf(Map(
+      KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
+      KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "1000",
+      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "1000"))(Map.empty)(
+      Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val preReq = new TExecuteStatementReq()
+        preReq.setStatement("select engine_name()")
+        preReq.setSessionHandle(handle)
+        preReq.setRunAsync(false)
+        client.ExecuteStatement(preReq)
+
+        val sessionHandle = SessionHandle(handle)
+        val session = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+          .getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
+
+        val exitReq = new TExecuteStatementReq()
+        exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 1000L)," +
+          "java_method('java.lang.System', 'exit', 1)")
+        exitReq.setSessionHandle(handle)
+        exitReq.setRunAsync(true)
+        client.ExecuteStatement(exitReq)
+
+        session.sessionManager.getConf
+          .set(KyuubiConf.OPERATION_STATUS_UPDATE_INTERVAL, 3000L)
+
+        val executeStmtReq = new TExecuteStatementReq()
+        executeStmtReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 30000l)")
+        executeStmtReq.setSessionHandle(handle)
+        executeStmtReq.setRunAsync(false)
+        val startTime = System.currentTimeMillis()
+        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+        assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+        val errorMsg = executeStmtResp.getStatus.getErrorMessage
+        assert(errorMsg.contains("java.net.SocketException") ||
+          errorMsg.contains("org.apache.thrift.transport.TTransportException") ||
+          errorMsg.contains("connection does not exist") ||
+          errorMsg.contains(s"Socket for ${SessionHandle(handle)} is closed"))
+        val elapsedTime = System.currentTimeMillis() - startTime
+        assert(elapsedTime < 20 * 1000)
+        eventually(timeout(3.seconds)) {
+          assert(session.client.asyncRequestInterrupted)
+        }
+      }
     }
   }
 }

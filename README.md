@@ -20,20 +20,20 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/apache/kyuubi/blob/master/LICENSE">
+    <img src="https://img.shields.io/github/license/apache/kyuubi?style=plastic" />
+  </a>
   <a href="https://kyuubi.apache.org/releases.html">
-    <img src="https://img.shields.io/github/v/release/apache/kyuubi" />
+    <img src="https://img.shields.io/github/v/release/apache/kyuubi?style=plastic" />
   </a>
-  <a href="https://github.com/apache/kyuubi/pulls">
-    <img src="https://img.shields.io/github/issues-pr-closed/apache/kyuubi" />
-  </a>
-  <a href="https://github.com/apache/kyuubi/pulse">
-    <img src="https://img.shields.io/tokei/lines/github/apache/kyuubi" />
+  <a href="https://hub.docker.com/r/apache/kyuubi">
+    <img src="https://img.shields.io/docker/pulls/apache/kyuubi?style=plastic">
   </a>
   <a href="https://github.com/apache/kyuubi/graphs/contributors">
-    <img src="https://img.shields.io/github/contributors/apache/kyuubi" />
+    <img src="https://img.shields.io/github/contributors/apache/kyuubi?style=plastic" />
   </a>
   <a class="github-button" href="https://github.com/apache/kyuubi" data-icon="octicon-star" aria-label="Star apache/kyuubi on GitHub">
-    <img src="https://img.shields.io/github/stars/apache/kyuubi?style=social" />
+    <img src="https://img.shields.io/github/stars/apache/kyuubi?style=plastic" />
   </a>
 </p>
 <p align="center">
@@ -48,8 +48,6 @@
 
 Apache Kyuubi™ is a distributed and multi-tenant gateway to provide serverless
 SQL on data warehouses and lakehouses.
-
-<https://kyuubi.apache.org/>
 
 ## What is Kyuubi?
 
@@ -84,7 +82,7 @@ HiveServer2 can identify and authenticate a caller, and then if the caller also 
 
 Kyuubi extends the use of STS in a multi-tenant model based on a unified interface and relies on the concept of multi-tenancy to interact with cluster managers to finally gain the ability of resources sharing/isolation and data security. The loosely coupled architecture of the Kyuubi server and engine dramatically improves the client concurrency and service stability of the service itself.
 
-#### DataLake/LakeHouse Support
+#### DataLake/Lakehouse Support
 
 The vision of Kyuubi is to unify the portal and become an easy-to-use data lake management platform. Different kinds of workloads, such as ETL processing and BI analytics, can be supported by one platform, using one copy of data, with one SQL interface.
 
@@ -105,11 +103,7 @@ and others would not be possible without your help.
 
 ![](./docs/imgs/kyuubi_ecosystem.drawio.png)
 
-## Online Documentation
-
-Since Kyuubi 1.3.0-incubating, the Kyuubi online documentation is hosted by [https://kyuubi.apache.org/](https://kyuubi.apache.org/).
-You can find the latest Kyuubi documentation on [this web page](https://kyuubi.readthedocs.io/en/master/).
-For 1.2 and earlier versions, please check the [Readthedocs](https://kyuubi.readthedocs.io/en/v1.2.0/) directly.
+## Online Documentation <a href='https://kyuubi.readthedocs.io/en/master/?badge=master?style=plastic'> <img src='https://readthedocs.org/projects/kyuubi/badge/?version=master' alt='Documentation Status' /> </a>
 
 ## Quick Start
 
@@ -117,9 +111,32 @@ Ready? [Getting Started](https://kyuubi.readthedocs.io/en/master/quick_start/) w
 
 ## [Contributing](./CONTRIBUTING.md)
 
-## Contributor over time
+## Project & Community Status
 
-[![Contributor over time](https://contributor-graph-api.apiseven.com/contributors-svg?chart=contributorOverTime&repo=apache/kyuubi)](https://api7.ai/contributor-graph?chart=contributorOverTime&repo=apache/kyuubi)
+<p align="center">
+  <a href="https://github.com/apache/kyuubi/issues?q=is%3Aissue+is%3Aclosed">
+    <img src="http://isitmaintained.com/badge/resolution/apache/kyuubi.svg" />
+  </a>
+  <a href="https://github.com/apache/kyuubi/issues">
+    <img src="http://isitmaintained.com/badge/open/apache/kyuubi.svg" />
+  </a>
+  <a href="https://github.com/apache/kyuubi/pulls">
+    <img src="https://img.shields.io/github/issues-pr-closed/apache/kyuubi?style=plastic" />
+  </a>
+  <img src="https://img.shields.io/github/commit-activity/y/apache/kyuubi?style=plastic">
+  <img src="https://img.shields.io/github/commit-activity/m/apache/kyuubi?style=plastic">
+  <img src="https://codecov.io/gh/apache/kyuubi/branch/master/graph/badge.svg" />
+  <a href="https://github.com/apache/kyuubi/actions/workflows/master.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/apache/kyuubi/master.yml?style=plastic">
+  </a>
+  <img src="https://img.shields.io/github/languages/top/apache/kyuubi?style=plastic">
+  <a href="https://github.com/apache/kyuubi/pulse">
+    <img src="https://img.shields.io/tokei/lines/github/apache/kyuubi?style=plastic" />
+  </a>
+</p>
+<p align="center">
+  <img src="https://contributor-graph-api.apiseven.com/contributors-svg?chart=contributorOverTime&repo=apache/kyuubi" />
+</p>
 
 ## Aside
 
@@ -127,7 +144,3 @@ The project took its name from a character of a popular Japanese manga - `Naruto
 The character is named `Kyuubi Kitsune/Kurama`, which is a nine-tailed fox in mythology.
 `Kyuubi` spread the power and spirit of fire, which is used here to represent the powerful [Apache Spark](http://spark.apache.org).
 Its nine tails stand for end-to-end multi-tenancy support of this project.
-
-## License
-
-This project is licensed under the Apache 2.0 License. See the [LICENSE](./LICENSE) file for details.

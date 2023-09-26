@@ -24,6 +24,10 @@
         <Property name="restAuditLogPath">rest-audit.log</Property>
         <Property name="restAuditLogFilePattern">rest-audit-%d{yyyy-MM-dd}-%i.log</Property>
     </Properties>
+    <Properties>
+        <Property name="k8sAuditLogPath">k8s-audit.log</Property>
+        <Property name="k8sAuditLogFilePattern">k8s-audit-%d{yyyy-MM-dd}-%i.log</Property>
+    </Properties>
     <Appenders>
         <Console name="stdout" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c: %m%n"/>
@@ -33,6 +37,14 @@
         </Console>
         <RollingFile name="restAudit" fileName="${sys:restAuditLogPath}"
                      filePattern="${sys:restAuditLogFilePattern}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="51200KB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+        <RollingFile name="k8sAudit" fileName="${sys:k8sAuditLogPath}"
+                     filePattern="${sys:k8sAuditLogFilePattern}">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="51200KB" />
@@ -57,6 +69,9 @@
         </Logger>
         <Logger name="org.apache.kyuubi.server.http.authentication.AuthenticationAuditLogger" additivity="false">
             <AppenderRef ref="restAudit" />
+        </Logger>
+        <Logger name="org.apache.kyuubi.engine.KubernetesApplicationAuditLogger" additivity="false">
+            <AppenderRef ref="k8sAudit" />
         </Logger>
     </Loggers>
 </Configuration>

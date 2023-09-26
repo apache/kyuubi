@@ -133,7 +133,9 @@ case class FinalStageConfigIsolation(session: SparkSession) extends Rule[SparkPl
           reusedExchangeExec
 
         // query stage is leaf node so we need to transform it manually
-        case queryStage: QueryStageExec =>
+        // compatible with Spark 3.5:
+        // SPARK-42101: table cache is a independent query stage, so do not need include it.
+        case queryStage: QueryStageExec if queryStage.nodeName != "TableCacheQueryStage" =>
           queryStageNum += 1
           collectNumber(queryStage.plan)
           queryStage

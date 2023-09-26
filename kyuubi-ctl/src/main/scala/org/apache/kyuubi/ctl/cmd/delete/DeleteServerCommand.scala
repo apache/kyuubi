@@ -16,6 +16,34 @@
  */
 package org.apache.kyuubi.ctl.cmd.delete
 
-import org.apache.kyuubi.ctl.opt.CliConfig
+import scala.collection.mutable.ListBuffer
 
-class DeleteServerCommand(cliConfig: CliConfig) extends DeleteCommand(cliConfig) {}
+import org.apache.kyuubi.ctl.opt.CliConfig
+import org.apache.kyuubi.ctl.util.CtlUtils
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
+import org.apache.kyuubi.ha.client.ServiceNodeInfo
+
+class DeleteServerCommand(cliConfig: CliConfig) extends DeleteCommand(cliConfig) {
+  override def doRun(): Iterable[ServiceNodeInfo] = {
+    withDiscoveryClient(conf) { discoveryClient =>
+      val znodeRoot = CtlUtils.getZkServerNamespace(conf, normalizedCliConfig)
+      val hostPortOpt =
+        Some((normalizedCliConfig.zkOpts.host, normalizedCliConfig.zkOpts.port.toInt))
+      val nodesToDelete = CtlUtils.getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
+
+      val deletedNodes = ListBuffer[ServiceNodeInfo]()
+      nodesToDelete.foreach { node =>
+        val nodePath = s"$znodeRoot/${node.nodeName}"
+        info(s"Deleting zookeeper service node:$nodePath")
+        try {
+          discoveryClient.delete(nodePath)
+          deletedNodes += node
+        } catch {
+          case e: Exception =>
+            error(s"Failed to delete zookeeper service node:$nodePath", e)
+        }
+      }
+      deletedNodes
+    }
+  }
+}

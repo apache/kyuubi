@@ -24,22 +24,12 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class SessionOpenRequest {
-  private int protocolVersion;
   private Map<String, String> configs;
 
   public SessionOpenRequest() {}
 
-  public SessionOpenRequest(int protocolVersion, Map<String, String> configs) {
-    this.protocolVersion = protocolVersion;
+  public SessionOpenRequest(Map<String, String> configs) {
     this.configs = configs;
-  }
-
-  public int getProtocolVersion() {
-    return protocolVersion;
-  }
-
-  public void setProtocolVersion(int protocolVersion) {
-    this.protocolVersion = protocolVersion;
   }
 
   public Map<String, String> getConfigs() {
@@ -58,13 +48,12 @@ public class SessionOpenRequest {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SessionOpenRequest that = (SessionOpenRequest) o;
-    return getProtocolVersion() == that.getProtocolVersion()
-        && Objects.equals(getConfigs(), that.getConfigs());
+    return Objects.equals(getConfigs(), that.getConfigs());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getProtocolVersion(), getConfigs());
+    return Objects.hash(getConfigs());
   }
 
   @Override

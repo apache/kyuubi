@@ -29,26 +29,44 @@ trait MetadataStore extends Closeable {
   def insertMetadata(metadata: Metadata): Unit
 
   /**
+   * Find unscheduled batch job metadata and pick up it to submit.
+   * @param kyuubiInstance the Kyuubi instance picked batch job
+   * @return selected metadata for submitting or None if no sufficient items
+   */
+  def pickMetadata(kyuubiInstance: String): Option[Metadata]
+
+  /**
+   * Transfer state of metadata from the existing state to another
+   * @param identifier the identifier.
+   * @param fromState the desired current state
+   * @param targetState the desired target state
+   * @return `true` if the metadata state was same as `fromState`, and successfully
+   *         transitioned to `targetState`, otherwise `false` is returned
+   */
+  def transformMetadataState(identifier: String, fromState: String, targetState: String): Boolean
+
+  /**
    * Get the persisted metadata by batch identifier.
    * @param identifier the identifier.
-   * @param stateOnly only return the state related column values.
    * @return selected metadata.
    */
-  def getMetadata(identifier: String, stateOnly: Boolean): Metadata
+  def getMetadata(identifier: String): Metadata
 
   /**
    * Get the metadata list with filter conditions, offset and size.
    * @param filter the metadata filter conditions.
    * @param from the metadata offset.
    * @param size the size to get.
-   * @param stateOnly only return the state related column values.
    * @return selected metadata list.
    */
-  def getMetadataList(
-      filter: MetadataFilter,
-      from: Int,
-      size: Int,
-      stateOnly: Boolean): Seq[Metadata]
+  def getMetadataList(filter: MetadataFilter, from: Int, size: Int): Seq[Metadata]
+
+  /**
+   * Count the metadata list with filter conditions.
+   * @param filter the metadata filter conditions.
+   * @return the count of metadata satisfied the filter condition.
+   */
+  def countMetadata(filter: MetadataFilter): Int
 
   /**
    * Update the metadata according to identifier.

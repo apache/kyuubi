@@ -201,7 +201,7 @@ object KerberosUtil {
     val names = ticket.get(0xA2, 0x30, 0xA1, 0x30)
     val sb = new StringBuilder
     while (names.hasNext) {
-      if (sb.length > 0) {
+      if (sb.nonEmpty) {
         sb.append('/')
       }
       sb.append(names.next.getAsString)

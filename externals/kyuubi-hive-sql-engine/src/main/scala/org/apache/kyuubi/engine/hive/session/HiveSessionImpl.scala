@@ -27,6 +27,7 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtoco
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.hive.events.HiveSessionEvent
+import org.apache.kyuubi.engine.hive.udf.KDFRegistry
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
@@ -48,6 +49,7 @@ class HiveSessionImpl(
     val confClone = new HashMap[String, String]()
     confClone.putAll(conf.asJava) // pass conf.asScala not support `put` method
     hive.open(confClone)
+    KDFRegistry.registerAll()
     EventBus.post(sessionEvent)
   }
 

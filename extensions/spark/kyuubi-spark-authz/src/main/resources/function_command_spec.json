@@ -1,6 +1,16 @@
 [ {
   "classname" : "org.apache.spark.sql.execution.command.CreateFunctionCommand",
   "functionDescs" : [ {
+    "fieldName" : "identifier",
+    "fieldExtractor" : "FunctionIdentifierFunctionExtractor",
+    "databaseDesc" : null,
+    "functionTypeDesc" : {
+      "fieldName" : "isTemp",
+      "fieldExtractor" : "TempMarkerFunctionTypeExtractor",
+      "skipTypes" : [ "TEMP" ]
+    },
+    "isInput" : false
+  }, {
     "fieldName" : "functionName",
     "fieldExtractor" : "StringFunctionExtractor",
     "databaseDesc" : {
@@ -44,6 +54,16 @@
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DropFunctionCommand",
   "functionDescs" : [ {
+    "fieldName" : "identifier",
+    "fieldExtractor" : "FunctionIdentifierFunctionExtractor",
+    "databaseDesc" : null,
+    "functionTypeDesc" : {
+      "fieldName" : "isTemp",
+      "fieldExtractor" : "TempMarkerFunctionTypeExtractor",
+      "skipTypes" : [ "TEMP" ]
+    },
+    "isInput" : false
+  }, {
     "fieldName" : "functionName",
     "fieldExtractor" : "StringFunctionExtractor",
     "databaseDesc" : {

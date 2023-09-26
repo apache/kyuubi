@@ -215,7 +215,7 @@ else
   echo "Making distribution for Kyuubi $VERSION in '$DISTDIR'..."
 fi
 
-MVN_DIST_OPT="-DskipTests"
+MVN_DIST_OPT="-DskipTests -Dmaven.javadoc.skip=true -Dmaven.scaladoc.skip=true -Dmaven.source.skip"
 
 if [[ "$ENABLE_WEBUI" == "true" ]]; then
   MVN_DIST_OPT="$MVN_DIST_OPT -Pweb-ui"
@@ -256,6 +256,7 @@ mkdir -p "$DISTDIR/externals/engines/spark"
 mkdir -p "$DISTDIR/externals/engines/trino"
 mkdir -p "$DISTDIR/externals/engines/hive"
 mkdir -p "$DISTDIR/externals/engines/jdbc"
+mkdir -p "$DISTDIR/externals/engines/chat"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Scala $SCALA_VERSION" >> "$DISTDIR/RELEASE"
@@ -313,6 +314,18 @@ for jar in $(ls "$DISTDIR/jars/"); do
   fi
 done
 
+# Copy chat engines
+cp "$KYUUBI_HOME/externals/kyuubi-chat-engine/target/kyuubi-chat-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/chat/"
+cp -r "$KYUUBI_HOME"/externals/kyuubi-chat-engine/target/scala-$SCALA_VERSION/jars/*.jar "$DISTDIR/externals/engines/chat/"
+
+# Share the jars w/ server to reduce binary size
+# shellcheck disable=SC2045
+for jar in $(ls "$DISTDIR/jars/"); do
+  if [[ -f "$DISTDIR/externals/engines/chat/$jar" ]]; then
+    (cd $DISTDIR/externals/engines/chat; ln -snf "../../../jars/$jar" "$DISTDIR/externals/engines/chat/$jar")
+  fi
+done
+
 # Copy kyuubi tools
 if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SCALA_VERSION}-${VERSION}.jar" ]]; then
   mkdir -p "$DISTDIR/tools/spark-block-cleaner/kubernetes"
@@ -322,7 +335,7 @@ if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SC
 fi
 
 # Copy Kyuubi Spark extension
-SPARK_EXTENSION_VERSIONS=('3-1' '3-2' '3-3')
+SPARK_EXTENSION_VERSIONS=('3-1' '3-2' '3-3' '3-4')
 # shellcheck disable=SC2068
 for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
   if [[ -f $"$KYUUBI_HOME/extensions/spark/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" ]]; then
@@ -371,7 +384,11 @@ if [[ "$MAKE_TGZ" == "true" ]]; then
   TARDIR="$KYUUBI_HOME/$TARDIR_NAME"
   rm -rf "$TARDIR"
   cp -R "$DISTDIR" "$TARDIR"
-  tar czf "$TARDIR_NAME.tgz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
+  TAR="tar"
+  if [ "$(uname -s)" = "Darwin" ]; then
+    TAR="tar --no-mac-metadata --no-xattrs --no-fflags"
+  fi
+  $TAR -czf "$TARDIR_NAME.tgz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
   rm -rf "$TARDIR"
   echo "The Kyuubi tarball $TARDIR_NAME.tgz is successfully generated in $KYUUBI_HOME."
 fi

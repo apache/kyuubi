@@ -30,10 +30,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.KeyStore;
-import java.security.SecureRandom;
+import java.security.*;
 import java.sql.*;
 import java.util.*;
 import java.util.Map.Entry;
@@ -43,6 +40,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.Subject;
 import javax.security.sasl.Sasl;
+import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.http.HttpRequestInterceptor;
@@ -106,9 +104,11 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private Thread engineLogThread;
   private boolean engineLogInflight = true;
   private volatile boolean launchEngineOpCompleted = false;
+  private boolean launchEngineOpSupportResult = false;
   private String engineId = "";
   private String engineName = "";
   private String engineUrl = "";
+  private String engineRefId = "";
 
   private boolean isBeeLineMode;
 
@@ -771,6 +771,10 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       String launchEngineOpHandleSecret =
           openRespConf.get("kyuubi.session.engine.launch.handle.secret");
 
+      launchEngineOpSupportResult =
+          Boolean.parseBoolean(
+              openRespConf.getOrDefault("kyuubi.session.engine.launch.support.result", "false"));
+
       if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null) {
         try {
           byte[] guidBytes = Base64.getMimeDecoder().decode(launchEngineOpHandleGuid);
@@ -813,11 +817,16 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return !AUTH_SIMPLE.equalsIgnoreCase(sessConfMap.get(AUTH_TYPE));
   }
 
-  private boolean isFromSubjectAuthMode() {
-    return isSaslAuthMode()
-        && hasSessionValue(AUTH_PRINCIPAL)
-        && AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
-            sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE));
+  private boolean isHadoopUserGroupInformationDoAs() {
+    try {
+      @SuppressWarnings("unchecked")
+      Class<? extends Principal> HadoopUserClz =
+          (Class<? extends Principal>) ClassUtils.getClass("org.apache.hadoop.security.User");
+      Subject subject = Subject.getSubject(AccessController.getContext());
+      return subject != null && !subject.getPrincipals(HadoopUserClz).isEmpty();
+    } catch (ClassNotFoundException e) {
+      return false;
+    }
   }
 
   private boolean isKeytabAuthMode() {
@@ -825,6 +834,16 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         && hasSessionValue(AUTH_PRINCIPAL)
         && hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
         && hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB);
+  }
+
+  private boolean isFromSubjectAuthMode() {
+    return isSaslAuthMode()
+        && hasSessionValue(AUTH_PRINCIPAL)
+        && !hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
+        && !hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB)
+        && (AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
+                sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE))
+            || isHadoopUserGroupInformationDoAs());
   }
 
   private boolean isTgtCacheAuthMode() {
@@ -843,15 +862,15 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private Subject createSubject() {
-    if (isFromSubjectAuthMode()) {
+    if (isKeytabAuthMode()) {
+      String principal = sessConfMap.get(AUTH_KYUUBI_CLIENT_PRINCIPAL);
+      String keytab = sessConfMap.get(AUTH_KYUUBI_CLIENT_KEYTAB);
+      return KerberosAuthenticationManager.getKeytabAuthentication(principal, keytab).getSubject();
+    } else if (isFromSubjectAuthMode()) {
       AccessControlContext context = AccessController.getContext();
       return Subject.getSubject(context);
     } else if (isTgtCacheAuthMode()) {
       return KerberosAuthenticationManager.getTgtCacheAuthentication().getSubject();
-    } else if (isKeytabAuthMode()) {
-      String principal = sessConfMap.get(AUTH_KYUUBI_CLIENT_PRINCIPAL);
-      String keytab = sessConfMap.get(AUTH_KYUUBI_CLIENT_KEYTAB);
-      return KerberosAuthenticationManager.getKeytabAuthentication(principal, keytab).getSubject();
     } else {
       // This should never happen
       throw new IllegalArgumentException("Unsupported auth mode");
@@ -1339,7 +1358,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private void fetchLaunchEngineResult() {
-    if (launchEngineOpHandle == null) return;
+    if (launchEngineOpHandle == null || !launchEngineOpSupportResult) return;
 
     TFetchResultsReq tFetchResultsReq =
         new TFetchResultsReq(
@@ -1357,6 +1376,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           engineName = value;
         } else if ("url".equals(key)) {
           engineUrl = value;
+        } else if ("refId".equals(key)) {
+          engineRefId = value;
         }
       }
     } catch (Exception e) {
@@ -1374,5 +1395,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   public String getEngineUrl() {
     return engineUrl;
+  }
+
+  public String getEngineRefId() {
+    return engineRefId;
   }
 }

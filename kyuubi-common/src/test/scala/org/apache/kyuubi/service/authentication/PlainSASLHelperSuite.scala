@@ -23,9 +23,9 @@ import org.apache.thrift.transport.{TSaslServerTransport, TSocket}
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.service.{NoopTBinaryFrontendServer, TBinaryFrontendService}
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
+import org.apache.kyuubi.util.SemanticVersion
 
 class PlainSASLHelperSuite extends KyuubiFunSuite {
 
@@ -62,10 +62,6 @@ class PlainSASLHelperSuite extends KyuubiFunSuite {
     val saslPlainProvider = new SaslPlainProvider()
     assert(saslPlainProvider.containsKey("SaslServerFactory.PLAIN"))
     assert(saslPlainProvider.getName === "KyuubiSaslPlain")
-    val version: Double = {
-      val ver = SemanticVersion(KYUUBI_VERSION)
-      ver.majorVersion + ver.minorVersion.toDouble / 10
-    }
-    assert(saslPlainProvider.getVersion === version)
+    assertResult(saslPlainProvider.getVersion)(SemanticVersion(KYUUBI_VERSION).toDouble)
   }
 }

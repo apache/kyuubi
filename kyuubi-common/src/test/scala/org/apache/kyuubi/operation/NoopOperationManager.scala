@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import java.nio.ByteBuffer
 import java.util
 
-import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
+import org.apache.hive.service.rpc.thrift.{TColumn, TFetchResultsResp, TRow, TRowSet, TStatus, TStatusCode, TStringColumn}
 
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
@@ -136,13 +136,16 @@ class NoopOperationManager extends OperationManager("noop") {
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,
-      maxRows: Int): TRowSet = {
+      maxRows: Int): TFetchResultsResp = {
     val logs = new util.ArrayList[String]()
     logs.add("test")
     val tColumn = TColumn.stringVal(new TStringColumn(logs, ByteBuffer.allocate(0)))
     val tRow = new TRowSet(0, new util.ArrayList[TRow](logs.size()))
     tRow.addToColumns(tColumn)
-    tRow
+    val resp = new TFetchResultsResp(new TStatus(TStatusCode.SUCCESS_STATUS))
+    resp.setResults(tRow)
+    resp.setHasMoreRows(false)
+    resp
   }
 
   override def getQueryId(operation: Operation): String = {

@@ -26,18 +26,18 @@ import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ctl.util.Render
 
-class ListSessionCommand(cliConfig: CliConfig) extends Command[Seq[SessionData]](cliConfig) {
+class ListSessionCommand(cliConfig: CliConfig) extends Command[Iterable[SessionData]](cliConfig) {
 
   override def validate(): Unit = {}
 
-  def doRun(): Seq[SessionData] = {
+  override def doRun(): Iterable[SessionData] = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val sessionRestApi = new SessionRestApi(kyuubiRestClient)
       sessionRestApi.listSessions.asScala
     }
   }
 
-  def render(resp: Seq[SessionData]): Unit = {
+  override def render(resp: Iterable[SessionData]): Unit = {
     info(Render.renderSessionDataListInfo(resp))
   }
 }

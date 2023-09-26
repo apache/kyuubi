@@ -44,29 +44,29 @@ class EventBusSuite extends KyuubiFunSuite {
   }
 
   test("register event handler") {
-    var test0EventRecievedCount = 0
-    var test1EventRecievedCount = 0
-    var test2EventRecievedCount = 0
-    var testEventRecievedCount = 0
+    var test0EventReceivedCount = 0
+    var test1EventReceivedCount = 0
+    var test2EventReceivedCount = 0
+    var testEventReceivedCount = 0
     val liveBus = EventBus()
 
     liveBus.register[Test0KyuubiEvent] { e =>
       assert(e.content == "test0")
       assert(e.eventType == "test0_kyuubi")
-      test0EventRecievedCount += 1
+      test0EventReceivedCount += 1
     }
     liveBus.register[Test1KyuubiEvent] { e =>
       assert(e.content == "test1")
       assert(e.eventType == "test1_kyuubi")
-      test1EventRecievedCount += 1
+      test1EventReceivedCount += 1
     }
     // scribe subclass event
     liveBus.register[TestKyuubiEvent] { e =>
       assert(e.eventType == "test2_kyuubi")
-      test2EventRecievedCount += 1
+      test2EventReceivedCount += 1
     }
-    liveBus.register[KyuubiEvent] { e =>
-      testEventRecievedCount += 1
+    liveBus.register[KyuubiEvent] { _ =>
+      testEventReceivedCount += 1
     }
 
     class Test0Handler extends EventHandler[Test0KyuubiEvent] {
@@ -77,11 +77,9 @@ class EventBusSuite extends KyuubiFunSuite {
 
     liveBus.register[Test0KyuubiEvent](new Test0Handler)
 
-    liveBus.register[Test1KyuubiEvent](new EventHandler[Test1KyuubiEvent] {
-      override def apply(e: Test1KyuubiEvent): Unit = {
-        assert(e.content == "test1")
-      }
-    })
+    liveBus.register[Test1KyuubiEvent] { e =>
+      assert(e.content == "test1")
+    }
 
     (1 to 10) foreach { _ =>
       liveBus.post(Test0KyuubiEvent("test0"))
@@ -92,10 +90,10 @@ class EventBusSuite extends KyuubiFunSuite {
     (1 to 30) foreach { _ =>
       liveBus.post(Test2KyuubiEvent("name2", "test2"))
     }
-    assert(test0EventRecievedCount == 10)
-    assert(test1EventRecievedCount == 20)
-    assert(test2EventRecievedCount == 30)
-    assert(testEventRecievedCount == 60)
+    assert(test0EventReceivedCount == 10)
+    assert(test1EventReceivedCount == 20)
+    assert(test2EventReceivedCount == 30)
+    assert(testEventReceivedCount == 60)
   }
 
   test("register event handler for default bus") {
@@ -120,7 +118,7 @@ class EventBusSuite extends KyuubiFunSuite {
 
   test("async event handler") {
     val countDownLatch = new CountDownLatch(4)
-    val count = new AtomicInteger(0);
+    val count = new AtomicInteger(0)
     class Test0Handler extends EventHandler[Test0KyuubiEvent] {
       override def apply(e: Test0KyuubiEvent): Unit = {
         Thread.sleep(10)

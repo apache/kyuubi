@@ -27,7 +27,9 @@ import org.apache.kyuubi.service.ServiceState._
 
 class SessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = {
-    Map(ENGINE_SHARE_LEVEL.key -> "CONNECTION")
+    Map(
+      ENGINE_SHARE_LEVEL.key -> "CONNECTION",
+      ENGINE_SPARK_MAX_INITIAL_WAIT.key -> "0")
   }
 
   override protected def beforeEach(): Unit = {

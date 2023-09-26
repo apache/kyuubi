@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.serde
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 trait DatabaseExtractor extends (AnyRef => Database) with Extractor
 
@@ -68,9 +69,9 @@ class StringSeqOptionDatabaseExtractor extends DatabaseExtractor {
  */
 class ResolvedNamespaceDatabaseExtractor extends DatabaseExtractor {
   override def apply(v1: AnyRef): Database = {
-    val catalogVal = invoke(v1, "catalog")
-    val catalog = new CatalogPluginCatalogExtractor().apply(catalogVal)
-    val namespace = getFieldVal[Seq[String]](v1, "namespace")
+    val catalogVal = invokeAs[AnyRef](v1, "catalog")
+    val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
+    val namespace = getField[Seq[String]](v1, "namespace")
     Database(catalog, quote(namespace))
   }
 }
@@ -80,9 +81,9 @@ class ResolvedNamespaceDatabaseExtractor extends DatabaseExtractor {
  */
 class ResolvedDBObjectNameDatabaseExtractor extends DatabaseExtractor {
   override def apply(v1: AnyRef): Database = {
-    val catalogVal = invoke(v1, "catalog")
-    val catalog = new CatalogPluginCatalogExtractor().apply(catalogVal)
-    val namespace = getFieldVal[Seq[String]](v1, "nameParts")
+    val catalogVal = invokeAs[AnyRef](v1, "catalog")
+    val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
+    val namespace = getField[Seq[String]](v1, "nameParts")
     Database(catalog, quote(namespace))
   }
 }

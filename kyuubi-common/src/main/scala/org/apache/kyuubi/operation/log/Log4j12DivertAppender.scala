@@ -30,7 +30,7 @@ class Log4j12DivertAppender extends WriterAppender {
 
   final private val lo = Logger.getRootLogger
     .getAllAppenders.asScala
-    .find(_.isInstanceOf[ConsoleAppender])
+    .find(ap => ap.isInstanceOf[ConsoleAppender] || ap.isInstanceOf[RollingFileAppender])
     .map(_.asInstanceOf[Appender].getLayout)
     .getOrElse(new PatternLayout("%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n"))
 

@@ -30,6 +30,8 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
 
   private RestClientConf conf;
 
+  private List<String> hostUrls;
+
   private List<String> baseUrls;
 
   private ApiVersion version;
@@ -77,14 +79,20 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
     if (hostUrls.isEmpty()) {
       throw new IllegalArgumentException("hostUrls cannot be blank.");
     }
+    this.hostUrls = hostUrls;
     List<String> baseUrls = initBaseUrls(hostUrls, version);
     this.httpClient = RetryableRestClient.getRestClient(baseUrls, this.conf);
+  }
+
+  public List<String> getHostUrls() {
+    return hostUrls;
   }
 
   private KyuubiRestClient() {}
 
   private KyuubiRestClient(Builder builder) {
     this.version = builder.version;
+    this.hostUrls = builder.hostUrls;
     this.baseUrls = initBaseUrls(builder.hostUrls, builder.version);
 
     RestClientConf conf = new RestClientConf();

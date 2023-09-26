@@ -27,6 +27,7 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.authentication.ldap.{DirSearch, DirSearchFactory, LdapSearchFactory}
+import org.apache.kyuubi.service.authentication.ldap.LdapUtils.getUserName
 
 class LdapAuthenticationProviderImplSuite extends WithLdapServer {
 
@@ -46,7 +47,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
   }
 
   test("authenticateGivenBlankOrNullPassword") {
-    Seq("", "\0", null).foreach { pwd =>
+    Seq("", "\u0000", null).foreach { pwd =>
       auth = new LdapAuthenticationProviderImpl(conf, new LdapSearchFactory)
       val thrown = intercept[AuthenticationException] {
         auth.authenticate("user", pwd)
@@ -309,6 +310,32 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
       mockEq(authFullUser),
       mockEq(authPass))
     verify(search, times(1)).findUserDn(mockEq(authUser))
+  }
+
+  test("AuthenticateWithBindDomainUserPasses") {
+    val bindUser = "cn=BindUser,ou=Users,ou=branch1,dc=mycorp,dc=com"
+    val bindPass = "Blah"
+    val authFullUser = "cn=user1,ou=Users,ou=branch1,dc=mycorp,dc=com"
+    val authUser = "user1@mydomain.com"
+    val authPass = "Blah2"
+    conf.set(AUTHENTICATION_LDAP_BIND_USER, bindUser)
+    conf.set(AUTHENTICATION_LDAP_BIND_PASSWORD, bindPass)
+
+    val username = getUserName(authUser)
+    when(search.findUserDn(mockEq(username))).thenReturn(authFullUser)
+
+    auth = new LdapAuthenticationProviderImpl(conf, factory)
+    auth.authenticate(authUser, authPass)
+
+    verify(factory, times(1)).getInstance(
+      isA(classOf[KyuubiConf]),
+      mockEq(bindUser),
+      mockEq(bindPass))
+    verify(factory, times(1)).getInstance(
+      isA(classOf[KyuubiConf]),
+      mockEq(authFullUser),
+      mockEq(authPass))
+    verify(search, times(1)).findUserDn(mockEq(username))
   }
 
   test("AuthenticateWithBindUserFailsOnAuthentication") {

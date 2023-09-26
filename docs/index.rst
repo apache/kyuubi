@@ -179,6 +179,7 @@ What's Next
    :glob:
 
    quick_start/index
+   configuration/settings
    deployment/index
    Security <security/index>
    monitor/index
@@ -216,7 +217,13 @@ What's Next
    :caption: Contributing
    :maxdepth: 2
 
-   develop_tools/index
+   contributing/code/index
+   contributing/doc/index
+
+.. toctree::
+   :caption: Community
+   :maxdepth: 2
+
    community/index
 
 .. toctree::

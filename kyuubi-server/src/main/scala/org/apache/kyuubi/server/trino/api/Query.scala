@@ -30,12 +30,13 @@ import scala.collection.mutable
 import Slug.Context.{EXECUTING_QUERY, QUEUED_QUERY}
 import com.google.common.hash.Hashing
 import io.trino.client.QueryResults
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.rpc.thrift.{TBoolValue, TColumnDesc, TColumnValue, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TProtocolVersion, TRow, TRowSet, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
 
-import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
+import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle, OperationState, OperationStatus}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, INITIALIZED, OperationState, PENDING}
 import org.apache.kyuubi.server.trino.api.Query.KYUUBI_SESSION_ID
 import org.apache.kyuubi.service.BackendService
+import org.apache.kyuubi.service.TFrontendService.OK_STATUS
 import org.apache.kyuubi.session.SessionHandle
 
 case class Query(
@@ -68,7 +69,7 @@ case class Query(
           queryId.operationHandle,
           defaultFetchOrientation,
           defaultMaxRows,
-          false)
+          false).getResults
         TrinoContext.createQueryResults(
           queryId.getQueryId,
           nextUri,
@@ -83,6 +84,45 @@ case class Query(
           queryHtmlUri,
           status)
     }
+  }
+
+  def getPrepareQueryResults(
+      token: Long,
+      uriInfo: UriInfo,
+      maxWait: Long = 0): QueryResults = {
+    val status = OperationStatus(OperationState.FINISHED, 0, 0, 0, 0, false)
+    val nextUri = null
+    val queryHtmlUri = uriInfo.getRequestUriBuilder
+      .replacePath("ui/query.html").replaceQuery(queryId.getQueryId).build()
+
+    val columns = new TGetResultSetMetadataResp()
+    columns.setStatus(OK_STATUS)
+    val tColumnDesc = new TColumnDesc()
+    tColumnDesc.setColumnName("result")
+    val desc = new TTypeDesc
+    desc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(TTypeId.BOOLEAN_TYPE)))
+    tColumnDesc.setTypeDesc(desc)
+    tColumnDesc.setPosition(0)
+    val schema = new TTableSchema()
+    schema.addToColumns(tColumnDesc)
+    columns.setSchema(schema)
+
+    val rows = new java.util.ArrayList[TRow]
+    val trow = new TRow()
+    val value = new TBoolValue()
+    value.setValue(true)
+    trow.addToColVals(TColumnValue.boolVal(value))
+    rows.add(trow)
+    val rowSet = new TRowSet(0, rows)
+
+    TrinoContext.createQueryResults(
+      queryId.getQueryId,
+      nextUri,
+      queryHtmlUri,
+      status,
+      Option(columns),
+      Option(rowSet),
+      updateType = "PREPARE")
   }
 
   def getLastToken: Long = this.lastToken.get()
@@ -150,6 +190,20 @@ object Query {
       context.session + (KYUUBI_SESSION_ID -> sessionHandle.identifier.toString)
     val updatedContext = context.copy(session = sessionWithId)
     Query(QueryId(operationHandle), updatedContext, backendService)
+  }
+
+  def apply(
+      statementId: String,
+      statement: String,
+      context: TrinoContext,
+      backendService: BackendService): Query = {
+    val sessionHandle = getOrCreateSession(context, backendService)
+    val sessionWithId =
+      context.session + (KYUUBI_SESSION_ID -> sessionHandle.identifier.toString)
+    Query(
+      queryId = QueryId(new OperationHandle(UUID.randomUUID())),
+      context.copy(preparedStatement = Map(statementId -> statement), session = sessionWithId),
+      backendService)
   }
 
   def apply(id: String, context: TrinoContext, backendService: BackendService): Query = {

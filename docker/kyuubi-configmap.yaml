@@ -52,4 +52,4 @@ data:
     # kyuubi.frontend.bind.port       10009
     #
 
-    # Details in https://kyuubi.apache.org/docs/latest/deployment/settings.html
+    # Details in https://kyuubi.readthedocs.io/en/master/configuration/settings.html

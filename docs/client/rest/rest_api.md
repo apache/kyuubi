@@ -89,13 +89,9 @@ Create a session
 
 #### Request Parameters
 
-| Name            | Description                              | Type   |
-|:----------------|:-----------------------------------------|:-------|
-| protocolVersion | The protocol version of Hive CLI service | Int    |
-| user            | The user name                            | String |
-| password        | The user password                        | String |
-| ipAddr          | The user client IP address               | String |
-| configs         | The configuration of the session         | Map    |
+| Name    | Description                      | Type |
+|:--------|:---------------------------------|:-----|
+| configs | The configuration of the session | Map  |
 
 #### Response Body
 
@@ -114,11 +110,12 @@ Create an operation with EXECUTE_STATEMENT type
 
 #### Request Body
 
-| Name         | Description                                                    | Type    |
-|:-------------|:---------------------------------------------------------------|:--------|
-| statement    | The SQL statement that you execute                             | String  |
-| runAsync     | The flag indicates whether the query runs synchronously or not | Boolean |
-| queryTimeout | The interval of query time out                                 | Long    |
+| Name         | Description                                                    | Type           |
+|:-------------|:---------------------------------------------------------------|:---------------|
+| statement    | The SQL statement that you execute                             | String         |
+| runAsync     | The flag indicates whether the query runs synchronously or not | Boolean        |
+| queryTimeout | The interval of query time out                                 | Long           |
+| confOverlay  | The conf to overlay only for current operation                 | Map of key=val |
 
 #### Response Body
 
@@ -401,7 +398,7 @@ curl --location --request POST 'http://localhost:10099/api/v1/batches' \
 
 The created [Batch](#batch) object.
 
-### GET /batches/{batchId}
+### GET /batches/${batchId}
 
 Returns the batch information.
 
@@ -452,7 +449,13 @@ Refresh the Hadoop configurations of the Kyuubi server.
 
 ### POST /admin/refresh/user_defaults_conf
 
-Refresh the [user defaults configs](../../deployment/settings.html#user-defaults) with key in format in the form of `___{username}___.{config key}` from default property file.
+Refresh the [user defaults configs](../../configuration/settings.html#user-defaults) with key in format in the form of `___{username}___.{config key}` from default property file.
+
+### POST /admin/refresh/kubernetes_conf
+
+Refresh the kubernetes configs with key prefixed with `kyuubi.kubernetes` from default property file.
+
+It is helpful if you need to support multiple kubernetes contexts and namespaces, see [KYUUBI #4843](https://github.com/apache/kyuubi/issues/4843).
 
 ### DELETE /admin/engine
 

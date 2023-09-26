@@ -31,7 +31,7 @@ import org.apache.spark.sql.connector.catalog.TableCapability.{BATCH_READ, BATCH
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.connector.write.{LogicalWriteInfo, WriteBuilder}
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{logicalExpressions, BucketSpecHelper}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{BucketSpecHelper, LogicalExpressions}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
@@ -68,7 +68,7 @@ case class HiveTable(
   override def partitioning: Array[Transform] = {
     val partitions = new mutable.ArrayBuffer[Transform]()
     catalogTable.partitionColumnNames.foreach { col =>
-      partitions += logicalExpressions.identity(logicalExpressions.reference(Seq(col)))
+      partitions += LogicalExpressions.identity(LogicalExpressions.reference(Seq(col)))
     }
     catalogTable.bucketSpec.foreach { spec =>
       partitions += spec.asTransform

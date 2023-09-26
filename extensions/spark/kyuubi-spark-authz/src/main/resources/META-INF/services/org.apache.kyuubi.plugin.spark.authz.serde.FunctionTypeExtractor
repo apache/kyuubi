@@ -17,4 +17,5 @@
 
 org.apache.kyuubi.plugin.spark.authz.serde.ExpressionInfoFunctionTypeExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.FunctionIdentifierFunctionTypeExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.FunctionNameFunctionTypeExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.TempMarkerFunctionTypeExtractor

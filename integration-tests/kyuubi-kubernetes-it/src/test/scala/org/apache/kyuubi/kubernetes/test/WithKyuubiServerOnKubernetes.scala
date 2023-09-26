@@ -18,14 +18,14 @@
 package org.apache.kyuubi.kubernetes.test
 
 import io.fabric8.kubernetes.api.model.Pod
-import io.fabric8.kubernetes.client.DefaultKubernetesClient
+import io.fabric8.kubernetes.client.KubernetesClient
 
 import org.apache.kyuubi.KyuubiFunSuite
 
 trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
   protected def connectionConf: Map[String, String] = Map.empty
 
-  lazy val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
+  lazy val miniKubernetesClient: KubernetesClient = MiniKube.getKubernetesClient
   lazy val kyuubiPod: Pod = miniKubernetesClient.pods().withName("kyuubi-test").get()
   lazy val kyuubiServerIp: String = kyuubiPod.getStatus.getPodIP
   lazy val miniKubeIp: String = MiniKube.getIp

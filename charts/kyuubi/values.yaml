@@ -22,40 +22,58 @@
 # Kyuubi server numbers
 replicaCount: 2
 
+# controls how Kyuubi server pods are created during initial scale up,
+# when replacing pods on nodes, or when scaling down.
+# The default policy is `OrderedReady`, alternative policy is `Parallel`.
+podManagementPolicy: OrderedReady
+
+# Minimum number of seconds for which a newly created kyuubi server
+# should be ready without any of its container crashing for it to be considered available.
+minReadySeconds: 30
+
+# maximum number of revisions that will be maintained in the StatefulSet's revision history.
+revisionHistoryLimit: 10
+
+# indicates the StatefulSetUpdateStrategy that will be employed to update Kyuubi server Pods in the StatefulSet
+# when a revision is made to Template.
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    partition: 0
+
 image:
   repository: apache/kyuubi
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   tag: ~
 
 imagePullSecrets: []
 
-# ServiceAccount used for Kyuubi create/list/delete pod in kubernetes
+# ServiceAccount used for Kyuubi create/list/delete pod in Kubernetes
 serviceAccount:
+  # Specifies whether a ServiceAccount should be created
   create: true
+  # Specifies ServiceAccount name to be used (created if `create: true`)
   name: ~
 
+# priorityClass used for Kyuubi server pod
+priorityClass:
+  # Specifies whether a priorityClass should be created
+  create: false
+  # Specifies priorityClass name to be used (created if `create: true`)
+  name: ~
+  # half of system-cluster-critical by default
+  value: 1000000000
+
+# Role-based access control
 rbac:
+  # Specifies whether RBAC resources should be created
   create: true
+  # RBAC rules
   rules:
     - apiGroups: [""]
       resources: ["pods"]
       verbs: ["create", "list", "delete"]
-
-probe:
-  liveness:
-    enabled: true
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 2
-    failureThreshold: 10
-    successThreshold: 1
-  readiness:
-    enabled: true
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 2
-    failureThreshold: 10
-    successThreshold: 1
 
 server:
   # Thrift Binary protocol (HiveServer2 compatible)
@@ -80,7 +98,7 @@ server:
 
   # REST API protocol (experimental)
   rest:
-    enabled: false
+    enabled: true
     port: 10099
     service:
       type: ClusterIP
@@ -98,22 +116,53 @@ server:
       nodePort: ~
       annotations: {}
 
+  # Exposes metrics in Prometheus format
+  prometheus:
+    enabled: true
+    port: 10019
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.prometheus.port }}"
+      nodePort: ~
+      annotations: {}
+
+# $KYUUBI_CONF_DIR directory
 kyuubiConfDir: /opt/kyuubi/conf
+# Kyuubi configurations files
 kyuubiConf:
   # The value (templated string) is used for kyuubi-env.sh file
-  # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments for more details
+  # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/configuration/settings.html#environments for more details
   kyuubiEnv: ~
+  #  kyuubiEnv: |
+  #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
+  #    export SPARK_HOME=/opt/spark
+  #    export FLINK_HOME=/opt/flink
+  #    export HIVE_HOME=/opt/hive
 
   # The value (templated string) is used for kyuubi-defaults.conf file
-  # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#kyuubi-configurations for more details
+  # See https://kyuubi.readthedocs.io/en/master/configuration/settings.html#kyuubi-configurations for more details
   kyuubiDefaults: ~
+  #  kyuubiDefaults: |
+  #    kyuubi.authentication=NONE
+  #    kyuubi.frontend.bind.host=10.0.0.1
+  #    kyuubi.engine.type=SPARK_SQL
+  #    kyuubi.engine.share.level=USER
+  #    kyuubi.session.engine.initialize.timeout=PT3M
+  #    kyuubi.ha.addresses=zk1:2181,zk2:2181,zk3:2181
+  #    kyuubi.ha.namespace=kyuubi
 
   # The value (templated string) is used for log4j2.xml file
-  # See https://kyuubi.apache.org/docs/latest/deployment/settings.html#logging for more details
+  # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/configuration/settings.html#logging for more details
   log4j2: ~
+
+# Command to launch Kyuubi server (templated)
+command: ~
+# Arguments to launch Kyuubi server (templated)
+args: ~
 
 # Environment variables (templated)
 env: []
+# Environment variables from ConfigMaps and Secrets (templated)
 envFrom: []
 
 # Additional volumes for Kyuubi pod (templated)
@@ -126,21 +175,67 @@ initContainers: []
 # Additional containers for Kyuubi pod (templated)
 containers: []
 
+# Resource requests and limits for Kyuubi pods
 resources: {}
-  # Used to specify resource, default unlimited.
-  # If you do want to specify resources:
-  #   1. remove the curly braces after 'resources:'
-  #   2. uncomment the following lines
-  # limits:
-  #   cpu: 4
-  #   memory: 10Gi
-  # requests:
-  #   cpu: 2
-  #   memory: 4Gi
+#  resources:
+#    requests:
+#      cpu: 2
+#      memory: 4Gi
+#    limits:
+#      cpu: 4
+#      memory: 10Gi
 
-# Constrain Kyuubi server pods to specific nodes
+# Liveness probe
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 10
+  successThreshold: 1
+
+# Readiness probe
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 10
+  successThreshold: 1
+
+# Constrain Kyuubi pods to nodes with specific node labels
 nodeSelector: {}
+# Allow to schedule Kyuubi pods on nodes with matching taints
 tolerations: []
+# Constrain Kyuubi pods to nodes by complex affinity/anti-affinity rules
 affinity: {}
 
+# Kyuubi pods security context
 securityContext: {}
+
+# Monitoring Kyuubi - Server Metrics
+# PROMETHEUS - PrometheusReporter which exposes metrics in Prometheus format
+metricsReporters: ~
+
+# Prometheus pod monitor
+podMonitor:
+  # If enabled, podMonitor for operator's pod will be created
+  enabled: false
+  # The podMetricsEndpoint contains metrics information such as port, interval, scheme, and possibly other relevant details.
+  # This information is used to configure the endpoint from which Prometheus can scrape and collect metrics for a specific Pod in Kubernetes.
+  podMetricsEndpoint: []
+
+# Prometheus service monitor
+serviceMonitor:
+  # If enabled, ServiceMonitor resources for Prometheus Operator are created
+  enabled: false
+  # The endpoints section in a ServiceMonitor specifies the metrics information for each target endpoint.
+  # This allows you to collect metrics from multiple Services across your Kubernetes cluster in a standardized and automated way.
+  endpoints: []
+
+# Rules for the Prometheus Operator
+prometheusRule:
+  # If enabled, a PrometheusRule resource for Prometheus Operator is created
+  enabled: false
+  # Contents of Prometheus rules file
+  groups: []

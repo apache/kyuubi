@@ -18,9 +18,10 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import scala.collection.JavaConverters._
+import scala.collection.convert.ImplicitConversions._
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.flink.table.api.{DataTypes, ResultKind, TableEnvironment}
+import org.apache.flink.table.api.{DataTypes, ResultKind}
 import org.apache.flink.table.catalog.Column
 import org.apache.flink.types.Row
 
@@ -35,14 +36,14 @@ class GetSchemas(session: Session, catalogName: String, schema: String)
   override protected def runInternal(): Unit = {
     try {
       val schemaPattern = toJavaRegex(schema)
-      val tableEnv: TableEnvironment = sessionContext.getExecutionContext.getTableEnvironment
-      val schemas = tableEnv.listCatalogs()
+      val catalogManager = sessionContext.getSessionState.catalogManager
+      val schemas = catalogManager.listCatalogs()
         .filter { c => StringUtils.isEmpty(catalogName) || c == catalogName }
         .flatMap { c =>
-          val catalog = tableEnv.getCatalog(c).get()
+          val catalog = catalogManager.getCatalog(c).get()
           filterPattern(catalog.listDatabases().asScala, schemaPattern)
             .map { d => Row.of(d, c) }
-        }
+        }.toArray
       resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
         .columns(
           Column.physical(TABLE_SCHEM, DataTypes.STRING()),

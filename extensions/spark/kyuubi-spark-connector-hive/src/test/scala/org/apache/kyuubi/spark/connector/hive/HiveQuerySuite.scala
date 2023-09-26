@@ -18,26 +18,35 @@
 package org.apache.kyuubi.spark.connector.hive
 
 import org.apache.spark.sql.{AnalysisException, Row, SparkSession}
+import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 
 class HiveQuerySuite extends KyuubiHiveTest {
 
-  def withTempNonPartitionedTable(spark: SparkSession, table: String)(f: => Unit): Unit = {
+  def withTempNonPartitionedTable(
+      spark: SparkSession,
+      table: String,
+      format: String = "PARQUET",
+      hiveTable: Boolean = false)(f: => Unit): Unit = {
     spark.sql(
       s"""
          | CREATE TABLE IF NOT EXISTS
          | $table (id String, date String)
-         | USING PARQUET
+         | ${if (hiveTable) "STORED AS" else "USING"} $format
          |""".stripMargin).collect()
     try f
     finally spark.sql(s"DROP TABLE $table")
   }
 
-  def withTempPartitionedTable(spark: SparkSession, table: String)(f: => Unit): Unit = {
+  def withTempPartitionedTable(
+      spark: SparkSession,
+      table: String,
+      format: String = "PARQUET",
+      hiveTable: Boolean = false)(f: => Unit): Unit = {
     spark.sql(
       s"""
          | CREATE TABLE IF NOT EXISTS
          | $table (id String, year String, month string)
-         | USING PARQUET
+         | ${if (hiveTable) "STORED AS" else "USING"} $format
          | PARTITIONED BY (year, month)
          |""".stripMargin).collect()
     try f
@@ -70,7 +79,10 @@ class HiveQuerySuite extends KyuubiHiveTest {
                | SELECT * FROM hive.ns1.tb1
                |""".stripMargin)
         }
-        assert(e.getMessage().contains("Table or view not found: hive.ns1.tb1"))
+
+        assert(e.plan.exists { p =>
+          p.exists(child => child.isInstanceOf[UnresolvedRelation])
+        })
       }
     }
   }
@@ -103,6 +115,30 @@ class HiveQuerySuite extends KyuubiHiveTest {
              |""".stripMargin).collect()
 
         checkQueryResult(s"select * from $table", spark, Array(Row.apply("yi", "2022", "0808")))
+      }
+    }
+  }
+
+  test("[KYUUBI #4525] Partitioning predicates should take effect to filter data") {
+    withSparkSession(Map("hive.exec.dynamic.partition.mode" -> "nonstrict")) { spark =>
+      val table = "hive.default.employee"
+      withTempPartitionedTable(spark, table) {
+        spark.sql(
+          s"""
+             | INSERT OVERWRITE
+             | $table
+             | VALUES("yi", "2022", "0808"),("yi", "2023", "0316")
+             |""".stripMargin).collect()
+
+        checkQueryResult(
+          s"select * from $table where year = '2022'",
+          spark,
+          Array(Row.apply("yi", "2022", "0808")))
+
+        checkQueryResult(
+          s"select * from $table where year = '2023'",
+          spark,
+          Array(Row.apply("yi", "2023", "0316")))
       }
     }
   }
@@ -155,6 +191,77 @@ class HiveQuerySuite extends KyuubiHiveTest {
         // 2. thrown `Partition spec is invalid`, should be consist with spark v1.
         assert(exception.message.contains("Partition spec is invalid. The spec (year='') " +
           "contains an empty partition column value"))
+      }
+    }
+  }
+
+  test("read partitioned avro table") {
+    readPartitionedTable("AVRO", true)
+    readPartitionedTable("AVRO", false)
+  }
+
+  test("read un-partitioned avro table") {
+    readUnPartitionedTable("AVRO", true)
+    readUnPartitionedTable("AVRO", false)
+  }
+
+  test("read partitioned textfile table") {
+    readPartitionedTable("TEXTFILE", true)
+    readPartitionedTable("TEXTFILE", false)
+  }
+
+  test("read un-partitioned textfile table") {
+    readUnPartitionedTable("TEXTFILE", true)
+    readUnPartitionedTable("TEXTFILE", false)
+  }
+
+  test("read partitioned SequenceFile table") {
+    readPartitionedTable("SequenceFile", true)
+    readPartitionedTable("SequenceFile", false)
+  }
+
+  test("read un-partitioned SequenceFile table") {
+    readUnPartitionedTable("SequenceFile", true)
+    readUnPartitionedTable("SequenceFile", false)
+  }
+
+  test("read partitioned ORC table") {
+    readPartitionedTable("ORC", true)
+    readPartitionedTable("ORC", false)
+  }
+
+  test("read un-partitioned ORC table") {
+    readUnPartitionedTable("ORC", true)
+    readUnPartitionedTable("ORC", false)
+  }
+
+  private def readPartitionedTable(format: String, hiveTable: Boolean): Unit = {
+    withSparkSession() { spark =>
+      val table = "hive.default.employee"
+      withTempPartitionedTable(spark, table, format, hiveTable) {
+        spark.sql(
+          s"""
+             | INSERT OVERWRITE
+             | $table PARTITION(year = '2023')
+             | VALUES("zhao", "09")
+             |""".stripMargin)
+        checkQueryResult(s"select * from $table", spark, Array(Row.apply("zhao", "2023", "09")))
+      }
+    }
+  }
+
+  private def readUnPartitionedTable(format: String, hiveTable: Boolean): Unit = {
+    withSparkSession() { spark =>
+      val table = "hive.default.employee"
+      withTempNonPartitionedTable(spark, table, format, hiveTable) {
+        spark.sql(
+          s"""
+             | INSERT OVERWRITE
+             | $table
+             | VALUES("zhao", "2023-09-21")
+             |""".stripMargin).collect()
+
+        checkQueryResult(s"select * from $table", spark, Array(Row.apply("zhao", "2023-09-21")))
       }
     }
   }

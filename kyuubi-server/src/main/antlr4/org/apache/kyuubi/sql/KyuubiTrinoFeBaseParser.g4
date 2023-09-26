@@ -54,7 +54,18 @@ statement
       CAST LEFT_PAREN NULL AS SMALLINT RIGHT_PAREN KEY_SEQ COMMA
       CAST LEFT_PAREN NULL AS VARCHAR RIGHT_PAREN PK_NAME
       WHERE FALSE                                                                                       #getPrimaryKeys
+    | EXECUTE IDENTIFIER (USING parameterList)?                                                         #execute
+    | PREPARE IDENTIFIER FROM statement                                                                 #prepare
+    | DEALLOCATE PREPARE IDENTIFIER                                                                     #deallocate
     | .*?                                                                                               #passThrough
+    ;
+
+anyStr
+    : ( ~',' )*
+    ;
+
+parameterList
+    : (TINYINT|SMALLINT|INTEGER|BIGINT|DOUBLE|REAL|DECIMAL|DATE|TIME|TIMESTAMP)? anyStr (',' (TINYINT|SMALLINT|INTEGER|BIGINT|DOUBLE|REAL|DECIMAL|DATE|TIME|TIMESTAMP)? anyStr)*
     ;
 
 tableCatalogFilter

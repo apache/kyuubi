@@ -41,8 +41,9 @@ class JpsApplicationOperation extends ApplicationOperation {
       }
   }
 
-  override def isSupported(clusterManager: Option[String]): Boolean = {
-    runner != null && (clusterManager.isEmpty || clusterManager.get == "local")
+  override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
+    runner != null &&
+    (appMgrInfo.resourceManager.isEmpty || appMgrInfo.resourceManager.get == "local")
   }
 
   private def getEngine(tag: String): Option[String] = {
@@ -80,11 +81,18 @@ class JpsApplicationOperation extends ApplicationOperation {
     }
   }
 
-  override def killApplicationByTag(tag: String): KillResponse = {
+  override def killApplicationByTag(
+      appMgrInfo: ApplicationManagerInfo,
+      tag: String,
+      proxyUser: Option[String] = None): KillResponse = {
     killJpsApplicationByTag(tag, true)
   }
 
-  override def getApplicationInfoByTag(tag: String): ApplicationInfo = {
+  override def getApplicationInfoByTag(
+      appMgrInfo: ApplicationManagerInfo,
+      tag: String,
+      proxyUser: Option[String] = None,
+      submitTime: Option[Long] = None): ApplicationInfo = {
     val commandOption = getEngine(tag)
     if (commandOption.nonEmpty) {
       val idAndCmd = commandOption.get

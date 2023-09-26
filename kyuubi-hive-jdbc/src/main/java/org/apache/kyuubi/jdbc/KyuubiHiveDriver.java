@@ -24,6 +24,7 @@ import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.logging.Logger;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 import org.apache.kyuubi.jdbc.hive.KyuubiSQLException;
@@ -137,7 +138,7 @@ public class KyuubiHiveDriver implements Driver {
       host = "";
     }
     String port = Integer.toString(params.getPort());
-    if (host.equals("")) {
+    if (StringUtils.isEmpty(host)) {
       port = "";
     } else if (port.equals("0") || port.equals("-1")) {
       port = DEFAULT_PORT;

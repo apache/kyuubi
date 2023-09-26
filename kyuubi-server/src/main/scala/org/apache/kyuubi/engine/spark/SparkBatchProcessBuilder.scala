@@ -36,7 +36,7 @@ class SparkBatchProcessBuilder(
   extends SparkProcessBuilder(proxyUser, conf, batchId, extraEngineLog) {
   import SparkProcessBuilder._
 
-  override protected val commands: Array[String] = {
+  override protected lazy val commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
     Option(mainClass).foreach { cla =>
@@ -51,14 +51,15 @@ class SparkBatchProcessBuilder(
     // tag batch application
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
-    (batchKyuubiConf.getAll ++ sparkAppNameConf()).foreach { case (k, v) =>
+    (batchKyuubiConf.getAll ++
+      sparkAppNameConf() ++
+      engineLogPathConf() ++
+      appendPodNameConf(batchConf)).foreach { case (k, v) =>
       buffer += CONF
       buffer += s"${convertConfigKey(k)}=$v"
     }
 
-    setSparkUserName(proxyUser, buffer)
-    buffer += PROXY_USER
-    buffer += proxyUser
+    setupKerberos(buffer)
 
     assert(mainResource.isDefined)
     buffer += mainResource.get
@@ -77,6 +78,14 @@ class SparkBatchProcessBuilder(
   override protected def module: String = "kyuubi-spark-batch-submit"
 
   override def clusterManager(): Option[String] = {
-    batchConf.get(MASTER_KEY).orElse(defaultMaster)
+    batchConf.get(MASTER_KEY).orElse(super.clusterManager())
+  }
+
+  override def kubernetesContext(): Option[String] = {
+    batchConf.get(KUBERNETES_CONTEXT_KEY).orElse(super.kubernetesContext())
+  }
+
+  override def kubernetesNamespace(): Option[String] = {
+    batchConf.get(KUBERNETES_NAMESPACE_KEY).orElse(super.kubernetesNamespace())
   }
 }

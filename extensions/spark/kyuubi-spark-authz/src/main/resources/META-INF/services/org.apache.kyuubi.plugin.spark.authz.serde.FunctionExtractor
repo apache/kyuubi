@@ -17,4 +17,5 @@
 
 org.apache.kyuubi.plugin.spark.authz.serde.ExpressionInfoFunctionExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.FunctionIdentifierFunctionExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.QualifiedNameStringFunctionExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.StringFunctionExtractor

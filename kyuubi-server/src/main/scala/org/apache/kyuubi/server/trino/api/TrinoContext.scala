@@ -187,14 +187,20 @@ object TrinoContext {
       queryHtmlUri: URI,
       queryStatus: OperationStatus,
       columns: Option[TGetResultSetMetadataResp] = None,
-      data: Option[TRowSet] = None): QueryResults = {
+      data: Option[TRowSet] = None,
+      updateType: String = null): QueryResults = {
 
     val columnList = columns match {
       case Some(value) => convertTColumn(value)
       case None => null
     }
     val rowList = data match {
-      case Some(value) => convertTRowSet(value)
+      case Some(value) =>
+        Option(updateType) match {
+          case Some("PREPARE") =>
+            ImmutableList.of(ImmutableList.of(true).asInstanceOf[util.List[Object]])
+          case _ => convertTRowSet(value)
+        }
       case None => null
     }
 
@@ -214,7 +220,7 @@ object TrinoContext {
         .setElapsedTimeMillis(0).setQueuedTimeMillis(0).build(),
       toQueryError(queryStatus),
       defaultWarning,
-      null,
+      updateType,
       0L)
   }
 
@@ -327,7 +333,7 @@ object TrinoContext {
 
     if (rowSet.getColumns == null) {
       return rowSet.getRows.asScala
-        .map(t => t.getColVals.asScala.map(v => v.getFieldValue.asInstanceOf[Object]).asJava)
+        .map(t => t.getColVals.asScala.map(v => v.getFieldValue).asJava)
         .asJava
     }
 

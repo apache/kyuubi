@@ -20,7 +20,7 @@ import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
-import org.apache.kyuubi.events.KyuubiSessionEvent
+import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.session.SessionType.SessionType
@@ -36,9 +36,9 @@ abstract class KyuubiSession(
 
   val sessionType: SessionType
 
-  val connectionUrl = conf.get(KYUUBI_SESSION_CONNECTION_URL_KEY).getOrElse("")
+  val connectionUrl = conf.getOrElse(KYUUBI_SESSION_CONNECTION_URL_KEY, "")
 
-  val realUser = conf.get(KYUUBI_SESSION_REAL_USER_KEY).getOrElse(user)
+  val realUser = conf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
 
   def getSessionEvent: Option[KyuubiSessionEvent]
 
@@ -49,7 +49,10 @@ abstract class KyuubiSession(
       f
     } catch {
       case t: Throwable =>
-        getSessionEvent.foreach(_.exception = Some(t))
+        getSessionEvent.foreach { sessionEvent =>
+          sessionEvent.exception = Some(t)
+          EventBus.post(sessionEvent)
+        }
         throw t
     }
   }

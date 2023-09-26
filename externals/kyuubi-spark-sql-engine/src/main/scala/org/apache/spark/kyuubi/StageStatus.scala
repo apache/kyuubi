@@ -17,13 +17,16 @@
 
 package org.apache.spark.kyuubi
 
-case class StageAttempt(stageId: Int, stageAttemptId: Int) {
+import java.util.concurrent.atomic.AtomicInteger
+
+case class SparkStageAttempt(stageId: Int, stageAttemptId: Int) {
   override def toString: String = s"Stage $stageId (Attempt $stageAttemptId)"
 }
 
 class JobInfo(val numStages: Int, val stageIds: Seq[Int]) {
   var numCompleteStages = 0
 }
+
 class StageInfo(val stageId: Int, val numTasks: Int) {
   var numActiveTasks = 0
   var numCompleteTasks = 0

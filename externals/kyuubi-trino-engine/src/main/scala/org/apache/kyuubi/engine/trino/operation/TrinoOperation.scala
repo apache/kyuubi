@@ -21,7 +21,7 @@ import java.io.IOException
 
 import io.trino.client.Column
 import io.trino.client.StatementClient
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
+import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils
@@ -54,7 +54,9 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
     resp
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(
+      order: FetchOrientation,
+      rowSetSize: Int): TFetchResultsResp = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
@@ -66,7 +68,10 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
     val taken = iter.take(rowSetSize)
     val resultRowSet = RowSet.toTRowSet(taken.toList, schema, getProtocolVersion)
     resultRowSet.setStartRowOffset(iter.getPosition)
-    resultRowSet
+    val resp = new TFetchResultsResp(OK_STATUS)
+    resp.setResults(resultRowSet)
+    resp.setHasMoreRows(false)
+    resp
   }
 
   override protected def beforeRun(): Unit = {
@@ -75,7 +80,7 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
   }
 
   override protected def afterRun(): Unit = {
-    state.synchronized {
+    withLockRequired {
       if (!isTerminalState(state)) {
         setState(OperationState.FINISHED)
       }
@@ -108,7 +113,7 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
     // could be thrown.
     case e: Throwable =>
       if (cancel && trino.isRunning) trino.cancelLeafStage()
-      state.synchronized {
+      withLockRequired {
         val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {
           val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")

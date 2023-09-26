@@ -22,6 +22,9 @@ import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
 
 import io.etcd.jetcd.launcher.{Etcd, EtcdCluster}
+import org.scalactic.source.Position
+import org.scalatest.Tag
+import org.testcontainers.DockerClientFactory
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_CLIENT_CLASS}
@@ -41,23 +44,36 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
   var conf: KyuubiConf = KyuubiConf()
     .set(HA_CLIENT_CLASS, classOf[EtcdDiscoveryClient].getName)
 
+  private val hasDockerEnv = DockerClientFactory.instance().isDockerAvailable
+
   override def beforeAll(): Unit = {
-    etcdCluster = new Etcd.Builder()
-      .withNodes(2)
-      .build()
-    etcdCluster.start()
-    conf = new KyuubiConf()
-      .set(HA_CLIENT_CLASS, classOf[EtcdDiscoveryClient].getName)
-      .set(HA_ADDRESSES, getConnectString)
+    if (hasDockerEnv) {
+      etcdCluster = new Etcd.Builder()
+        .withNodes(2)
+        .build()
+      etcdCluster.start()
+      conf = new KyuubiConf()
+        .set(HA_CLIENT_CLASS, classOf[EtcdDiscoveryClient].getName)
+        .set(HA_ADDRESSES, getConnectString)
+    }
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
-    if (etcdCluster != null) {
+    if (hasDockerEnv && etcdCluster != null) {
       etcdCluster.close()
       etcdCluster = null
     }
+  }
+
+  override protected def test(
+      testName: String,
+      testTags: Tag*)(testFun: => Any)(implicit pos: Position): Unit = {
+    if (hasDockerEnv) {
+      super.test(testName, testTags: _*)(testFun)
+    }
+    // skip test
   }
 
   test("etcd test: set, get and delete") {

@@ -22,6 +22,7 @@ import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -87,6 +88,62 @@ public class Utils {
       return;
     }
     throw new KyuubiSQLException(status);
+  }
+
+  /**
+   * Splits the parametered sql statement at parameter boundaries.
+   *
+   * <p>taking into account ' and \ escaping.
+   *
+   * <p>output for: 'select 1 from ? where a = ?' ['select 1 from ',' where a = ','']
+   */
+  static List<String> splitSqlStatement(String sql) {
+    List<String> parts = new ArrayList<>();
+    int apCount = 0;
+    int off = 0;
+    boolean skip = false;
+
+    for (int i = 0; i < sql.length(); i++) {
+      char c = sql.charAt(i);
+      if (skip) {
+        skip = false;
+        continue;
+      }
+      switch (c) {
+        case '\'':
+          apCount++;
+          break;
+        case '\\':
+          skip = true;
+          break;
+        case '?':
+          if ((apCount & 1) == 0) {
+            parts.add(sql.substring(off, i));
+            off = i + 1;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    parts.add(sql.substring(off));
+    return parts;
+  }
+
+  /** update the SQL string with parameters set by setXXX methods of {@link PreparedStatement} */
+  public static String updateSql(final String sql, HashMap<Integer, String> parameters)
+      throws SQLException {
+    List<String> parts = splitSqlStatement(sql);
+
+    StringBuilder newSql = new StringBuilder(parts.get(0));
+    for (int i = 1; i < parts.size(); i++) {
+      if (!parameters.containsKey(i)) {
+        throw new KyuubiSQLException("Parameter #" + i + " is unset");
+      }
+      newSql.append(parameters.get(i));
+      newSql.append(parts.get(i));
+    }
+    return newSql.toString();
   }
 
   public static JdbcConnectionParams parseURL(String uri)
@@ -494,7 +551,10 @@ public class Utils {
     if (KYUUBI_CLIENT_VERSION == null) {
       try {
         Properties prop = new Properties();
-        prop.load(Utils.class.getClassLoader().getResourceAsStream("version.properties"));
+        prop.load(
+            Utils.class
+                .getClassLoader()
+                .getResourceAsStream("org/apache/kyuubi/version.properties"));
         KYUUBI_CLIENT_VERSION = prop.getProperty(KYUUBI_CLIENT_VERSION_KEY, "unknown");
       } catch (Exception e) {
         LOG.error("Error getting kyuubi client version", e);

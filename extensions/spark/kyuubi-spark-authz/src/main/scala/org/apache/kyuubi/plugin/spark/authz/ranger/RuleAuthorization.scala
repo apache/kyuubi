@@ -27,16 +27,15 @@ import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 
 import org.apache.kyuubi.plugin.spark.authz._
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
-import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
+import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization._
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._;
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
-  override def apply(plan: LogicalPlan): LogicalPlan = plan match {
-    case p if !plan.getTagValue(KYUUBI_AUTHZ_TAG).contains(true) =>
-      RuleAuthorization.checkPrivileges(spark, p)
-      p.setTagValue(KYUUBI_AUTHZ_TAG, true)
-      p
-    case p => p // do nothing if checked privileges already.
+  override def apply(plan: LogicalPlan): LogicalPlan = {
+    plan match {
+      case plan if isAuthChecked(plan) => plan // do nothing if checked privileges already.
+      case p => checkPrivileges(spark, p)
+    }
   }
 }
 
@@ -44,7 +43,7 @@ object RuleAuthorization {
 
   val KYUUBI_AUTHZ_TAG = TreeNodeTag[Boolean]("__KYUUBI_AUTHZ_TAG")
 
-  def checkPrivileges(spark: SparkSession, plan: LogicalPlan): Unit = {
+  private def checkPrivileges(spark: SparkSession, plan: LogicalPlan): LogicalPlan = {
     val auditHandler = new SparkRangerAuditHandler
     val ugi = getAuthzUgi(spark.sparkContext)
     val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
@@ -54,7 +53,7 @@ object RuleAuthorization {
       requests += AccessRequest(resource, ugi, opType, AccessType.USE)
     }
 
-    def addAccessRequest(objects: Seq[PrivilegeObject], isInput: Boolean): Unit = {
+    def addAccessRequest(objects: Iterable[PrivilegeObject], isInput: Boolean): Unit = {
       objects.foreach { obj =>
         val resource = AccessResource(obj, opType)
         val accessType = ranger.AccessType(obj, opType, isInput)
@@ -85,7 +84,7 @@ object RuleAuthorization {
           }
         case _ => Seq(request)
       }
-    }
+    }.toSeq
 
     if (authorizeInSingleCall) {
       verify(requestArrays.flatten, auditHandler)
@@ -94,5 +93,17 @@ object RuleAuthorization {
         verify(Seq(req), auditHandler)
       }
     }
+    markAuthChecked(plan)
+  }
+
+  private def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
+    plan.transformUp { case p =>
+      p.setTagValue(KYUUBI_AUTHZ_TAG, true)
+      p
+    }
+  }
+
+  private def isAuthChecked(plan: LogicalPlan): Boolean = {
+    plan.find(_.getTagValue(KYUUBI_AUTHZ_TAG).contains(true)).nonEmpty
   }
 }

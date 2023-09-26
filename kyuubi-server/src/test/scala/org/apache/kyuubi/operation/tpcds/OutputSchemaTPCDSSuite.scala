@@ -26,24 +26,20 @@ import org.apache.kyuubi.{DeltaSuiteMixin, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.mysql.MySQLJDBCTestHelper
 import org.apache.kyuubi.tags.DeltaTest
+import org.apache.kyuubi.util.AssertionUtils._
+import org.apache.kyuubi.util.GoldenFileUtils._
 
-// scalastyle:off line.size.limit
 /**
  * To run this test suite:
  * {{{
- *   build/mvn clean install \
- *     -Dmaven.plugin.scalatest.exclude.tags="" \
- *     -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite
+ *   KYUUBI_UPDATE=0 dev/gen/gen_tpcds_output_schema.sh
  * }}}
  *
  * To re-generate golden files for this suite:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn clean install \
- *     -Dmaven.plugin.scalatest.exclude.tags="" \
- *     -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite
+ *   dev/gen/gen_tpcds_output_schema.sh
  * }}}
  */
-// scalastyle:on line.size.limit
 @Slow
 @DeltaTest
 class OutputSchemaTPCDSSuite extends WithKyuubiServer
@@ -78,7 +74,6 @@ class OutputSchemaTPCDSSuite extends WithKyuubiServer
     super.afterAll()
   }
 
-  private val regenerateGoldenFiles = sys.env.get("KYUUBI_UPDATE").contains("1")
   protected val baseResourcePath: Path = Paths.get("src", "test", "resources")
 
   private def fileToString(file: Path): String = {
@@ -93,12 +88,15 @@ class OutputSchemaTPCDSSuite extends WithKyuubiServer
         val columnTypes = (1 to result.getMetaData.getColumnCount).map { i =>
           s"${result.getMetaData.getColumnName(i)}:${result.getMetaData.getColumnTypeName(i)}"
         }.mkString("struct<", ",", ">\n")
-        if (regenerateGoldenFiles) {
+        if (isRegenerateGoldenFiles) {
           Files.write(goldenFile, columnTypes.getBytes())
+        } else {
+          assertFileContent(
+            goldenFile,
+            Seq(columnTypes),
+            "dev/gen/gen_tpcds_output_schema.sh",
+            splitFirstExpectedLine = true)
         }
-
-        val expected = fileToString(goldenFile)
-        assert(columnTypes === expected)
       } finally {
         result.close()
       }

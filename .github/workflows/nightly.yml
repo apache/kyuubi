@@ -43,6 +43,8 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
       - name: Build with Maven
         run: ./build/mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
       - name: Upload test logs

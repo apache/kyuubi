@@ -23,21 +23,20 @@ import scala.collection.mutable
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hive.ql.metadata.{Partition => HivePartition}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTablePartition}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression}
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
 import org.apache.spark.sql.connector.read.PartitionReaderFactory
 import org.apache.spark.sql.execution.PartitionedFileUtil
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.datasources.v2.FileScan
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.hiveClientImpl
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.HiveClientImpl
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorException
+import org.apache.kyuubi.spark.connector.hive.{HiveConnectorUtils, KyuubiHiveConnectorException}
 
 case class HiveScan(
     sparkSession: SparkSession,
@@ -52,13 +51,23 @@ case class HiveScan(
 
   private val isCaseSensitive = sparkSession.sessionState.conf.caseSensitiveAnalysis
 
-  private val partFileToHivePartMap: mutable.Map[PartitionedFile, HivePartition] = mutable.Map()
+  private val partFileToHivePartMap: mutable.Map[PartitionedFile, CatalogTablePartition] =
+    mutable.Map()
+
+  override def isSplitable(path: Path): Boolean = {
+    catalogTable.provider.map(_.toUpperCase(Locale.ROOT)).exists {
+      case "PARQUET" => true
+      case "ORC" => true
+      case "HIVE" => isHiveOrcOrParquet(catalogTable.storage)
+      case _ => super.isSplitable(path)
+    }
+  }
 
   override def createReaderFactory(): PartitionReaderFactory = {
-    val hiveConf = sparkSession.sessionState.newHadoopConf()
+    val hiveConf = fileIndex.hiveCatalog.hadoopConfiguration()
     addCatalogTableConfToConf(hiveConf, catalogTable)
 
-    val table = hiveClientImpl.toHiveTable(catalogTable)
+    val table = HiveClientImpl.toHiveTable(catalogTable)
     HiveReader.initializeHiveConf(table, hiveConf, dataSchema, readDataSchema)
     val broadcastHiveConf =
       sparkSession.sparkContext.broadcast(new SerializableConfiguration(hiveConf))
@@ -88,7 +97,7 @@ case class HiveScan(
     }
     lazy val partitionValueProject =
       GenerateUnsafeProjection.generate(readPartitionAttributes, partitionAttributes)
-    val splitFiles = selectedPartitions.flatMap { partition =>
+    val splitFiles: Seq[PartitionedFile] = selectedPartitions.flatMap { partition =>
       val partitionValues =
         if (readPartitionAttributes != partitionAttributes) {
           partitionValueProject(partition.values).copy()
@@ -115,7 +124,7 @@ case class HiveScan(
     }
 
     if (splitFiles.length == 1) {
-      val path = new Path(splitFiles(0).filePath)
+      val path = new Path(HiveConnectorUtils.partitionedFilePath(splitFiles(0)))
       if (!isSplitable(path) && splitFiles(0).length >
           sparkSession.sparkContext.getConf.getOption("spark.io.warning.largeFileThreshold")
             .getOrElse("1024000000").toLong) {
@@ -140,6 +149,11 @@ case class HiveScan(
     } else {
       name.toLowerCase(Locale.ROOT)
     }
+  }
+
+  private def isHiveOrcOrParquet(storage: CatalogStorageFormat): Boolean = {
+    val serde = storage.serde.getOrElse("").toLowerCase(Locale.ROOT)
+    serde.contains("parquet") || serde.contains("orc")
   }
 
   def toAttributes(structType: StructType): Seq[AttributeReference] =

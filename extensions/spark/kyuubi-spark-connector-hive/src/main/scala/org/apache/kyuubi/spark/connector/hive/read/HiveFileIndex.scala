@@ -21,15 +21,14 @@ import java.net.URI
 
 import scala.collection.mutable
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
-import org.apache.hadoop.hive.ql.metadata.{Partition => HivePartition, Table}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{expressions, InternalRow}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition, ExternalCatalogUtils}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, BoundReference, Expression, Predicate}
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources._
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.hiveClientImpl
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConnectorException}
@@ -37,7 +36,7 @@ import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConne
 class HiveCatalogFileIndex(
     sparkSession: SparkSession,
     val catalogTable: CatalogTable,
-    hiveCatalog: HiveTableCatalog,
+    val hiveCatalog: HiveTableCatalog,
     override val sizeInBytes: Long)
   extends PartitioningAwareFileIndex(
     sparkSession,
@@ -46,18 +45,17 @@ class HiveCatalogFileIndex(
 
   private val table = catalogTable
 
-  private val partPathToBindHivePart: mutable.Map[PartitionPath, HivePartition] = mutable.Map()
+  private val partPathToBindHivePart: mutable.Map[PartitionPath, CatalogTablePartition] =
+    mutable.Map()
 
   private val fileStatusCache = FileStatusCache.getOrCreate(sparkSession)
-
-  private lazy val hiveTable: Table = hiveClientImpl.toHiveTable(table)
 
   private val baseLocation: Option[URI] = table.storage.locationUri
 
   override def partitionSchema: StructType = table.partitionSchema
 
   private[hive] def listHiveFiles(partitionFilters: Seq[Expression], dataFilters: Seq[Expression])
-      : (Seq[PartitionDirectory], Map[PartitionDirectory, HivePartition]) = {
+      : (Seq[PartitionDirectory], Map[PartitionDirectory, CatalogTablePartition]) = {
     val fileIndex = filterPartitions(partitionFilters)
     val partDirs = fileIndex.listFiles(partitionFilters, dataFilters)
     val partDirToHivePart = fileIndex.partDirToBindHivePartMap()
@@ -78,15 +76,15 @@ class HiveCatalogFileIndex(
       }
 
       val partitions = selectedPartitions.map {
-        case BindPartition(catalogTablePartition, hivePartition) =>
+        case BindPartition(catalogTablePartition) =>
           val path = new Path(catalogTablePartition.location)
-          val fs = path.getFileSystem(hadoopConf)
+          val fs = path.getFileSystem(hiveCatalog.hadoopConfiguration())
           val partPath = PartitionPath(
             catalogTablePartition.toRow(
               partitionSchema,
               sparkSession.sessionState.conf.sessionLocalTimeZone),
             path.makeQualified(fs.getUri, fs.getWorkingDirectory))
-          partPathToBindHivePart += (partPath -> hivePartition)
+          partPathToBindHivePart += (partPath -> catalogTablePartition)
           partPath
       }
       val partitionSpec = PartitionSpec(partitionSchema, partitions)
@@ -99,19 +97,21 @@ class HiveCatalogFileIndex(
         userSpecifiedSchema = Some(partitionSpec.partitionColumns),
         fileStatusCache = fileStatusCache,
         userSpecifiedPartitionSpec = Some(partitionSpec),
-        metadataOpsTimeNs = Some(timeNs))
+        metadataOpsTimeNs = Some(timeNs),
+        hadoopConf = hiveCatalog.hadoopConfiguration())
     } else {
       new HiveInMemoryFileIndex(
         sparkSession = sparkSession,
         rootPathsSpecified = rootPaths,
         parameters = table.properties,
         userSpecifiedSchema = None,
-        fileStatusCache = fileStatusCache)
+        fileStatusCache = fileStatusCache,
+        hadoopConf = hiveCatalog.hadoopConfiguration())
     }
   }
 
   private def buildBindPartition(partition: CatalogTablePartition): BindPartition =
-    BindPartition(partition, hiveClientImpl.toHivePartition(partition, hiveTable))
+    BindPartition(partition)
 
   override def partitionSpec(): PartitionSpec = {
     throw notSupportOperator("partitionSpec")
@@ -139,10 +139,11 @@ class HiveInMemoryFileIndex(
     rootPathsSpecified: Seq[Path],
     parameters: Map[String, String],
     userSpecifiedSchema: Option[StructType],
-    partPathToBindHivePart: Map[PartitionPath, HivePartition] = Map.empty,
+    partPathToBindHivePart: Map[PartitionPath, CatalogTablePartition] = Map.empty,
     fileStatusCache: FileStatusCache = NoopCache,
     userSpecifiedPartitionSpec: Option[PartitionSpec] = None,
-    override val metadataOpsTimeNs: Option[Long] = None)
+    override val metadataOpsTimeNs: Option[Long] = None,
+    override protected val hadoopConf: Configuration)
   extends InMemoryFileIndex(
     sparkSession,
     rootPathsSpecified,
@@ -152,7 +153,8 @@ class HiveInMemoryFileIndex(
     userSpecifiedPartitionSpec,
     metadataOpsTimeNs) {
 
-  private val partDirToBindHivePart: mutable.Map[PartitionDirectory, HivePartition] = mutable.Map()
+  private val partDirToBindHivePart: mutable.Map[PartitionDirectory, CatalogTablePartition] =
+    mutable.Map()
 
   override def listFiles(
       partitionFilters: Seq[Expression],
@@ -230,7 +232,7 @@ class HiveInMemoryFileIndex(
     !((name.startsWith("_") && !name.contains("=")) || name.startsWith("."))
   }
 
-  def partDirToBindHivePartMap(): Map[PartitionDirectory, HivePartition] = {
+  def partDirToBindHivePartMap(): Map[PartitionDirectory, CatalogTablePartition] = {
     partDirToBindHivePart.toMap
   }
 
@@ -243,7 +245,7 @@ class HiveInMemoryFileIndex(
   }
 }
 
-case class BindPartition(catalogTablePartition: CatalogTablePartition, hivePartition: HivePartition)
+case class BindPartition(catalogTablePartition: CatalogTablePartition)
 
 object HiveTableCatalogFileIndex {
   implicit class CatalogHelper(plugin: CatalogPlugin) {

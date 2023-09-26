@@ -21,14 +21,35 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: setup npm
+      - name: Setup JDK 8
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 8
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
+      - name: Get NodeJS and PNPM version
+        run: |
+          NODEJS_VERSION=$(build/mvn help:evaluate -Dexpression=node.version -q -DforceStdout)
+          PNPM_VERSION=$(build/mvn help:evaluate -Dexpression=pnpm.version -q -DforceStdout)
+          echo "NODEJS_VERSION=${NODEJS_VERSION}" >> "$GITHUB_ENV"
+          echo "PNPM_VERSION=${PNPM_VERSION}" >> "$GITHUB_ENV"
+      - name: Setup Nodejs and NPM
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: ${{env.NODEJS_VERSION}}
+          cache: npm
+          cache-dependency-path: ./kyuubi-server/web-ui/package.json
+      - name: Cache NPM dependencies
+        uses: actions/cache@v3
+        with:
+          path: ./kyuubi-server/web-ui/node_modules
+          key: webui-dependencies-${{ hashFiles('kyuubi-server/web-ui/pnpm-lock.yaml') }}
+          restore-keys: webui-dependencies-
       - name: npm run coverage & build
         run: |
           cd ./kyuubi-server/web-ui
-          npm install pnpm -g
+          npm install pnpm@${PNPM_VERSION} -g
           pnpm install
           pnpm run coverage
           pnpm run build

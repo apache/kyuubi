@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.TimeUnit
 
-import org.apache.hive.service.rpc.thrift.TRowSet
+import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TStatus, TStatusCode}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
@@ -28,7 +28,7 @@ import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionImpl, Session}
+import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionImpl, Session}
 import org.apache.kyuubi.sql.plan.command.RunnableCommand
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -74,14 +74,14 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   }
 
   def newBatchJobSubmissionOperation(
-      session: KyuubiBatchSessionImpl,
+      session: KyuubiBatchSession,
       batchType: String,
       batchName: String,
       resource: String,
       className: String,
       batchConf: Map[String, String],
       batchArgs: Seq[String],
-      recoveryMetadata: Option[Metadata]): BatchJobSubmission = {
+      metadata: Option[Metadata]): BatchJobSubmission = {
     val operation = new BatchJobSubmission(
       session,
       batchType,
@@ -90,7 +90,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       className,
       batchConf,
       batchArgs,
-      recoveryMetadata)
+      metadata)
     addOperation(operation)
     operation
   }
@@ -212,12 +212,12 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,
-      maxRows: Int): TRowSet = {
-
+      maxRows: Int): TFetchResultsResp = {
+    val resp = new TFetchResultsResp(new TStatus(TStatusCode.SUCCESS_STATUS))
     val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
     val operationLog = operation.getOperationLog
-    operationLog match {
-      case Some(log) => log.read(maxRows)
+    val rowSet = operationLog match {
+      case Some(log) => log.read(order, maxRows)
       case None =>
         val remoteHandle = operation.remoteOpHandle()
         val client = operation.client
@@ -227,6 +227,9 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
           ThriftUtils.EMPTY_ROW_SET
         }
     }
+    resp.setResults(rowSet)
+    resp.setHasMoreRows(false)
+    resp
   }
 
   override def start(): Unit = synchronized {

@@ -21,8 +21,8 @@ package org.apache.kyuubi.plugin.spark.authz.serde
  * :: Developer API ::
  *
  * Represents a function identity
- *
+ * @param catalog
  * @param database
  * @param functionName
  */
-case class Function(database: Option[String], functionName: String)
+case class Function(catalog: Option[String], database: Option[String], functionName: String)

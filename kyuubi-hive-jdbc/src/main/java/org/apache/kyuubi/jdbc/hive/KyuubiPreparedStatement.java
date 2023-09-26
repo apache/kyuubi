@@ -26,9 +26,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Scanner;
 import org.apache.hive.service.rpc.thrift.TCLIService;
 import org.apache.hive.service.rpc.thrift.TSessionHandle;
@@ -81,57 +79,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements SQLPrepa
   /** update the SQL string with parameters set by setXXX methods of {@link PreparedStatement} */
   private String updateSql(final String sql, HashMap<Integer, String> parameters)
       throws SQLException {
-    List<String> parts = splitSqlStatement(sql);
-
-    StringBuilder newSql = new StringBuilder(parts.get(0));
-    for (int i = 1; i < parts.size(); i++) {
-      if (!parameters.containsKey(i)) {
-        throw new KyuubiSQLException("Parameter #" + i + " is unset");
-      }
-      newSql.append(parameters.get(i));
-      newSql.append(parts.get(i));
-    }
-    return newSql.toString();
-  }
-
-  /**
-   * Splits the parametered sql statement at parameter boundaries.
-   *
-   * <p>taking into account ' and \ escaping.
-   *
-   * <p>output for: 'select 1 from ? where a = ?' ['select 1 from ',' where a = ','']
-   */
-  private List<String> splitSqlStatement(String sql) {
-    List<String> parts = new ArrayList<>();
-    int apCount = 0;
-    int off = 0;
-    boolean skip = false;
-
-    for (int i = 0; i < sql.length(); i++) {
-      char c = sql.charAt(i);
-      if (skip) {
-        skip = false;
-        continue;
-      }
-      switch (c) {
-        case '\'':
-          apCount++;
-          break;
-        case '\\':
-          skip = true;
-          break;
-        case '?':
-          if ((apCount & 1) == 0) {
-            parts.add(sql.substring(off, i));
-            off = i + 1;
-          }
-          break;
-        default:
-          break;
-      }
-    }
-    parts.add(sql.substring(off, sql.length()));
-    return parts;
+    return Utils.updateSql(sql, parameters);
   }
 
   @Override
@@ -220,7 +168,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements SQLPrepa
       // Can't infer a type.
       throw new KyuubiSQLException(
           MessageFormat.format(
-              "Can't infer the SQL type to use for an instance of {0}. Use setObject() with an explicit Types value to specify the type to use.",
+              "Cannot infer the SQL type to use for an instance of {0}. Use setObject() with an explicit Types value to specify the type to use.",
               x.getClass().getName()));
     }
   }

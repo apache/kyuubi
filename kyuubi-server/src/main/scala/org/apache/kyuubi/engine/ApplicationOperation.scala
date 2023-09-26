@@ -35,30 +35,48 @@ trait ApplicationOperation {
   /**
    * Called before other method to do a quick skip
    *
-   * @param clusterManager the underlying cluster manager or just local instance
+   * @param appMgrInfo the application manager information
    */
-  def isSupported(clusterManager: Option[String]): Boolean
+  def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean
 
   /**
    * Kill the app/engine by the unique application tag
    *
+   * @param appMgrInfo the application manager information
    * @param tag the unique application tag for engine instance.
    *            For example,
    *            if the Hadoop Yarn is used, for spark applications,
    *            the tag will be preset via spark.yarn.tags
+   * @param proxyUser the proxy user to use for executing kill commands.
+   *                  For secured YARN cluster, the Kyuubi Server's user typically
+   *                  has no permission to kill the application. Admin user or
+   *                  application owner should be used instead.
    * @return a message contains response describing how the kill process.
    *
    * @note For implementations, please suppress exceptions and always return KillResponse
    */
-  def killApplicationByTag(tag: String): KillResponse
+  def killApplicationByTag(
+      appMgrInfo: ApplicationManagerInfo,
+      tag: String,
+      proxyUser: Option[String] = None): KillResponse
 
   /**
    * Get the engine/application status by the unique application tag
    *
+   * @param appMgrInfo the application manager information
    * @param tag the unique application tag for engine instance.
+   * @param submitTime engine submit to resourceManager time
+   * @param proxyUser  the proxy user to use for creating YARN client
+   *                   For secured YARN cluster, the Kyuubi Server's user may have no permission
+   *                   to operate the application. Admin user or application owner could be used
+   *                   instead.
    * @return [[ApplicationInfo]]
    */
-  def getApplicationInfoByTag(tag: String): ApplicationInfo
+  def getApplicationInfoByTag(
+      appMgrInfo: ApplicationManagerInfo,
+      tag: String,
+      proxyUser: Option[String] = None,
+      submitTime: Option[Long] = None): ApplicationInfo
 }
 
 object ApplicationState extends Enumeration {
@@ -99,6 +117,30 @@ case class ApplicationInfo(
   }
 }
 
+object ApplicationInfo {
+  val NOT_FOUND: ApplicationInfo = ApplicationInfo(null, null, ApplicationState.NOT_FOUND)
+  val UNKNOWN: ApplicationInfo = ApplicationInfo(null, null, ApplicationState.UNKNOWN)
+}
+
 object ApplicationOperation {
   val NOT_FOUND = "APPLICATION_NOT_FOUND"
+}
+
+case class KubernetesInfo(context: Option[String] = None, namespace: Option[String] = None)
+
+case class ApplicationManagerInfo(
+    resourceManager: Option[String],
+    kubernetesInfo: KubernetesInfo = KubernetesInfo())
+
+object ApplicationManagerInfo {
+  final val DEFAULT_KUBERNETES_NAMESPACE = "default"
+
+  def apply(
+      resourceManager: Option[String],
+      kubernetesContext: Option[String],
+      kubernetesNamespace: Option[String]): ApplicationManagerInfo = {
+    new ApplicationManagerInfo(
+      resourceManager,
+      KubernetesInfo(kubernetesContext, kubernetesNamespace))
+  }
 }

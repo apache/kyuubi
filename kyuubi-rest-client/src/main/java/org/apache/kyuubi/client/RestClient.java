@@ -114,7 +114,7 @@ public class RestClient implements IRestClient {
               contentBody = new FileBody((File) payload);
               break;
             default:
-              throw new RuntimeException("Unsupported multi part type:" + multiPart);
+              throw new RuntimeException("Unsupported multi part type:" + multiPart.getType());
           }
           entityBuilder.addPart(s, contentBody);
         });
@@ -124,6 +124,21 @@ public class RestClient implements IRestClient {
     postRequestBuilder.setEntity(httpEntity);
     String responseJson = doRequest(buildURI(path), authHeader, postRequestBuilder);
     return JsonUtils.fromJson(responseJson, type);
+  }
+
+  @Override
+  public <T> T put(String path, String body, Class<T> type, String authHeader) {
+    String responseJson = put(path, body, authHeader);
+    return JsonUtils.fromJson(responseJson, type);
+  }
+
+  @Override
+  public String put(String path, String body, String authHeader) {
+    RequestBuilder putRequestBuilder = RequestBuilder.put();
+    if (body != null) {
+      putRequestBuilder.setEntity(new StringEntity(body, StandardCharsets.UTF_8));
+    }
+    return doRequest(buildURI(path), authHeader, putRequestBuilder);
   }
 
   @Override

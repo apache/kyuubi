@@ -30,16 +30,17 @@ jobs:
       matrix:
         branch:
           - master
-          - branch-1.6
-          - branch-1.5
+          - branch-1.7
+          - branch-1.8
         profiles:
           - -Pflink-provided,spark-provided,hive-provided,spark-3.1
-          - -Pflink-provided,spark-provided,hive-provided,spark-3.2,tpcds
+          - -Pflink-provided,spark-provided,hive-provided,spark-3.2
+          - -Pflink-provided,spark-provided,hive-provided,spark-3.3,tpcds
         include:
           - branch: master
-            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.3
-          - branch: branch-1.6
-            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.3
+            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.4
+          - branch: branch-1.8
+            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.4
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

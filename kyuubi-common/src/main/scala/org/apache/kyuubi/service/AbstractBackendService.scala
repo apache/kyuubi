@@ -201,7 +201,7 @@ abstract class AbstractBackendService(name: String)
       operationHandle: OperationHandle,
       orientation: FetchOrientation,
       maxRows: Int,
-      fetchLog: Boolean): TRowSet = {
+      fetchLog: Boolean): TFetchResultsResp = {
     maxRowsLimit.foreach(limit =>
       if (maxRows > limit) {
         throw new IllegalArgumentException(s"Max rows for fetching results " +

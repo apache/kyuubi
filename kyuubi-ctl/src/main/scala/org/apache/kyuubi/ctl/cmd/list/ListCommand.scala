@@ -18,21 +18,20 @@ package org.apache.kyuubi.ctl.cmd.list
 
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.opt.CliConfig
-import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
+import org.apache.kyuubi.ctl.util.{Render, Validator}
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
-class ListCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](cliConfig) {
+abstract class ListCommand(cliConfig: CliConfig)
+  extends Command[Iterable[ServiceNodeInfo]](cliConfig) {
 
   def validate(): Unit = {
     Validator.validateZkArguments(normalizedCliConfig)
     mergeArgsIntoKyuubiConf()
   }
 
-  def doRun(): Seq[ServiceNodeInfo] = {
-    CtlUtils.listZkServerNodes(conf, normalizedCliConfig, filterHostPort = false)
-  }
+  override def doRun(): Iterable[ServiceNodeInfo]
 
-  def render(nodes: Seq[ServiceNodeInfo]): Unit = {
+  override def render(nodes: Iterable[ServiceNodeInfo]): Unit = {
     val title = "Zookeeper service nodes"
     info(Render.renderServiceNodesInfo(title, nodes))
   }

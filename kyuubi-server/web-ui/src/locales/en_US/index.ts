@@ -16,5 +16,42 @@
  */
 
 export default {
-  test: 'test'
+  test: 'test',
+  user: 'User',
+  client_ip: 'Client IP',
+  server_ip: 'Server IP',
+  kyuubi_instance: 'Kyuubi Instance',
+  session_id: 'Session ID',
+  operation_id: 'Operation ID',
+  create_time: 'Create Time',
+  start_time: 'State Time',
+  complete_time: 'Completed Time',
+  state: 'State',
+  duration: 'Duration',
+  statement: 'Statement',
+  engine_address: 'Engine Address',
+  engine_id: 'Engine ID',
+  engine_type: 'Engine Type',
+  share_level: 'Share Level',
+  version: 'Version',
+  engine_ui: 'Engine UI',
+  failure_reason: 'Failure Reason',
+  session_properties: 'Session Properties',
+  operation: {
+    text: 'Operation',
+    delete_confirm: 'Delete Confirm',
+    close_confirm: 'Close Confirm',
+    cancel_confirm: 'Cancel Confirm',
+    close: 'Close',
+    cancel: 'Cancel',
+    delete: 'Delete'
+  },
+  message: {
+    delete_succeeded: 'Delete {name} Succeeded',
+    delete_failed: 'Delete {name} Failed',
+    close_succeeded: 'Close {name} Succeeded',
+    close_failed: 'Close {name} Failed',
+    cancel_succeeded: 'Cancel {name} Succeeded',
+    cancel_failed: 'Cancel {name} Failed'
+  }
 }

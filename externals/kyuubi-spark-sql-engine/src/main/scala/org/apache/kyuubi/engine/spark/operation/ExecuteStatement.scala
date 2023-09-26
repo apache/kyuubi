@@ -21,15 +21,14 @@ import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.execution.SQLExecution
-import org.apache.spark.sql.kyuubi.SparkDatasetHelper
+import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -77,22 +76,23 @@ class ExecuteStatement(
     resultDF.take(maxRows)
   }
 
-  protected def executeStatement(): Unit = withLocalProperties {
+  protected def executeStatement(): Unit =
     try {
-      setState(OperationState.RUNNING)
-      info(diagnostics)
-      Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-      addOperationListener()
-      result = spark.sql(statement)
-      iter = collectAsIterator(result)
-      setCompiledStateIfNeeded()
-      setState(OperationState.FINISHED)
+      withLocalProperties {
+        setState(OperationState.RUNNING)
+        info(diagnostics)
+        Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+        addOperationListener()
+        result = spark.sql(statement)
+        iter = collectAsIterator(result)
+        setCompiledStateIfNeeded()
+        setState(OperationState.FINISHED)
+      }
     } catch {
       onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
     }
-  }
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
@@ -186,35 +186,18 @@ class ArrowBasedExecuteStatement(
     incrementalCollect,
     handle) {
 
+  checkUseLargeVarType()
+
   override protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
-    collectAsArrow(convertComplexType(resultDF)) { rdd =>
-      rdd.toLocalIterator
-    }
+    toArrowBatchLocalIterator(convertComplexType(resultDF))
   }
 
   override protected def fullCollectResult(resultDF: DataFrame): Array[_] = {
-    collectAsArrow(convertComplexType(resultDF)) { rdd =>
-      rdd.collect()
-    }
+    executeCollect(convertComplexType(resultDF))
   }
 
   override protected def takeResult(resultDF: DataFrame, maxRows: Int): Array[_] = {
-    // this will introduce shuffle and hurt performance
-    val limitedResult = resultDF.limit(maxRows)
-    collectAsArrow(convertComplexType(limitedResult)) { rdd =>
-      rdd.collect()
-    }
-  }
-
-  /**
-   * refer to org.apache.spark.sql.Dataset#withAction(), assign a new execution id for arrow-based
-   * operation, so that we can track the arrow-based queries on the UI tab.
-   */
-  private def collectAsArrow[T](df: DataFrame)(action: RDD[Array[Byte]] => T): T = {
-    SQLExecution.withNewExecutionId(df.queryExecution, Some("collectAsArrow")) {
-      df.queryExecution.executedPlan.resetMetrics()
-      action(SparkDatasetHelper.toArrowBatchRdd(df))
-    }
+    executeCollect(convertComplexType(resultDF.limit(maxRows)))
   }
 
   override protected def isArrowBasedOperation: Boolean = true
@@ -222,7 +205,19 @@ class ArrowBasedExecuteStatement(
   override val resultFormat = "arrow"
 
   private def convertComplexType(df: DataFrame): DataFrame = {
-    SparkDatasetHelper.convertTopLevelComplexTypeToHiveString(df, timestampAsString)
+    convertTopLevelComplexTypeToHiveString(df, timestampAsString)
   }
 
+  def checkUseLargeVarType(): Unit = {
+    // TODO: largeVarType support, see SPARK-39979.
+    val useLargeVarType = session.asInstanceOf[SparkSessionImpl].spark
+      .conf
+      .get("spark.sql.execution.arrow.useLargeVarType", "false")
+      .toBoolean
+    if (useLargeVarType) {
+      throw new KyuubiSQLException(
+        "`spark.sql.execution.arrow.useLargeVarType = true` not support now.",
+        null)
+    }
+  }
 }

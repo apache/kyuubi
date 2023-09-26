@@ -18,6 +18,7 @@
 package org.apache.spark.kyuubi.lineage
 
 import org.apache.spark.SparkContext
+import org.apache.spark.internal.config.ConfigEntry
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.sql.SparkSession
 
@@ -31,4 +32,11 @@ object SparkContextHelper {
     sc.listenerBus.post(event)
   }
 
+  def getConf[T](entry: ConfigEntry[T]): T = {
+    globalSparkContext.getConf.get(entry)
+  }
+
+  def setConf[T](entry: ConfigEntry[T], value: T): Unit = {
+    globalSparkContext.conf.set(entry, value)
+  }
 }

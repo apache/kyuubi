@@ -37,6 +37,8 @@ case class HiveScanBuilder(
       catalogTable = table,
       dataSchema = dataSchema,
       readDataSchema = readDataSchema(),
-      readPartitionSchema = readPartitionSchema())
+      readPartitionSchema = readPartitionSchema(),
+      partitionFilters = partitionFilters,
+      dataFilters = dataFilters)
   }
 }

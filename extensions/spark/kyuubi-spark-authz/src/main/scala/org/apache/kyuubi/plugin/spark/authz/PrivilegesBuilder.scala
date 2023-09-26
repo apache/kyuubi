@@ -28,6 +28,7 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object PrivilegesBuilder {
 
@@ -94,6 +95,12 @@ object PrivilegesBuilder {
         val sortCols = s.order.flatMap(sortOrder => collectLeaves(sortOrder))
         val cols = conditionList ++ sortCols
         buildQuery(s.child, privilegeObjects, projectionList, cols, spark)
+
+      case a: Aggregate =>
+        val aggCols =
+          (a.aggregateExpressions ++ a.groupingExpressions).flatMap(e => collectLeaves(e))
+        val cols = conditionList ++ aggCols
+        buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
 
       case scan if isKnownScan(scan) && scan.resolved =>
         getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))
@@ -202,7 +209,39 @@ object PrivilegesBuilder {
     }
   }
 
-  type PrivilegesAndOpType = (Seq[PrivilegeObject], Seq[PrivilegeObject], OperationType)
+  type PrivilegesAndOpType = (Iterable[PrivilegeObject], Iterable[PrivilegeObject], OperationType)
+
+  /**
+   * Build input  privilege objects from a Spark's LogicalPlan for hive permanent udf
+   *
+   * @param plan      A Spark LogicalPlan
+   */
+  def buildFunctions(
+      plan: LogicalPlan,
+      spark: SparkSession): PrivilegesAndOpType = {
+    val inputObjs = new ArrayBuffer[PrivilegeObject]
+    plan match {
+      case command: Command if isKnownTableCommand(command) =>
+        val spec = getTableCommandSpec(command)
+        val functionPrivAndOpType = spec.queries(plan)
+          .map(plan => buildFunctions(plan, spark))
+        functionPrivAndOpType.map(_._1)
+          .reduce(_ ++ _)
+          .foreach(functionPriv => inputObjs += functionPriv)
+
+      case plan => plan transformAllExpressions {
+          case hiveFunction: Expression if isKnownFunction(hiveFunction) =>
+            val functionSpec: ScanSpec = getFunctionSpec(hiveFunction)
+            if (functionSpec.functionDescs
+                .exists(!_.functionTypeDesc.get.skip(hiveFunction, spark))) {
+              functionSpec.functions(hiveFunction).foreach(func =>
+                inputObjs += PrivilegeObject(func))
+            }
+            hiveFunction
+        }
+    }
+    (inputObjs, Seq.empty, OperationType.QUERY)
+  }
 
   /**
    * Build input and output privilege objects from a Spark's LogicalPlan
