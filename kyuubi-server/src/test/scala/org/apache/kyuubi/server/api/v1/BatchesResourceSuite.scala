@@ -598,7 +598,8 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         }
       case "2" =>
         eventually(timeout(20.seconds)) {
-          Seq(batchId1, batchId2).foreach { batchId =>
+          Seq(batchMetadata, batchMetadata2).foreach { originMetadata =>
+            val batchId = originMetadata.identifier
             val metadata = sessionManager.getBatchMetadata(batchId).getOrElse(fail(
               s"Can't find metadata for recovery batch: $batchId"))
             assert(
@@ -606,6 +607,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
                 metadata.state === OperationState.RUNNING.toString ||
                 metadata.state === OperationState.FINISHED.toString)
             assert(metadata.kyuubiInstance === fe.connectionUrl)
+            assert(metadata.createTime !== originMetadata.createTime)
           }
         }
       case "_" =>

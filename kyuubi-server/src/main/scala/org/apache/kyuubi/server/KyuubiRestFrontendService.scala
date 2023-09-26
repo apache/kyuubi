@@ -23,13 +23,10 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import javax.servlet.DispatcherType
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response.Status
-
 import scala.collection.mutable.ListBuffer
-
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.conf.Configuration
 import org.eclipse.jetty.servlet.{ErrorPageErrorHandler, FilterHolder}
-
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -41,7 +38,7 @@ import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
-import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.{KyuubiUtils, ThreadUtils}
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.
@@ -144,22 +141,16 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     batchChecker.scheduleWithFixedDelay(task, interval, interval, TimeUnit.MILLISECONDS)
   }
 
-  private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
-    KyuubiServer.kyuubiServer.getConf.get(BATCH_SUBMITTER_ENABLED) &&
-    reqConf.getOrElse(BATCH_IMPL_VERSION.key, getConf.get(BATCH_IMPL_VERSION)) == "2"
-  }
-
   @VisibleForTesting
   private[kyuubi] def recoverBatchSessions(): Unit = {
     val recoveryNumThreads = conf.get(METADATA_RECOVERY_THREADS)
     val batchRecoveryExecutor =
       ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
     try {
-      // split metadata wait to recover as v1 and v2
       val v1Metadata = new ListBuffer[Metadata]
       val v2Metadata = new ListBuffer[Metadata]
       sessionManager.getMetadataToRecover(connectionUrl).foreach { metadata =>
-        if (batchV2Enabled(metadata.requestConf)) {
+        if (KyuubiUtils.batchV2Enabled(metadata.requestConf)) {
           v2Metadata += metadata
         } else {
           v1Metadata += metadata
