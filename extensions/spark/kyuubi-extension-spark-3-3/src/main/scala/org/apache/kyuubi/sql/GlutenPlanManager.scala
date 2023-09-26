@@ -54,31 +54,20 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
     val count = plan.collect {
       case p: FileSourceScanExec
           if !p.relation.fileFormat.isInstanceOf[ParquetFileFormat] =>
-        p
-      case p: RowDataSourceScanExec =>
-        p
-      case p: UserDefinedExpression =>
-        p
-      case p: CartesianProductExec =>
-        p
-      case p: ShuffleExchangeExec =>
-        p
-      case p: CollectLimitExec =>
-        p
-      case p: ObjectHashAggregateExec =>
-        p
-      case p: SortAggregateExec =>
-        p
-      case p: CoalesceExec =>
-        p
-      case p: GenerateExec =>
-        p
-      case p: RangeExec =>
-        p
-      case p: SampleExec =>
-        p
-      case p: BroadcastNestedLoopJoinExec =>
-        p
+        true
+      case _: RowDataSourceScanExec |
+          _: UserDefinedExpression |
+          _: CartesianProductExec |
+          _: ShuffleExchangeExec |
+          _: CollectLimitExec |
+          _: ObjectHashAggregateExec |
+          _: SortAggregateExec |
+          _: CoalesceExec |
+          _: GenerateExec |
+          _: RangeExec |
+          _: SampleExec |
+          _: BroadcastNestedLoopJoinExec =>
+        true
       // TODO check whether the plan contains unsupported expressions
     }.size
     check(count)
