@@ -29,8 +29,7 @@ import org.apache.kyuubi.operation.Operation
 
 class SparkConsoleProgressBar(
     operation: Operation,
-    liveJobs: ConcurrentHashMap[Int, JobInfo],
-    liveStages: ConcurrentHashMap[StageAttempt, StageInfo],
+    liveStages: ConcurrentHashMap[SparkStageAttempt, SparkStageInfo],
     updatePeriodMSec: Long,
     timeFormat: String)
   extends Logging {
@@ -81,13 +80,6 @@ class SparkConsoleProgressBar(
   private def show(now: Long, stages: Seq[SparkStageInfo]): Unit = {
     val width = TerminalWidth / stages.size
     val bar = stages.map { s =>
-      // build job log info
-      val jobId: Option[Int] = liveJobs.asScala.find {
-        case (jobId, jobInfo) => jobInfo.stageIds.contains(s.stageId)
-      }.map(_._1)
-      val jobInfoHeader = s"[Job ${jobId} " +
-        s"(${liveJobs.get(jobId).numCompleteStages} / ${liveJobs.get(jobId).numStages}) Stages] "
-      // build stage log info
       val total = s.numTasks
       val header = s"[Stage ${s.stageId}:"
       val tailer = s"(${s.numCompleteTasks} + ${s.numActiveTasks}) / $total]"
@@ -101,7 +93,7 @@ class SparkConsoleProgressBar(
         } else {
           ""
         }
-      jobInfoHeader + header + bar + tailer
+      header + bar + tailer
     }.mkString("")
 
     // only refresh if it's changed OR after 1 minute (or the ssh connection will be closed
