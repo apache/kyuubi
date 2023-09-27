@@ -21,7 +21,6 @@ import java.util._
 
 import org.apache.commons.collections.CollectionUtils
 import org.apache.commons.lang3.StringUtils
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.util.Lists
 import org.apache.ranger.audit.model.AuthzAuditEvent
 import org.apache.ranger.plugin.audit.RangerDefaultAuditHandler
@@ -31,9 +30,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.ObjectType
-import org.apache.kyuubi.plugin.spark.authz.OperationType
-import org.apache.kyuubi.plugin.spark.authz.ranger.AccessRequest
-import org.apache.kyuubi.plugin.spark.authz.ranger.AccessResource
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType.AccessType
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAuditHandler.{LOG, URL_RESOURCE_TYPE}
 
