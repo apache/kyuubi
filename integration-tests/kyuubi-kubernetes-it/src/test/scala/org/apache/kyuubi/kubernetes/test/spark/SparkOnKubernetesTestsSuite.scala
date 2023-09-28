@@ -27,7 +27,7 @@ import org.apache.hadoop.net.NetUtils
 import org.apache.kyuubi._
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationOperation, KubernetesApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, NOT_FOUND, RUNNING}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
@@ -57,9 +57,9 @@ abstract class SparkOnKubernetesSuiteBase
       .set("spark.driver.memory", "512M")
       .set("spark.kubernetes.driver.request.cores", "250m")
       .set("spark.kubernetes.executor.request.cores", "250m")
-      .set("kyuubi.kubernetes.context", "minikube")
-      .set("kyuubi.frontend.protocols", "THRIFT_BINARY,REST")
-      .set("kyuubi.session.engine.initialize.timeout", "PT10M")
+      .set(KUBERNETES_CONTEXT.key, "minikube")
+      .set(FRONTEND_PROTOCOLS.key, "THRIFT_BINARY,REST")
+      .set(ENGINE_INIT_TIMEOUT.key, "PT10M")
   }
 }
 
