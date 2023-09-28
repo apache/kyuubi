@@ -198,7 +198,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       "spark.submit.deployMode" -> "cluster",
       "spark.sql.defaultCatalog=spark_catalog" -> "spark_catalog",
       "spark.sql.catalog.spark_catalog.type" -> "invalid_type",
-      "kyuubi.session.engine.initialize.timeout" -> "PT10M",
+      ENGINE_INIT_TIMEOUT.key -> "PT10M",
       KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))(Map.empty) {
       val startTime = System.currentTimeMillis()
       val exception = intercept[Exception] {
