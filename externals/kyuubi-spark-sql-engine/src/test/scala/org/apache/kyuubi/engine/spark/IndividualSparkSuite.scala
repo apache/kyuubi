@@ -114,7 +114,7 @@ class SparkEngineSuites extends KyuubiFunSuite {
       }
       assert(SparkSQLEngine.currentEngine.isEmpty)
       val errorMsg = s"The Engine main thread was interrupted, possibly due to `createSpark`" +
-        s" timeout. The `kyuubi.session.engine.initialize.timeout` is ($timeout ms) " +
+        s" timeout. The `${ENGINE_INIT_TIMEOUT.key}` is ($timeout ms) " +
         s" and submitted at $submitTime."
       assert(logAppender.loggingEvents.exists(
         _.getMessage.getFormattedMessage.equals(errorMsg)))
