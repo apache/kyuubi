@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 import java.util.{Base64, UUID}
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{GenericType, MediaType}
@@ -49,6 +50,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
     .set(KyuubiConf.SERVER_ADMINISTRATORS, Set("admin001"))
+    .set(KyuubiConf.ENGINE_IDLE_TIMEOUT, Duration.ofMinutes(3).toMillis)
 
   private val encodeAuthorization: String = {
     new String(
@@ -275,7 +277,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
@@ -320,7 +321,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
@@ -366,7 +366,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val id = UUID.randomUUID().toString
@@ -401,7 +400,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
@@ -446,7 +444,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
@@ -492,7 +489,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engineSpace = DiscoveryPaths.makePath(
