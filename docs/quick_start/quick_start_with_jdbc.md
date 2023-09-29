@@ -35,7 +35,7 @@ The driver is available from Maven Central:
 
 ## Connect to non-kerberized Kyuubi Server
 
-The below java code is using a keytab file to login and connect to Kyuubi server by JDBC.
+The following java code connects directly to the Kyuubi Server by JDBC without using kerberos authentication.
 
 ```java
 package org.apache.kyuubi.examples;
