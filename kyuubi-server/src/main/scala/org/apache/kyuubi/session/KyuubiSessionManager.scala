@@ -18,10 +18,13 @@
 package org.apache.kyuubi.session
 
 import java.util.concurrent.{Semaphore, TimeUnit}
+
 import scala.collection.JavaConverters._
+
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.client.util.BatchUtils.KYUUBI_BATCH_ID_KEY
