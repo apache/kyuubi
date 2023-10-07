@@ -78,6 +78,7 @@ case class Metadata(
     engineState: String = null,
     engineError: Option[String] = None,
     endTime: Long = 0L,
+    priority: Option[Int] = None,
     peerInstanceClosed: Boolean = false) {
   def appMgrInfo: ApplicationManagerInfo = {
     ApplicationManagerInfo(
