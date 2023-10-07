@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS metadata(
     engine_state varchar(32), -- the engine application state
     engine_error mediumtext, -- the engine application diagnose
     end_time bigint, -- the metadata end time
-    priority INTEGER DEFAULT 10, -- the application priority, high value means high priority
+    priority INTEGER DEFAULT 10 NOT NULL, -- the application priority, high value means high priority
     peer_instance_closed boolean default '0' -- closed by peer kyuubi instance
 );
 
