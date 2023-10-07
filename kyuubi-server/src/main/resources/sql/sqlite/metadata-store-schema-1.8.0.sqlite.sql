@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS metadata(
     engine_state varchar(32), -- the engine application state
     engine_error mediumtext, -- the engine application diagnose
     end_time bigint, -- the metadata end time
+    priority INTEGER NOT NULL DEFAULT 10, -- the application priority, high value means high priority
     peer_instance_closed boolean default '0' -- closed by peer kyuubi instance
 );
 
@@ -34,3 +35,5 @@ CREATE INDEX IF NOT EXISTS metadata_user_name_index ON metadata(user_name);
 CREATE INDEX IF NOT EXISTS metadata_engine_type_index ON metadata(engine_type);
 
 CREATE INDEX IF NOT EXISTS metadata_create_time_index ON metadata(create_time);
+
+CREATE INDEX IF NOT EXISTS metadata_priority_create_time_index ON metadata(priority, create_time);
