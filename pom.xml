@@ -2249,8 +2249,7 @@
             <properties>
                 <delta.version>2.4.0</delta.version>
                 <spark.version>3.5.0</spark.version>
-                <!-- TODO: Iceberg does not support 3.5 -->
-                <!-- <spark.binary.version>3.5</spark.binary.version> -->
+                <spark.binary.version>3.5</spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
