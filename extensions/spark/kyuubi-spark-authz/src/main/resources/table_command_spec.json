@@ -157,7 +157,7 @@
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateTableAsSelect",
   "tableDescs" : [ {
-    "fieldName" : "left",
+    "fieldName" : "name",
     "fieldExtractor" : "ResolvedIdentifierTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : null,
@@ -508,7 +508,7 @@
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceTableAsSelect",
   "tableDescs" : [ {
-    "fieldName" : "left",
+    "fieldName" : "name",
     "fieldExtractor" : "ResolvedIdentifierTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : null,
