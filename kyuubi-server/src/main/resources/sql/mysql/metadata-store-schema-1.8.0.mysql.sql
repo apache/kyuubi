@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS metadata(
     engine_state varchar(32) COMMENT 'the engine application state',
     engine_error mediumtext COMMENT 'the engine application diagnose',
     end_time bigint COMMENT 'the metadata end time',
-    priority int DEFAULT 10 NOT NULL COMMENT 'the application priority, high value means high priority',
+    priority int NOT NULL DEFAULT 10 COMMENT 'the application priority, high value means high priority',
     peer_instance_closed boolean default '0' COMMENT 'closed by peer kyuubi instance',
     UNIQUE INDEX unique_identifier_index(identifier),
     INDEX user_name_index(user_name),
