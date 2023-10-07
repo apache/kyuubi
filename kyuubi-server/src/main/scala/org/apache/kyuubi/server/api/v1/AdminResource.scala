@@ -283,8 +283,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @GET
   @Path("engine")
   def listEngines(
-      @QueryParam("type") engineType: String,
-      @QueryParam("sharelevel") shareLevel: String,
+      @QueryParam("type") _engineType: String,
+      @QueryParam("sharelevel") _shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
       @QueryParam("all") @DefaultValue("false") all: String): Seq[Engine] = {
@@ -298,8 +298,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       }
       val engines = ListBuffer[Engine]()
       val engineSpace = fe.getConf.get(HA_NAMESPACE)
-      val shareLevel = fe.getConf.get(ENGINE_SHARE_LEVEL)
-      val engineType = fe.getConf.get(ENGINE_TYPE)
+      val shareLevel = Option(_shareLevel).getOrElse(fe.getConf.get(ENGINE_SHARE_LEVEL))
+      val engineType = Option(_engineType).getOrElse(fe.getConf.get(ENGINE_TYPE))
       withDiscoveryClient(fe.getConf) { discoveryClient =>
         val commonParent = s"/${engineSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType"
         info(s"Listing engine nodes for $commonParent")
@@ -336,7 +336,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     } else {
       fe.getSessionUser(hs2ProxyUser)
     }
-    val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
+    val engine = getEngine(userName, _engineType, _shareLevel, subdomain, "")
     val engineSpace = getEngineSpace(engine)
 
     val engineNodes = ListBuffer[ServiceNodeInfo]()
@@ -357,10 +357,11 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
             case nne: NoNodeException =>
               error(
                 s"No such engine for user: $userName, " +
-                  s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain",
+                  s"engine type: ${_engineType}, share level: ${_shareLevel}," +
+                  s" subdomain: $subdomain",
                 nne)
               throw new NotFoundException(s"No such engine for user: $userName, " +
-                s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain")
+                s"engine type: ${_engineType}, share level: ${_shareLevel}, subdomain: $subdomain")
           }
         }
     }
