@@ -19,10 +19,12 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{ArrayContains, ArrayIntersect, ArraySort, Bin, Contains, EndsWith, LastDay, MakeDate, Overlay, Rand, Randn, Size, SortArray, StartsWith, ToUnixTimestamp, UnaryMinus, UnixTimestamp, UserDefinedExpression}
+import org.apache.spark.sql.catalyst.expressions.{AddMonths, ArrayMax, ArrayMin, ArraysOverlap, ConcatWs, DateFormatClass, Factorial, FromUnixTime, LengthOfJsonArray, PosExplode, Rand, Sequence, SplitPart, StringRepeat, StringTranslate, TruncInstant, UserDefinedExpression}
+import org.apache.spark.sql.catalyst.expressions.aggregate.ApproximatePercentile
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.aggregate.{ObjectHashAggregateExec, SortAggregateExec}
+import org.apache.spark.sql.execution.datasources.orc.OrcFileFormat
 import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.execution.joins.{BroadcastNestedLoopJoinExec, CartesianProductExec}
@@ -53,7 +55,8 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
   override def apply(plan: SparkPlan): SparkPlan = {
     val count = plan.collect {
       case p: FileSourceScanExec
-          if !p.relation.fileFormat.isInstanceOf[ParquetFileFormat] =>
+          if !p.relation.fileFormat.isInstanceOf[ParquetFileFormat] &&
+            !p.relation.fileFormat.isInstanceOf[OrcFileFormat] =>
         true
       case _: RowDataSourceScanExec |
           _: CartesianProductExec |
@@ -67,28 +70,27 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
           _: BroadcastNestedLoopJoinExec =>
         true
       case p: SparkPlan
-          if p.expressions.exists(e =>
-            e.exists {
-              case _: UserDefinedExpression |
-                  _: UnaryMinus |
-                  _: Bin |
-                  _: Contains |
-                  _: StartsWith |
-                  _: EndsWith |
-                  _: Overlay |
-                  _: Rand |
-                  _: Randn |
-                  _: ArrayContains |
-                  _: ArrayIntersect |
-                  _: ArraySort |
-                  _: SortArray |
-                  _: Size |
-                  _: LastDay |
-                  _: MakeDate |
-                  _: ToUnixTimestamp |
-                  _: UnixTimestamp => true
-              case _ => false
-            }) =>
+          if p.expressions.exists(_.exists {
+            case _: UserDefinedExpression |
+                _: SplitPart |
+                _: Factorial |
+                _: ConcatWs |
+                _: Rand |
+                _: LengthOfJsonArray |
+                _: FromUnixTime |
+                _: StringRepeat |
+                _: StringTranslate |
+                _: AddMonths |
+                _: DateFormatClass |
+                _: TruncInstant |
+                _: Sequence |
+                _: PosExplode |
+                _: ArraysOverlap |
+                _: ArrayMin |
+                _: ArrayMax |
+                _: ApproximatePercentile => true
+            case _ => false
+          }) =>
         true
       // TODO check whether the plan contains unsupported expressions
     }.size

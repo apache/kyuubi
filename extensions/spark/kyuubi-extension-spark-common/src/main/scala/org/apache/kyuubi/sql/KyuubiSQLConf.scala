@@ -283,5 +283,5 @@ object KyuubiSQLConf {
         "intended exposing to end users, it may be removed in anytime.")
       .version("1.8.0")
       .intConf
-      .createWithDefault(5)
+      .createWithDefault(Int.MaxValue)
 }
