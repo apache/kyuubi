@@ -23,7 +23,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_PRIORITY
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_BATCH_PRIORITY
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
@@ -179,7 +179,7 @@ class KyuubiBatchSession(
           createTime = createTime,
           engineType = batchType,
           clusterManager = batchJobSubmissionOp.builder.clusterManager(),
-          priority = conf.get(KYUUBI_SESSION_PRIORITY).map(_.toInt))
+          priority = conf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt))
 
         // there is a chance that operation failed w/ duplicated key error
         sessionManager.insertMetadata(newMetadata)
