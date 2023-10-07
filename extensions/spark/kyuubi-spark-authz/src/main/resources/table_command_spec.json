@@ -178,7 +178,7 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   }, {
-    "fieldName" : "left",
+    "fieldName" : "name",
     "fieldExtractor" : "ResolvedDbObjectNameTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : null,
@@ -529,7 +529,7 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   }, {
-    "fieldName" : "left",
+    "fieldName" : "name",
     "fieldExtractor" : "ResolvedDbObjectNameTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : null,
