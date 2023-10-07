@@ -21,7 +21,7 @@ import org.apache.spark.sql.KyuubiSparkSQLExtensionTest
 
 class GlutenPlanManagerSuite extends KyuubiSparkSQLExtensionTest {
 
-  test("Kyuubi Extension fast fail if over un-supported operator threshold") {
+  test("Kyuubi Extension fast fail with Plan if over un-supported operator threshold") {
     withSQLConf(
       KyuubiSQLConf.GLUTEN_FALLBACK_OPERATOR_THRESHOLD.key -> "1") {
       withTable("gluten_tmp_1") {
@@ -33,6 +33,19 @@ class GlutenPlanManagerSuite extends KyuubiSparkSQLExtensionTest {
       withTable("gluten_tmp_2") {
         sql("CREATE TABLE gluten_tmp_2 (c1 int) USING PARQUET PARTITIONED BY (c2 string)")
         sql("SELECT * FROM gluten_tmp_2").collect()
+      }
+    }
+  }
+
+  test("Kyuubi Extension fast fail with Expression if over un-supported operator threshold") {
+    withSQLConf(KyuubiSQLConf.GLUTEN_FALLBACK_OPERATOR_THRESHOLD.key -> "1") {
+      assertThrows[TooMuchGlutenUnsupportedOperationException] {
+        sql("SELECT rand(100)").collect()
+      }
+
+      spark.udf.register("str_len", (s: String) => s.length)
+      assertThrows[TooMuchGlutenUnsupportedOperationException] {
+        sql("SELECT str_len('123')").collect()
       }
     }
   }

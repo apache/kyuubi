@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.UserDefinedExpression
+import org.apache.spark.sql.catalyst.expressions.{ArrayContains, ArrayIntersect, ArraySort, Bin, Contains, EndsWith, LastDay, MakeDate, Overlay, Rand, Randn, Size, SortArray, StartsWith, ToUnixTimestamp, UnaryMinus, UnixTimestamp, UserDefinedExpression}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.aggregate.{ObjectHashAggregateExec, SortAggregateExec}
@@ -56,7 +56,6 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
           if !p.relation.fileFormat.isInstanceOf[ParquetFileFormat] =>
         true
       case _: RowDataSourceScanExec |
-          _: UserDefinedExpression |
           _: CartesianProductExec |
           _: ShuffleExchangeExec |
           _: ObjectHashAggregateExec |
@@ -66,6 +65,30 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
           _: RangeExec |
           _: SampleExec |
           _: BroadcastNestedLoopJoinExec =>
+        true
+      case p: SparkPlan
+          if p.expressions.exists(e =>
+            e.exists {
+              case _: UserDefinedExpression |
+                  _: UnaryMinus |
+                  _: Bin |
+                  _: Contains |
+                  _: StartsWith |
+                  _: EndsWith |
+                  _: Overlay |
+                  _: Rand |
+                  _: Randn |
+                  _: ArrayContains |
+                  _: ArrayIntersect |
+                  _: ArraySort |
+                  _: SortArray |
+                  _: Size |
+                  _: LastDay |
+                  _: MakeDate |
+                  _: ToUnixTimestamp |
+                  _: UnixTimestamp => true
+              case _ => false
+            }) =>
         true
       // TODO check whether the plan contains unsupported expressions
     }.size
