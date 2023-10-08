@@ -27,8 +27,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.HoodieTest
 
 /**
- * Tests for RangerSparkExtensionSuite
- * on Iceberg catalog with DataSource V2 API.
+ * Tests for RangerSparkExtensionSuite on Hoodie SQL.
  */
 @HoodieTest
 class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
