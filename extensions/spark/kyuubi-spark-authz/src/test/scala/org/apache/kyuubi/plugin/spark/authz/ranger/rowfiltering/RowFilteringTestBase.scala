@@ -98,7 +98,6 @@ trait RowFilteringTestBase extends AnyFunSuite with SparkSessionProvider with Be
   }
 
   test("[KYUUBI #3581]: row level filter on permanent view") {
-    assume(isSparkV31OrGreater)
     val supported = doAs(
       permViewUser,
       Try(sql("CREATE OR REPLACE VIEW default.perm_view AS SELECT * FROM default.src")).isSuccess)

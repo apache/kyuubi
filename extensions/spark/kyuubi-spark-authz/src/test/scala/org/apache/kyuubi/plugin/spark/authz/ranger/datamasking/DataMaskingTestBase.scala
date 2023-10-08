@@ -279,7 +279,6 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   }
 
   test("KYUUBI #3581: permanent view should lookup rule on itself not the raw table") {
-    assume(isSparkV31OrGreater)
     val supported = doAs(
       permViewUser,
       Try(sql("CREATE OR REPLACE VIEW default.perm_view AS SELECT * FROM default.src")).isSuccess)

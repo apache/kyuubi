@@ -30,9 +30,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
-    if (isSparkV31OrGreater) {
-      "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
-    } else ""
+    "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
   override protected def format = "iceberg"
 
   override protected val supportsUpdateTable = false
@@ -42,20 +40,17 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val supportsPartitionManagement = false
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater) {
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2",
-        "org.apache.iceberg.spark.SparkCatalog")
-      spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2.warehouse",
-        Utils.createTempDir("iceberg-hadoop").toString)
-    }
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2",
+      "org.apache.iceberg.spark.SparkCatalog")
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2.warehouse",
+      Utils.createTempDir("iceberg-hadoop").toString)
     super.beforeAll()
   }
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV31OrGreater)
     test()
   }
 
