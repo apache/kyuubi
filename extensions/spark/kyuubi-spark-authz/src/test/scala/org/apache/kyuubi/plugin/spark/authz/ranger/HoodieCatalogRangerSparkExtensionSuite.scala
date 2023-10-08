@@ -34,7 +34,7 @@ import org.apache.kyuubi.tags.HoodieTest
 class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
   override protected val sqlExtensions: String =
-    if (isSparkV31OrGreater && !isSparkV34OrGreater) {
+    if (isSparkV31OrGreater) {
       "org.apache.spark.sql.hudi.HoodieSparkSessionExtension"
     } else {
       ""
@@ -50,12 +50,12 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val outputTable1 = "outputTable_hoodie"
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV31OrGreater && !isSparkV34OrGreater)
+    assume(isSparkV31OrGreater)
     test()
   }
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater && !isSparkV34OrGreater) {
+    if (isSparkV31OrGreater) {
       if (isSparkV32OrGreater) {
         spark.conf.set(
           s"spark.sql.catalog.$sparkCatalog",
@@ -86,9 +86,11 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   override def afterAll(): Unit = {
-    super.afterAll()
-    spark.sessionState.catalog.reset()
-    spark.sessionState.conf.clear()
+    if (isSparkV31OrGreater) {
+      super.afterAll()
+      spark.sessionState.catalog.reset()
+      spark.sessionState.conf.clear()
+    }
   }
 
   test("[KYUUBI #5284] Kyuubi authz support Hoodie Alter Table Command") {
