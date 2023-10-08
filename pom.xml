@@ -1189,6 +1189,12 @@
                 <groupId>org.apache.hudi</groupId>
                 <artifactId>hudi-spark3.2-bundle_2.12</artifactId>
                 <version>${hudi.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.dropwizard.metrics</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -2196,6 +2202,12 @@
                     <groupId>org.apache.hudi</groupId>
                     <artifactId>hudi-spark3.1-bundle_2.12</artifactId>
                     <version>${hudi.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>io.dropwizard.metrics</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
         </profile>
@@ -2218,6 +2230,12 @@
                     <groupId>org.apache.hudi</groupId>
                     <artifactId>hudi-spark3.2-bundle_2.12</artifactId>
                     <version>${hudi.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>io.dropwizard.metrics</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
         </profile>
@@ -2240,6 +2258,12 @@
                     <groupId>org.apache.hudi</groupId>
                     <artifactId>hudi-spark3.3-bundle_2.12</artifactId>
                     <version>${hudi.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>io.dropwizard.metrics</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
         </profile>
