@@ -97,8 +97,7 @@ body:
       label: Implementation steps
       description: How could it be implemented?
       placeholder: |
-        Please describe the solution to implement the task.
-        Note, please list the implementation steps in as much detail as possible so that contributors who meet
+        Please list the implementation steps in as much detail as possible so that contributors who meet
         the skill requirements could complete the task quickly and independently.
     validations:
       required: true
