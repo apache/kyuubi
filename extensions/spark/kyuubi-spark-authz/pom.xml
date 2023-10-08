@@ -36,6 +36,7 @@
         <gethostname4j.version>1.0.0</gethostname4j.version>
         <jersey.client.version>1.19.4</jersey.client.version>
         <jna.version>5.7.0</jna.version>
+        <hudi.version>0.14.0</hudi.version>
     </properties>
 
     <dependencies>
@@ -323,6 +324,12 @@
             <artifactId>scala-collection-compat_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.hudi</groupId>
+            <artifactId>hudi-spark3.4-bundle_2.12</artifactId>
+            <version>${hudi.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -360,6 +367,50 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>spark-3.1</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.hudi</groupId>
+                    <artifactId>hudi-spark3.1-bundle_2.12</artifactId>
+                    <version>${hudi.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>spark-3.2</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.hudi</groupId>
+                    <artifactId>hudi-spark3.2-bundle_2.12</artifactId>
+                    <version>${hudi.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>spark-3.3</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.hudi</groupId>
+                    <artifactId>hudi-spark3.3-bundle_2.12</artifactId>
+                    <version>${hudi.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>spark-3.4</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.hudi</groupId>
+                    <artifactId>hudi-spark3.4-bundle_2.12</artifactId>
+                    <version>${hudi.version}</version>
+                </dependency>
+            </dependencies>
         </profile>
     </profiles>
 </project>
