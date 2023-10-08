@@ -192,7 +192,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         metadata.createTime,
         Option(metadata.engineType).map(_.toUpperCase(Locale.ROOT)).orNull,
         metadata.clusterManager.orNull,
-        metadata.priority.orNull)
+        metadata.priority)
     }
   }
 
