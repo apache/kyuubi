@@ -96,7 +96,7 @@ body:
     attributes:
       label: Implementation steps
       description: How could it be implemented?
-      placeholder: |
+      placeholder: >
         Please list the implementation steps in as much detail as possible so that contributors who meet
         the skill requirements could complete the task quickly and independently.
     validations:
