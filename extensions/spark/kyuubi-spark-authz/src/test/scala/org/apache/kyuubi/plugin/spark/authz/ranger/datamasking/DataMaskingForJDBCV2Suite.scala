@@ -23,7 +23,6 @@ import scala.util.Try
 import org.apache.spark.SparkConf
 import org.scalatest.Outcome
 
-
 class DataMaskingForJDBCV2Suite extends DataMaskingTestBase {
   override protected val extraSparkConf: SparkConf = {
     new SparkConf()
