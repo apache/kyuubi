@@ -67,21 +67,6 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           Utils.createTempDir("hoodie-hadoop").toString)
       }
       super.beforeAll()
-
-      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
-      doAs(
-        admin,
-        sql(
-          s"""
-             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
-             |USING hudi
-             |OPTIONS (
-             | type = 'cow',
-             | primaryKey = 'id',
-             | 'hoodie.datasource.hive_sync.enable' = 'false'
-             |)
-             |PARTITIONED BY(city)
-             |""".stripMargin))
     }
   }
 
@@ -94,6 +79,21 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("[KYUUBI #5284] Kyuubi authz support Hoodie Alter Table Command") {
+    doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+    doAs(
+      admin,
+      sql(
+        s"""
+           |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+           |USING hudi
+           |OPTIONS (
+           | type = 'cow',
+           | primaryKey = 'id',
+           | 'hoodie.datasource.hive_sync.enable' = 'false'
+           |)
+           |PARTITIONED BY(city)
+           |""".stripMargin))
+
     val e1 = intercept[AccessControlException] {
       doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)"))
     }.getMessage
@@ -119,5 +119,8 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
     assert(e4.contains(s"does not have [alter] privilege" +
       s" on [$namespace1/$table1]"))
+
+    doAs(admin, s"DROP TABLE IF EXISTS $namespace1.$table1")
+    doAs(admin, s"DROP DATABASE IF EXISTS $namespace1")
   }
 }
