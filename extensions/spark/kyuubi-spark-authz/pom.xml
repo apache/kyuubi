@@ -329,6 +329,7 @@
             <groupId>org.apache.hudi</groupId>
             <artifactId>hudi-spark3.4-bundle_2.12</artifactId>
             <version>${hudi.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -376,6 +377,7 @@
                     <groupId>org.apache.hudi</groupId>
                     <artifactId>hudi-spark3.1-bundle_2.12</artifactId>
                     <version>${hudi.version}</version>
+                    <scope>provided</scope>
                 </dependency>
             </dependencies>
         </profile>
@@ -387,6 +389,7 @@
                     <groupId>org.apache.hudi</groupId>
                     <artifactId>hudi-spark3.2-bundle_2.12</artifactId>
                     <version>${hudi.version}</version>
+                    <scope>provided</scope>
                 </dependency>
             </dependencies>
         </profile>
@@ -398,6 +401,7 @@
                     <groupId>org.apache.hudi</groupId>
                     <artifactId>hudi-spark3.3-bundle_2.12</artifactId>
                     <version>${hudi.version}</version>
+                    <scope>provided</scope>
                 </dependency>
             </dependencies>
         </profile>
@@ -409,6 +413,7 @@
                     <groupId>org.apache.hudi</groupId>
                     <artifactId>hudi-spark3.4-bundle_2.12</artifactId>
                     <version>${hudi.version}</version>
+                    <scope>provided</scope>
                 </dependency>
             </dependencies>
         </profile>
