@@ -2194,6 +2194,7 @@
                 <spark.version>3.1.3</spark.version>
                 <spark.binary.version>3.1</spark.binary.version>
                 <delta.version>1.0.1</delta.version>
+                <hudi.version>0.14.0</hudi.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
@@ -2223,6 +2224,7 @@
                 <spark.binary.version>3.2</spark.binary.version>
                 <delta.version>2.0.2</delta.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
+                <hudi.version>0.14.0</hudi.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
             <dependencies>
@@ -2251,6 +2253,7 @@
                 <delta.version>2.3.0</delta.version>
                 <spark.version>3.3.3</spark.version>
                 <spark.binary.version>3.3</spark.binary.version>
+                <hudi.version>0.14.0</hudi.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
             <dependencies>
@@ -2278,8 +2281,22 @@
                 <delta.version>2.4.0</delta.version>
                 <spark.version>3.4.1</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
+                <hudi.version>0.14.0</hudi.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
             </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.hudi</groupId>
+                    <artifactId>hudi-spark3.4-bundle_2.12</artifactId>
+                    <version>${hudi.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>io.dropwizard.metrics</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+            </dependencies>
         </profile>
 
         <profile>
