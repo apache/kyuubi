@@ -22,7 +22,7 @@
 name: 2023 Kyuubi Code Contribution Task
 title: "[TASK][<LEVEL>] <The Task Title>"
 description: Propose a task for 2023 Kyuubi Code Contribution Program
-labels: [ "kind:feature,priority:major" ]
+labels: [ "hacktoberfest" ]
 body:
   - type: markdown
     attributes:
