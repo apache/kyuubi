@@ -284,4 +284,34 @@ object KyuubiSQLConf {
       .version("1.8.0")
       .intConf
       .createWithDefault(Int.MaxValue)
+
+  val GLUTEN_NON_SUPPORT_OPERATOR_LIST =
+    buildConf("spark.sql.gluten.nonSupportOperatorList")
+      .doc("The list of non-support operator. If the plan contains these operators, " +
+        "we will fallback to original plan." +
+        "Note: Gluten-Related extension is experimental and under rapid development," +
+        "this configuration is added to allow user to control extension, not " +
+        "intended exposing to end users, it may be removed in anytime.")
+      .version("1.8.0")
+      .stringConf
+      .toSequence
+      .createWithDefault(Seq(
+        "SplitPart",
+        "Factorial",
+        "ConcatWs",
+        "Rand",
+        "LengthOfJsonArray",
+        "FromUnixTime",
+        "StringRepeat",
+        "StringTranslate",
+        "AddMonths",
+        "DateFormatClass",
+        "TruncDate",
+        "TruncTimestamp",
+        "Sequence",
+        "PosExplode",
+        "ArraysOverlap",
+        "ArrayMin",
+        "ArrayMax",
+        "ApproximatePercentile"))
 }

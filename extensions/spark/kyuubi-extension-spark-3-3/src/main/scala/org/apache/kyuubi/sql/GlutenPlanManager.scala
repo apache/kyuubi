@@ -19,8 +19,7 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{AddMonths, ArrayMax, ArrayMin, ArraysOverlap, ConcatWs, DateFormatClass, Factorial, FromUnixTime, LengthOfJsonArray, PosExplode, Rand, Sequence, SplitPart, StringRepeat, StringTranslate, TruncInstant, UserDefinedExpression}
-import org.apache.spark.sql.catalyst.expressions.aggregate.ApproximatePercentile
+import org.apache.spark.sql.catalyst.expressions.{Expression, UserDefinedExpression}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.aggregate.{ObjectHashAggregateExec, SortAggregateExec}
@@ -28,6 +27,8 @@ import org.apache.spark.sql.execution.datasources.orc.OrcFileFormat
 import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.execution.joins.{BroadcastNestedLoopJoinExec, CartesianProductExec}
+
+import org.apache.kyuubi.sql.KyuubiSQLConf.GLUTEN_NON_SUPPORT_OPERATOR_LIST
 
 /**
  * [Experimental]Kyuubi extension for gluten enabled case.
@@ -51,6 +52,7 @@ case class GlutenPlanManager(session: SparkSession) extends ColumnarRule {
 }
 
 object GlutenPlanAnalysis extends Rule[SparkPlan] {
+  private val nonSupportedOperatorList = conf.getConf(GLUTEN_NON_SUPPORT_OPERATOR_LIST)
 
   override def apply(plan: SparkPlan): SparkPlan = {
     val count = plan.collect {
@@ -71,24 +73,9 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
         true
       case p: SparkPlan
           if p.expressions.exists(_.exists {
-            case _: UserDefinedExpression |
-                _: SplitPart |
-                _: Factorial |
-                _: ConcatWs |
-                _: Rand |
-                _: LengthOfJsonArray |
-                _: FromUnixTime |
-                _: StringRepeat |
-                _: StringTranslate |
-                _: AddMonths |
-                _: DateFormatClass |
-                _: TruncInstant |
-                _: Sequence |
-                _: PosExplode |
-                _: ArraysOverlap |
-                _: ArrayMin |
-                _: ArrayMax |
-                _: ApproximatePercentile => true
+            case _: UserDefinedExpression => true
+            case e: Expression if nonSupportedOperatorList.contains(e.getClass.getSimpleName) =>
+              true
             case _ => false
           }) =>
         true
