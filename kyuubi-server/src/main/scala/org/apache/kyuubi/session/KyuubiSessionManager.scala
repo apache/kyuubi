@@ -238,7 +238,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       requestArgs = batchRequest.getArgs.asScala.toSeq,
       createTime = System.currentTimeMillis(),
       engineType = batchRequest.getBatchType,
-      priority = conf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt))
+      priority = conf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
 
     // there is a chance that operation failed w/ duplicated key error
     metadataManager.foreach(_.insertMetadata(metadata, asyncRetryOnError = false))

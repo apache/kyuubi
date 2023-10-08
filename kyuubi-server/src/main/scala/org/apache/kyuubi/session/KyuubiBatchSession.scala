@@ -179,7 +179,7 @@ class KyuubiBatchSession(
           createTime = createTime,
           engineType = batchType,
           clusterManager = batchJobSubmissionOp.builder.clusterManager(),
-          priority = conf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt))
+          priority = conf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
 
         // there is a chance that operation failed w/ duplicated key error
         sessionManager.insertMetadata(newMetadata)
