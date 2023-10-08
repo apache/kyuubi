@@ -24,8 +24,6 @@ import scala.util.Try
 import org.apache.spark.SparkConf
 import org.scalatest.Outcome
 
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-
 class RowFilteringForJDBCV2Suite extends RowFilteringTestBase {
   override protected val extraSparkConf: SparkConf = {
     new SparkConf()
