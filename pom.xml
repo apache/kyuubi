@@ -158,7 +158,7 @@
         <hive.archive.download.skip>false</hive.archive.download.skip>
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
-        <iceberg.version>1.3.1</iceberg.version>
+        <iceberg.version>1.4.0</iceberg.version>
         <jackson.version>2.15.0</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
@@ -2190,6 +2190,8 @@
                 <spark.version>3.1.3</spark.version>
                 <spark.binary.version>3.1</spark.binary.version>
                 <delta.version>1.0.1</delta.version>
+                <!-- Iceberg removed the support for Spark 3.1 in apache/iceberg#8661 since 1.4.0 -->
+                <iceberg.version>1.3.1</iceberg.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
