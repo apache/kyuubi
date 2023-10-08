@@ -29,7 +29,7 @@ body:
       value: |
         You are very welcome to propose new task for 2023 Kyuubi Code Contribution Program.
         Your brilliant ideas keep Apache Kyuubi evolving.
-        Please replace the placeholder <LEVEL> in the issue title with one of the following options:
+        Please replace the placeholder `<LEVEL>` in the issue title with one of the following options:
         - TRIVIAL - it's usually for new contributors to learn the contributor process, e.g. how to cut branch,
           how to use GitHub to send PR, how to response with reviewers, the contributor should not stay at this
           stage too long.
@@ -71,9 +71,9 @@ body:
 
   - type: textarea
     attributes:
-      label: Skill Requirements
+      label: Skill requirements
       description: Which stills are required for contributors who want to take this task?
-      placeholder: >
+      placeholder: |
         e.g.
         - Basic knowledge on Scala Programing Language
         - Familiar with Apache Maven, Docker and GitHub Action
@@ -94,16 +94,18 @@ body:
 
   - type: textarea
     attributes:
-      label: Implementation Steps
+      label: Implementation steps
       description: How could it be implemented?
-      placeholder: >
+      placeholder: |
         Please describe the solution to implement the task.
+        Note, please list the implementation steps in as much detail as possible so that contributors who meet
+        the skill requirements could complete the task quickly and independently.
     validations:
       required: true
 
   - type: textarea
     attributes:
-      label: Additional Context
+      label: Additional context
       placeholder: >
         Anything else that related to this task that the contributors need to know.
     validations:
