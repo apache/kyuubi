@@ -159,7 +159,7 @@
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
         <iceberg.version>1.3.1</iceberg.version>
-        <hudi.version>0.13.1</hudi.version>
+        <hudi.version>0.14.0</hudi.version>
         <jackson.version>2.15.0</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
@@ -1187,7 +1187,7 @@
 
             <dependency>
                 <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-spark3.2-bundle_${scala.binary.version}</artifactId>
+                <artifactId>hudi-spark3.2-bundle_2.12</artifactId>
                 <version>${hudi.version}</version>
             </dependency>
 
@@ -2194,7 +2194,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.hudi</groupId>
-                    <artifactId>hudi-spark3.1-bundle_${scala.binary.version}</artifactId>
+                    <artifactId>hudi-spark3.1-bundle_2.12</artifactId>
                     <version>${hudi.version}</version>
                 </dependency>
             </dependencies>
@@ -2216,7 +2216,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.hudi</groupId>
-                    <artifactId>hudi-spark3.2-bundle_${scala.binary.version}</artifactId>
+                    <artifactId>hudi-spark3.2-bundle_2.12</artifactId>
                     <version>${hudi.version}</version>
                 </dependency>
             </dependencies>
@@ -2238,7 +2238,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.hudi</groupId>
-                    <artifactId>hudi-spark3.3-bundle_${scala.binary.version}</artifactId>
+                    <artifactId>hudi-spark3.3-bundle_2.12</artifactId>
                     <version>${hudi.version}</version>
                 </dependency>
             </dependencies>

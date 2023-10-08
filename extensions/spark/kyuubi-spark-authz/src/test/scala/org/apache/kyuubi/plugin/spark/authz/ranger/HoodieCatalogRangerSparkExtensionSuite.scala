@@ -24,13 +24,13 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.tags.IcebergTest
+import org.apache.kyuubi.tags.HoodieTest
 
 /**
  * Tests for RangerSparkExtensionSuite
  * on Iceberg catalog with DataSource V2 API.
  */
-@IcebergTest
+@HoodieTest
 class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
   override protected val sqlExtensions: String =
