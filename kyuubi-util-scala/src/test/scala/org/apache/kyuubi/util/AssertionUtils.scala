@@ -123,8 +123,9 @@ object AssertionUtils {
   def assertMatches(actual: String, regex: Regex)(implicit
       prettifier: Prettifier,
       pos: Position): Unit =
-    withClue(s"'$actual' expected to match the regex '$regex'")(
-      assert(actual.matches(regex.regex))(prettifier, pos))
+    withClue(s"'$actual' expected matching the regex '$regex'") {
+      assert(regex.findFirstMatchIn(actual).isDefined)(prettifier, pos)
+    }
 
   /**
    * Asserts the string does not match the regex
@@ -132,8 +133,9 @@ object AssertionUtils {
   def assertNotMatches(actual: String, regex: Regex)(implicit
       prettifier: Prettifier,
       pos: Position): Unit =
-    withClue(s"'$actual' expected not to match the regex '$regex'")(
-      assert(!actual.matches(regex.regex))(prettifier, pos))
+    withClue(s"'$actual' expected not matching the regex '$regex'") {
+      assert(regex.findFirstMatchIn(actual).isEmpty)(prettifier, pos)
+    }
 
   /**
    * Asserts that the given function throws an exception of the given type

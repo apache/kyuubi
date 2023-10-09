@@ -118,7 +118,7 @@ class SparkProcessBuilder(
       case "2.12" => SPARK_HOME_REGEX_SCALA_212
       case "2.13" => SPARK_HOME_REGEX_SCALA_213
     }
-    file.isDirectory && file.getName.matches(r.regex)
+    file.isDirectory && r.findFirstMatchIn(file.getName).isDefined
   }
 
   override protected lazy val commands: Array[String] = {
