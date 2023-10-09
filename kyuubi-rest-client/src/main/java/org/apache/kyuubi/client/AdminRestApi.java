@@ -17,10 +17,7 @@
 
 package org.apache.kyuubi.client;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.apache.kyuubi.client.api.v1.dto.Engine;
 import org.apache.kyuubi.client.api.v1.dto.OperationData;
 import org.apache.kyuubi.client.api.v1.dto.ServerData;
@@ -87,9 +84,17 @@ public class AdminRestApi {
   }
 
   public List<SessionData> listSessions() {
+    return listSessions(Collections.emptyList());
+  }
+
+  public List<SessionData> listSessions(List<String> users) {
+    Map<String, Object> params = new HashMap<>();
+    if (users != null && !users.isEmpty()) {
+      params.put("users", String.join(",", users));
+    }
     SessionData[] result =
         this.getClient()
-            .get(API_BASE_PATH + "/sessions", null, SessionData[].class, client.getAuthHeader());
+            .get(API_BASE_PATH + "/sessions", params, SessionData[].class, client.getAuthHeader());
     return Arrays.asList(result);
   }
 
