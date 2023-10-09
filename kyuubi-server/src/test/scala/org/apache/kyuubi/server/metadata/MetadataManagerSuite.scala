@@ -190,6 +190,47 @@ class MetadataManagerSuite extends KyuubiFunSuite {
         val metadata3 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
         assert(metadata3.exists(m => m.identifier === "mock_batch_job_3"))
     }
+
+    withMetadataManager(Map(METADATA_STORE_JDBC_PRIORITY_ENABLED.key -> "false")) {
+      metadataManager =>
+        val mockKyuubiInstance = "mock_kyuubi_instance"
+        val time = System.currentTimeMillis()
+        val mockBatchJob1 = Metadata(
+          identifier = "mock_batch_job_1",
+          sessionType = SessionType.BATCH,
+          realUser = "kyuubi",
+          username = "kyuubi",
+          engineType = EngineType.SPARK_SQL.toString,
+          state = OperationState.INITIALIZED.toString,
+          priority = 20,
+          createTime = time + 10000)
+        val mockBatchJob2 = Metadata(
+          identifier = "mock_batch_job_2",
+          sessionType = SessionType.BATCH,
+          realUser = "kyuubi",
+          username = "kyuubi",
+          engineType = EngineType.SPARK_SQL.toString,
+          state = OperationState.INITIALIZED.toString,
+          createTime = time)
+        val mockBatchJob3 = Metadata(
+          identifier = "mock_batch_job_3",
+          sessionType = SessionType.BATCH,
+          realUser = "kyuubi",
+          username = "kyuubi",
+          engineType = EngineType.SPARK_SQL.toString,
+          state = OperationState.INITIALIZED.toString,
+          createTime = time + 500)
+        metadataManager.insertMetadata(mockBatchJob1, asyncRetryOnError = false)
+        metadataManager.insertMetadata(mockBatchJob2, asyncRetryOnError = false)
+        metadataManager.insertMetadata(mockBatchJob3, asyncRetryOnError = false)
+
+        // pick the oldest batch job
+        val metadata2 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
+        assert(metadata2.exists(m => m.identifier === "mock_batch_job_2"))
+
+        val metadata3 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
+        assert(metadata3.exists(m => m.identifier === "mock_batch_job_3"))
+    }
   }
 
   private def withMetadataManager(

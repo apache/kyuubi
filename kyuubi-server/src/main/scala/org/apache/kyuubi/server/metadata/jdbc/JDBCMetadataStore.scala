@@ -199,15 +199,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   }
 
   override def pickMetadata(kyuubiInstance: String): Option[Metadata] = synchronized {
-    val orderByCondition = if (priorityEnabled) {
-      "priority DESC, create_time ASC"
-    } else {
-      "create_time ASC"
-    }
     JdbcUtils.executeQueryWithRowMapper(
       s"""SELECT identifier FROM $METADATA_TABLE
          |WHERE state=?
-         |ORDER BY $orderByCondition LIMIT 1
+         |ORDER BY ${if (priorityEnabled) "priority DESC," else "" } create_time ASC LIMIT 1
          |""".stripMargin) { stmt =>
       stmt.setString(1, OperationState.INITIALIZED.toString)
     } { resultSet =>
