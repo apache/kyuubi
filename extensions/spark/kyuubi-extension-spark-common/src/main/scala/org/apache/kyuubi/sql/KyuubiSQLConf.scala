@@ -295,23 +295,5 @@ object KyuubiSQLConf {
       .version("1.8.0")
       .stringConf
       .toSequence
-      .createWithDefault(Seq(
-        "SplitPart",
-        "Factorial",
-        "ConcatWs",
-        "Rand",
-        "LengthOfJsonArray",
-        "FromUnixTime",
-        "StringRepeat",
-        "StringTranslate",
-        "AddMonths",
-        "DateFormatClass",
-        "TruncDate",
-        "TruncTimestamp",
-        "Sequence",
-        "PosExplode",
-        "ArraysOverlap",
-        "ArrayMin",
-        "ArrayMax",
-        "ApproximatePercentile"))
+      .createOptional
 }

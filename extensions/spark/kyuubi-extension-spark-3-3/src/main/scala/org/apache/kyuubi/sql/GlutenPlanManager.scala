@@ -52,9 +52,10 @@ case class GlutenPlanManager(session: SparkSession) extends ColumnarRule {
 }
 
 object GlutenPlanAnalysis extends Rule[SparkPlan] {
-  private val nonSupportedOperatorList = conf.getConf(GLUTEN_NON_SUPPORT_OPERATOR_LIST)
 
   override def apply(plan: SparkPlan): SparkPlan = {
+    val nonSupportedOperatorList =
+      conf.getConf(GLUTEN_NON_SUPPORT_OPERATOR_LIST).getOrElse(Seq.empty)
     val count = plan.collect {
       case p: FileSourceScanExec
           if !p.relation.fileFormat.isInstanceOf[ParquetFileFormat] &&
