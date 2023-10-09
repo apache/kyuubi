@@ -96,10 +96,10 @@ object JDBCMetadataStoreConf {
 
   val METADATA_STORE_JDBC_PRIORITY_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.metadata.store.jdbc.priority.enabled")
-      .doc("Whether to pick up job from metadata store order by priority." +
-        "If disabled this, set kyuubi.batch.priority wont take effect." +
-        "We recommend to enabled this when you already have a metadata store, " +
-        "which can support mix order index(such as MySQL 8)." +
+      .doc("Whether to enable picking up jobs from the metadata store in order of priority." +
+        "If this feature is disabled, setting kyuubi.batch.priority will not take effect." +
+        "However, it is recommended to enable this feature if you already have a metadata store " +
+        "that can support mixed order indexing(such as MySQL 8)." +
         "See why recommend this in https://github.com/apache/kyuubi/pull/5329")
       .version("1.8.0")
       .serverOnly
