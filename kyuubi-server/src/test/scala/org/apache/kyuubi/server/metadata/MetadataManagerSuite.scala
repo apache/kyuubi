@@ -31,6 +31,7 @@ import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf.METADATA_STORE_JDBC_PRIORITY_ENABLED
 import org.apache.kyuubi.session.SessionType
 
 class MetadataManagerSuite extends KyuubiFunSuite {
@@ -145,48 +146,49 @@ class MetadataManagerSuite extends KyuubiFunSuite {
   }
 
   test("[KYUUBI #5328] Test MetadataManager#pickBatchForSubmitting in order") {
-    withMetadataManager(Map.empty) { metadataManager =>
-      val mockKyuubiInstance = "mock_kyuubi_instance"
-      val time = System.currentTimeMillis()
-      val mockBatchJob1 = Metadata(
-        identifier = "mock_batch_job_1",
-        sessionType = SessionType.BATCH,
-        realUser = "kyuubi",
-        username = "kyuubi",
-        engineType = EngineType.SPARK_SQL.toString,
-        state = OperationState.INITIALIZED.toString,
-        priority = 20,
-        createTime = time + 10000)
-      val mockBatchJob2 = Metadata(
-        identifier = "mock_batch_job_2",
-        sessionType = SessionType.BATCH,
-        realUser = "kyuubi",
-        username = "kyuubi",
-        engineType = EngineType.SPARK_SQL.toString,
-        state = OperationState.INITIALIZED.toString,
-        createTime = time)
-      val mockBatchJob3 = Metadata(
-        identifier = "mock_batch_job_3",
-        sessionType = SessionType.BATCH,
-        realUser = "kyuubi",
-        username = "kyuubi",
-        engineType = EngineType.SPARK_SQL.toString,
-        state = OperationState.INITIALIZED.toString,
-        createTime = time + 10000)
-      metadataManager.insertMetadata(mockBatchJob1, asyncRetryOnError = false)
-      metadataManager.insertMetadata(mockBatchJob2, asyncRetryOnError = false)
-      metadataManager.insertMetadata(mockBatchJob3, asyncRetryOnError = false)
+    withMetadataManager(Map(METADATA_STORE_JDBC_PRIORITY_ENABLED.key -> "true")) {
+      metadataManager =>
+        val mockKyuubiInstance = "mock_kyuubi_instance"
+        val time = System.currentTimeMillis()
+        val mockBatchJob1 = Metadata(
+          identifier = "mock_batch_job_1",
+          sessionType = SessionType.BATCH,
+          realUser = "kyuubi",
+          username = "kyuubi",
+          engineType = EngineType.SPARK_SQL.toString,
+          state = OperationState.INITIALIZED.toString,
+          priority = 20,
+          createTime = time + 10000)
+        val mockBatchJob2 = Metadata(
+          identifier = "mock_batch_job_2",
+          sessionType = SessionType.BATCH,
+          realUser = "kyuubi",
+          username = "kyuubi",
+          engineType = EngineType.SPARK_SQL.toString,
+          state = OperationState.INITIALIZED.toString,
+          createTime = time)
+        val mockBatchJob3 = Metadata(
+          identifier = "mock_batch_job_3",
+          sessionType = SessionType.BATCH,
+          realUser = "kyuubi",
+          username = "kyuubi",
+          engineType = EngineType.SPARK_SQL.toString,
+          state = OperationState.INITIALIZED.toString,
+          createTime = time + 10000)
+        metadataManager.insertMetadata(mockBatchJob1, asyncRetryOnError = false)
+        metadataManager.insertMetadata(mockBatchJob2, asyncRetryOnError = false)
+        metadataManager.insertMetadata(mockBatchJob3, asyncRetryOnError = false)
 
-      // pick the highest priority batch job
-      val metadata1 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
-      assert(metadata1.exists(m => m.identifier === "mock_batch_job_1"))
+        // pick the highest priority batch job
+        val metadata1 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
+        assert(metadata1.exists(m => m.identifier === "mock_batch_job_1"))
 
-      // pick the oldest batch job when same priority
-      val metadata2 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
-      assert(metadata2.exists(m => m.identifier === "mock_batch_job_2"))
+        // pick the oldest batch job when same priority
+        val metadata2 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
+        assert(metadata2.exists(m => m.identifier === "mock_batch_job_2"))
 
-      val metadata3 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
-      assert(metadata3.exists(m => m.identifier === "mock_batch_job_3"))
+        val metadata3 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
+        assert(metadata3.exists(m => m.identifier === "mock_batch_job_3"))
     }
   }
 
