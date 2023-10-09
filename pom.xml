@@ -2242,6 +2242,19 @@
         </profile>
 
         <profile>
+            <id>spark-3.5</id>
+            <modules>
+                <module>extensions/spark/kyuubi-extension-spark-3-5</module>
+            </modules>
+            <properties>
+                <delta.version>2.4.0</delta.version>
+                <spark.version>3.5.0</spark.version>
+                <spark.binary.version>3.5</spark.binary.version>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
+            </properties>
+        </profile>
+
+        <profile>
             <id>spark-master</id>
             <properties>
                 <spark.version>4.0.0-SNAPSHOT</spark.version>
