@@ -285,8 +285,8 @@ object KyuubiSQLConf {
       .intConf
       .createWithDefault(Int.MaxValue)
 
-  val GLUTEN_NON_SUPPORT_OPERATOR_LIST =
-    buildConf("spark.sql.gluten.nonSupportOperatorList")
+  val GLUTEN_FALLBACK_OPERATORS =
+    buildConf("spark.sql.gluten.fallbackOperators")
       .doc("The list of non-support operator. If the plan contains these operators, " +
         "we will fallback to original plan." +
         "Note: Gluten-Related extension is experimental and under rapid development," +

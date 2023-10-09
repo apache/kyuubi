@@ -28,7 +28,7 @@ import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.execution.joins.{BroadcastNestedLoopJoinExec, CartesianProductExec}
 
-import org.apache.kyuubi.sql.KyuubiSQLConf.GLUTEN_NON_SUPPORT_OPERATOR_LIST
+import org.apache.kyuubi.sql.KyuubiSQLConf.GLUTEN_FALLBACK_OPERATORS
 
 /**
  * [Experimental]Kyuubi extension for gluten enabled case.
@@ -55,7 +55,7 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
 
   override def apply(plan: SparkPlan): SparkPlan = {
     val nonSupportedOperatorList =
-      conf.getConf(GLUTEN_NON_SUPPORT_OPERATOR_LIST).getOrElse(Seq.empty)
+      conf.getConf(GLUTEN_FALLBACK_OPERATORS).getOrElse(Seq.empty)
     val count = plan.collect {
       case p: FileSourceScanExec
           if !p.relation.fileFormat.isInstanceOf[ParquetFileFormat] &&
@@ -80,7 +80,6 @@ object GlutenPlanAnalysis extends Rule[SparkPlan] {
             case _ => false
           }) =>
         true
-      // TODO check whether the plan contains unsupported expressions
     }.size
     check(count)
     plan
