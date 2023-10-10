@@ -119,6 +119,10 @@ private[kyuubi] class EngineRef(
           DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
             client.getAndIncrement(snPath)
           }
+
+        case "ADAPTIVE" =>
+          getPoolId(clientPoolSize)
+
         case "RANDOM" =>
           Random.nextInt(poolSize)
       }
@@ -370,6 +374,51 @@ private[kyuubi] class EngineRef(
       } catch {
         case e: Exception =>
           warn(s"Error closing engine builder, engineRefId: $engineRefId", e)
+      }
+    }
+  }
+
+  def getPoolId(poolSize: Int): Int = {
+    val sessionThreshold = conf.get(ENGINE_POOL_ADAPTIVE_SESSION_THRESHOLD)
+    val metricsSpace =
+      s"/metrics/${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}/$user"
+    DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
+      tryWithLock(client) {
+        if (client.pathNonExists(metricsSpace)) {
+          client.create(metricsSpace, "PERSISTENT")
+        }
+      }
+      val metrics = client.getChildren(metricsSpace)
+      if (metrics.isEmpty) {
+        return Random.nextInt(poolSize)
+      } else {
+        engineType match {
+          case SPARK_SQL =>
+            val engineMetricsMap = metrics.map(p =>
+              new String(client.getData(s"$metricsSpace/$p"))
+                .split(";")
+                .map(_.split("=", 2))
+                .filter(_.length == 2)
+                .map(kv => (kv.head, kv.last.toInt))
+                .toMap)
+            if (engineMetricsMap.isEmpty) {
+              return Random.nextInt(poolSize)
+            }
+            val sortedEngineMetrics =
+              engineMetricsMap.sortBy(map =>
+                (
+                  map.getOrElse("openSessionCount", sessionThreshold),
+                  map.getOrElse("activeTask", 0)))
+            val candidate = sortedEngineMetrics.head
+            if (candidate.contains("poolId") && (candidate(
+                "openSessionCount") < sessionThreshold || metrics.size == poolSize)) {
+              candidate("poolId")
+            } else {
+              Random.nextInt(poolSize)
+            }
+          // TODO: other engine support adaptive
+          case _ => Random.nextInt(poolSize)
+        }
       }
     }
   }
