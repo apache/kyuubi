@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.RejectedExecutionException
 
+import scala.Array._
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.DataFrame
@@ -26,7 +27,7 @@ import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_PATH, OPERATION_RESULT_SAVE_TO_FILE_THRESHOLD}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
@@ -158,6 +159,25 @@ class ExecuteStatement(
         override def iterator: Iterator[Any] = incrementalCollectResult(resultDF)
       })
     } else {
+      val sparkSave = spark.conf.getOption(OPERATION_RESULT_SAVE_TO_FILE.key).map(_.toBoolean)
+        .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE))
+      lazy val threshold =
+        session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_THRESHOLD)
+      if (hasResultSet && sparkSave && shouldSaveResultToHdfs(resultMaxRows, threshold, result)) {
+        val sessionId = session.handle.identifier.toString
+        val savePath = session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_PATH)
+        val fileName = s"$savePath/$engineId/$sessionId/$statementId"
+        val colName = range(0, result.schema.size).map(x => "col" + x)
+        if (resultMaxRows > 0) {
+          result.toDF(colName: _*).limit(resultMaxRows).write
+            .option("compression", "zstd").format("orc").save(fileName)
+        } else {
+          result.toDF(colName: _*).write
+            .option("compression", "zstd").format("orc").save(fileName)
+        }
+        info(s"Save result to $fileName")
+        return new FetchOrcStatement(spark).getIterator(fileName, resultSchema)
+      }
       val internalArray = if (resultMaxRows <= 0) {
         info("Execute in full collect mode")
         fullCollectResult(resultDF)

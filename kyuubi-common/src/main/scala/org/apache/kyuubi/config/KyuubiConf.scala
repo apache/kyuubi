@@ -1941,6 +1941,27 @@ object KyuubiConf {
       .intConf
       .createWithDefault(0)
 
+  val OPERATION_RESULT_SAVE_TO_FILE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.result.save.to.file")
+      .doc("The switch for Spark query result save to hdfs file")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val OPERATION_RESULT_SAVE_TO_FILE_PATH: ConfigEntry[String] =
+    buildConf("kyuubi.operation.result.save.to.file.path")
+      .doc("The hdfs path of Spark query result save")
+      .version("1.9.0")
+      .stringConf
+      .createWithDefault("/tmp/kyuubi/tmp_kyuubi_result")
+
+  val OPERATION_RESULT_SAVE_TO_FILE_THRESHOLD: ConfigEntry[Int] =
+    buildConf("kyuubi.operation.result.save.to.file.threshold")
+      .doc("The threshold of Spark result save to hdfs file, default value is 200 MB")
+      .version("1.9.0")
+      .intConf
+      .createWithDefault(209715200)
+
   val OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.incremental.collect")
       .internal
