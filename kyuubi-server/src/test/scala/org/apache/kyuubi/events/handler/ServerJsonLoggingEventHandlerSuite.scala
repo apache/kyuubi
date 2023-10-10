@@ -57,7 +57,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
       .set(KyuubiConf.SERVER_EVENT_JSON_LOG_PATH, serverLogRoot)
       .set(KyuubiConf.ENGINE_SPARK_EVENT_LOGGERS, Seq("JSON"))
       .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, engineLogRoot)
-      .set(METRICS_PROMETHEUS_PORT, 0)
+      .set(KyuubiConf.METRICS_REPORTERS, Seq.empty)
   }
 
   override protected def jdbcUrl: String = getJdbcUrl
