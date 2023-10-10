@@ -298,15 +298,15 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       }
       val engines = ListBuffer[Engine]()
       val engineSpace = fe.getConf.get(HA_NAMESPACE)
-      val shareLevel = fe.getConf.get(ENGINE_SHARE_LEVEL)
-      val engineType = fe.getConf.get(ENGINE_TYPE)
+      val finalShareLevel = Option(shareLevel).getOrElse(fe.getConf.get(ENGINE_SHARE_LEVEL))
+      val finalEngineType = Option(engineType).getOrElse(fe.getConf.get(ENGINE_TYPE))
       withDiscoveryClient(fe.getConf) { discoveryClient =>
-        val commonParent = s"/${engineSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType"
+        val commonParent = s"/${engineSpace}_${KYUUBI_VERSION}_${finalShareLevel}_$finalEngineType"
         info(s"Listing engine nodes for $commonParent")
         try {
           discoveryClient.getChildren(commonParent).map {
             user =>
-              val engine = getEngine(user, engineType, shareLevel, "", "")
+              val engine = getEngine(user, finalEngineType, finalShareLevel, "", "")
               val engineSpace = getEngineSpace(engine)
               discoveryClient.getChildren(engineSpace).map { child =>
                 info(s"Listing engine nodes for $engineSpace/$child")
@@ -324,9 +324,12 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           }
         } catch {
           case nne: NoNodeException =>
-            error(s"No such engine for engine type: $engineType, share level: $shareLevel", nne)
+            error(
+              s"No such engine for engine type: $finalEngineType," +
+                s" share level: $finalShareLevel",
+              nne)
             throw new NotFoundException(
-              s"No such engine for engine type: $engineType, share level: $shareLevel")
+              s"No such engine for engine type: $finalEngineType, share level: $finalShareLevel")
         }
       }
       return engines.toSeq
