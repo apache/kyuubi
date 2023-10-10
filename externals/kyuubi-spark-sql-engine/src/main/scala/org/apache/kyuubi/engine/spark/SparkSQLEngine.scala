@@ -43,7 +43,7 @@ import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, Sp
 import org.apache.kyuubi.engine.spark.session.{SparkSessionImpl, SparkSQLSessionManager}
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.RetryPolicies
+import org.apache.kyuubi.ha.client.{DiscoveryClientProvider, RetryPolicies}
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
@@ -61,6 +61,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   @volatile private var stopEngineExec: Option[ThreadPoolExecutor] = None
   private lazy val engineSavePath =
     backendService.sessionManager.asInstanceOf[SparkSQLSessionManager].getEngineResultSavePath()
+  @volatile private var metricsReporter: Option[ScheduledExecutorService] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
@@ -97,6 +98,15 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
       fs.mkdirs(path)
       fs.deleteOnExit(path)
     }
+
+    if (conf.get(ENGINE_POOL_SELECT_POLICY) == "ADAPTIVE") {
+      val subdomain = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN)
+      val shareLevel = conf.get(ENGINE_SHARE_LEVEL)
+      val enginePoolIgnoreSubdomain = conf.get(ENGINE_POOL_IGNORE_SUBDOMAIN)
+      if (!"CONNECTION".equals(shareLevel) && (subdomain.isEmpty || enginePoolIgnoreSubdomain)) {
+        startMetricsReporter()
+      }
+    }
   }
 
   override def stop(): Unit = if (shutdown.compareAndSet(false, true)) {
@@ -110,6 +120,11 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     stopEngineExec.foreach(exec => {
       ThreadUtils.shutdown(
         exec,
+        Duration(60, TimeUnit.SECONDS))
+    })
+    metricsReporter.foreach(reporter => {
+      ThreadUtils.shutdown(
+        reporter,
         Duration(60, TimeUnit.SECONDS))
     })
     try {
@@ -159,6 +174,42 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         }
       }
     }
+  }
+
+  private[kyuubi] def startMetricsReporter(): Unit = {
+    val interval = conf.get(ENGINE_REPORT_INTERVAL)
+    val engineSpace = conf.get(HA_NAMESPACE)
+    val statusTracker = spark.sparkContext.statusTracker
+    val metricsSpace = s"/metrics$engineSpace"
+    val report: Runnable = () => {
+      if (!shutdown.get) {
+        val openSessionCount = backendService.sessionManager.getOpenSessionCount
+        val activeTask = statusTracker.getActiveStageIds()
+          .flatMap { stage =>
+            statusTracker.getStageInfo(stage).map(_.numActiveTasks)
+          }.sum
+        val engineMetrics = Map(
+          "openSessionCount" -> openSessionCount,
+          "activeTask" -> activeTask,
+          "poolId" -> engineSpace.split("-").last)
+        info(s"Spark engine has $openSessionCount open sessions and $activeTask active tasks.")
+        DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
+          if (client.pathNonExists(metricsSpace)) {
+            client.create(metricsSpace, "PERSISTENT")
+          }
+          client.setData(
+            s"/metrics$engineSpace",
+            engineMetrics.map { case (k, v) => s"$k=$v" }.mkString(";").getBytes)
+        }
+      }
+    }
+    metricsReporter =
+      Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("spark-engine-metrics-reporter"))
+    metricsReporter.get.scheduleWithFixedDelay(
+      report,
+      interval,
+      interval,
+      TimeUnit.MILLISECONDS)
   }
 
   override protected def stopServer(): Unit = {
