@@ -32,9 +32,9 @@ import org.apache.kyuubi.util.AssertionUtils.interceptContains
  */
 @HoodieTest
 class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
-  override protected val catalogImpl: String = "in-memory"
+  override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
-    if (isSparkV31OrGreater) {
+    if (isSparkV31OrGreater && !isSparkV35OrGreater) {
       "org.apache.spark.sql.hudi.HoodieSparkSessionExtension"
     } else {
       ""
@@ -50,17 +50,16 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val outputTable1 = "outputTable_hoodie"
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV31OrGreater)
+    assume(isSparkV31OrGreater && !isSparkV35OrGreater)
     test()
   }
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater) {
+    if (isSparkV31OrGreater && !isSparkV35OrGreater) {
       if (isSparkV32OrGreater) {
         spark.conf.set(
           s"spark.sql.catalog.$sparkCatalog",
           "org.apache.spark.sql.hudi.catalog.HoodieCatalog")
-        spark.conf.set("hoodie.schema.on.read.enable", "true")
         spark.conf.set(s"spark.sql.catalog.$sparkCatalog.type", "hadoop")
         spark.conf.set(
           s"spark.sql.catalog.$sparkCatalog.warehouse",
@@ -71,7 +70,7 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   override def afterAll(): Unit = {
-    if (isSparkV31OrGreater) {
+    if (isSparkV31OrGreater && !isSparkV35OrGreater) {
       super.afterAll()
       spark.sessionState.catalog.reset()
       spark.sessionState.conf.clear()
@@ -79,41 +78,70 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("[KYUUBI #5284] Kyuubi authz support Hoodie Alter Table Command") {
-    doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
-    doAs(
-      admin,
-      sql(
-        s"""
-           |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
-           |USING hudi
-           |OPTIONS (
-           | type = 'cow',
-           | primaryKey = 'id',
-           | 'hoodie.datasource.hive_sync.enable' = 'false'
-           |)
-           |PARTITIONED BY(city)
-           |""".stripMargin))
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING hudi
+             |OPTIONS (
+             | type = 'cow',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |""".stripMargin))
 
-    interceptContains[AccessControlException](
-      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
-      s"does not have [alter] privilege on [$namespace1/$table1/age]")
+      if (isSparkV34OrGreater) {
+        interceptContains[AccessControlException](
+          doAs(someone,
+            sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
+          s"does not have [alter] privilege on [$namespace1/$table1/age]")
 
-    interceptContains[AccessControlException](
-      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 CHANGE COLUMN id id bigint")))(
-      s"does not have [alter] privilege" +
-        s" on [$namespace1/$table1/id]")
+        interceptContains[AccessControlException](
+          doAs(someone,
+            sql(s"ALTER TABLE $namespace1.$table1 CHANGE COLUMN id id bigint")))(
+          s"does not have [alter] privilege" +
+            s" on [$namespace1/$table1/id]")
 
-    interceptContains[AccessControlException](
-      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 DROP PARTITION (city='test')")))(
-      s"does not have [alter] privilege" +
-        s" on [$namespace1/$table1/city]")
+        interceptContains[AccessControlException](
+          doAs(someone,
+            sql(s"ALTER TABLE $namespace1.$table1 DROP PARTITION (city='test')")))(
+          s"does not have [alter] privilege" +
+            s" on [$namespace1/$table1/city]")
 
-    interceptContains[AccessControlException](
-      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 RENAME TO $namespace1.$table2")))(
-      s"does not have [alter] privilege" +
-        s" on [$namespace1/$table1]")
+        interceptContains[AccessControlException](
+          doAs(someone,
+            sql(s"ALTER TABLE $namespace1.$table1 RENAME TO $namespace1.$table2")))(
+          s"does not have [alter] privilege" +
+            s" on [$namespace1/$table1]")
+      } else {
+        // All generate AlterTableCommand
+        interceptContains[AccessControlException](
+          doAs(someone,
+            sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
+          s"does not have [alter] privilege on [$namespace1/$table1]")
 
-    doAs(admin, s"DROP TABLE IF EXISTS $namespace1.$table1")
-    doAs(admin, s"DROP DATABASE IF EXISTS $namespace1")
+        interceptContains[AccessControlException](
+          doAs(someone,
+            sql(s"ALTER TABLE $namespace1.$table1 CHANGE COLUMN id id bigint")))(
+          s"does not have [alter] privilege" +
+            s" on [$namespace1/$table1]")
+
+        interceptContains[AccessControlException](
+          doAs(someone,
+            sql(s"ALTER TABLE $namespace1.$table1 DROP PARTITION (city='test')")))(
+          s"does not have [alter] privilege" +
+            s" on [$namespace1/$table1]")
+
+        interceptContains[AccessControlException](
+          doAs(someone,
+            sql(s"ALTER TABLE $namespace1.$table1 RENAME TO $namespace1.$table2")))(
+          s"does not have [alter] privilege" +
+            s" on [$namespace1/$table1]")
+      }
+    }
   }
 }

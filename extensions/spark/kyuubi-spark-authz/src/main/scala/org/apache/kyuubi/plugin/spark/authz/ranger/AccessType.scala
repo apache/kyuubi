@@ -37,6 +37,7 @@ object AccessType extends Enumeration {
             if (isInput) SELECT else CREATE
           case ALTERDATABASE |
               ALTERDATABASE_LOCATION |
+              ALTERTABLE |
               ALTERTABLE_ADDCOLS |
               ALTERTABLE_ADDPARTS |
               ALTERTABLE_DROPPARTS |
