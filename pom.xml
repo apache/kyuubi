@@ -1479,7 +1479,7 @@
 
             <dependency>
                 <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-spark${spark.binary.version}-bundle_2.12</artifactId>
+                <artifactId>hudi-spark${hudi.spark.binary.version}-bundle_2.12</artifactId>
                 <version>${hudi.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -2199,6 +2199,7 @@
             <properties>
                 <spark.version>3.1.3</spark.version>
                 <spark.binary.version>3.1</spark.binary.version>
+                <hudi.spark.binary.version>3.1</hudi.spark.binary.version>
                 <delta.version>1.0.1</delta.version>
                 <!-- Iceberg removed the support for Spark 3.1 in apache/iceberg#8661 since 1.4.0 -->
                 <iceberg.version>1.3.1</iceberg.version>
@@ -2216,6 +2217,7 @@
             <properties>
                 <spark.version>3.2.4</spark.version>
                 <spark.binary.version>3.2</spark.binary.version>
+                <hudi.spark.binary.version>3.2</hudi.spark.binary.version>
                 <delta.version>2.0.2</delta.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.2${spark.archive.scala.suffix}.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
@@ -2233,6 +2235,7 @@
                 <delta.version>2.3.0</delta.version>
                 <spark.version>3.3.3</spark.version>
                 <spark.binary.version>3.3</spark.binary.version>
+                <hudi.spark.binary.version>3.3</hudi.spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -2247,6 +2250,7 @@
                 <delta.version>2.4.0</delta.version>
                 <spark.version>3.4.1</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
+                <hudi.spark.binary.version>3.4</hudi.spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HoodieTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -2260,6 +2264,7 @@
                 <delta.version>2.4.0</delta.version>
                 <spark.version>3.5.0</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
+                <hudi.spark.binary.version>3.4</hudi.spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
