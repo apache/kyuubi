@@ -17,6 +17,9 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 // scalastyle:off
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import scala.util.Try
 
 import org.scalatest.Outcome
@@ -283,6 +286,50 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         admin, {
           val result2 = sql(rewriteDataFiles2).collect()
           assert(result2(0)(0) === 0)
+        })
+    }
+  }
+
+  test("CALL snapshot management") {
+    val tableName = "table_select_call_command_table"
+    val table = s"$catalogV2.$namespace1.$tableName"
+    val initDataFilesCount = 2
+
+    withCleanTmpResources(Seq((table, "table"))) {
+      doAs(
+        admin, {
+          sql(s"CREATE TABLE IF NOT EXISTS $table  (id int, name string) USING iceberg")
+          // insert 2 data files
+          (0 until initDataFilesCount)
+            .foreach(i => sql(s"INSERT INTO $table VALUES ($i, 'user_$i')"))
+        })
+
+      val calendar = Calendar.getInstance()
+      calendar.add(Calendar.DAY_OF_MONTH, 1)
+      val snapshots =
+        sql(s"select * from $table.snapshots order by committed_at asc limit 1").collect()
+      val snapshotId = snapshots.apply(0).getAs[Long]("snapshot_id")
+      val rollbackSnapshot = s"CALL $catalogV2.system.rollback_to_snapshot ('$table', $snapshotId)"
+      val rollbackToTimestamp =
+        s"CALL $catalogV2.system.rollback_to_timestamp ('$table', TIMESTAMP " +
+          s"'${new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(calendar.getTime)}')"
+      val setCurrentSnapshot =
+        s"CALL $catalogV2.system.set_current_snapshot ('$table', $snapshotId)"
+
+      interceptContains[AccessControlException](doAs(someone, sql(rollbackSnapshot)))(
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
+
+      interceptContains[AccessControlException](doAs(someone, sql(rollbackToTimestamp)))(
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
+
+      interceptContains[AccessControlException](doAs(someone, sql(setCurrentSnapshot)))(
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
+
+      doAs(
+        admin, {
+          sql(rollbackSnapshot)
+          sql(rollbackToTimestamp)
+          sql(setCurrentSnapshot)
         })
     }
   }
