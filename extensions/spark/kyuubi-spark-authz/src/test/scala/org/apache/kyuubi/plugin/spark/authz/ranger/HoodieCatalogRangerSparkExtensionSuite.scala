@@ -94,54 +94,28 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |PARTITIONED BY(city)
              |""".stripMargin))
 
-      if (isSparkV34OrGreater) {
-        interceptContains[AccessControlException](
-          doAs(someone,
-            sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
-          s"does not have [alter] privilege on [$namespace1/$table1/age]")
+      interceptContains[AccessControlException](
+        doAs(someone,
+          sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
+        s"does not have [alter] privilege on [$namespace1/$table1/age]")
 
-        interceptContains[AccessControlException](
-          doAs(someone,
-            sql(s"ALTER TABLE $namespace1.$table1 CHANGE COLUMN id id bigint")))(
-          s"does not have [alter] privilege" +
-            s" on [$namespace1/$table1/id]")
+      interceptContains[AccessControlException](
+        doAs(someone,
+          sql(s"ALTER TABLE $namespace1.$table1 CHANGE COLUMN id id bigint")))(
+        s"does not have [alter] privilege" +
+          s" on [$namespace1/$table1/id]")
 
-        interceptContains[AccessControlException](
-          doAs(someone,
-            sql(s"ALTER TABLE $namespace1.$table1 DROP PARTITION (city='test')")))(
-          s"does not have [alter] privilege" +
-            s" on [$namespace1/$table1/city]")
+      interceptContains[AccessControlException](
+        doAs(someone,
+          sql(s"ALTER TABLE $namespace1.$table1 DROP PARTITION (city='test')")))(
+        s"does not have [alter] privilege" +
+          s" on [$namespace1/$table1/city]")
 
-        interceptContains[AccessControlException](
-          doAs(someone,
-            sql(s"ALTER TABLE $namespace1.$table1 RENAME TO $namespace1.$table2")))(
-          s"does not have [alter] privilege" +
-            s" on [$namespace1/$table1]")
-      } else {
-        // All generate AlterTableCommand
-        interceptContains[AccessControlException](
-          doAs(someone,
-            sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
-          s"does not have [alter] privilege on [$namespace1/$table1]")
-
-        interceptContains[AccessControlException](
-          doAs(someone,
-            sql(s"ALTER TABLE $namespace1.$table1 CHANGE COLUMN id id bigint")))(
-          s"does not have [alter] privilege" +
-            s" on [$namespace1/$table1]")
-
-        interceptContains[AccessControlException](
-          doAs(someone,
-            sql(s"ALTER TABLE $namespace1.$table1 DROP PARTITION (city='test')")))(
-          s"does not have [alter] privilege" +
-            s" on [$namespace1/$table1]")
-
-        interceptContains[AccessControlException](
-          doAs(someone,
-            sql(s"ALTER TABLE $namespace1.$table1 RENAME TO $namespace1.$table2")))(
-          s"does not have [alter] privilege" +
-            s" on [$namespace1/$table1]")
-      }
+      interceptContains[AccessControlException](
+        doAs(someone,
+          sql(s"ALTER TABLE $namespace1.$table1 RENAME TO $namespace1.$table2")))(
+        s"does not have [alter] privilege" +
+          s" on [$namespace1/$table1]")
     }
   }
 }

@@ -326,7 +326,7 @@
 
         <dependency>
             <groupId>org.apache.hudi</groupId>
-            <artifactId>hudi-spark3.4-bundle_2.12</artifactId>
+            <artifactId>hudi-spark${spark.binary.version}-bundle_2.12</artifactId>
             <version>${hudi.version}</version>
             <scope>test</scope>
         </dependency>
@@ -367,54 +367,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <id>spark-3.1</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.hudi</groupId>
-                    <artifactId>hudi-spark3.1-bundle_2.12</artifactId>
-                    <version>${hudi.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>spark-3.2</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.hudi</groupId>
-                    <artifactId>hudi-spark3.2-bundle_2.12</artifactId>
-                    <version>${hudi.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>spark-3.3</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.hudi</groupId>
-                    <artifactId>hudi-spark3.3-bundle_2.12</artifactId>
-                    <version>${hudi.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>spark-3.4</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.hudi</groupId>
-                    <artifactId>hudi-spark3.4-bundle_2.12</artifactId>
-                    <version>${hudi.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
         </profile>
     </profiles>
 </project>
