@@ -127,8 +127,8 @@ jobs:
             **/kyuubi-spark-sql-engine.log*
             **/kyuubi-spark-batch-submit.log*
 
-  scala213:
-    name: Scala Compilation Test
+  scala-test:
+    name: Scala Test
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
