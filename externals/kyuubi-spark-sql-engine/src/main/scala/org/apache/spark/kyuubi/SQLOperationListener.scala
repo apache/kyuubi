@@ -44,7 +44,7 @@ class SQLOperationListener(
     spark: SparkSession) extends StatsReportListener with Logging {
 
   private val operationId: String = operation.getHandle.identifier.toString
-  private lazy val activeJobs = new java.util.HashSet[Int]()
+  private lazy val activeJobs = new ConcurrentHashMap[Int, SparkJobInfo]()
   private lazy val activeStages = new ConcurrentHashMap[SparkStageAttempt, SparkStageInfo]()
   private var executionId: Option[Long] = None
 
@@ -53,6 +53,7 @@ class SQLOperationListener(
     if (conf.get(ENGINE_SPARK_SHOW_PROGRESS)) {
       Some(new SparkConsoleProgressBar(
         operation,
+        activeJobs,
         activeStages,
         conf.get(ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL),
         conf.get(ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT)))
@@ -79,37 +80,45 @@ class SQLOperationListener(
     }
   }
 
-  override def onJobStart(jobStart: SparkListenerJobStart): Unit = activeJobs.synchronized {
-    if (sameGroupId(jobStart.properties)) {
-      val jobId = jobStart.jobId
-      val stageSize = jobStart.stageInfos.size
-      if (executionId.isEmpty) {
-        executionId = Option(jobStart.properties.getProperty(SPARK_SQL_EXECUTION_ID_KEY))
-          .map(_.toLong)
-        consoleProgressBar
-        operation match {
-          case executeStatement: ExecuteStatement =>
-            executeStatement.setCompiledStateIfNeeded()
-          case _ =>
+  override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
+    activeJobs.synchronized {
+      if (sameGroupId(jobStart.properties)) {
+        val jobId = jobStart.jobId
+        val stageIds = jobStart.stageInfos.map(_.stageId)
+        val stageSize = jobStart.stageInfos.size
+        if (executionId.isEmpty) {
+          executionId = Option(jobStart.properties.getProperty(SPARK_SQL_EXECUTION_ID_KEY))
+            .map(_.toLong)
+          consoleProgressBar
+          operation match {
+            case executeStatement: ExecuteStatement =>
+              executeStatement.setCompiledStateIfNeeded()
+            case _ =>
+          }
         }
-      }
-      withOperationLog {
-        activeJobs.add(jobId)
-        info(s"Query [$operationId]: Job $jobId started with $stageSize stages," +
-          s" ${activeJobs.size()} active jobs running")
+        activeJobs.put(
+          jobId,
+          new SparkJobInfo(stageSize, stageIds)
+        )
+        withOperationLog {
+          info(s"Query [$operationId]: Job $jobId started with $stageSize stages," +
+            s" ${activeJobs.size()} active jobs running")
+        }
       }
     }
   }
 
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = activeJobs.synchronized {
     val jobId = jobEnd.jobId
-    if (activeJobs.remove(jobId)) {
-      val hint = jobEnd.jobResult match {
-        case JobSucceeded => "succeeded"
-        case _ => "failed" // TODO: Handle JobFailed(exception: Exception)
-      }
-      withOperationLog {
-        info(s"Query [$operationId]: Job $jobId $hint, ${activeJobs.size()} active jobs running")
+    activeJobs.synchronized {
+      if (activeJobs.remove(jobId) != null) {
+        val hint = jobEnd.jobResult match {
+          case JobSucceeded => "succeeded"
+          case _ => "failed" // TODO: Handle JobFailed(exception: Exception)
+        }
+        withOperationLog {
+          info(s"Query [$operationId]: Job $jobId $hint, ${activeJobs.size()} active jobs running")
+        }
       }
     }
   }
@@ -134,9 +143,17 @@ class SQLOperationListener(
 
   override def onStageCompleted(stageCompleted: SparkListenerStageCompleted): Unit = {
     val stageInfo = stageCompleted.stageInfo
+    val stageId = stageInfo.stageId
     val stageAttempt = SparkStageAttempt(stageInfo.stageId, stageInfo.attemptNumber())
     activeStages.synchronized {
       if (activeStages.remove(stageAttempt) != null) {
+        activeJobs.synchronized {
+          activeJobs.forEach((jobId, sparkJobInfo) => {
+            if (sparkJobInfo.stageIds.contains(stageId)) {
+              sparkJobInfo.numCompleteStages.getAndIncrement()
+            }
+          })
+        }
         withOperationLog(super.onStageCompleted(stageCompleted))
       }
     }

@@ -27,3 +27,8 @@ class SparkStageInfo(val stageId: Int, val numTasks: Int) {
   var numActiveTasks = new AtomicInteger(0)
   var numCompleteTasks = new AtomicInteger(0)
 }
+
+
+class SparkJobInfo(val numStages: Int, val stageIds: Seq[Int]) {
+  var numCompleteStages = new AtomicInteger(0)
+}
