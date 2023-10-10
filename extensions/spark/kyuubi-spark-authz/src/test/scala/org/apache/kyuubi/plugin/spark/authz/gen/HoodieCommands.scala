@@ -63,7 +63,7 @@ object HoodieCommands {
   val AlterTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.AlterTableCommand"
     val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], None)
-    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE)
+    TableCommandSpec(cmd, Seq(tableDesc), QUERY)
   }
 
   val data: Array[TableCommandSpec] = Array(
