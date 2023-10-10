@@ -72,6 +72,12 @@ class SparkConsoleProgressBar(
       show(now, stages.take(3)) // display at most 3 stages in same time
     }
   }
+
+  /**
+   * Use stageId to find stage's jobId
+   * @param stageId stageId
+   * @return jobId,if not exists, return -1
+   */
   private def findJobId(stageId: Int): Int = {
     liveJobs.forEach((jobId, sparkJobInfo) => {
       if (sparkJobInfo.stageIds.contains(stageId)) {
