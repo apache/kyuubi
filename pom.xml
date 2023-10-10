@@ -1476,6 +1476,13 @@
                 <artifactId>threeten-extra</artifactId>
                 <version>${threeten.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.apache.hudi</groupId>
+                <artifactId>hudi-spark${spark.binary.version}-bundle_2.12</artifactId>
+                <version>${hudi.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
