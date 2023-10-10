@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.operation
 
+import scala.collection.mutable.ListBuffer
+
 import org.apache.kyuubi.{IcebergSuiteMixin, SPARK_COMPILE_VERSION}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.SparkVersionUtil
 
 trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin with SparkVersionUtil {
@@ -27,10 +30,11 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData
       val catalogs = metaData.getCatalogs
-      catalogs.next()
-      assert(catalogs.getString(TABLE_CAT) === "spark_catalog")
-      catalogs.next()
-      assert(catalogs.getString(TABLE_CAT) === catalog)
+      val results = ListBuffer[String]()
+      while (catalogs.next()) {
+        results += catalogs.getString(TABLE_CAT)
+      }
+      assertContains(results, "spark_catalog", catalog)
     }
   }
 
