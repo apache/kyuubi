@@ -1490,6 +1490,6 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ALTERTABLE",
+  "opType" : "QUERY",
   "queryDescs" : [ ]
 } ]
