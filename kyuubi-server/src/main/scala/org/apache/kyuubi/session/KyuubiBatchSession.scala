@@ -156,7 +156,6 @@ class KyuubiBatchSession(
         // new batch job created using batch impl v2
         val metadataToUpdate = Metadata(
           identifier = initialMetadata.identifier,
-          kyuubiInstance = connectionUrl,
           requestName = name.orNull,
           requestConf = optimizedConf ++ kubernetesInfo, // save the kubernetes info
           clusterManager = batchJobSubmissionOp.builder.clusterManager())

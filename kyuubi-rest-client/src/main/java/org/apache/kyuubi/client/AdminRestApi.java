@@ -17,10 +17,7 @@
 
 package org.apache.kyuubi.client;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.apache.kyuubi.client.api.v1.dto.Engine;
 import org.apache.kyuubi.client.api.v1.dto.OperationData;
 import org.apache.kyuubi.client.api.v1.dto.ServerData;
@@ -73,12 +70,13 @@ public class AdminRestApi {
   }
 
   public List<Engine> listEngines(
-      String engineType, String shareLevel, String subdomain, String hs2ProxyUser) {
+      String engineType, String shareLevel, String subdomain, String hs2ProxyUser, String all) {
     Map<String, Object> params = new HashMap<>();
     params.put("type", engineType);
     params.put("sharelevel", shareLevel);
     params.put("subdomain", subdomain);
     params.put("hive.server2.proxy.user", hs2ProxyUser);
+    params.put("all", all);
     Engine[] result =
         this.getClient()
             .get(API_BASE_PATH + "/engine", params, Engine[].class, client.getAuthHeader());
@@ -86,9 +84,17 @@ public class AdminRestApi {
   }
 
   public List<SessionData> listSessions() {
+    return listSessions(Collections.emptyList());
+  }
+
+  public List<SessionData> listSessions(List<String> users) {
+    Map<String, Object> params = new HashMap<>();
+    if (users != null && !users.isEmpty()) {
+      params.put("users", String.join(",", users));
+    }
     SessionData[] result =
         this.getClient()
-            .get(API_BASE_PATH + "/sessions", null, SessionData[].class, client.getAuthHeader());
+            .get(API_BASE_PATH + "/sessions", params, SessionData[].class, client.getAuthHeader());
     return Arrays.asList(result);
   }
 

@@ -142,13 +142,6 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     if (!isClosedOrCanceled) {
       setState(OperationState.CLOSED)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
-      try {
-        // For launch engine operation, we use OperationLog to pass engine submit log but
-        // at that time we do not have remoteOpHandle
-        getOperationLog.foreach(_.close())
-      } catch {
-        case e: IOException => error(e.getMessage, e)
-      }
       if (_remoteOpHandle != null) {
         try {
           client.closeOperation(_remoteOpHandle)
@@ -157,6 +150,13 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
             warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
         }
       }
+    }
+    try {
+      // For launch engine operation, we use OperationLog to pass engine submit log but
+      // at that time we do not have remoteOpHandle
+      getOperationLog.foreach(_.close())
+    } catch {
+      case e: IOException => error(e.getMessage, e)
     }
   }
 

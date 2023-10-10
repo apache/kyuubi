@@ -35,7 +35,7 @@ The driver is available from Maven Central:
 
 ## Connect to non-kerberized Kyuubi Server
 
-The below java code is using a keytab file to login and connect to Kyuubi server by JDBC.
+The following java code connects directly to the Kyuubi Server by JDBC without using kerberos authentication.
 
 ```java
 package org.apache.kyuubi.examples;
@@ -50,7 +50,7 @@ public class KyuubiJDBC {
   public static void main(String[] args) throws SQLException {
     try (Connection conn = DriverManager.getConnection(kyuubiJdbcUrl)) {
       try (Statement stmt = conn.createStatement()) {
-        try (ResultSet rs = st.executeQuery("show databases")) {
+        try (ResultSet rs = stmt.executeQuery("show databases")) {
           while (rs.next()) {
             System.out.println(rs.getString(1));
           }
@@ -79,11 +79,11 @@ public class KyuubiJDBCDemo {
   public static void main(String[] args) throws SQLException {
     String clientPrincipal = args[0]; // Kerberos principal
     String clientKeytab = args[1];    // Keytab file location
-    String serverPrincipal = arg[2];  // Kerberos principal used by Kyuubi Server
+    String serverPrincipal = args[2]; // Kerberos principal used by Kyuubi Server
     String kyuubiJdbcUrl = String.format(kyuubiJdbcUrlTemplate, clientPrincipal, clientKeytab, serverPrincipal);
     try (Connection conn = DriverManager.getConnection(kyuubiJdbcUrl)) {
       try (Statement stmt = conn.createStatement()) {
-        try (ResultSet rs = st.executeQuery("show databases")) {
+        try (ResultSet rs = stmt.executeQuery("show databases")) {
           while (rs.next()) {
             System.out.println(rs.getString(1));
           }
