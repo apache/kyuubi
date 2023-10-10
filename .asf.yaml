@@ -30,6 +30,7 @@ github:
     - hive
     - sql
     - kubernetes
+    - hacktoberfest
   enabled_merge_buttons:
     squash: true
     merge: false
@@ -39,7 +40,7 @@ github:
     issues: true
     discussions: true
     wiki: false
-    projects: false
+    projects: true
 notifications:
   commits: commits@kyuubi.apache.org
   issues: notifications@kyuubi.apache.org

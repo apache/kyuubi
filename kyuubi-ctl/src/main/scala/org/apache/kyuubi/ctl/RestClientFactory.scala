@@ -47,7 +47,8 @@ object RestClientFactory {
       kyuubiRestClient: KyuubiRestClient,
       kyuubiInstance: String)(f: KyuubiRestClient => Unit): Unit = {
     val kyuubiInstanceRestClient = kyuubiRestClient.clone()
-    val hostUrls = Seq(s"http://$kyuubiInstance") ++ kyuubiRestClient.getHostUrls.asScala
+    val hostUrls = Option(kyuubiInstance).map(instance => s"http://$instance").toSeq ++
+      kyuubiRestClient.getHostUrls.asScala
     kyuubiInstanceRestClient.setHostUrls(hostUrls.asJava)
     try {
       f(kyuubiInstanceRestClient)

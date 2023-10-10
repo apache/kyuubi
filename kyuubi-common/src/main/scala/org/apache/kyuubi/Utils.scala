@@ -21,6 +21,7 @@ import java.io._
 import java.net.{Inet4Address, InetAddress, NetworkInterface}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.security.PrivilegedAction
 import java.text.SimpleDateFormat
 import java.util.{Date, Properties, TimeZone, UUID}
 import java.util.concurrent.TimeUnit
@@ -202,6 +203,14 @@ object Utils extends Logging {
   }
 
   def currentUser: String = UserGroupInformation.getCurrentUser.getShortUserName
+
+  def doAs[T](
+      proxyUser: String,
+      realUser: UserGroupInformation = UserGroupInformation.getCurrentUser)(f: () => T): T = {
+    UserGroupInformation.createProxyUser(proxyUser, realUser).doAs(new PrivilegedAction[T] {
+      override def run(): T = f()
+    })
+  }
 
   private val shortVersionRegex = """^(\d+\.\d+\.\d+)(.*)?$""".r
 

@@ -56,6 +56,9 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     Files.createDirectories(Paths.get(tempFlinkHome.toPath.toString, "usrlib")).toFile
   private val tempUdfJar =
     Files.createFile(Paths.get(tempUsrLib.toPath.toString, "test-udf.jar"))
+  private val tempHiveDir =
+    Files.createDirectories(Paths.get(tempFlinkHome.toPath.toString, "hive-conf")).toFile
+  Files.createFile(Paths.get(tempHiveDir.toPath.toString, "hive-site.xml"))
 
   private def envDefault: ListMap[String, String] = ListMap(
     "JAVA_HOME" -> s"${File.separator}jdk",
@@ -63,7 +66,8 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def envWithoutHadoopCLASSPATH: ListMap[String, String] = envDefault +
     ("HADOOP_CONF_DIR" -> s"${File.separator}hadoop${File.separator}conf") +
     ("YARN_CONF_DIR" -> s"${File.separator}yarn${File.separator}conf") +
-    ("HBASE_CONF_DIR" -> s"${File.separator}hbase${File.separator}conf")
+    ("HBASE_CONF_DIR" -> s"${File.separator}hbase${File.separator}conf") +
+    ("HIVE_CONF_DIR" -> s"$tempHiveDir")
   private def envWithAllHadoop: ListMap[String, String] = envWithoutHadoopCLASSPATH +
     (FLINK_HADOOP_CLASSPATH_KEY -> s"${File.separator}hadoop")
   private def confStr: String = {
@@ -89,10 +93,12 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     val expectedCommands =
       escapePaths(s"${builder.flinkExecutable} run-application ") +
         s"-t yarn-application " +
-        s"-Dyarn.ship-files=.*\\/flink-sql-client.*jar;.*\\/flink-sql-gateway.*jar;$tempUdfJar " +
+        s"-Dyarn.ship-files=.*\\/flink-sql-client.*jar;.*\\/flink-sql-gateway.*jar;$tempUdfJar" +
+        s";.*\\/hive-site\\.xml " +
         s"-Dyarn\\.application\\.name=kyuubi_.* " +
         s"-Dyarn\\.tags=KYUUBI " +
         s"-Dcontainerized\\.master\\.env\\.FLINK_CONF_DIR=\\. " +
+        s"-Dcontainerized\\.master\\.env\\.HIVE_CONF_DIR=\\. " +
         s"-Dexecution.target=yarn-application " +
         s"-c org\\.apache\\.kyuubi\\.engine\\.flink\\.FlinkSQLEngine " +
         s".*kyuubi-flink-sql-engine_.*jar" +
@@ -151,9 +157,9 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     matchActualAndExpectedSessionMode(builder)
   }
 
-  test("application mode - default env") {
+  test("application mode - all hadoop related environment variables are configured") {
     val builder = new FlinkProcessBuilder("paullam", applicationModeConf) {
-      override def env: Map[String, String] = envDefault
+      override def env: Map[String, String] = envWithAllHadoop
     }
     matchActualAndExpectedApplicationMode(builder)
   }

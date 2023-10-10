@@ -323,6 +323,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
               val batchAppStatus = sessionManager.applicationManager.getApplicationInfo(
                 metadata.appMgrInfo,
                 batchId,
+                Some(userName),
                 // prevent that the batch be marked as terminated if application state is NOT_FOUND
                 Some(metadata.engineOpenTime).filter(_ > 0).orElse(Some(System.currentTimeMillis)))
               buildBatch(metadata, batchAppStatus)
@@ -415,6 +416,13 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         } else if (fe.connectionUrl != metadata.kyuubiInstance) {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           internalRestClient.getBatchLocalLog(userName, batchId, from, size)
+        } else if (batchV2Enabled(metadata.requestConf) &&
+          // in batch v2 impl, the operation state is changed from PENDING to RUNNING
+          // before being added to SessionManager.
+          (metadata.state == "PENDING" || metadata.state == "RUNNING")) {
+          info(s"Batch $batchId is waiting for submitting")
+          val dummyLogs = List(s"Batch $batchId is waiting for submitting").asJava
+          new OperationLog(dummyLogs, dummyLogs.size)
         } else {
           throw new NotFoundException(s"No local log found for batch: $batchId")
         }
@@ -445,9 +453,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       }
     }
 
-    def forceKill(appMgrInfo: ApplicationManagerInfo, batchId: String): KillResponse = {
+    def forceKill(
+        appMgrInfo: ApplicationManagerInfo,
+        batchId: String,
+        user: String): KillResponse = {
       val (killed, message) = sessionManager.applicationManager
-        .killApplication(appMgrInfo, batchId)
+        .killApplication(appMgrInfo, batchId, Some(user))
       info(s"Mark batch[$batchId] closed by ${fe.connectionUrl}")
       sessionManager.updateMetadata(Metadata(identifier = batchId, peerInstanceClosed = true))
       (killed, message)
@@ -473,7 +484,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
           } else {
             info(s"Cancel batch[$batchId] with state ${metadata.state} by killing application")
-            val (killed, msg) = forceKill(metadata.appMgrInfo, batchId)
+            val (killed, msg) = forceKill(metadata.appMgrInfo, batchId, userName)
             new CloseBatchResponse(killed, msg)
           }
         } else if (metadata.kyuubiInstance != fe.connectionUrl) {
@@ -484,12 +495,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           } catch {
             case e: KyuubiRestException =>
               error(s"Error redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}", e)
-              val (killed, msg) = forceKill(metadata.appMgrInfo, batchId)
+              val (killed, msg) = forceKill(metadata.appMgrInfo, batchId, userName)
               new CloseBatchResponse(killed, if (killed) msg else Utils.stringifyException(e))
           }
         } else { // should not happen, but handle this for safe
           warn(s"Something wrong on deleting batch[$batchId], try forcibly killing application")
-          val (killed, msg) = forceKill(metadata.appMgrInfo, batchId)
+          val (killed, msg) = forceKill(metadata.appMgrInfo, batchId, userName)
           new CloseBatchResponse(killed, msg)
         }
       }.getOrElse {

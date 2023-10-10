@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 import java.util.{Base64, UUID}
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{GenericType, MediaType}
@@ -49,6 +50,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
     .set(KyuubiConf.SERVER_ADMINISTRATORS, Set("admin001"))
+    .set(KyuubiConf.ENGINE_IDLE_TIMEOUT, Duration.ofMinutes(3).toMillis)
 
   private val encodeAuthorization: String = {
     new String(
@@ -275,7 +277,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
@@ -320,7 +321,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
@@ -366,7 +366,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val id = UUID.randomUUID().toString
@@ -401,7 +400,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
@@ -446,7 +444,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
@@ -492,7 +489,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engineSpace = DiscoveryPaths.makePath(
@@ -585,6 +581,157 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(attributes.containsKey("version"))
       assert(attributes.containsKey("sequence"))
       assert("Running".equals(testServer.getStatus))
+    }
+  }
+
+  test("list all engine - user share level") {
+    val id = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
+    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
+    val engine =
+      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+
+    val engineSpace = DiscoveryPaths.makePath(
+      s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
+      Utils.currentUser,
+      "")
+
+    withDiscoveryClient(conf) { client =>
+      engine.getOrCreate(client)
+
+      assert(client.pathExists(engineSpace))
+      assert(client.getChildren(engineSpace).size == 1)
+
+      val response = webTarget.path("api/v1/admin/engine")
+        .queryParam("all", "true")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+        .get
+
+      assert(200 == response.getStatus)
+      val engines = response.readEntity(new GenericType[Seq[Engine]]() {})
+      assert(engines.size == 1)
+      assert(engines(0).getEngineType == "SPARK_SQL")
+      assert(engines(0).getSharelevel == "USER")
+      assert(engines(0).getSubdomain == "default")
+
+      // kill the engine application
+      engineMgr.killApplication(ApplicationManagerInfo(None), id)
+      eventually(timeout(30.seconds), interval(100.milliseconds)) {
+        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id).exists(
+          _.state == ApplicationState.NOT_FOUND))
+      }
+    }
+  }
+
+  test("list all engines - group share level") {
+    val id = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, GROUP.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
+    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
+    val engine =
+      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+
+    val engineSpace = DiscoveryPaths.makePath(
+      s"kyuubi_test_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
+      fe.asInstanceOf[KyuubiRestFrontendService].sessionManager.groupProvider.primaryGroup(
+        Utils.currentUser,
+        null),
+      "")
+
+    withDiscoveryClient(conf) { client =>
+      engine.getOrCreate(client)
+
+      assert(client.pathExists(engineSpace))
+      assert(client.getChildren(engineSpace).size == 1)
+
+      val response = webTarget.path("api/v1/admin/engine")
+        .queryParam("all", "true")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+        .get
+
+      assert(200 == response.getStatus)
+      val engines = response.readEntity(new GenericType[Seq[Engine]]() {})
+      assert(engines.size == 1)
+      assert(engines(0).getEngineType == "SPARK_SQL")
+      assert(engines(0).getSharelevel == "GROUP")
+      assert(engines(0).getSubdomain == "default")
+
+      // kill the engine application
+      engineMgr.killApplication(ApplicationManagerInfo(None), id)
+      eventually(timeout(30.seconds), interval(100.milliseconds)) {
+        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id).exists(
+          _.state == ApplicationState.NOT_FOUND))
+      }
+    }
+  }
+
+  test("list all engines - connection share level") {
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, CONNECTION.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
+    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
+    val engineSpace = DiscoveryPaths.makePath(
+      s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
+      Utils.currentUser,
+      "")
+
+    val id1 = UUID.randomUUID().toString
+    val engine1 =
+      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id1, null)
+    val engineSpace1 = DiscoveryPaths.makePath(
+      s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
+      Utils.currentUser,
+      id1)
+
+    val id2 = UUID.randomUUID().toString
+    val engine2 =
+      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id2, null)
+    val engineSpace2 = DiscoveryPaths.makePath(
+      s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
+      Utils.currentUser,
+      id2)
+
+    withDiscoveryClient(conf) { client =>
+      engine1.getOrCreate(client)
+      engine2.getOrCreate(client)
+
+      assert(client.pathExists(engineSpace))
+      assert(client.getChildren(engineSpace).size == 2)
+      assert(client.pathExists(engineSpace1))
+      assert(client.pathExists(engineSpace2))
+
+      val response = webTarget.path("api/v1/admin/engine")
+        .queryParam("all", "true")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+        .get
+      assert(200 == response.getStatus)
+      val result = response.readEntity(new GenericType[Seq[Engine]]() {})
+      assert(result.size == 2)
+
+      // kill the engine application
+      engineMgr.killApplication(ApplicationManagerInfo(None), id1)
+      engineMgr.killApplication(ApplicationManagerInfo(None), id2)
+      eventually(timeout(30.seconds), interval(100.milliseconds)) {
+        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id1)
+          .exists(_.state == ApplicationState.NOT_FOUND))
+        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id2)
+          .exists(_.state == ApplicationState.NOT_FOUND))
+      }
     }
   }
 }

@@ -234,9 +234,9 @@ object TableCommands {
     TableCommandSpec(
       cmd,
       Seq(
-        resolvedIdentifierTableDesc.copy(fieldName = "left"),
+        resolvedIdentifierTableDesc.copy(fieldName = "name"),
         tableDesc,
-        resolvedDbObjectNameDesc.copy(fieldName = "left")),
+        resolvedDbObjectNameDesc.copy(fieldName = "name")),
       CREATETABLE_AS_SELECT,
       Seq(queryQueryDesc))
   }

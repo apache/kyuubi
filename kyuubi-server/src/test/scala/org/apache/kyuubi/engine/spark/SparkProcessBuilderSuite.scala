@@ -26,7 +26,7 @@ import java.util.concurrent.{Executors, TimeUnit}
 import org.scalatest.time.SpanSugar._
 import org.scalatestplus.mockito.MockitoSugar
 
-import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
+import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE}
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
@@ -34,6 +34,7 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder._
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.service.ServiceUtils
+import org.apache.kyuubi.util.AssertionUtils._
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   private def conf = KyuubiConf().set("kyuubi.on", "off")
@@ -362,6 +363,46 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val execPodNamePrefix3 = processBuilder
       .appendPodNameConf(conf3).get(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)
     assert(execPodNamePrefix3 === Some(s"kyuubi-$engineRefId"))
+  }
+
+  test("extract spark core scala version") {
+    val builder = new SparkProcessBuilder("kentyao", KyuubiConf(false))
+    Seq(
+      "spark-core_2.13-3.4.1.jar",
+      "spark-core_2.13-3.5.0-abc-20230921.jar",
+      "spark-core_2.13-3.5.0-xyz-1.2.3.jar",
+      "spark-core_2.13-3.5.0.1.jar",
+      "spark-core_2.13.2-3.5.0.jar").foreach { f =>
+      assertResult("2.13")(builder.extractSparkCoreScalaVersion(Seq(f)))
+    }
+
+    Seq(
+      "spark-dummy_2.13-3.5.0.jar",
+      "spark-core_2.13-3.5.0.1.zip",
+      "yummy-spark-core_2.13-3.5.0.jar").foreach { f =>
+      assertThrows[KyuubiException](builder.extractSparkCoreScalaVersion(Seq(f)))
+    }
+  }
+
+  test("match scala version of spark home") {
+    SCALA_COMPILE_VERSION match {
+      case "2.12" => Seq(
+          "spark-3.2.4-bin-hadoop3.2",
+          "spark-3.2.4-bin-hadoop2.7",
+          "spark-3.4.1-bin-hadoop3")
+          .foreach { sparkHome =>
+            assertMatches(sparkHome, SPARK_HOME_REGEX_SCALA_212)
+            assertNotMatches(sparkHome, SPARK_HOME_REGEX_SCALA_213)
+          }
+      case "2.13" => Seq(
+          "spark-3.2.4-bin-hadoop3.2-scala2.13",
+          "spark-3.4.1-bin-hadoop3-scala2.13",
+          "spark-3.5.0-bin-hadoop3-scala2.13")
+          .foreach { sparkHome =>
+            assertMatches(sparkHome, SPARK_HOME_REGEX_SCALA_213)
+            assertNotMatches(sparkHome, SPARK_HOME_REGEX_SCALA_212)
+          }
+    }
   }
 }
 

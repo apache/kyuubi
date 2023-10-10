@@ -83,14 +83,16 @@ class JpsApplicationOperation extends ApplicationOperation {
 
   override def killApplicationByTag(
       appMgrInfo: ApplicationManagerInfo,
-      tag: String): KillResponse = {
+      tag: String,
+      proxyUser: Option[String] = None): KillResponse = {
     killJpsApplicationByTag(tag, true)
   }
 
   override def getApplicationInfoByTag(
       appMgrInfo: ApplicationManagerInfo,
       tag: String,
-      submitTime: Option[Long]): ApplicationInfo = {
+      proxyUser: Option[String] = None,
+      submitTime: Option[Long] = None): ApplicationInfo = {
     val commandOption = getEngine(tag)
     if (commandOption.nonEmpty) {
       val idAndCmd = commandOption.get
