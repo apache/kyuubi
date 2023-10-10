@@ -25,6 +25,7 @@ import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.HoodieTest
+import org.apache.kyuubi.util.AssertionUtils.interceptContains
 
 /**
  * Tests for RangerSparkExtensionSuite on Hoodie SQL.
@@ -93,31 +94,24 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
            |PARTITIONED BY(city)
            |""".stripMargin))
 
-    val e1 = intercept[AccessControlException] {
-      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)"))
-    }.getMessage
-    assert(e1.contains(s"does not have [alter] privilege" +
-      s" on [$namespace1/$table1/age]"))
+    interceptContains[AccessControlException](
+      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
+      s"does not have [alter] privilege on [$namespace1/$table1/age]")
 
-    val e2 = intercept[AccessControlException] {
-      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 CHANGE COLUMN id id bigint"))
-    }.getMessage
-    assert(e2.contains(s"does not have [alter] privilege" +
-      s" on [$namespace1/$table1/id]"))
+    interceptContains[AccessControlException](
+      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 CHANGE COLUMN id id bigint")))(
+      s"does not have [alter] privilege" +
+        s" on [$namespace1/$table1/id]")
 
-    val e3 = intercept[AccessControlException] {
-      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 DROP PARTITION (city='test')"))
-    }.getMessage
+    interceptContains[AccessControlException](
+      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 DROP PARTITION (city='test')")))(
+      s"does not have [alter] privilege" +
+        s" on [$namespace1/$table1/city]")
 
-    assert(e3.contains(s"does not have [alter] privilege" +
-      s" on [$namespace1/$table1/city]"))
-
-    val e4 = intercept[AccessControlException] {
-      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 RENAME TO $namespace1.$table2"))
-    }.getMessage
-
-    assert(e4.contains(s"does not have [alter] privilege" +
-      s" on [$namespace1/$table1]"))
+    interceptContains[AccessControlException](
+      doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 RENAME TO $namespace1.$table2")))(
+      s"does not have [alter] privilege" +
+        s" on [$namespace1/$table1]")
 
     doAs(admin, s"DROP TABLE IF EXISTS $namespace1.$table1")
     doAs(admin, s"DROP DATABASE IF EXISTS $namespace1")
