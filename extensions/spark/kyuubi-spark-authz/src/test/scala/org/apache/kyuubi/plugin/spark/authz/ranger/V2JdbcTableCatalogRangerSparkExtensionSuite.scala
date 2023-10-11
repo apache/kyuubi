@@ -44,27 +44,25 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   val jdbcUrl: String = s"$dbUrl;create=true"
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater) {
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2",
-        "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog")
-      spark.conf.set(s"spark.sql.catalog.$catalogV2.url", jdbcUrl)
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2.driver",
-        "org.apache.derby.jdbc.AutoloadedDriver")
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2",
+      "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog")
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.url", jdbcUrl)
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2.driver",
+      "org.apache.derby.jdbc.AutoloadedDriver")
 
-      super.beforeAll()
+    super.beforeAll()
 
-      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
-      doAs(
-        admin,
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
-          " (id int, name string, city string)"))
-      doAs(
-        admin,
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
-          " (id int, name string, city string)"))
-    }
+    doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
+    doAs(
+      admin,
+      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
+        " (id int, name string, city string)"))
+    doAs(
+      admin,
+      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
+        " (id int, name string, city string)"))
   }
 
   override def afterAll(): Unit = {
@@ -79,8 +77,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] CREATE DATABASE") {
-    assume(isSparkV31OrGreater)
-
     // create database
     val e1 = intercept[AccessControlException](
       doAs(someone, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace2").explain()))
@@ -89,8 +85,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] DROP DATABASE") {
-    assume(isSparkV31OrGreater)
-
     // create database
     val e1 = intercept[AccessControlException](
       doAs(someone, sql(s"DROP DATABASE IF EXISTS $catalogV2.$namespace2").explain()))
@@ -99,8 +93,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] SELECT TABLE") {
-    assume(isSparkV31OrGreater)
-
     // select
     val e1 = intercept[AccessControlException](
       doAs(someone, sql(s"select city, id from $catalogV2.$namespace1.$table1").explain()))
@@ -109,7 +101,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #4255] DESCRIBE TABLE") {
-    assume(isSparkV31OrGreater)
     val e1 = intercept[AccessControlException](
       doAs(someone, sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain()))
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
@@ -117,8 +108,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] CREATE TABLE") {
-    assume(isSparkV31OrGreater)
-
     // CreateTable
     val e2 = intercept[AccessControlException](
       doAs(someone, sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2")))
@@ -136,8 +125,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] DROP TABLE") {
-    assume(isSparkV31OrGreater)
-
     // DropTable
     val e3 = intercept[AccessControlException](
       doAs(someone, sql(s"DROP TABLE $catalogV2.$namespace1.$table1")))
@@ -146,8 +133,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] INSERT TABLE") {
-    assume(isSparkV31OrGreater)
-
     // AppendData: Insert Using a VALUES Clause
     val e4 = intercept[AccessControlException](
       doAs(
@@ -186,8 +171,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] MERGE INTO") {
-    assume(isSparkV31OrGreater)
-
     val mergeIntoSql =
       s"""
          |MERGE INTO $catalogV2.$namespace1.$outputTable1 AS target
@@ -218,8 +201,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] UPDATE TABLE") {
-    assume(isSparkV31OrGreater)
-
     // UpdateTable
     val e5 = intercept[AccessControlException](
       doAs(
@@ -231,8 +212,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] DELETE FROM TABLE") {
-    assume(isSparkV31OrGreater)
-
     // DeleteFromTable
     val e6 = intercept[AccessControlException](
       doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1")))
@@ -241,8 +220,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] CACHE TABLE") {
-    assume(isSparkV31OrGreater)
-
     // CacheTable
     val e7 = intercept[AccessControlException](
       doAs(
@@ -281,8 +258,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] ALTER TABLE") {
-    assume(isSparkV31OrGreater)
-
     // AddColumns
     val e61 = intercept[AccessControlException](
       doAs(
@@ -318,8 +293,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] COMMENT ON") {
-    assume(isSparkV31OrGreater)
-
     // CommentOnNamespace
     val e1 = intercept[AccessControlException](
       doAs(

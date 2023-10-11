@@ -37,9 +37,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
-    if (isSparkV31OrGreater)
-      "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
-    else ""
+    "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
 
   val catalogV2 = "local"
   val namespace1 = icebergNamespace
@@ -47,37 +45,34 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   val outputTable1 = "outputTable1"
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV31OrGreater)
     test()
   }
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater) {
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2",
-        "org.apache.iceberg.spark.SparkCatalog")
-      spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2.warehouse",
-        Utils.createTempDir("iceberg-hadoop").toString)
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2",
+      "org.apache.iceberg.spark.SparkCatalog")
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2.warehouse",
+      Utils.createTempDir("iceberg-hadoop").toString)
 
-      super.beforeAll()
+    super.beforeAll()
 
-      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
-      doAs(
-        admin,
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
-          " (id int, name string, city string) USING iceberg"))
+    doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
+    doAs(
+      admin,
+      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
+        " (id int, name string, city string) USING iceberg"))
 
-      doAs(
-        admin,
-        sql(s"INSERT INTO $catalogV2.$namespace1.$table1" +
-          " (id , name , city ) VALUES (1, 'liangbowen','Guangzhou')"))
-      doAs(
-        admin,
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
-          " (id int, name string, city string) USING iceberg"))
-    }
+    doAs(
+      admin,
+      sql(s"INSERT INTO $catalogV2.$namespace1.$table1" +
+        " (id , name , city ) VALUES (1, 'liangbowen','Guangzhou')"))
+    doAs(
+      admin,
+      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
+        " (id int, name string, city string) USING iceberg"))
   }
 
   override def afterAll(): Unit = {
