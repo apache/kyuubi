@@ -23,7 +23,6 @@ import scala.util.Try
 import org.scalatest.Outcome
 
 import org.apache.kyuubi.plugin.spark.authz.serde._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
 
 class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
@@ -39,15 +38,13 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
   val jdbcUrl: String = s"$dbUrl;create=true"
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater) {
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2",
-        "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog")
-      spark.conf.set(s"spark.sql.catalog.$catalogV2.url", jdbcUrl)
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2.driver",
-        "org.apache.derby.jdbc.AutoloadedDriver")
-    }
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2",
+      "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog")
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.url", jdbcUrl)
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2.driver",
+      "org.apache.derby.jdbc.AutoloadedDriver")
     super.beforeAll()
   }
 
@@ -61,7 +58,6 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
   }
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV31OrGreater)
     test()
   }
 
