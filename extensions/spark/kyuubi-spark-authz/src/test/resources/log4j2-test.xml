@@ -21,14 +21,14 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="stdout" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} %p %c: %m%n"/>
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %p %c: %m%n%ex"/>
             <Filters>
                 <ThresholdFilter level="FATAL"/>
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
         </Console>
         <File name="file" fileName="target/unit-tests.log">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} %t %p %c{1}: %m%n"/>
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %t %p %c{1}: %m%n%ex"/>
             <Filters>
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
