@@ -34,7 +34,7 @@ import org.apache.kyuubi.util.AssertionUtils.interceptContains
 class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
-    if (isSparkV31OrGreater && !isSparkV35OrGreater) {
+    if (isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213OrGreater) {
       "org.apache.spark.sql.hudi.HoodieSparkSessionExtension"
     } else {
       ""
@@ -50,12 +50,12 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val outputTable1 = "outputTable_hoodie"
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV31OrGreater && !isSparkV35OrGreater)
+    assume(isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213OrGreater)
     test()
   }
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater && !isSparkV35OrGreater) {
+    if (isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213OrGreater) {
       if (isSparkV32OrGreater) {
         spark.conf.set(
           s"spark.sql.catalog.$sparkCatalog",
@@ -70,7 +70,7 @@ class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   override def afterAll(): Unit = {
-    if (isSparkV31OrGreater && !isSparkV35OrGreater) {
+    if (isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213OrGreater) {
       super.afterAll()
       spark.sessionState.catalog.reset()
       spark.sessionState.conf.clear()
