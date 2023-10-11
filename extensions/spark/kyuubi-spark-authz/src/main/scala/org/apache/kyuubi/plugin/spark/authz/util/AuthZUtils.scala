@@ -61,7 +61,7 @@ private[authz] object AuthZUtils {
 
   def hasResolvedPermanentView(plan: LogicalPlan): Boolean = {
     plan match {
-      case view: View if view.resolved && isSparkV31OrGreater =>
+      case view: View if view.resolved =>
         !getField[Boolean](view, "isTempView")
       case _ =>
         false
@@ -84,7 +84,6 @@ private[authz] object AuthZUtils {
   }
 
   lazy val SPARK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(SPARK_VERSION)
-  lazy val isSparkV31OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.1"
   lazy val isSparkV32OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.2"
   lazy val isSparkV33OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.3"
 
