@@ -21,7 +21,7 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.serde.TableType._
 
-object HoodieCommands {
+object HudiCommands {
   val tite = classOf[TableIdentifierTableExtractor]
 
   val AlterHoodieTableAddColumnsCommand = {

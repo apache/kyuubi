@@ -323,12 +323,6 @@
             <artifactId>scala-collection-compat_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.hudi</groupId>
-            <artifactId>hudi-spark${hudi.spark.binary.version}-bundle_2.12</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -342,6 +336,18 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>hudi</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.hudi</groupId>
+                    <artifactId>hudi-spark${hudi.spark.binary.version}-bundle_2.12</artifactId>
+                    <version>${hudi.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
         <profile>
             <id>gen-policy</id>
             <build>

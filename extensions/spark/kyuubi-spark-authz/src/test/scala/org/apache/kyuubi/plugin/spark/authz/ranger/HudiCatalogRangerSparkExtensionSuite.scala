@@ -24,14 +24,15 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.tags.HoodieTest
+import org.apache.kyuubi.tags.HudiTest
 import org.apache.kyuubi.util.AssertionUtils.interceptContains
 
 /**
- * Tests for RangerSparkExtensionSuite on Hoodie SQL.
+ * Tests for RangerSparkExtensionSuite on Hudi SQL.
+ * Run this test should enbale `hudi` profile.
  */
-@HoodieTest
-class HoodieCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
+@HudiTest
+class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
     if (isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213OrGreater) {
