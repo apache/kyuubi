@@ -110,8 +110,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
         result.getMaskTypeDef.getName match {
           case "MASK" => regexp_replace(col)
           case "MASK_SHOW_FIRST_4" =>
-            val right = regexp_replace(s"substr($col, 5)")
-            s"concat(substr($col, 0, 4), $right)"
+            regexp_replace(col, hasLen = true)
           case "MASK_SHOW_LAST_4" =>
             val left = regexp_replace(s"left($col, length($col) - 4)")
             s"concat($left, right($col, 4))"
