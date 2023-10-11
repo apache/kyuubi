@@ -21,25 +21,18 @@ import org.apache.spark.SparkConf
 import org.scalatest.Outcome
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 class DataMaskingForIcebergSuite extends DataMaskingTestBase {
   override protected val extraSparkConf: SparkConf = {
-    val conf = new SparkConf()
-
-    if (isSparkV31OrGreater) {
-      conf
-        .set("spark.sql.defaultCatalog", "testcat")
-        .set(
-          "spark.sql.catalog.testcat",
-          "org.apache.iceberg.spark.SparkCatalog")
-        .set(s"spark.sql.catalog.testcat.type", "hadoop")
-        .set(
-          "spark.sql.catalog.testcat.warehouse",
-          Utils.createTempDir("iceberg-hadoop").toString)
-    }
-    conf
-
+    new SparkConf()
+      .set("spark.sql.defaultCatalog", "testcat")
+      .set(
+        "spark.sql.catalog.testcat",
+        "org.apache.iceberg.spark.SparkCatalog")
+      .set(s"spark.sql.catalog.testcat.type", "hadoop")
+      .set(
+        "spark.sql.catalog.testcat.warehouse",
+        Utils.createTempDir("iceberg-hadoop").toString)
   }
 
   override protected val catalogImpl: String = "in-memory"
@@ -47,19 +40,14 @@ class DataMaskingForIcebergSuite extends DataMaskingTestBase {
   override protected def format: String = "USING iceberg"
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater) {
-      super.beforeAll()
-    }
+    super.beforeAll()
   }
 
   override def afterAll(): Unit = {
-    if (isSparkV31OrGreater) {
-      super.afterAll()
-    }
+    super.afterAll()
   }
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV31OrGreater)
     test()
   }
 }
