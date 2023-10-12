@@ -22,6 +22,7 @@ import scala.collection.JavaConverters.asScalaBufferConverter
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TOperationHandle}
 import org.scalatest.time.SpanSugar._
 
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_SPARK_LISTENER_ENABLED
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
@@ -29,13 +30,10 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 class SQLOperationListenerSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
   override def withKyuubiConf: Map[String, String] = Map(
-    "kyuubi.session.engine.spark.showProgress" -> "true",
-    "kyuubi.session.engine.spark.progress.update.interval" -> "200")
-
+    KyuubiConf.ENGINE_SPARK_SHOW_PROGRESS.key -> "true",
+    KyuubiConf.ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL.key -> "200")
 
   override protected def jdbcUrl: String = getJdbcUrl
-
-
 
   test("operation listener with progress job info") {
     val sql = "SELECT java_method('java.lang.Thread', 'sleep', 10000l) FROM range(1, 3, 1, 2);"

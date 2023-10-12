@@ -79,12 +79,15 @@ class SparkConsoleProgressBar(
    * @return jobId,if not exists, return -1
    */
   private def findJobId(stageId: Int): Int = {
-    liveJobs.forEach((jobId, sparkJobInfo) => {
-      if (sparkJobInfo.stageIds.contains(stageId)) {
-        return jobId
-      }
-    })
-    -1
+    val result: Option[Int] = liveJobs.asScala.find(item => {
+      item._2.stageIds.contains(stageId)
+    }).map(_._1)
+    result match {
+      case Some(value) =>
+        value
+      case None =>
+        -1
+    }
   }
   /**
    * Show progress bar in console. The progress bar is displayed in the next line
