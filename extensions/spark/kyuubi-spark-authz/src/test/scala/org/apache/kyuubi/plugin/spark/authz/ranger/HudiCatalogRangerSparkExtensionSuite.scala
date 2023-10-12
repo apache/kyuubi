@@ -34,6 +34,8 @@ import org.apache.kyuubi.util.AssertionUtils.interceptContains
 @HudiTest
 class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  // TODO: Apache Hudi not support Spark 3.5 and Scala 2.13 yet,
+  //  should change after Apache Hudi support Spark 3.5 and Scala 2.13.
   override protected val sqlExtensions: String =
     if (isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213) {
       "org.apache.spark.sql.hudi.HoodieSparkSessionExtension"
