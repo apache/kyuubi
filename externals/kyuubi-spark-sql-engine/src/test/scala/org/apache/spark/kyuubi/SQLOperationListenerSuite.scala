@@ -38,7 +38,7 @@ class SQLOperationListenerSuite extends WithSparkSQLEngine with HiveJDBCTestHelp
 
 
   test("operation listener with progress job info") {
-    val sql = "SELECT java_method('java.lang.Thread', 'sleep', 5000l) FROM range(1, 3, 1, 2);"
+    val sql = "SELECT java_method('java.lang.Thread', 'sleep', 10000l) FROM range(1, 3, 1, 2);"
     withSessionHandle { (client, handle) =>
       val req = new TExecuteStatementReq()
       req.setSessionHandle(handle)
@@ -50,7 +50,6 @@ class SQLOperationListenerSuite extends WithSparkSQLEngine with HiveJDBCTestHelp
       eventually(timeout(90.seconds), interval(500.milliseconds)) {
         val resultsResp = client.FetchResults(fetchResultsReq)
         val logs = resultsResp.getResults.getColumns.get(0).getStringVal.getValues.asScala
-        print(logs)
         assert(logs.exists(_.matches(".*\\[Job .* Stages\\] \\[Stage .*\\]")))
       }
     }
