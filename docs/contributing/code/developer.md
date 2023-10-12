@@ -46,8 +46,7 @@ You can run `dev/reformat` to format all Java and Scala code.
 
 Kyuubi uses settings.md to explain available configurations.
 
-You can run `KYUUBI_UPDATE=1 build/mvn clean test -pl kyuubi-server -am -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration`
-to append descriptions of new configurations to settings.md.
+You can run `dev/gen/gen_all_config_docs.sh` to append and update descriptions of new configurations to `settings.md`.
 
 ## Generative Tooling Usage
 
