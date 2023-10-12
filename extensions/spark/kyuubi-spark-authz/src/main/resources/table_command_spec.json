@@ -473,7 +473,7 @@
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceData",
   "tableDescs" : [ {
-    "fieldName" : "table",
+    "fieldName" : "originalTable",
     "fieldExtractor" : "DataSourceV2RelationTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : {

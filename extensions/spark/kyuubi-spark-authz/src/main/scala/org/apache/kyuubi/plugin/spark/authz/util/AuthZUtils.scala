@@ -87,6 +87,7 @@ private[authz] object AuthZUtils {
   lazy val isSparkV32OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.2"
   lazy val isSparkV33OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.3"
   lazy val isSparkV34OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.4"
+  lazy val isSparkV35OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.5"
 
   def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
