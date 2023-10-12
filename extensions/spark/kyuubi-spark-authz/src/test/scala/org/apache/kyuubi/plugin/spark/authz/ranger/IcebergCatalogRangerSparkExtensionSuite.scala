@@ -47,6 +47,8 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   val namespace1 = icebergNamespace
   val table1 = "table1"
   val outputTable1 = "outputTable1"
+  val bobNamespace= "default_bob"
+  val bobSelectTable = "table_select_bob_1"
 
   override def withFixture(test: NoArgTest): Outcome = {
     test()
@@ -77,6 +79,11 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       admin,
       sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
         " (id int, name string, city string) USING iceberg"))
+
+    doAs(
+      admin,
+      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$bobNamespace.$bobSelectTable" +
+        " (id int, name string, city string) USING iceberg"))
   }
 
   override def afterAll(): Unit = {
@@ -88,7 +95,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   test("[KYUUBI #3515] MERGE INTO") {
     val mergeIntoSql =
       s"""
-         |MERGE INTO $catalogV2.$namespace1.$outputTable1 AS target
+         |MERGE INTO $catalogV2.$bobNamespace.$bobSelectTable AS target
          |USING $catalogV2.$namespace1.$table1  AS source
          |ON target.id = source.id
          |WHEN MATCHED AND (target.name='delete') THEN DELETE
@@ -106,12 +113,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     withSingleCallEnabled {
       val e2 = intercept[AccessControlException](
         doAs(
-          someone,
+          bob,
           sql(mergeIntoSql)))
       assert(e2.getMessage.contains(s"does not have" +
-        s" [select] privilege" +
-        s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
-        s" [update] privilege on [$namespace1/$outputTable1]"))
+        s" [update] privilege on [$bobNamespace/$bobSelectTable]"))
     }
 
     doAs(admin, sql(mergeIntoSql))
@@ -121,11 +126,11 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     // UpdateTable
     val e1 = intercept[AccessControlException](
       doAs(
-        someone,
-        sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
+        bob,
+        sql(s"UPDATE $catalogV2.$bobNamespace.$bobSelectTable SET city='Guangzhou' " +
           " WHERE id=1")))
     assert(e1.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$namespace1/$table1]"))
+      s" on [$bobNamespace/$bobSelectTable]"))
 
     doAs(
       admin,
@@ -136,14 +141,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   test("[KYUUBI #3515] DELETE FROM TABLE") {
     // DeleteFromTable
     val e6 = intercept[AccessControlException](
-      doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2")))
-    if (isSparkV34OrGreater) {
-      assert(e6.getMessage.contains(s"does not have [select] privilege" +
-        s" on [$namespace1/$table1/id]"))
-    } else {
-      assert(e6.getMessage.contains(s"does not have [update] privilege" +
-        s" on [$namespace1/$table1]"))
-    }
+      doAs(bob, sql(s"DELETE FROM $catalogV2.$bobNamespace.$bobSelectTable WHERE id=2")))
+    assert(e6.getMessage.contains(s"does not have [update] privilege" +
+      s" on [$bobNamespace/$bobSelectTable]"))
 
     doAs(admin, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
   }
