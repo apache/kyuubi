@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.io.{File, IOException}
+import java.io.{File, FileFilter, IOException}
 import java.nio.file.Paths
 import java.util.Locale
 
@@ -25,6 +25,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
@@ -35,8 +36,7 @@ import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.KubernetesUtils
-import org.apache.kyuubi.util.Validator
+import org.apache.kyuubi.util.{KubernetesUtils, Validator}
 
 class SparkProcessBuilder(
     override val proxyUser: String,
@@ -100,6 +100,25 @@ class SparkProcessBuilder(
     } else {
       "spark." + key
     }
+  }
+
+  private[kyuubi] def extractSparkCoreScalaVersion(fileNames: Iterable[String]): String = {
+    fileNames.collectFirst { case SPARK_CORE_SCALA_VERSION_REGEX(scalaVersion) => scalaVersion }
+      .getOrElse(throw new KyuubiException("Failed to extract Scala version from spark-core jar"))
+  }
+
+  override protected val engineScalaBinaryVersion: String = {
+    val sparkCoreScalaVersion =
+      extractSparkCoreScalaVersion(Paths.get(sparkHome, "jars").toFile.list())
+    StringUtils.defaultIfBlank(System.getenv("SPARK_SCALA_VERSION"), sparkCoreScalaVersion)
+  }
+
+  override protected lazy val engineHomeDirFilter: FileFilter = file => {
+    val r = SCALA_COMPILE_VERSION match {
+      case "2.12" => SPARK_HOME_REGEX_SCALA_212
+      case "2.13" => SPARK_HOME_REGEX_SCALA_213
+    }
+    file.isDirectory && r.findFirstMatchIn(file.getName).isDefined
   }
 
   override protected lazy val commands: Array[String] = {
@@ -314,4 +333,13 @@ object SparkProcessBuilder {
   final private val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
   final private val SPARK_CONF_DIR = "SPARK_CONF_DIR"
   final private val SPARK_CONF_FILE_NAME = "spark-defaults.conf"
+
+  final private[kyuubi] val SPARK_CORE_SCALA_VERSION_REGEX =
+    """^spark-core_(\d\.\d+).*.jar$""".r
+
+  final private[kyuubi] val SPARK_HOME_REGEX_SCALA_212 =
+    """^spark-\d+\.\d+\.\d+-bin-hadoop\d+(\.\d+)?$""".r
+
+  final private[kyuubi] val SPARK_HOME_REGEX_SCALA_213 =
+    """^spark-\d+\.\d+\.\d+-bin-hadoop\d(\.\d+)?+-scala\d+(\.\d+)?$""".r
 }

@@ -376,7 +376,7 @@ object SparkSQLEngine extends Logging {
         case i: InterruptedException if !sparkSessionCreated.get =>
           error(
             s"The Engine main thread was interrupted, possibly due to `createSpark` timeout." +
-              s" The `kyuubi.session.engine.initialize.timeout` is ($initTimeout ms) " +
+              s" The `${ENGINE_INIT_TIMEOUT.key}` is ($initTimeout ms) " +
               s" and submitted at $submitTime.",
             i)
         case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)

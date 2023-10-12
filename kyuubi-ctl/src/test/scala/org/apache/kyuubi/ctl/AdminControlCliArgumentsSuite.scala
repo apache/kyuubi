@@ -158,13 +158,14 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |Command: list [engine|server]
          |	List information about resources.
          |Command: list engine [options]
-         |	List all the engine nodes for a user
+         |	List the engine nodes
          |  -et, --engine-type <value>
          |                           The engine type this engine belong to.
          |  -es, --engine-subdomain <value>
          |                           The engine subdomain this engine belong to.
          |  -esl, --engine-share-level <value>
          |                           The engine share level this engine belong to.
+         |  -a, --all <value>        All the engine.
          |Command: list server
          |	List all the server nodes
          |

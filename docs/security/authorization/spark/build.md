@@ -51,7 +51,7 @@ The available `spark.version`s are shown in the following table.
 |       3.3.x       |     √     |                                                           -                                                            |
 |       3.2.x       |     √     |                                                           -                                                            |
 |       3.1.x       |     √     |                                                           -                                                            |
-|       3.0.x       |     √     |                                                           -                                                            |
+|       3.0.x       |     x     |                                                    EOL since v1.9.0                                                    |
 | 2.4.x and earlier |     ×     | [PR 2367](https://github.com/apache/kyuubi/pull/2367) is used to track how we work with older releases with scala 2.11 |
 
 Currently, Spark released with Scala 2.12 are supported.

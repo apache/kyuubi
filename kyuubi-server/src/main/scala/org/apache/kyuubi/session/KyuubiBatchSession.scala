@@ -61,9 +61,13 @@ class KyuubiBatchSession(
   override def createTime: Long = metadata.map(_.createTime).getOrElse(super.createTime)
 
   override def getNoOperationTime: Long = {
-    if (batchJobSubmissionOp != null && !OperationState.isTerminal(
-        batchJobSubmissionOp.getStatus.state)) {
-      0L
+    if (batchJobSubmissionOp != null) {
+      val batchStatus = batchJobSubmissionOp.getStatus
+      if (!OperationState.isTerminal(batchStatus.state)) {
+        0L
+      } else {
+        System.currentTimeMillis() - batchStatus.completed
+      }
     } else {
       super.getNoOperationTime
     }
@@ -156,7 +160,6 @@ class KyuubiBatchSession(
         // new batch job created using batch impl v2
         val metadataToUpdate = Metadata(
           identifier = initialMetadata.identifier,
-          kyuubiInstance = connectionUrl,
           requestName = name.orNull,
           requestConf = optimizedConf ++ kubernetesInfo, // save the kubernetes info
           clusterManager = batchJobSubmissionOp.builder.clusterManager())

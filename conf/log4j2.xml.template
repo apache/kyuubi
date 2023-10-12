@@ -30,14 +30,14 @@
     </Properties>
     <Appenders>
         <Console name="stdout" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c: %m%n"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c: %m%n%ex"/>
             <Filters>
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
         </Console>
         <RollingFile name="restAudit" fileName="${sys:restAuditLogPath}"
                      filePattern="${sys:restAuditLogFilePattern}">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="51200KB" />
             </Policies>
@@ -45,7 +45,7 @@
         </RollingFile>
         <RollingFile name="k8sAudit" fileName="${sys:k8sAuditLogPath}"
                      filePattern="${sys:k8sAuditLogFilePattern}">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="51200KB" />
             </Policies>

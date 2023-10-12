@@ -30,7 +30,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 /**
  * Base trait for data masking tests, derivative classes shall name themselves following:
@@ -279,7 +278,6 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   }
 
   test("KYUUBI #3581: permanent view should lookup rule on itself not the raw table") {
-    assume(isSparkV31OrGreater)
     val supported = doAs(
       permViewUser,
       Try(sql("CREATE OR REPLACE VIEW default.perm_view AS SELECT * FROM default.src")).isSuccess)

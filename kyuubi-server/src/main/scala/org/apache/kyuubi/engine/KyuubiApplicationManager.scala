@@ -60,11 +60,14 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
     super.stop()
   }
 
-  def killApplication(appMgrInfo: ApplicationManagerInfo, tag: String): KillResponse = {
+  def killApplication(
+      appMgrInfo: ApplicationManagerInfo,
+      tag: String,
+      proxyUser: Option[String] = None): KillResponse = {
     var (killed, lastMessage): KillResponse = (false, null)
     for (operation <- operations if !killed) {
       if (operation.isSupported(appMgrInfo)) {
-        val (k, m) = operation.killApplicationByTag(appMgrInfo, tag)
+        val (k, m) = operation.killApplicationByTag(appMgrInfo, tag, proxyUser)
         killed = k
         lastMessage = m
       }
@@ -83,10 +86,11 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
   def getApplicationInfo(
       appMgrInfo: ApplicationManagerInfo,
       tag: String,
+      proxyUser: Option[String] = None,
       submitTime: Option[Long] = None): Option[ApplicationInfo] = {
     val operation = operations.find(_.isSupported(appMgrInfo))
     operation match {
-      case Some(op) => Some(op.getApplicationInfoByTag(appMgrInfo, tag, submitTime))
+      case Some(op) => Some(op.getApplicationInfoByTag(appMgrInfo, tag, proxyUser, submitTime))
       case None => None
     }
   }

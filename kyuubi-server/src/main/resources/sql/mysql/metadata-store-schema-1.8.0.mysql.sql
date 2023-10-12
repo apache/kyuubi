@@ -24,9 +24,12 @@ CREATE TABLE IF NOT EXISTS metadata(
     engine_state varchar(32) COMMENT 'the engine application state',
     engine_error mediumtext COMMENT 'the engine application diagnose',
     end_time bigint COMMENT 'the metadata end time',
+    priority int NOT NULL DEFAULT 10 COMMENT 'the application priority, high value means high priority',
     peer_instance_closed boolean default '0' COMMENT 'closed by peer kyuubi instance',
     UNIQUE INDEX unique_identifier_index(identifier),
     INDEX user_name_index(user_name),
     INDEX engine_type_index(engine_type),
-    INDEX create_time_index(create_time)
+    INDEX create_time_index(create_time),
+    -- See more detail about this index in ./005-KYUUBI-5327.mysql.sql
+    INDEX priority_create_time_index(priority DESC, create_time ASC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

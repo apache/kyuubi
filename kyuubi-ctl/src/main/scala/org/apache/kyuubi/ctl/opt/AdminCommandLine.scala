@@ -52,7 +52,7 @@ object AdminCommandLine extends CommonCommandLine {
         .text("\tDelete resources.")
         .action((_, c) => c.copy(action = ControlAction.DELETE))
         .children(
-          engineCmd(builder).text("\tDelete the specified engine node for user.")))
+          deleteEngineCmd(builder).text("\tDelete the specified engine node for user.")))
 
   }
 
@@ -64,7 +64,7 @@ object AdminCommandLine extends CommonCommandLine {
         .text("\tList information about resources.")
         .action((_, c) => c.copy(action = ControlAction.LIST))
         .children(
-          engineCmd(builder).text("\tList all the engine nodes for a user"),
+          listEngineCmd(builder).text("\tList the engine nodes"),
           serverCmd(builder).text("\tList all the server nodes")))
 
   }
@@ -80,7 +80,7 @@ object AdminCommandLine extends CommonCommandLine {
           refreshConfigCmd(builder).text("\tRefresh the config with specified type.")))
   }
 
-  private def engineCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+  private def deleteEngineCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
     cmd("engine").action((_, c) => c.copy(resource = ControlObject.ENGINE))
       .children(
@@ -93,6 +93,24 @@ object AdminCommandLine extends CommonCommandLine {
         opt[String]("engine-share-level").abbr("esl")
           .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(engineShareLevel = v)))
           .text("The engine share level this engine belong to."))
+  }
+
+  private def listEngineCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("engine").action((_, c) => c.copy(resource = ControlObject.ENGINE))
+      .children(
+        opt[String]("engine-type").abbr("et")
+          .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(engineType = v)))
+          .text("The engine type this engine belong to."),
+        opt[String]("engine-subdomain").abbr("es")
+          .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(engineSubdomain = v)))
+          .text("The engine subdomain this engine belong to."),
+        opt[String]("engine-share-level").abbr("esl")
+          .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(engineShareLevel = v)))
+          .text("The engine share level this engine belong to."),
+        opt[String]("all").abbr("a")
+          .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(all = v)))
+          .text("All the engine."))
   }
 
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
