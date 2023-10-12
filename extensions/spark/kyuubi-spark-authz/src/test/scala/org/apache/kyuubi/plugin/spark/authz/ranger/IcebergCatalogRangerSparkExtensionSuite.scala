@@ -47,7 +47,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   val namespace1 = icebergNamespace
   val table1 = "table1"
   val outputTable1 = "outputTable1"
-  val bobNamespace= "default_bob"
+  val bobNamespace = "default_bob"
   val bobSelectTable = "table_select_bob_1"
 
   override def withFixture(test: NoArgTest): Outcome = {
