@@ -27,6 +27,10 @@ object KyuubiReservedKeys {
   final val KYUUBI_SESSION_REAL_USER_KEY = "kyuubi.session.real.user"
   final val KYUUBI_SESSION_CONNECTION_URL_KEY = "kyuubi.session.connection.url"
   final val KYUUBI_BATCH_RESOURCE_UPLOADED_KEY = "kyuubi.batch.resource.uploaded"
+  /**
+   * default priority is 10, higher priority will be scheduled first
+   * when enabled metadata store priority feature
+   */
   final val KYUUBI_BATCH_PRIORITY = "kyuubi.batch.priority"
   final val KYUUBI_STATEMENT_ID_KEY = "kyuubi.statement.id"
   final val KYUUBI_ENGINE_ID = "kyuubi.engine.id"
