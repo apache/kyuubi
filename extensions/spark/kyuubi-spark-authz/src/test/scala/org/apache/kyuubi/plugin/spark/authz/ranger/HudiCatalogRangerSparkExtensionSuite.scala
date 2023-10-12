@@ -36,8 +36,10 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   // TODO: Apache Hudi not support Spark 3.5 and Scala 2.13 yet,
   //  should change after Apache Hudi support Spark 3.5 and Scala 2.13.
+  private def isSupportedVersion = !isSparkV35OrGreater && !isScalaV213
+
   override protected val sqlExtensions: String =
-    if (!isSparkV35OrGreater && !isScalaV213) {
+    if (isSupportedVersion) {
       "org.apache.spark.sql.hudi.HoodieSparkSessionExtension"
     } else {
       ""
@@ -53,12 +55,12 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val outputTable1 = "outputTable_hoodie"
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(!isSparkV35OrGreater && !isScalaV213)
+    assume(isSupportedVersion)
     test()
   }
 
   override def beforeAll(): Unit = {
-    if (!isSparkV35OrGreater && !isScalaV213) {
+    if (isSupportedVersion) {
       if (isSparkV32OrGreater) {
         spark.conf.set(
           s"spark.sql.catalog.$sparkCatalog",
@@ -73,7 +75,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   override def afterAll(): Unit = {
-    if (!isSparkV35OrGreater && !isScalaV213) {
+    if (isSupportedVersion) {
       super.afterAll()
       spark.sessionState.catalog.reset()
       spark.sessionState.conf.clear()
