@@ -262,7 +262,7 @@ object TableCommands {
     val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
     val tableDesc =
       TableDesc(
-        "table",
+        "originalTable",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
