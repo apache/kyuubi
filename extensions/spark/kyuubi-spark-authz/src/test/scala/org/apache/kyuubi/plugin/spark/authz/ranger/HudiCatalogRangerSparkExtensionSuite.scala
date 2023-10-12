@@ -35,7 +35,7 @@ import org.apache.kyuubi.util.AssertionUtils.interceptContains
 class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
-    if (isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213OrGreater) {
+    if (isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213) {
       "org.apache.spark.sql.hudi.HoodieSparkSessionExtension"
     } else {
       ""
@@ -51,12 +51,12 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val outputTable1 = "outputTable_hoodie"
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213OrGreater)
+    assume(isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213)
     test()
   }
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213OrGreater) {
+    if (isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213) {
       if (isSparkV32OrGreater) {
         spark.conf.set(
           s"spark.sql.catalog.$sparkCatalog",
@@ -71,14 +71,14 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   override def afterAll(): Unit = {
-    if (isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213OrGreater) {
+    if (isSparkV31OrGreater && !isSparkV35OrGreater && !isScalaV213) {
       super.afterAll()
       spark.sessionState.catalog.reset()
       spark.sessionState.conf.clear()
     }
   }
 
-  test("[KYUUBI #5284] Kyuubi authz support Hoodie Alter Table Command") {
+  test("AlterTableCommand") {
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(
@@ -95,24 +95,34 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |PARTITIONED BY(city)
              |""".stripMargin))
 
+      // AlterHoodieTableAddColumnsCommand
       interceptContains[AccessControlException](
         doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
         s"does not have [alter] privilege on [$namespace1/$table1/age]")
 
+      // AlterHoodieTableChangeColumnCommand
       interceptContains[AccessControlException](
         doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 CHANGE COLUMN id id bigint")))(
         s"does not have [alter] privilege" +
           s" on [$namespace1/$table1/id]")
 
+      // AlterHoodieTableDropPartitionCommand
       interceptContains[AccessControlException](
         doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 DROP PARTITION (city='test')")))(
         s"does not have [alter] privilege" +
           s" on [$namespace1/$table1/city]")
 
+      // AlterHoodieTableRenameCommand
       interceptContains[AccessControlException](
         doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 RENAME TO $namespace1.$table2")))(
         s"does not have [alter] privilege" +
           s" on [$namespace1/$table1]")
+
+      // AlterTableCommand
+      sql("set hoodie.schema.on.read.enable=true")
+      interceptContains[AccessControlException](
+        doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
+        s"does not have [select] privilege on [$namespace1/$table1]")
     }
   }
 }
