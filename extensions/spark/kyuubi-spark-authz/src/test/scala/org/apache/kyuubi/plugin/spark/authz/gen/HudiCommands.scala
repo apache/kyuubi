@@ -63,6 +63,8 @@ object HudiCommands {
   val AlterTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.AlterTableCommand"
     val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], None)
+    // This command was removed from hudi 0.14, so here just use a operation type QUERY
+    // since it won't impact.
     TableCommandSpec(cmd, Seq(tableDesc), QUERY)
   }
 

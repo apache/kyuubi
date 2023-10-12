@@ -336,6 +336,11 @@
     </build>
 
     <profiles>
+        <!--
+          Add hudi profile here to avoid import Hudi when enable scala-2.13.
+          Can remove this profile after hudi support Scala 2.13.
+          https://issues.apache.org/jira/browse/HUDI-6296
+          -->
         <profile>
             <id>hudi</id>
             <dependencies>

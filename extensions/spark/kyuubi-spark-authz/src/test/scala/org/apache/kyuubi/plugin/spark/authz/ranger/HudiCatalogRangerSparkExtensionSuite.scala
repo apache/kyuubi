@@ -45,7 +45,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     new SparkConf()
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
 
-  val namespace1 = hoodieNamespace
+  val namespace1 = hudiNamespace
   val table1 = "table1_hoodie"
   val table2 = "table2_hoodie"
   val outputTable1 = "outputTable_hoodie"

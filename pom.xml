@@ -196,7 +196,8 @@
         <snakeyaml.version>2.2</snakeyaml.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
-          `delta.version`, `maven.plugin.scalatest.exclude.tags`
+          `delta.version`, `maven.plugin.scalatest.exclude.tags`,
+          `hudi.version`, `hudi.spark.binary.version`
           -->
         <spark.version>3.4.1</spark.version>
         <spark.binary.version>3.4</spark.binary.version>
