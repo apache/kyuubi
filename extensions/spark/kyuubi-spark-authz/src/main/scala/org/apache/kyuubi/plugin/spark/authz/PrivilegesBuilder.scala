@@ -261,6 +261,9 @@ object PrivilegesBuilder {
     val opType = plan match {
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
+      // Subquery
+      case _: Subquery => // Do Nothing
+        OperationType.QUERY
       // Queries
       case _ =>
         buildQuery(plan, inputObjs, spark = spark)
