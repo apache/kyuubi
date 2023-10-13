@@ -22,26 +22,26 @@ import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.serde.TableType._
 
 object HudiCommands {
-  val tite = classOf[TableIdentifierTableExtractor]
-
   val AlterHoodieTableAddColumnsCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.AlterHoodieTableAddColumnsCommand"
     val columnDesc = ColumnDesc("colsToAdd", classOf[StructFieldSeqColumnExtractor])
-    val tableDesc = TableDesc("tableId", tite, Some(columnDesc))
+    val tableDesc = TableDesc("tableId", classOf[TableIdentifierTableExtractor], Some(columnDesc))
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_ADDCOLS)
   }
 
   val AlterHoodieTableChangeColumnCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.AlterHoodieTableChangeColumnCommand"
     val columnDesc = ColumnDesc("columnName", classOf[StringColumnExtractor])
-    val tableDesc = TableDesc("tableIdentifier", tite, Some(columnDesc))
+    val tableDesc =
+      TableDesc("tableIdentifier", classOf[TableIdentifierTableExtractor], Some(columnDesc))
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_REPLACECOLS)
   }
 
   val AlterHoodieTableDropPartitionCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.AlterHoodieTableDropPartitionCommand"
     val columnDesc = ColumnDesc("partitionSpecs", classOf[PartitionSeqColumnExtractor])
-    val tableDesc = TableDesc("tableIdentifier", tite, Some(columnDesc))
+    val tableDesc =
+      TableDesc("tableIdentifier", classOf[TableIdentifierTableExtractor], Some(columnDesc))
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_DROPPARTS)
   }
 
@@ -54,7 +54,7 @@ object HudiCommands {
         Seq(TEMP_VIEW))
     val oldTableD = TableDesc(
       "oldName",
-      tite,
+      classOf[TableIdentifierTableExtractor],
       tableTypeDesc = Some(oldTableTableTypeDesc))
 
     TableCommandSpec(cmd, Seq(oldTableD), ALTERTABLE_RENAME)
