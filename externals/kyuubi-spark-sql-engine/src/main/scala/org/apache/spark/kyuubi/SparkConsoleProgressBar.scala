@@ -83,6 +83,7 @@ class SparkConsoleProgressBar(
       case (jobId, jobInfo) if jobInfo.stageIds.contains(stageId) => jobId
     }
   }
+
   /**
    * Show progress bar in console. The progress bar is displayed in the next line
    * after your last output, keeps overwriting itself to hold in one line. The logging will follow
