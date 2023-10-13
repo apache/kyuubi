@@ -757,16 +757,18 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       Seq((s"$db1.$table1", "table"), (s"$db1.$table2", "table"), (s"$db1.$view1", "view"))) {
       doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
       doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table2 (id int, scope int)"))
-      doAs(admin, sql(
-        s"""
-           |CREATE VIEW $db1.$view1
-           |AS
-           |WITH temp AS (
-           |    SELECT max(scope) max_scope
-           |    FROM $db1.$table1)
-           |SELECT id as new_id FROM $db1.$table2
-           |WHERE scope = (SELECT max_scope FROM temp)
-           |""".stripMargin))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE VIEW $db1.$view1
+             |AS
+             |WITH temp AS (
+             |    SELECT max(scope) max_scope
+             |    FROM $db1.$table1)
+             |SELECT id as new_id FROM $db1.$table2
+             |WHERE scope = (SELECT max_scope FROM temp)
+             |""".stripMargin))
       val e = intercept[AccessControlException](
         doAs(someone, sql(s"SELECT * FROM $db1.$view1".stripMargin).show()))
       assert(e.getMessage.contains(s"does not have [select] privilege on [$db1/$view1/new_id]"))
