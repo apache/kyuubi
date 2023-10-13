@@ -24,6 +24,7 @@ import scala.util.Try
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
+import org.apache.kyuubi.plugin.spark.authz.V2JdbcTableCatalogPrivilegesBuilderSuite._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 /**
@@ -44,9 +45,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   val jdbcUrl: String = s"$dbUrl;create=true"
 
   override def beforeAll(): Unit = {
-    spark.conf.set(
-      s"spark.sql.catalog.$catalogV2",
-      "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog")
+    spark.conf.set(s"spark.sql.catalog.$catalogV2", v2JdbcTableCatalogClassName)
     spark.conf.set(s"spark.sql.catalog.$catalogV2.url", jdbcUrl)
     spark.conf.set(
       s"spark.sql.catalog.$catalogV2.driver",

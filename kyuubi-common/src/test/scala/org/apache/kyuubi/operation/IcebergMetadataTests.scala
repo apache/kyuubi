@@ -133,7 +133,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
             }
             assert(!rs1.next())
           } finally {
-            statement.execute(s"DROP TABLE IF EXISTS $cg.$db.tbl")
+            statement.execute(s"DROP TABLE IF EXISTS $cg.$db.tbl PURGE")
           }
         }
       }
