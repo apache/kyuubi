@@ -78,15 +78,9 @@ class SparkConsoleProgressBar(
    * @param stageId stageId
    * @return jobId,if not exists, return -1
    */
-  private def findJobId(stageId: Int): Int = {
-    val result: Option[Int] = liveJobs.asScala.find(item => {
-      item._2.stageIds.contains(stageId)
-    }).map(_._1)
-    result match {
-      case Some(value) =>
-        value
-      case None =>
-        -1
+  private def findJobId(stageId: Int): Option[Int] = {
+    liveJobs.asScala.collectFirst {
+      case (jobId, jobInfo) if jobInfo.stageIds.contains(stageId) => jobId
     }
   }
   /**
@@ -98,7 +92,8 @@ class SparkConsoleProgressBar(
     val width = TerminalWidth / stages.size
     val bar = stages.map { s =>
       val total = s.numTasks
-      val jobId = findJobId(s.stageId)
+      val result = findJobId(s.stageId)
+      val jobId = result.getOrElse(-1)
       var jobHeader = s"[There is no job about this stage]"
       if (jobId != -1) {
         jobHeader = s"[Job $jobId (${liveJobs.get(jobId).numCompleteStages} " +
