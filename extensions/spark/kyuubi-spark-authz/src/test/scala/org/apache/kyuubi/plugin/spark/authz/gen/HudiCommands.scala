@@ -67,10 +67,18 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc), QUERY)
   }
 
+  val Spark31AlterTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.Spark31AlterTableCommand"
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], None)
+    // Here just use a operation type QUERY since it won't impact.
+    TableCommandSpec(cmd, Seq(tableDesc), QUERY)
+  }
+
   val data: Array[TableCommandSpec] = Array(
     AlterHoodieTableAddColumnsCommand,
     AlterHoodieTableChangeColumnCommand,
     AlterHoodieTableDropPartitionCommand,
     AlterHoodieTableRenameCommand,
-    AlterTableCommand)
+    AlterTableCommand,
+    Spark31AlterTableCommand)
 }

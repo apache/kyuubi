@@ -122,7 +122,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s"does not have [alter] privilege" +
           s" on [$namespace1/$table1]")
 
-      // AlterTableCommand
+      // AlterTableCommand && Spark31AlterTableCommand
       sql("set hoodie.schema.on.read.enable=true")
       interceptContains[AccessControlException](
         doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
