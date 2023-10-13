@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.kyuubi.engine.jdbc.dialect
+
 import java.sql.{Connection, ResultSet, Statement}
 import java.util
 
@@ -43,11 +44,13 @@ class DorisDialect extends JdbcDialect {
     throw KyuubiSQLException.featureNotSupported()
   }
 
-  override def getCatalogsOperation(session: Session): Operation = {
+  override def getCatalogsOperation(): String = {
     throw KyuubiSQLException.featureNotSupported()
   }
 
-  override def getSchemasOperation(session: Session): Operation = {
+  override def getSchemasOperation(
+      catalog: String,
+      tableName: String): String = {
     throw KyuubiSQLException.featureNotSupported()
   }
 
@@ -84,8 +87,10 @@ class DorisDialect extends JdbcDialect {
     }
 
     if (tTypes.nonEmpty) {
-      filters += s"(${tTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
-          .mkString(" OR ")})"
+      filters += s"(${
+          tTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
+            .mkString(" OR ")
+        })"
     }
 
     if (filters.nonEmpty) {

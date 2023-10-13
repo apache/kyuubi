@@ -25,13 +25,13 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.engine.jdbc.phoenix.{PhoenixRowSetHelper, PhoenixSchemaHelper}
+import org.apache.kyuubi.engine.jdbc.postgresql.{PostgreSqlRowSetHelper, PostgreSqlSchemaHelper}
 import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
-class PhoenixDialect extends JdbcDialect {
+class PostgreSqlDialect extends JdbcDialect {
 
   override def createStatement(connection: Connection, fetchSize: Int): Statement = {
     val statement =
@@ -45,13 +45,41 @@ class PhoenixDialect extends JdbcDialect {
   }
 
   override def getCatalogsOperation(): String = {
-    throw KyuubiSQLException.featureNotSupported()
+    val query = new StringBuilder(
+      s"""
+         |SELECT CATALOG_NAME
+         |FROM INFORMATION_SCHEMA.INFORMATION_SCHEMA_CATALOG_NAME
+         |""".stripMargin)
+
+    query.toString()
   }
 
   override def getSchemasOperation(
       catalog: String,
-      tableName: String): String = {
-    throw KyuubiSQLException.featureNotSupported()
+      schema: String): String = {
+    val query = new StringBuilder(
+      s"""
+         |SELECT CATALOG_NAME, SCHEMA_NAME, SCHEMA_OWNER, 
+         |DEFAULT_CHARACTER_SET_CATALOG, DEFAULT_CHARACTER_SET_SCHEMA, 
+         |DEFAULT_CHARACTER_SET_NAME, SQL_PATH
+         |FROM INFORMATION_SCHEMA.SCHEMATA
+         |""".stripMargin)
+
+    val filters = ArrayBuffer[String]()
+    if (StringUtils.isNotBlank(catalog)) {
+      filters += s"CATALOG_NAME = '$catalog'"
+    }
+
+    if (StringUtils.isNotBlank(schema)) {
+      filters += s"SCHEMA_NAME LIKE '$schema'"
+    }
+
+    if (filters.nonEmpty) {
+      query.append(" WHERE ")
+      query.append(filters.mkString(" AND "))
+    }
+
+    query.toString()
   }
 
   override def getTablesQuery(
@@ -61,20 +89,27 @@ class PhoenixDialect extends JdbcDialect {
       tableTypes: util.List[String]): String = {
     val tTypes =
       if (tableTypes == null || tableTypes.isEmpty) {
-        Set("s", "u")
+        Set("BASE TABLE", "VIEW")
       } else {
         tableTypes.asScala.toSet
       }
     val query = new StringBuilder(
       s"""
-         |SELECT TENANT_ID, TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, COLUMN_FAMILY,
-         |TABLE_SEQ_NUM, TABLE_TYPE, PK_NAME,
-         |COLUMN_COUNT, SALT_BUCKETS, DATA_TABLE_NAME, INDEX_STATE
-         |IMMUTABLE_ROWS, VIEW_STATEMENT
-         |FROM SYSTEM.CATALOG
+         |SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE,
+         |SELF_REFERENCING_COLUMN_NAME, REFERENCE_GENERATION, USER_DEFINED_TYPE_CATALOG,
+         |USER_DEFINED_TYPE_SCHEMA,USER_DEFINED_TYPE_NAME,
+         |IS_INSERTABLE_INTO,IS_TYPED,COMMIT_ACTION
+         |FROM INFORMATION_SCHEMA.TABLES
          |""".stripMargin)
 
     val filters = ArrayBuffer[String]()
+    if (StringUtils.isNotBlank(catalog)) {
+      filters += s"$TABLE_CATALOG = '$catalog'"
+    }
+
+    if (StringUtils.isNotBlank(schema)) {
+      filters += s"$TABLE_SCHEMA LIKE '$schema'"
+    }
 
     if (StringUtils.isNotBlank(tableName)) {
       filters += s"$TABLE_NAME LIKE '$tableName'"
@@ -107,15 +142,27 @@ class PhoenixDialect extends JdbcDialect {
       columnName: String): String = {
     val query = new StringBuilder(
       """
-        |SELECT TENANT_ID, TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, COLUMN_FAMILY,
-        |TABLE_SEQ_NUM, TABLE_TYPE, PK_NAME,
-        |COLUMN_COUNT, SALT_BUCKETS, DATA_TABLE_NAME, INDEX_STATE
-        |IMMUTABLE_ROWS, VIEW_STATEMENT
-        |FROM SYSTEM.CATALOG
+        |SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, 
+        |COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, 
+        |CHARACTER_OCTET_LENGTH, NUMERIC_PRECISION, NUMERIC_PRECISION_RADIX, 
+        |NUMERIC_SCALE, DATETIME_PRECISION, INTERVAL_TYPE, INTERVAL_PRECISION, 
+        |CHARACTER_SET_CATALOG, CHARACTER_SET_SCHEMA, CHARACTER_SET_NAME, 
+        |COLLATION_CATALOG, COLLATION_SCHEMA, COLLATION_NAME, DOMAIN_CATALOG, 
+        |DOMAIN_SCHEMA, DOMAIN_NAME, UDT_CATALOG, UDT_SCHEMA, UDT_NAME, SCOPE_CATALOG, 
+        |SCOPE_SCHEMA, SCOPE_NAME, MAXIMUM_CARDINALITY, DTD_IDENTIFIER, 
+        |IS_SELF_REFERENCING, IS_IDENTITY, IDENTITY_GENERATION, IDENTITY_START, 
+        |IDENTITY_INCREMENT, IDENTITY_MAXIMUM, IDENTITY_MINIMUM, IDENTITY_CYCLE, 
+        |IS_GENERATED, GENERATION_EXPRESSION, IS_UPDATABLE
+        |FROM INFORMATION_SCHEMA.COLUMNS
         |""".stripMargin)
 
     val filters = ArrayBuffer[String]()
-
+    if (StringUtils.isNotEmpty(catalogName)) {
+      filters += s"$TABLE_CATALOG = '$catalogName'"
+    }
+    if (StringUtils.isNotEmpty(schemaName)) {
+      filters += s"$TABLE_SCHEMA LIKE '$schemaName'"
+    }
     if (StringUtils.isNotEmpty(tableName)) {
       filters += s"$TABLE_NAME LIKE '$tableName'"
     }
@@ -144,14 +191,14 @@ class PhoenixDialect extends JdbcDialect {
   }
 
   override def getRowSetHelper(): RowSetHelper = {
-    new PhoenixRowSetHelper
+    new PostgreSqlRowSetHelper
   }
 
   override def getSchemaHelper(): SchemaHelper = {
-    new PhoenixSchemaHelper
+    new PostgreSqlSchemaHelper
   }
 
   override def name(): String = {
-    "phoenix"
+    "postgresql"
   }
 }
