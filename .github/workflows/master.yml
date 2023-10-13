@@ -77,6 +77,11 @@ jobs:
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.5.0 -Dspark.archive.name=spark-3.5.0-bin-hadoop3.tgz -Pzookeeper-3.6'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-3.5-binary'
+          - java: 21
+            spark: '3.5'
+            spark-archive: ''
+            exclude-tags: ''
+            comment: 'normal'
         exclude:
           # SPARK-33772: Spark supports JDK 17 since 3.3.0
           - java: 17
@@ -92,7 +97,7 @@ jobs:
       - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
@@ -146,7 +151,7 @@ jobs:
       - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
@@ -197,7 +202,7 @@ jobs:
       - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
@@ -245,7 +250,7 @@ jobs:
       - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
@@ -284,7 +289,7 @@ jobs:
       - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
@@ -323,7 +328,7 @@ jobs:
       - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
@@ -357,7 +362,7 @@ jobs:
       - name: Setup JDK 8
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: 8
           cache: 'maven'
           check-latest: false
@@ -496,7 +501,7 @@ jobs:
       - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
