@@ -1490,7 +1490,7 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "QUERY",
+  "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.Spark31AlterTableCommand",
@@ -1504,6 +1504,6 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "QUERY",
+  "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 } ]

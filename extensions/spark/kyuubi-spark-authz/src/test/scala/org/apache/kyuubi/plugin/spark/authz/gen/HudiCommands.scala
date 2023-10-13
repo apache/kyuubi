@@ -63,15 +63,13 @@ object HudiCommands {
   val AlterTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.AlterTableCommand"
     val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], None)
-    // Here just use a operation type QUERY since it won't impact.
-    TableCommandSpec(cmd, Seq(tableDesc), QUERY)
+    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
   }
 
   val Spark31AlterTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.Spark31AlterTableCommand"
     val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], None)
-    // Here just use a operation type QUERY since it won't impact.
-    TableCommandSpec(cmd, Seq(tableDesc), QUERY)
+    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
   }
 
   val data: Array[TableCommandSpec] = Array(
