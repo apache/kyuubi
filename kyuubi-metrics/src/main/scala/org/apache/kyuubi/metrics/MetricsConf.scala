@@ -46,7 +46,7 @@ object MetricsConf {
     .transformToUpperCase
     .toSet()
     .checkValues(ReporterType)
-    .createWithDefault(Set(JSON.toString))
+    .createWithDefault(Set(PROMETHEUS.toString))
 
   val METRICS_CONSOLE_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.console.interval")
     .doc("How often should report metrics to console")
