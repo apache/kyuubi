@@ -112,8 +112,14 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
     withSingleCallEnabled {
       interceptContains[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
-        "[select] privilege on [iceberg_ns/table1/id,iceberg_ns/table1/name,iceberg_ns/table1/city]," +
-          " [update] privilege on [default_bob/table_select_bob_1]")
+        if (isSparkV35OrGreater) {
+          s"does not have [select] privilege on [$namespace1/table1/id" +
+            s",$namespace1/$table1/name,$namespace1/$table1/city]"
+        } else {
+          "does not have " +
+            s"[select] privilege on [$namespace1/$table1/id,$namespace1/$table1/name,$namespace1/$table1/city]," +
+            s" [update] privilege on [$bobNamespace/$bobSelectTable]"
+        })
 
       val e2 = intercept[AccessControlException](
         doAs(
