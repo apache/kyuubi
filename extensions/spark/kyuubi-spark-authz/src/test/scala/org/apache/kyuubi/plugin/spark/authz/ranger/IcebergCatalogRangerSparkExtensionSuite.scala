@@ -134,13 +134,13 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("[KYUUBI #3515] UPDATE TABLE") {
     // UpdateTable
-    val e1 = intercept[AccessControlException](
-      doAs(
-        bob,
-        sql(s"UPDATE $catalogV2.$bobNamespace.$bobSelectTable SET city='Guangzhou' " +
-          " WHERE id=1")))
-    assert(e1.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$bobNamespace/$bobSelectTable]"))
+    interceptContains[AccessControlException] {
+      doAs(someone, sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou'  WHERE id=1"))
+    }(if (isSparkV35OrGreater) {
+      s"does not have [select] privilege on [$namespace1/$table1/id]"
+    } else {
+      s"does not have [update] privilege on [$namespace1/$table1]"
+    })
 
     doAs(
       admin,
@@ -150,10 +150,13 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("[KYUUBI #3515] DELETE FROM TABLE") {
     // DeleteFromTable
-    val e6 = intercept[AccessControlException](
-      doAs(bob, sql(s"DELETE FROM $catalogV2.$bobNamespace.$bobSelectTable WHERE id=2")))
-    assert(e6.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$bobNamespace/$bobSelectTable]"))
+    interceptContains[AccessControlException] {
+      doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
+    }(if (isSparkV35OrGreater) {
+      s"does not have [select] privilege on [$namespace1/$table1/id]"
+    } else {
+      s"does not have [update] privilege on [$namespace1/$table1]"
+    })
 
     doAs(admin, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
   }
