@@ -342,7 +342,7 @@
           https://issues.apache.org/jira/browse/HUDI-6296
           -->
         <profile>
-            <id>hudi</id>
+            <id>spark-authz-hudi-test</id>
             <dependencies>
                 <dependency>
                     <groupId>org.apache.hudi</groupId>
