@@ -93,4 +93,16 @@ object JDBCMetadataStoreConf {
       .serverOnly
       .stringConf
       .createWithDefault("")
+
+  val METADATA_STORE_JDBC_PRIORITY_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.metadata.store.jdbc.priority.enabled")
+      .doc("Whether to enable the priority scheduling for batch impl v2. " +
+        "When false, ignore kyuubi.batch.priority and use the FIFO ordering strategy " +
+        "for batch job scheduling. Note: this feature may cause significant performance issues " +
+        "when using MySQL 5.7 as the metastore backend due to the lack of support " +
+        "for mixed order index. See more details at KYUUBI #5329.")
+      .version("1.8.0")
+      .serverOnly
+      .booleanConf
+      .createWithDefault(false)
 }
