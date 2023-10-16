@@ -23,10 +23,13 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import javax.servlet.DispatcherType
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response.Status
+
 import scala.collection.mutable.ListBuffer
+
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.conf.Configuration
 import org.eclipse.jetty.servlet.{ErrorPageErrorHandler, FilterHolder}
+
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
