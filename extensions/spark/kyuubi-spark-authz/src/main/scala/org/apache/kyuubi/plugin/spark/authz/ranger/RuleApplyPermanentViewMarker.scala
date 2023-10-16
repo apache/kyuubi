@@ -39,7 +39,9 @@ class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
       case permanentView: View if hasResolvedPermanentView(permanentView) =>
         val resolvedSubquery = permanentView.transformAllExpressions {
           case scalarSubquery: ScalarSubquery =>
-            // Pass null to PermanentViewMarker to avoid check view's ScalarSubquery.
+            // TODO: Currently, we do not do an auth check in the subquery
+            //  as the main query part also secures it. But for performance consideration,
+            //  we also pre-check it in subqueries and fail fast with negative privileges.
             scalarSubquery.copy(plan = PermanentViewMarker(scalarSubquery.plan, null))
         }
         PermanentViewMarker(resolvedSubquery, resolvedSubquery.desc)
