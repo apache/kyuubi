@@ -16,12 +16,13 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import org.apache.spark.sql.Row
-import org.scalatest.Outcome
-
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
+
 import scala.util.Try
+
+import org.apache.spark.sql.Row
+import org.scalatest.Outcome
 
 // scalastyle:off
 import org.apache.kyuubi.Utils
