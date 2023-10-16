@@ -16,13 +16,12 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import java.sql.Timestamp
-import java.text.SimpleDateFormat
-
-import scala.util.Try
-
 import org.apache.spark.sql.Row
 import org.scalatest.Outcome
+
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import scala.util.Try
 
 // scalastyle:off
 import org.apache.kyuubi.Utils
@@ -111,6 +110,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s" on [$namespace1/$table1/id]"))
 
     withSingleCallEnabled {
+      interceptContains[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
+        "[select] privilege on [iceberg_ns/table1/id,iceberg_ns/table1/name,iceberg_ns/table1/city]," +
+          " [update] privilege on [default_bob/table_select_bob_1]")
+
       val e2 = intercept[AccessControlException](
         doAs(
           bob,
