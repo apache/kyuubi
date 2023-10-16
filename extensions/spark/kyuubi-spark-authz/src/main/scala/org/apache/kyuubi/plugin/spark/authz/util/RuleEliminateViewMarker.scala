@@ -29,11 +29,11 @@ class RuleEliminateViewMarker extends Rule[LogicalPlan] {
     plan.transformUp {
       case pvm: PermanentViewMarker =>
         pvm.child.transformAllExpressions {
-          case scalarSubquery @ ScalarSubquery(pvsm: PermanentViewSubqueryMarker, _, _) =>
+          case scalarSubquery @ ScalarSubquery(pvsm: PermanentViewMarker, _, _) =>
             scalarSubquery.copy(plan = pvsm.child)
         }
 
-      case subquery @ Subquery(pvsm: PermanentViewSubqueryMarker, _) =>
+      case subquery @ Subquery(pvsm: PermanentViewMarker, _) =>
         subquery.copy(child = pvsm.child).asInstanceOf[LogicalPlan]
     }
   }

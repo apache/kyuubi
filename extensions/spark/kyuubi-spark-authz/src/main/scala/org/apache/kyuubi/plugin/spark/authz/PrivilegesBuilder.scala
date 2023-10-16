@@ -28,7 +28,6 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewSubqueryMarker
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object PrivilegesBuilder {
@@ -262,10 +261,6 @@ object PrivilegesBuilder {
     val opType = plan match {
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
-      // Spark will first execute Subquery in plan, for permanent view,
-      // We don't need to check internal Subquery 's privilege.
-      case Subquery(_: PermanentViewSubqueryMarker, _) =>
-        OperationType.QUERY
       // Queries
       case _ =>
         buildQuery(plan, inputObjs, spark = spark)
