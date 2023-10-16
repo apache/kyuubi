@@ -24,6 +24,9 @@
   To restore previous behavior, set `kyuubi.metadata.store.jdbc.database.type=DERBY` and
   `kyuubi.metadata.store.jdbc.url=jdbc:derby:memory:kyuubi_state_store_db;create=true`.
 
+* Since Kyuubi 1.8, PROMETHEUS is changed as the default metrics reporter. To restore previous behavior,
+  set `kyuubi.metrics.reporters=JSON`.
+
 ## Upgrading from Kyuubi 1.7.1 to 1.7.2
 
 * Since Kyuubi 1.7.2, for Kyuubi BeeLine, please use `--python-mode` option to run python code or script.

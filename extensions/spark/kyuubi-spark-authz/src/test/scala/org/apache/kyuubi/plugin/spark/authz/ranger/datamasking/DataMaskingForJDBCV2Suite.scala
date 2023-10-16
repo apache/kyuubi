@@ -23,13 +23,13 @@ import scala.util.Try
 import org.apache.spark.SparkConf
 import org.scalatest.Outcome
 
+import org.apache.kyuubi.plugin.spark.authz.V2JdbcTableCatalogPrivilegesBuilderSuite._
+
 class DataMaskingForJDBCV2Suite extends DataMaskingTestBase {
   override protected val extraSparkConf: SparkConf = {
     new SparkConf()
       .set("spark.sql.defaultCatalog", "testcat")
-      .set(
-        "spark.sql.catalog.testcat",
-        "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog")
+      .set("spark.sql.catalog.testcat", v2JdbcTableCatalogClassName)
       .set(s"spark.sql.catalog.testcat.url", "jdbc:derby:memory:testcat;create=true")
       .set(
         s"spark.sql.catalog.testcat.driver",
