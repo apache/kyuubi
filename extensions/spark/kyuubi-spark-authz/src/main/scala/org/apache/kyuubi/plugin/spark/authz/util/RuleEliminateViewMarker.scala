@@ -28,8 +28,8 @@ class RuleEliminateViewMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan.transformUp {
       case pvm: PermanentViewMarker => pvm.child.transformAllExpressions {
-        case s: SubqueryExpression => s.withNewPlan(apply(s.plan))
-      }
+          case s: SubqueryExpression => s.withNewPlan(apply(s.plan))
+        }
     }
   }
 }
