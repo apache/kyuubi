@@ -39,7 +39,7 @@ class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
       case permanentView: View if hasResolvedPermanentView(permanentView) =>
         val resolvedSubquery = permanentView.transformAllExpressions {
           case scalarSubquery: ScalarSubquery =>
-            scalarSubquery.copy(plan = PermanentViewMarker(scalarSubquery.plan, permanentView.desc))
+            scalarSubquery.copy(plan = PermanentViewMarker(scalarSubquery.plan, null))
         }
         PermanentViewMarker(resolvedSubquery, resolvedSubquery.desc)
       case other => apply(other)
