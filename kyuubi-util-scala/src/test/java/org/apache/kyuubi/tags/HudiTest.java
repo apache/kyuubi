@@ -15,32 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz
+package org.apache.kyuubi.tags;
 
-object RangerTestUsers {
-  // authorized users used in policy generation
-  val admin = "admin"
-  val alice = "alice"
-  val bob = "bob"
-  val kent = "kent"
-  val permViewUser = "perm_view_user"
-  val ownerPlaceHolder = "{OWNER}"
-  val createOnlyUser = "create_only_user"
-  val defaultTableOwner = "default_table_owner"
-  val permViewOnlyUser = "user_perm_view_only"
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.scalatest.TagAnnotation;
 
-  // non-authorized users
-  val invisibleUser = "i_am_invisible"
-  val denyUser = "denyuser"
-  val denyUser2 = "denyuser2"
-  val someone = "someone"
-}
-
-object RangerTestNamespace {
-  val defaultDb = "default"
-  val sparkCatalog = "spark_catalog"
-  val icebergNamespace = "iceberg_ns"
-  val hudiNamespace = "hudi_ns"
-  val namespace1 = "ns1"
-  val namespace2 = "ns2"
-}
+@TagAnnotation
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.TYPE})
+public @interface HudiTest {}

@@ -1409,4 +1409,101 @@
     "fieldName" : "query",
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableAddColumnsCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableId",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "colsToAdd",
+      "fieldExtractor" : "StructFieldSeqColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_ADDCOLS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableChangeColumnCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableIdentifier",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "columnName",
+      "fieldExtractor" : "StringColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_REPLACECOLS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableDropPartitionCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableIdentifier",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "partitionSpecs",
+      "fieldExtractor" : "PartitionSeqColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_DROPPARTS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableRenameCommand",
+  "tableDescs" : [ {
+    "fieldName" : "oldName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : {
+      "fieldName" : "oldName",
+      "fieldExtractor" : "TableIdentifierTableTypeExtractor",
+      "skipTypes" : [ "TEMP_VIEW" ]
+    },
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_RENAME",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.AlterTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.Spark31AlterTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ]
 } ]

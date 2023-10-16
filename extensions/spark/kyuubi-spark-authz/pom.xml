@@ -336,6 +336,23 @@
     </build>
 
     <profiles>
+        <!--
+          Add spark-authz-hudi-test profile here to avoid import Apache Hudi when enable scala-2.13.
+          Can remove this profile after Apache Hudi support Scala 2.13.
+          https://issues.apache.org/jira/browse/HUDI-6296
+          -->
+        <profile>
+            <id>spark-authz-hudi-test</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.hudi</groupId>
+                    <artifactId>hudi-spark${hudi.spark.binary.version}-bundle_${scala.binary.version}</artifactId>
+                    <version>${hudi.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
         <profile>
             <id>gen-policy</id>
             <build>
