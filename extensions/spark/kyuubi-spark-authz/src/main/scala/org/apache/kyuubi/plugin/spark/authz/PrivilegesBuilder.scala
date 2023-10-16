@@ -264,7 +264,7 @@ object PrivilegesBuilder {
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Spark will first execute Subquery in plan, for permanent view,
       // We don't need to check internal Subquery 's privilege.
-      case subquery: Subquery if subquery.child.isInstanceOf[PermanentViewSubqueryMarker] =>
+      case Subquery(_: PermanentViewSubqueryMarker, _) =>
         OperationType.QUERY
       // Queries
       case _ =>
