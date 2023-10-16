@@ -44,15 +44,8 @@ class PostgreSqlDialect extends JdbcDialect {
     throw KyuubiSQLException.featureNotSupported()
   }
 
-  override def getCatalogsOperation(): String = {
-    val query = new StringBuilder(
-      s"""
-         |SELECT CATALOG_NAME
-         |FROM INFORMATION_SCHEMA.INFORMATION_SCHEMA_CATALOG_NAME
-         |""".stripMargin)
-
-    query.toString()
-  }
+  override def getCatalogsOperation(): String = "SELECT CATALOG_NAME " +
+    "FROM INFORMATION_SCHEMA.INFORMATION_SCHEMA_CATALOG_NAME"
 
   override def getSchemasOperation(
       catalog: String,
