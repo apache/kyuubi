@@ -155,6 +155,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s"does not have [update] privilege on [$namespace1/$table1]"
     })
 
+    interceptContains[AccessControlException] {
+      doAs(bob, sql(s"DELETE FROM $catalogV2.$bobNamespace.$bobSelectTable WHERE id=2"))
+    }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
+
     doAs(admin, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
   }
 
