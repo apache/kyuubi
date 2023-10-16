@@ -149,7 +149,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     // DeleteFromTable
     interceptContains[AccessControlException] {
       doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
-    }(if (isSparkV35OrGreater) {
+    }(if (isSparkV34OrGreater) {
       s"does not have [select] privilege on [$namespace1/$table1/id]"
     } else {
       s"does not have [update] privilege on [$namespace1/$table1]"
