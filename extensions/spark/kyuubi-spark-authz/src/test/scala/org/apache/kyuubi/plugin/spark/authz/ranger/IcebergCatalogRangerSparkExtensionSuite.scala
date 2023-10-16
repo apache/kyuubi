@@ -121,12 +121,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
             s" [update] privilege on [$bobNamespace/$bobSelectTable]"
         })
 
-      val e2 = intercept[AccessControlException](
-        doAs(
-          bob,
-          sql(mergeIntoSql)))
-      assert(e2.getMessage.contains(s"does not have" +
-        s" [update] privilege on [$bobNamespace/$bobSelectTable]"))
+      interceptContains[AccessControlException] {
+        doAs(bob, sql(mergeIntoSql))
+      }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
     }
 
     doAs(admin, sql(mergeIntoSql))
