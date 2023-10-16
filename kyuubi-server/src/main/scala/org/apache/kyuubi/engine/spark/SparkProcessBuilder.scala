@@ -108,9 +108,9 @@ class SparkProcessBuilder(
   }
 
   override protected val engineScalaBinaryVersion: String = {
-    val sparkCoreScalaVersion =
+    env.get("SPARK_SCALA_VERSION").filter(StringUtils.isNotBlank).getOrElse {
       extractSparkCoreScalaVersion(Paths.get(sparkHome, "jars").toFile.list())
-    StringUtils.defaultIfBlank(System.getenv("SPARK_SCALA_VERSION"), sparkCoreScalaVersion)
+    }
   }
 
   override protected lazy val engineHomeDirFilter: FileFilter = file => {
