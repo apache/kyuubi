@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
+import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.PERMANNENT_VIEW_SUBQUERY_TAG
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
@@ -261,8 +262,10 @@ object PrivilegesBuilder {
     val opType = plan match {
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
-      // Subquery
-      case _: Subquery => // Do Nothing
+      // Spark will first execute Subquery in plan, for permanent view,
+      // We don't need to check internal Subquery 's privilege.
+      case subquery: Subquery
+          if subquery.find(_.getTagValue(PERMANNENT_VIEW_SUBQUERY_TAG).contains(true)).nonEmpty =>
         OperationType.QUERY
       // Queries
       case _ =>
