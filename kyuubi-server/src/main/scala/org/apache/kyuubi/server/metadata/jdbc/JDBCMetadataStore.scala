@@ -61,6 +61,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     case CUSTOM => new GenericDatabaseDialect
   }
 
+  private val priorityEnabled = conf.get(METADATA_STORE_JDBC_PRIORITY_ENABLED)
+
   private val datasourceProperties =
     JDBCMetadataStoreConf.getMetadataStoreJDBCDataSourceProperties(conf)
   private val hikariConfig = new HikariConfig(datasourceProperties)
@@ -167,9 +169,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
          |request_args,
          |create_time,
          |engine_type,
-         |cluster_manager
+         |cluster_manager,
+         |priority
          |)
-         |VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         |VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          |""".stripMargin
 
     JdbcUtils.withConnection { connection =>
@@ -190,7 +193,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         valueAsString(metadata.requestArgs),
         metadata.createTime,
         Option(metadata.engineType).map(_.toUpperCase(Locale.ROOT)).orNull,
-        metadata.clusterManager.orNull)
+        metadata.clusterManager.orNull,
+        metadata.priority)
     }
   }
 
@@ -198,7 +202,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     JdbcUtils.executeQueryWithRowMapper(
       s"""SELECT identifier FROM $METADATA_TABLE
          |WHERE state=?
-         |ORDER BY create_time ASC LIMIT 1
+         |ORDER BY ${if (priorityEnabled) "priority DESC, " else ""}create_time ASC LIMIT 1
          |""".stripMargin) { stmt =>
       stmt.setString(1, OperationState.INITIALIZED.toString)
     } { resultSet =>
