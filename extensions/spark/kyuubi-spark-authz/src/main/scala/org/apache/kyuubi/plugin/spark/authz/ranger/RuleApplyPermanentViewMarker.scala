@@ -21,9 +21,8 @@ import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.catalyst.rules.Rule
 
-import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_PERMANNENT_VIEW_SUBQUERY_TAG
+import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, PermanentViewSubqueryMarker}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 
 /**
  * Adding [[org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker]] for permanent views
@@ -38,16 +37,11 @@ class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
     plan mapChildren {
       case p: PermanentViewMarker => p
       case permanentView: View if hasResolvedPermanentView(permanentView) =>
-        permanentView.transformAllExpressions {
+        val resolvedSubquery = permanentView.transformAllExpressions {
           case scalarSubquery: ScalarSubquery =>
-            scalarSubquery.plan.transformDown {
-              case p =>
-                p.setTagValue(KYUUBI_PERMANNENT_VIEW_SUBQUERY_TAG, ())
-                p
-            }
-            scalarSubquery
+            scalarSubquery.copy(plan = PermanentViewSubqueryMarker(scalarSubquery.plan))
         }
-        PermanentViewMarker(permanentView, permanentView.desc)
+        PermanentViewMarker(resolvedSubquery, resolvedSubquery.desc)
       case other => apply(other)
     }
   }

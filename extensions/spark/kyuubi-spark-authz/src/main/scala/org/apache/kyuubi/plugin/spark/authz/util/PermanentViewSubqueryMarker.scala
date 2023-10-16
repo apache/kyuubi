@@ -17,24 +17,14 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
-import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
-import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
-/**
- * Transforming up [[org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker]]
- */
-class RuleEliminateViewMarker extends Rule[LogicalPlan] {
-  override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUp {
-      case pvm: PermanentViewMarker =>
-        pvm.child.transformAllExpressions {
-          case scalarSubquery @ ScalarSubquery(pvsm: PermanentViewSubqueryMarker, _, _) =>
-            scalarSubquery.copy(plan = pvsm.child)
-        }
+case class PermanentViewSubqueryMarker(child: LogicalPlan) extends UnaryNode
+  with WithInternalChild {
 
-      case subquery @ Subquery(pvsm: PermanentViewSubqueryMarker, _) =>
-        subquery.copy(child = pvsm.child).asInstanceOf[LogicalPlan]
-    }
-  }
+  override def output: Seq[Attribute] = child.output
+
+  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
+    copy(child = newChild)
 }

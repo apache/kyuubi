@@ -42,8 +42,6 @@ class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
 object RuleAuthorization {
 
   val KYUUBI_AUTHZ_TAG = TreeNodeTag[Boolean]("__KYUUBI_AUTHZ_TAG")
-  val KYUUBI_PERMANNENT_VIEW_SUBQUERY_TAG =
-    TreeNodeTag[Unit]("__KYUUBI_PERMANNENT_VIEW_SUBQUERY_TAG")
 
   private def checkPrivileges(spark: SparkSession, plan: LogicalPlan): LogicalPlan = {
     val auditHandler = new SparkRangerAuditHandler
