@@ -17,8 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
-import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
+import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 
 /**
@@ -27,14 +27,9 @@ import org.apache.spark.sql.catalyst.rules.Rule
 class RuleEliminateViewMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan.transformUp {
-      case pvm: PermanentViewMarker =>
-        pvm.child.transformAllExpressions {
-          case scalarSubquery @ ScalarSubquery(pvsm: PermanentViewMarker, _, _) =>
-            scalarSubquery.copy(plan = pvsm.child)
-        }
-
-      case subquery @ Subquery(pvsm: PermanentViewMarker, _) =>
-        subquery.copy(child = pvsm.child).asInstanceOf[LogicalPlan]
+      case pvm: PermanentViewMarker => pvm.child.transformAllExpressions {
+        case s: SubqueryExpression => s.withNewPlan(apply(s.plan))
+      }
     }
   }
 }
