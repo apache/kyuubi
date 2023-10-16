@@ -68,7 +68,7 @@ In typical big data production environments with Kyuubi, there should be system 
 - System administrators: A small group consists of Spark experts responsible for Kyuubi deployment, configuration, and tuning.
 - End-users: Focus on business data of their own, not where it stores, how it computes.
 
-Additionally, the Kyuubi community will continuously optimize the whole system with various features, such as History-Based Optimizer, Auto-tuning, Materialized View, SQL Dialects, Functions, e.t.c.
+Additionally, the Kyuubi community will continuously optimize the whole system with various features, such as History-Based Optimizer, Auto-tuning, Materialized View, SQL Dialects, Functions, etc.
 
 ### Usage scenarios
 
