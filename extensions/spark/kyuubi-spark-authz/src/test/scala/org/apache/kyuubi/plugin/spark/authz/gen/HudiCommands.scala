@@ -141,7 +141,7 @@ object HudiCommands {
     Spark31AlterTableCommand,
     CreateHoodieTableCommand,
     CreateHoodieTableAsSelectCommand,
-    CreateHoodieTableLikeCommand
+    CreateHoodieTableLikeCommand,
     DropHoodieTableCommand,
     RepairHoodieTableCommand,
     TruncateHoodieTableCommand)
