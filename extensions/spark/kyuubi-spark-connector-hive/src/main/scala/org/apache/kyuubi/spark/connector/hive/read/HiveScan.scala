@@ -64,7 +64,7 @@ case class HiveScan(
   }
 
   override def createReaderFactory(): PartitionReaderFactory = {
-    val hiveConf = fileIndex.hiveCatalog.hadoopConfiguration()
+    val hiveConf = new Configuration(fileIndex.hiveCatalog.hadoopConfiguration())
     addCatalogTableConfToConf(hiveConf, catalogTable)
 
     val table = HiveClientImpl.toHiveTable(catalogTable)
