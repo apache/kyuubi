@@ -22,6 +22,7 @@ import org.scalatest.Outcome
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.IcebergTest
 import org.apache.kyuubi.util.AssertionUtils._
 
@@ -57,7 +58,15 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
     val plan = sql(s"DELETE FROM $catalogTable WHERE key = 1 ").queryExecution.analyzed
     val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
-    assert(inputs.isEmpty)
+    if (isSparkV34OrGreater) {
+      assert(inputs.size === 1)
+      val po = inputs.head
+      assertEqualsIgnoreCase(namespace)(po.dbname)
+      assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
+      assertContains(po.columns, "key", "value")
+    } else {
+      assert(inputs.size === 0)
+    }
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.UPDATE)
@@ -74,7 +83,15 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
     val plan = sql(s"UPDATE $catalogTable SET value = 'b' WHERE key = 1 ").queryExecution.analyzed
     val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
-    assert(inputs.isEmpty)
+    if (isSparkV35OrGreater) {
+      assert(inputs.size === 1)
+      val po = inputs.head
+      assertEqualsIgnoreCase(namespace)(po.dbname)
+      assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
+      assertContains(po.columns, "key", "value")
+    } else {
+      assert(inputs.size === 0)
+    }
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.UPDATE)
@@ -98,8 +115,20 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
         s"WHEN NOT MATCHED THEN INSERT *").queryExecution.analyzed
       val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
       assert(operationType === QUERY)
-      assert(inputs.size === 1)
-      val po0 = inputs.head
+      if (isSparkV35OrGreater) {
+        assert(inputs.size === 2)
+        val po = inputs.head
+        assert(po.actionType === PrivilegeObjectActionType.OTHER)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assertEqualsIgnoreCase(namespace)(po.dbname)
+        assertEqualsIgnoreCase(table)(po.objectName)
+        assertContains(po.columns, "key", "value")
+        // The properties of RowLevelOperationTable are empty, so owner is none
+        assert(po.owner.isEmpty)
+      } else {
+        assert(inputs.size === 1)
+      }
+      val po0 = inputs.last
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
       assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assertEqualsIgnoreCase(namespace)(po0.dbname)
