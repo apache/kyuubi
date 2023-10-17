@@ -85,7 +85,7 @@ class SQLOperationListener(
   override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
     if (sameGroupId(jobStart.properties)) {
       val jobId = jobStart.jobId
-      val stageIds = jobStart.stageInfos.map(_.stageId)
+      val stageIds = jobStart.stageInfos.map(_.stageId).toSet
       val stageSize = jobStart.stageInfos.size
       if (executionId.isEmpty) {
         executionId = Option(jobStart.properties.getProperty(SPARK_SQL_EXECUTION_ID_KEY))
@@ -144,11 +144,14 @@ class SQLOperationListener(
     val stageAttempt = SparkStageAttempt(stageInfo.stageId, stageInfo.attemptNumber())
     activeStages.synchronized {
       if (activeStages.remove(stageAttempt) != null) {
-        activeJobs.asScala.foreach(item => {
-          if (item._2.stageIds.contains(stageId)) {
-            item._2.numCompleteStages.getAndIncrement()
-          }
-        })
+        stageInfo.getStatusString match {
+          case "succeeded" =>
+            activeJobs.asScala.foreach(item => {
+              if (item._2.stageIds.contains(stageId)) {
+                item._2.numCompleteStages.getAndIncrement()
+              }
+            })
+        }
         withOperationLog(super.onStageCompleted(stageCompleted))
       }
     }
