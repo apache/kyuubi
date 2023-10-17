@@ -38,8 +38,6 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   //  should change after Apache Hudi support Spark 3.5 and Scala 2.13.
   private def isSupportedVersion = !isSparkV35OrGreater && !isScalaV213
 
-  override def format: String = "HUDI"
-
   override protected val sqlExtensions: String =
     if (isSupportedVersion) {
       "org.apache.spark.sql.hudi.HoodieSparkSessionExtension"
@@ -141,7 +139,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           sql(
             s"""
                |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
-               |USING $format
+               |USING HUDI
                |OPTIONS (
                | type = 'cow',
                | primaryKey = 'id',
@@ -160,7 +158,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         sql(
           s"""
              |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
-             |USING $format
+             |USING HUDI
              |OPTIONS (
              | type = 'cow',
              | primaryKey = 'id',
@@ -174,10 +172,10 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           sql(
             s"""
                |CREATE TABLE IF NOT EXISTS $namespace1.$table2
-               |USING $format
+               |USING HUDI
                |AS
-               |SELECT * FROM $namespace1.$table1
-               |""".stripMargin)))(s"does not have [select] privilege on [$namespace1/$table1]")
+               |SELECT id FROM $namespace1.$table1
+               |""".stripMargin)))(s"does not have [select] privilege on [$namespace1/$table1/id]")
     }
   }
 
@@ -189,7 +187,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         sql(
           s"""
              |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
-             |USING $format
+             |USING HUDI
              |OPTIONS (
              | type = 'cow',
              | primaryKey = 'id',
@@ -204,7 +202,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             s"""
                |CREATE TABLE IF NOT EXISTS $namespace1.$table2
                |LIKE  $namespace1.$table1
-               |USING $format
+               |USING HUDI
                |""".stripMargin)))(s"does not have [select] privilege on [$namespace1/$table1]")
     }
   }
