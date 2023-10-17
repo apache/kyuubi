@@ -48,7 +48,11 @@ class SQLOperationListenerSuite extends WithSparkSQLEngine with HiveJDBCTestHelp
       eventually(timeout(90.seconds), interval(500.milliseconds)) {
         val resultsResp = client.FetchResults(fetchResultsReq)
         val logs = resultsResp.getResults.getColumns.get(0).getStringVal.getValues.asScala
-        assert(logs.exists(_.matches(".*\\[Job .* Stages\\] \\[Stage .*\\]")))
+        assert(logs.exists(_.contains("started with 2 stages")))
+        assert(logs.exists(_.contains("started with 1 tasks")))
+        assert(logs.exists(_.contains("started with 3 tasks")))
+        assert(logs.exists(_.contains("Finished stage:")))
+        assert(logs.exists(_.contains(s"Job ${0 + initJobId} succeeded")))
       }
     }
   }
