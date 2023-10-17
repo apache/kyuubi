@@ -40,6 +40,7 @@ import org.apache.kyuubi.server.metadata.jdbc.DatabaseType._
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf._
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.JdbcUtils
+import org.apache.kyuubi.util.reflect.ReflectUtils
 
 class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   import JDBCMetadataStore._
@@ -47,11 +48,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   private val dbType = DatabaseType.withName(conf.get(METADATA_STORE_JDBC_DATABASE_TYPE))
   private val driverClassOpt = conf.get(METADATA_STORE_JDBC_DRIVER)
   private lazy val mysqlDriverClass =
-    try {
-      Class.forName("com.mysql.cj.jdbc.Driver", false, Thread.currentThread.getContextClassLoader)
+    if (ReflectUtils.isClassLoadable("com.mysql.cj.jdbc.Driver")) {
       "com.mysql.cj.jdbc.Driver"
-    } catch {
-      case _: ClassNotFoundException => "com.mysql.jdbc.Driver"
+    } else {
+      "com.mysql.jdbc.Driver"
     }
   private val driverClass = dbType match {
     case SQLITE => driverClassOpt.getOrElse("org.sqlite.JDBC")
