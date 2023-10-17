@@ -93,13 +93,10 @@ class SparkConsoleProgressBar(
     val width = TerminalWidth / stages.size
     val bar = stages.map { s =>
       val total = s.numTasks
-      val result = findJobId(s.stageId)
-      var jobHeader = s"[There is no job about this stage]"
-      if (result.isDefined) {
-        val jobId = result.get
-        jobHeader = s"[Job $jobId (${liveJobs.get(jobId).numCompleteStages} " +
-          s"/ ${liveJobs.get(jobId).numStages}) Stages] "
-      }
+      val jobHeader = findJobId(s.stageId).map(jobId =>
+        s"[Job $jobId (${liveJobs.get(jobId).numCompleteStages} " +
+          s"/ ${liveJobs.get(jobId).numStages}) Stages] ").getOrElse(
+        "[There is no job about this stage] ")
       val header = jobHeader + s"[Stage ${s.stageId}:"
       val tailer = s"(${s.numCompleteTasks} + ${s.numActiveTasks}) / $total]"
       val w = width - header.length - tailer.length
