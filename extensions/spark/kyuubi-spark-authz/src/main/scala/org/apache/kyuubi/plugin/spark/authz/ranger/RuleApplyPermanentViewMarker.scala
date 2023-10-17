@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
+import org.apache.spark.sql.catalyst.expressions.{ListQuery, ScalarSubquery}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.catalyst.rules.Rule
 
@@ -43,6 +43,8 @@ class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
             //  as the main query part also secures it. But for performance consideration,
             //  we also pre-check it in subqueries and fail fast with negative privileges.
             scalarSubquery.copy(plan = PermanentViewMarker(scalarSubquery.plan, null))
+          case listQuery: ListQuery =>
+            listQuery.copy(plan = PermanentViewMarker(listQuery.plan, null))
         }
         PermanentViewMarker(resolvedSubquery, resolvedSubquery.desc)
       case other => apply(other)
