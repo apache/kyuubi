@@ -195,16 +195,20 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |)
              |PARTITIONED BY(city)
              |""".stripMargin))
+
+      val createTableSql =
+        s"""
+           |CREATE TABLE IF NOT EXISTS $namespace1.$table2
+           |LIKE  $namespace1.$table1
+           |USING HUDI
+           |""".stripMargin
       interceptContains[AccessControlException] {
         doAs(
           someone,
           sql(
-            s"""
-               |CREATE TABLE IF NOT EXISTS $namespace1.$table2
-               |LIKE  $namespace1.$table1
-               |USING HUDI
-               |""".stripMargin))
+            createTableSql))
       }(s"does not have [select] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(createTableSql))
     }
   }
 
@@ -224,9 +228,12 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |)
              |PARTITIONED BY(city)
              |""".stripMargin))
+
+      val dropTableSql = s"DROP TABLE IF EXISTS $namespace1.$table1"
       interceptContains[AccessControlException] {
-        doAs(someone, sql(s"DROP TABLE IF EXISTS $namespace1.$table1"))
+        doAs(someone, sql(dropTableSql))
       }(s"does not have [drop] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(dropTableSql))
     }
   }
 
@@ -247,9 +254,11 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |PARTITIONED BY(city)
              |""".stripMargin))
 
+      val repairTableSql = s"MSCK REPAIR TABLE $namespace1.$table1"
       interceptContains[AccessControlException] {
-        doAs(someone, sql(s"MSCK REPAIR TABLE $namespace1.$table1"))
+        doAs(someone, sql(repairTableSql))
       }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(repairTableSql))
     }
   }
 
@@ -269,9 +278,12 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |)
              |PARTITIONED BY(city)
              |""".stripMargin))
+
+      val truncateTableSql = s"TRUNCATE TABLE $namespace1.$table1"
       interceptContains[AccessControlException] {
-        doAs(someone, sql(s"TRUNCATE TABLE $namespace1.$table1"))
+        doAs(someone, sql(truncateTableSql))
       }(s"does not have [update] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(truncateTableSql))
     }
   }
 }
