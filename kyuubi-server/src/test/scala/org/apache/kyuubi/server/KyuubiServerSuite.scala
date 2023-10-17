@@ -20,6 +20,7 @@ package org.apache.kyuubi.server
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceState._
+import org.apache.kyuubi.util.AssertionUtils._
 
 class KyuubiServerSuite extends KyuubiFunSuite {
 
@@ -60,7 +61,7 @@ class KyuubiServerSuite extends KyuubiFunSuite {
 
   test("invalid port") {
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 100)
-    val e = intercept[IllegalArgumentException](new KyuubiServer().initialize(conf))
-    assert(e.getMessage contains "Invalid Port number")
+    interceptContains[IllegalArgumentException](new KyuubiServer().initialize(conf))(
+      "Invalid Port number")
   }
 }

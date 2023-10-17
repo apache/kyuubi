@@ -27,6 +27,7 @@ import org.apache.hive.service.rpc.thrift.TTypeId
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.trino.schema.SchemaHelper._
 import org.apache.kyuubi.engine.trino.util.TestUtils._
+import org.apache.kyuubi.util.AssertionUtils._
 
 class SchemaHelperSuite extends KyuubiFunSuite {
 
@@ -83,8 +84,8 @@ class SchemaHelperSuite extends KyuubiFunSuite {
     assert(toTTypeId(outerSchema(21).getTypeSignature) === TTypeId.STRING_TYPE)
     assert(toTTypeId(outerSchema(22).getTypeSignature) === TTypeId.NULL_TYPE)
 
-    val e1 = intercept[IllegalArgumentException](toTTypeId(textTypeSignature))
-    assert(e1.getMessage === "Unrecognized trino type name: text")
+    interceptEquals[IllegalArgumentException](toTTypeId(textTypeSignature))(
+      "Unrecognized trino type name: text")
   }
 
   test("toTTypeQualifiers") {

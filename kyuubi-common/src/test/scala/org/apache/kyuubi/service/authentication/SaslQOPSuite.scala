@@ -20,6 +20,7 @@ package org.apache.kyuubi.service.authentication
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SASL_QOP
+import org.apache.kyuubi.util.AssertionUtils._
 
 class SaslQOPSuite extends KyuubiFunSuite {
 
@@ -31,10 +32,9 @@ class SaslQOPSuite extends KyuubiFunSuite {
       assert(SaslQOP.withName(conf.get(SASL_QOP)) === q)
     }
     conf.set(SASL_QOP, "abc")
-    val e = intercept[IllegalArgumentException](conf.get(SASL_QOP))
-    assert(e.getMessage ===
+    interceptEquals[IllegalArgumentException] { conf.get(SASL_QOP) }(
       "The value of kyuubi.authentication.sasl.qop should be one of" +
-      " auth, auth-int, auth-conf, but was abc")
+        " auth, auth-int, auth-conf, but was abc")
   }
 
 }

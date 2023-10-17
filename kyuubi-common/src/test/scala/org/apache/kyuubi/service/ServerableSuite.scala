@@ -19,6 +19,7 @@ package org.apache.kyuubi.service
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.util.AssertionUtils._
 
 class ServerableSuite extends KyuubiFunSuite {
 
@@ -44,9 +45,9 @@ class ServerableSuite extends KyuubiFunSuite {
 
   test("invalid port") {
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 100)
-    val e = intercept[IllegalArgumentException](
-      new NoopTBinaryFrontendServer().initialize(conf))
-    assert(e.getMessage.contains("Invalid Port number"))
+    interceptContains[IllegalArgumentException] {
+      new NoopTBinaryFrontendServer().initialize(conf)
+    }("Invalid Port number")
   }
 
   test("error start child services") {
@@ -55,8 +56,7 @@ class ServerableSuite extends KyuubiFunSuite {
       .set("kyuubi.test.server.should.fail", "true")
     val server = new NoopTBinaryFrontendServer()
     server.initialize(conf)
-    val e = intercept[IllegalArgumentException](server.start())
-    assert(e.getMessage === "should fail")
+    interceptEquals[IllegalArgumentException](server.start())("should fail")
 
     conf
       .set("kyuubi.test.server.should.fail", "false")

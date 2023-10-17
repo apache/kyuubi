@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.trino
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.util.AssertionUtils._
 
 class TrinoStatementSuite extends WithTrinoContainerServer {
 
@@ -61,8 +62,8 @@ class TrinoStatementSuite extends WithTrinoContainerServer {
   test("test exception") {
     withTrinoContainer { trinoContext =>
       val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "use kyuubi")
-      val e1 = intercept[KyuubiSQLException](trinoStatement.execute().toArray)
-      assert(e1.getMessage.contains("Schema does not exist: tpch.kyuubi"))
+      interceptContains[KyuubiSQLException](trinoStatement.execute().toArray)(
+        "Schema does not exist: tpch.kyuubi")
     }
   }
 }

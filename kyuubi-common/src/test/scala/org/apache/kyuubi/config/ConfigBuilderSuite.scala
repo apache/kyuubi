@@ -55,8 +55,8 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
 
     KyuubiConf.register(booleanConf)
     val kyuubiConf = KyuubiConf().set(booleanConf.key, "invalid conf")
-    val e = intercept[IllegalArgumentException](kyuubiConf.get(booleanConf))
-    assert(e.getMessage === "kyuubi.boolean.conf should be boolean, but was invalid conf")
+    interceptEquals[IllegalArgumentException](kyuubiConf.get(booleanConf))(
+      "kyuubi.boolean.conf should be boolean, but was invalid conf")
   }
 
   test("string config") {
@@ -110,8 +110,8 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     assert(timeConf.defaultVal.get === 3)
     val kyuubiConf = KyuubiConf().set(timeConf.key, "invalid")
     KyuubiConf.register(timeConf)
-    val e = intercept[IllegalArgumentException](kyuubiConf.get(timeConf))
-    assert(e.getMessage startsWith "The formats accepted are 1) based on the ISO-8601")
+    interceptStartsWith[IllegalArgumentException](kyuubiConf.get(timeConf))(
+      "The formats accepted are 1) based on the ISO-8601")
   }
 
   test("invalid config") {
@@ -123,8 +123,8 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     assert(intConf.defaultVal.get === 3)
     val kyuubiConf = KyuubiConf().set(intConf.key, "-1")
     KyuubiConf.register(intConf)
-    val e = intercept[IllegalArgumentException](kyuubiConf.get(intConf))
-    assert(e.getMessage equals "'-1' in kyuubi.invalid.config is invalid. must be positive integer")
+    interceptEquals[IllegalArgumentException](kyuubiConf.get(intConf))(
+      "'-1' in kyuubi.invalid.config is invalid. must be positive integer")
   }
 
   test("invalid config for enum") {

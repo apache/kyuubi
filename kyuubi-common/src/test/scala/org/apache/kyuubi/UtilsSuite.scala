@@ -29,6 +29,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SERVER_SECRET_REDACTION_PATTERN
+import org.apache.kyuubi.util.AssertionUtils._
 
 class UtilsSuite extends KyuubiFunSuite {
 
@@ -83,10 +84,9 @@ class UtilsSuite extends KyuubiFunSuite {
     assert(props("kyuubi.yes") === "yes")
     assert(!props.contains("kyuubi.no"))
 
-    val e = intercept[KyuubiException] {
+    interceptContains[KyuubiException] {
       Utils.getPropertiesFromFile(Some(new File("invalid-file")))
-    }
-    assert(e.getMessage contains "Failed when loading Kyuubi properties from")
+    }("Failed when loading Kyuubi properties from")
   }
 
   test("create directory") {
@@ -94,8 +94,8 @@ class UtilsSuite extends KyuubiFunSuite {
     assert(Files.exists(path))
     assert(path.getFileName.toString.startsWith("kyuubi-"))
     path.toFile.deleteOnExit()
-    val e = intercept[IOException](Utils.createDirectory("/"))
-    assert(e.getMessage === "Failed to create a temp directory (under /) after 10 attempts!")
+    interceptEquals[IOException](Utils.createDirectory("/"))(
+      "Failed to create a temp directory (under /) after 10 attempts!")
     val path1 = Utils.createDirectory(System.getProperty("java.io.tmpdir"), "kentyao")
     assert(Files.exists(path1))
     assert(path1.getFileName.toString.startsWith("kentyao-"))
@@ -144,12 +144,12 @@ class UtilsSuite extends KyuubiFunSuite {
     assert(conf.getOption("k2").get == "v2")
 
     val args1 = Array[String]("--conf", "k1=v1", "--conf")
-    val exception1 = intercept[IllegalArgumentException](Utils.fromCommandLineArgs(args1, conf))
-    assert(exception1.getMessage.contains("Illegal size of arguments"))
+    interceptContains[IllegalArgumentException](Utils.fromCommandLineArgs(args1, conf))(
+      "Illegal size of arguments")
 
     val args2 = Array[String]("--conf", "k1=v1", "--conf", "a")
-    val exception2 = intercept[IllegalArgumentException](Utils.fromCommandLineArgs(args2, conf))
-    assert(exception2.getMessage.contains("Illegal argument: a"))
+    interceptContains[IllegalArgumentException](Utils.fromCommandLineArgs(args2, conf))(
+      "Illegal argument: a")
   }
 
   test("redact sensitive information in command line args") {

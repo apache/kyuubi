@@ -22,6 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.session.{FileSessionConfAdvisor, HadoopGroupProvider}
+import org.apache.kyuubi.util.AssertionUtils._
 
 class PluginLoaderSuite extends KyuubiFunSuite {
 
@@ -30,16 +31,14 @@ class PluginLoaderSuite extends KyuubiFunSuite {
     assert(PluginLoader.loadSessionConfAdvisor(conf).isInstanceOf[DefaultSessionConfAdvisor])
 
     conf.set(KyuubiConf.SESSION_CONF_ADVISOR, classOf[InvalidSessionConfAdvisor].getName)
-    val msg1 = intercept[KyuubiException] {
+    interceptContains[KyuubiException] {
       PluginLoader.loadSessionConfAdvisor(conf)
-    }.getMessage
-    assert(msg1.contains(s"is not a child of '${classOf[SessionConfAdvisor].getName}'"))
+    }(s"is not a child of '${classOf[SessionConfAdvisor].getName}'")
 
     conf.set(KyuubiConf.SESSION_CONF_ADVISOR, "non.exists")
-    val msg2 = intercept[IllegalArgumentException] {
+    interceptStartsWith[IllegalArgumentException] {
       PluginLoader.loadSessionConfAdvisor(conf)
-    }.getMessage
-    assert(msg2.startsWith("Error while instantiating 'non.exists'"))
+    }("Error while instantiating 'non.exists'")
   }
 
   test("FileSessionConfAdvisor") {
@@ -74,16 +73,14 @@ class PluginLoaderSuite extends KyuubiFunSuite {
     assert(PluginLoader.loadGroupProvider(conf).isInstanceOf[HadoopGroupProvider])
 
     conf.set(KyuubiConf.GROUP_PROVIDER, classOf[InvalidGroupProvider].getName)
-    val msg1 = intercept[KyuubiException] {
+    interceptContains[KyuubiException] {
       PluginLoader.loadGroupProvider(conf)
-    }.getMessage
-    assert(msg1.contains(s"is not a child of '${classOf[GroupProvider].getName}'"))
+    }(s"is not a child of '${classOf[GroupProvider].getName}'")
 
     conf.set(KyuubiConf.GROUP_PROVIDER, "non.exists")
-    val msg2 = intercept[IllegalArgumentException] {
+    interceptStartsWith[IllegalArgumentException] {
       PluginLoader.loadGroupProvider(conf)
-    }.getMessage
-    assert(msg2.startsWith("Error while instantiating 'non.exists'"))
+    }("Error while instantiating 'non.exists'")
   }
 
   test("HadoopGroupProvider") {

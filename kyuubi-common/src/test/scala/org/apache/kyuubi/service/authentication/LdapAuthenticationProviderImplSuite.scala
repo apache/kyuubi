@@ -28,6 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.authentication.ldap.{DirSearch, DirSearchFactory, LdapSearchFactory}
 import org.apache.kyuubi.service.authentication.ldap.LdapUtils.getUserName
+import org.apache.kyuubi.util.AssertionUtils._
 
 class LdapAuthenticationProviderImplSuite extends WithLdapServer {
 
@@ -49,10 +50,8 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
   test("authenticateGivenBlankOrNullPassword") {
     Seq("", "\u0000", null).foreach { pwd =>
       auth = new LdapAuthenticationProviderImpl(conf, new LdapSearchFactory)
-      val thrown = intercept[AuthenticationException] {
-        auth.authenticate("user", pwd)
-      }
-      assert(thrown.getMessage.contains("is null or contains blank space"))
+      interceptContains[AuthenticationException] { auth.authenticate("user", pwd) }(
+        "is null or contains blank space")
     }
   }
 

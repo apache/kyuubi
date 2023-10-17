@@ -21,6 +21,7 @@ import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
+import org.apache.kyuubi.util.AssertionUtils._
 
 class TrinoProcessBuilderSuite extends KyuubiFunSuite {
 
@@ -38,10 +39,9 @@ class TrinoProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("capture error from trino process builder") {
-    val e1 = intercept[IllegalArgumentException](
-      new TrinoProcessBuilder("kyuubi", KyuubiConf()).processBuilder)
-    assert(e1.getMessage contains
-      s"Trino server url can not be null! Please set ${ENGINE_TRINO_CONNECTION_URL.key}")
+    interceptContains[IllegalArgumentException] {
+      new TrinoProcessBuilder("kyuubi", KyuubiConf()).processBuilder
+    }(s"Trino server url can not be null! Please set ${ENGINE_TRINO_CONNECTION_URL.key}")
   }
 
   test("default engine memory") {

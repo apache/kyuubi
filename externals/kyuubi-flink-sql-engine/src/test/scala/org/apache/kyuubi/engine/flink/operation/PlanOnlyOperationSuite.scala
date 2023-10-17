@@ -24,6 +24,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.{WithDiscoveryFlinkSQLEngine, WithFlinkSQLEngineLocal}
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
 import org.apache.kyuubi.operation.{AnalyzeMode, ExecutionMode, HiveJDBCTestHelper, ParseMode, PhysicalMode}
+import org.apache.kyuubi.util.AssertionUtils._
 
 class PlanOnlyOperationSuite extends WithFlinkSQLEngineLocal
   with HiveJDBCTestHelper with WithDiscoveryFlinkSQLEngine {
@@ -55,9 +56,8 @@ class PlanOnlyOperationSuite extends WithFlinkSQLEngineLocal
   test("Plan only operation with session conf") {
     withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> AnalyzeMode.name))(Map.empty) {
       withJdbcStatement() { statement =>
-        val exceptionMsg = intercept[Exception](statement.executeQuery("select 1")).getMessage
-        assert(exceptionMsg.contains(
-          s"The operation mode ${AnalyzeMode.name} doesn't support in Flink SQL engine."))
+        interceptContains[Exception](statement.executeQuery("select 1"))(
+          s"The operation mode ${AnalyzeMode.name} doesn't support in Flink SQL engine.")
       }
     }
   }

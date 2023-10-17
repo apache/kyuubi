@@ -26,6 +26,7 @@ import com.zaxxer.hikari.util.DriverDataSource
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.JdbcUtils
 
 class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
@@ -69,39 +70,36 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     val providerImpl = new JdbcAuthenticationProviderImpl(conf)
     providerImpl.authenticate(authUser, authPasswd)
 
-    val e1 = intercept[AuthenticationException] {
+    interceptContains[AuthenticationException] {
       providerImpl.authenticate("", "")
-    }
-    assert(e1.getMessage.contains("user is null"))
+    }("user is null")
 
     val wrong_password = "wrong_password"
-    val e4 = intercept[AuthenticationException] {
+    interceptContains[AuthenticationException] {
       providerImpl.authenticate(authUser, wrong_password)
-    }
-    assert(e4.isInstanceOf[AuthenticationException])
-    assert(e4.getMessage.contains(s"Password does not match or no such user. " +
+    }(s"Password does not match or no such user. " +
       s"user: $authUser, " +
-      s"password: ${"*" * wrong_password.length}(length:${wrong_password.length})"))
+      s"password: ${"*" * wrong_password.length}(length:${wrong_password.length})")
 
     var _conf = conf.clone
     _conf.unset(AUTHENTICATION_JDBC_URL)
-    val e5 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
-    assert(e5.getMessage.contains("JDBC url is not configured"))
+    interceptContains[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }(
+      "JDBC url is not configured")
 
     _conf = conf.clone
     _conf.unset(AUTHENTICATION_JDBC_QUERY)
-    val e8 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
-    assert(e8.getMessage.contains("Query SQL is not configured"))
+    interceptContains[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }(
+      "Query SQL is not configured")
 
     _conf.set(
       AUTHENTICATION_JDBC_QUERY,
       "INSERT INTO user_auth (user, password) VALUES ('demouser','demopassword');")
-    val e9 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
-    assert(e9.getMessage.contains("Query SQL must start with 'SELECT'"))
+    interceptContains[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }(
+      "Query SQL must start with 'SELECT'")
 
     _conf.unset(AUTHENTICATION_JDBC_URL)
-    val e10 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
-    assert(e10.getMessage.contains("JDBC url is not configured"))
+    interceptContains[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }(
+      "JDBC url is not configured")
 
     _conf = conf.clone
     _conf.set(AUTHENTICATION_JDBC_QUERY, "SELECT 1 FROM user_auth")
@@ -117,9 +115,8 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     _conf.set(
       AUTHENTICATION_JDBC_QUERY,
       "SELECT 1 FROM user_auth WHERE user=${unsupported_placeholder} and username=${user}")
-    val e11 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
-    assert(e11.getMessage.contains(
-      "Unsupported placeholder in Query SQL: ${unsupported_placeholder}"))
+    interceptContains[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }(
+      "Unsupported placeholder in Query SQL: ${unsupported_placeholder}")
 
     // unknown field
     _conf.set(

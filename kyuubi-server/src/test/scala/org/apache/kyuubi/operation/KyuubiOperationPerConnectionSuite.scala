@@ -35,6 +35,7 @@ import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiSQLException}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.plugin.SessionConfAdvisor
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
+import org.apache.kyuubi.util.AssertionUtils._
 
 /**
  * UT with Connection level engine shared cost much time, only run basic jdbc tests.
@@ -291,8 +292,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       statement.executeQuery(s"set ${KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key}=true;")
       val resultSet = statement.executeQuery(
         "SELECT raise_error('client should catch this exception');")
-      val e = intercept[KyuubiSQLException](resultSet.next())
-      assert(e.getMessage.contains("client should catch this exception"))
+      interceptContains[KyuubiSQLException](resultSet.next())("client should catch this exception")
     }
   }
 

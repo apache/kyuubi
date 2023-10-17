@@ -22,6 +22,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_MYSQL_BIND_HOST, FRONTEND_MYSQL_BIND_PORT}
 import org.apache.kyuubi.service.NoopMySQLFrontendServer
 import org.apache.kyuubi.service.ServiceState._
+import org.apache.kyuubi.util.AssertionUtils._
 
 class KyuubiMySQLFrontendServiceSuite extends KyuubiFunSuite {
 
@@ -31,8 +32,8 @@ class KyuubiMySQLFrontendServiceSuite extends KyuubiFunSuite {
     val conf = KyuubiConf()
     assert(server.getServices.isEmpty)
     assert(server.getServiceState === LATENT)
-    val e = intercept[IllegalStateException](server.frontendServices.head.connectionUrl)
-    assert(e.getMessage startsWith "Illegal Service State: LATENT")
+    interceptStartsWith[IllegalStateException] { server.frontendServices.head.connectionUrl }(
+      "Illegal Service State: LATENT")
     assert(server.getConf === null)
 
     server.initialize(conf)

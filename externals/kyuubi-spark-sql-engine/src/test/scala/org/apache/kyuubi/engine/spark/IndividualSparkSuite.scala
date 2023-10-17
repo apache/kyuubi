@@ -31,6 +31,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.util.AssertionUtils._
 
 class SparkEngineSuites extends KyuubiFunSuite {
 
@@ -63,10 +64,9 @@ class SparkEngineSuites extends KyuubiFunSuite {
           try {
             statement.setQueryTimeout(5)
             forceCancel.set(force)
-            val e1 = intercept[SQLTimeoutException] {
-              statement.execute("select java_method('java.lang.Thread', 'sleep', 500000L)")
-            }.getMessage
-            assert(e1.contains("Query timed out"))
+            interceptContains[SQLTimeoutException](
+              statement.execute("select java_method('java.lang.Thread', 'sleep', 500000L)"))(
+              "Query timed out")
             assert(index.get() != 0, "The query statement was not executed.")
             eventually(Timeout(30.seconds)) {
               if (forceCancel.get()) {
@@ -90,11 +90,10 @@ class SparkEngineSuites extends KyuubiFunSuite {
       s"spark.${ENGINE_INIT_TIMEOUT.key}" -> String.valueOf(timeout))) {
       SparkSQLEngine.setupConf()
       SparkSQLEngine.currentEngine = None
-      val e1 = intercept[KyuubiException] {
+      interceptStartsWith[KyuubiException] {
         SparkSQLEngine.main(Array.empty)
-      }.getMessage
+      }("The total engine initialization time")
       assert(SparkSQLEngine.currentEngine.isEmpty)
-      assert(e1.startsWith("The total engine initialization time"))
     }
   }
 

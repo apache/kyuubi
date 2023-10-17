@@ -25,6 +25,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.{NoopTBinaryFrontendServer, TBinaryFrontendService}
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.SemanticVersion
 
 class PlainSASLHelperSuite extends KyuubiFunSuite {
@@ -39,19 +40,16 @@ class PlainSASLHelperSuite extends KyuubiFunSuite {
 
     val tProcessor = tProcessorFactory.getProcessor(tSocket)
     assert(tProcessor.isInstanceOf[TSetIpAddressProcessor[_]])
-    val e = intercept[IllegalArgumentException] {
+    interceptEquals[IllegalArgumentException] {
       PlainSASLHelper.getTransportFactory("KERBEROS", conf)
-    }
-    assert(e.getMessage === "Illegal authentication type KERBEROS for plain transport")
-    val e2 = intercept[IllegalArgumentException] {
+    }("Illegal authentication type KERBEROS for plain transport")
+    interceptEquals[IllegalArgumentException] {
       PlainSASLHelper.getTransportFactory("NOSASL", conf)
-    }
-    assert(e2.getMessage === "Illegal authentication type NOSASL for plain transport")
+    }("Illegal authentication type NOSASL for plain transport")
 
-    val e3 = intercept[IllegalArgumentException] {
+    interceptEquals[IllegalArgumentException] {
       PlainSASLHelper.getTransportFactory("ELSE", conf)
-    }
-    assert(e3.getMessage === "Illegal authentication type ELSE for plain transport")
+    }("Illegal authentication type ELSE for plain transport")
 
     val tTransportFactory = PlainSASLHelper.getTransportFactory("NONE", conf)
     assert(tTransportFactory.isInstanceOf[TSaslServerTransport.Factory])

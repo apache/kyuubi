@@ -34,9 +34,9 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
 import org.apache.kyuubi.session.KyuubiSessionManager
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.Validator.KUBERNETES_EXECUTOR_POD_NAME_PREFIX
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
-
 abstract class SparkOnKubernetesSuiteBase
   extends WithKyuubiServer with Logging with BatchTestHelper {
   private val apiServerAddress = {
@@ -193,10 +193,10 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     Seq("_123", "spark_exec", "spark@", "a" * 238).foreach { invalid =>
       conf.set(KUBERNETES_EXECUTOR_POD_NAME_PREFIX, invalid)
       val builder = new SparkProcessBuilder("test", conf)
-      val e = intercept[KyuubiException](builder.validateConf)
-      assert(e.getMessage === s"'$invalid' in spark.kubernetes.executor.podNamePrefix is" +
-        s" invalid. must conform https://kubernetes.io/docs/concepts/overview/" +
-        "working-with-objects/names/#dns-subdomain-names and the value length <= 237")
+      interceptEquals[KyuubiException](builder.validateConf)(
+        s"'$invalid' in spark.kubernetes.executor.podNamePrefix is" +
+          s" invalid. must conform https://kubernetes.io/docs/concepts/overview/" +
+          "working-with-objects/names/#dns-subdomain-names and the value length <= 237")
     }
     // clean test conf
     conf.unset(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)

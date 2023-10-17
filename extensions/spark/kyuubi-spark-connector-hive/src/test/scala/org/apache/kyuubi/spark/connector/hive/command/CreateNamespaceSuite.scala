@@ -27,6 +27,7 @@ import org.apache.spark.sql.connector.catalog.SupportsNamespaces
 import org.apache.spark.sql.internal.SQLConf
 
 import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{V1_COMMAND_VERSION, V2_COMMAND_VERSION}
+import org.apache.kyuubi.util.AssertionUtils._
 
 trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
   override protected def command: String = "CREATE NAMESPACE"
@@ -59,11 +60,9 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
         val path = tmpDir.getCanonicalPath
         assert(!path.startsWith("file:/"))
 
-        val e = intercept[IllegalArgumentException] {
+        interceptContainsAny[IllegalArgumentException] {
           sql(s"CREATE NAMESPACE $ns LOCATION ''")
-        }
-        assert(e.getMessage.contains("Can not create a Path from an empty string") ||
-          e.getMessage.contains("The location name cannot be empty string"))
+        }("Can not create a Path from an empty string", "The location name cannot be empty string")
 
         val uri = new Path(path).toUri
         sql(s"CREATE NAMESPACE $ns LOCATION '$uri'")
@@ -81,11 +80,11 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
     withNamespace(ns) {
       sql(s"CREATE NAMESPACE $ns")
 
-      val e = intercept[NamespaceAlreadyExistsException] {
+      interceptContainsAny[NamespaceAlreadyExistsException] {
         sql(s"CREATE NAMESPACE $ns")
-      }
-      assert(e.getMessage.contains(s"Namespace '$namespace' already exists") ||
-        e.getMessage.contains(s"Cannot create schema `fakens` because it already exists"))
+      }(
+        s"Namespace '$namespace' already exists",
+        s"Cannot create schema `fakens` because it already exists")
 
       // The following will be no-op since the namespace already exists.
       Try { sql(s"CREATE NAMESPACE IF NOT EXISTS $ns") }.isSuccess
@@ -97,10 +96,9 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
     val ns = s"$catalogName.$namespace"
     withSQLConf((SQLConf.LEGACY_PROPERTY_NON_RESERVED.key, "false")) {
       NAMESPACE_RESERVED_PROPERTIES.filterNot(_ == PROP_COMMENT).foreach { key =>
-        val exception = intercept[ParseException] {
+        interceptContains[ParseException] {
           sql(s"CREATE NAMESPACE $ns WITH DBPROPERTIES('$key'='dummyVal')")
-        }
-        assert(exception.getMessage.contains(s"$key is a reserved namespace property"))
+        }(s"$key is a reserved namespace property")
       }
     }
     withSQLConf((SQLConf.LEGACY_PROPERTY_NON_RESERVED.key, "true")) {

@@ -32,6 +32,7 @@ import org.apache.kyuubi.operation.{FetchOrientation, HiveJDBCTestHelper, Operat
 import org.apache.kyuubi.operation.OperationState.ERROR
 import org.apache.kyuubi.server.MiniYarnService
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager}
+import org.apache.kyuubi.util.AssertionUtils._
 
 /**
  * To developers:
@@ -201,12 +202,11 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       ENGINE_INIT_TIMEOUT.key -> "PT10M",
       KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))(Map.empty) {
       val startTime = System.currentTimeMillis()
-      val exception = intercept[Exception] {
+      interceptContains[Exception] {
         withJdbcStatement() { _ => }
-      }
+      }("The engine application has been terminated.")
       val elapsedTime = System.currentTimeMillis() - startTime
       assert(elapsedTime < 60 * 1000)
-      assert(exception.getMessage contains "The engine application has been terminated.")
     }
   }
 }

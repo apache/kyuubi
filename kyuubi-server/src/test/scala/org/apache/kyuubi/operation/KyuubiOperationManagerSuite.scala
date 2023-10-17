@@ -22,6 +22,7 @@ import java.sql.SQLTimeoutException
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.util.AssertionUtils._
 
 class KyuubiOperationManagerSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   override protected val conf: KyuubiConf = {
@@ -52,10 +53,9 @@ class KyuubiOperationManagerSuite extends WithKyuubiServer with HiveJDBCTestHelp
     withJdbcStatement() { statement =>
       Range(-1, 20, 5).foreach { clientTimeout =>
         statement.setQueryTimeout(clientTimeout)
-        val e = intercept[SQLTimeoutException] {
+        interceptContains[SQLTimeoutException] {
           statement.executeQuery("select java_method('java.lang.Thread', 'sleep', 10000L)")
-        }.getMessage
-        assert(e.contains("Query timed out after"))
+        }("Query timed out after")
       }
     }
   }

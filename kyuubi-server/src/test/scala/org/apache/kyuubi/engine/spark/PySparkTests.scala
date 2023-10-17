@@ -30,6 +30,7 @@ import org.apache.kyuubi.jdbc.KyuubiHiveDriver
 import org.apache.kyuubi.jdbc.hive.{KyuubiSQLException, KyuubiStatement}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.tags.PySparkTest
+import org.apache.kyuubi.util.AssertionUtils._
 
 @PySparkTest
 class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
@@ -75,13 +76,11 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
     statement.setQueryTimeout(5)
     try {
       var code = "spark.sql(\"select java_method('java.lang.Thread', 'sleep', 10000L)\").show()"
-      var e = intercept[SQLTimeoutException] {
+      interceptContains[SQLTimeoutException] {
         statement.executePython(code)
-      }.getMessage
-      assert(e.contains("Query timed out"))
+      }("Query timed out")
       code = "bad_code"
-      e = intercept[KyuubiSQLException](statement.executePython(code)).getMessage
-      assert(e.contains("Interpret error"))
+      interceptContains[KyuubiSQLException] { statement.executePython(code) }("Interpret error")
     } finally {
       statement.close()
       connection.close()

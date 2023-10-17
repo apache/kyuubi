@@ -26,6 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.service._
+import org.apache.kyuubi.util.AssertionUtils._
 
 trait DiscoveryClientTests extends KyuubiFunSuite {
 
@@ -144,10 +145,9 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
 
     withDiscoveryClient(conf) { discoveryClient =>
       assert(lockLatch.await(20000, TimeUnit.MILLISECONDS))
-      val e = intercept[KyuubiSQLException] {
+      interceptContains[KyuubiSQLException] {
         discoveryClient.tryWithLock(lockPath, 5000) {}
-      }
-      assert(e.getMessage contains s"Timeout to lock on path [$lockPath]")
+      }(s"Timeout to lock on path [$lockPath]")
     }
   }
 

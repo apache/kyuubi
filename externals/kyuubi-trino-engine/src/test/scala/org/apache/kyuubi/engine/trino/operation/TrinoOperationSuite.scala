@@ -29,6 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.trino.{TrinoQueryTests, TrinoStatement, WithTrinoEngine}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+import org.apache.kyuubi.util.AssertionUtils._
 
 class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
   override def withKyuubiConf: Map[String, String] = Map(
@@ -551,11 +552,9 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
 
   test("trino - get functions") {
     withJdbcStatement() { statement =>
-      val exceptionMsg = intercept[Exception](statement.getConnection.getMetaData.getFunctions(
-        null,
-        null,
-        "abs")).getMessage
-      assert(exceptionMsg === KyuubiSQLException.featureNotSupported().getMessage)
+      interceptEquals[Exception] {
+        statement.getConnection.getMetaData.getFunctions(null, null, "abs")
+      }(KyuubiSQLException.featureNotSupported().getMessage)
     }
   }
 

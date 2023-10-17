@@ -38,6 +38,7 @@ import org.apache.kyuubi.jdbc.hive.{KyuubiSQLException, KyuubiStatement}
 import org.apache.kyuubi.jdbc.hive.common.TimestampTZ
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+import org.apache.kyuubi.util.AssertionUtils._
 
 abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTestResources {
 
@@ -1252,7 +1253,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
   }
 
   test("test result fetch timeout") {
-    val exception = intercept[KyuubiSQLException](
+    interceptEquals[KyuubiSQLException](
       withSessionConf()(Map(ENGINE_FLINK_FETCH_TIMEOUT.key -> "60000"))() {
         withJdbcStatement("tbl_a") { stmt =>
           stmt.executeQuery("create table tbl_a (a int) " +
@@ -1260,7 +1261,6 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
           val resultSet = stmt.executeQuery("select * from tbl_a")
           while (resultSet.next()) {}
         }
-      })
-    assert(exception.getMessage === "Futures timed out after [60000 milliseconds]")
+      })("Futures timed out after [60000 milliseconds]")
   }
 }

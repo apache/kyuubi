@@ -28,6 +28,7 @@ import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsRe
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.util.AssertionUtils._
 
 trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
 
@@ -135,10 +136,9 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
   test("query time out shall respect client-side if no server-side control") {
     withJdbcStatement() { statement =>
       statement.setQueryTimeout(1)
-      val e = intercept[SQLTimeoutException] {
+      interceptContains[SQLTimeoutException] {
         statement.execute("select java_method('java.lang.Thread', 'sleep', 10000L)")
-      }.getMessage
-      assert(e.contains("Query timed out after"))
+      }("Query timed out after")
 
       statement.setQueryTimeout(0)
       val rs1 = statement.executeQuery(
@@ -333,8 +333,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
           |  .map {
           |    x => (x, x + 1, x * 2)
           |""".stripMargin
-      val e = intercept[SQLException](statement.executeQuery(incompleteCode))
-      assert(e.getMessage contains "Incomplete code:")
+      interceptContains[SQLException](statement.executeQuery(incompleteCode))("Incomplete code:")
     }
   }
 
@@ -348,8 +347,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
           |  .range(0, 10, 2, 1)
           |  .map { x => (x, x + 1, y * 2) } // y is missing
           |""".stripMargin
-      val e = intercept[SQLException](statement.executeQuery(incompleteCode))
-      assert(e.getMessage contains "not found: value y")
+      interceptContains[SQLException](statement.executeQuery(incompleteCode))("not found: value y")
     }
   }
 
@@ -428,8 +426,8 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
     withSessionConf()(Map(KyuubiConf.OPERATION_LANGUAGE.key -> "SQL"))(Map.empty) {
       withJdbcStatement() { statement =>
         statement.executeQuery(s"set ${KyuubiConf.OPERATION_LANGUAGE.key}=AAA")
-        val e = intercept[SQLException](statement.executeQuery("select 1"))
-        assert(e.getMessage.contains("The operation language UNKNOWN doesn't support"))
+        interceptContains[SQLException](statement.executeQuery("select 1"))(
+          "The operation language UNKNOWN doesn't support")
         statement.executeQuery(s"set ${KyuubiConf.OPERATION_LANGUAGE.key}=SQL")
         val result = statement.executeQuery("select 1")
         assert(result.next())

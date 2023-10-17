@@ -35,10 +35,9 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
     val kyuubiConf = KyuubiConf()
     val hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
 
-    val e1 = intercept[KyuubiSQLException] {
+    interceptEquals[KyuubiSQLException] {
       verifyProxyAccess("kent", "yao", "localhost", hadoopConf)
-    }
-    assert(e1.getMessage === "Failed to validate proxy privilege of kent for yao")
+    }("Failed to validate proxy privilege of kent for yao")
 
     kyuubiConf.set("hadoop.proxyuser.kent.groups", "*")
     kyuubiConf.set("hadoop.proxyuser.kent.hosts", "*")
@@ -74,8 +73,8 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
     val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Set("KERBEROS"))
 
     val factory = new KyuubiAuthenticationFactory(conf)
-    val e = intercept[LoginException](factory.getTTransportFactory)
-    assert(e.getMessage startsWith "Kerberos principal should have 3 parts")
+    interceptStartsWith[LoginException](factory.getTTransportFactory)(
+      "Kerberos principal should have 3 parts")
   }
 
   test("AuthType is NOSASL if only NOSASL is specified") {

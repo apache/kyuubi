@@ -31,6 +31,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, OptimizeZorderStatement, Zorder, ZorderBytesUtils}
+import org.apache.kyuubi.util.AssertionUtils._
 
 trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
   override def sparkConf(): SparkConf = {
@@ -69,10 +70,9 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
           "(2,0,2),(2,1,1),(2,2,5),(2,3,5)," +
           "(3,0,3),(3,1,4),(3,2,9),(3,3,0)")
 
-        val e = intercept[KyuubiSQLExtensionException] {
+        interceptEquals[KyuubiSQLExtensionException] {
           sql("OPTIMIZE up WHERE c1 > 1 ZORDER BY c1, c2")
-        }
-        assert(e.getMessage == "Filters are only supported for partitioned table")
+        }("Filters are only supported for partitioned table")
 
         sql("OPTIMIZE up ZORDER BY c1, c2")
         val res = sql("SELECT c1, c2 FROM up").collect()
@@ -201,9 +201,9 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
           "(2,0,2),(2,1,1),(2,2,5),(2,3,5)," +
           "(3,0,3),(3,1,4),(3,2,9),(3,3,0)")
 
-        val e = intercept[KyuubiSQLExtensionException](
-          sql(s"OPTIMIZE p WHERE id = 1 AND c1 > 1 ZORDER BY c1, c2"))
-        assert(e.getMessage == "Only partition column filters are allowed")
+        val e = interceptEquals[KyuubiSQLExtensionException] {
+          sql(s"OPTIMIZE p WHERE id = 1 AND c1 > 1 ZORDER BY c1, c2")
+        }("Only partition column filters are allowed")
 
         sql(s"OPTIMIZE p WHERE id = 1 ZORDER BY c1, c2")
 
@@ -232,10 +232,9 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
     // TODO remove this if we support datasource table
     withTable("t") {
       sql("CREATE TABLE t (c1 int, c2 int) USING PARQUET")
-      val msg = intercept[KyuubiSQLExtensionException] {
+      interceptContains[KyuubiSQLExtensionException] {
         sql("OPTIMIZE t ZORDER BY c1, c2")
-      }.getMessage
-      assert(msg.contains("only support hive table"))
+      }("only support hive table")
     }
   }
 
@@ -735,15 +734,13 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
   test("OPTIMIZE partition predicates constraint") {
     withTable("p") {
       sql("CREATE TABLE p (c1 INT, c2 INT) PARTITIONED BY (event_date DATE)")
-      val e1 = intercept[KyuubiSQLExtensionException] {
+      interceptContains[KyuubiSQLExtensionException] {
         sql("OPTIMIZE p WHERE event_date = current_date as c ZORDER BY c1, c2")
-      }
-      assert(e1.getMessage.contains("unsupported partition predicates"))
+      }("unsupported partition predicates")
 
-      val e2 = intercept[KyuubiSQLExtensionException] {
+      interceptEquals[KyuubiSQLExtensionException] {
         sql("OPTIMIZE p WHERE c1 = 1 ZORDER BY c1, c2")
-      }
-      assert(e2.getMessage == "Only partition column filters are allowed")
+      }("Only partition column filters are allowed")
     }
   }
 

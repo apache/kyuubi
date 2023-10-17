@@ -20,6 +20,7 @@ import java.security.InvalidParameterException
 import java.util.Base64
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.util.AssertionUtils._
 
 class SignUtilsSuite extends KyuubiFunSuite {
   test("generate key pair") {
@@ -28,8 +29,8 @@ class SignUtilsSuite extends KyuubiFunSuite {
     assert(publicKey !== null)
 
     val invalidAlgorithm = "invalidAlgorithm"
-    val e1 = intercept[InvalidParameterException](SignUtils.generateKeyPair(invalidAlgorithm))
-    assert(e1.getMessage == s"algorithm $invalidAlgorithm not supported for key pair generation")
+    interceptEquals[InvalidParameterException](SignUtils.generateKeyPair(invalidAlgorithm))(
+      s"algorithm $invalidAlgorithm not supported for key pair generation")
   }
 
   test("sign/verify with key pair") {

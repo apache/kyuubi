@@ -37,6 +37,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.IdentifierHelper
 import org.apache.kyuubi.spark.connector.hive.read.HiveScan
+import org.apache.kyuubi.util.AssertionUtils._
 
 class HiveCatalogSuite extends KyuubiHiveTest {
 
@@ -297,21 +298,17 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     catalog.dropNamespace(testNs, true)
     assert(catalog.namespaceExists(testNs) === false)
 
-    val exc = intercept[NoSuchNamespaceException] {
+    interceptContains[NoSuchNamespaceException] {
       assert(catalog.listNamespaces(testNs) === Array())
-    }
-
-    assert(exc.getMessage.contains(testNs.quoted))
+    }(testNs.quoted)
     assert(catalog.namespaceExists(testNs) === false)
   }
 
   test("loadNamespaceMetadata: fail missing namespace") {
     catalog.dropNamespace(testNs, true)
-    val exc = intercept[NoSuchNamespaceException] {
+    interceptContains[NoSuchNamespaceException] {
       catalog.loadNamespaceMetadata(testNs)
-    }
-
-    assert(exc.getMessage.contains(testNs.quoted))
+    }(testNs.quoted)
   }
 
   test("loadNamespaceMetadata: non-empty metadata") {

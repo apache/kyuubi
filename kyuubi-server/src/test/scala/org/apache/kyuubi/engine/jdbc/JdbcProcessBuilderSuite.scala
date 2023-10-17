@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.jdbc
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY}
+import org.apache.kyuubi.util.AssertionUtils._
 
 class JdbcProcessBuilderSuite extends KyuubiFunSuite {
 
@@ -37,10 +38,9 @@ class JdbcProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("capture error from jdbc process builder") {
-    val e1 = intercept[IllegalArgumentException](
-      new JdbcProcessBuilder("kyuubi", KyuubiConf()).processBuilder)
-    assert(e1.getMessage contains
-      s"Jdbc server url can not be null! Please set ${ENGINE_JDBC_CONNECTION_URL.key}")
+    interceptContains[IllegalArgumentException] {
+      new JdbcProcessBuilder("kyuubi", KyuubiConf()).processBuilder
+    }(s"Jdbc server url can not be null! Please set ${ENGINE_JDBC_CONNECTION_URL.key}")
   }
 
   test("default engine memory") {

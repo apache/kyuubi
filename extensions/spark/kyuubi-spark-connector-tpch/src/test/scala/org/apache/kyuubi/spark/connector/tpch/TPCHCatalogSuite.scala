@@ -24,6 +24,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 import org.apache.kyuubi.spark.connector.common.SparkUtils.SPARK_RUNTIME_VERSION
+import org.apache.kyuubi.util.AssertionUtils._
 
 class TPCHCatalogSuite extends KyuubiFunSuite {
 
@@ -155,11 +156,9 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
       .set("spark.sql.cbo.enabled", "true")
       .set("spark.sql.cbo.planStats.enabled", "true")
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-      val exception = intercept[AnalysisException] {
+      interceptContainsAny[AnalysisException] {
         spark.table("tpch.sf1.nonexistent_table")
-      }
-      assert(exception.message.contains("Table or view not found")
-        || exception.message.contains("TABLE_OR_VIEW_NOT_FOUND"))
+      }("Table or view not found", "TABLE_OR_VIEW_NOT_FOUND")
     }
   }
 }

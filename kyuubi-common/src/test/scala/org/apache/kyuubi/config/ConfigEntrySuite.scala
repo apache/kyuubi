@@ -18,6 +18,7 @@
 package org.apache.kyuubi.config
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.util.AssertionUtils._
 
 class ConfigEntrySuite extends KyuubiFunSuite {
 
@@ -49,7 +50,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     KyuubiConf.register(e1)
     val conf = KyuubiConf()
     assert(conf.get(e1).isEmpty)
-    val e = intercept[IllegalArgumentException](new OptionalConfigEntry[Int](
+    interceptEquals[IllegalArgumentException](new OptionalConfigEntry[Int](
       "kyuubi.int.spark",
       List.empty[String],
       s => s.toInt + 1,
@@ -58,8 +59,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "<none>",
       "int",
       false,
-      false))
-    assert(e.getMessage ===
+      false))(
       "requirement failed: Config entry kyuubi.int.spark already registered!")
     conf.set(e1.key, "2")
     assert(conf.get(e1) === Some(3))
@@ -182,10 +182,9 @@ class ConfigEntrySuite extends KyuubiFunSuite {
 
     KyuubiConf.unregister(config)
 
-    val exception = intercept[IllegalArgumentException](conf.get(config))
-    assert(exception.getMessage.contains("requirement failed: " +
+    interceptContains[IllegalArgumentException](conf.get(config))("requirement failed: " +
       "ConfigEntry(key=kyuubi.unregistered.spark, defaultValue=3.0, " +
-      "doc=doc, version=, type=double) is not registered"))
+      "doc=doc, version=, type=double) is not registered")
   }
 
   test("support alternative keys in ConfigBuilder") {

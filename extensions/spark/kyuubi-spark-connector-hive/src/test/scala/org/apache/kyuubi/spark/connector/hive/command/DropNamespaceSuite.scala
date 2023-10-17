@@ -22,7 +22,7 @@ import org.apache.spark.sql.types.{StringType, StructType}
 
 import org.apache.kyuubi.spark.connector.common.SparkUtils.SPARK_RUNTIME_VERSION
 import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{V1_COMMAND_VERSION, V2_COMMAND_VERSION}
-import org.apache.kyuubi.util.AssertionUtils.interceptContains
+import org.apache.kyuubi.util.AssertionUtils._
 
 trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
   override protected def command: String = "DROP NAMESPACE"
@@ -59,11 +59,9 @@ trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
 
   test("namespace does not exist") {
     // Namespace $catalog.unknown does not exist.
-    val message = intercept[AnalysisException] {
+    interceptContainsAny[AnalysisException] {
       sql(s"DROP NAMESPACE $catalogName.unknown")
-    }.getMessage
-    assert(message.contains(s"'unknown' not found") ||
-      message.contains(s"The schema `unknown` cannot be found"))
+    }("'unknown' not found", "The schema `unknown` cannot be found")
   }
 
   test("drop non-empty namespace with a non-cascading mode") {

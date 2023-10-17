@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.ui
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
+import org.apache.kyuubi.util.AssertionUtils._
 
 class JettyUtilsSuite extends KyuubiFunSuite {
 
@@ -25,8 +26,8 @@ class JettyUtilsSuite extends KyuubiFunSuite {
     val contextPath = "/static"
     val handler = JettyUtils.createStaticHandler("org/apache/kyuubi/ui/static", contextPath)
     assert(handler.getContextPath === contextPath)
-    val e = intercept[KyuubiException](JettyUtils
-      .createStaticHandler("org/apache/kyuubi/ui/static/nonexists", contextPath))
-    assert(e.getMessage.startsWith("Could not find resource path"))
+    interceptStartsWith[KyuubiException] {
+      JettyUtils.createStaticHandler("org/apache/kyuubi/ui/static/nonexists", contextPath)
+    }("Could not find resource path")
   }
 }

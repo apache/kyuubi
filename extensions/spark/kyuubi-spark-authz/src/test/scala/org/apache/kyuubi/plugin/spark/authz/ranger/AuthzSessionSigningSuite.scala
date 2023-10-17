@@ -28,6 +28,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.SignUtils
 
 class AuthzSessionSigningSuite extends AnyFunSuite
@@ -62,13 +63,13 @@ class AuthzSessionSigningSuite extends AnyFunSuite
     // fake session user name
     val fakeSessionUser = "faker"
     sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, fakeSessionUser)
-    val e1 = intercept[AccessControlException](AuthZUtils.getAuthzUgi(sc))
-    assertResult(s"Invalid user identifier [$fakeSessionUser]")(e1.getMessage)
+    interceptEquals[AccessControlException](AuthZUtils.getAuthzUgi(sc))(
+      s"Invalid user identifier [$fakeSessionUser]")
     sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, kyuubiSessionUser)
 
     // invalid session user sign
     sc.setLocalProperty(KYUUBI_SESSION_USER_SIGN, "invalid_sign")
-    val e2 = intercept[AccessControlException](AuthZUtils.getAuthzUgi(sc))
-    assertResult(s"Invalid user identifier [$kyuubiSessionUser]")(e2.getMessage)
+    interceptEquals[AccessControlException](AuthZUtils.getAuthzUgi(sc))(
+      s"Invalid user identifier [$kyuubiSessionUser]")
   }
 }

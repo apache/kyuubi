@@ -22,6 +22,7 @@ import java.sql.Statement
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.jdbc.hive.KyuubiSQLException
+import org.apache.kyuubi.util.AssertionUtils._
 
 class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
@@ -191,8 +192,8 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> "parse"))(Map.empty) {
       withJdbcStatement() { statement =>
         statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=parser")
-        val e = intercept[KyuubiSQLException](statement.executeQuery("select 1"))
-        assert(e.getMessage.contains("Unknown planOnly mode: parser"))
+        interceptContains[KyuubiSQLException](statement.executeQuery("select 1"))(
+          "Unknown planOnly mode: parser")
         statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=parse")
         val result = statement.executeQuery("select 1")
         assert(result.next())

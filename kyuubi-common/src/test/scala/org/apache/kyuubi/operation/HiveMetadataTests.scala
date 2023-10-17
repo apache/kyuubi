@@ -23,6 +23,7 @@ import scala.util.Random
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Utils}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+import org.apache.kyuubi.util.AssertionUtils._
 
 // For `hive` external catalog only
 trait HiveMetadataTests extends SparkMetadataTests {
@@ -208,8 +209,7 @@ trait HiveMetadataTests extends SparkMetadataTests {
         () => metaData.getFunctionColumns("", "%", "%", "%"),
         () => metaData.getPseudoColumns("", "%", "%", "%"),
         () => metaData.generatedKeyAlwaysReturned).foreach { func =>
-        val e = intercept[SQLFeatureNotSupportedException](func())
-        assert(e.getMessage === "Method not supported")
+        interceptEquals[SQLFeatureNotSupportedException](func())("Method not supported")
       }
 
       assert(metaData.allTablesAreSelectable)
@@ -260,16 +260,14 @@ trait HiveMetadataTests extends SparkMetadataTests {
       assert(metaData.getDefaultTransactionIsolation === java.sql.Connection.TRANSACTION_NONE)
       assert(!metaData.supportsTransactions)
       assert(!metaData.getProcedureColumns("", "%", "%", "%").next())
-      val e1 = intercept[SQLException] {
+      interceptContains[SQLException] {
         metaData.getPrimaryKeys("", "default", "src").next()
-      }
-      assert(e1.getMessage.contains(KyuubiSQLException.featureNotSupported().getMessage))
+      }(KyuubiSQLException.featureNotSupported().getMessage)
       assert(!metaData.getImportedKeys("", "default", "").next())
 
-      val e2 = intercept[SQLException] {
+      interceptContains[SQLException] {
         metaData.getCrossReference("", "default", "src", "", "default", "src2").next()
-      }
-      assert(e2.getMessage.contains(KyuubiSQLException.featureNotSupported().getMessage))
+      }(KyuubiSQLException.featureNotSupported().getMessage)
       assert(!metaData.getIndexInfo("", "default", "src", true, true).next())
 
       assert(metaData.supportsResultSetType(new Random().nextInt()))

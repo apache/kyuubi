@@ -20,6 +20,8 @@ package org.apache.kyuubi.spark.connector.hive
 import org.apache.spark.sql.{AnalysisException, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 
+import org.apache.kyuubi.util.AssertionUtils._
+
 class HiveQuerySuite extends KyuubiHiveTest {
 
   def withTempNonPartitionedTable(
@@ -196,18 +198,18 @@ class HiveQuerySuite extends KyuubiHiveTest {
     withSparkSession() { spark =>
       val table = "hive.default.employee"
       withTempPartitionedTable(spark, table) {
-        val exception = intercept[KyuubiHiveConnectorException] {
+        interceptContains[KyuubiHiveConnectorException] {
           spark.sql(
             s"""
                | INSERT OVERWRITE
                | $table PARTITION(year = '', month = '08')
                | VALUES("yi")
                |""".stripMargin).collect()
-        }
-        // 1. not thrown `Dynamic partition cannot be the parent of a static partition`
-        // 2. thrown `Partition spec is invalid`, should be consist with spark v1.
-        assert(exception.message.contains("Partition spec is invalid. The spec (year='') " +
-          "contains an empty partition column value"))
+        }(
+          // 1. not thrown `Dynamic partition cannot be the parent of a static partition`
+          // 2. thrown `Partition spec is invalid`, should be consist with spark v1.
+          "Partition spec is invalid. The spec (year='') " +
+            "contains an empty partition column value")
       }
     }
   }

@@ -26,6 +26,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.spark.schema.SchemaHelper._
+import org.apache.kyuubi.util.AssertionUtils._
 
 class SchemaHelperSuite extends KyuubiFunSuite {
 
@@ -70,10 +71,10 @@ class SchemaHelperSuite extends KyuubiFunSuite {
     assert(toTTypeId(outerSchema(14).dataType) === TTypeId.MAP_TYPE)
     assert(toTTypeId(outerSchema(15).dataType) === TTypeId.STRUCT_TYPE)
     assert(toTTypeId(outerSchema(16).dataType) === TTypeId.STRING_TYPE)
-    val e1 = intercept[IllegalArgumentException](toTTypeId(CharType(1)))
-    assert(e1.getMessage === "Unrecognized type name: char(1)")
-    val e2 = intercept[IllegalArgumentException](toTTypeId(VarcharType(1)))
-    assert(e2.getMessage === "Unrecognized type name: varchar(1)")
+    interceptEquals[IllegalArgumentException](toTTypeId(CharType(1)))(
+      "Unrecognized type name: char(1)")
+    interceptEquals[IllegalArgumentException](toTTypeId(VarcharType(1)))(
+      "Unrecognized type name: varchar(1)")
   }
 
   test("toTTypeQualifiers") {

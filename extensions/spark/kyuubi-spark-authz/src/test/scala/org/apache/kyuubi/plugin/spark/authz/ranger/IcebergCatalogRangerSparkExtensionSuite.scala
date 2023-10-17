@@ -103,12 +103,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       """.stripMargin
 
     // MergeIntoTable:  Using a MERGE INTO Statement
-    val e1 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(mergeIntoSql)))
-    assert(e1.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/id]"))
+    interceptContains[AccessControlException] {
+      doAs(someone, sql(mergeIntoSql))
+    }(s"does not have [select] privilege on [$namespace1/$table1/id]")
 
     withSingleCallEnabled {
       interceptContains[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
@@ -181,8 +178,8 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
       doAs(
         createOnlyUser, {
-          val e = intercept[AccessControlException](sql(select).collect())
-          assert(e.getMessage === errorMessage("select", s"$namespace1/$table/key"))
+          interceptEquals[AccessControlException](sql(select).collect())(
+            errorMessage("select", s"$namespace1/$table/key"))
         })
     }
   }
@@ -240,10 +237,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   test("[KYUUBI #4255] DESCRIBE TABLE") {
-    val e1 = intercept[AccessControlException](
-      doAs(someone, sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain()))
-    assert(e1.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1]"))
+    interceptContains[AccessControlException] {
+      doAs(someone, sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain())
+    }(s"does not have [select] privilege on [$namespace1/$table1]")
   }
 
   test("CALL RewriteDataFilesProcedure") {

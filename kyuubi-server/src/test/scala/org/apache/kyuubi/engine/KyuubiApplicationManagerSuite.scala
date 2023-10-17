@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
+import org.apache.kyuubi.util.AssertionUtils._
 
 class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
   test("application access path") {
@@ -32,10 +33,9 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
     KyuubiApplicationManager.checkApplicationAccessPath(path, noLocalDirLimitConf)
 
     path = "/apache/kyuubijar"
-    var e = intercept[KyuubiException] {
+    interceptContains[KyuubiException] {
       KyuubiApplicationManager.checkApplicationAccessPath(path, localDirLimitConf)
-    }
-    assert(e.getMessage.contains("is not in the local dir allow list"))
+    }("is not in the local dir allow list")
     KyuubiApplicationManager.checkApplicationAccessPath(path, noLocalDirLimitConf)
 
     path = "hdfs:/apache/kyuubijar"
@@ -43,10 +43,9 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
     KyuubiApplicationManager.checkApplicationAccessPath(path, noLocalDirLimitConf)
 
     path = "path/to/kyuubijar"
-    e = intercept[KyuubiException] {
+    interceptContains[KyuubiException] {
       KyuubiApplicationManager.checkApplicationAccessPath(path, localDirLimitConf)
-    }
-    assert(e.getMessage.contains("please use absolute path"))
+    }("please use absolute path")
     KyuubiApplicationManager.checkApplicationAccessPath(path, noLocalDirLimitConf)
 
     var appConf = Map("spark.files" -> "/apache/kyuubi/jars/a.jar")

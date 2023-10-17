@@ -155,9 +155,40 @@ object AssertionUtils {
    */
   def interceptContains[T <: Exception](f: => Any)(contained: String)(implicit
       classTag: ClassTag[T],
+      prettifier: Prettifier,
       pos: Position): Unit = {
     assert(contained != null)
     val exception = intercept[T](f)(classTag, pos)
-    assert(exception.getMessage.contains(contained))
+    val exceptionMessage = exception.getMessage
+    withClue(s"'$exceptionMessage' expected containing '$contained'") {
+      assert(exception.getMessage.contains(contained))(prettifier, pos)
+    }
+  }
+
+  def interceptContainsAny[T <: Exception](f: => Any)(contained: String*)(implicit
+      classTag: ClassTag[T],
+      prettifier: Prettifier,
+      pos: Position): Unit = {
+    val exception = intercept[T](f)(classTag, pos)
+    val exceptionMessage = exception.getMessage
+    withClue(s"'$exceptionMessage' expected containing any of [${contained.mkString(",")}]") {
+      assert(contained.exists(exceptionMessage.contains(_)))(prettifier, pos)
+    }
+  }
+
+  /**
+   * Asserts that the given function throws an exception of the given type
+   * and with the exception message starting with the prefix string
+   */
+  def interceptStartsWith[T <: Exception](f: => Any)(prefix: String)(implicit
+      classTag: ClassTag[T],
+      prettifier: Prettifier,
+      pos: Position): Unit = {
+    assert(prefix != null)
+    val exception = intercept[T](f)(classTag, pos)
+    val exceptionMessage = exception.getMessage
+    withClue(s"'$exceptionMessage' expected starting with '$prefix''") {
+      assert(exception.getMessage.startsWith(prefix))(prettifier, pos)
+    }
   }
 }

@@ -39,6 +39,7 @@ import org.apache.kyuubi.shaded.curator.framework.CuratorFrameworkFactory
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry
 import org.apache.kyuubi.shaded.zookeeper.ZooDefs
 import org.apache.kyuubi.shaded.zookeeper.data.ACL
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT
@@ -131,9 +132,8 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
       assert(options("useKeyTab").toString.toBoolean)
 
       conf.set(HA_ZK_AUTH_KEYTAB.key, s"${keytab.getName}")
-      val e = intercept[IOException](setUpZooKeeperAuth(conf))
-      assert(
-        e.getMessage === s"${HA_ZK_AUTH_KEYTAB.key}: ${getKeyTabFile(conf).get} does not exists")
+      interceptEquals[IOException](setUpZooKeeperAuth(conf))(
+        s"${HA_ZK_AUTH_KEYTAB.key}: ${getKeyTabFile(conf).get} does not exists")
     }
   }
 

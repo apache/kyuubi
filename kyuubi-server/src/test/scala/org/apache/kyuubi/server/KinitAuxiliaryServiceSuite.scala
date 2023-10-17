@@ -22,6 +22,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi.KerberizedTestHelper
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceState
+import org.apache.kyuubi.util.AssertionUtils._
 
 class KinitAuxiliaryServiceSuite extends KerberizedTestHelper {
 
@@ -40,8 +41,8 @@ class KinitAuxiliaryServiceSuite extends KerberizedTestHelper {
     tryWithSecurityEnabled {
       val service = new KinitAuxiliaryService()
       val conf = KyuubiConf()
-      val e = intercept[IllegalArgumentException](service.initialize(conf))
-      assert(e.getMessage === "requirement failed: principal or keytab is missing")
+      interceptEquals[IllegalArgumentException](service.initialize(conf))(
+        "requirement failed: principal or keytab is missing")
       conf.set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
         .set(KyuubiConf.SERVER_KEYTAB, testKeytab)
         .set(KyuubiConf.KINIT_INTERVAL, 0L)

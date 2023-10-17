@@ -22,22 +22,22 @@ import javax.security.sasl.AuthenticationException
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthenticationProviderFactory.getAuthenticationProvider
+import org.apache.kyuubi.util.AssertionUtils._
 
 class CustomAuthenticationProviderImplSuite extends KyuubiFunSuite {
   test("Test user defined authentication") {
     val conf = KyuubiConf()
 
-    val e1 = intercept[AuthenticationException](
-      getAuthenticationProvider(AuthMethods.withName("CUSTOM"), conf))
-    assert(e1.getMessage.contains(
-      "authentication.custom.class must be set when auth method was CUSTOM."))
+    interceptContains[AuthenticationException](
+      getAuthenticationProvider(AuthMethods.withName("CUSTOM"), conf))(
+      "authentication.custom.class must be set when auth method was CUSTOM.")
 
     conf.set(
       KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
       classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
     val p1 = getAuthenticationProvider(AuthMethods.withName("CUSTOM"), conf)
-    val e2 = intercept[AuthenticationException](p1.authenticate("test", "test"))
-    assert(e2.getMessage.contains("Username or password is not valid!"))
+    interceptContains[AuthenticationException](p1.authenticate("test", "test"))(
+      "Username or password is not valid!")
 
     p1.authenticate("user", "password")
   }

@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 import scala.util.Random
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.ThreadUtils
 
 class SessionLimiterSuite extends KyuubiFunSuite {
@@ -143,13 +144,10 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
       .foreach(c => assert(c.get() == 0))
 
-    val caught = intercept[KyuubiSQLException] {
+    interceptEquals[KyuubiSQLException] {
       val userIpAddress = UserIpAddress("user002", ipAddress)
       limiter.increment(userIpAddress)
-    }
-
-    assert(caught.getMessage.equals(
-      "Connection denied because the user is in the deny user list. (user: user002)"))
+    }("Connection denied because the user is in the deny user list. (user: user002)")
   }
 
   test("test refresh unlimited users and deny users") {

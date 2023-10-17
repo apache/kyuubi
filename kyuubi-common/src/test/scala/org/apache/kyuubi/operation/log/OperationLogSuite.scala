@@ -29,6 +29,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.session.NoopSessionManager
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.ThriftUtils
 
 class OperationLogSuite extends KyuubiFunSuite {
@@ -159,8 +160,8 @@ class OperationLogSuite extends KyuubiFunSuite {
     log1.write("some msg here \n")
     log1.close()
     log1.write("some msg here again")
-    val e = intercept[KyuubiSQLException](log1.read(-1))
-    assert(e.getMessage.contains(s"${sHandle.identifier}/${oHandle.identifier}"))
+    interceptContains[KyuubiSQLException](log1.read(-1))(
+      s"${sHandle.identifier}/${oHandle.identifier}")
   }
 
   test("test fail to init operation log root dir") {

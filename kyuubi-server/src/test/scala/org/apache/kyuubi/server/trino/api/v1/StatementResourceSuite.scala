@@ -29,6 +29,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, TrinoRestFrontendT
 import org.apache.kyuubi.server.trino.api.{Query, TrinoContext}
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.util.AssertionUtils._
 
 class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHelper {
 
@@ -88,8 +89,8 @@ class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHe
       s"${Query.KYUUBI_SESSION_ID}=${TrinoContext.urlEncode(sessionHandle.identifier.toString)}")
       .delete()
     assert(nextResponse.getStatus == 204)
-    val exception = intercept[KyuubiSQLException](sessionManager.getSession(sessionHandle))
-    assert(exception.getMessage === s"Invalid $sessionHandle")
+    interceptEquals[KyuubiSQLException](sessionManager.getSession(sessionHandle))(
+      s"Invalid $sessionHandle")
   }
 
   private def getData(current: TrinoResponse): TrinoResponse = {
