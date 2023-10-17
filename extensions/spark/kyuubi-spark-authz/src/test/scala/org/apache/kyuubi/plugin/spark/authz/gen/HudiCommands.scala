@@ -72,11 +72,46 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
   }
 
+  val DropHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.DropHoodieTableCommand"
+    val tableTypeDesc =
+      TableTypeDesc(
+        "tableIdentifier",
+        classOf[TableIdentifierTableTypeExtractor],
+        Seq(TEMP_VIEW))
+    TableCommandSpec(
+      cmd,
+      Seq(TableDesc(
+        "tableIdentifier",
+        classOf[TableIdentifierTableExtractor],
+        tableTypeDesc = Some(tableTypeDesc))),
+      DROPTABLE)
+  }
+
+  val RepairHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.RepairHoodieTableCommand"
+    TableCommandSpec(cmd, Seq(TableDesc("tableName", classOf[TableIdentifierTableExtractor])), MSCK)
+  }
+
+  val TruncateHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.TruncateHoodieTableCommand"
+    val columnDesc = ColumnDesc("partitionSpec", classOf[PartitionOptionColumnExtractor])
+    val tableDesc =
+      TableDesc(
+        "tableIdentifier",
+        classOf[TableIdentifierTableExtractor],
+        columnDesc = Some(columnDesc))
+    TableCommandSpec(cmd, Seq(tableDesc), TRUNCATETABLE)
+  }
+
   val data: Array[TableCommandSpec] = Array(
     AlterHoodieTableAddColumnsCommand,
     AlterHoodieTableChangeColumnCommand,
     AlterHoodieTableDropPartitionCommand,
     AlterHoodieTableRenameCommand,
     AlterTableCommand,
-    Spark31AlterTableCommand)
+    Spark31AlterTableCommand,
+    DropHoodieTableCommand,
+    RepairHoodieTableCommand,
+    TruncateHoodieTableCommand)
 }
