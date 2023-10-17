@@ -371,6 +371,24 @@
                             </excludes>
                         </filter>
                     </filters>
+                    <relocations>
+                        <relocation>
+                            <pattern>org.apache.ranger</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.ranger</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.codehaus.jackson.jaxrs</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.codehaus.jackson.jaxrs</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.sun.jersey</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.sun.jersey</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.kstruct.gethostname4j</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.kstruct.gethostname4j</shadedPattern>
+                        </relocation>
+                    </relocations>
                     <transformers>
                         <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"></transformer>
                     </transformers>
