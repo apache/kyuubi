@@ -425,11 +425,19 @@ jobs:
       - name: Cat kyuubi server log
         if: failure()
         run: kubectl logs kyuubi-test
+      - name: Copy spark engine from kyuubi pod
+        if: failure()
+        run: kubectl cp kyuubi-test:/opt/kyuubi/work ./target/work
       - name: Cat spark driver log
         if: failure()
         run: |
           kubectl get pods
           kubectl get pods | grep driver | awk -F " " '{print$1}' | xargs -I {} kubectl logs {}
+      - name: Get spark executor pod
+        if: failure()
+        run: |
+          kubectl get pods
+          kubectl get pods | grep exec | awk -F " " '{print$1}' | xargs -I {} kubectl get pod -o yaml {}
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -437,6 +445,7 @@ jobs:
           name: unit-tests-log-kyuubi-on-k8s-it
           path: |
             **/target/unit-tests.log
+            **/target/work/**
 
   spark-on-k8s-it:
     name: Spark Engine On Kubernetes Integration Test
