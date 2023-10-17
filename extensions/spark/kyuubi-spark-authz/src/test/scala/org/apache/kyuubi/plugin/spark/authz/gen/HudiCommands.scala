@@ -72,11 +72,42 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
   }
 
+  val CreateHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.CreateHoodieTableCommand"
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
+  }
+
+  val CreateHoodieTableAsSelectCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.CreateHoodieTableAsSelectCommand"
+    CreateHoodieTableCommand.copy(
+      classname = cmd,
+      opType = CREATETABLE_AS_SELECT,
+      queryDescs = Seq(QueryDesc("query")))
+  }
+
+  val CreateHoodieTableLikeCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.CreateHoodieTableLikeCommand"
+    val tableDesc1 = TableDesc(
+      "targetTable",
+      classOf[TableIdentifierTableExtractor],
+      setCurrentDatabaseIfMissing = true)
+    val tableDesc2 = TableDesc(
+      "sourceTable",
+      classOf[TableIdentifierTableExtractor],
+      isInput = true,
+      setCurrentDatabaseIfMissing = true)
+    TableCommandSpec(cmd, Seq(tableDesc1, tableDesc2), CREATETABLE)
+  }
+
   val data: Array[TableCommandSpec] = Array(
     AlterHoodieTableAddColumnsCommand,
     AlterHoodieTableChangeColumnCommand,
     AlterHoodieTableDropPartitionCommand,
     AlterHoodieTableRenameCommand,
     AlterTableCommand,
-    Spark31AlterTableCommand)
+    Spark31AlterTableCommand,
+    CreateHoodieTableCommand,
+    CreateHoodieTableAsSelectCommand,
+    CreateHoodieTableLikeCommand)
 }

@@ -129,4 +129,81 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s"does not have [alter] privilege on [$namespace1/$table1]")
     }
   }
+
+  test("CreateHoodieTableCommand") {
+    withCleanTmpResources(Seq((namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      interceptContains[AccessControlException](
+        doAs(
+          someone,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+               |USING HUDI
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin)))(s"does not have [create] privilege on [$namespace1/$table1]")
+    }
+  }
+
+  test("CreateHoodieTableAsSelectCommand") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING HUDI
+             |OPTIONS (
+             | type = 'cow',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |""".stripMargin))
+      interceptContains[AccessControlException](
+        doAs(
+          someone,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table2
+               |USING HUDI
+               |AS
+               |SELECT id FROM $namespace1.$table1
+               |""".stripMargin)))(s"does not have [select] privilege on [$namespace1/$table1/id]")
+    }
+  }
+
+  test("CreateHoodieTableLikeCommand") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING HUDI
+             |OPTIONS (
+             | type = 'cow',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |""".stripMargin))
+      interceptContains[AccessControlException](
+        doAs(
+          someone,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table2
+               |LIKE  $namespace1.$table1
+               |USING HUDI
+               |""".stripMargin)))(s"does not have [select] privilege on [$namespace1/$table1]")
+    }
+  }
 }

@@ -1514,6 +1514,60 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.hudi.command.CreateHoodieTableAsSelectCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE_AS_SELECT",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.CreateHoodieTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.CreateHoodieTableLikeCommand",
+  "tableDescs" : [ {
+    "fieldName" : "targetTable",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : true
+  }, {
+    "fieldName" : "sourceTable",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : true
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.hudi.command.Spark31AlterTableCommand",
   "tableDescs" : [ {
     "fieldName" : "table",
