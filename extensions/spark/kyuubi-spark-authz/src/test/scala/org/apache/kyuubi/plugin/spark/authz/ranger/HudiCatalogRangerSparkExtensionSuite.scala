@@ -223,11 +223,9 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |)
              |PARTITIONED BY(city)
              |""".stripMargin))
-      interceptContains[AccessControlException](
-        doAs(
-          someone,
-          sql(s"DROP TABLE IF EXISTS $namespace1.$table1".stripMargin)))(
-        s"does not have [drop] privilege on [$namespace1/$table1]")
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(s"DROP TABLE IF EXISTS $namespace1.$table1".stripMargin))
+      }(s"does not have [drop] privilege on [$namespace1/$table1]")
     }
   }
 
