@@ -180,7 +180,10 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("CreateHoodieTableLikeCommand") {
-    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+    withCleanTmpResources(Seq(
+      (s"$namespace1.$table1", "table"),
+      (s"$namespace1.$table2", "table"),
+      (namespace1, "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(
         admin,
@@ -213,7 +216,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("DropHoodieTableCommand") {
-    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+    withCleanTmpResources(Seq((namespace1, "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(
         admin,
@@ -238,13 +241,13 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("RepairHoodieTableCommand") {
-    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+    withCleanTmpResources(Seq((s"$namespace1.$table2", "table"), (namespace1, "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(
         admin,
         sql(
           s"""
-             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table2(id int, name string, city string)
              |USING HUDI
              |OPTIONS (
              | type = 'cow',
@@ -254,10 +257,10 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |PARTITIONED BY(city)
              |""".stripMargin))
 
-      val repairTableSql = s"MSCK REPAIR TABLE $namespace1.$table1"
+      val repairTableSql = s"MSCK REPAIR TABLE $namespace1.$table2"
       interceptContains[AccessControlException] {
         doAs(someone, sql(repairTableSql))
-      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      }(s"does not have [alter] privilege on [$namespace1/$table2]")
       doAs(admin, sql(repairTableSql))
     }
   }
