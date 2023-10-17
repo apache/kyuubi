@@ -16,17 +16,18 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-// scalastyle:off
 import scala.util.Try
 
 import org.scalatest.Outcome
 
+// scalastyle:off
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.IcebergTest
+import org.apache.kyuubi.util.AssertionUtils._
 
 /**
  * Tests for RangerSparkExtensionSuite
@@ -36,14 +37,14 @@ import org.apache.kyuubi.tags.IcebergTest
 class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
-    if (isSparkV31OrGreater)
-      "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
-    else ""
+    "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
 
   val catalogV2 = "local"
   val namespace1 = icebergNamespace
   val table1 = "table1"
   val outputTable1 = "outputTable1"
+  val bobNamespace = "default_bob"
+  val bobSelectTable = "table_select_bob_1"
 
   override def withFixture(test: NoArgTest): Outcome = {
     assume(isSparkV31OrGreater)
@@ -76,6 +77,11 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         admin,
         sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
           " (id int, name string, city string) USING iceberg"))
+
+      doAs(
+        admin,
+        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$bobNamespace.$bobSelectTable" +
+          " (id int, name string, city string) USING iceberg"))
     }
   }
 
@@ -104,14 +110,19 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s" on [$namespace1/$table1/id]"))
 
     withSingleCallEnabled {
-      val e2 = intercept[AccessControlException](
-        doAs(
-          someone,
-          sql(mergeIntoSql)))
-      assert(e2.getMessage.contains(s"does not have" +
-        s" [select] privilege" +
-        s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
-        s" [update] privilege on [$namespace1/$outputTable1]"))
+      interceptContains[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
+        if (isSparkV35OrGreater) {
+          s"does not have [select] privilege on [$namespace1/table1/id" +
+            s",$namespace1/$table1/name,$namespace1/$table1/city]"
+        } else {
+          "does not have " +
+            s"[select] privilege on [$namespace1/$table1/id,$namespace1/$table1/name,$namespace1/$table1/city]," +
+            s" [update] privilege on [$bobNamespace/$bobSelectTable]"
+        })
+
+      interceptContains[AccessControlException] {
+        doAs(bob, sql(mergeIntoSql))
+      }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
     }
 
     doAs(admin, sql(mergeIntoSql))
@@ -119,13 +130,13 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("[KYUUBI #3515] UPDATE TABLE") {
     // UpdateTable
-    val e1 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
-          " WHERE id=1")))
-    assert(e1.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$namespace1/$table1]"))
+    interceptContains[AccessControlException] {
+      doAs(someone, sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou'  WHERE id=1"))
+    }(if (isSparkV35OrGreater) {
+      s"does not have [select] privilege on [$namespace1/$table1/id]"
+    } else {
+      s"does not have [update] privilege on [$namespace1/$table1]"
+    })
 
     doAs(
       admin,
@@ -135,10 +146,17 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("[KYUUBI #3515] DELETE FROM TABLE") {
     // DeleteFromTable
-    val e6 = intercept[AccessControlException](
-      doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2")))
-    assert(e6.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$namespace1/$table1]"))
+    interceptContains[AccessControlException] {
+      doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
+    }(if (isSparkV34OrGreater) {
+      s"does not have [select] privilege on [$namespace1/$table1/id]"
+    } else {
+      s"does not have [update] privilege on [$namespace1/$table1]"
+    })
+
+    interceptContains[AccessControlException] {
+      doAs(bob, sql(s"DELETE FROM $catalogV2.$bobNamespace.$bobSelectTable WHERE id=2"))
+    }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
 
     doAs(admin, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
   }

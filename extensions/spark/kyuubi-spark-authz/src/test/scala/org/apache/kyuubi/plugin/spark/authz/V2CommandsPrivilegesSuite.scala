@@ -161,7 +161,11 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(namespace)(po.dbname)
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
-      assert(po.owner.isEmpty)
+      if (isSparkV34OrGreater) {
+        checkV2TableOwner(po)
+      } else {
+        assert(po.owner.isEmpty)
+      }
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.CREATE)
     }
@@ -193,7 +197,11 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(namespace)(po.dbname)
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
-      assert(po.owner.isEmpty)
+      if (isSparkV34OrGreater) {
+        checkV2TableOwner(po)
+      } else {
+        assert(po.owner.isEmpty)
+      }
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.CREATE)
     }
