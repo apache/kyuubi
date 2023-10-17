@@ -31,12 +31,14 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
   private var zks: ZooKeeperServer = _
   private var serverFactory: NIOServerCnxnFactory = _
   private var dataDirectory: File = _
+  private var dataLogDirectory: File = _
   // TODO: Is it right in prod?
   private val deleteDataDirectoryOnClose = true
   private var host: String = _
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     dataDirectory = new File(conf.get(ZK_DATA_DIR))
+    dataLogDirectory = new File(conf.get(ZK_DATA_LOG_DIR))
     val clientPort = conf.get(ZK_CLIENT_PORT)
     val tickTime = conf.get(ZK_TICK_TIME)
     val maxClientCnxns = conf.get(ZK_MAX_CLIENT_CONNECTIONS)
@@ -51,7 +53,7 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
     }
 
     try {
-      zks = new ZooKeeperServer(dataDirectory, dataDirectory, tickTime)
+      zks = new ZooKeeperServer(dataDirectory, dataLogDirectory, tickTime)
       zks.setMinSessionTimeout(minSessionTimeout)
       zks.setMaxSessionTimeout(maxSessionTimeout)
 
@@ -79,7 +81,10 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
     if (getServiceState == ServiceState.STARTED) {
       if (null != serverFactory) serverFactory.shutdown()
       if (null != zks) zks.shutdown()
-      if (deleteDataDirectoryOnClose) deleteDirectoryRecursively(dataDirectory)
+      if (deleteDataDirectoryOnClose) {
+        deleteDirectoryRecursively(dataDirectory)
+        deleteDirectoryRecursively(dataLogDirectory)
+      }
     }
     super.stop()
   }
