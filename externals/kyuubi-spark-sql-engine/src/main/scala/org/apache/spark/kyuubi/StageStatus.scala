@@ -28,6 +28,6 @@ class SparkStageInfo(val stageId: Int, val numTasks: Int) {
   val numCompleteTasks = new AtomicInteger(0)
 }
 
-class SparkJobInfo(val numStages: Int, val stageIds: Seq[Int]) {
-  var numCompleteStages = new AtomicInteger(0)
+class SparkJobInfo(val numStages: Int, val stageIds: Set[Int]) {
+  val numCompleteStages = new AtomicInteger(0)
 }
