@@ -195,7 +195,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |)
              |PARTITIONED BY(city)
              |""".stripMargin))
-      interceptContains[AccessControlException](
+      interceptContains[AccessControlException] {
         doAs(
           someone,
           sql(
@@ -203,7 +203,8 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                |CREATE TABLE IF NOT EXISTS $namespace1.$table2
                |LIKE  $namespace1.$table1
                |USING HUDI
-               |""".stripMargin)))(s"does not have [select] privilege on [$namespace1/$table1]")
+               |""".stripMargin))
+      }(s"does not have [select] privilege on [$namespace1/$table1]")
     }
   }
 
@@ -224,7 +225,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |PARTITIONED BY(city)
              |""".stripMargin))
       interceptContains[AccessControlException] {
-        doAs(someone, sql(s"DROP TABLE IF EXISTS $namespace1.$table1".stripMargin))
+        doAs(someone, sql(s"DROP TABLE IF EXISTS $namespace1.$table1"))
       }(s"does not have [drop] privilege on [$namespace1/$table1]")
     }
   }
@@ -246,11 +247,9 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |PARTITIONED BY(city)
              |""".stripMargin))
 
-      interceptContains[AccessControlException](
-        doAs(
-          someone,
-          sql(s"MSCK REPAIR TABLE $namespace1.$table1".stripMargin)))(
-        s"does not have [alter] privilege on [$namespace1/$table1]")
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(s"MSCK REPAIR TABLE $namespace1.$table1"))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
     }
   }
 
@@ -270,11 +269,9 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |)
              |PARTITIONED BY(city)
              |""".stripMargin))
-      interceptContains[AccessControlException](
-        doAs(
-          someone,
-          sql(s"TRUNCATE TABLE $namespace1.$table1".stripMargin)))(
-        s"does not have [update] privilege on [$namespace1/$table1]")
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(s"TRUNCATE TABLE $namespace1.$table1"))
+      }(s"does not have [update] privilege on [$namespace1/$table1]")
     }
   }
 }
