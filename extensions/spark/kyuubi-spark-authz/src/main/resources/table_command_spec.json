@@ -1514,6 +1514,43 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.hudi.command.CompactionHoodieTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.CompactionShowHoodieTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "SHOW_TBLPROPERTIES",
+  "queryDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.hudi.command.CreateHoodieTableAsSelectCommand",
   "tableDescs" : [ {
     "fieldName" : "table",
