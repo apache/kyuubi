@@ -267,7 +267,8 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("IndexBasedCommand") {
-    assume(!isSparkV33OrGreater,
+    assume(
+      !isSparkV33OrGreater,
       "Hudi index creation not supported on Spark 3.3 or greater currently")
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
