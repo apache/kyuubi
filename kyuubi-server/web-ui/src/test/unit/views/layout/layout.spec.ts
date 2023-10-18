@@ -16,7 +16,7 @@
  */
 
 import { mount } from '@vue/test-utils'
-import Layout from '@/views/layout/index.vue'
+import Layout from '@/layout/index.vue'
 import { expect, test } from 'vitest'
 import { createI18n, getStore } from '@/test/unit/utils'
 
