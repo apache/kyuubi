@@ -265,7 +265,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("CompactionHoodieTable/CompactionShowHoodieTable Command") {
+  test("CompactionHoodieTableCommand / CompactionShowHoodieTableCommand") {
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(

@@ -145,12 +145,12 @@ object HudiCommands {
     AlterHoodieTableDropPartitionCommand,
     AlterHoodieTableRenameCommand,
     AlterTableCommand,
-    Spark31AlterTableCommand,
-    CreateHoodieTableCommand,
     CreateHoodieTableAsSelectCommand,
+    CreateHoodieTableCommand,
     CreateHoodieTableLikeCommand,
+    CompactionHoodieTableCommand,
+    CompactionShowHoodieTableCommand,
     DropHoodieTableCommand,
     TruncateHoodieTableCommand,
-    CompactionHoodieTableCommand,
-    CompactionShowHoodieTableCommand)
+    Spark31AlterTableCommand)
 }
