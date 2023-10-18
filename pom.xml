@@ -133,6 +133,7 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <etcd.version>0.7.3</etcd.version>
+        <delta.artifact>delta-core</delta.artifact>
         <delta.version>2.4.0</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
@@ -1192,7 +1193,7 @@
 
             <dependency>
                 <groupId>io.delta</groupId>
-                <artifactId>delta-core_${scala.binary.version}</artifactId>
+                <artifactId>${delta.artifact}_${scala.binary.version}</artifactId>
                 <version>${delta.version}</version>
                 <exclusions>
                     <!--
@@ -2199,6 +2200,7 @@
             <properties>
                 <spark.version>3.1.3</spark.version>
                 <spark.binary.version>3.1</spark.binary.version>
+                <delta.artifact>delta-core</delta.artifact>
                 <delta.version>1.0.1</delta.version>
                 <!-- Iceberg removed the support for Spark 3.1 in apache/iceberg#8661 since 1.4.0 -->
                 <iceberg.version>1.3.1</iceberg.version>
@@ -2216,6 +2218,7 @@
             <properties>
                 <spark.version>3.2.4</spark.version>
                 <spark.binary.version>3.2</spark.binary.version>
+                <delta.artifact>delta-core</delta.artifact>
                 <delta.version>2.0.2</delta.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.2${spark.archive.scala.suffix}.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
@@ -2231,6 +2234,7 @@
             </modules>
             <properties>
                 <delta.version>2.3.0</delta.version>
+                <delta.artifact>delta-core</delta.artifact>
                 <spark.version>3.3.3</spark.version>
                 <spark.binary.version>3.3</spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
@@ -2244,6 +2248,7 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
+                <delta.artifact>delta-core</delta.artifact>
                 <delta.version>2.4.0</delta.version>
                 <spark.version>3.4.1</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
@@ -2257,7 +2262,8 @@
                 <module>extensions/spark/kyuubi-extension-spark-3-5</module>
             </modules>
             <properties>
-                <delta.version>2.4.0</delta.version>
+                <delta.artifact>delta-spark</delta.artifact>
+                <delta.version>3.0.0</delta.version>
                 <!-- Remove this when Hudi supports Spark 3.5 -->
                 <hudi.spark.binary.version>3.4</hudi.spark.binary.version>
                 <spark.version>3.5.0</spark.version>
