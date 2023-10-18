@@ -323,12 +323,6 @@
             <artifactId>scala-collection-compat_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-spark-${spark.binary.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -354,6 +348,22 @@
                     <groupId>org.apache.hudi</groupId>
                     <artifactId>hudi-spark${hudi.spark.binary.version}-bundle_${scala.binary.version}</artifactId>
                     <version>${hudi.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!--
+          Add spark-authz-paimon-test profile here to avoid import Apache Hudi when enable spark-3.5.
+          Can remove this profile after Apache Paimon support Spark 3.5
+          https://issues.apache.org/jira/browse/HUDI-6296
+          -->
+        <profile>
+            <id>spark-authz-paimon-test</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.paimon</groupId>
+                    <artifactId>paimon-spark-${spark.binary.version}</artifactId>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
