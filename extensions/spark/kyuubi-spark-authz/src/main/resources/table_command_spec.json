@@ -1579,7 +1579,7 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "CREATETABLE",
+  "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.DropIndexCommand",
@@ -1593,7 +1593,7 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "DROPTABLE",
+  "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.RefreshIndexCommand",
