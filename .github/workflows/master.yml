@@ -53,9 +53,9 @@ jobs:
           - '3.3'
           - '3.4'
           - '3.5'
-        spark-archive: [ "" ]
-        exclude-tags: [ "" ]
-        comment: [ "normal" ]
+        spark-archive: [""]
+        exclude-tags: [""]
+        comment: ["normal"]
         include:
           - java: 8
             spark: '3.4'
@@ -192,9 +192,9 @@ jobs:
             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.16.1 -Dflink.archive.name=flink-1.16.1-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.16-binary'
           - java: 8
-            flink: '1.18'
-            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.17.1 -Dflink.archive.name=flink-1.17.1-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.17-binary'
+            flink: '1.17'
+            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.18.0 -Dflink.archive.name=flink-1.18.0-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-1.18-binary'
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM
@@ -492,7 +492,7 @@ jobs:
       fail-fast: false
       matrix:
         java: [ 8 ]
-        zookeeper: [ "3.4", "3.5", "3.6", "3.7" ]
+        zookeeper: ["3.4", "3.5", "3.6", "3.7" ]
         comment: [ "normal" ]
     steps:
       - uses: actions/checkout@v3

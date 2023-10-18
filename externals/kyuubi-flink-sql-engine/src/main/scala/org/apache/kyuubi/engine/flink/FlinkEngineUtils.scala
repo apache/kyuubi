@@ -119,7 +119,7 @@ object FlinkEngineUtils extends Logging {
         .build()
         .newInstance(flinkConf, commandLines)
         .asInstanceOf[DefaultContext]
-    } else if (FLINK_RUNTIME_VERSION === "1.17" || FLINK_RUNTIME_VERSION === "1.18") {
+    } else if (FLINK_RUNTIME_VERSION >= "1.17") {
       invokeAs[DefaultContext](
         classOf[DefaultContext],
         "load",
