@@ -94,7 +94,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   test("[KYUUBI #3515] MERGE INTO") {
     val mergeIntoSql =
       s"""
-         |MERGE INTO $catalogV2.$namespace1.$outputTable1 AS target
+         |MERGE INTO $catalogV2.$bobNamespace.$bobSelectTable AS target
          |USING $catalogV2.$namespace1.$table1  AS source
          |ON target.id = source.id
          |WHEN MATCHED AND (target.name='delete') THEN DELETE
