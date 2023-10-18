@@ -65,7 +65,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("CreateTable") {
-    withCleanTmpResources(Seq((s  "$catalogV2.$namespace1.$table1", "table"))) {
+    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table1", "table"))) {
       val createTable =
         s"""
            |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
