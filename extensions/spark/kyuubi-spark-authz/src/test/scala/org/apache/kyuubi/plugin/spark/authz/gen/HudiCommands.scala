@@ -181,5 +181,4 @@ object HudiCommands {
     ShowIndexCommand,
     Spark31AlterTableCommand,
     TruncateHoodieTableCommand)
-)
 }
