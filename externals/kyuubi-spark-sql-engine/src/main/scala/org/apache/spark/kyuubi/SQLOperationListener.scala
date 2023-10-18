@@ -20,7 +20,7 @@ package org.apache.spark.kyuubi
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
-import scala.jdk.CollectionConverters._
+import scala.collection.JavaConverters._
 
 import org.apache.spark.scheduler._
 import org.apache.spark.sql.SparkSession
