@@ -90,7 +90,7 @@ jobs:
         run: |
           SPOTLESS_BLACK_VERSION=$(build/mvn help:evaluate -Dexpression=spotless.python.black.version -q -DforceStdout)
           pip install black==$SPOTLESS_BLACK_VERSION
-          build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python
+          build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python,spark-3.1
       - name: setup npm
         uses: actions/setup-node@v3
         with:
