@@ -77,22 +77,7 @@ jobs:
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.5.0 -Dspark.archive.name=spark-3.5.0-bin-hadoop3.tgz -Pzookeeper-3.6'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-3.5-binary'
-          - java: 8
-            spark: '3.5'
-            deactivate-profiles: '-P !spark-authz-paimon-test'
-          - java: 11
-            spark: '3.5'
-            deactivate-profiles: '-P !spark-authz-paimon-test'
-          - java: 17
-            spark: '3.5'
-            deactivate-profiles: '-P !spark-authz-paimon-test'
         exclude:
-          - java: 8
-            spark: '3.5'
-          - java: 11
-            spark: '3.5'
-          - java: 17
-            spark: '3.5'
           # SPARK-33772: Spark supports JDK 17 since 3.3.0
           - java: 17
             spark: '3.1'
@@ -123,10 +108,7 @@ jobs:
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
-          -Pspark-${{ matrix.spark }} \
-          -Pspark-authz-hudi-test -Pspark-authz-paimon-test \
-          ${{ matrix.deactivate-profiles }} \
-          ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
+          -Pspark-${{ matrix.spark }} -Pspark-authz-hudi-test ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
           matrix.java == 8 &&

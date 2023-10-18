@@ -185,6 +185,7 @@
         <netty.version>4.1.93.Final</netty.version>
         <openai.java.version>0.12.0</openai.java.version>
         <paimon.version>0.5.0-incubating</paimon.version>
+        <paimon.spark.binary.version>${spark.binary.version}</paimon.spark.binary.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -1488,7 +1489,7 @@
 
             <dependency>
                 <groupId>org.apache.paimon</groupId>
-                <artifactId>paimon-spark-${spark.binary.version}</artifactId>
+                <artifactId>paimon-spark-${paimon.spark.binary.version}</artifactId>
                 <version>${paimon.version}</version>
             </dependency>
         </dependencies>
@@ -2273,6 +2274,8 @@
                 <delta.version>3.0.0</delta.version>
                 <!-- Remove this when Hudi supports Spark 3.5 -->
                 <hudi.spark.binary.version>3.4</hudi.spark.binary.version>
+                <!-- Remove this when Paimon supports Spark 3.5 -->
+                <paimon.spark.binary.version>3.4</paimon.spark.binary.version>
                 <spark.version>3.5.0</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.PySparkTest,org.apache.kyuubi.tags.PaimonTest</maven.plugin.scalatest.exclude.tags>
