@@ -47,7 +47,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       spark.conf.set(s"spark.sql.catalog.$catalogV2", "org.apache.paimon.spark.SparkCatalog")
       spark.conf.set(
         s"spark.sql.catalog.$catalogV2.warehouse",
-        Utils.createTempDir("iceberg-hadoop").toString)
+        Utils.createTempDir(catalogV2).toString)
       super.beforeAll()
     }
 
