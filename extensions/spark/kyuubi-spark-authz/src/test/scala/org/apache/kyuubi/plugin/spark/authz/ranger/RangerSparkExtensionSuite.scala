@@ -748,7 +748,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #5417] should not check dependent subquery plan privilege") {
+  test("[KYUUBI #5417] should not check scalar-subquery in permanent view") {
     val db1 = defaultDb
     val table1 = "table1"
     val table2 = "table2"
@@ -784,6 +784,50 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |    FROM $db1.$table1)
              |SELECT id as new_id FROM $db1.$table2
              |WHERE scope = (SELECT max_scope FROM temp)
+             |""".stripMargin))
+      // Will just check permanent view privilege.
+      val e2 = intercept[AccessControlException](
+        doAs(someone, sql(s"SELECT * FROM $db1.$view1".stripMargin).show()))
+      assert(e2.getMessage.contains(s"does not have [select] privilege on [$db1/$view1/new_id]"))
+    }
+  }
+
+  test("[KYUUBI #5417] should not check in-subquery in permanent view") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val table2 = "table2"
+    val view1 = "view1"
+    withCleanTmpResources(
+      Seq((s"$db1.$table1", "table"), (s"$db1.$table2", "table"), (s"$db1.$view1", "view"))) {
+      doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+      doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table2 (id int, scope int)"))
+
+      val e1 = intercept[AccessControlException] {
+        doAs(
+          someone,
+          sql(
+            s"""
+               |WITH temp AS (
+               |    SELECT max(scope) max_scope
+               |    FROM $db1.$table1)
+               |SELECT id as new_id FROM $db1.$table2
+               |WHERE scope in (SELECT max_scope FROM temp)
+               |""".stripMargin).show())
+      }
+      // Will first check subquery privilege.
+      assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table1/scope]"))
+
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE VIEW $db1.$view1
+             |AS
+             |WITH temp AS (
+             |    SELECT max(scope) max_scope
+             |    FROM $db1.$table1)
+             |SELECT id as new_id FROM $db1.$table2
+             |WHERE scope in (SELECT max_scope FROM temp)
              |""".stripMargin))
       // Will just check permanent view privilege.
       val e2 = intercept[AccessControlException](
