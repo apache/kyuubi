@@ -287,7 +287,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |""".stripMargin))
 
       // CreateIndexCommand
-      val createIndex = s"CREATE INDEX $index1 ON $namespace1.$table1(id)"
+      val createIndex = s"CREATE INDEX $index1 ON $namespace1.$table1 USING LUCENE (id)"
       interceptContains[AccessControlException](
         doAs(
           someone,
