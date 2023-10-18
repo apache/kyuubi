@@ -264,4 +264,35 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(truncateTableSql))
     }
   }
+
+  test("CompactionHoodieTableCommand / CompactionShowHoodieTableCommand") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING HUDI
+             |OPTIONS (
+             | type = 'mor',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |""".stripMargin))
+
+      val compactionTable = s"RUN COMPACTION ON $namespace1.$table1"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(compactionTable))
+      }(s"does not have [select] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(compactionTable))
+
+      val showCompactionTable = s"SHOW COMPACTION ON  $namespace1.$table1"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(showCompactionTable))
+      }(s"does not have [select] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(showCompactionTable))
+    }
+  }
 }
