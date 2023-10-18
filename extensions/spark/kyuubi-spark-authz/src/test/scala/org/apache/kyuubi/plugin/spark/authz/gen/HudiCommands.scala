@@ -139,7 +139,7 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc), SHOW_TBLPROPERTIES)
   }
 
-    val CreateIndexCommand = {
+  val CreateIndexCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.CreateIndexCommand"
     val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
