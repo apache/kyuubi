@@ -56,7 +56,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
   override def afterAll(): Unit = {
     if (isSupportedVersion) {
-      doAs(admin, sql(s"DROP DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
+      doAs(admin, sql(s"DROP DATABASE IF EXISTS $catalogV2.$namespace1"))
 
       super.afterAll()
       spark.sessionState.catalog.reset()
@@ -65,7 +65,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("CreateTable") {
-    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table1", "table"))) {
+    withCleanTmpResources(Seq((s  "$catalogV2.$namespace1.$table1", "table"))) {
       val createTable =
         s"""
            |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
