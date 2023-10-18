@@ -296,7 +296,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-   test("InsertIntoHoodieTableCommand") {
+  test("InsertIntoHoodieTableCommand") {
     withSingleCallEnabled {
       withCleanTmpResources(Seq(
         (s"$namespace1.$table1", "table"),
