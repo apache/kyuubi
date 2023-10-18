@@ -116,6 +116,11 @@ object HudiCommands {
       DROPTABLE)
   }
 
+  val RepairHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.RepairHoodieTableCommand"
+    TableCommandSpec(cmd, Seq(TableDesc("tableName", classOf[TableIdentifierTableExtractor])), MSCK)
+  }
+
   val TruncateHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.TruncateHoodieTableCommand"
     val columnDesc = ColumnDesc("partitionSpec", classOf[PartitionOptionColumnExtractor])
@@ -138,5 +143,6 @@ object HudiCommands {
     CreateHoodieTableAsSelectCommand,
     CreateHoodieTableLikeCommand,
     DropHoodieTableCommand,
+    RepairHoodieTableCommand,
     TruncateHoodieTableCommand)
 }
