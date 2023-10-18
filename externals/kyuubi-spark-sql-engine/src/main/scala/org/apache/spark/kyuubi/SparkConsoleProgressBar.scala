@@ -75,8 +75,8 @@ class SparkConsoleProgressBar(
 
   /**
    * Use stageId to find stage's jobId
-   * @param stageId stageId
-   * @return jobId,if not exists, return -1
+   * @param stageId
+   * @return Optional jobId
    */
   private def findJobId(stageId: Int): Option[Int] = {
     liveJobs.asScala.collectFirst {
