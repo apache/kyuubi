@@ -90,6 +90,12 @@ jobs:
             deactivate-profiles: '-P !spark-authz-paimon-test'
             comment: 'deactivate-profiles-spark-3.5'
         exclude:
+          - java: 8
+            spark: '3.5'
+          - java: 11
+            spark: '3.5'
+          - java: 17
+            spark: '3.5'
           # SPARK-33772: Spark supports JDK 17 since 3.3.0
           - java: 17
             spark: '3.1'
