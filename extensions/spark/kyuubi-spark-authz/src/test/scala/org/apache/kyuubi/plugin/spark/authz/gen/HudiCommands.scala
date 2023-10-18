@@ -127,6 +127,28 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc), TRUNCATETABLE)
   }
 
+  val CompactionHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.CompactionHoodieTableCommand"
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc, tableDesc.copy(isInput = true)), CREATETABLE)
+  }
+
+  val CompactionHoodiePathCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.CompactionHoodiePathCommand"
+    TableCommandSpec(cmd, Seq.empty, CREATETABLE)
+  }
+
+  val CompactionShowHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.CompactionShowHoodieTableCommand"
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], isInput = true)
+    TableCommandSpec(cmd, Seq(tableDesc), SHOW_TBLPROPERTIES)
+  }
+
+  val CompactionShowHoodiePathCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.CompactionShowHoodiePathCommand"
+    TableCommandSpec(cmd, Seq.empty, SHOW_TBLPROPERTIES)
+  }
+
   val data: Array[TableCommandSpec] = Array(
     AlterHoodieTableAddColumnsCommand,
     AlterHoodieTableChangeColumnCommand,
@@ -138,5 +160,9 @@ object HudiCommands {
     CreateHoodieTableAsSelectCommand,
     CreateHoodieTableLikeCommand,
     DropHoodieTableCommand,
-    TruncateHoodieTableCommand)
+    TruncateHoodieTableCommand,
+    CompactionHoodieTableCommand,
+    CompactionHoodiePathCommand,
+    CompactionShowHoodieTableCommand,
+    CompactionShowHoodiePathCommand)
 }
