@@ -240,32 +240,6 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  // TODO: this test generate v2 hudi table when running unit tests together, need fix it.
-  ignore("RepairHoodieTableCommand") {
-    withCleanTmpResources(Seq((s"$namespace1.$table2", "table"), (namespace1, "database"))) {
-      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
-      doAs(
-        admin,
-        sql(
-          s"""
-             |CREATE TABLE IF NOT EXISTS $namespace1.$table2(id int, name string, city string)
-             |USING HUDI
-             |OPTIONS (
-             | type = 'cow',
-             | primaryKey = 'id',
-             | 'hoodie.datasource.hive_sync.enable' = 'false'
-             |)
-             |PARTITIONED BY(city)
-             |""".stripMargin))
-
-      val repairTableSql = s"MSCK REPAIR TABLE $namespace1.$table2"
-      interceptContains[AccessControlException] {
-        doAs(someone, sql(repairTableSql))
-      }(s"does not have [alter] privilege on [$namespace1/$table2]")
-      doAs(admin, sql(repairTableSql))
-    }
-  }
-
   test("TruncateHoodieTableCommand") {
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
