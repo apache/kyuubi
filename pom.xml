@@ -184,6 +184,7 @@
           -->
         <netty.version>4.1.93.Final</netty.version>
         <openai.java.version>0.12.0</openai.java.version>
+        <paimon.version>0.5.0-incubating</paimon.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -1483,6 +1484,12 @@
                 <groupId>org.apache.hudi</groupId>
                 <artifactId>hudi-spark${hudi.spark.binary.version}-bundle_${scala.binary.version}</artifactId>
                 <version>${hudi.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.paimon</groupId>
+                <artifactId>paimon-spark-${spark.binary.version}</artifactId>
+                <version>${paimon.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
