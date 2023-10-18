@@ -1514,11 +1514,6 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
-  "classname" : "org.apache.spark.sql.hudi.command.CompactionHoodiePathCommand",
-  "tableDescs" : [ ],
-  "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
-}, {
   "classname" : "org.apache.spark.sql.hudi.command.CompactionHoodieTableCommand",
   "tableDescs" : [ {
     "fieldName" : "table",
@@ -1540,11 +1535,6 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
-}, {
-  "classname" : "org.apache.spark.sql.hudi.command.CompactionShowHoodiePathCommand",
-  "tableDescs" : [ ],
-  "opType" : "SHOW_TBLPROPERTIES",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CompactionShowHoodieTableCommand",
