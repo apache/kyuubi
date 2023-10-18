@@ -80,15 +80,12 @@ jobs:
           - java: 8
             spark: '3.5'
             deactivate-profiles: '-P !spark-authz-paimon-test'
-            comment: 'deactivate-profiles-spark-3.5'
           - java: 11
             spark: '3.5'
             deactivate-profiles: '-P !spark-authz-paimon-test'
-            comment: 'deactivate-profiles-spark-3.5'
           - java: 17
             spark: '3.5'
             deactivate-profiles: '-P !spark-authz-paimon-test'
-            comment: 'deactivate-profiles-spark-3.5'
         exclude:
           - java: 8
             spark: '3.5'
