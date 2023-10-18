@@ -121,11 +121,6 @@ monitoring:
   prometheus:
     enabled: true
     port: 10019
-    service:
-      type: ClusterIP
-      port: "{{ .Values.monitoring.prometheus.port }}"
-      nodePort: ~
-      annotations: {}
 
 # $KYUUBI_CONF_DIR directory
 kyuubiConfDir: /opt/kyuubi/conf
