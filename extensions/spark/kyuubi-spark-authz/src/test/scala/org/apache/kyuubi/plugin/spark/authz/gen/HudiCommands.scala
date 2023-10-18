@@ -177,8 +177,9 @@ object HudiCommands {
     CompactionShowHoodieTableCommand,
     DropHoodieTableCommand,
     DropIndexCommand,
-    TruncateHoodieTableCommand,
-    ShowIndexCommand,
     RefreshIndexCommand,
-    Spark31AlterTableCommand)
+    ShowIndexCommand,
+    Spark31AlterTableCommand,
+    TruncateHoodieTableCommand)
+)
 }
