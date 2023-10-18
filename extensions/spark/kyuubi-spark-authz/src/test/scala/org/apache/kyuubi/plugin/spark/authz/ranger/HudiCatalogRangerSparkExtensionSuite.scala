@@ -209,6 +209,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("IndexBasedCommand") {
+    assume(!isSparkV33OrGreater, "Create index have compatible for spark 3.3 and greater version")
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(
@@ -226,11 +227,11 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |""".stripMargin))
 
       // CreateIndexCommand
-      val createIndex = s"CREATE INDEX $index1 ON $namespace1.$table1 USING LUCENE (id)"
+      val createIndex = s"CREATE INDEX $index1 ON $namespace1.$table1(id)"
       interceptContains[AccessControlException](
         doAs(
           someone,
-          sql(createIndex)))(s"does not have [create] privilege on [$namespace1/$table1]")
+          sql(createIndex)))(s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(createIndex))
 
       // RefreshIndexCommand
@@ -254,7 +255,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptContains[AccessControlException](
         doAs(
           someone,
-          sql(dropIndex)))(s"does not have [drop] privilege on [$namespace1/$table1]")
+          sql(dropIndex)))(s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(dropIndex))
     }
   }
