@@ -2275,7 +2275,7 @@
                 <hudi.spark.binary.version>3.4</hudi.spark.binary.version>
                 <spark.version>3.5.0</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.PySparkTest,org.apache.kyuubi.tags.PaimonTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
