@@ -16,7 +16,7 @@
  */
 
 import { mount } from '@vue/test-utils'
-import Aside from '@/views/layout/components/aside/index.vue'
+import Aside from '@/layout/components/aside/index.vue'
 import { expect, test } from 'vitest'
 import { getStore } from '@/test/unit/utils'
 import { createRouter, createWebHistory } from 'vue-router'

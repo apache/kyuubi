@@ -100,7 +100,7 @@
   import { useRoute } from 'vue-router'
   import { format } from 'date-fns'
   import { secondTransfer } from '@/utils/unit'
-  import { useTable } from '@/views/common/use-table'
+  import { useTable } from '@/utils/use-table'
   const route = useRoute()
   const sessionProperties: Ref<any> = ref({})
   const sessionPropertiesLoading = ref(false)
