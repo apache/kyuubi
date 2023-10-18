@@ -103,7 +103,7 @@
   import { format } from 'date-fns'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { useTable } from '@/views/common/use-table'
+  import { useTable } from '@/utils/use-table'
 
   const { t } = useI18n()
   const { tableData, loading, getList: _getList } = useTable()

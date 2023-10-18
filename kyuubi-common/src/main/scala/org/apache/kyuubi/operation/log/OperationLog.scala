@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation.log
 import java.io.{BufferedReader, IOException}
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, NoSuchFileException, Path, Paths}
 import java.util.{ArrayList => JArrayList, List => JList}
 
 import scala.collection.JavaConverters._
@@ -262,6 +262,7 @@ class OperationLog(path: Path) {
     try {
       f
     } catch {
+      case _: NoSuchFileException =>
       case e: IOException =>
         // Printing log here may cause a deadlock. The lock order of OperationLog.write
         // is RootLogger -> LogDivertAppender -> OperationLog. If printing log here, the

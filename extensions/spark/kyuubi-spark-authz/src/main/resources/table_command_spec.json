@@ -1637,10 +1637,10 @@
   "opType" : "DROPTABLE",
   "queryDescs" : [ ]
 }, {
-  "classname" : "org.apache.spark.sql.hudi.command.DropIndexCommand",
+  "classname" : "org.apache.spark.sql.hudi.command.RepairHoodieTableCommand",
   "tableDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "CatalogTableTableExtractor",
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
@@ -1648,35 +1648,7 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
-}, {
-  "classname" : "org.apache.spark.sql.hudi.command.RefreshIndexCommand",
-  "tableDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "CatalogTableTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
-  } ],
-  "opType" : "QUERY",
-  "queryDescs" : [ ]
-}, {
-  "classname" : "org.apache.spark.sql.hudi.command.ShowIndexesCommand",
-  "tableDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "CatalogTableTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
-  } ],
-  "opType" : "QUERY",
+  "opType" : "MSCK",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.Spark31AlterTableCommand",
