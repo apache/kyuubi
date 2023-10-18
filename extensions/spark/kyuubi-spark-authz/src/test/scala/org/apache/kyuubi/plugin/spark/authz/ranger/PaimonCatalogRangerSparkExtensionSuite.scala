@@ -56,12 +56,12 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
   override def afterAll(): Unit = {
     if (isSupportedVersion) {
+      doAs(admin, sql(s"DROP DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
+
       super.afterAll()
       spark.sessionState.catalog.reset()
       spark.sessionState.conf.clear()
     }
-
-    doAs(admin, sql(s"DROP DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
   }
 
   test("CreateTable") {
