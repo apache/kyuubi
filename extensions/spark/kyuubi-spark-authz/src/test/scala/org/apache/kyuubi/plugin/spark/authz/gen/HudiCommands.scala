@@ -127,6 +127,16 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc), TRUNCATETABLE)
   }
 
+  val InsertIntoHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.InsertIntoHoodieTableCommand"
+    val tableDesc = TableDesc(
+      "logicalRelation",
+      classOf[LogicalRelationTableExtractor],
+      actionTypeDesc =
+        Some(ActionTypeDesc("overwrite", classOf[OverwriteOrInsertActionTypeExtractor])))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
+  }
+
   val data: Array[TableCommandSpec] = Array(
     AlterHoodieTableAddColumnsCommand,
     AlterHoodieTableChangeColumnCommand,
@@ -138,5 +148,6 @@ object HudiCommands {
     CreateHoodieTableAsSelectCommand,
     CreateHoodieTableLikeCommand,
     DropHoodieTableCommand,
-    TruncateHoodieTableCommand)
+    TruncateHoodieTableCommand,
+    InsertIntoHoodieTableCommand)
 }
