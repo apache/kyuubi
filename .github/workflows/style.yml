@@ -76,7 +76,7 @@ jobs:
         # Check with Spark 3.1 profile separately as it use Iceberg 1.3.1 which is not compatible with Spark 3.5+
         run: |
           build/mvn scalastyle:check ${{ matrix.profiles }}        
-          build/mvn scalastyle:check -Pflink-provided,hive-provided,spark-provided -Pspark-3.1
+          build/mvn scalastyle:check -Pflink-provided,hive-provided,spark-provided,spark-3.1
       - name: Print scalastyle error report
         if: failure() && steps.scalastyle-check.outcome != 'success'
         run: >-
