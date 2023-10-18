@@ -180,6 +180,67 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("CreateHoodieTableLikeCommand") {
+    withCleanTmpResources(Seq(
+      (s"$namespace1.$table1", "table"),
+      (s"$namespace1.$table2", "table"),
+      (namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING HUDI
+             |OPTIONS (
+             | type = 'cow',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |""".stripMargin))
+
+      val createTableSql =
+        s"""
+           |CREATE TABLE IF NOT EXISTS $namespace1.$table2
+           |LIKE  $namespace1.$table1
+           |USING HUDI
+           |""".stripMargin
+      interceptContains[AccessControlException] {
+        doAs(
+          someone,
+          sql(
+            createTableSql))
+      }(s"does not have [select] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(createTableSql))
+    }
+  }
+
+  test("DropHoodieTableCommand") {
+    withCleanTmpResources(Seq((namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING HUDI
+             |OPTIONS (
+             | type = 'cow',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |""".stripMargin))
+
+      val dropTableSql = s"DROP TABLE IF EXISTS $namespace1.$table1"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(dropTableSql))
+      }(s"does not have [drop] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(dropTableSql))
+    }
+  }
+
+  test("TruncateHoodieTableCommand") {
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(
@@ -195,15 +256,12 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |)
              |PARTITIONED BY(city)
              |""".stripMargin))
-      interceptContains[AccessControlException](
-        doAs(
-          someone,
-          sql(
-            s"""
-               |CREATE TABLE IF NOT EXISTS $namespace1.$table2
-               |LIKE  $namespace1.$table1
-               |USING HUDI
-               |""".stripMargin)))(s"does not have [select] privilege on [$namespace1/$table1]")
+
+      val truncateTableSql = s"TRUNCATE TABLE $namespace1.$table1"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(truncateTableSql))
+      }(s"does not have [update] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(truncateTableSql))
     }
   }
 }

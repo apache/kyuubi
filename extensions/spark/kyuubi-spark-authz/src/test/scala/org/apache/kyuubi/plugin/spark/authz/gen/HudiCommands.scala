@@ -100,6 +100,33 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc1, tableDesc2), CREATETABLE)
   }
 
+  val DropHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.DropHoodieTableCommand"
+    val tableTypeDesc =
+      TableTypeDesc(
+        "tableIdentifier",
+        classOf[TableIdentifierTableTypeExtractor],
+        Seq(TEMP_VIEW))
+    TableCommandSpec(
+      cmd,
+      Seq(TableDesc(
+        "tableIdentifier",
+        classOf[TableIdentifierTableExtractor],
+        tableTypeDesc = Some(tableTypeDesc))),
+      DROPTABLE)
+  }
+
+  val TruncateHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.TruncateHoodieTableCommand"
+    val columnDesc = ColumnDesc("partitionSpec", classOf[PartitionOptionColumnExtractor])
+    val tableDesc =
+      TableDesc(
+        "tableIdentifier",
+        classOf[TableIdentifierTableExtractor],
+        columnDesc = Some(columnDesc))
+    TableCommandSpec(cmd, Seq(tableDesc), TRUNCATETABLE)
+  }
+
   val data: Array[TableCommandSpec] = Array(
     AlterHoodieTableAddColumnsCommand,
     AlterHoodieTableChangeColumnCommand,
@@ -109,5 +136,7 @@ object HudiCommands {
     Spark31AlterTableCommand,
     CreateHoodieTableCommand,
     CreateHoodieTableAsSelectCommand,
-    CreateHoodieTableLikeCommand)
+    CreateHoodieTableLikeCommand,
+    DropHoodieTableCommand,
+    TruncateHoodieTableCommand)
 }
