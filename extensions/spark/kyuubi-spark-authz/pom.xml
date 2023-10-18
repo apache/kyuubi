@@ -354,9 +354,8 @@
         </profile>
 
         <!--
-          Add spark-authz-paimon-test profile here to avoid import Apache Hudi when enable spark-3.5.
-          Can remove this profile after Apache Paimon support Spark 3.5
-          https://issues.apache.org/jira/browse/HUDI-6296
+          Add spark-authz-paimon-test profile here to avoid import Apache Paimon when enable spark-3.5.
+          Can remove this profile when Apache Paimon supports Spark 3.5
           -->
         <profile>
             <id>spark-authz-paimon-test</id>
