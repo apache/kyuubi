@@ -35,7 +35,7 @@ const routes = [
   {
     path: '/layout',
     name: 'layout',
-    component: () => import('@/views/layout/index.vue'),
+    component: () => import('@/layout/index.vue'),
     redirect: 'overview',
     children: [
       ...overviewRoutes,

@@ -123,10 +123,14 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s" on [$namespace1/$table1]")
 
       // AlterTableCommand && Spark31AlterTableCommand
-      sql("set hoodie.schema.on.read.enable=true")
-      interceptContains[AccessControlException](
-        doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
-        s"does not have [alter] privilege on [$namespace1/$table1]")
+      try {
+        sql("set hoodie.schema.on.read.enable=true")
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
+          s"does not have [alter] privilege on [$namespace1/$table1]")
+      } finally {
+        sql("set hoodie.schema.on.read.enable=false")
+      }
     }
   }
 
@@ -237,6 +241,31 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(someone, sql(dropTableSql))
       }(s"does not have [drop] privilege on [$namespace1/$table1]")
       doAs(admin, sql(dropTableSql))
+    }
+  }
+
+  test("RepairHoodieTableCommand") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING HUDI
+             |OPTIONS (
+             | type = 'cow',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |""".stripMargin))
+
+      val repairTableSql = s"MSCK REPAIR TABLE $namespace1.$table1"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(repairTableSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(repairTableSql))
     }
   }
 
