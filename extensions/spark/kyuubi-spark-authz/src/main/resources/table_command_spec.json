@@ -1658,6 +1658,23 @@
   "opType" : "MSCK",
   "queryDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.hudi.command.ShowHoodieTablePartitionsCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableIdentifier",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "specOpt",
+      "fieldExtractor" : "PartitionOptionColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "SHOWPARTITIONS",
+  "queryDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.hudi.command.Spark31AlterTableCommand",
   "tableDescs" : [ {
     "fieldName" : "table",
