@@ -17,3 +17,4 @@
 
 org.apache.kyuubi.plugin.spark.authz.serde.LogicalPlanOptionQueryExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.LogicalPlanQueryExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.HudiMergeIntoSourceTableExtractor

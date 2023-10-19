@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 import java.util.{Map => JMap}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -27,6 +28,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
+import org.apache.kyuubi.plugin.spark.authz.{PrivilegeObject, PrivilegesBuilder}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
@@ -238,5 +240,40 @@ class TableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val tableName = invokeAs[String](v1, "name")
     lookupExtractor[StringTableExtractor].apply(spark, tableName)
+  }
+}
+
+class HudiDataSourceV2RelationTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val outputObjs = new ArrayBuffer[PrivilegeObject]
+    PrivilegesBuilder.buildQuery(invokeAs[LogicalPlan](v1, "table"), outputObjs, spark = spark)
+    if (outputObjs.isEmpty) {
+      None
+    } else {
+      Option(Table(
+        outputObjs.head.catalog,
+        Option(outputObjs.head.dbname),
+        outputObjs.head.objectName,
+        outputObjs.head.owner))
+    }
+  }
+}
+
+class HudiMergeIntoTargetTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val outputObjs = new ArrayBuffer[PrivilegeObject]
+    PrivilegesBuilder.buildQuery(
+      invokeAs[LogicalPlan](v1, "targetTable"),
+      outputObjs,
+      spark = spark)
+    if (outputObjs.isEmpty) {
+      None
+    } else {
+      Option(Table(
+        outputObjs.head.catalog,
+        Option(outputObjs.head.dbname),
+        outputObjs.head.objectName,
+        outputObjs.head.owner))
+    }
   }
 }

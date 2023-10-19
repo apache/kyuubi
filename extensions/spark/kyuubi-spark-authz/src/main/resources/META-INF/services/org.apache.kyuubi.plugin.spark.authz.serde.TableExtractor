@@ -27,3 +27,5 @@ org.apache.kyuubi.plugin.spark.authz.serde.ResolvedTableTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.StringTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.TableIdentifierTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.TableTableExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.HudiDataSourceV2RelationTableExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.HudiMergeIntoTargetTableExtractor
