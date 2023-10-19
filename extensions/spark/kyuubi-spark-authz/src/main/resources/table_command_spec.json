@@ -1623,6 +1623,27 @@
   "opType" : "DROPTABLE",
   "queryDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.hudi.command.InsertIntoHoodieTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "logicalRelation",
+    "fieldExtractor" : "LogicalRelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : "overwrite",
+      "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",
+      "actionType" : null
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
   "classname" : "org.apache.spark.sql.hudi.command.RepairHoodieTableCommand",
   "tableDescs" : [ {
     "fieldName" : "tableName",

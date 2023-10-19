@@ -324,4 +324,50 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(showCompactionTable))
     }
   }
+
+  test("InsertIntoHoodieTableCommand") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq(
+        (s"$namespace1.$table1", "table"),
+        (s"$namespace1.$table2", "table"),
+        (namespace1, "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+               |USING HUDI
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin))
+
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table2(id int, name string, city string)
+               |USING $format
+               |""".stripMargin))
+
+        val insertIntoHoodieTableSql =
+          s"""
+             |INSERT INTO $namespace1.$table1
+             |PARTITION(city = 'hangzhou')
+             |SELECT id, name
+             |FROM $namespace1.$table2
+             |WHERE city = 'hangzhou'
+             |""".stripMargin
+        interceptContains[AccessControlException] {
+          doAs(someone, sql(insertIntoHoodieTableSql))
+        }(s"does not have [select] privilege on " +
+          s"[$namespace1/$table2/id,$namespace1/$table2/name,hudi_ns/$table2/city], " +
+          s"[update] privilege on [$namespace1/$table1]")
+      }
+    }
+  }
 }
