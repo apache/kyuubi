@@ -42,9 +42,16 @@ class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
             // TODO: Currently, we do not do an auth check in the subquery
             //  as the main query part also secures it. But for performance consideration,
             //  we also pre-check it in subqueries and fail fast with negative privileges.
-            subquery.withNewPlan(plan = PermanentViewMarker(subquery.plan, null))
+            subquery.withNewPlan(plan =
+              PermanentViewMarker(
+                subquery.plan,
+                permanentView.desc,
+                permanentView.output.map(_.name)))
         }
-        PermanentViewMarker(resolvedSubquery, resolvedSubquery.desc)
+        PermanentViewMarker(
+          resolvedSubquery,
+          resolvedSubquery.desc,
+          resolvedSubquery.output.map(_.name))
       case other => apply(other)
     }
   }
