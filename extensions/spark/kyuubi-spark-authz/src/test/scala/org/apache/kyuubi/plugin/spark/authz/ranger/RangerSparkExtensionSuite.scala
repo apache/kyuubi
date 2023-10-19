@@ -835,4 +835,25 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       assert(e2.getMessage.contains(s"does not have [select] privilege on [$db1/$view1/new_id]"))
     }
   }
+
+  test("[KYUUBI #5742] Permanent View should pass column when child plan no output ") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val view1 = "view1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$view1", "view"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        doAs(admin, sql(s"CREATE VIEW $db1.$view1 AS SELECT * FROM $db1.$table1"))
+        val e1 = intercept[AccessControlException](
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$table1").show()))
+        assert(e1.getMessage.contains(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]"))
+
+        val e2 = intercept[AccessControlException](
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view1").show()))
+        assert(e2.getMessage.contains(
+          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]"))
+      }
+    }
+  }
 }
