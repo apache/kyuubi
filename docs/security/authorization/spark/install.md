@@ -31,7 +31,7 @@
 
 ## Install
 
-With the `kyuubi-spark-authz_*.jar` and its transitive dependencies available or use only `kyuubi-spark-authz-bundle_*.jar` for spark runtime classpath, such as
+Use either the bundle jar `kyuubi-spark-authz-bundle_*.jar` or the `kyuubi-spark-authz_*.jar` with its transitive dependencies available for spark runtime classpath, such as
 - Copied to `$SPARK_HOME/jars`, or
 - Specified to `spark.jars` configuration
 
