@@ -33,7 +33,7 @@ After a while, if everything goes well, you will get the plugin finally in two p
 
 ## Build bundle jar with Apache Maven
 
-Apache Kyuubi provides the bundle jar for the Spark authZ plugin, You can run the authZ plugin using just a bundle jar without the additional dependency of jars,
+Apache Kyuubi also provides the bundle jar for the Spark AuthZ plugin, You can run the AuthZ plugin using just a bundle jar without the additional dependency of jars,
 To build it, `cd` to the root direct of kyuubi project and run:
 
 ```shell
