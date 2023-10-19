@@ -81,12 +81,12 @@ class KyuubiBatchSession(
     sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(conf)
 
   val optimizedConf: Map[String, String] = {
-    val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
+    val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
-      normalizedConf.asJava)
+      normalizedConf.asJava).asScala).reduce(_ ++ _)
     if (confOverlay != null) {
       val overlayConf = new KyuubiConf(false)
-      confOverlay.asScala.foreach { case (k, v) => overlayConf.set(k, v) }
+      confOverlay.foreach { case (k, v) => overlayConf.set(k, v) }
       normalizedConf ++ overlayConf.getBatchConf(batchType)
     } else {
       warn(s"the server plugin return null value for user: $user, ignore it")

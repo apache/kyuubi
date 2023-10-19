@@ -53,11 +53,11 @@ class KyuubiSessionImpl(
   override val sessionType: SessionType = SessionType.INTERACTIVE
 
   private[kyuubi] val optimizedConf: Map[String, String] = {
-    val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
+    val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
-      normalizedConf.asJava)
+      normalizedConf.asJava).asScala).reduce(_ ++ _)
     if (confOverlay != null) {
-      normalizedConf ++ confOverlay.asScala
+      normalizedConf ++ confOverlay
     } else {
       warn(s"the server plugin return null value for user: $user, ignore it")
       normalizedConf

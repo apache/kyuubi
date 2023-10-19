@@ -27,15 +27,15 @@ class PluginLoaderSuite extends KyuubiFunSuite {
 
   test("SessionConfAdvisor - wrong class") {
     val conf = new KyuubiConf(false)
-    assert(PluginLoader.loadSessionConfAdvisor(conf).isInstanceOf[DefaultSessionConfAdvisor])
+    assert(PluginLoader.loadSessionConfAdvisor(conf).head.isInstanceOf[DefaultSessionConfAdvisor])
 
-    conf.set(KyuubiConf.SESSION_CONF_ADVISOR, classOf[InvalidSessionConfAdvisor].getName)
+    conf.set(KyuubiConf.SESSION_CONF_ADVISOR, Seq(classOf[InvalidSessionConfAdvisor].getName))
     val msg1 = intercept[KyuubiException] {
       PluginLoader.loadSessionConfAdvisor(conf)
     }.getMessage
     assert(msg1.contains(s"is not a child of '${classOf[SessionConfAdvisor].getName}'"))
 
-    conf.set(KyuubiConf.SESSION_CONF_ADVISOR, "non.exists")
+    conf.set(KyuubiConf.SESSION_CONF_ADVISOR, Seq("non.exists"))
     val msg2 = intercept[IllegalArgumentException] {
       PluginLoader.loadSessionConfAdvisor(conf)
     }.getMessage
@@ -44,25 +44,44 @@ class PluginLoaderSuite extends KyuubiFunSuite {
 
   test("FileSessionConfAdvisor") {
     val conf = new KyuubiConf(false)
-    conf.set(KyuubiConf.SESSION_CONF_ADVISOR, classOf[FileSessionConfAdvisor].getName)
+    conf.set(KyuubiConf.SESSION_CONF_ADVISOR, Seq(classOf[FileSessionConfAdvisor].getName))
     val advisor = PluginLoader.loadSessionConfAdvisor(conf)
-    val emptyConfig = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    val emptyConfig =
+      advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
     assert(emptyConfig.isEmpty)
 
     conf.set(KyuubiConf.SESSION_CONF_PROFILE, "non.exists")
-    val nonExistsConfig = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    val nonExistsConfig =
+      advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
     assert(nonExistsConfig.isEmpty)
 
     conf.set(KyuubiConf.SESSION_CONF_PROFILE, "cluster-a")
-    val clusterAConf = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    val clusterAConf =
+      advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
     assert(clusterAConf.get("kyuubi.ha.namespace") == "kyuubi-ns-a")
     assert(clusterAConf.get("kyuubi.zk.ha.namespace") == null)
     assert(clusterAConf.size() == 5)
 
-    val clusterAConfFromCache = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    val clusterAConfFromCache =
+      advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
     assert(clusterAConfFromCache.get("kyuubi.ha.namespace") == "kyuubi-ns-a")
     assert(clusterAConfFromCache.get("kyuubi.zk.ha.namespace") == null)
     assert(clusterAConfFromCache.size() == 5)
+  }
+
+  test("SessionConfAdvisor - multi class") {
+    val conf = new KyuubiConf(false)
+    conf.set(
+      KyuubiConf.SESSION_CONF_ADVISOR,
+      Seq(classOf[FileSessionConfAdvisor].getName, classOf[TestSessionConfAdvisor].getName))
+    val advisor = PluginLoader.loadSessionConfAdvisor(conf)
+    conf.set(KyuubiConf.SESSION_CONF_PROFILE, "cluster-a")
+    val clusterAConf =
+      advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
+    assert(clusterAConf.get("kyuubi.ha.namespace") == "kyuubi-ns-a")
+    assert(clusterAConf.get("kyuubi.zk.ha.namespace") == null)
+    assert(clusterAConf.get("spark.k3") == "v3")
+    assert(clusterAConf.size() == 7)
   }
 
   test("GroupProvider - wrong class") {
@@ -99,3 +118,11 @@ class PluginLoaderSuite extends KyuubiFunSuite {
 
 class InvalidSessionConfAdvisor
 class InvalidGroupProvider
+
+class TestSessionConfAdvisor extends SessionConfAdvisor {
+  override def getConfOverlay(
+      user: String,
+      sessionConf: java.util.Map[String, String]): java.util.Map[String, String] = {
+    Map("spark.k3" -> "v3", "spark.k4" -> "v4").asJava
+  }
+}
