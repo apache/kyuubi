@@ -75,7 +75,7 @@ jobs:
           - java: 8
             spark: '3.4'
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.5.0 -Dspark.archive.name=spark-3.5.0-bin-hadoop3.tgz -Pzookeeper-3.6'
-            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
+            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-3.5-binary'
         exclude:
           # SPARK-33772: Spark supports JDK 17 since 3.3.0
