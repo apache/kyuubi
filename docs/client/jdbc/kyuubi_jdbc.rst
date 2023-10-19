@@ -150,7 +150,7 @@ Connection URL over Service Discovery
 HiveServer2 Compatibility
 *************************
 
-.. versionadded:: 1.9.0
+.. versionadded:: 1.8.0
 
 JDBC Drivers need to negotiate a protocol version with Kyuubi Server/HiveServer2 when connecting.
 
