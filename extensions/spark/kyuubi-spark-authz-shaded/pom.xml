@@ -25,9 +25,9 @@
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-spark-authz-bundle_${scala.binary.version}</artifactId>
+    <artifactId>kyuubi-spark-authz-shaded_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
-    <name>Kyuubi Dev Spark Authorization Extension Bundle</name>
+    <name>Kyuubi Dev Spark Authorization Extension Shaded</name>
     <url>https://kyuubi.apache.org/</url>
 
     <properties>
