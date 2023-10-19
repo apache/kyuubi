@@ -700,7 +700,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private void openSession() throws SQLException {
-    TOpenSessionReq openReq = new TOpenSessionReq();
+    // Server responses are the same if TProtocolVersion >= HIVE_CLI_SERVICE_PROTOCOL_V6
+    // So we set it to HIVE_CLI_SERVICE_PROTOCOL_V6 to support HiveServer2 early versions.
+    TOpenSessionReq openReq = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6);
 
     Map<String, String> openConf = new HashMap<>();
     // for remote JDBC client, try to set the conf var using 'set foo=bar'
