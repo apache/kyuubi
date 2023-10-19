@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         profiles:
-          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds,kubernetes-it'
+          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.5,spark-3.4,spark-3.3,spark-3.2,tpcds,kubernetes-it'
 
     steps:
       - uses: actions/checkout@v3
@@ -73,7 +73,10 @@ jobs:
 
       - name: Scalastyle with maven
         id: scalastyle-check
-        run: build/mvn scalastyle:check ${{ matrix.profiles }}
+        # Check with Spark 3.1 profile separately as it use Iceberg 1.3.1 which is not compatible with Spark 3.5+
+        run: |
+          build/mvn scalastyle:check ${{ matrix.profiles }}        
+          build/mvn scalastyle:check -Pflink-provided,hive-provided,spark-provided,spark-3.1
       - name: Print scalastyle error report
         if: failure() && steps.scalastyle-check.outcome != 'success'
         run: >-
@@ -87,7 +90,7 @@ jobs:
         run: |
           SPOTLESS_BLACK_VERSION=$(build/mvn help:evaluate -Dexpression=spotless.python.black.version -q -DforceStdout)
           pip install black==$SPOTLESS_BLACK_VERSION
-          build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python
+          build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python,spark-3.1
       - name: setup npm
         uses: actions/setup-node@v3
         with:
