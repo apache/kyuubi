@@ -33,6 +33,7 @@ public class JdbcConnectionParams {
 
   // Client param names:
 
+  static final String CLIENT_PROTOCOL_VERSION = "clientProtocolVersion";
   // Retry setting
   static final String RETRIES = "retries";
 

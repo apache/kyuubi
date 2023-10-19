@@ -292,6 +292,13 @@ public class Utils {
         }
       }
     }
+    if (!connParams.getSessionVars().containsKey(CLIENT_PROTOCOL_VERSION)) {
+      if (info.containsKey(CLIENT_PROTOCOL_VERSION)) {
+        connParams
+            .getSessionVars()
+            .put(CLIENT_PROTOCOL_VERSION, info.getProperty(CLIENT_PROTOCOL_VERSION));
+      }
+    }
     // Extract user/password from JDBC connection properties if its not supplied
     // in the connection URL
     if (!connParams.getSessionVars().containsKey(AUTH_USER)) {
