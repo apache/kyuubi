@@ -167,7 +167,7 @@ object HudiCommands {
     val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], isInput = true)
     TableCommandSpec(cmd, Seq(tableDesc))
   }
-  
+
   val InsertIntoHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.InsertIntoHoodieTableCommand"
     val tableDesc = TableDesc(
@@ -195,6 +195,7 @@ object HudiCommands {
     InsertIntoHoodieTableCommand,
     RefreshIndexCommand,
     RepairHoodieTableCommand,
+    ShowIndexCommand,
     TruncateHoodieTableCommand,
     Spark31AlterTableCommand)
 }
