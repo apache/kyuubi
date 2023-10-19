@@ -403,6 +403,8 @@ jobs:
           minikube start --cpus 2 --memory 4096 --kubernetes-version=${KUBERNETES_VERSION} --force
           # https://minikube.sigs.k8s.io/docs/handbook/pushing/#7-loading-directly-to-in-cluster-container-runtime
           minikube image load apache/kyuubi:latest
+          docker pull apache/spark:3.4.1
+          minikube image load apache/spark:3.4.1
           minikube image list
       - name: kubectl pre-check
         run: |
