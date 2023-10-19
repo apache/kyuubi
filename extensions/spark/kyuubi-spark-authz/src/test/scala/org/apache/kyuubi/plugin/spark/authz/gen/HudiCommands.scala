@@ -155,6 +155,17 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
   }
 
+  val ShowHoodieTablePartitionsCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.ShowHoodieTablePartitionsCommand"
+    val columnDesc = ColumnDesc("specOpt", classOf[PartitionOptionColumnExtractor])
+    val tableDesc = TableDesc(
+      "tableIdentifier",
+      classOf[TableIdentifierTableExtractor],
+      isInput = true,
+      columnDesc = Some(columnDesc))
+    TableCommandSpec(cmd, Seq(tableDesc), SHOWPARTITIONS)
+  }
+
   val DeleteHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.DeleteHoodieTableCommand"
     val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
@@ -187,17 +198,6 @@ object HudiCommands {
         actionTypeDesc = Some(actionTypeDesc))
     val queryDescs = QueryDesc("mergeInto", classOf[HudiMergeIntoSourceTableExtractor])
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDescs))
-  }
-
-  val ShowHoodieTablePartitionsCommand = {
-    val cmd = "org.apache.spark.sql.hudi.command.ShowHoodieTablePartitionsCommand"
-    val columnDesc = ColumnDesc("specOpt", classOf[PartitionOptionColumnExtractor])
-    val tableDesc = TableDesc(
-      "tableIdentifier",
-      classOf[TableIdentifierTableExtractor],
-      isInput = true,
-      columnDesc = Some(columnDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), SHOWPARTITIONS)
   }
 
   val data: Array[TableCommandSpec] = Array(
