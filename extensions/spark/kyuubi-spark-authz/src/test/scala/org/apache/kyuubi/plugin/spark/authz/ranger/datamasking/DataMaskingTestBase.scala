@@ -268,17 +268,15 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   test("KYUUBI #5367: Spark happened ClassCastException when resolving a join of masked tables") {
 
     import spark.implicits._
-    val df0 = spark.table("default.src").
-      selectExpr("'col0' col0", "'col1' col1")
+    val df0 = spark.table("default.src").selectExpr("'col0' col0", "'col1' col1")
 
-    doAs("bob",
+    doAs(
+      "bob",
       assert(
         df0.as("a").join(
           right = df0.as("b"),
           joinExprs = $"a.col0" === $"b.col0" && $"a.col1" === $"b.col1",
           joinType = "left_outer").collect() ===
-          Seq(Row("col0", "col1", "col0", "col1"))
-      )
-    )
+          Seq(Row("col0", "col1", "col0", "col1"))))
   }
 }
