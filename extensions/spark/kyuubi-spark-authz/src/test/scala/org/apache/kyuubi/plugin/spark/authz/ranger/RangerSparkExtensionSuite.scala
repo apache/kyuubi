@@ -836,7 +836,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #5742] Permanent View should pass column when child plan no output ") {
+  test("[KYUUBI #5472] Permanent View should pass column when child plan no output ") {
     val db1 = defaultDb
     val table1 = "table1"
     val view1 = "view1"
