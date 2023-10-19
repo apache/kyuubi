@@ -193,7 +193,7 @@ jobs:
             comment: 'verify-on-flink-1.16-binary'
           - java: 8
             flink: '1.17'
-            flink-archive: '-Dflink.archive.mirror=https://dist.apache.org/repos/dist/dev/flink/flink-1.18.0-rc2 -Dflink.archive.name=flink-1.18.0-bin-scala_2.12.tgz'
+            flink-archive: '-Dflink.archive.mirror=https://dist.apache.org/repos/dist/dev/flink/flink-1.18.0-rc3 -Dflink.archive.name=flink-1.18.0-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.18-binary'
     steps:
       - uses: actions/checkout@v3
