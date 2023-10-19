@@ -1637,33 +1637,26 @@
   "opType" : "DROPTABLE",
   "queryDescs" : [ ]
 }, {
-  "classname" : "org.apache.spark.sql.hudi.command.DropIndexCommand",
+  "classname" : "org.apache.spark.sql.hudi.command.InsertIntoHoodieTableCommand",
   "tableDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "CatalogTableTableExtractor",
+    "fieldName" : "logicalRelation",
+    "fieldExtractor" : "LogicalRelationTableExtractor",
     "columnDesc" : null,
-    "actionTypeDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : "overwrite",
+      "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",
+      "actionType" : null
+    },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
-}, {
-  "classname" : "org.apache.spark.sql.hudi.command.RefreshIndexCommand",
-  "tableDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "CatalogTableTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
-  } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.RepairHoodieTableCommand",
   "tableDescs" : [ {

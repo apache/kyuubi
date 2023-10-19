@@ -326,57 +326,49 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("IndexBasedCommand") {
-    assume(
-      !isSparkV33OrGreater,
-      "Hudi index creation not supported on Spark 3.3 or greater currently")
-    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
-      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
-      doAs(
-        admin,
-        sql(
+  test("InsertIntoHoodieTableCommand") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq(
+        (s"$namespace1.$table1", "table"),
+        (s"$namespace1.$table2", "table"),
+        (namespace1, "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+               |USING HUDI
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin))
+
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table2(id int, name string, city string)
+               |USING $format
+               |""".stripMargin))
+
+        val insertIntoHoodieTableSql =
           s"""
-             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
-             |USING HUDI
-             |OPTIONS (
-             | type = 'cow',
-             | primaryKey = 'id',
-             | 'hoodie.datasource.hive_sync.enable' = 'false'
-             |)
-             |PARTITIONED BY(city)
-             |""".stripMargin))
-
-      // CreateIndexCommand
-      val createIndex = s"CREATE INDEX $index1 ON $namespace1.$table1 USING LUCENE (id)"
-      interceptContains[AccessControlException](
-        doAs(
-          someone,
-          sql(createIndex)))(s"does not have [alter] privilege on [$namespace1/$table1]")
-      doAs(admin, sql(createIndex))
-
-      // RefreshIndexCommand
-      val refreshIndex = s"REFRESH INDEX $index1 ON $namespace1.$table1"
-      interceptContains[AccessControlException](
-        doAs(
-          someone,
-          sql(refreshIndex)))(s"does not have [select] privilege on [$namespace1/$table1]")
-      doAs(admin, sql(refreshIndex))
-
-      // ShowIndexesCommand
-      val showIndex = s"SHOW INDEXES FROM TABLE $namespace1.$table1"
-      interceptContains[AccessControlException](
-        doAs(
-          someone,
-          sql(showIndex)))(s"does not have [select] privilege on [$namespace1/$table1]")
-      doAs(admin, sql(showIndex))
-
-      // DropIndexCommand
-      val dropIndex = s"DROP INDEX $index1 ON $namespace1.$table1"
-      interceptContains[AccessControlException](
-        doAs(
-          someone,
-          sql(dropIndex)))(s"does not have [alter] privilege on [$namespace1/$table1]")
-      doAs(admin, sql(dropIndex))
+             |INSERT INTO $namespace1.$table1
+             |PARTITION(city = 'hangzhou')
+             |SELECT id, name
+             |FROM $namespace1.$table2
+             |WHERE city = 'hangzhou'
+             |""".stripMargin
+        interceptContains[AccessControlException] {
+          doAs(someone, sql(insertIntoHoodieTableSql))
+        }(s"does not have [select] privilege on " +
+          s"[$namespace1/$table2/id,$namespace1/$table2/name,hudi_ns/$table2/city], " +
+          s"[update] privilege on [$namespace1/$table1]")
+      }
     }
   }
 }
