@@ -18,19 +18,20 @@
 package org.apache.kyuubi.server.metadata.jdbc
 
 trait JdbcDatabaseDialect {
-  def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String
+  def limitClause(limit: Int, offset: Int): String
 }
 
 class DerbyDatabaseDialect extends JdbcDatabaseDialect {
-  override def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String = {
-    s"$sql OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY"
+  override def limitClause(limit: Int, offset: Int): String = {
+    s"OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY"
   }
 }
 
 class GenericDatabaseDialect extends JdbcDatabaseDialect {
-  override def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String = {
-    s"$sql LIMIT $limit OFFSET $offset"
+  override def limitClause(limit: Int, offset: Int): String = {
+    s"LIMIT $limit OFFSET $offset"
   }
 }
 
-class MysqlDatabaseDialect extends GenericDatabaseDialect {}
+class SQLiteDatabaseDialect extends GenericDatabaseDialect {}
+class MySQLDatabaseDialect extends GenericDatabaseDialect {}

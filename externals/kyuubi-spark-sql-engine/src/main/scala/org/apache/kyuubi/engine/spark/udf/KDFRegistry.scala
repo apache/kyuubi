@@ -25,7 +25,7 @@ import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions.udf
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_URL, KYUUBI_SESSION_USER_KEY}
 
 object KDFRegistry {
 
@@ -72,6 +72,16 @@ object KDFRegistry {
     "Return the session username for the associated query engine",
     "string",
     "1.4.0")
+
+  val engine_url: KyuubiDefinedFunction = create(
+    "engine_url",
+    udf { () =>
+      Option(TaskContext.get()).map(_.getLocalProperty(KYUUBI_ENGINE_URL))
+        .getOrElse(throw new RuntimeException("Unable to get engine url"))
+    },
+    "Return the engine url for the associated query engine",
+    "string",
+    "1.8.0")
 
   def create(
       name: String,

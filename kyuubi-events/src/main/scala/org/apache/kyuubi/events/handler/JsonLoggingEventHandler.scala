@@ -65,6 +65,17 @@ class JsonLoggingEventHandler(
     stream.foreach(_.hflush())
   }
 
+  override def close(): Unit = {
+    writers.values.foreach { case (writer, stream) =>
+      writer.flush()
+      stream.foreach(_.hflush())
+      writer.close()
+      stream.foreach(_.close())
+    }
+    writers.clear()
+    fs = null
+  }
+
   private def getOrUpdate(event: KyuubiEvent): Logger = synchronized {
     val partitions = event.partitions.map(kv => s"${kv._1}=${kv._2}").mkString(Path.SEPARATOR)
     writers.getOrElseUpdate(
@@ -108,6 +119,7 @@ class JsonLoggingEventHandler(
 }
 
 object JsonLoggingEventHandler {
-  val JSON_LOG_DIR_PERM: FsPermission = new FsPermission(Integer.parseInt("770", 8).toShort)
-  val JSON_LOG_FILE_PERM: FsPermission = new FsPermission(Integer.parseInt("660", 8).toShort)
+  private val JSON_LOG_DIR_PERM: FsPermission = new FsPermission(Integer.parseInt("770", 8).toShort)
+  private val JSON_LOG_FILE_PERM: FsPermission =
+    new FsPermission(Integer.parseInt("660", 8).toShort)
 }

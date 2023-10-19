@@ -20,8 +20,9 @@ import overviewRoutes from './overview'
 import workloadRoutes from './workload'
 import operationRoutes from './operation'
 import contactRoutes from './contact'
-import sessionRoutes from './session'
-import engineRoutes from './engine'
+import managementRoutes from './management'
+import detailRoutes from './detail'
+import swaggerRoutes from './swagger'
 
 const routes = [
   {
@@ -34,14 +35,15 @@ const routes = [
   {
     path: '/layout',
     name: 'layout',
-    component: () => import('@/views/layout/index.vue'),
+    component: () => import('@/layout/index.vue'),
     redirect: 'overview',
     children: [
       ...overviewRoutes,
-      ...sessionRoutes,
       ...workloadRoutes,
       ...operationRoutes,
-      ...engineRoutes,
+      ...managementRoutes,
+      ...detailRoutes,
+      ...swaggerRoutes,
       ...contactRoutes
     ]
   }

@@ -20,5 +20,5 @@ package org.apache.kyuubi.plugin.lineage
 object LineageDispatcherType extends Enumeration {
   type LineageDispatcherType = Value
 
-  val SPARK_EVENT, KYUUBI_EVENT = Value
+  val SPARK_EVENT, KYUUBI_EVENT, ATLAS = Value
 }

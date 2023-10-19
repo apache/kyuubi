@@ -26,6 +26,7 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift.{TStatus, TStatusCode}
 
 import org.apache.kyuubi.Utils.stringifyException
+import org.apache.kyuubi.util.reflect.DynConstructors
 
 /**
  * @param reason     a description of the exception
@@ -139,9 +140,10 @@ object KyuubiSQLException {
   }
   private def newInstance(className: String, message: String, cause: Throwable): Throwable = {
     try {
-      Class.forName(className)
-        .getConstructor(classOf[String], classOf[Throwable])
-        .newInstance(message, cause).asInstanceOf[Throwable]
+      DynConstructors.builder()
+        .impl(className, classOf[String], classOf[Throwable])
+        .buildChecked[Throwable]()
+        .newInstance(message, cause)
     } catch {
       case _: Exception => new RuntimeException(className + ":" + message, cause)
     }
@@ -154,7 +156,7 @@ object KyuubiSQLException {
     (i1, i2, i3)
   }
 
-  def toCause(details: Seq[String]): Throwable = {
+  def toCause(details: Iterable[String]): Throwable = {
     var ex: Throwable = null
     if (details != null && details.nonEmpty) {
       val head = details.head
@@ -170,7 +172,7 @@ object KyuubiSQLException {
         val lineNum = line.substring(i3 + 1).toInt
         new StackTraceElement(clzName, methodName, fileName, lineNum)
       }
-      ex = newInstance(exClz, msg, toCause(details.slice(length + 2, details.length)))
+      ex = newInstance(exClz, msg, toCause(details.slice(length + 2, details.size)))
       ex.setStackTrace(stackTraceElements.toArray)
     }
     ex

@@ -45,7 +45,7 @@ npm run prettier
 
 ### Recommend
 
-If you want to save disk space and boost installation speed, we recommend using `pnpm 7.x.x` to instead of npm.
+If you want to save disk space and boost installation speed, we recommend using `pnpm 8.x.x` to instead of npm.
 You can learn how to install the corresponding version from its official website.
 
 - [pnpm](https://pnpm.io/)

@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.trino.operation
 
 import java.util.concurrent.RejectedExecutionException
 
-import org.apache.hive.service.rpc.thrift.TRowSet
+import org.apache.hive.service.rpc.thrift.TFetchResultsResp
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.trino.TrinoStatement
@@ -82,7 +82,9 @@ class ExecuteStatement(
     }
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(
+      order: FetchOrientation,
+      rowSetSize: Int): TFetchResultsResp = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
@@ -97,7 +99,10 @@ class ExecuteStatement(
     val taken = iter.take(rowSetSize)
     val resultRowSet = RowSet.toTRowSet(taken.toList, schema, getProtocolVersion)
     resultRowSet.setStartRowOffset(iter.getPosition)
-    resultRowSet
+    val fetchResultsResp = new TFetchResultsResp(OK_STATUS)
+    fetchResultsResp.setResults(resultRowSet)
+    fetchResultsResp.setHasMoreRows(false)
+    fetchResultsResp
   }
 
   private def executeStatement(trinoStatement: TrinoStatement): Unit = {

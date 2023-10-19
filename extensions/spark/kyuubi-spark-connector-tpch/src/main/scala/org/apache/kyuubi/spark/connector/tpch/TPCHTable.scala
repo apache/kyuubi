@@ -44,7 +44,7 @@ class TPCHTable(tbl: String, scale: Double, tpchConf: TPCHConf)
     StructType(
       tpchTable.asInstanceOf[TpchTable[TpchEntity]].getColumns.zipWithIndex.map { case (c, _) =>
         StructField(c.getColumnName, toSparkDataType(c.getType))
-      })
+      }.toSeq)
   }
 
   override def capabilities(): util.Set[TableCapability] =

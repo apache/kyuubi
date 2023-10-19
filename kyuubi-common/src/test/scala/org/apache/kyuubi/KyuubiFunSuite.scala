@@ -30,6 +30,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.slf4j.bridge.SLF4JBridgeHandler
 
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
+import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 
 trait KyuubiFunSuite extends AnyFunSuite
   with BeforeAndAfterAll
@@ -46,6 +47,7 @@ trait KyuubiFunSuite extends AnyFunSuite
   override def beforeAll(): Unit = {
     System.setProperty(IS_TESTING.key, "true")
     doThreadPreAudit()
+    InternalSecurityAccessor.reset()
     super.beforeAll()
   }
 
@@ -102,6 +104,7 @@ trait KyuubiFunSuite extends AnyFunSuite
           logger.asInstanceOf[Logger].setLevel(restoreLevels(i))
           logger.asInstanceOf[Logger].get().setLevel(restoreLevels(i))
         }
+        LogManager.getContext(false).asInstanceOf[LoggerContext].updateLoggers()
       }
     }
   }

@@ -37,16 +37,16 @@ class GetTables(
 
   override protected def runInternal(): Unit = {
     try {
-      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
+      val catalogManager = sessionContext.getSessionState.catalogManager
 
       val catalogName =
-        if (StringUtils.isEmpty(catalogNameOrEmpty)) tableEnv.getCurrentCatalog
+        if (StringUtils.isEmpty(catalogNameOrEmpty)) catalogManager.getCurrentCatalog
         else catalogNameOrEmpty
 
       val schemaNameRegex = toJavaRegex(schemaNamePattern)
       val tableNameRegex = toJavaRegex(tableNamePattern)
 
-      val tables = tableEnv.getCatalog(catalogName).asScala.toArray.flatMap { flinkCatalog =>
+      val tables = catalogManager.getCatalog(catalogName).asScala.toArray.flatMap { flinkCatalog =>
         SchemaHelper.getSchemasWithPattern(flinkCatalog, schemaNameRegex)
           .flatMap { schemaName =>
             SchemaHelper.getFlinkTablesWithPattern(

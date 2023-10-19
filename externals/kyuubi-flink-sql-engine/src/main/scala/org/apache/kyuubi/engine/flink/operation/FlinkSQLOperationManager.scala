@@ -20,9 +20,12 @@ package org.apache.kyuubi.engine.flink.operation
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.{Duration, DurationLong}
+import scala.language.postfixOps
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
 import org.apache.kyuubi.operation.{NoneMode, Operation, OperationManager, PlanOnlyMode}
@@ -44,7 +47,8 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val flinkSession = session.asInstanceOf[FlinkSessionImpl]
-    if (flinkSession.sessionContext.getConfigMap.getOrDefault(
+    val sessionConfig = flinkSession.fSession.getSessionConfig
+    if (sessionConfig.getOrDefault(
         ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key,
         operationConvertCatalogDatabaseDefault.toString).toBoolean) {
       val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
@@ -53,23 +57,42 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       }
     }
 
-    val mode = PlanOnlyMode.fromString(flinkSession.sessionContext.getConfigMap.getOrDefault(
-      OPERATION_PLAN_ONLY_MODE.key,
-      operationModeDefault))
+    val mode = PlanOnlyMode.fromString(
+      sessionConfig.getOrDefault(
+        OPERATION_PLAN_ONLY_MODE.key,
+        operationModeDefault))
 
-    flinkSession.sessionContext.set(OPERATION_PLAN_ONLY_MODE.key, mode.name)
+    val sessionContext = FlinkEngineUtils.getSessionContext(flinkSession.fSession)
+    sessionContext.set(OPERATION_PLAN_ONLY_MODE.key, mode.name)
     val resultMaxRows =
       flinkSession.normalizedConf.getOrElse(
         ENGINE_FLINK_MAX_ROWS.key,
         resultMaxRowsDefault.toString).toInt
+
+    val resultFetchTimeout =
+      flinkSession.normalizedConf.get(ENGINE_FLINK_FETCH_TIMEOUT.key).map(_.toLong milliseconds)
+        .getOrElse(Duration.Inf)
+
     val op = mode match {
       case NoneMode =>
         // FLINK-24427 seals calcite classes which required to access in async mode, considering
         // there is no much benefit in async mode, here we just ignore `runAsync` and always run
         // statement in sync mode as a workaround
-        new ExecuteStatement(session, statement, false, queryTimeout, resultMaxRows)
+        new ExecuteStatement(
+          session,
+          statement,
+          false,
+          queryTimeout,
+          resultMaxRows,
+          resultFetchTimeout)
       case mode =>
-        new PlanOnlyStatement(session, statement, mode)
+        new PlanOnlyStatement(
+          session,
+          statement,
+          mode,
+          queryTimeout,
+          resultMaxRows,
+          resultFetchTimeout)
     }
     addOperation(op)
   }

@@ -32,13 +32,16 @@ import org.apache.kyuubi.{BatchTestHelper, RestClientTestHelper, Utils}
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ctl.{CtlConf, TestPrematureExit}
+import org.apache.kyuubi.engine.ApplicationManagerInfo
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
+import org.apache.kyuubi.server.metadata.api.MetadataFilter
 import org.apache.kyuubi.session.KyuubiSessionManager
 
 class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with BatchTestHelper {
 
   val basePath: String = Utils.getCodeSourceLocation(getClass)
   val batchFile: String = s"${basePath}/batch.yaml"
+  val longTimeBatchFile: String = s"${basePath}/batch_long_time.yaml"
 
   override protected val otherConfigs: Map[String, String] = {
     Map(KyuubiConf.BATCH_APPLICATION_CHECK_INTERVAL.key -> "100")
@@ -71,6 +74,27 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
                          |options:
                          |  verbose: true""".stripMargin
     Files.write(Paths.get(batchFile), batch_basic.getBytes(StandardCharsets.UTF_8))
+
+    val long_time_batch_basic = s"""apiVersion: v1
+                                   |username: ${ldapUser}
+                                   |request:
+                                   |  batchType: Spark
+                                   |  name: LongTimeBatch
+                                   |  resource: ${sparkBatchTestResource.get}
+                                   |  className: org.apache.spark.examples.DriverSubmissionTest
+                                   |  args:
+                                   |   - 10
+                                   |  configs:
+                                   |    spark.master: local
+                                   |    wait.completion: true
+                                   |    k1: v1
+                                   |    1: test_integer_key
+                                   |    key:
+                                   |options:
+                                   |  verbose: true""".stripMargin
+    Files.write(
+      Paths.get(longTimeBatchFile),
+      long_time_batch_basic.getBytes(StandardCharsets.UTF_8))
   }
 
   override def afterEach(): Unit = {
@@ -78,10 +102,9 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
     sessionManager.allSessions().foreach { session =>
       sessionManager.closeSession(session.handle)
     }
-    sessionManager.getBatchesFromMetadataStore(null, null, null, 0, 0, 0, Int.MaxValue).foreach {
-      batch =>
-        sessionManager.applicationManager.killApplication(None, batch.getId)
-        sessionManager.cleanupMetadata(batch.getId)
+    sessionManager.getBatchesFromMetadataStore(MetadataFilter(), 0, Int.MaxValue).foreach { batch =>
+      sessionManager.applicationManager.killApplication(ApplicationManagerInfo(None), batch.getId)
+      sessionManager.cleanupMetadata(batch.getId)
     }
   }
 
@@ -93,7 +116,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       "create",
       "batch",
       "-f",
-      batchFile,
+      longTimeBatchFile,
       "--password",
       ldapUserPasswd)
     var result = testPrematureExitForControlCli(createArgs, "")
@@ -109,9 +132,15 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       ldapUser,
       "--password",
       ldapUserPasswd)
-    result = testPrematureExitForControlCli(getArgs, "SPARK")
-    assert(result.contains("SPARK"))
-    assert(result.contains(s"${fe.connectionUrl}"))
+    var invalidCount = 0
+    eventually(timeout(5.seconds), interval(100.milliseconds)) {
+      invalidCount += 1
+      result = testPrematureExitForControlCli(getArgs, "SPARK")
+      assert(result.contains("RUNNING"))
+      assert(result.contains("SPARK"))
+      assert(result.contains(s"${fe.connectionUrl}"))
+      invalidCount -= 1
+    }
 
     val logArgs = Array(
       "log",
@@ -139,7 +168,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
 
     eventually(timeout(3.seconds), interval(200.milliseconds)) {
       assert(MetricsSystem.counterValue(
-        MetricsConstants.REST_CONN_TOTAL).getOrElse(0L) - totalConnections === 5)
+        MetricsConstants.REST_CONN_TOTAL).getOrElse(0L) - totalConnections - invalidCount === 5)
       assert(MetricsSystem.counterValue(MetricsConstants.REST_CONN_OPEN).getOrElse(0L) === 0)
     }
   }
@@ -151,7 +180,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       "create",
       "batch",
       "-f",
-      batchFile,
+      longTimeBatchFile,
       "--authSchema",
       "SPNEGO")
     var result = testPrematureExitForControlCli(createArgs, "")
@@ -165,9 +194,12 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       batchId,
       "--authSchema",
       "spnego")
-    result = testPrematureExitForControlCli(getArgs, "SPARK")
-    assert(result.contains("SPARK"))
-    assert(result.contains(s"${fe.connectionUrl}"))
+    eventually(timeout(5.seconds), interval(100.milliseconds)) {
+      result = testPrematureExitForControlCli(getArgs, "SPARK")
+      assert(result.contains("RUNNING"))
+      assert(result.contains("SPARK"))
+      assert(result.contains(s"${fe.connectionUrl}"))
+    }
 
     val logArgs = Array(
       "log",
@@ -258,12 +290,12 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
         "",
         "",
-        ""))
+        "",
+        Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString)))
     sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
       "",
@@ -280,22 +312,22 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
         "",
         "",
-        ""))
+        "",
+        Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString)))
     sessionManager.openBatchSession(
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
-      Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString),
       newBatchRequest(
         "spark",
         "",
         "",
-        ""))
+        "",
+        Map(KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString)))
 
     val listArgs = Array(
       "list",

@@ -66,6 +66,7 @@ case class BatchOpts(
     batchType: String = null,
     batchUser: String = null,
     batchState: String = null,
+    batchName: String = null,
     createTime: Long = 0,
     endTime: Long = 0,
     from: Int = -1,
@@ -76,6 +77,7 @@ case class EngineOpts(
     user: String = null,
     engineType: String = null,
     engineSubdomain: String = null,
-    engineShareLevel: String = null)
+    engineShareLevel: String = null,
+    all: String = null)
 
 case class AdminConfigOpts(configType: String = null)

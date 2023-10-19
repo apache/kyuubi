@@ -333,7 +333,7 @@ object TrinoContext {
 
     if (rowSet.getColumns == null) {
       return rowSet.getRows.asScala
-        .map(t => t.getColVals.asScala.map(v => v.getFieldValue.asInstanceOf[Object]).asJava)
+        .map(t => t.getColVals.asScala.map(v => v.getFieldValue).asJava)
         .asJava
     }
 

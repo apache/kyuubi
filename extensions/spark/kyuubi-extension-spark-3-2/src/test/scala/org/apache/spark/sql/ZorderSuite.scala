@@ -17,6 +17,20 @@
 
 package org.apache.spark.sql
 
-class ZorderWithCodegenEnabledSuite extends ZorderWithCodegenEnabledSuiteBase {}
+import org.apache.spark.sql.catalyst.parser.ParserInterface
 
-class ZorderWithCodegenDisabledSuite extends ZorderWithCodegenDisabledSuiteBase {}
+import org.apache.kyuubi.sql.SparkKyuubiSparkSQLParser
+
+trait ParserSuite { self: ZorderSuiteBase =>
+  override def createParser: ParserInterface = {
+    new SparkKyuubiSparkSQLParser(spark.sessionState.sqlParser)
+  }
+}
+
+class ZorderWithCodegenEnabledSuite
+  extends ZorderWithCodegenEnabledSuiteBase
+  with ParserSuite {}
+
+class ZorderWithCodegenDisabledSuite
+  extends ZorderWithCodegenDisabledSuiteBase
+  with ParserSuite {}

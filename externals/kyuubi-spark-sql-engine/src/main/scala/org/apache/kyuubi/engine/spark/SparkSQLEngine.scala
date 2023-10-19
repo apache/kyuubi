@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.net.InetAddress
 import java.time.Instant
 import java.util.{Locale, UUID}
 import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
@@ -36,7 +35,8 @@ import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_SUBMIT_TIME_KEY, KYUUBI_ENGINE_URL}
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
@@ -80,6 +80,12 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
       assert(currentEngine.isDefined)
       currentEngine.get.stop()
     })
+
+    val maxInitTimeout = conf.get(ENGINE_SPARK_MAX_INITIAL_WAIT)
+    if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString &&
+      maxInitTimeout > 0) {
+      startFastFailChecker(maxInitTimeout)
+    }
   }
 
   override def stop(): Unit = if (shutdown.compareAndSet(false, true)) {
@@ -112,6 +118,27 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     stopEngineExec =
       Some(ThreadUtils.newDaemonFixedThreadPool(1, "spark-engine-graceful-stop"))
     stopEngineExec.get.execute(stopTask)
+  }
+
+  private[kyuubi] def startFastFailChecker(maxTimeout: Long): Unit = {
+    val startedTime = System.currentTimeMillis()
+    Utils.tryLogNonFatalError {
+      ThreadUtils.runInNewThread("spark-engine-failfast-checker") {
+        if (!shutdown.get) {
+          while (backendService.sessionManager.getOpenSessionCount <= 0 &&
+            System.currentTimeMillis() - startedTime < maxTimeout) {
+            info(s"Waiting for the initial connection")
+            Thread.sleep(Duration(10, TimeUnit.SECONDS).toMillis)
+          }
+          if (backendService.sessionManager.getOpenSessionCount <= 0) {
+            error(s"Spark engine has been terminated because no incoming connection" +
+              s" for more than $maxTimeout ms, de-registering from engine discovery space.")
+            assert(currentEngine.isDefined)
+            currentEngine.get.stop()
+          }
+        }
+      }
+    }
   }
 
   override protected def stopServer(): Unit = {
@@ -165,6 +192,10 @@ object SparkSQLEngine extends Logging {
 
   private val sparkSessionCreated = new AtomicBoolean(false)
 
+  // Kubernetes pod name max length - '-exec-' - Int.MAX_VALUE.length
+  // 253 - 10 - 6
+  val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
+
   SignalRegister.registerLogger(logger)
   setupConf()
 
@@ -189,7 +220,6 @@ object SparkSQLEngine extends Logging {
     _kyuubiConf = KyuubiConf()
     val rootDir = _sparkConf.getOption("spark.repl.classdir").getOrElse(getLocalDir(_sparkConf))
     val outputDir = Utils.createTempDir(prefix = "repl", root = rootDir)
-    _sparkConf.setIfMissing("spark.sql.execution.topKSortFallbackThreshold", "10000")
     _sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     _sparkConf.setIfMissing("spark.master", "local")
     _sparkConf.set(
@@ -223,7 +253,7 @@ object SparkSQLEngine extends Logging {
 
       if (!isOnK8sClusterMode) {
         // set driver host to ip instead of kyuubi pod name
-        _sparkConf.set("spark.driver.host", InetAddress.getLocalHost.getHostAddress)
+        _sparkConf.setIfMissing("spark.driver.host", Utils.findLocalInetAddress.getHostAddress)
       }
     }
 
@@ -259,6 +289,7 @@ object SparkSQLEngine extends Logging {
     KyuubiSparkUtil.initializeSparkSession(
       session,
       kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
+    session.sparkContext.setLocalProperty(KYUUBI_ENGINE_URL, KyuubiSparkUtil.engineUrl)
     session
   }
 
@@ -345,7 +376,7 @@ object SparkSQLEngine extends Logging {
         case i: InterruptedException if !sparkSessionCreated.get =>
           error(
             s"The Engine main thread was interrupted, possibly due to `createSpark` timeout." +
-              s" The `kyuubi.session.engine.initialize.timeout` is ($initTimeout ms) " +
+              s" The `${ENGINE_INIT_TIMEOUT.key}` is ($initTimeout ms) " +
               s" and submitted at $submitTime.",
             i)
         case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
@@ -359,7 +390,7 @@ object SparkSQLEngine extends Logging {
 
   private def startInitTimeoutChecker(startTime: Long, timeout: Long): Unit = {
     val mainThread = Thread.currentThread()
-    new Thread(
+    val checker = new Thread(
       () => {
         while (System.currentTimeMillis() - startTime < timeout && !sparkSessionCreated.get()) {
           Thread.sleep(500)
@@ -368,7 +399,9 @@ object SparkSQLEngine extends Logging {
           mainThread.interrupt()
         }
       },
-      "CreateSparkTimeoutChecker").start()
+      "CreateSparkTimeoutChecker")
+    checker.setDaemon(true)
+    checker.start()
   }
 
   private def isOnK8sClusterMode: Boolean = {
@@ -390,8 +423,4 @@ object SparkSQLEngine extends Logging {
       s"kyuubi-${UUID.randomUUID()}"
     }
   }
-
-  // Kubernetes pod name max length - '-exec-' - Int.MAX_VALUE.length
-  // 253 - 10 - 6
-  val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
 }

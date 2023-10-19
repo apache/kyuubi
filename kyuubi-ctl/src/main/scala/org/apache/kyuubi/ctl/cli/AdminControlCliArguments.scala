@@ -22,7 +22,7 @@ import scopt.OParser
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.cmd.delete.AdminDeleteEngineCommand
-import org.apache.kyuubi.ctl.cmd.list.AdminListEngineCommand
+import org.apache.kyuubi.ctl.cmd.list.{AdminListEngineCommand, AdminListServerCommand}
 import org.apache.kyuubi.ctl.cmd.refresh.RefreshConfigCommand
 import org.apache.kyuubi.ctl.opt.{AdminCommandLine, CliConfig, ControlAction, ControlObject}
 
@@ -37,6 +37,7 @@ class AdminControlCliArguments(args: Seq[String], env: Map[String, String] = sys
     cliConfig.action match {
       case ControlAction.LIST => cliConfig.resource match {
           case ControlObject.ENGINE => new AdminListEngineCommand(cliConfig)
+          case ControlObject.SERVER => new AdminListServerCommand(cliConfig)
           case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
         }
       case ControlAction.DELETE => cliConfig.resource match {
@@ -60,6 +61,12 @@ class AdminControlCliArguments(args: Seq[String], env: Map[String, String] = sys
            |  type                    ${cliConfig.engineOpts.engineType}
            |  sharelevel              ${cliConfig.engineOpts.engineShareLevel}
            |  sharesubdomain          ${cliConfig.engineOpts.engineSubdomain}
+           |  all                     ${cliConfig.engineOpts.all}
+        """.stripMargin
+      case ControlObject.SERVER =>
+        s"""Parsed arguments:
+           |  action                  ${cliConfig.action}
+           |  resource                ${cliConfig.resource}
         """.stripMargin
       case ControlObject.CONFIG =>
         s"""Parsed arguments:

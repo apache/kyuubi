@@ -28,7 +28,7 @@ import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAp
 import org.apache.logging.log4j.core.filter.AbstractFilter
 import org.apache.logging.log4j.core.layout.PatternLayout
 
-import org.apache.kyuubi.reflection.DynFields
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class Log4j2DivertAppender(
     name: String,
@@ -63,11 +63,8 @@ class Log4j2DivertAppender(
     }
   })
 
-  private val writeLock = DynFields.builder()
-    .hiddenImpl(classOf[AbstractWriterAppender[_]], "readWriteLock")
-    .build[ReadWriteLock](this)
-    .get()
-    .writeLock
+  private val writeLock =
+    getField[ReadWriteLock]((classOf[AbstractWriterAppender[_]], this), "readWriteLock").writeLock
 
   /**
    * Overrides AbstractWriterAppender.append(), which does the real logging. No need
@@ -96,7 +93,7 @@ object Log4j2DivertAppender {
           ap.getLayout.isInstanceOf[StringLayout])
       .map(_.getLayout.asInstanceOf[StringLayout])
       .getOrElse(PatternLayout.newBuilder().withPattern(
-        "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n").build())
+        "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n%ex").build())
   }
 
   def initialize(): Unit = {

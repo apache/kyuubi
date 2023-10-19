@@ -27,6 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
+import org.apache.kyuubi.Utils.REDACTION_REPLACEMENT_TEXT
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
@@ -108,5 +109,19 @@ class TrinoProcessBuilder(
 
   override def shortName: String = "trino"
 
-  override def toString: String = Utils.redactCommandLineArgs(conf, commands).mkString("\n")
+  override def toString: String = {
+    if (commands == null) {
+      super.toString()
+    } else {
+      Utils.redactCommandLineArgs(conf, commands).map {
+        case arg if arg.contains(ENGINE_TRINO_CONNECTION_PASSWORD.key) =>
+          s"${ENGINE_TRINO_CONNECTION_PASSWORD.key}=$REDACTION_REPLACEMENT_TEXT"
+        case arg if arg.contains(ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD.key) =>
+          s"${ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD.key}=$REDACTION_REPLACEMENT_TEXT"
+        case arg if arg.contains(ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD.key) =>
+          s"${ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD.key}=$REDACTION_REPLACEMENT_TEXT"
+        case arg => arg
+      }.mkString("\n")
+    }
+  }
 }

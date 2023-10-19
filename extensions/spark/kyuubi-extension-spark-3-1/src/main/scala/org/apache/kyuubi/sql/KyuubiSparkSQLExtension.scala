@@ -20,7 +20,7 @@ package org.apache.kyuubi.sql
 import org.apache.spark.sql.SparkSessionExtensions
 
 import org.apache.kyuubi.sql.sqlclassification.KyuubiSqlClassification
-import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MaxPartitionStrategy}
+import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MaxScanStrategy}
 
 // scalastyle:off line.size.limit
 /**
@@ -40,6 +40,6 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
 
     // watchdog extension
     extensions.injectOptimizerRule(ForcedMaxOutputRowsRule)
-    extensions.injectPlannerStrategy(MaxPartitionStrategy)
+    extensions.injectPlannerStrategy(MaxScanStrategy)
   }
 }

@@ -20,6 +20,7 @@ Extensions for Hive
     :maxdepth: 2
 
     ../../../connector/hive/index
+    functions
 
 .. warning::
    This page is still in-progress.

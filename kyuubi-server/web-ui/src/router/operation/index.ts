@@ -25,11 +25,6 @@ const routes = [
     path: '/operation/completedJobs',
     name: 'operation-completedJobs',
     component: () => import('@/views/operation/completedJobs/index.vue')
-  },
-  {
-    path: '/operation/operation-statistics',
-    name: 'operation-statistics',
-    component: () => import('@/views/operation/operation-statistics/index.vue')
   }
 ]
 

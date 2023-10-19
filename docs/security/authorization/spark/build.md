@@ -51,7 +51,7 @@ The available `spark.version`s are shown in the following table.
 |       3.3.x       |     √     |                                                           -                                                            |
 |       3.2.x       |     √     |                                                           -                                                            |
 |       3.1.x       |     √     |                                                           -                                                            |
-|       3.0.x       |     √     |                                                           -                                                            |
+|       3.0.x       |     x     |                                                    EOL since v1.9.0                                                    |
 | 2.4.x and earlier |     ×     | [PR 2367](https://github.com/apache/kyuubi/pull/2367) is used to track how we work with older releases with scala 2.11 |
 
 Currently, Spark released with Scala 2.12 are supported.
@@ -79,7 +79,7 @@ The available `ranger.version`s are shown in the following table.
 |     1.1.x      |     √     |                                             -                                             |
 |     1.0.x      |     √     |                                             -                                             |
 |     0.7.x      |     √     |                                             -                                             |
-|     0.6.x      |     X     | [RANGER-4672](https://github.com/apache/kyuubi/issues/4672) reported unresolved failures. |
+|     0.6.x      |     X     | [KYUUBI-4672](https://github.com/apache/kyuubi/issues/4672) reported unresolved failures. |
 
 Currently, all ranger releases are supported.
 

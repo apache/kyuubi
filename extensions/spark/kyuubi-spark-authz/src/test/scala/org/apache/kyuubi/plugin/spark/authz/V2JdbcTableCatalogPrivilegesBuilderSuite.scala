@@ -22,7 +22,9 @@ import scala.util.Try
 
 import org.scalatest.Outcome
 
+import org.apache.kyuubi.plugin.spark.authz.V2JdbcTableCatalogPrivilegesBuilderSuite._
 import org.apache.kyuubi.plugin.spark.authz.serde._
+import org.apache.kyuubi.util.AssertionUtils._
 
 class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val catalogImpl: String = "in-memory"
@@ -37,15 +39,11 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
   val jdbcUrl: String = s"$dbUrl;create=true"
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater) {
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2",
-        "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog")
-      spark.conf.set(s"spark.sql.catalog.$catalogV2.url", jdbcUrl)
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2.driver",
-        "org.apache.derby.jdbc.AutoloadedDriver")
-    }
+    spark.conf.set(s"spark.sql.catalog.$catalogV2", v2JdbcTableCatalogClassName)
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.url", jdbcUrl)
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2.driver",
+      "org.apache.derby.jdbc.AutoloadedDriver")
     super.beforeAll()
   }
 
@@ -59,7 +57,6 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
   }
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV31OrGreater)
     test()
   }
 
@@ -77,12 +74,12 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
           val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
           var table: Table = null
           spec.tableDescs.find { d =>
-            Try(table = d.extract(plan, spark).get).isSuccess
+            Try { table = d.extract(plan, spark).get }.isSuccess
           }
           withClue(str) {
-            assert(table.catalog === Some(catalogV2))
-            assert(table.database === Some(ns1))
-            assert(table.table === tbl)
+            assertEqualsIgnoreCase(Some(catalogV2))(table.catalog)
+            assertEqualsIgnoreCase(Some(ns1))(table.database)
+            assertEqualsIgnoreCase(tbl)(table.table)
             assert(table.owner.isEmpty)
           }
         }
@@ -102,12 +99,12 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
         val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
         var table: Table = null
         spec.tableDescs.find { d =>
-          Try(table = d.extract(plan, spark).get).isSuccess
+          Try { table = d.extract(plan, spark).get }.isSuccess
         }
         withClue(sql1) {
-          assert(table.catalog === Some(catalogV2))
-          assert(table.database === Some(ns1))
-          assert(table.table === tbl)
+          assertEqualsIgnoreCase(Some(catalogV2))(table.catalog)
+          assertEqualsIgnoreCase(Some(ns1))(table.database)
+          assertEqualsIgnoreCase(tbl)(table.table)
           assert(table.owner.isEmpty)
         }
       }
@@ -125,11 +122,11 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
         val plan = executePlan(sql1).analyzed
         val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
         var table: Table = null
-        spec.tableDescs.find { d => Try(table = d.extract(plan, spark).get).isSuccess }
+        spec.tableDescs.find { d => Try { table = d.extract(plan, spark).get }.isSuccess }
         withClue(sql1) {
-          assert(table.catalog === Some(catalogV2))
-          assert(table.database === Some(ns1))
-          assert(table.table === tbl)
+          assertEqualsIgnoreCase(Some(catalogV2))(table.catalog)
+          assertEqualsIgnoreCase(Some(ns1))(table.database)
+          assertEqualsIgnoreCase(tbl)(table.table)
           assert(table.owner.isEmpty)
         }
       }
@@ -144,11 +141,11 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
       val spec = DB_COMMAND_SPECS(plan.getClass.getName)
       var db: Database = null
       spec.databaseDescs.find { d =>
-        Try(db = d.extract(plan)).isSuccess
+        Try { db = d.extract(plan) }.isSuccess
       }
       withClue(sql) {
-        assert(db.catalog === Some(catalogV2))
-        assert(db.database === ns1)
+        assertEqualsIgnoreCase(Some(catalogV2))(db.catalog)
+        assertEqualsIgnoreCase(ns1)(db.database)
       }
     }
 
@@ -163,12 +160,17 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
       val spec = DB_COMMAND_SPECS(plan.getClass.getName)
       var db: Database = null
       spec.databaseDescs.find { d =>
-        Try(db = d.extract(plan)).isSuccess
+        Try { db = d.extract(plan) }.isSuccess
       }
       withClue(sql1) {
-        assert(db.catalog === Some(catalogV2))
-        assert(db.database === ns1)
+        assertEqualsIgnoreCase(Some(catalogV2))(db.catalog)
+        assertEqualsIgnoreCase(ns1)(db.database)
       }
     }
   }
+}
+
+object V2JdbcTableCatalogPrivilegesBuilderSuite {
+  val v2JdbcTableCatalogClassName: String =
+    "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog"
 }

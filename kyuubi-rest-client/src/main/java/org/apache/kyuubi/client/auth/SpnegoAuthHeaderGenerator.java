@@ -17,13 +17,13 @@
 
 package org.apache.kyuubi.client.auth;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
 import javax.security.auth.Subject;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
+import org.apache.kyuubi.util.reflect.DynFields;
+import org.apache.kyuubi.util.reflect.DynMethods;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
@@ -61,13 +61,17 @@ public class SpnegoAuthHeaderGenerator implements AuthHeaderGenerator {
   private String generateToken(String server) throws Exception {
     Subject subject;
     try {
-      Class<?> ugiClz = Class.forName(UGI_CLASS);
-      Method ugiGetCurrentUserMethod = ugiClz.getDeclaredMethod("getCurrentUser");
-      Object ugiCurrentUser = ugiGetCurrentUserMethod.invoke(null);
+      Object ugiCurrentUser =
+          DynMethods.builder("getCurrentUser")
+              .hiddenImpl(Class.forName(UGI_CLASS))
+              .buildStaticChecked()
+              .invoke();
       LOG.debug("The user credential is {}", ugiCurrentUser);
-      Field ugiSubjectField = ugiCurrentUser.getClass().getDeclaredField("subject");
-      ugiSubjectField.setAccessible(true);
-      subject = (Subject) ugiSubjectField.get(ugiCurrentUser);
+      subject =
+          DynFields.builder()
+              .hiddenImpl(ugiCurrentUser.getClass(), "subject")
+              .<Subject>buildChecked(ugiCurrentUser)
+              .get();
     } catch (ClassNotFoundException e) {
       // TODO do kerberos authentication using JDK class directly
       LOG.error("Hadoop UGI class {} is required for SPNEGO authentication.", UGI_CLASS);

@@ -96,8 +96,6 @@ trait ShowTablesSuiteBase extends DDLCommandTestUtils {
 
 class ShowTablesV2Suite extends ShowTablesSuiteBase {
 
-  override protected def catalogName: String = super.catalogName
-
   override protected def catalogVersion: String = "Hive V2"
 
   override protected def commandVersion: String = V2_COMMAND_VERSION
@@ -107,7 +105,7 @@ class ShowTablesV1Suite extends ShowTablesSuiteBase {
 
   val SESSION_CATALOG_NAME: String = "spark_catalog"
 
-  override protected def catalogName: String = SESSION_CATALOG_NAME
+  override protected val catalogName: String = SESSION_CATALOG_NAME
 
   override protected def catalogVersion: String = "V1"
 

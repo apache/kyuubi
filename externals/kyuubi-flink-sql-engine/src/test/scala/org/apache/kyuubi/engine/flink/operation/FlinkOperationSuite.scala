@@ -17,21 +17,25 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.nio.file.Paths
 import java.sql.DatabaseMetaData
 import java.util.UUID
 
 import scala.collection.JavaConverters._
 
 import org.apache.flink.api.common.JobID
+import org.apache.flink.configuration.PipelineOptions
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils.FLINK_RUNTIME_VERSION
 import org.apache.kyuubi.engine.flink.WithFlinkTestResources
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
-import org.apache.kyuubi.jdbc.hive.KyuubiStatement
+import org.apache.kyuubi.jdbc.hive.{KyuubiSQLException, KyuubiStatement}
+import org.apache.kyuubi.jdbc.hive.common.TimestampTZ
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
@@ -631,6 +635,60 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
     }
   }
 
+  test("execute statement - show/stop jobs") {
+    if (FLINK_RUNTIME_VERSION >= "1.17") {
+      withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "10"))(Map.empty) {
+        withMultipleConnectionJdbcStatement()({ statement =>
+          statement.executeQuery(
+            "create table tbl_a (a int) with (" +
+              "'connector' = 'datagen', " +
+              "'rows-per-second'='10')")
+          statement.executeQuery("create table tbl_b (a int) with ('connector' = 'blackhole')")
+          val insertResult1 = statement.executeQuery("insert into tbl_b select * from tbl_a")
+          assert(insertResult1.next())
+          val jobId1 = insertResult1.getString(1)
+
+          Thread.sleep(5000)
+
+          val showResult = statement.executeQuery("show jobs")
+          val metadata = showResult.getMetaData
+          assert(metadata.getColumnName(1) === "job id")
+          assert(metadata.getColumnType(1) === java.sql.Types.VARCHAR)
+          assert(metadata.getColumnName(2) === "job name")
+          assert(metadata.getColumnType(2) === java.sql.Types.VARCHAR)
+          assert(metadata.getColumnName(3) === "status")
+          assert(metadata.getColumnType(3) === java.sql.Types.VARCHAR)
+          assert(metadata.getColumnName(4) === "start time")
+          assert(metadata.getColumnType(4) === java.sql.Types.OTHER)
+
+          var isFound = false
+          while (showResult.next()) {
+            if (showResult.getString(1) === jobId1) {
+              isFound = true
+              assert(showResult.getString(2) === "test-job")
+              assert(showResult.getString(3) === "RUNNING")
+              assert(showResult.getObject(4).isInstanceOf[TimestampTZ])
+            }
+          }
+          assert(isFound)
+
+          val stopResult1 = statement.executeQuery(s"stop job '$jobId1'")
+          assert(stopResult1.next())
+          assert(stopResult1.getString(1) === "OK")
+
+          val insertResult2 = statement.executeQuery("insert into tbl_b select * from tbl_a")
+          assert(insertResult2.next())
+          val jobId2 = insertResult2.getString(1)
+
+          val stopResult2 = statement.executeQuery(s"stop job '$jobId2' with savepoint")
+          assert(stopResult2.getMetaData.getColumnName(1).equals("savepoint path"))
+          assert(stopResult2.next())
+          assert(Paths.get(stopResult2.getString(1)).getFileName.toString.startsWith("savepoint-"))
+        })
+      }
+    }
+  }
+
   test("execute statement - select column name with dots") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select 'tmp.hello'")
@@ -738,6 +796,23 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
     }
   }
 
+  test("execute statement - select timestamp with local time zone") {
+    withJdbcStatement() { statement =>
+      statement.executeQuery("CREATE VIEW T1 AS SELECT TO_TIMESTAMP_LTZ(4001, 3)")
+      statement.executeQuery("SET 'table.local-time-zone' = 'UTC'")
+      val resultSetUTC = statement.executeQuery("SELECT * FROM T1")
+      val metaData = resultSetUTC.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.OTHER)
+      assert(resultSetUTC.next())
+      assert(resultSetUTC.getString(1) === "1970-01-01 00:00:04.001 UTC")
+
+      statement.executeQuery("SET 'table.local-time-zone' = 'America/Los_Angeles'")
+      val resultSetPST = statement.executeQuery("SELECT * FROM T1")
+      assert(resultSetPST.next())
+      assert(resultSetPST.getString(1) === "1969-12-31 16:00:04.001 America/Los_Angeles")
+    }
+  }
+
   test("execute statement - select time") {
     withJdbcStatement() { statement =>
       val resultSet =
@@ -758,7 +833,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.ARRAY)
       assert(resultSet.next())
-      val expected = "[v1,v2,v3]"
+      val expected = "[\"v1\",\"v2\",\"v3\"]"
       assert(resultSet.getObject(1).toString == expected)
     }
   }
@@ -778,7 +853,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select (1, '2', true)")
       assert(resultSet.next())
-      val expected = """{INT NOT NULL:1,CHAR(1) NOT NULL:2,BOOLEAN NOT NULL:true}"""
+      val expected = """{INT NOT NULL:1,CHAR(1) NOT NULL:"2",BOOLEAN NOT NULL:true}"""
       assert(resultSet.getString(1) == expected)
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.STRUCT)
@@ -955,11 +1030,11 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       statement.executeQuery("create table tbl_a (a int) with ('connector' = 'blackhole')")
       val resultSet = statement.executeQuery("insert into tbl_a select 1")
       val metadata = resultSet.getMetaData
-      assert(metadata.getColumnName(1) === "result")
+      assert(metadata.getColumnName(1) === "job id")
       assert(metadata.getColumnType(1) === java.sql.Types.VARCHAR)
       assert(resultSet.next())
       assert(resultSet.getString(1).length == 32)
-    };
+    }
   }
 
   test("execute statement - streaming insert into") {
@@ -973,10 +1048,17 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       statement.executeQuery("create table tbl_b (a int) with ('connector' = 'blackhole')")
       val resultSet = statement.executeQuery("insert into tbl_b select * from tbl_a")
       val metadata = resultSet.getMetaData
-      assert(metadata.getColumnName(1) === "result")
+      assert(metadata.getColumnName(1) === "job id")
       assert(metadata.getColumnType(1) === java.sql.Types.VARCHAR)
       assert(resultSet.next())
-      assert(resultSet.getString(1).length == 32)
+      val jobId = resultSet.getString(1)
+      assert(jobId.length == 32)
+
+      if (FLINK_RUNTIME_VERSION >= "1.17") {
+        val stopResult = statement.executeQuery(s"stop job '$jobId'")
+        assert(stopResult.next())
+        assert(stopResult.getString(1) === "OK")
+      }
     })
   }
 
@@ -984,11 +1066,9 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
     withMultipleConnectionJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("set table.dynamic-table-options.enabled = true")
       val metadata = resultSet.getMetaData
-      assert(metadata.getColumnName(1) == "key")
-      assert(metadata.getColumnName(2) == "value")
+      assert(metadata.getColumnName(1) == "result")
       assert(resultSet.next())
-      assert(resultSet.getString(1) == "table.dynamic-table-options.enabled")
-      assert(resultSet.getString(2) == "true")
+      assert(resultSet.getString(1) == "OK")
     }
   }
 
@@ -1003,16 +1083,17 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
   }
 
   test("execute statement - reset property") {
+    val originalName = "test-job" // defined in WithFlinkTestResource
     withMultipleConnectionJdbcStatement() { statement =>
-      statement.executeQuery("set pipeline.jars = my.jar")
-      statement.executeQuery("reset pipeline.jars")
+      statement.executeQuery(s"set ${PipelineOptions.NAME.key()} = wrong-name")
+      statement.executeQuery(s"reset ${PipelineOptions.NAME.key()}")
       val resultSet = statement.executeQuery("set")
       // Flink does not support set key without value currently,
       // thus read all rows to find the desired one
       var success = false
       while (resultSet.next()) {
-        if (resultSet.getString(1) == "pipeline.jars" &&
-          !resultSet.getString(2).contains("my.jar")) {
+        if (resultSet.getString(1) == PipelineOptions.NAME.key() &&
+          resultSet.getString(2).equals(originalName)) {
           success = true
         }
       }
@@ -1055,7 +1136,8 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
   test("ensure result max rows") {
     withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "200"))(Map.empty) {
       withJdbcStatement() { statement =>
-        statement.execute("create table tbl_src (a bigint) with ('connector' = 'datagen')")
+        statement.execute("create table tbl_src (a bigint) with (" +
+          "'connector' = 'datagen', 'number-of-rows' = '1000')")
         val resultSet = statement.executeQuery(s"select a from tbl_src")
         var rows = 0
         while (resultSet.next()) {
@@ -1066,7 +1148,31 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
     }
   }
 
-  test("execute statement - add/remove/show jar") {
+  test("execute statement - add/show jar") {
+    val jarName = s"newly-added-${UUID.randomUUID()}.jar"
+    val newJar = TestUserClassLoaderJar.createJarFile(
+      Utils.createTempDir("add-jar-test").toFile,
+      jarName,
+      GENERATED_UDF_CLASS,
+      GENERATED_UDF_CODE).toPath
+
+    withMultipleConnectionJdbcStatement()({ statement =>
+      statement.execute(s"add jar '$newJar'")
+
+      val showJarsResultAdded = statement.executeQuery("show jars")
+      var exists = false
+      while (showJarsResultAdded.next()) {
+        if (showJarsResultAdded.getString(1).contains(jarName)) {
+          exists = true
+        }
+      }
+      assert(exists)
+    })
+  }
+
+  // ignored because Flink gateway doesn't support remove-jar statements
+  // see org.apache.flink.table.gateway.service.operation.OperationExecutor#callRemoveJar(..)
+  ignore("execute statement - remove jar") {
     val jarName = s"newly-added-${UUID.randomUUID()}.jar"
     val newJar = TestUserClassLoaderJar.createJarFile(
       Utils.createTempDir("add-jar-test").toFile,
@@ -1136,9 +1242,25 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       assert(stmt.asInstanceOf[KyuubiStatement].getQueryId === null)
       stmt.executeQuery("insert into tbl_a values (1)")
       val queryId = stmt.asInstanceOf[KyuubiStatement].getQueryId
-      assert(queryId !== null)
-      // parse the string to check if it's valid Flink job id
-      assert(JobID.fromHexString(queryId) !== null)
+      // Flink 1.16 doesn't support query id via ResultFetcher
+      if (FLINK_RUNTIME_VERSION >= "1.17") {
+        assert(queryId !== null)
+        // parse the string to check if it's valid Flink job id
+        assert(JobID.fromHexString(queryId) !== null)
+      }
     }
+  }
+
+  test("test result fetch timeout") {
+    val exception = intercept[KyuubiSQLException](
+      withSessionConf()(Map(ENGINE_FLINK_FETCH_TIMEOUT.key -> "60000"))() {
+        withJdbcStatement("tbl_a") { stmt =>
+          stmt.executeQuery("create table tbl_a (a int) " +
+            "with ('connector' = 'datagen', 'rows-per-second'='0')")
+          val resultSet = stmt.executeQuery("select * from tbl_a")
+          while (resultSet.next()) {}
+        }
+      })
+    assert(exception.getMessage === "Futures timed out after [60000 milliseconds]")
   }
 }

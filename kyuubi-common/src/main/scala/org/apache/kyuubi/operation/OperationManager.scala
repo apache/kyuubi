@@ -137,18 +137,22 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   final def getOperationNextRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,
-      maxRows: Int): TRowSet = {
+      maxRows: Int): TFetchResultsResp = {
     getOperation(opHandle).getNextRowSet(order, maxRows)
   }
 
   def getOperationLogRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,
-      maxRows: Int): TRowSet = {
+      maxRows: Int): TFetchResultsResp = {
     val operationLog = getOperation(opHandle).getOperationLog
-    operationLog.map(_.read(maxRows)).getOrElse {
+    val rowSet = operationLog.map(_.read(order, maxRows)).getOrElse {
       throw KyuubiSQLException(s"$opHandle failed to generate operation log")
     }
+    val resp = new TFetchResultsResp(new TStatus(TStatusCode.SUCCESS_STATUS))
+    resp.setResults(rowSet)
+    resp.setHasMoreRows(false)
+    resp
   }
 
   final def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[Operation] = synchronized {

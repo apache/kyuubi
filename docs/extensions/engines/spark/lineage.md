@@ -45,14 +45,14 @@ The lineage of this SQL:
 
 ```json
 {
-   "inputTables": ["default.test_table0"],
+   "inputTables": ["spark_catalog.default.test_table0"],
    "outputTables": [],
    "columnLineage": [{
       "column": "col0",
-      "originalColumns": ["default.test_table0.a"]
+      "originalColumns": ["spark_catalog.default.test_table0.a"]
    }, {
       "column": "col1",
-      "originalColumns": ["default.test_table0.b"]
+      "originalColumns": ["spark_catalog.default.test_table0.b"]
    }]
 }
 ```
@@ -101,13 +101,12 @@ Kyuubi Spark Lineage Listener Extension is built using [Apache Maven](https://ma
 To build it, `cd` to the root direct of kyuubi project and run:
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -DskipTests
+build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -am -DskipTests
 ```
 
 After a while, if everything goes well, you will get the plugin finally in two parts:
 
 - The main plugin jar, which is under `./extensions/spark/kyuubi-spark-lineage/target/kyuubi-spark-lineage_${scala.binary.version}-${project.version}.jar`
-- The least transitive dependencies needed, which are under `./extensions/spark/kyuubi-spark-lineage/target/scala-${scala.binary.version}/jars`
 
 ### Build against Different Apache Spark Versions
 
@@ -118,7 +117,7 @@ Sometimes, it may be incompatible with other Spark distributions, then you may n
 For example,
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -DskipTests -Dspark.version=3.1.2
+build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -am -DskipTests -Dspark.version=3.1.2
 ```
 
 The available `spark.version`s are shown in the following table.
@@ -126,6 +125,7 @@ The available `spark.version`s are shown in the following table.
 | Spark Version | Supported | Remark |
 |:-------------:|:---------:|:------:|
 |    master     |     √     |   -    |
+|     3.4.x     |     √     |   -    |
 |     3.3.x     |     √     |   -    |
 |     3.2.x     |     √     |   -    |
 |     3.1.x     |     √     |   -    |
@@ -186,6 +186,7 @@ The lineage dispatchers are used to dispatch lineage events, configured via `spa
 <ul>
   <li>SPARK_EVENT (by default): send lineage event to spark event bus</li>
   <li>KYUUBI_EVENT: send lineage event to kyuubi event bus</li>
+  <li>ATLAS: send lineage to apache atlas</li>
 </ul>
 
 #### Get Lineage Events from SparkListener
@@ -208,3 +209,24 @@ spark.sparkContext.addSparkListener(new SparkListener {
 #### Get Lineage Events from Kyuubi EventHandler
 
 When using the `KYUUBI_EVENT` dispatcher, the lineage events will be sent to the Kyuubi `EventBus`. Refer to [Kyuubi Event Handler](../../server/events) to handle kyuubi events.
+
+#### Ingest Lineage Entities to Apache Atlas
+
+The lineage entities can be ingested into [Apache Atlas](https://atlas.apache.org/) using the `ATLAS` dispatcher.
+
+Extra works:
+
++ The least transitive dependencies needed, which are under `./extensions/spark/kyuubi-spark-lineage/target/scala-${scala.binary.version}/jars`
++ Use `spark.files` to specify the `atlas-application.properties` configuration file for Atlas
+
+Atlas Client configurations (Configure in `atlas-application.properties` or passed in `spark.atlas.` prefix):
+
+|                  Name                   |     Default Value      |                      Description                      | Since |
+|-----------------------------------------|------------------------|-------------------------------------------------------|-------|
+| atlas.rest.address                      | http://localhost:21000 | The rest endpoint url for the Atlas server            | 1.8.0 |
+| atlas.client.type                       | rest                   | The client type (currently only supports rest)        | 1.8.0 |
+| atlas.client.username                   | none                   | The client username                                   | 1.8.0 |
+| atlas.client.password                   | none                   | The client password                                   | 1.8.0 |
+| atlas.cluster.name                      | primary                | The cluster name to use in qualifiedName of entities. | 1.8.0 |
+| atlas.hook.spark.column.lineage.enabled | true                   | Whether to ingest column lineages to Atlas.           | 1.8.0 |
+

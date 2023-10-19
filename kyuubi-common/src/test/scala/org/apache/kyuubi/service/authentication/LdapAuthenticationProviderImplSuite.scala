@@ -47,7 +47,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
   }
 
   test("authenticateGivenBlankOrNullPassword") {
-    Seq("", "\0", null).foreach { pwd =>
+    Seq("", "\u0000", null).foreach { pwd =>
       auth = new LdapAuthenticationProviderImpl(conf, new LdapSearchFactory)
       val thrown = intercept[AuthenticationException] {
         auth.authenticate("user", pwd)

@@ -23,7 +23,7 @@ import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, Pa
 import javax.security.sasl.{AuthorizeCallback, SaslException, SaslServer, SaslServerFactory}
 
 import org.apache.kyuubi.KYUUBI_VERSION
-import org.apache.kyuubi.engine.SemanticVersion
+import org.apache.kyuubi.util.SemanticVersion
 
 class PlainSASLServer(
     handler: CallbackHandler,
@@ -126,10 +126,7 @@ object PlainSASLServer {
     }
   }
 
-  final private val version: Double = {
-    val runtimeVersion = SemanticVersion(KYUUBI_VERSION)
-    runtimeVersion.majorVersion + runtimeVersion.minorVersion.toDouble / 10
-  }
+  final private val version = SemanticVersion(KYUUBI_VERSION).toDouble
 
   class SaslPlainProvider
     extends Provider("KyuubiSaslPlain", version, "Kyuubi Plain SASL provider") {

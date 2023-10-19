@@ -19,22 +19,45 @@ package org.apache.hive.beeline;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.sql.Driver;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.hive.common.util.HiveStringUtils;
+import org.apache.kyuubi.util.reflect.DynConstructors;
+import org.apache.kyuubi.util.reflect.DynFields;
+import org.apache.kyuubi.util.reflect.DynMethods;
 
 public class KyuubiBeeLine extends BeeLine {
+
+  static {
+    try {
+      // We use reflection here to handle the case where users remove the
+      // slf4j-to-jul bridge order to route their logs to JUL.
+      Class<?> bridgeClass = Class.forName("org.slf4j.bridge.SLF4JBridgeHandler");
+      bridgeClass.getMethod("removeHandlersForRootLogger").invoke(null);
+      boolean installed = (boolean) bridgeClass.getMethod("isInstalled").invoke(null);
+      if (!installed) {
+        bridgeClass.getMethod("install").invoke(null);
+      }
+    } catch (ReflectiveOperationException cnf) {
+      // can't log anything yet so just fail silently
+    }
+  }
+
   public static final String KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER =
       "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
   protected KyuubiCommands commands = new KyuubiCommands(this);
-  private Driver defaultDriver = null;
+  private Driver defaultDriver;
+
+  // copied from org.apache.hive.beeline.BeeLine
+  private static final int ERRNO_OK = 0;
+  private static final int ERRNO_ARGS = 1;
+  private static final int ERRNO_OTHER = 2;
+
+  private static final String PYTHON_MODE_PREFIX = "--python-mode";
+  private boolean pythonMode = false;
 
   public KyuubiBeeLine() {
     this(true);
@@ -44,23 +67,35 @@ public class KyuubiBeeLine extends BeeLine {
   public KyuubiBeeLine(boolean isBeeLine) {
     super(isBeeLine);
     try {
-      Field commandsField = BeeLine.class.getDeclaredField("commands");
-      commandsField.setAccessible(true);
-      commandsField.set(this, commands);
+      DynFields.builder().hiddenImpl(BeeLine.class, "commands").buildChecked(this).set(commands);
     } catch (Throwable t) {
       throw new ExceptionInInitializerError("Failed to inject kyuubi commands");
     }
     try {
       defaultDriver =
-          (Driver)
-              Class.forName(
-                      KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER,
-                      true,
-                      Thread.currentThread().getContextClassLoader())
-                  .newInstance();
+          DynConstructors.builder()
+              .impl(KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER)
+              .<Driver>buildChecked()
+              .newInstance();
     } catch (Throwable t) {
       throw new ExceptionInInitializerError(KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER + "-missing");
     }
+  }
+
+  @Override
+  void usage() {
+    super.usage();
+    output("Usage: java \" + KyuubiBeeLine.class.getCanonicalName()");
+    output("   --python-mode                   Execute python code/script.");
+  }
+
+  public boolean isPythonMode() {
+    return pythonMode;
+  }
+
+  // Visible for testing
+  public void setPythonMode(boolean pythonMode) {
+    this.pythonMode = pythonMode;
   }
 
   /** Starts the program. */
@@ -115,25 +150,37 @@ public class KyuubiBeeLine extends BeeLine {
     BeelineParser beelineParser;
     boolean connSuccessful;
     boolean exit;
-    Field exitField;
+    DynFields.BoundField<Boolean> exitField;
 
     try {
-      Field optionsField = BeeLine.class.getDeclaredField("options");
-      optionsField.setAccessible(true);
-      Options options = (Options) optionsField.get(this);
+      Options options =
+          DynFields.builder()
+              .hiddenImpl(BeeLine.class, "options")
+              .<Options>buildStaticChecked()
+              .get();
 
-      beelineParser = new BeelineParser();
+      beelineParser =
+          new BeelineParser() {
+            @SuppressWarnings("rawtypes")
+            @Override
+            protected void processOption(String arg, ListIterator iter) throws ParseException {
+              if (PYTHON_MODE_PREFIX.equals(arg)) {
+                pythonMode = true;
+              } else {
+                super.processOption(arg, iter);
+              }
+            }
+          };
       cl = beelineParser.parse(options, args);
 
-      Method connectUsingArgsMethod =
-          BeeLine.class.getDeclaredMethod(
-              "connectUsingArgs", BeelineParser.class, CommandLine.class);
-      connectUsingArgsMethod.setAccessible(true);
-      connSuccessful = (boolean) connectUsingArgsMethod.invoke(this, beelineParser, cl);
+      connSuccessful =
+          DynMethods.builder("connectUsingArgs")
+              .hiddenImpl(BeeLine.class, BeelineParser.class, CommandLine.class)
+              .buildChecked(this)
+              .invoke(beelineParser, cl);
 
-      exitField = BeeLine.class.getDeclaredField("exit");
-      exitField.setAccessible(true);
-      exit = (boolean) exitField.get(this);
+      exitField = DynFields.builder().hiddenImpl(BeeLine.class, "exit").buildChecked(this);
+      exit = exitField.get();
 
     } catch (ParseException e1) {
       output(e1.getMessage());
@@ -149,15 +196,21 @@ public class KyuubiBeeLine extends BeeLine {
     // no-op if the file is not present
     if (!connSuccessful && !exit) {
       try {
-        Method defaultBeelineConnectMethod =
-            BeeLine.class.getDeclaredMethod("defaultBeelineConnect", CommandLine.class);
-        defaultBeelineConnectMethod.setAccessible(true);
-        connSuccessful = (boolean) defaultBeelineConnectMethod.invoke(this, cl);
+        connSuccessful =
+            DynMethods.builder("defaultBeelineConnect")
+                .hiddenImpl(BeeLine.class, CommandLine.class)
+                .buildChecked(this)
+                .invoke(cl);
 
       } catch (Exception t) {
         error(t.getMessage());
         return 1;
       }
+    }
+
+    // see HIVE-19048 : InitScript errors are ignored
+    if (exit) {
+      return 1;
     }
 
     int code = 0;
@@ -175,8 +228,7 @@ public class KyuubiBeeLine extends BeeLine {
       return 1;
     }
     if (!commands.isEmpty()) {
-      for (Iterator<String> i = commands.iterator(); i.hasNext(); ) {
-        String command = i.next().toString();
+      for (String command : commands) {
         debug(loc("executing-command", command));
         if (!dispatch(command)) {
           code++;
@@ -184,12 +236,67 @@ public class KyuubiBeeLine extends BeeLine {
       }
       try {
         exit = true;
-        exitField.set(this, exit);
+        exitField.set(exit);
       } catch (Exception e) {
         error(e.getMessage());
         return 1;
       }
     }
     return code;
+  }
+
+  // see HIVE-19048 : Initscript errors are ignored
+  @Override
+  int runInit() {
+    String[] initFiles = getOpts().getInitFiles();
+
+    // executionResult will be ERRNO_OK only if all initFiles execute successfully
+    int executionResult = ERRNO_OK;
+    boolean exitOnError = !getOpts().getForce();
+    DynFields.BoundField<Boolean> exitField = null;
+
+    if (initFiles != null && initFiles.length != 0) {
+      for (String initFile : initFiles) {
+        info("Running init script " + initFile);
+        try {
+          int currentResult;
+          try {
+            currentResult =
+                DynMethods.builder("executeFile")
+                    .hiddenImpl(BeeLine.class, String.class)
+                    .buildChecked(this)
+                    .invoke(initFile);
+            exitField = DynFields.builder().hiddenImpl(BeeLine.class, "exit").buildChecked(this);
+          } catch (Exception t) {
+            error(t.getMessage());
+            currentResult = ERRNO_OTHER;
+          }
+
+          if (currentResult != ERRNO_OK) {
+            executionResult = currentResult;
+
+            if (exitOnError) {
+              return executionResult;
+            }
+          }
+        } finally {
+          // exit beeline if there is initScript failure and --force is not set
+          boolean exit = exitOnError && executionResult != ERRNO_OK;
+          try {
+            exitField.set(exit);
+          } catch (Exception t) {
+            error(t.getMessage());
+            return ERRNO_OTHER;
+          }
+        }
+      }
+    }
+    return executionResult;
+  }
+
+  // see HIVE-15820: comment at the head of beeline -e
+  @Override
+  boolean dispatch(String line) {
+    return super.dispatch(isPythonMode() ? line : HiveStringUtils.removeComments(line));
   }
 }

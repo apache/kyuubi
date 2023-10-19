@@ -67,6 +67,7 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
   }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
+    registry.registerAll(MetricsConstants.JVM, new JvmAttributeGaugeSet)
     registry.registerAll(MetricsConstants.GC_METRIC, new GarbageCollectorMetricSet)
     registry.registerAll(MetricsConstants.MEMORY_USAGE, new MemoryUsageGaugeSet)
     registry.registerAll(

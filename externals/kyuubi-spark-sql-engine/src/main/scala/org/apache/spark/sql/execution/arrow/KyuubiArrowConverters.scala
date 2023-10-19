@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.arrow
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.lang.{Boolean => JBoolean}
 import java.nio.channels.Channels
 
 import scala.collection.JavaConverters._
@@ -26,6 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.arrow.vector._
 import org.apache.arrow.vector.ipc.{ArrowStreamWriter, ReadChannel, WriteChannel}
 import org.apache.arrow.vector.ipc.message.{IpcOption, MessageSerializer}
+import org.apache.arrow.vector.types.pojo.{Schema => ArrowSchema}
 import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
@@ -35,6 +37,8 @@ import org.apache.spark.sql.execution.CollectLimitExec
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.ArrowUtils
 import org.apache.spark.util.Utils
+
+import org.apache.kyuubi.util.reflect.DynMethods
 
 object KyuubiArrowConverters extends SQLConfHelper with Logging {
 
@@ -60,7 +64,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       "slice",
       0,
       Long.MaxValue)
-    val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId)
+    val arrowSchema = toArrowSchema(schema, timeZoneId, true, false)
     vectorSchemaRoot = VectorSchemaRoot.create(arrowSchema, sliceAllocator)
     try {
       val recordBatch = MessageSerializer.deserializeRecordBatch(
@@ -124,7 +128,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     val n = collectLimitExec.limit
     val schema = collectLimitExec.schema
     if (n == 0) {
-      return new Array[Batch](0)
+      new Array[Batch](0)
     } else {
       val limitScaleUpFactor = Math.max(conf.limitScaleUpFactor, 2)
       // TODO: refactor and reuse the code from RDD's take()
@@ -152,7 +156,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
         }
 
         val partsToScan =
-          partsScanned.until(math.min(partsScanned + numPartsToTry, totalParts).toInt)
+          partsScanned.until(math.min(partsScanned + numPartsToTry, totalParts))
 
         // TODO: SparkPlan.session introduced in SPARK-35798, replace with SparkPlan.session once we
         // drop Spark-3.1.x support.
@@ -203,7 +207,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
    * Different from [[org.apache.spark.sql.execution.arrow.ArrowConverters.toBatchIterator]],
    * each output arrow batch contains this batch row count.
    */
-  private def toBatchIterator(
+  def toBatchIterator(
       rowIter: Iterator[InternalRow],
       schema: StructType,
       maxRecordsPerBatch: Long,
@@ -226,6 +230,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
    * with two key differences:
    *   1. there is no requirement to write the schema at the batch header
    *   2. iteration halts when `rowCount` equals `limit`
+   * Note that `limit < 0` means no limit, and return all rows the in the iterator.
    */
   private[sql] class ArrowBatchIterator(
       rowIter: Iterator[InternalRow],
@@ -237,7 +242,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       context: TaskContext)
     extends Iterator[Array[Byte]] {
 
-    protected val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId)
+    protected val arrowSchema = toArrowSchema(schema, timeZoneId, true, false)
     private val allocator =
       ArrowUtils.rootAllocator.newChildAllocator(
         s"to${this.getClass.getSimpleName}",
@@ -255,7 +260,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       }
     }
 
-    override def hasNext: Boolean = (rowIter.hasNext && rowCount < limit) || {
+    override def hasNext: Boolean = (rowIter.hasNext && (rowCount < limit || limit < 0)) || {
       root.close()
       allocator.close()
       false
@@ -283,7 +288,8 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
               // If the size of rows are 0 or negative, unlimit it.
               maxRecordsPerBatch <= 0 ||
               rowCountInLastBatch < maxRecordsPerBatch ||
-              rowCount < limit)) {
+              rowCount < limit ||
+              limit < 0)) {
           val row = rowIter.next()
           arrowWriter.write(row)
           estimatedBatchSize += (row match {
@@ -299,7 +305,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
         MessageSerializer.serialize(writeChannel, batch)
 
         // Always write the Ipc options at the end.
-        ArrowStreamWriter.writeEndOfStream(writeChannel, IpcOption.DEFAULT)
+        ArrowStreamWriter.writeEndOfStream(writeChannel, ARROW_IPC_OPTION_DEFAULT)
 
         batch.close()
       } {
@@ -310,12 +316,37 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     }
   }
 
-  // for testing
-  def fromBatchIterator(
-      arrowBatchIter: Iterator[Array[Byte]],
+  // the signature of function [[ArrowUtils.toArrowSchema]] is changed in SPARK-41971 (since Spark
+  // 3.5)
+  private lazy val toArrowSchemaMethod = DynMethods.builder("toArrowSchema")
+    .impl( // for Spark 3.4 or previous
+      "org.apache.spark.sql.util.ArrowUtils",
+      classOf[StructType],
+      classOf[String])
+    .impl( // for Spark 3.5 or later
+      "org.apache.spark.sql.util.ArrowUtils",
+      classOf[StructType],
+      classOf[String],
+      classOf[Boolean],
+      classOf[Boolean])
+    .build()
+
+  /**
+   * this function uses reflective calls to the [[ArrowUtils.toArrowSchema]].
+   */
+  private def toArrowSchema(
       schema: StructType,
-      timeZoneId: String,
-      context: TaskContext): Iterator[InternalRow] = {
-    ArrowConverters.fromBatchIterator(arrowBatchIter, schema, timeZoneId, context)
+      timeZone: String,
+      errorOnDuplicatedFieldNames: JBoolean,
+      largeVarTypes: JBoolean): ArrowSchema = {
+    toArrowSchemaMethod.invoke[ArrowSchema](
+      ArrowUtils,
+      schema,
+      timeZone,
+      errorOnDuplicatedFieldNames,
+      largeVarTypes)
   }
+
+  // IpcOption.DEFAULT was introduced in ARROW-11081(ARROW-4.0.0), add this for adapt Spark-3.1/3.2
+  final private val ARROW_IPC_OPTION_DEFAULT = new IpcOption()
 }

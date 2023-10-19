@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.flink
 
-import org.apache.flink.table.client.gateway.context.DefaultContext
+import org.apache.flink.table.gateway.service.context.DefaultContext
 
 import org.apache.kyuubi.engine.flink.session.FlinkSQLSessionManager
 import org.apache.kyuubi.service.AbstractBackendService

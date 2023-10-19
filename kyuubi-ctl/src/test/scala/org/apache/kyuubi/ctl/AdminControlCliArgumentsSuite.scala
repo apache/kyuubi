@@ -86,6 +86,24 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
     args = Array(
       "refresh",
       "config",
+      "kubernetesConf")
+    val opArgs4 = new AdminControlCliArguments(args)
+    assert(opArgs4.cliConfig.action === ControlAction.REFRESH)
+    assert(opArgs4.cliConfig.resource === ControlObject.CONFIG)
+    assert(opArgs4.cliConfig.adminConfigOpts.configType === KUBERNETES_CONF)
+
+    args = Array(
+      "refresh",
+      "config",
+      "denyUsers")
+    val opArgs5 = new AdminControlCliArguments(args)
+    assert(opArgs5.cliConfig.action === ControlAction.REFRESH)
+    assert(opArgs5.cliConfig.resource === ControlObject.CONFIG)
+    assert(opArgs5.cliConfig.adminConfigOpts.configType === DENY_USERS)
+
+    args = Array(
+      "refresh",
+      "config",
       "--hostUrl",
       "https://kyuubi.test.com",
       "otherConf")
@@ -115,6 +133,13 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
     }
   }
 
+  test("test list server") {
+    val args = Array("list", "server")
+    val opArgs = new AdminControlCliArguments(args)
+    assert(opArgs.cliConfig.action.toString === "LIST")
+    assert(opArgs.cliConfig.resource.toString === "SERVER")
+  }
+
   test("test --help") {
     // scalastyle:off
     val helpString =
@@ -130,16 +155,19 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |  --hs2ProxyUser <value>   The value of hive.server2.proxy.user config.
          |  --conf <value>           Kyuubi config property pair, formatted key=value.
          |
-         |Command: list [engine]
+         |Command: list [engine|server]
          |	List information about resources.
          |Command: list engine [options]
-         |	List all the engine nodes for a user
+         |	List the engine nodes
          |  -et, --engine-type <value>
          |                           The engine type this engine belong to.
          |  -es, --engine-subdomain <value>
          |                           The engine subdomain this engine belong to.
          |  -esl, --engine-share-level <value>
          |                           The engine share level this engine belong to.
+         |  -a, --all <value>        All the engine.
+         |Command: list server
+         |	List all the server nodes
          |
          |Command: delete [engine]
          |	Delete resources.
@@ -156,7 +184,7 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |	Refresh the resource.
          |Command: refresh config [<configType>]
          |	Refresh the config with specified type.
-         |  <configType>             The valid config type can be one of the following: $HADOOP_CONF, $USER_DEFAULTS_CONF, $UNLIMITED_USERS.
+         |  <configType>             The valid config type can be one of the following: $HADOOP_CONF, $USER_DEFAULTS_CONF, $KUBERNETES_CONF, $UNLIMITED_USERS, $DENY_USERS.
          |
          |  -h, --help               Show help message and exit.""".stripMargin
     // scalastyle:on

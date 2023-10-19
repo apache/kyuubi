@@ -101,7 +101,7 @@ trait BackendService {
       operationHandle: OperationHandle,
       orientation: FetchOrientation,
       maxRows: Int,
-      fetchLog: Boolean): TRowSet
+      fetchLog: Boolean): TFetchResultsResp
 
   def sessionManager: SessionManager
 }

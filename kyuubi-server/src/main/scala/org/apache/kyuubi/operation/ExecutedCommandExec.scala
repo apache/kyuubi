@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
+import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp}
 
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
@@ -67,11 +67,17 @@ class ExecutedCommandExec(
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+  override def getNextRowSetInternal(
+      order: FetchOrientation,
+      rowSetSize: Int): TFetchResultsResp = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
-    command.getNextRowSet(order, rowSetSize, getProtocolVersion)
+    val rowSet = command.getNextRowSet(order, rowSetSize, getProtocolVersion)
+    val resp = new TFetchResultsResp(OK_STATUS)
+    resp.setResults(rowSet)
+    resp.setHasMoreRows(false)
+    resp
   }
 
   override def getResultSetMetadata: TGetResultSetMetadataResp = {

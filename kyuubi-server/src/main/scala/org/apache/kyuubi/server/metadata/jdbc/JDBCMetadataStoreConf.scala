@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server.metadata.jdbc
 
-import java.util.{Locale, Properties}
+import java.util.Properties
 
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf, OptionalConfigEntry}
 import org.apache.kyuubi.config.KyuubiConf.buildConf
@@ -37,8 +37,11 @@ object JDBCMetadataStoreConf {
   val METADATA_STORE_JDBC_DATABASE_TYPE: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.database.type")
       .doc("The database type for server jdbc metadata store.<ul>" +
-        " <li>DERBY: Apache Derby, JDBC driver `org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
-        " <li>MYSQL: MySQL, JDBC driver `com.mysql.jdbc.Driver`.</li>" +
+        " <li>(Deprecated) DERBY: Apache Derby, JDBC driver " +
+        "`org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
+        " <li>SQLITE: SQLite3, JDBC driver `org.sqlite.JDBC`.</li>" +
+        " <li>MYSQL: MySQL, JDBC driver `com.mysql.cj.jdbc.Driver` " +
+        "(fallback `com.mysql.jdbc.Driver`).</li>" +
         " <li>CUSTOM: User-defined database type, need to specify corresponding JDBC driver.</li>" +
         " Note that: The JDBC datasource is powered by HiKariCP, for datasource properties," +
         " please specify them with the prefix: kyuubi.metadata.store.jdbc.datasource." +
@@ -46,8 +49,8 @@ object JDBCMetadataStoreConf {
       .version("1.6.0")
       .serverOnly
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
-      .createWithDefault("DERBY")
+      .transformToUpperCase
+      .createWithDefault("SQLITE")
 
   val METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT: ConfigEntry[Boolean] =
     buildConf("kyuubi.metadata.store.jdbc.database.schema.init")
@@ -67,14 +70,14 @@ object JDBCMetadataStoreConf {
 
   val METADATA_STORE_JDBC_URL: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.url")
-      .doc("The JDBC url for server JDBC metadata store. By default, it is a DERBY in-memory" +
+      .doc("The JDBC url for server JDBC metadata store. By default, it is a SQLite" +
         " database url, and the state information is not shared across kyuubi instances. To" +
         " enable high availability for multiple kyuubi instances," +
         " please specify a production JDBC url.")
       .version("1.6.0")
       .serverOnly
       .stringConf
-      .createWithDefault("jdbc:derby:memory:kyuubi_state_store_db;create=true")
+      .createWithDefault("jdbc:sqlite:kyuubi_state_store.db")
 
   val METADATA_STORE_JDBC_USER: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.user")
@@ -91,4 +94,16 @@ object JDBCMetadataStoreConf {
       .serverOnly
       .stringConf
       .createWithDefault("")
+
+  val METADATA_STORE_JDBC_PRIORITY_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.metadata.store.jdbc.priority.enabled")
+      .doc("Whether to enable the priority scheduling for batch impl v2. " +
+        "When false, ignore kyuubi.batch.priority and use the FIFO ordering strategy " +
+        "for batch job scheduling. Note: this feature may cause significant performance issues " +
+        "when using MySQL 5.7 as the metastore backend due to the lack of support " +
+        "for mixed order index. See more details at KYUUBI #5329.")
+      .version("1.8.0")
+      .serverOnly
+      .booleanConf
+      .createWithDefault(false)
 }

@@ -92,15 +92,6 @@ Copyright 2001-2020 The Apache Software Foundation
 Apache Commons Logging
 Copyright 2003-2013 The Apache Software Foundation
 
-Curator Client
-Copyright 2011-2017 The Apache Software Foundation
-
-Curator Framework
-Copyright 2011-2017 The Apache Software Foundation
-
-Curator Recipes
-Copyright 2011-2017 The Apache Software Foundation
-
 =========================================================================
 ==  NOTICE file corresponding to section 4(d) of the Apache License,
 ==  Version 2.0, in this case for the Apache Derby distribution.
@@ -1236,7 +1227,7 @@ This product optionally depends on 'zstd-jni', a zstd-jni Java compression
 and decompression library, which can be obtained at:
 
   * LICENSE:
-    * license/LICENSE.zstd-jni.txt (Apache License 2.0)
+    * license/LICENSE.zstd-jni.txt (BSD License)
   * HOMEPAGE:
     * https://github.com/luben/zstd-jni
 
@@ -1370,3 +1361,26 @@ decompression for Java., which can be obtained at:
   * HOMEPAGE:
     * https://github.com/hyperxpro/Brotli4j
 
+This product depends on 'kafka-clients', Java clients for Kafka,
+which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.kafka.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://github.com/apache/kafka
+
+This product optionally depends on 'snappy-java', Snappy compression and
+decompression for Java, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.snappy-java.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://github.com/xerial/snappy-java
+
+This product optionally depends on 'lz4-java', Lz4 compression and
+decompression for Java, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.lz4-java.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://github.com/lz4/lz4-java

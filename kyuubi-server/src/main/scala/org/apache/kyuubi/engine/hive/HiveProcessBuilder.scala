@@ -29,7 +29,7 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder._
 import org.apache.kyuubi.operation.log.OperationLog
@@ -106,6 +106,8 @@ class HiveProcessBuilder(
 
     buffer += "--conf"
     buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
+    buffer += "--conf"
+    buffer += s"$KYUUBI_ENGINE_ID=$engineRefId"
 
     for ((k, v) <- conf.getAll) {
       buffer += "--conf"
@@ -121,4 +123,5 @@ class HiveProcessBuilder(
 
 object HiveProcessBuilder {
   final val HIVE_HADOOP_CLASSPATH_KEY = "HIVE_HADOOP_CLASSPATH"
+  final val HIVE_ENGINE_NAME = "hive.engine.name"
 }

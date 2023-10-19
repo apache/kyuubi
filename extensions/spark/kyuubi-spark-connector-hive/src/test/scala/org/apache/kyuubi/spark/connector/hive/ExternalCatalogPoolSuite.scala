@@ -56,11 +56,11 @@ class ExternalCatalogPoolSuite extends KyuubiHiveTest {
       val externalCatalog2 = pool.take(catalog2)
 
       assert(externalCatalog1 != externalCatalog2)
-      (1 to 10).foreach { id =>
+      (1 to 10).foreach { _ =>
         assert(pool.take(catalog1) == externalCatalog1)
       }
 
-      (1 to 10).foreach { id =>
+      (1 to 10).foreach { _ =>
         assert(pool.take(catalog2) == externalCatalog2)
       }
     }

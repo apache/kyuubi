@@ -28,7 +28,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.metrics.MetricsConstants._
-import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.operation.OperationState
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf.METADATA_STORE_JDBC_PRIORITY_ENABLED
 import org.apache.kyuubi.session.SessionType
 
 class MetadataManagerSuite extends KyuubiFunSuite {
@@ -66,7 +68,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       retryRef.addRetryingMetadataRequest(UpdateMetadata(metadataToUpdate))
       eventually(timeout(3.seconds)) {
         assert(retryRef.hasRemainingRequests())
-        assert(metadataManager.getBatch(metadata.identifier).getState === "PENDING")
+        assert(metadataManager.getBatch(metadata.identifier).map(_.getState).contains("PENDING"))
       }
 
       val metadata2 = metadata.copy(identifier = UUID.randomUUID().toString)
@@ -84,7 +86,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
 
       eventually(timeout(3.seconds)) {
         assert(!retryRef2.hasRemainingRequests())
-        assert(metadataManager.getBatch(metadata2.identifier).getState === "RUNNING")
+        assert(metadataManager.getBatch(metadata2.identifier).map(_.getState).contains("RUNNING"))
       }
 
       metadataManager.identifierRequestsAsyncRetryRefs.clear()
@@ -116,7 +118,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
         MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_RETRYING)
           .getOrElse(0L) - retryingRequests === 0)
 
-      val invalidMetadata = metadata.copy(kyuubiInstance = null)
+      val invalidMetadata = metadata.copy(state = null)
       intercept[Exception](metadataManager.insertMetadata(invalidMetadata, false))
       assert(
         MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_TOTAL)
@@ -142,6 +144,58 @@ class MetadataManagerSuite extends KyuubiFunSuite {
     }
   }
 
+  test("[KYUUBI #5328] Test MetadataManager#pickBatchForSubmitting in order") {
+    // build mock batch jobs
+    val mockKyuubiInstance = "mock_kyuubi_instance"
+    val time = System.currentTimeMillis()
+    val mockBatchJob1 = newMetadata(
+      identifier = "mock_batch_job_1",
+      state = OperationState.INITIALIZED.toString,
+      createTime = time + 10000,
+      // larger than default priority 10
+      priority = 20)
+    val mockBatchJob2 = newMetadata(
+      identifier = "mock_batch_job_2",
+      state = OperationState.INITIALIZED.toString,
+      createTime = time)
+    val mockBatchJob3 = newMetadata(
+      identifier = "mock_batch_job_3",
+      state = OperationState.INITIALIZED.toString,
+      createTime = time + 5000)
+
+    withMetadataManager(Map(METADATA_STORE_JDBC_PRIORITY_ENABLED.key -> "true")) {
+      metadataManager =>
+        metadataManager.insertMetadata(mockBatchJob1, asyncRetryOnError = false)
+        metadataManager.insertMetadata(mockBatchJob2, asyncRetryOnError = false)
+        metadataManager.insertMetadata(mockBatchJob3, asyncRetryOnError = false)
+
+        // pick the highest priority batch job
+        val metadata1 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
+        assert(metadata1.exists(m => m.identifier === "mock_batch_job_1"))
+
+        // pick the oldest batch job when same priority
+        val metadata2 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
+        assert(metadata2.exists(m => m.identifier === "mock_batch_job_2"))
+
+        val metadata3 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
+        assert(metadata3.exists(m => m.identifier === "mock_batch_job_3"))
+    }
+
+    withMetadataManager(Map(METADATA_STORE_JDBC_PRIORITY_ENABLED.key -> "false")) {
+      metadataManager =>
+        metadataManager.insertMetadata(mockBatchJob1, asyncRetryOnError = false)
+        metadataManager.insertMetadata(mockBatchJob2, asyncRetryOnError = false)
+        metadataManager.insertMetadata(mockBatchJob3, asyncRetryOnError = false)
+
+        // pick the oldest batch job
+        val metadata2 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
+        assert(metadata2.exists(m => m.identifier === "mock_batch_job_2"))
+
+        val metadata3 = metadataManager.pickBatchForSubmitting(mockKyuubiInstance)
+        assert(metadata3.exists(m => m.identifier === "mock_batch_job_3"))
+    }
+  }
+
   private def withMetadataManager(
       confOverlay: Map[String, String],
       newMetadataMgr: () => MetadataManager = () => new MetadataManager())(
@@ -157,7 +211,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       metadataManager.start()
       f(metadataManager)
     } finally {
-      metadataManager.getBatches(null, null, null, 0, 0, 0, Int.MaxValue).foreach { batch =>
+      metadataManager.getBatches(MetadataFilter(), 0, Int.MaxValue).foreach { batch =>
         metadataManager.cleanupMetadataById(batch.getId)
       }
       // ensure no metadata request leak
@@ -169,22 +223,27 @@ class MetadataManagerSuite extends KyuubiFunSuite {
     }
   }
 
-  private def newMetadata(): Metadata = {
+  private def newMetadata(
+      identifier: String = UUID.randomUUID().toString,
+      state: String = OperationState.PENDING.toString,
+      createTime: Long = System.currentTimeMillis(),
+      priority: Int = 10): Metadata = {
     Metadata(
-      identifier = UUID.randomUUID().toString,
+      identifier = identifier,
       sessionType = SessionType.BATCH,
       realUser = "kyuubi",
       username = "kyuubi",
       ipAddress = "127.0.0.1",
       kyuubiInstance = "localhost:10009",
-      state = "PENDING",
+      state = state,
       resource = "intern",
       className = "org.apache.kyuubi.SparkWC",
       requestName = "kyuubi_batch",
       requestConf = Map("spark.master" -> "local"),
       requestArgs = Seq("100"),
-      createTime = System.currentTimeMillis(),
+      createTime = createTime,
       engineType = "spark",
+      priority = priority,
       clusterManager = Some("local"))
   }
 }

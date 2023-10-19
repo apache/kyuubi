@@ -215,7 +215,7 @@ else
   echo "Making distribution for Kyuubi $VERSION in '$DISTDIR'..."
 fi
 
-MVN_DIST_OPT="-DskipTests"
+MVN_DIST_OPT="-DskipTests -Dmaven.javadoc.skip=true -Dmaven.scaladoc.skip=true -Dmaven.source.skip"
 
 if [[ "$ENABLE_WEBUI" == "true" ]]; then
   MVN_DIST_OPT="$MVN_DIST_OPT -Pweb-ui"
@@ -335,7 +335,7 @@ if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SC
 fi
 
 # Copy Kyuubi Spark extension
-SPARK_EXTENSION_VERSIONS=('3-1' '3-2' '3-3')
+SPARK_EXTENSION_VERSIONS=('3-1' '3-2' '3-3' '3-4' '3-5')
 # shellcheck disable=SC2068
 for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
   if [[ -f $"$KYUUBI_HOME/extensions/spark/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" ]]; then
@@ -384,7 +384,11 @@ if [[ "$MAKE_TGZ" == "true" ]]; then
   TARDIR="$KYUUBI_HOME/$TARDIR_NAME"
   rm -rf "$TARDIR"
   cp -R "$DISTDIR" "$TARDIR"
-  tar czf "$TARDIR_NAME.tgz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
+  TAR="tar"
+  if [ "$(uname -s)" = "Darwin" ]; then
+    TAR="tar --no-mac-metadata --no-xattrs --no-fflags"
+  fi
+  $TAR -czf "$TARDIR_NAME.tgz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
   rm -rf "$TARDIR"
   echo "The Kyuubi tarball $TARDIR_NAME.tgz is successfully generated in $KYUUBI_HOME."
 fi

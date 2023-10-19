@@ -30,3 +30,17 @@ export function deleteSession(sessionId: string) {
     method: 'delete'
   })
 }
+
+export function getSession(sessionId: string) {
+  return request({
+    url: `api/v1/sessions/${sessionId}`,
+    method: 'get'
+  })
+}
+
+export function getAllTypeOperation(sessionId: string) {
+  return request({
+    url: `api/v1/sessions/${sessionId}/operations`,
+    method: 'get'
+  })
+}

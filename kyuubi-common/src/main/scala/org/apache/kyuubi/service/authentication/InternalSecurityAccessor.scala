@@ -20,6 +20,8 @@ package org.apache.kyuubi.service.authentication
 import javax.crypto.Cipher
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 
+import org.apache.hadoop.classification.VisibleForTesting
+
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -120,5 +122,10 @@ object InternalSecurityAccessor extends Logging {
 
   def get(): InternalSecurityAccessor = {
     _engineSecurityAccessor
+  }
+
+  @VisibleForTesting
+  def reset(): Unit = {
+    _engineSecurityAccessor = null
   }
 }

@@ -31,15 +31,6 @@ Basics
     high_availability_guide
     migration-guide
 
-Configurations
---------------
-
-.. toctree::
-    :maxdepth: 2
-    :glob:
-
-    settings
-
 Engines
 -------
 

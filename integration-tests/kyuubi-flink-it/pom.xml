@@ -21,11 +21,11 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>integration-tests</artifactId>
-        <version>1.8.0-SNAPSHOT</version>
+        <version>1.9.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-flink-it_2.12</artifactId>
+    <artifactId>kyuubi-flink-it_${scala.binary.version}</artifactId>
     <name>Kyuubi Test Flink SQL IT</name>
     <url>https://kyuubi.apache.org/</url>
 
@@ -112,4 +112,8 @@
 
     </dependencies>
 
+    <build>
+        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
+        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
+    </build>
 </project>

@@ -19,6 +19,7 @@ export default {
   test: 'test',
   user: 'User',
   client_ip: 'Client IP',
+  server_ip: 'Server IP',
   kyuubi_instance: 'Kyuubi Instance',
   session_id: 'Session ID',
   operation_id: 'Operation ID',
@@ -33,6 +34,9 @@ export default {
   engine_type: 'Engine Type',
   share_level: 'Share Level',
   version: 'Version',
+  engine_ui: 'Engine UI',
+  failure_reason: 'Failure Reason',
+  session_properties: 'Session Properties',
   operation: {
     text: 'Operation',
     delete_confirm: 'Delete Confirm',

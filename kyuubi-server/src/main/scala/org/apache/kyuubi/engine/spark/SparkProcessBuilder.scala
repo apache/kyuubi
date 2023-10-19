@@ -17,22 +17,26 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.io.{File, IOException}
+import java.io.{File, FileFilter, IOException}
 import java.nio.file.Paths
+import java.util.Locale
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
+import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.Validator
+import org.apache.kyuubi.util.{KubernetesUtils, Validator}
 
 class SparkProcessBuilder(
     override val proxyUser: String,
@@ -98,7 +102,26 @@ class SparkProcessBuilder(
     }
   }
 
-  override protected val commands: Array[String] = {
+  private[kyuubi] def extractSparkCoreScalaVersion(fileNames: Iterable[String]): String = {
+    fileNames.collectFirst { case SPARK_CORE_SCALA_VERSION_REGEX(scalaVersion) => scalaVersion }
+      .getOrElse(throw new KyuubiException("Failed to extract Scala version from spark-core jar"))
+  }
+
+  override protected val engineScalaBinaryVersion: String = {
+    env.get("SPARK_SCALA_VERSION").filter(StringUtils.isNotBlank).getOrElse {
+      extractSparkCoreScalaVersion(Paths.get(sparkHome, "jars").toFile.list())
+    }
+  }
+
+  override protected lazy val engineHomeDirFilter: FileFilter = file => {
+    val r = SCALA_COMPILE_VERSION match {
+      case "2.12" => SPARK_HOME_REGEX_SCALA_212
+      case "2.13" => SPARK_HOME_REGEX_SCALA_213
+    }
+    file.isDirectory && r.findFirstMatchIn(file.getName).isDefined
+  }
+
+  override protected lazy val commands: Array[String] = {
     // complete `spark.master` if absent on kubernetes
     completeMasterUrl(conf)
 
@@ -115,8 +138,8 @@ class SparkProcessBuilder(
         == AuthTypes.KERBEROS) {
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
-
-    allConf.foreach { case (k, v) =>
+    // pass spark engine log path to spark conf
+    (allConf ++ engineLogPathConf ++ appendPodNameConf(allConf)).foreach { case (k, v) =>
       buffer += CONF
       buffer += s"${convertConfigKey(k)}=$v"
     }
@@ -183,26 +206,69 @@ class SparkProcessBuilder(
 
   override def shortName: String = "spark"
 
-  protected lazy val defaultMaster: Option[String] = {
+  protected lazy val defaultsConf: Map[String, String] = {
     val confDir = env.getOrElse(SPARK_CONF_DIR, s"$sparkHome${File.separator}conf")
-    val defaults =
-      try {
-        val confFile = new File(s"$confDir${File.separator}$SPARK_CONF_FILE_NAME")
-        if (confFile.exists()) {
-          Utils.getPropertiesFromFile(Some(confFile))
-        } else {
-          Map.empty[String, String]
-        }
-      } catch {
-        case _: Exception =>
-          warn(s"Failed to load spark configurations from $confDir")
-          Map.empty[String, String]
+    try {
+      val confFile = new File(s"$confDir${File.separator}$SPARK_CONF_FILE_NAME")
+      if (confFile.exists()) {
+        Utils.getPropertiesFromFile(Some(confFile))
+      } else {
+        Map.empty[String, String]
       }
-    defaults.get(MASTER_KEY)
+    } catch {
+      case _: Exception =>
+        warn(s"Failed to load spark configurations from $confDir")
+        Map.empty[String, String]
+    }
+  }
+
+  override def appMgrInfo(): ApplicationManagerInfo = {
+    ApplicationManagerInfo(
+      clusterManager(),
+      kubernetesContext(),
+      kubernetesNamespace())
+  }
+
+  def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
+    val appName = conf.getOrElse(APP_KEY, "spark")
+    val map = mutable.Map.newBuilder[String, String]
+    if (clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s"))) {
+      if (!conf.contains(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)) {
+        val prefix = KubernetesUtils.generateExecutorPodNamePrefix(appName, engineRefId)
+        map += (KUBERNETES_EXECUTOR_POD_NAME_PREFIX -> prefix)
+      }
+      if (deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")) {
+        if (!conf.contains(KUBERNETES_DRIVER_POD_NAME)) {
+          val name = KubernetesUtils.generateDriverPodName(appName, engineRefId)
+          map += (KUBERNETES_DRIVER_POD_NAME -> name)
+        }
+      }
+    }
+    map.result().toMap
   }
 
   override def clusterManager(): Option[String] = {
-    conf.getOption(MASTER_KEY).orElse(defaultMaster)
+    conf.getOption(MASTER_KEY).orElse(defaultsConf.get(MASTER_KEY))
+  }
+
+  def deployMode(): Option[String] = {
+    conf.getOption(DEPLOY_MODE_KEY).orElse(defaultsConf.get(DEPLOY_MODE_KEY))
+  }
+
+  override def isClusterMode(): Boolean = {
+    clusterManager().map(_.toLowerCase(Locale.ROOT)) match {
+      case Some(m) if m.startsWith("yarn") || m.startsWith("k8s") =>
+        deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")
+      case _ => false
+    }
+  }
+
+  def kubernetesContext(): Option[String] = {
+    conf.getOption(KUBERNETES_CONTEXT_KEY).orElse(defaultsConf.get(KUBERNETES_CONTEXT_KEY))
+  }
+
+  def kubernetesNamespace(): Option[String] = {
+    conf.getOption(KUBERNETES_NAMESPACE_KEY).orElse(defaultsConf.get(KUBERNETES_NAMESPACE_KEY))
   }
 
   override def validateConf: Unit = Validator.validateConf(conf)
@@ -218,12 +284,21 @@ class SparkProcessBuilder(
       }
     }
   }
+
+  private[spark] def engineLogPathConf(): Map[String, String] = {
+    Map(KYUUBI_ENGINE_LOG_PATH_KEY -> engineLog.getAbsolutePath)
+  }
 }
 
 object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
+  final val DEPLOY_MODE_KEY = "spark.submit.deployMode"
+  final val KUBERNETES_CONTEXT_KEY = "spark.kubernetes.context"
+  final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
+  final val KUBERNETES_DRIVER_POD_NAME = "spark.kubernetes.driver.pod.name"
+  final val KUBERNETES_EXECUTOR_POD_NAME_PREFIX = "spark.kubernetes.executor.podNamePrefix"
   final val INTERNAL_RESOURCE = "spark-internal"
 
   /**
@@ -258,4 +333,13 @@ object SparkProcessBuilder {
   final private val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
   final private val SPARK_CONF_DIR = "SPARK_CONF_DIR"
   final private val SPARK_CONF_FILE_NAME = "spark-defaults.conf"
+
+  final private[kyuubi] val SPARK_CORE_SCALA_VERSION_REGEX =
+    """^spark-core_(\d\.\d+).*.jar$""".r
+
+  final private[kyuubi] val SPARK_HOME_REGEX_SCALA_212 =
+    """^spark-\d+\.\d+\.\d+-bin-hadoop\d+(\.\d+)?$""".r
+
+  final private[kyuubi] val SPARK_HOME_REGEX_SCALA_213 =
+    """^spark-\d+\.\d+\.\d+-bin-hadoop\d(\.\d+)?+-scala\d+(\.\d+)?$""".r
 }

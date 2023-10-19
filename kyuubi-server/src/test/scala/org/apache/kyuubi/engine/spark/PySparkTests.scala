@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.engine.spark
 
 import java.io.PrintWriter
 import java.nio.file.Files
@@ -158,16 +158,16 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
-  private def withTempPyFile(code: String)(op: (String) => Unit): Unit = {
+  private def withTempPyFile(code: String)(op: String => Unit): Unit = {
     val tempPyFile = Files.createTempFile("", ".py").toFile
     try {
       new PrintWriter(tempPyFile) {
         write(code)
-        close
+        close()
       }
       op(tempPyFile.getPath)
     } finally {
-      Files.delete(tempPyFile.toPath)
+      Files.deleteIfExists(tempPyFile.toPath)
     }
   }
 }

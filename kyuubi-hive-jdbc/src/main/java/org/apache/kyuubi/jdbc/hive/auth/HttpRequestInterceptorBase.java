@@ -110,7 +110,7 @@ public abstract class HttpRequestInterceptorBase implements HttpRequestIntercept
         httpRequest.addHeader("Cookie", cookieHeaderKeyValues.toString());
       }
     } catch (Exception e) {
-      throw new HttpException(e.getMessage(), e);
+      throw new HttpException(e.getMessage() == null ? "" : e.getMessage(), e);
     }
   }
 

@@ -20,6 +20,7 @@ Extensions for Flink
     :maxdepth: 1
 
     ../../../connector/flink/index
+    functions
 
 .. warning::
    This page is still in-progress.

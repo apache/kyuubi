@@ -26,12 +26,12 @@ import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
-import org.apache.kyuubi.engine.{ApplicationState, YarnApplicationOperation}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState, YarnApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState._
 import org.apache.kyuubi.operation.{FetchOrientation, HiveJDBCTestHelper, OperationState}
 import org.apache.kyuubi.operation.OperationState.ERROR
 import org.apache.kyuubi.server.MiniYarnService
-import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
+import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager}
 
 /**
  * To developers:
@@ -80,7 +80,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
   override protected val conf: KyuubiConf = {
     new KyuubiConf()
       .set(s"$KYUUBI_BATCH_CONF_PREFIX.spark.spark.master", "yarn")
-      .set(BATCH_CONF_IGNORE_LIST, Seq("spark.master"))
+      .set(BATCH_CONF_IGNORE_LIST, Set("spark.master"))
       .set(BATCH_APPLICATION_CHECK_INTERVAL, 3000L)
   }
 
@@ -116,29 +116,32 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       "kyuubi",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
-    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSession]
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val appInfo = batchJobSubmissionOp.getOrFetchCurrentApplicationInfo
+      val appInfo = batchJobSubmissionOp.getApplicationInfo
       assert(appInfo.nonEmpty)
       assert(appInfo.exists(_.id.startsWith("application_")))
     }
 
     eventually(timeout(10.seconds)) {
       val metadata = session.sessionManager.getBatchMetadata(session.handle.identifier.toString)
-      assert(metadata.state === "RUNNING")
-      assert(metadata.engineId.startsWith("application_"))
+      assert(metadata.map(_.state).contains("RUNNING"))
+      assert(metadata.map(_.engineId).get.startsWith("application_"))
     }
 
-    val killResponse = yarnOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    val appMgrInfo = ApplicationManagerInfo(Some("yarn"))
+
+    val killResponse =
+      yarnOperation.killApplicationByTag(appMgrInfo, sessionHandle.identifier.toString)
     assert(killResponse._1)
     assert(killResponse._2 startsWith "Succeeded to terminate:")
 
-    val appInfo = yarnOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+    val appInfo =
+      yarnOperation.getApplicationInfoByTag(appMgrInfo, sessionHandle.identifier.toString)
 
     assert(appInfo.state === KILLED)
 
@@ -147,7 +150,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     }
 
     val resultColumns = batchJobSubmissionOp.getNextRowSet(FetchOrientation.FETCH_NEXT, 10)
-      .getColumns.asScala
+      .getResults.getColumns.asScala
 
     val keys = resultColumns.head.getStringVal.getValues.asScala
     val values = resultColumns.apply(1).getStringVal.getValues.asScala
@@ -158,7 +161,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     val appUrl = rows("url")
     val appError = rows("error")
 
-    val appInfo2 = batchJobSubmissionOp.getOrFetchCurrentApplicationInfo.get
+    val appInfo2 = batchJobSubmissionOp.getApplicationInfo.get
     assert(appId === appInfo2.id)
     assert(appName === appInfo2.name)
     assert(appState === appInfo2.state.toString)
@@ -176,16 +179,15 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       "kyuubi",
       "passwd",
       "localhost",
-      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
-    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSession]
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      assert(batchJobSubmissionOp.getOrFetchCurrentApplicationInfo.exists(_.id == null))
-      assert(batchJobSubmissionOp.getOrFetchCurrentApplicationInfo.exists(
-        _.state == ApplicationState.NOT_FOUND))
+      assert(batchJobSubmissionOp.getApplicationInfo.exists(_.id == null))
+      assert(batchJobSubmissionOp.getApplicationInfo.exists(
+        _.state == ApplicationState.UNKNOWN))
       assert(batchJobSubmissionOp.getStatus.state === OperationState.ERROR)
     }
   }
@@ -196,7 +198,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       "spark.submit.deployMode" -> "cluster",
       "spark.sql.defaultCatalog=spark_catalog" -> "spark_catalog",
       "spark.sql.catalog.spark_catalog.type" -> "invalid_type",
-      "kyuubi.session.engine.initialize.timeout" -> "PT10M",
+      ENGINE_INIT_TIMEOUT.key -> "PT10M",
       KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))(Map.empty) {
       val startTime = System.currentTimeMillis()
       val exception = intercept[Exception] {

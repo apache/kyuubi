@@ -38,7 +38,7 @@ object Validator {
 
   private val dns1123LabelFmt = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
 
-  private val podConfValidator = (s"^$dns1123LabelFmt(\\.$dns1123LabelFmt)*$$").r.pattern
+  private val podConfValidator = s"^$dns1123LabelFmt(\\.$dns1123LabelFmt)*$$".r.pattern
 
   val KUBERNETES_DNS_SUBDOMAIN_NAME_MAX_LENGTH = 253
 

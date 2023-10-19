@@ -21,12 +21,12 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.8.0-SNAPSHOT</version>
+        <version>1.9.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
 
     </parent>
 
-    <artifactId>kyuubi-spark-authz_2.12</artifactId>
+    <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Dev Spark Authorization Extension</name>
     <url>https://kyuubi.apache.org/</url>
@@ -39,6 +39,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.ranger</groupId>
             <artifactId>ranger-plugins-common</artifactId>
@@ -318,6 +323,12 @@
             <artifactId>scala-collection-compat_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-spark-${paimon.spark.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -331,15 +342,25 @@
     </build>
 
     <profiles>
+        <!--
+          Add spark-authz-hudi-test profile here to avoid import Apache Hudi when enable scala-2.13.
+          Can remove this profile after Apache Hudi support Scala 2.13.
+          https://issues.apache.org/jira/browse/HUDI-6296
+          -->
         <profile>
-            <id>genpolicy</id>
-            <activation>
-                <!-- activated when Ranger version is identical to required-->
-                <property>
-                    <name>ranger.version</name>
-                    <value>2.4.0</value>
-                </property>
-            </activation>
+            <id>spark-authz-hudi-test</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.hudi</groupId>
+                    <artifactId>hudi-spark${hudi.spark.binary.version}-bundle_${scala.binary.version}</artifactId>
+                    <version>${hudi.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>gen-policy</id>
             <build>
                 <plugins>
                     <plugin>

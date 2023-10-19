@@ -35,7 +35,8 @@ abstract class KyuubiHiveTest extends QueryTest with Logging {
       TableCatalog.PROP_PROVIDER,
       TableCatalog.PROP_OWNER,
       TableCatalog.PROP_EXTERNAL,
-      TableCatalog.PROP_IS_MANAGED_LOCATION)
+      TableCatalog.PROP_IS_MANAGED_LOCATION,
+      "transient_lastDdlTime")
 
   protected val NAMESPACE_RESERVED_PROPERTIES =
     Seq(
@@ -43,7 +44,7 @@ abstract class KyuubiHiveTest extends QueryTest with Logging {
       SupportsNamespaces.PROP_LOCATION,
       SupportsNamespaces.PROP_OWNER)
 
-  protected def catalogName: String = "hive"
+  protected val catalogName: String = "hive"
 
   override def beforeEach(): Unit = {
     super.beforeAll()
