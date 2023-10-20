@@ -31,6 +31,15 @@ checker-qual/3.42.0//checker-qual-3.42.0.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
 commons-codec/1.15//commons-codec-1.15.jar
 commons-lang3/3.13.0//commons-lang3-3.13.0.jar
+commons-logging/1.2//commons-logging-1.2.jar
+config/1.4.2//config-1.4.2.jar
+elastic4s-client-core_2.12/8.9.1//elastic4s-client-core_2.12-8.9.1.jar
+elastic4s-client-esjava_2.12/8.9.1//elastic4s-client-esjava_2.12-8.9.1.jar
+elastic4s-core_2.12/8.9.1//elastic4s-core_2.12-8.9.1.jar
+elastic4s-domain_2.12/8.9.1//elastic4s-domain_2.12-8.9.1.jar
+elastic4s-handlers_2.12/8.9.1//elastic4s-handlers_2.12-8.9.1.jar
+elastic4s-json-builder_2.12/8.9.1//elastic4s-json-builder_2.12-8.9.1.jar
+elasticsearch-rest-client/8.9.0//elasticsearch-rest-client-8.9.0.jar
 error_prone_annotations/2.20.0//error_prone_annotations-2.20.0.jar
 failsafe/3.3.2//failsafe-3.3.2.jar
 failureaccess/1.0.1//failureaccess-1.0.1.jar
@@ -52,7 +61,9 @@ hadoop-client-runtime/3.3.6//hadoop-client-runtime-3.3.6.jar
 hk2-api/2.6.1//hk2-api-2.6.1.jar
 hk2-locator/2.6.1//hk2-locator-2.6.1.jar
 hk2-utils/2.6.1//hk2-utils-2.6.1.jar
+httpasyncclient/4.1.5//httpasyncclient-4.1.5.jar
 httpclient/4.5.14//httpclient-4.5.14.jar
+httpcore-nio/4.4.13//httpcore-nio-4.4.13.jar
 httpcore/4.4.16//httpcore-4.4.16.jar
 httpmime/4.5.14//httpmime-4.5.14.jar
 j2objc-annotations/1.3//j2objc-annotations-1.3.jar

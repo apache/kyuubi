@@ -1079,3 +1079,19 @@ decompression for Java, which can be obtained at:
     * license/LICENSE.lz4-java.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/lz4/lz4-java
+
+This product depends on 'elastic4s', Scala client for ElasticSearch,
+which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.elastic4s.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://github.com/sksamuel/elastic4s
+
+This product depends on 'elasticsearch-rest-client', the low-level Java REST client for ElasticSearch,
+which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.elasticsearch.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/java-rest-low.html

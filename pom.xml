@@ -136,6 +136,7 @@
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
         <delta.version>3.2.0</delta.version>
+        <elastic4s.version>8.9.1</elastic4s.version>
         <failsafe.verion>3.3.2</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
@@ -607,6 +608,12 @@
             </dependency>
 
             <dependency>
+                <groupId>com.dimafeng</groupId>
+                <artifactId>testcontainers-scala-elasticsearch_${scala.binary.version}</artifactId>
+                <version>${testcontainers-scala.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-client</artifactId>
                 <version>${kubernetes-client.version}</version>
@@ -1051,6 +1058,13 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka.version}</version>
+                <optional>true</optional>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sksamuel.elastic4s</groupId>
+                <artifactId>elastic4s-client-esjava_${scala.binary.version}</artifactId>
+                <version>${elastic4s.version}</version>
                 <optional>true</optional>
             </dependency>
 

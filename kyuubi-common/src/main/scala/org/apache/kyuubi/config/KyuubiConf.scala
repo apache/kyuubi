@@ -2437,6 +2437,49 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofMillis(5000).toMillis)
 
+  val SERVER_EVENT_ELASTICSEARCH_SERVER_URL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.backend.server.event.elasticsearch.url")
+      .doc("The url of ElasticSearch endpoints" +
+        " that server events go for the built-in ElasticSearch logger")
+      .version("1.9.0")
+      .serverOnly
+      .stringConf
+      .createOptional
+
+  val SERVER_EVENT_ELASTICSEARCH_INDEX: OptionalConfigEntry[String] =
+    buildConf("kyuubi.backend.server.event.elasticsearch.index")
+      .doc("The index of server events go for the built-in ElasticSearch logger")
+      .version("1.9.0")
+      .serverOnly
+      .stringConf
+      .createOptional
+
+  val SERVER_EVENT_ELASTICSEARCH_INDEX_AUTOCREATE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.backend.server.event.elasticsearch.index.autocreate.enabled")
+      .doc("Whether auto create the index of server events go for the built-in ElasticSearch" +
+        " logger")
+      .version("1.9.0")
+      .serverOnly
+      .booleanConf
+      .createWithDefault(true)
+
+  val SERVER_EVENT_ELASTICSEARCH_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.backend.server.event.elasticsearch.user")
+      .doc("The user for ElasticSearch that server events go for the built-in ElasticSearch logger")
+      .version("1.9.0")
+      .serverOnly
+      .stringConf
+      .createOptional
+
+  val SERVER_EVENT_ELASTICSEARCH_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.backend.server.event.elasticsearch.password")
+      .doc("The password for ElasticSearch that server events go for" +
+        " the built-in ElasticSearch logger")
+      .version("1.9.0")
+      .serverOnly
+      .stringConf
+      .createOptional
+
   val SERVER_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.backend.server.event.loggers")
       .doc("A comma-separated list of server history loggers, where session/operation etc" +
@@ -2449,6 +2492,9 @@ object KyuubiConf {
         s" please specify them with the prefix: `kyuubi.backend.server.event.kafka.`." +
         s" For example, `kyuubi.backend.server.event.kafka.bootstrap.servers=127.0.0.1:9092`" +
         s" </li>" +
+        s" <li>ELASTICSEARCH: the events will be sent to the " +
+        s" index `${SERVER_EVENT_ELASTICSEARCH_INDEX.key}` on ElasticSearch" +
+        s"</li>" +
         s" <li>JDBC: to be done</li>" +
         s" <li>CUSTOM: User-defined event handlers.</li></ul>" +
         " Note that: Kyuubi supports custom event handlers with the Java SPI." +
@@ -2462,7 +2508,7 @@ object KyuubiConf {
       .transformToUpperCase
       .toSequence()
       .checkValue(
-        _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM", "KAFKA")),
+        _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM", "KAFKA", "ELASTICSEARCH")),
         "Unsupported event loggers")
       .createWithDefault(Nil)
 

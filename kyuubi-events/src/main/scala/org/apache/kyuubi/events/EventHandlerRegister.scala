@@ -55,6 +55,11 @@ trait EventHandlerRegister extends Logging {
     throw new KyuubiException(s"Unsupported kafka event logger.")
   }
 
+  protected def createElasticSearchEventHandler(kyuubiConf: KyuubiConf)
+      : EventHandler[KyuubiEvent] = {
+    throw new KyuubiException(s"Unsupported elasticsearch event logger.")
+  }
+
   private def loadEventHandler(
       eventLoggerType: EventLoggerType,
       kyuubiConf: KyuubiConf): Seq[EventHandler[KyuubiEvent]] = {
@@ -70,6 +75,9 @@ trait EventHandlerRegister extends Logging {
 
       case EventLoggerType.KAFKA =>
         createKafkaEventHandler(kyuubiConf) :: Nil
+
+      case EventLoggerType.ELASTICSEARCH =>
+        createElasticSearchEventHandler(kyuubiConf) :: Nil
 
       case EventLoggerType.CUSTOM =>
         EventHandlerLoader.loadCustom(kyuubiConf)

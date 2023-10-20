@@ -309,6 +309,8 @@ org.apache.kafka:kafka-clients
 org.lz4:lz4-java
 org.xerial.snappy:snappy-java
 org.xerial:sqlite-jdbc
+com.sksamuel.elastic4s:elastic4s-client-esjava
+org.elasticsearch.client:elasticsearch-rest-client
 
 BSD
 ------------

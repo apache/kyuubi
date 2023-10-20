@@ -15,11 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.events
+package org.apache.kyuubi.events.handler
 
-object EventLoggerType extends Enumeration {
+import org.apache.kyuubi.config.KyuubiConf
 
-  type EventLoggerType = Value
-
-  val SPARK, JSON, JDBC, CUSTOM, KAFKA, ELASTICSEARCH = Value
-}
+case class ServerElasticSearchLoggingEventHandler(
+    indexId: String,
+    serverUrl: String,
+    username: Option[String],
+    password: Option[String],
+    kyuubiConf: KyuubiConf)
+  extends ElasticSearchLoggingEventHandler(indexId, serverUrl, username, password, kyuubiConf)

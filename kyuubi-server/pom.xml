@@ -289,6 +289,11 @@
         </dependency>
 
         <dependency>
+            <groupId>com.sksamuel.elastic4s</groupId>
+            <artifactId>elastic4s-client-esjava_${scala.binary.version}</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.dimafeng</groupId>
             <artifactId>testcontainers-scala-scalatest_${scala.binary.version}</artifactId>
             <scope>test</scope>
@@ -297,6 +302,12 @@
         <dependency>
             <groupId>com.dimafeng</groupId>
             <artifactId>testcontainers-scala-kafka_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dimafeng</groupId>
+            <artifactId>testcontainers-scala-elasticsearch_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
 

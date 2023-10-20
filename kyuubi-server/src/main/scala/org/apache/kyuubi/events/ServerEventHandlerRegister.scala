@@ -20,7 +20,7 @@ import java.net.InetAddress
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.events.handler.{EventHandler, ServerJsonLoggingEventHandler, ServerKafkaLoggingEventHandler}
+import org.apache.kyuubi.events.handler._
 import org.apache.kyuubi.events.handler.ServerKafkaLoggingEventHandler.KAFKA_SERVER_EVENT_HANDLER_PREFIX
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
@@ -51,6 +51,26 @@ object ServerEventHandlerRegister extends EventHandlerRegister {
       kafkaEventHandlerProducerConf,
       kyuubiConf,
       closeTimeoutInMs)
+  }
+
+  override def createElasticSearchEventHandler(kyuubiConf: KyuubiConf)
+      : EventHandler[KyuubiEvent] = {
+    val indexId = kyuubiConf.get(SERVER_EVENT_ELASTICSEARCH_INDEX).getOrElse {
+      throw new IllegalArgumentException(
+        s"${SERVER_EVENT_ELASTICSEARCH_INDEX.key} must be configured")
+    }
+    val serverUrl = kyuubiConf.get(SERVER_EVENT_ELASTICSEARCH_SERVER_URL).getOrElse {
+      throw new IllegalArgumentException(
+        s"${SERVER_EVENT_ELASTICSEARCH_SERVER_URL.key} must be configured")
+    }
+    val username = kyuubiConf.get(SERVER_EVENT_ELASTICSEARCH_USER)
+    val password = kyuubiConf.get(SERVER_EVENT_ELASTICSEARCH_PASSWORD)
+    ServerElasticSearchLoggingEventHandler(
+      indexId,
+      serverUrl,
+      username,
+      password,
+      kyuubiConf)
   }
 
   override protected def getLoggers(conf: KyuubiConf): Seq[String] = {
