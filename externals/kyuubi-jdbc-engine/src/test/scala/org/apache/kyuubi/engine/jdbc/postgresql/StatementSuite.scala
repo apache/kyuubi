@@ -22,7 +22,7 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class StatementSuite extends WithPostgreSqlEngine with HiveJDBCTestHelper {
 
-  test("test select") {
+  test("postgreSql - test select") {
     withJdbcStatement("test1") { statement =>
       statement.execute("create table public.test1(id bigint primary key, " +
         "name varchar(255), age integer)")
@@ -40,14 +40,13 @@ class StatementSuite extends WithPostgreSqlEngine with HiveJDBCTestHelper {
     }
   }
 
-  test("test types") {
+  test("postgreSql - test types") {
     withJdbcStatement("type_test") { statement =>
       statement.execute("create table public.type_test(" +
         "id bigint primary key, " +
         "smallint_col smallint, " +
         "int_col integer, " +
         "bigint_col bigint, " +
-//        "decimal_col decimal(27, 9), " +
         "date_col date, " +
         "timestamp_col timestamp, " +
         "char_col char(10), " +
@@ -60,7 +59,6 @@ class StatementSuite extends WithPostgreSqlEngine with HiveJDBCTestHelper {
         "smallint_col, " +
         "int_col, " +
         "bigint_col, " +
-//                "decimal_col, " +
         "date_col, " +
         "timestamp_col, " +
         "char_col, " +
@@ -72,7 +70,6 @@ class StatementSuite extends WithPostgreSqlEngine with HiveJDBCTestHelper {
         "2, " +
         "3, " +
         "4, " +
-//                "7.7, " +
         "'2022-05-08', " +
         "'2022-05-08 17:47:45'," +
         "'a', " +
@@ -88,7 +85,6 @@ class StatementSuite extends WithPostgreSqlEngine with HiveJDBCTestHelper {
         assert(resultSet1.getObject(2) == 2)
         assert(resultSet1.getObject(3) == 3)
         assert(resultSet1.getObject(4) == 4)
-//                assert(resultSet1.getObject(5) == new java.math.BigDecimal("7.7"))
         assert(resultSet1.getObject(5) == Date.valueOf("2022-05-08"))
         assert(resultSet1.getObject(6) == Timestamp.valueOf("2022-05-08 17:47:45"))
         assert(resultSet1.getString(7).trim == "a")

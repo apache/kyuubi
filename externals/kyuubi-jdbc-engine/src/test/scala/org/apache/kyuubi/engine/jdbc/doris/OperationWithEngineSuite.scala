@@ -26,7 +26,7 @@ class OperationWithEngineSuite extends DorisOperationSuite with HiveJDBCTestHelp
 
   override protected def jdbcUrl: String = jdbcConnectionUrl
 
-  test("Test for Jdbc engine getInfo") {
+  test("doris - test for Jdbc engine getInfo") {
     val metaData = ConnectionProvider.create(kyuubiConf).getMetaData
 
     withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
@@ -60,7 +60,7 @@ class OperationWithEngineSuite extends DorisOperationSuite with HiveJDBCTestHelp
     }
   }
 
-  test("JDBC ExecuteStatement operation should contain operationLog") {
+  test("doris - JDBC ExecuteStatement operation should contain operationLog") {
     withSessionHandle { (client, handle) =>
       val tExecuteStatementReq = new TExecuteStatementReq()
       tExecuteStatementReq.setSessionHandle(handle)
