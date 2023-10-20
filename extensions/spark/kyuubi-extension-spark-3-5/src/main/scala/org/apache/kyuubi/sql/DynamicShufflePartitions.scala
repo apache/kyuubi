@@ -31,7 +31,6 @@ import org.apache.spark.sql.internal.SQLConf._
 case class DynamicShufflePartitions(spark: SparkSession) extends Rule[SparkPlan] {
 
   override def apply(plan: SparkPlan): SparkPlan = {
-
     def collectScanSizes(plan: SparkPlan): Seq[Long] = plan match {
       case FileSourceScanExec(relation, _, _, _, _, _, _, _, _) =>
         Seq(relation.location.sizeInBytes)
@@ -49,8 +48,8 @@ case class DynamicShufflePartitions(spark: SparkSession) extends Rule[SparkPlan]
 
     val targetSize = conf.getConf(ADVISORY_PARTITION_SIZE_IN_BYTES)
     val maxScanSizes = collectScanSizes(plan) match {
-      case Nil => targetSize
-      case sizes => sizes.max
+      case sizes if sizes.nonEmpty => sizes.max
+      case _ => targetSize
     }
     val targetShufflePartitions =
       Math.max(maxScanSizes / targetSize + 1, conf.numShufflePartitions).toInt
