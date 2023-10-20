@@ -56,6 +56,7 @@
         <module>extensions/server/kyuubi-server-plugin</module>
         <module>extensions/spark/kyuubi-extension-spark-jdbc-dialect</module>
         <module>extensions/spark/kyuubi-spark-authz</module>
+        <module>extensions/spark/kyuubi-spark-authz-shaded</module>
         <module>extensions/spark/kyuubi-spark-connector-common</module>
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>extensions/spark/kyuubi-spark-connector-tpch</module>
