@@ -36,8 +36,11 @@ case class DynamicShufflePartitions(spark: SparkSession) extends Rule[SparkPlan]
       case FileSourceScanExec(relation, _, _, _, _, _, _, _, _) =>
         Seq(relation.location.sizeInBytes)
       case t: HiveTableScanExec =>
-        Seq(t.relation.computeStats().sizeInBytes.toLong)
-          .filter(_ != conf.defaultSizeInBytes)
+        t.relation.prunedPartitions match {
+          case Some(partitions) => Seq(partitions.flatMap(_.stats).map(_.sizeInBytes.toLong).sum)
+          case None => Seq(t.relation.computeStats().sizeInBytes.toLong)
+            .filter(_ != conf.defaultSizeInBytes)
+        }
       case stage: ShuffleQueryStageExec if stage.isMaterialized =>
         Seq(stage.mapStats.map(_.bytesByPartitionId.sum).getOrElse(0L))
       case p =>
