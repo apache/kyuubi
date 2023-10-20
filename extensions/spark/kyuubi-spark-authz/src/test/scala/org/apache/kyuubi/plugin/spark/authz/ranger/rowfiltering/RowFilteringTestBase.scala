@@ -27,7 +27,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 /**
  * Base trait for row filtering tests, derivative classes shall name themselves following:
@@ -98,7 +97,6 @@ trait RowFilteringTestBase extends AnyFunSuite with SparkSessionProvider with Be
   }
 
   test("[KYUUBI #3581]: row level filter on permanent view") {
-    assume(isSparkV31OrGreater)
     val supported = doAs(
       permViewUser,
       Try(sql("CREATE OR REPLACE VIEW default.perm_view AS SELECT * FROM default.src")).isSuccess)

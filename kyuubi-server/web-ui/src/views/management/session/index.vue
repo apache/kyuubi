@@ -78,7 +78,7 @@
   import { getAllSessions, deleteSession } from '@/api/session'
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
-  import { useTable } from '@/views/common/use-table'
+  import { useTable } from '@/utils/use-table'
   import { Router, useRouter } from 'vue-router'
   const { t } = useI18n()
   const { tableData, loading, getList: _getList } = useTable()

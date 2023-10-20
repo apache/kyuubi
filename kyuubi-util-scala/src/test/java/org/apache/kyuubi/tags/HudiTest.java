@@ -15,18 +15,15 @@
  * limitations under the License.
  */
 
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
+package org.apache.kyuubi.tags;
 
-export const useStore = defineStore('aside', () => {
-  const isCollapse = ref(false)
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.scalatest.TagAnnotation;
 
-  function changeCollapse() {
-    isCollapse.value = !isCollapse.value
-  }
-
-  return {
-    isCollapse,
-    changeCollapse
-  }
-})
+@TagAnnotation
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.TYPE})
+public @interface HudiTest {}

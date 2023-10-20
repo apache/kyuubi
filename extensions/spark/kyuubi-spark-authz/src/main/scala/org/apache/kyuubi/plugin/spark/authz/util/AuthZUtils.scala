@@ -61,7 +61,7 @@ private[authz] object AuthZUtils {
 
   def hasResolvedPermanentView(plan: LogicalPlan): Boolean = {
     plan match {
-      case view: View if view.resolved && isSparkV31OrGreater =>
+      case view: View if view.resolved =>
         !getField[Boolean](view, "isTempView")
       case _ =>
         false
@@ -84,9 +84,14 @@ private[authz] object AuthZUtils {
   }
 
   lazy val SPARK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(SPARK_VERSION)
-  lazy val isSparkV31OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.1"
   lazy val isSparkV32OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.2"
   lazy val isSparkV33OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.3"
+  lazy val isSparkV34OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.4"
+  lazy val isSparkV35OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.5"
+
+  lazy val SCALA_RUNTIME_VERSION: SemanticVersion =
+    SemanticVersion(scala.util.Properties.versionNumberString)
+  lazy val isScalaV213: Boolean = SCALA_RUNTIME_VERSION >= "2.13"
 
   def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {

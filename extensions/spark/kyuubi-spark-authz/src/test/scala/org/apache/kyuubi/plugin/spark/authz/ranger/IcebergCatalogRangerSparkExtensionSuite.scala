@@ -16,11 +16,15 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-// scalastyle:off
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+
 import scala.util.Try
 
+import org.apache.spark.sql.Row
 import org.scalatest.Outcome
 
+// scalastyle:off
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
@@ -37,47 +41,49 @@ import org.apache.kyuubi.util.AssertionUtils._
 class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
-    if (isSparkV31OrGreater)
-      "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
-    else ""
+    "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
 
   val catalogV2 = "local"
   val namespace1 = icebergNamespace
   val table1 = "table1"
   val outputTable1 = "outputTable1"
+  val bobNamespace = "default_bob"
+  val bobSelectTable = "table_select_bob_1"
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV31OrGreater)
     test()
   }
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater) {
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2",
-        "org.apache.iceberg.spark.SparkCatalog")
-      spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2.warehouse",
-        Utils.createTempDir("iceberg-hadoop").toString)
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2",
+      "org.apache.iceberg.spark.SparkCatalog")
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2.warehouse",
+      Utils.createTempDir("iceberg-hadoop").toString)
 
-      super.beforeAll()
+    super.beforeAll()
 
-      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
-      doAs(
-        admin,
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
-          " (id int, name string, city string) USING iceberg"))
+    doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
+    doAs(
+      admin,
+      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
+        " (id int, name string, city string) USING iceberg"))
 
-      doAs(
-        admin,
-        sql(s"INSERT INTO $catalogV2.$namespace1.$table1" +
-          " (id , name , city ) VALUES (1, 'liangbowen','Guangzhou')"))
-      doAs(
-        admin,
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
-          " (id int, name string, city string) USING iceberg"))
-    }
+    doAs(
+      admin,
+      sql(s"INSERT INTO $catalogV2.$namespace1.$table1" +
+        " (id , name , city ) VALUES (1, 'liangbowen','Guangzhou')"))
+    doAs(
+      admin,
+      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
+        " (id int, name string, city string) USING iceberg"))
+
+    doAs(
+      admin,
+      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$bobNamespace.$bobSelectTable" +
+        " (id int, name string, city string) USING iceberg"))
   }
 
   override def afterAll(): Unit = {
@@ -89,7 +95,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   test("[KYUUBI #3515] MERGE INTO") {
     val mergeIntoSql =
       s"""
-         |MERGE INTO $catalogV2.$namespace1.$outputTable1 AS target
+         |MERGE INTO $catalogV2.$bobNamespace.$bobSelectTable AS target
          |USING $catalogV2.$namespace1.$table1  AS source
          |ON target.id = source.id
          |WHEN MATCHED AND (target.name='delete') THEN DELETE
@@ -105,14 +111,19 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s" on [$namespace1/$table1/id]"))
 
     withSingleCallEnabled {
-      val e2 = intercept[AccessControlException](
-        doAs(
-          someone,
-          sql(mergeIntoSql)))
-      assert(e2.getMessage.contains(s"does not have" +
-        s" [select] privilege" +
-        s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
-        s" [update] privilege on [$namespace1/$outputTable1]"))
+      interceptContains[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
+        if (isSparkV35OrGreater) {
+          s"does not have [select] privilege on [$namespace1/table1/id" +
+            s",$namespace1/$table1/name,$namespace1/$table1/city]"
+        } else {
+          "does not have " +
+            s"[select] privilege on [$namespace1/$table1/id,$namespace1/$table1/name,$namespace1/$table1/city]," +
+            s" [update] privilege on [$bobNamespace/$bobSelectTable]"
+        })
+
+      interceptContains[AccessControlException] {
+        doAs(bob, sql(mergeIntoSql))
+      }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
     }
 
     doAs(admin, sql(mergeIntoSql))
@@ -120,13 +131,13 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("[KYUUBI #3515] UPDATE TABLE") {
     // UpdateTable
-    val e1 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
-          " WHERE id=1")))
-    assert(e1.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$namespace1/$table1]"))
+    interceptContains[AccessControlException] {
+      doAs(someone, sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou'  WHERE id=1"))
+    }(if (isSparkV35OrGreater) {
+      s"does not have [select] privilege on [$namespace1/$table1/id]"
+    } else {
+      s"does not have [update] privilege on [$namespace1/$table1]"
+    })
 
     doAs(
       admin,
@@ -136,10 +147,17 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("[KYUUBI #3515] DELETE FROM TABLE") {
     // DeleteFromTable
-    val e6 = intercept[AccessControlException](
-      doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2")))
-    assert(e6.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$namespace1/$table1]"))
+    interceptContains[AccessControlException] {
+      doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
+    }(if (isSparkV34OrGreater) {
+      s"does not have [select] privilege on [$namespace1/$table1/id]"
+    } else {
+      s"does not have [update] privilege on [$namespace1/$table1]"
+    })
+
+    interceptContains[AccessControlException] {
+      doAs(bob, sql(s"DELETE FROM $catalogV2.$bobNamespace.$bobSelectTable WHERE id=2"))
+    }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
 
     doAs(admin, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
   }
@@ -284,6 +302,66 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
           val result2 = sql(rewriteDataFiles2).collect()
           assert(result2(0)(0) === 0)
         })
+    }
+  }
+
+  private def prepareExampleIcebergTable(table: String, initSnapshots: Int): Unit = {
+    doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $table (id int, name string) USING iceberg"))
+    (0 until initSnapshots).foreach(i =>
+      doAs(admin, sql(s"INSERT INTO $table VALUES ($i, 'user_$i')")))
+  }
+
+  private def getFirstSnapshot(table: String): Row = {
+    val existedSnapshots =
+      sql(s"SELECT * FROM $table.snapshots ORDER BY committed_at ASC LIMIT 1").collect()
+    existedSnapshots(0)
+  }
+
+  test("CALL rollback_to_snapshot") {
+    val tableName = "table_rollback_to_snapshot"
+    val table = s"$catalogV2.$namespace1.$tableName"
+    withCleanTmpResources(Seq((table, "table"))) {
+      prepareExampleIcebergTable(table, 2)
+      val targetSnapshotId = getFirstSnapshot(table).getAs[Long]("snapshot_id")
+      val callRollbackToSnapshot =
+        s"CALL $catalogV2.system.rollback_to_snapshot (table => '$table', snapshot_id => $targetSnapshotId)"
+
+      interceptContains[AccessControlException](doAs(someone, sql(callRollbackToSnapshot)))(
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
+      doAs(admin, sql(callRollbackToSnapshot))
+    }
+  }
+
+  test("CALL rollback_to_timestamp") {
+    val tableName = "table_rollback_to_timestamp"
+    val table = s"$catalogV2.$namespace1.$tableName"
+    withCleanTmpResources(Seq((table, "table"))) {
+      prepareExampleIcebergTable(table, 2)
+      val callRollbackToTimestamp = {
+        val targetSnapshotCommittedAt = getFirstSnapshot(table).getAs[Timestamp]("committed_at")
+        val targetTimestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+          .format(targetSnapshotCommittedAt.getTime + 1)
+        s"CALL $catalogV2.system.rollback_to_timestamp (table => '$table', timestamp => TIMESTAMP '$targetTimestamp')"
+      }
+
+      interceptContains[AccessControlException](doAs(someone, sql(callRollbackToTimestamp)))(
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
+      doAs(admin, sql(callRollbackToTimestamp))
+    }
+  }
+
+  test("CALL set_current_snapshot") {
+    val tableName = "table_set_current_snapshot"
+    val table = s"$catalogV2.$namespace1.$tableName"
+    withCleanTmpResources(Seq((table, "table"))) {
+      prepareExampleIcebergTable(table, 2)
+      val targetSnapshotId = getFirstSnapshot(table).getAs[Long]("snapshot_id")
+      val callSetCurrentSnapshot =
+        s"CALL $catalogV2.system.set_current_snapshot (table => '$table', snapshot_id => $targetSnapshotId)"
+
+      interceptContains[AccessControlException](doAs(someone, sql(callSetCurrentSnapshot)))(
+        s"does not have [alter] privilege on [$namespace1/$tableName]")
+      doAs(admin, sql(callSetCurrentSnapshot))
     }
   }
 }
