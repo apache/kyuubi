@@ -33,7 +33,7 @@ import org.apache.kyuubi.util.AssertionUtils.interceptContains
  */
 @HudiTest
 class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
-  override protected val catalogImpl: String = "hive"
+  override protected val catalogImpl: String = "in-memory"
   // TODO: Apache Hudi not support Spark 3.5 and Scala 2.13 yet,
   //  should change after Apache Hudi support Spark 3.5 and Scala 2.13.
   private def isSupportedVersion = !isSparkV35OrGreater && !isScalaV213
@@ -447,11 +447,13 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         interceptContains[AccessControlException] {
           doAs(someone, sql(deleteFrom))
         }(s"does not have [update] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(deleteFrom))
 
         val updateSql = s"UPDATE $namespace1.$table1 SET name = 'test' WHERE id > 10"
         interceptContains[AccessControlException] {
           doAs(someone, sql(updateSql))
         }(s"does not have [update] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(updateSql))
 
         val mergeIntoSQL =
           s"""
@@ -466,6 +468,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           doAs(someone, sql(mergeIntoSQL))
         }(s"does not have [select] privilege on " +
           s"[$namespace1/$table2/id,$namespace1/$table2/name,$namespace1/$table2/city]")
+        doAs(admin, sql(mergeIntoSQL))
       }
     }
   }
