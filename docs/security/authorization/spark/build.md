@@ -31,6 +31,19 @@ After a while, if everything goes well, you will get the plugin finally in two p
 - The main plugin jar, which is under `./extensions/spark/kyuubi-spark-authz/target/kyuubi-spark-authz_${scala.binary.version}-${project.version}.jar`
 - The least transitive dependencies needed, which are under `./extensions/spark/kyuubi-spark-authz/target/scala-${scala.binary.version}/jars`
 
+## Build shaded jar with Apache Maven
+
+Apache Kyuubi also provides the shaded jar for the Spark AuthZ plugin, You can run the AuthZ plugin using just a shaded jar without the additional dependency of jars,
+To build it, `cd` to the root direct of kyuubi project and run:
+
+```shell
+build/mvn clean package -pl :kyuubi-spark-authz-shaded_2.12 -DskipTests -am
+```
+
+After a while, if everything goes well, you will get the plugin finally:
+
+- The shaded AuthZ plugin jar, which is under `./extensions/spark/kyuubi-spark-authz-shaded/target/kyuubi-spark-authz-shaded_${scala.binary.version}-${project.version}.jar`
+
 ### Build against Different Apache Spark Versions
 
 The maven option `spark.version` is used for specifying Spark version to compile with and generate corresponding transitive dependencies.
