@@ -19,6 +19,8 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
+import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
+
 trait QueryExtractor extends (AnyRef => Option[LogicalPlan]) with Extractor
 
 object QueryExtractor {
@@ -42,5 +44,11 @@ class LogicalPlanQueryExtractor extends QueryExtractor {
 class LogicalPlanOptionQueryExtractor extends QueryExtractor {
   override def apply(v1: AnyRef): Option[LogicalPlan] = {
     v1.asInstanceOf[Option[LogicalPlan]]
+  }
+}
+
+class HudiMergeIntoSourceTableExtractor extends QueryExtractor {
+  override def apply(v1: AnyRef): Option[LogicalPlan] = {
+    new LogicalPlanQueryExtractor().apply(invokeAs[LogicalPlan](v1, "sourceTable"))
   }
 }
