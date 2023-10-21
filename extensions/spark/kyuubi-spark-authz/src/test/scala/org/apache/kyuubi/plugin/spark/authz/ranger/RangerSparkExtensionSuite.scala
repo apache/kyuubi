@@ -848,7 +848,12 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(admin, sql(s"CREATE VIEW $db1.$view1 AS SELECT * FROM $db1.$table1"))
         doAs(
           admin,
-          sql(s"CREATE VIEW $db1.$view2 AS SELECT count(*) as cnt, sum(id) FROM $db1.$table1"))
+          sql(
+            s"""
+               |CREATE VIEW $db1.$view2
+               |AS
+               |SELECT count(*) as cnt, sum(id) as sum_id FROM $db1.$table1
+          """.stripMargin))
         val e1 = intercept[AccessControlException](
           doAs(someone, sql(s"SELECT count(*) FROM $db1.$table1").show()))
         assert(e1.getMessage.contains(
@@ -862,7 +867,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         val e3 = intercept[AccessControlException](
           doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2").show()))
         assert(e3.getMessage.contains(
-          s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum(id)]"))
+          s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]"))
       }
     }
   }
