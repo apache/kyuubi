@@ -1605,6 +1605,27 @@
   "opType" : "CREATETABLE",
   "queryDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.hudi.command.DeleteHoodieTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "dft",
+    "fieldExtractor" : "HudiDataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
   "classname" : "org.apache.spark.sql.hudi.command.DropHoodieTableCommand",
   "tableDescs" : [ {
     "fieldName" : "tableIdentifier",
@@ -1642,6 +1663,27 @@
   "queryDescs" : [ {
     "fieldName" : "query",
     "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.MergeIntoHoodieTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "mergeInto",
+    "fieldExtractor" : "HudiMergeIntoTargetTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "mergeInto",
+    "fieldExtractor" : "HudiMergeIntoSourceTableExtractor"
   } ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.RepairHoodieTableCommand",
@@ -1705,4 +1747,25 @@
   } ],
   "opType" : "TRUNCATETABLE",
   "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.UpdateHoodieTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "ut",
+    "fieldExtractor" : "HudiDataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
 } ]

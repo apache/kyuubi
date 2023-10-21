@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.gen
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.serde.TableType._
 
@@ -165,6 +166,40 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc), SHOWPARTITIONS)
   }
 
+  val DeleteHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.DeleteHoodieTableCommand"
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val tableDesc =
+      TableDesc(
+        "dft",
+        classOf[HudiDataSourceV2RelationTableExtractor],
+        actionTypeDesc = Some(actionTypeDesc))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
+  }
+
+  val UpdateHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.UpdateHoodieTableCommand"
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val tableDesc =
+      TableDesc(
+        "ut",
+        classOf[HudiDataSourceV2RelationTableExtractor],
+        actionTypeDesc = Some(actionTypeDesc))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
+  }
+
+  val MergeIntoHoodieTableCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.MergeIntoHoodieTableCommand"
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val tableDesc =
+      TableDesc(
+        "mergeInto",
+        classOf[HudiMergeIntoTargetTableExtractor],
+        actionTypeDesc = Some(actionTypeDesc))
+    val queryDescs = QueryDesc("mergeInto", classOf[HudiMergeIntoSourceTableExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDescs))
+  }
+
   val data: Array[TableCommandSpec] = Array(
     AlterHoodieTableAddColumnsCommand,
     AlterHoodieTableChangeColumnCommand,
@@ -176,10 +211,13 @@ object HudiCommands {
     CreateHoodieTableLikeCommand,
     CompactionHoodieTableCommand,
     CompactionShowHoodieTableCommand,
+    DeleteHoodieTableCommand,
     DropHoodieTableCommand,
     InsertIntoHoodieTableCommand,
+    MergeIntoHoodieTableCommand,
     RepairHoodieTableCommand,
     TruncateHoodieTableCommand,
     ShowHoodieTablePartitionsCommand,
-    Spark31AlterTableCommand)
+    Spark31AlterTableCommand,
+    UpdateHoodieTableCommand)
 }
