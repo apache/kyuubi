@@ -96,8 +96,10 @@ class CatalogTableTableExtractor extends TableExtractor {
     } else {
       val catalogTable = v1.asInstanceOf[CatalogTable]
       val identifier = catalogTable.identifier
+      val db = identifier.database.getOrElse(spark.sessionState.catalog.getCurrentDatabase)
+      val tableIdentWithDB = identifier.copy(database = Some(db))
       val owner = Option(catalogTable.owner).filter(_.nonEmpty)
-      Some(Table(None, identifier.database, identifier.table, owner))
+      Some(Table(None, tableIdentWithDB.database, tableIdentWithDB.table, owner))
     }
   }
 }
