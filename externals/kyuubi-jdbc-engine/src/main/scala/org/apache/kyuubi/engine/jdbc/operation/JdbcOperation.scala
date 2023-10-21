@@ -98,7 +98,7 @@ abstract class JdbcOperation(session: Session) extends AbstractOperation(session
   override protected def afterRun(): Unit = {}
 
   protected def toTRowSet(taken: Iterator[Row]): TRowSet = {
-    val rowSetHelper = dialect.getRowSetHelper
+    val rowSetHelper = dialect.getRowSetHelper()
     rowSetHelper.toTRowSet(
       taken.toList.map(_.values),
       schema.columns,
@@ -106,7 +106,7 @@ abstract class JdbcOperation(session: Session) extends AbstractOperation(session
   }
 
   override def getResultSetMetadata: TGetResultSetMetadataResp = {
-    val schemaHelper = dialect.getSchemaHelper
+    val schemaHelper = dialect.getSchemaHelper()
     val tTableSchema = schemaHelper.toTTTableSchema(schema.columns)
     val resp = new TGetResultSetMetadataResp
     resp.setSchema(tTableSchema)

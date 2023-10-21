@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.kyuubi.engine.jdbc.dialect
+import java.sql.{Connection, Statement}
 import java.util
 
 import scala.collection.JavaConverters._
@@ -28,6 +29,12 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class DorisDialect extends JdbcDialect {
+
+  override def createStatement(connection: Connection, fetchSize: Int): Statement = {
+    val statement = super.createStatement(connection, fetchSize)
+    statement.setFetchSize(Integer.MIN_VALUE)
+    statement
+  }
 
   override def getTablesQuery(
       catalog: String,
@@ -113,15 +120,13 @@ class DorisDialect extends JdbcDialect {
     query.toString()
   }
 
-  override def getRowSetHelper: RowSetHelper = {
+  override def getRowSetHelper(): RowSetHelper = {
     new DorisRowSetHelper
   }
 
-  override def getSchemaHelper: SchemaHelper = {
+  override def getSchemaHelper(): SchemaHelper = {
     new DorisSchemaHelper
   }
-
-  override def getFetchSize: Int = Integer.MIN_VALUE
 
   override def name(): String = {
     "doris"

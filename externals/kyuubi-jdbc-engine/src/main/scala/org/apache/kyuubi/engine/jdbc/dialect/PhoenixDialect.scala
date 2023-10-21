@@ -100,11 +100,11 @@ class PhoenixDialect extends JdbcDialect {
     query.toString()
   }
 
-  override def getRowSetHelper: RowSetHelper = {
+  override def getRowSetHelper(): RowSetHelper = {
     new PhoenixRowSetHelper
   }
 
-  override def getSchemaHelper: SchemaHelper = {
+  override def getSchemaHelper(): SchemaHelper = {
     new PhoenixSchemaHelper
   }
 

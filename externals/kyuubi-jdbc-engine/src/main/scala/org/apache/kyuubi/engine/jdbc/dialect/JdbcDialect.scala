@@ -30,10 +30,10 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 abstract class JdbcDialect extends SupportServiceLoader with Logging {
 
-  def createStatement(connection: Connection): Statement = {
+  def createStatement(connection: Connection, fetchSize: Int = 1000): Statement = {
     val statement =
       connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
-    statement.setFetchSize(getFetchSize)
+    statement.setFetchSize(fetchSize)
     statement
   }
 
@@ -78,11 +78,9 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
     throw KyuubiSQLException.featureNotSupported()
   }
 
-  def getRowSetHelper: RowSetHelper
+  def getRowSetHelper(): RowSetHelper
 
-  def getSchemaHelper: SchemaHelper
-
-  def getFetchSize: Int = 1000
+  def getSchemaHelper(): SchemaHelper
 }
 
 object JdbcDialects extends Logging {

@@ -28,8 +28,6 @@ import org.apache.kyuubi.util.RowSetUtils.{bitSetToBuffer, formatDate, formatLoc
 
 abstract class RowSetHelper {
 
-  val nulls = new java.util.BitSet()
-
   def toTRowSet(
       rows: Seq[List[_]],
       columns: List[Column],
@@ -51,7 +49,7 @@ abstract class RowSetHelper {
       val columnSize = row.size
       var j = 0
       while (j < columnSize) {
-        val columnValue = toTColumnValue(row, j, columns)
+        val columnValue = toTColumnValue(j, row, columns)
         tRow.addToColVals(columnValue)
         j += 1
       }
@@ -112,7 +110,7 @@ abstract class RowSetHelper {
     }
   }
 
-  protected def toTColumnValue(row: List[Any], ordinal: Int, types: List[Column]): TColumnValue = {
+  protected def toTColumnValue(ordinal: Int, row: List[Any], types: List[Column]): TColumnValue = {
     types(ordinal).sqlType match {
       case Types.BIT =>
         toBitTColumnValue(row, ordinal)
@@ -169,7 +167,7 @@ abstract class RowSetHelper {
   }
 
   protected def toDefaultTColumn(rows: Seq[Seq[Any]], ordinal: Int, sqlType: Int): TColumn = {
-    val nulls = new util.BitSet()
+    val nulls = new java.util.BitSet()
     val rowSize = rows.length
     val values = new util.ArrayList[String](rowSize)
     var i = 0
@@ -189,37 +187,44 @@ abstract class RowSetHelper {
   }
 
   protected def toBitTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn = {
+    val nulls = new java.util.BitSet()
     val values = getOrSetAsNull[java.lang.Boolean](rows, ordinal, nulls, true)
     TColumn.boolVal(new TBoolColumn(values, nulls))
   }
 
   protected def toTinyIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn = {
+    val nulls = new java.util.BitSet()
     val values = getOrSetAsNull[java.lang.Byte](rows, ordinal, nulls, 0.toByte)
     TColumn.byteVal(new TByteColumn(values, nulls))
   }
 
   protected def toSmallIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn = {
+    val nulls = new java.util.BitSet()
     val values = getOrSetAsNull[java.lang.Short](rows, ordinal, nulls, 0.toShort)
     TColumn.i16Val(new TI16Column(values, nulls))
   }
 
   protected def toIntegerTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn = {
+    val nulls = new java.util.BitSet()
     val values = getOrSetAsNull[java.lang.Integer](rows, ordinal, nulls, 0)
     TColumn.i32Val(new TI32Column(values, nulls))
   }
 
   protected def toBigIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn = {
+    val nulls = new java.util.BitSet()
     val values = getOrSetAsNull[lang.Long](rows, ordinal, nulls, 0L)
     TColumn.i64Val(new TI64Column(values, nulls))
   }
 
   protected def toRealTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn = {
+    val nulls = new java.util.BitSet()
     val values = getOrSetAsNull[lang.Float](rows, ordinal, nulls, 0.toFloat)
       .asScala.map(n => java.lang.Double.valueOf(n.toString)).asJava
     TColumn.doubleVal(new TDoubleColumn(values, nulls))
   }
 
   protected def toDoubleTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn = {
+    val nulls = new java.util.BitSet()
     val values = getOrSetAsNull[lang.Double](rows, ordinal, nulls, 0.toDouble)
     TColumn.doubleVal(new TDoubleColumn(values, nulls))
   }
@@ -229,6 +234,7 @@ abstract class RowSetHelper {
   }
 
   protected def toVarcharTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn = {
+    val nulls = new java.util.BitSet()
     val values = getOrSetAsNull[String](rows, ordinal, nulls, "")
     TColumn.stringVal(new TStringColumn(values, nulls))
   }
