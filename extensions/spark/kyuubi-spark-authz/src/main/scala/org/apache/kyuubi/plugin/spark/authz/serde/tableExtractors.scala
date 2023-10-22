@@ -80,9 +80,7 @@ class TableIdentifierTableExtractor extends TableExtractor {
         val catalogTable = spark.sessionState.catalog.getTableMetadata(identifier)
         Option(catalogTable.owner).filter(_.nonEmpty)
       } catch {
-        case e: Exception =>
-          e.printStackTrace()
-          None
+        case _: Exception => None
       }
     Some(Table(None, identifier.database, identifier.table, owner))
   }
