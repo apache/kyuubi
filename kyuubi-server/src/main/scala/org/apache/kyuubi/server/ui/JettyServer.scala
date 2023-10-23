@@ -17,12 +17,15 @@
 
 package org.apache.kyuubi.server.ui
 
-import org.eclipse.jetty.server.{Handler, HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
-import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
-import org.eclipse.jetty.util.component.LifeCycle
-import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
-
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.isWindows
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
+import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
+import org.eclipse.jetty.server._
+import org.eclipse.jetty.util.component.LifeCycle
+import org.eclipse.jetty.util.ssl.SslContextFactory
+import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 
 private[kyuubi] case class JettyServer(
     server: Server,
@@ -71,14 +74,20 @@ private[kyuubi] case class JettyServer(
   def getState: String = server.getState
 }
 
-object JettyServer {
+object JettyServer extends Logging{
 
-  def apply(name: String, host: String, port: Int, poolSize: Int): JettyServer = {
+  def apply(name: String, host: String, port: Int, kyuubiConf: KyuubiConf): JettyServer = {
+
+    // set Jetty Server pool size
+    val poolSize = kyuubiConf.get(FRONTEND_REST_MAX_WORKER_THREADS)
     val pool = new QueuedThreadPool(poolSize)
     pool.setName(name)
     pool.setDaemon(true)
+
+    // 启动一个eclipse jetty server
     val server = new Server(pool)
 
+    // set Error handler for Jetty Server
     val errorHandler = new ErrorHandler()
     errorHandler.setShowStacks(true)
     errorHandler.setServer(server)
@@ -88,20 +97,81 @@ object JettyServer {
     server.setHandler(collection)
 
     val serverExecutor = new ScheduledExecutorScheduler(s"$name-JettyScheduler", true)
+
+    val connector = getServerConnector(server, host, port , serverExecutor , kyuubiConf)
+
+    new JettyServer(server, connector, collection)
+  }
+
+  def getServerConnector(
+                          server: Server,
+                          host : String ,
+                          port : Int,
+                          serverExecutor : ScheduledExecutorScheduler,
+                          conf: KyuubiConf): ServerConnector ={
     val httpConf = new HttpConfiguration()
-    val connector = new ServerConnector(
-      server,
-      null,
-      serverExecutor,
-      null,
-      -1,
-      -1,
-      new HttpConnectionFactory(httpConf))
+    val useSsl = conf.get(FRONTEND_JETTYSERVER_USE_SSL)
+
+    val connector = {
+      if (useSsl){
+        val keyStorePath = conf.get(FRONTEND_JETTYSERVER_SSL_KEYSTORE_PATH)
+
+        if (keyStorePath.isEmpty) {
+          throw new IllegalArgumentException(FRONTEND_JETTYSERVER_SSL_KEYSTORE_PATH.key +
+            " Not configured for SSL connection, please set the key with: " +
+            FRONTEND_JETTYSERVER_SSL_KEYSTORE_PATH.doc)
+        }
+
+        val keyStorePassword = conf.get(FRONTEND_JETTYSERVER_SSL_KEYSTORE_PASSWORD)
+        if (keyStorePassword.isEmpty) {
+          throw new IllegalArgumentException(FRONTEND_JETTYSERVER_SSL_KEYSTORE_PASSWORD.key +
+            " Not configured for SSL connection. please set the key with: " +
+            FRONTEND_JETTYSERVER_SSL_KEYSTORE_PASSWORD.doc)
+        }
+
+        val sslContextFactory = new SslContextFactory.Server
+        val excludedProtocols = conf.get(FRONTEND_JETTYSERVER_SSL_PROTOCOL_BLACKLIST)
+        val excludeCipherSuites = conf.get(FRONTEND_JETTYSERVER_SSL_EXCLUDE_CIPHER_SUITES)
+        val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
+        val keyStoreAlgorithm = conf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
+
+        info("Jetty Server SSL: adding excluded protocols: " +
+          String.join(",", excludedProtocols: _*))
+        sslContextFactory.addExcludeProtocols(excludedProtocols: _*)
+        info("Jetty Server SSL: SslContextFactory.getExcludeProtocols = " +
+          String.join(",", sslContextFactory.getExcludeProtocols: _*))
+        info("Jetty Server SSL: setting excluded cipher Suites: " +
+          String.join(",", excludeCipherSuites: _*))
+        sslContextFactory.setExcludeCipherSuites(excludeCipherSuites: _*)
+        info("Jetty SSL: SslContextFactory.getExcludeCipherSuites = " +
+          String.join(",", sslContextFactory.getExcludeCipherSuites: _*))
+
+        sslContextFactory.setKeyStorePath(keyStorePath.get)
+        sslContextFactory.setKeyStorePassword(keyStorePassword.get)
+
+        keyStoreType.foreach(sslContextFactory.setKeyStoreType)
+        keyStoreAlgorithm.foreach(sslContextFactory.setKeyManagerFactoryAlgorithm)
+
+        new ServerConnector(
+          server,
+          sslContextFactory,
+          new HttpConnectionFactory(httpConf))
+      } else {
+        new ServerConnector(
+          server,
+          null,
+          serverExecutor,
+          null,
+          -1,
+          -1,
+          new HttpConnectionFactory(httpConf))
+      }
+    }
     connector.setHost(host)
     connector.setPort(port)
     connector.setReuseAddress(!isWindows)
     connector.setAcceptQueueSize(math.min(connector.getAcceptors, 8))
 
-    new JettyServer(server, connector, collection)
+    connector
   }
 }

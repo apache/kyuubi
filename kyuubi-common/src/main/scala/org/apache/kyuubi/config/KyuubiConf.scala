@@ -751,6 +751,57 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  //------------------------Jetty Server-------------------------
+  val FRONTEND_JETTYSERVER_USE_SSL: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.jettyServer.use.SSL")
+      .doc("Set this to true for using SSL encryption in http mode.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FRONTEND_JETTYSERVER_SSL_KEYSTORE_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.jettyServer.ssl.keystore.path")
+      .doc("SSL certificate keystore location.")
+      .version("1.9.0")
+      .withAlternative("kyuubi.frontend.ssl.keystore.path")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_JETTYSERVER_SSL_KEYSTORE_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.jettyServer.ssl.keystore.password")
+      .doc("SSL certificate keystore password.")
+      .version("1.9.0")
+      .serverOnly
+      .withAlternative("kyuubi.frontend.ssl.keystore.password")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_JETTYSERVER_SSL_PROTOCOL_BLACKLIST: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.jettyServer.ssl.protocol.blacklist")
+      .doc("SSL Versions to disable when using HTTP transport mode.")
+      .version("1.9.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Seq("SSLv2", "SSLv3"))
+
+  val FRONTEND_JETTYSERVER_SSL_EXCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.jettyServer.ssl.exclude.ciphersuites")
+      .doc("A comma-separated list of exclude SSL cipher suite names for thrift http frontend.")
+      .version("1.9.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
+  val FRONTEND_JETTYSERVER_ALLOW_USER_SUBSTITUTION: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.jettyServer.allow.user.substitution")
+      .doc("Allow alternate user to be specified as part of open connection" +
+        " request when using HTTP transport mode.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(true)
+
+
+  //-------------------------------------------------------
   val FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER: ConfigEntry[String] =
     buildConf("kyuubi.frontend.proxy.http.client.ip.header")
       .doc("The HTTP header to record the real client IP address. If your server is behind a load" +

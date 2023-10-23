@@ -72,11 +72,15 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
+    // server 是 JettyServer类，
+    // JettyServer.server 是 eclipse jetty类
+    // JettyServer.connector 是 eclipse jetty server的 serverConnector类
     server = JettyServer(
       getName,
       host,
       port,
-      conf.get(FRONTEND_REST_MAX_WORKER_THREADS))
+      conf)
+    //
     super.initialize(conf)
   }
 

@@ -150,6 +150,8 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
             warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
         }
       }
+
+
     }
     try {
       // For launch engine operation, we use OperationLog to pass engine submit log but
