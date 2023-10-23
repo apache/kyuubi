@@ -89,7 +89,8 @@ object ReflectUtils {
     } catch {
       case e: Exception =>
         throw new RuntimeException(
-          s"$clz does not have $methodName method or incorrect arguments", e)
+          s"$clz does not have $methodName method or incorrect arguments",
+          e)
     }
   }
 
