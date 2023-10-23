@@ -28,6 +28,7 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object PrivilegesBuilder {
@@ -117,6 +118,11 @@ object PrivilegesBuilder {
         val cols = conditionList ++ aggCols
         buildSubquery()
         buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
+
+      case pvm: PermanentViewMarker =>
+        getScanSpec(pvm).tables(pvm, spark).foreach { table =>
+          privilegeObjects += PrivilegeObject(table, pvm.visitColNames)
+        }
 
       case scan if isKnownScan(scan) && scan.resolved =>
         getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))
