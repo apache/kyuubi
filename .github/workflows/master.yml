@@ -403,9 +403,9 @@ jobs:
           minikube start --cpus 2 --memory 4096 --kubernetes-version=${KUBERNETES_VERSION} --force
           # https://minikube.sigs.k8s.io/docs/handbook/pushing/#7-loading-directly-to-in-cluster-container-runtime
           minikube image load apache/kyuubi:latest
+          # pre-install spark into minikube
           docker pull apache/spark:3.4.1
           minikube image load apache/spark:3.4.1
-          minikube image list
       - name: kubectl pre-check
         run: |
           kubectl get nodes
@@ -428,7 +428,7 @@ jobs:
       - name: Cat kyuubi server log
         if: failure()
         run: kubectl logs kyuubi-test
-      - name: Copy spark engine from kyuubi pod
+      - name: Copy spark engine log from kyuubi pod
         if: failure()
         run: kubectl cp kyuubi-test:/opt/kyuubi/work ./target/work
       - name: Cat spark driver log
@@ -436,11 +436,6 @@ jobs:
         run: |
           kubectl get pods
           kubectl get pods | grep driver | awk -F " " '{print$1}' | xargs -I {} kubectl logs {}
-      - name: Get spark executor pod
-        if: failure()
-        run: |
-          kubectl get pods
-          kubectl get pods | grep exec | awk -F " " '{print$1}' | xargs -I {} kubectl get pod -o yaml {}
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
