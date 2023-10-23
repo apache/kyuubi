@@ -377,7 +377,8 @@ object TableCommands {
 
   val CreateDataSourceTable = {
     val cmd = "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    val tableDesc =
+      TableDesc("table", classOf[CatalogTableTableExtractor], setCurrentDatabaseIfMissing = true)
     TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
   }
 
