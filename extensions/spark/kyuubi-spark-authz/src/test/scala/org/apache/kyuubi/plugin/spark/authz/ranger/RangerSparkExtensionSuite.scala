@@ -933,6 +933,11 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2 WHERE cnt > 10").show()))
         assert(e4.getMessage.contains(
           s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]"))
+
+        val e5 = intercept[AccessControlException](
+          doAs(someone, sql(s"SELECT count(cnt) FROM $db1.$view2 WHERE cnt > 10").show()))
+        assert(e5.getMessage.contains(
+          s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]"))
       }
     }
   }
