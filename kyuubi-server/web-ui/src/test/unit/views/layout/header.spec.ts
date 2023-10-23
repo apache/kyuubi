@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import Header from '@/views/layout/components/header/index.vue'
+import Header from '@/layout/components/header/index.vue'
 import { expect, test } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createI18n, getStore } from '@/test/unit/utils'

@@ -34,6 +34,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.ServerEventHandlerRegister
+import org.apache.kyuubi.metrics.MetricsConf
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.KyuubiServer
@@ -56,6 +57,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
       .set(KyuubiConf.SERVER_EVENT_JSON_LOG_PATH, serverLogRoot)
       .set(KyuubiConf.ENGINE_SPARK_EVENT_LOGGERS, Seq("JSON"))
       .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, engineLogRoot)
+      .set(MetricsConf.METRICS_REPORTERS, Set.empty[String])
   }
 
   override protected def jdbcUrl: String = getJdbcUrl

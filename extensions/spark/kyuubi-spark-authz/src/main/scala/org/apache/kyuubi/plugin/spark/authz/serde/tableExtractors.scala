@@ -25,7 +25,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
@@ -91,10 +91,14 @@ class TableIdentifierTableExtractor extends TableExtractor {
  */
 class CatalogTableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val catalogTable = v1.asInstanceOf[CatalogTable]
-    val identifier = catalogTable.identifier
-    val owner = Option(catalogTable.owner).filter(_.nonEmpty)
-    Some(Table(None, identifier.database, identifier.table, owner))
+    if (null == v1) {
+      None
+    } else {
+      val catalogTable = v1.asInstanceOf[CatalogTable]
+      val identifier = catalogTable.identifier
+      val owner = Option(catalogTable.owner).filter(_.nonEmpty)
+      Some(Table(None, identifier.database, identifier.table, owner))
+    }
   }
 }
 
@@ -234,5 +238,31 @@ class TableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val tableName = invokeAs[String](v1, "name")
     lookupExtractor[StringTableExtractor].apply(spark, tableName)
+  }
+}
+
+class HudiDataSourceV2RelationTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    invokeAs[LogicalPlan](v1, "table") match {
+      // Match multipartIdentifier with tableAlias
+      case SubqueryAlias(_, SubqueryAlias(identifier, _)) =>
+        new StringTableExtractor().apply(spark, identifier.toString())
+      // Match multipartIdentifier without tableAlias
+      case SubqueryAlias(identifier, _) =>
+        new StringTableExtractor().apply(spark, identifier.toString())
+    }
+  }
+}
+
+class HudiMergeIntoTargetTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    invokeAs[LogicalPlan](v1, "targetTable") match {
+      // Match multipartIdentifier with tableAlias
+      case SubqueryAlias(_, SubqueryAlias(identifier, relation)) =>
+        new StringTableExtractor().apply(spark, identifier.toString())
+      // Match multipartIdentifier without tableAlias
+      case SubqueryAlias(identifier, _) =>
+        new StringTableExtractor().apply(spark, identifier.toString())
+    }
   }
 }

@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine
 
-import java.io.{File, FilenameFilter, IOException}
+import java.io.{File, FileFilter, IOException}
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
@@ -56,13 +56,14 @@ trait ProcBuilder {
     }
   }
 
+  protected val engineScalaBinaryVersion: String = SCALA_COMPILE_VERSION
+
   /**
    * The engine jar or other runnable jar containing the main method
    */
   def mainResource: Option[String] = {
     // 1. get the main resource jar for user specified config first
-    // TODO use SPARK_SCALA_VERSION instead of SCALA_COMPILE_VERSION
-    val jarName = s"${module}_$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
+    val jarName: String = s"${module}_$engineScalaBinaryVersion-$KYUUBI_VERSION.jar"
     conf.getOption(s"kyuubi.session.engine.$shortName.main.resource").filter { userSpecified =>
       // skip check exist if not local file.
       val uri = new URI(userSpecified)
@@ -295,6 +296,11 @@ trait ProcBuilder {
     }
   }
 
+  protected lazy val engineHomeDirFilter: FileFilter = file => {
+    val fileName = file.getName
+    file.isDirectory && fileName.contains(s"$shortName-") && !fileName.contains("-engine")
+  }
+
   /**
    * Get the home directly that contains binary distributions of engines.
    *
@@ -311,9 +317,6 @@ trait ProcBuilder {
    * @return SPARK_HOME, HIVE_HOME, etc.
    */
   protected def getEngineHome(shortName: String): String = {
-    val homeDirFilter: FilenameFilter = (dir: File, name: String) =>
-      dir.isDirectory && name.contains(s"$shortName-") && !name.contains("-engine")
-
     val homeKey = s"${shortName.toUpperCase}_HOME"
     // 1. get from env, e.g. SPARK_HOME, FLINK_HOME
     env.get(homeKey)
@@ -321,14 +324,14 @@ trait ProcBuilder {
         // 2. get from $KYUUBI_HOME/externals/kyuubi-download/target
         env.get(KYUUBI_HOME).flatMap { p =>
           val candidates = Paths.get(p, "externals", "kyuubi-download", "target")
-            .toFile.listFiles(homeDirFilter)
+            .toFile.listFiles(engineHomeDirFilter)
           if (candidates == null) None else candidates.map(_.toPath).headOption
         }.filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
       }.orElse {
         // 3. get from kyuubi-server/../externals/kyuubi-download/target
         Utils.getCodeSourceLocation(getClass).split("kyuubi-server").flatMap { cwd =>
           val candidates = Paths.get(cwd, "externals", "kyuubi-download", "target")
-            .toFile.listFiles(homeDirFilter)
+            .toFile.listFiles(engineHomeDirFilter)
           if (candidates == null) None else candidates.map(_.toPath).headOption
         }.find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
       } match {

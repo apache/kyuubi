@@ -30,9 +30,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
-    if (isSparkV31OrGreater) {
-      "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
-    } else ""
+    "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
   override protected def format = "iceberg"
 
   override protected val supportsUpdateTable = false
@@ -42,20 +40,17 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val supportsPartitionManagement = false
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater) {
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2",
-        "org.apache.iceberg.spark.SparkCatalog")
-      spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
-      spark.conf.set(
-        s"spark.sql.catalog.$catalogV2.warehouse",
-        Utils.createTempDir("iceberg-hadoop").toString)
-    }
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2",
+      "org.apache.iceberg.spark.SparkCatalog")
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2.warehouse",
+      Utils.createTempDir("iceberg-hadoop").toString)
     super.beforeAll()
   }
 
   override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSparkV31OrGreater)
     test()
   }
 
@@ -63,7 +58,15 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
     val plan = sql(s"DELETE FROM $catalogTable WHERE key = 1 ").queryExecution.analyzed
     val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
-    assert(inputs.isEmpty)
+    if (isSparkV34OrGreater) {
+      assert(inputs.size === 1)
+      val po = inputs.head
+      assertEqualsIgnoreCase(namespace)(po.dbname)
+      assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
+      assertContains(po.columns, "key", "value")
+    } else {
+      assert(inputs.size === 0)
+    }
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.UPDATE)
@@ -80,7 +83,15 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
     val plan = sql(s"UPDATE $catalogTable SET value = 'b' WHERE key = 1 ").queryExecution.analyzed
     val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
-    assert(inputs.isEmpty)
+    if (isSparkV35OrGreater) {
+      assert(inputs.size === 1)
+      val po = inputs.head
+      assertEqualsIgnoreCase(namespace)(po.dbname)
+      assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
+      assertContains(po.columns, "key", "value")
+    } else {
+      assert(inputs.size === 0)
+    }
     assert(outputs.size === 1)
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.UPDATE)
@@ -104,8 +115,20 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
         s"WHEN NOT MATCHED THEN INSERT *").queryExecution.analyzed
       val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
       assert(operationType === QUERY)
-      assert(inputs.size === 1)
-      val po0 = inputs.head
+      if (isSparkV35OrGreater) {
+        assert(inputs.size === 2)
+        val po = inputs.head
+        assert(po.actionType === PrivilegeObjectActionType.OTHER)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assertEqualsIgnoreCase(namespace)(po.dbname)
+        assertEqualsIgnoreCase(table)(po.objectName)
+        assertContains(po.columns, "key", "value")
+        // The properties of RowLevelOperationTable are empty, so owner is none
+        assert(po.owner.isEmpty)
+      } else {
+        assert(inputs.size === 1)
+      }
+      val po0 = inputs.last
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
       assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assertEqualsIgnoreCase(namespace)(po0.dbname)

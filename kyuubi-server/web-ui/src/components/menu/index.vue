@@ -22,7 +22,7 @@
     :collapse="isCollapse"
     :default-active="activePath"
     :router="true">
-    <template v-for="(menu, index) in menus">
+    <template v-for="(menu, index) in (menus as any)">
       <el-menu-item
         v-if="!menu.children || menu.children.length === 0"
         :key="index + '-1'"

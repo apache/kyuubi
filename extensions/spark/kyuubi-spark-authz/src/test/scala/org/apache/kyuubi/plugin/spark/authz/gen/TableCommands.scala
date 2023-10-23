@@ -234,9 +234,9 @@ object TableCommands {
     TableCommandSpec(
       cmd,
       Seq(
-        resolvedIdentifierTableDesc.copy(fieldName = "left"),
+        resolvedIdentifierTableDesc.copy(fieldName = "name"),
         tableDesc,
-        resolvedDbObjectNameDesc.copy(fieldName = "left")),
+        resolvedDbObjectNameDesc.copy(fieldName = "name")),
       CREATETABLE_AS_SELECT,
       Seq(queryQueryDesc))
   }
@@ -252,6 +252,17 @@ object TableCommands {
     val tableDesc =
       TableDesc(
         "table",
+        classOf[DataSourceV2RelationTableExtractor],
+        actionTypeDesc = Some(actionTypeDesc))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
+  }
+
+  val ReplaceData = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.ReplaceData"
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val tableDesc =
+      TableDesc(
+        "originalTable",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
@@ -366,7 +377,8 @@ object TableCommands {
 
   val CreateDataSourceTable = {
     val cmd = "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    val tableDesc =
+      TableDesc("table", classOf[CatalogTableTableExtractor], setCurrentDatabaseIfMissing = true)
     TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
   }
 
@@ -655,6 +667,7 @@ object TableCommands {
     RefreshTable,
     RefreshTableV2,
     RefreshTable3d0,
+    ReplaceData,
     ShowColumns,
     ShowCreateTable,
     ShowCreateTable.copy(classname =

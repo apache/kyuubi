@@ -35,6 +35,7 @@ import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll {
@@ -567,11 +568,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           someone, {
             sql(s"select * from $db1.$permView").collect()
           }))
-      if (isSparkV31OrGreater) {
-        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$permView/id]"))
-      } else {
-        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
-      }
+      assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$permView/id]"))
     }
   }
 
@@ -590,22 +587,12 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       // query all columns of the permanent view
       // with access privileges to the permanent view but no privilege to the source table
       val sql1 = s"SELECT * FROM $db1.$permView"
-      if (isSparkV31OrGreater) {
-        doAs(userPermViewOnly, { sql(sql1).collect() })
-      } else {
-        val e1 = intercept[AccessControlException](doAs(userPermViewOnly, { sql(sql1).collect() }))
-        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
-      }
+      doAs(userPermViewOnly, { sql(sql1).collect() })
 
       // query the second column of permanent view with multiple columns
       // with access privileges to the permanent view but no privilege to the source table
       val sql2 = s"SELECT name FROM $db1.$permView"
-      if (isSparkV31OrGreater) {
-        doAs(userPermViewOnly, { sql(sql2).collect() })
-      } else {
-        val e2 = intercept[AccessControlException](doAs(userPermViewOnly, { sql(sql2).collect() }))
-        assert(e2.getMessage.contains(s"does not have [select] privilege on [$db1/$table/name]"))
-      }
+      doAs(userPermViewOnly, { sql(sql2).collect() })
     }
   }
 
@@ -759,6 +746,108 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                | USING parquet
                | SELECT * FROM $db1.$table;""".stripMargin)))
       assert(e.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+    }
+  }
+
+  test("[KYUUBI #5417] should not check scalar-subquery in permanent view") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val table2 = "table2"
+    val view1 = "view1"
+    withCleanTmpResources(
+      Seq((s"$db1.$table1", "table"), (s"$db1.$table2", "table"), (s"$db1.$view1", "view"))) {
+      doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+      doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table2 (id int, scope int)"))
+
+      val e1 = intercept[AccessControlException] {
+        doAs(
+          someone,
+          sql(
+            s"""
+               |WITH temp AS (
+               |    SELECT max(scope) max_scope
+               |    FROM $db1.$table1)
+               |SELECT id as new_id FROM $db1.$table2
+               |WHERE scope = (SELECT max_scope FROM temp)
+               |""".stripMargin).show())
+      }
+      // Will first check subquery privilege.
+      assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table1/scope]"))
+
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE VIEW $db1.$view1
+             |AS
+             |WITH temp AS (
+             |    SELECT max(scope) max_scope
+             |    FROM $db1.$table1)
+             |SELECT id as new_id FROM $db1.$table2
+             |WHERE scope = (SELECT max_scope FROM temp)
+             |""".stripMargin))
+      // Will just check permanent view privilege.
+      val e2 = intercept[AccessControlException](
+        doAs(someone, sql(s"SELECT * FROM $db1.$view1".stripMargin).show()))
+      assert(e2.getMessage.contains(s"does not have [select] privilege on [$db1/$view1/new_id]"))
+    }
+  }
+
+  test("[KYUUBI #5417] should not check in-subquery in permanent view") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val table2 = "table2"
+    val view1 = "view1"
+    withCleanTmpResources(
+      Seq((s"$db1.$table1", "table"), (s"$db1.$table2", "table"), (s"$db1.$view1", "view"))) {
+      doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+      doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table2 (id int, scope int)"))
+
+      val e1 = intercept[AccessControlException] {
+        doAs(
+          someone,
+          sql(
+            s"""
+               |WITH temp AS (
+               |    SELECT max(scope) max_scope
+               |    FROM $db1.$table1)
+               |SELECT id as new_id FROM $db1.$table2
+               |WHERE scope in (SELECT max_scope FROM temp)
+               |""".stripMargin).show())
+      }
+      // Will first check subquery privilege.
+      assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table1/scope]"))
+
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE VIEW $db1.$view1
+             |AS
+             |WITH temp AS (
+             |    SELECT max(scope) max_scope
+             |    FROM $db1.$table1)
+             |SELECT id as new_id FROM $db1.$table2
+             |WHERE scope in (SELECT max_scope FROM temp)
+             |""".stripMargin))
+      // Will just check permanent view privilege.
+      val e2 = intercept[AccessControlException](
+        doAs(someone, sql(s"SELECT * FROM $db1.$view1".stripMargin).show()))
+      assert(e2.getMessage.contains(s"does not have [select] privilege on [$db1/$view1/new_id]"))
+    }
+  }
+
+  test("[KYUUBI #5492] saveAsTable create DataSource table miss db info") {
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq.empty) {
+        val df = doAs(
+          admin,
+          sql(s"SELECT * FROM VALUES(1, 100),(2, 200),(3, 300) AS t(id, scope)")).persist()
+        interceptContains[AccessControlException](
+          doAs(someone, df.write.mode("overwrite").saveAsTable(table1)))(
+          s"does not have [create] privilege on [$defaultDb/$table1]")
+      }
     }
   }
 }
