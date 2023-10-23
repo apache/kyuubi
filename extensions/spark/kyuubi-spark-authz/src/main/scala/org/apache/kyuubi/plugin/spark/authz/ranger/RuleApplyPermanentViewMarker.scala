@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.catalyst.rules.Rule
 
@@ -37,14 +36,7 @@ class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
     plan mapChildren {
       case p: PermanentViewMarker => p
       case permanentView: View if hasResolvedPermanentView(permanentView) =>
-        val resolvedSubquery = permanentView.transformAllExpressions {
-          case subquery: SubqueryExpression =>
-            // TODO: Currently, we do not do an auth check in the subquery
-            //  as the main query part also secures it. But for performance consideration,
-            //  we also pre-check it in subqueries and fail fast with negative privileges.
-            subquery.withNewPlan(plan = PermanentViewMarker(subquery.plan, null))
-        }
-        PermanentViewMarker(resolvedSubquery, resolvedSubquery.desc)
+        PermanentViewMarker(permanentView, permanentView.desc)
       case other => apply(other)
     }
   }

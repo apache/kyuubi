@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression, SubqueryExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.slf4j.LoggerFactory
 
@@ -72,34 +72,50 @@ object PrivilegesBuilder {
       }
     }
 
+    // Should execute this for all plan and skip PermanentViewMaker
+    def buildSubquery(): Unit = {
+      plan transformExpressions {
+        case subquery: SubqueryExpression =>
+          buildQuery(subquery.plan, privilegeObjects, projectionList, conditionList, spark)
+          subquery
+      }
+    }
+
     plan match {
-      case p: Project => buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
+      case p: Project =>
+        buildSubquery()
+        buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
 
       case j: Join =>
         val cols =
           conditionList ++ j.condition.map(expr => collectLeaves(expr)).getOrElse(Nil)
+        buildSubquery()
         buildQuery(j.left, privilegeObjects, projectionList, cols, spark)
         buildQuery(j.right, privilegeObjects, projectionList, cols, spark)
 
       case f: Filter =>
         val cols = conditionList ++ collectLeaves(f.condition)
+        buildSubquery()
         buildQuery(f.child, privilegeObjects, projectionList, cols, spark)
 
       case w: Window =>
         val orderCols = w.orderSpec.flatMap(orderSpec => collectLeaves(orderSpec))
         val partitionCols = w.partitionSpec.flatMap(partitionSpec => collectLeaves(partitionSpec))
         val cols = conditionList ++ orderCols ++ partitionCols
+        buildSubquery()
         buildQuery(w.child, privilegeObjects, projectionList, cols, spark)
 
       case s: Sort =>
         val sortCols = s.order.flatMap(sortOrder => collectLeaves(sortOrder))
         val cols = conditionList ++ sortCols
+        buildSubquery()
         buildQuery(s.child, privilegeObjects, projectionList, cols, spark)
 
       case a: Aggregate =>
         val aggCols =
           (a.aggregateExpressions ++ a.groupingExpressions).flatMap(e => collectLeaves(e))
         val cols = conditionList ++ aggCols
+        buildSubquery()
         buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
 
       case scan if isKnownScan(scan) && scan.resolved =>
@@ -113,6 +129,7 @@ object PrivilegesBuilder {
 
       case p =>
         for (child <- p.children) {
+          buildSubquery()
           buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
         }
     }

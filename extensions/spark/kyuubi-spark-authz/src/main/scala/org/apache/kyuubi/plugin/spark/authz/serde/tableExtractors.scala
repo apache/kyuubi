@@ -91,14 +91,10 @@ class TableIdentifierTableExtractor extends TableExtractor {
  */
 class CatalogTableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    if (null == v1) {
-      None
-    } else {
-      val catalogTable = v1.asInstanceOf[CatalogTable]
-      val identifier = catalogTable.identifier
-      val owner = Option(catalogTable.owner).filter(_.nonEmpty)
-      Some(Table(None, identifier.database, identifier.table, owner))
-    }
+    val catalogTable = v1.asInstanceOf[CatalogTable]
+    val identifier = catalogTable.identifier
+    val owner = Option(catalogTable.owner).filter(_.nonEmpty)
+    Some(Table(None, identifier.database, identifier.table, owner))
   }
 }
 
