@@ -69,13 +69,13 @@ class ReflectUtilsSuite extends AnyFunSuite {
   }
 
   test("test invokeAs method not found exception") {
-    interceptEquals[RuntimeException] {
+    interceptEquals[NoSuchMethodException] {
       invokeAs[String](
         ObjectA,
         "methodNotExists",
         (classOf[String], "arg1"),
         (classOf[String], "arg2"))
-    }("org.apache.kyuubi.util.reflect.ObjectA$ does not have methodNotExists method or" +
+    }("class org.apache.kyuubi.util.reflect.ObjectA$ does not have methodNotExists method or" +
       " incorrect arguments")
   }
 }
