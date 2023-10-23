@@ -988,7 +988,7 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : true
   } ],
   "opType" : "CREATETABLE_AS_SELECT",
   "queryDescs" : [ {
@@ -1005,7 +1005,7 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : true
   } ],
   "opType" : "CREATETABLE",
   "queryDescs" : [ ]
@@ -1019,7 +1019,7 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : true
   } ],
   "opType" : "CREATETABLE",
   "queryDescs" : [ ]
