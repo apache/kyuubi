@@ -69,7 +69,7 @@ class ReflectUtilsSuite extends AnyFunSuite {
   }
 
   test("test invokeAs method not found exception") {
-    interceptEquals[NoSuchMethodException] {
+    interceptEquals[RuntimeException] {
       invokeAs[String](
         ObjectA,
         "methodNotExists",
