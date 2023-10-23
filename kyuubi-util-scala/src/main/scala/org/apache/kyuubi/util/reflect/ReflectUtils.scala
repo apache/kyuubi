@@ -60,11 +60,7 @@ object ReflectUtils {
       }
     } catch {
       case e: Exception =>
-        val candidates =
-          (clz.getDeclaredFields ++ clz.getFields).map(_.getName).distinct.sorted
-        throw new RuntimeException(
-          s"Field $fieldName not in $clz [${candidates.mkString(",")}]",
-          e)
+        throw new RuntimeException(s"$clz does not have $fieldName field", e)
     }
   }
 
@@ -92,15 +88,8 @@ object ReflectUtils {
       }
     } catch {
       case e: Exception =>
-        val candidates =
-          (clz.getDeclaredMethods ++ clz.getMethods)
-            .map(m => s"${m.getName}(${m.getParameterTypes.map(_.getName).mkString(", ")})")
-            .distinct.sorted
-        val argClassesNames = argClasses.map(_.getName)
         throw new RuntimeException(
-          s"Method $methodName(${argClassesNames.mkString(", ")})" +
-            s" not found in $clz [${candidates.mkString(", ")}]",
-          e)
+          s"$clz does not have $methodName method or incorrect arguments", e)
     }
   }
 
