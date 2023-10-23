@@ -105,11 +105,7 @@ object PrivilegesBuilder {
 
       case pvm: PermanentViewMarker =>
         getScanSpec(pvm).tables(pvm, spark).foreach { table =>
-          if (pvm.child.output.isEmpty) {
-            privilegeObjects += PrivilegeObject(table, pvm.catalogTable.schema.map(_.name))
-          } else {
-            privilegeObjects += PrivilegeObject(table, pvm.output.map(_.name))
-          }
+          privilegeObjects += PrivilegeObject(table, pvm.visitColNames)
         }
 
       case scan if isKnownScan(scan) && scan.resolved =>
