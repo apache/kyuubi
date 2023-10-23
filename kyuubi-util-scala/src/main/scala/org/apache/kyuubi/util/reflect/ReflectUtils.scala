@@ -89,7 +89,7 @@ object ReflectUtils {
     } catch {
       case e: Exception =>
         throw new RuntimeException(
-          s"$clz does not have $methodName method or incorrect arguments",
+          s"$clz does not have $methodName${argClasses.map(_.getName).mkString("(", ", ", ")")}",
           e)
     }
   }
