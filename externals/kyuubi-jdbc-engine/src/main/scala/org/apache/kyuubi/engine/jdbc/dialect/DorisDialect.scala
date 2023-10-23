@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 package org.apache.kyuubi.engine.jdbc.dialect
-import java.sql.{Connection, ResultSet, Statement}
+import java.sql.{Connection, Statement}
 import java.util
 
 import scala.collection.JavaConverters._
@@ -23,32 +23,17 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.commons.lang3.StringUtils
 
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.jdbc.doris.{DorisRowSetHelper, DorisSchemaHelper}
 import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
-import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class DorisDialect extends JdbcDialect {
 
   override def createStatement(connection: Connection, fetchSize: Int): Statement = {
-    val statement =
-      connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+    val statement = super.createStatement(connection, fetchSize)
     statement.setFetchSize(Integer.MIN_VALUE)
     statement
-  }
-
-  override def getTypeInfoOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
-  override def getCatalogsOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
-  override def getSchemasOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
   }
 
   override def getTablesQuery(
@@ -96,10 +81,6 @@ class DorisDialect extends JdbcDialect {
     query.toString()
   }
 
-  override def getTableTypesOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
   override def getColumnsQuery(
       session: Session,
       catalogName: String,
@@ -137,18 +118,6 @@ class DorisDialect extends JdbcDialect {
     }
 
     query.toString()
-  }
-
-  override def getFunctionsOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
-  override def getPrimaryKeysOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
-  override def getCrossReferenceOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
   }
 
   override def getRowSetHelper(): RowSetHelper = {
