@@ -94,14 +94,6 @@
                     <artifactId>jsr311-api</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.codehaus.jackson</groupId>
-                    <artifactId>jackson-core-asl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.codehaus.jackson</groupId>
-                    <artifactId>jackson-mapper-asl</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>com.kstruct</groupId>
                     <artifactId>gethostname4j</artifactId>
                 </exclusion>
@@ -246,6 +238,8 @@
                             <include>org.apache.ranger:ranger-plugins-common</include>
                             <include>org.apache.ranger:ranger-plugins-audit</include>
                             <include>org.codehaus.jackson:jackson-jaxrs</include>
+                            <include>org.codehaus.jackson:jackson-core-asl</include>
+                            <include>org.codehaus.jackson:jackson-mapper-asl</include>
                             <include>com.sun.jersey:jersey-client</include>
                             <include>com.sun.jersey:jersey-core</include>
                             <include>com.kstruct:gethostname4j</include>
@@ -274,8 +268,8 @@
                     </filters>
                     <relocations>
                         <relocation>
-                            <pattern>org.codehaus.jackson.jaxrs</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.codehaus.jackson.jaxrs</shadedPattern>
+                            <pattern>org.codehaus.jackson</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.codehaus.jackson</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>com.sun.jersey</pattern>
