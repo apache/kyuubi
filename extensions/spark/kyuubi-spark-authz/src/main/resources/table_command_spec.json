@@ -226,10 +226,7 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ {
-    "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+  "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DeleteFromTable",
   "tableDescs" : [ {
@@ -247,10 +244,7 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ {
-    "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+  "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeRelation",
   "tableDescs" : [ {
@@ -658,10 +652,7 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ {
-    "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+  "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.UpdateTable",
   "tableDescs" : [ {
@@ -679,10 +670,7 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ {
-    "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+  "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand",
   "tableDescs" : [ {
@@ -1652,10 +1640,7 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ {
-    "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+  "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.DropHoodieTableCommand",
   "tableDescs" : [ {
@@ -1795,8 +1780,5 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ {
-    "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+  "queryDescs" : [ ]
 } ]
