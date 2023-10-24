@@ -464,19 +464,6 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       (killed, message)
     }
 
-    def redirectDeleteRequest(metadata: Metadata, userName: String): CloseBatchResponse = {
-      info(s"Redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}")
-      val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
-      try {
-        internalRestClient.deleteBatch(userName, batchId)
-      } catch {
-        case e: KyuubiRestException =>
-          error(s"Error redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}", e)
-          val (killed, msg) = forceKill(metadata.appMgrInfo, batchId, userName)
-          new CloseBatchResponse(killed, if (killed) msg else Utils.stringifyException(e))
-      }
-    }
-
     val sessionHandle = formatSessionHandle(batchId)
     val userName = fe.getSessionUser(hs2ProxyUser)
 
@@ -490,16 +477,20 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         checkPermission(userName, metadata.username)
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
-        } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED") {
-          if (batchService.get.cancelUnscheduledBatch(batchId)) {
-            new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
-          } else if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
-            new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
-          } else {
-            redirectDeleteRequest(metadata, userName)
-          }
+        } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED" &&
+          batchService.get.cancelUnscheduledBatch(batchId)) {
+          new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
         } else if (metadata.kyuubiInstance != fe.connectionUrl) {
-          redirectDeleteRequest(metadata, userName)
+          info(s"Redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}")
+          val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
+          try {
+            internalRestClient.deleteBatch(userName, batchId)
+          } catch {
+            case e: KyuubiRestException =>
+              error(s"Error redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}", e)
+              val (killed, msg) = forceKill(metadata.appMgrInfo, batchId, userName)
+              new CloseBatchResponse(killed, if (killed) msg else Utils.stringifyException(e))
+          }
         } else { // should not happen, but handle this for safe
           warn(s"Something wrong on deleting batch[$batchId], try forcibly killing application")
           val (killed, msg) = forceKill(metadata.appMgrInfo, batchId, userName)
