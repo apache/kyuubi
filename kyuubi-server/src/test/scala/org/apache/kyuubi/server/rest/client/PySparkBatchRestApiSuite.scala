@@ -25,7 +25,7 @@ import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 
-class BatchRestApiPySparkSuite extends RestClientTestHelper with BatchTestHelper {
+class PySparkBatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
   object PySparkJobPI {
     val batchType = "PYSPARK"
     val className: String = null // For PySpark, mainClass isn't needed.
