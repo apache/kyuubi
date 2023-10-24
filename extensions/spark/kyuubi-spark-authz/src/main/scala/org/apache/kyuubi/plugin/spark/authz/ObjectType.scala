@@ -30,9 +30,9 @@ object ObjectType extends Enumeration {
       case PrivilegeObjectType.DATABASE => DATABASE
       case PrivilegeObjectType.TABLE_OR_VIEW if obj.columns.nonEmpty => COLUMN
       case PrivilegeObjectType.TABLE_OR_VIEW if opType.toString.contains("VIEW") => VIEW
+      case PrivilegeObjectType.TABLE_OR_VIEW if opType.toString.contains("INDEX") => INDEX
       case PrivilegeObjectType.TABLE_OR_VIEW => TABLE
       case PrivilegeObjectType.FUNCTION => FUNCTION
-      case PrivilegeObjectType.INDEX => INDEX
     }
   }
 }
