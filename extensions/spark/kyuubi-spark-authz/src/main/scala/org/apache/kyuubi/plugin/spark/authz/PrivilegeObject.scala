@@ -64,7 +64,7 @@ object PrivilegeObject {
   def apply(
       table: Table,
       columns: Seq[String] = Nil,
-    actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
+      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
     new PrivilegeObject(
       TABLE_OR_VIEW,
       actionType,
