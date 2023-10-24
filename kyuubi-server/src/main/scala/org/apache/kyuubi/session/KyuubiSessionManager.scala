@@ -293,27 +293,29 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     startEngineAliveChecker()
   }
 
-  def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSession] = {
+  def getMetadataToRecover(kyuubiInstance: String): Seq[Metadata] = {
     Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
       metadataManager.map(_.getBatchesRecoveryMetadata(
         stateToRecover.toString,
         kyuubiInstance,
         0,
-        Int.MaxValue).map { metadata =>
-        createBatchSession(
-          metadata.username,
-          "anonymous",
-          metadata.ipAddress,
-          metadata.requestConf,
-          metadata.engineType,
-          Option(metadata.requestName),
-          metadata.resource,
-          metadata.className,
-          metadata.requestArgs,
-          Some(metadata),
-          fromRecovery = true)
-      }).getOrElse(Seq.empty)
+        Int.MaxValue)).getOrElse(Seq.empty)
     }
+  }
+
+  def getBatchSessionFromMetaToRecover(metadata: Metadata): KyuubiBatchSession = {
+    createBatchSession(
+      metadata.username,
+      "anonymous",
+      metadata.ipAddress,
+      metadata.requestConf,
+      metadata.engineType,
+      Option(metadata.requestName),
+      metadata.resource,
+      metadata.className,
+      metadata.requestArgs,
+      Some(metadata),
+      fromRecovery = true)
   }
 
   def getPeerInstanceClosedBatchSessions(kyuubiInstance: String): Seq[Metadata] = {

@@ -576,23 +576,42 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     val restFe = fe.asInstanceOf[KyuubiRestFrontendService]
     restFe.recoverBatchSessions()
-    assert(sessionManager.getOpenSessionCount === 2)
+    batchVersion match {
+      case "1" =>
+        assert(sessionManager.getOpenSessionCount === 2)
 
-    val sessionHandle1 = SessionHandle.fromUUID(batchId1)
-    val sessionHandle2 = SessionHandle.fromUUID(batchId2)
-    val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSession]
-    val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSession]
-    assert(session1.createTime === batchMetadata.createTime)
-    assert(session2.createTime === batchMetadata2.createTime)
+        val sessionHandle1 = SessionHandle.fromUUID(batchId1)
+        val sessionHandle2 = SessionHandle.fromUUID(batchId2)
+        val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSession]
+        val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSession]
+        assert(session1.createTime === batchMetadata.createTime)
+        assert(session2.createTime === batchMetadata2.createTime)
 
-    eventually(timeout(10.seconds)) {
-      assert(session1.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
-        session1.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
-      assert(session1.batchJobSubmissionOp.builder.processLaunched)
+        eventually(timeout(10.seconds)) {
+          assert(session1.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
+            session1.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
+          assert(session1.batchJobSubmissionOp.builder.processLaunched)
 
-      assert(session2.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
-        session2.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
-      assert(!session2.batchJobSubmissionOp.builder.processLaunched)
+          assert(session2.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
+            session2.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
+          assert(!session2.batchJobSubmissionOp.builder.processLaunched)
+        }
+      case "2" =>
+        eventually(timeout(20.seconds)) {
+          Seq(batchMetadata, batchMetadata2).foreach { originMetadata =>
+            val batchId = originMetadata.identifier
+            val metadata = sessionManager.getBatchMetadata(batchId).getOrElse(fail(
+              s"Can't find metadata for recovery batch: $batchId"))
+            assert(
+              metadata.state === OperationState.PENDING.toString ||
+                metadata.state === OperationState.RUNNING.toString ||
+                metadata.state === OperationState.FINISHED.toString)
+            assert(metadata.kyuubiInstance === fe.connectionUrl)
+            assert(metadata.createTime !== originMetadata.createTime)
+          }
+        }
+      case "_" =>
+        fail(s"unexpected batch version: $batchVersion")
     }
 
     assert(sessionManager.getBatchesFromMetadataStore(

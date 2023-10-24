@@ -42,13 +42,12 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, KillResponse, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
-import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
-import org.apache.kyuubi.util.JdbcUtils
+import org.apache.kyuubi.util.{JdbcUtils, KyuubiUtils}
 
 @Tag(name = "Batch")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -58,11 +57,6 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT).toInt
   private lazy val internalConnectTimeout =
     fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT).toInt
-
-  private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
-    KyuubiServer.kyuubiServer.getConf.get(BATCH_SUBMITTER_ENABLED) &&
-    reqConf.getOrElse(BATCH_IMPL_VERSION.key, fe.getConf.get(BATCH_IMPL_VERSION)) == "2"
-  }
 
   private def getInternalRestClient(kyuubiInstance: String): InternalRestClient = {
     internalRestClients.computeIfAbsent(
@@ -239,7 +233,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
             KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
 
-        if (batchV2Enabled(request.getConf.asScala.toMap)) {
+        if (KyuubiUtils.batchV2Enabled(request.getConf.asScala.toMap)) {
           logger.info(s"Submit batch job $batchId using Batch API v2")
           return Try {
             sessionManager.initializeBatchState(
@@ -309,7 +303,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       buildBatch(batchSession)
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
-        if (batchV2Enabled(metadata.requestConf) ||
+        if (KyuubiUtils.batchV2Enabled(metadata.requestConf) ||
           OperationState.isTerminal(OperationState.withName(metadata.state)) ||
           metadata.kyuubiInstance == fe.connectionUrl) {
           MetadataManager.buildBatch(metadata)
@@ -409,14 +403,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       }
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
-        if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED") {
+        if (KyuubiUtils.batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED") {
           info(s"Batch $batchId is waiting for scheduling")
           val dummyLogs = List(s"Batch $batchId is waiting for scheduling").asJava
           new OperationLog(dummyLogs, dummyLogs.size)
         } else if (fe.connectionUrl != metadata.kyuubiInstance) {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           internalRestClient.getBatchLocalLog(userName, batchId, from, size)
-        } else if (batchV2Enabled(metadata.requestConf) &&
+        } else if (KyuubiUtils.batchV2Enabled(metadata.requestConf) &&
           // in batch v2 impl, the operation state is changed from PENDING to RUNNING
           // before being added to SessionManager.
           (metadata.state == "PENDING" || metadata.state == "RUNNING")) {
@@ -477,7 +471,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         checkPermission(userName, metadata.username)
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
-        } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED") {
+        } else if (KyuubiUtils.batchV2Enabled(
+            metadata.requestConf) && metadata.state == "INITIALIZED") {
           if (batchService.get.cancelUnscheduledBatch(batchId)) {
             new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
           } else if (OperationState.isTerminal(OperationState.withName(metadata.state))) {

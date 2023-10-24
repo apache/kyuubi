@@ -24,6 +24,8 @@ import javax.servlet.DispatcherType
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response.Status
 
+import scala.collection.mutable.ListBuffer
+
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.conf.Configuration
 import org.eclipse.jetty.servlet.{ErrorPageErrorHandler, FilterHolder}
@@ -31,13 +33,15 @@ import org.eclipse.jetty.servlet.{ErrorPageErrorHandler, FilterHolder}
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
+import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
-import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.{KyuubiUtils, ThreadUtils}
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.
@@ -146,7 +150,25 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val batchRecoveryExecutor =
       ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
     try {
-      val batchSessionsToRecover = sessionManager.getBatchSessionsToRecover(connectionUrl)
+      val v1Metadata = new ListBuffer[Metadata]
+      val v2Metadata = new ListBuffer[Metadata]
+      sessionManager.getMetadataToRecover(connectionUrl).foreach { metadata =>
+        if (KyuubiUtils.batchV2Enabled(metadata.requestConf)) {
+          v2Metadata += metadata
+        } else {
+          v1Metadata += metadata
+        }
+      }
+
+      // mark v2 metadata as unattributed, allow them can be picked by each kyuubi server
+      v2Metadata.foreach { m =>
+        sessionManager.updateMetadata(Metadata(
+          identifier = m.identifier,
+          state = OperationState.INITIALIZED.toString))
+      }
+
+      val batchSessionsToRecover =
+        v1Metadata.map { m => sessionManager.getBatchSessionFromMetaToRecover(m) }
       val pendingRecoveryTasksCount = new AtomicInteger(0)
       val tasks = batchSessionsToRecover.flatMap { batchSession =>
         val batchId = batchSession.batchJobSubmissionOp.batchId
