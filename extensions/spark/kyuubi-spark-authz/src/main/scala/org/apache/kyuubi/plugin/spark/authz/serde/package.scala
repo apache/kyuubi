@@ -85,7 +85,7 @@ package object serde {
   }
 
   final private lazy val FUNCTION_SPECS: Map[String, ScanSpec] = {
-    val is = getClass.getClassLoader.getResourceAsStream("scan_command_spec.json")
+    val is = getClass.getClassLoader.getResourceAsStream("function_command_spec.json")
     mapper.readValue(is, new TypeReference[Array[ScanSpec]] {})
       .map(e => (e.classname, e))
       .filter(t => t._2.functionDescs.nonEmpty).toMap
