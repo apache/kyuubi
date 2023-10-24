@@ -312,8 +312,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
               try {
                 closeSession(session.handle)
               } catch {
-                case e: KyuubiSQLException =>
-                  warn(s"Error closing idle session ${session.handle}", e)
+                case e: Throwable => warn(s"Error closing idle session ${session.handle}", e)
               }
             } else {
               session.closeExpiredOperations()
