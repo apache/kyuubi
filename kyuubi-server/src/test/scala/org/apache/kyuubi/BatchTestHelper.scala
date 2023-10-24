@@ -36,22 +36,6 @@ trait BatchTestHelper {
       _.getName.startsWith("spark-examples")) map (_.getCanonicalPath)
   }
 
-  object PySparkJobPI {
-    val batchType = "PYSPARK"
-    val className: String = null // For PySpark, mainClass isn't needed.
-    val name = "PythonPi" // the app name is hard coded in spark example code
-    lazy val resource: Option[String] = {
-      val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", KyuubiConf())
-      Paths.get(
-        sparkProcessBuilder.sparkHome,
-        "examples",
-        "src",
-        "main",
-        "python").toFile.listFiles().find(
-        _.getName.equalsIgnoreCase("pi.py")) map (_.getCanonicalPath)
-    }
-  }
-
   def newBatchRequest(
       batchType: String,
       resource: String,
