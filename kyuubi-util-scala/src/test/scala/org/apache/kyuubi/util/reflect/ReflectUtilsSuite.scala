@@ -75,10 +75,8 @@ class ReflectUtilsSuite extends AnyFunSuite {
         "methodNotExists",
         (classOf[String], "arg1"),
         (classOf[String], "arg2"))
-    }("Method methodNotExists(java.lang.String, java.lang.String) not found " +
-      "in class org.apache.kyuubi.util.reflect.ObjectA$ " +
-      "[equals(java.lang.Object), field5(), field6(), getClass(), hashCode(), method5(), " +
-      "method6(), notify(), notifyAll(), toString(), wait(), wait(long), wait(long, int)]")
+    }("class org.apache.kyuubi.util.reflect.ObjectA$ does not have methodNotExists(" +
+      "java.lang.String, java.lang.String)")
   }
 }
 

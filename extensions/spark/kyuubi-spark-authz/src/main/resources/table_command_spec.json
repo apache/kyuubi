@@ -988,7 +988,7 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : true
   } ],
   "opType" : "CREATETABLE_AS_SELECT",
   "queryDescs" : [ {
@@ -1005,7 +1005,7 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : true
   } ],
   "opType" : "CREATETABLE",
   "queryDescs" : [ ]
@@ -1019,7 +1019,7 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : true
   } ],
   "opType" : "CREATETABLE",
   "queryDescs" : [ ]
@@ -1514,6 +1514,37 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.hudi.command.CallProcedureHoodieCommand",
+  "tableDescs" : [ {
+    "fieldName" : "clone",
+    "fieldExtractor" : "HudiCallProcedureInputTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "OTHER"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : true
+  }, {
+    "fieldName" : "clone",
+    "fieldExtractor" : "HudiCallProcedureOutputTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : true
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.hudi.command.CompactionHoodieTableCommand",
   "tableDescs" : [ {
     "fieldName" : "table",
@@ -1605,19 +1636,26 @@
   "opType" : "CREATETABLE",
   "queryDescs" : [ ]
 }, {
-  "classname" : "org.apache.spark.sql.hudi.command.CreateIndexCommand",
+  "classname" : "org.apache.spark.sql.hudi.command.DeleteHoodieTableCommand",
   "tableDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "CatalogTableTableExtractor",
+    "fieldName" : "dft",
+    "fieldExtractor" : "HudiDataSourceV2RelationTableExtractor",
     "columnDesc" : null,
-    "actionTypeDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.DropHoodieTableCommand",
   "tableDescs" : [ {
@@ -1672,19 +1710,26 @@
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ]
 }, {
-  "classname" : "org.apache.spark.sql.hudi.command.RefreshIndexCommand",
+  "classname" : "org.apache.spark.sql.hudi.command.MergeIntoHoodieTableCommand",
   "tableDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "CatalogTableTableExtractor",
+    "fieldName" : "mergeInto",
+    "fieldExtractor" : "HudiMergeIntoTargetTableExtractor",
     "columnDesc" : null,
-    "actionTypeDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
-    "isInput" : true,
+    "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ {
+    "fieldName" : "mergeInto",
+    "fieldExtractor" : "HudiMergeIntoSourceTableExtractor"
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.RepairHoodieTableCommand",
   "tableDescs" : [ {
@@ -1700,18 +1745,21 @@
   "opType" : "MSCK",
   "queryDescs" : [ ]
 }, {
-  "classname" : "org.apache.spark.sql.hudi.command.ShowIndexesCommand",
+  "classname" : "org.apache.spark.sql.hudi.command.ShowHoodieTablePartitionsCommand",
   "tableDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "CatalogTableTableExtractor",
-    "columnDesc" : null,
+    "fieldName" : "tableIdentifier",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "specOpt",
+      "fieldExtractor" : "PartitionOptionColumnExtractor"
+    },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "QUERY",
+  "opType" : "SHOWPARTITIONS",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.Spark31AlterTableCommand",
@@ -1744,4 +1792,25 @@
   } ],
   "opType" : "TRUNCATETABLE",
   "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.UpdateHoodieTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "ut",
+    "fieldExtractor" : "HudiDataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
 } ]
