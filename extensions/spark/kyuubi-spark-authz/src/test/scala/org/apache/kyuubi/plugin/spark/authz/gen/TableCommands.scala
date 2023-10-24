@@ -276,7 +276,7 @@ object TableCommands {
         "table",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
+    TableCommandSpec(cmd, Seq(tableDesc))
   }
 
   val DeleteFromTable = {

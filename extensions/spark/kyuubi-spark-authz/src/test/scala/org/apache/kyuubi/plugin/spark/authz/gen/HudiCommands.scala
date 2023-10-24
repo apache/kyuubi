@@ -174,7 +174,7 @@ object HudiCommands {
         "dft",
         classOf[HudiDataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
+    TableCommandSpec(cmd, Seq(tableDesc))
   }
 
   val UpdateHoodieTableCommand = {
@@ -185,7 +185,7 @@ object HudiCommands {
         "ut",
         classOf[HudiDataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
+    TableCommandSpec(cmd, Seq(tableDesc))
   }
 
   val MergeIntoHoodieTableCommand = {
