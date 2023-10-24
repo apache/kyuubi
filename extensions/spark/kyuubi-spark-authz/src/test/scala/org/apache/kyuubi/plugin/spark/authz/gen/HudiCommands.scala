@@ -200,12 +200,31 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDescs))
   }
 
+  val CallProcedureHoodieCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.CallProcedureHoodieCommand"
+    TableCommandSpec(
+      cmd,
+      Seq(
+        TableDesc(
+          "clone",
+          classOf[HudiCallProcedureInputTableExtractor],
+          actionTypeDesc = Some(ActionTypeDesc(actionType = Some(OTHER))),
+          isInput = true,
+          setCurrentDatabaseIfMissing = true),
+        TableDesc(
+          "clone",
+          classOf[HudiCallProcedureOutputTableExtractor],
+          actionTypeDesc = Some(ActionTypeDesc(actionType = Some(UPDATE))),
+          setCurrentDatabaseIfMissing = true)))
+  }
+
   val data: Array[TableCommandSpec] = Array(
     AlterHoodieTableAddColumnsCommand,
     AlterHoodieTableChangeColumnCommand,
     AlterHoodieTableDropPartitionCommand,
     AlterHoodieTableRenameCommand,
     AlterTableCommand,
+    CallProcedureHoodieCommand,
     CreateHoodieTableAsSelectCommand,
     CreateHoodieTableCommand,
     CreateHoodieTableLikeCommand,
