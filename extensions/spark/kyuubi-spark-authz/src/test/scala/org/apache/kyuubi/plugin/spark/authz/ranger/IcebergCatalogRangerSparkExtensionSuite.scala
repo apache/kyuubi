@@ -103,23 +103,14 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       """.stripMargin
 
     // MergeIntoTable:  Using a MERGE INTO Statement
-    val e1 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(mergeIntoSql)))
-    assert(e1.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/id]"))
-
     withSingleCallEnabled {
       interceptContains[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
-        if (isSparkV35OrGreater) {
-          s"does not have [select] privilege on [$namespace1/table1/id" +
-            s",$namespace1/$table1/name,$namespace1/$table1/city]"
-        } else {
-          "does not have " +
-            s"[select] privilege on [$namespace1/$table1/id,$namespace1/$table1/name,$namespace1/$table1/city]," +
-            s" [update] privilege on [$bobNamespace/$bobSelectTable]"
-        })
+        s"does not have [select] privilege on " +
+          s"[$bobNamespace/$bobSelectTable/id,$bobNamespace/$bobSelectTable/name," +
+          s"$bobNamespace/$bobSelectTable/city,$bobNamespace/$bobSelectTable/_file," +
+          s"$namespace1/$table1/id,$namespace1/$table1/city], " +
+          s"[update] privilege on [$bobNamespace/$bobSelectTable]"
+      )
 
       interceptContains[AccessControlException] {
         doAs(bob, sql(mergeIntoSql))
