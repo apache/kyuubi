@@ -305,7 +305,7 @@ abstract class HudiCallProcedureTableExtractor extends TableExtractor {
   protected val procedureArgsInputOutputPairs: Map[String, ProcedureArgsInputOutputPair] = Map(
     (
       s"$PROCEDURE_CLASS_PATH.ArchiveCommitsProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputPair(output = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.CommitsCompareProcedure",
       ProcedureArgsInputOutputPair(input = Some("table"))),
@@ -319,19 +319,19 @@ abstract class HudiCallProcedureTableExtractor extends TableExtractor {
       ProcedureArgsInputOutputPair(input = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.CreateMetadataTableProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputPair(output = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.CreateSavepointProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputPair(output = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.DeleteMarkerProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputPair(output = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.DeleteMetadataTableProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputPair(output = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.DeleteSavepointProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputPair(output = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ExportInstantsProcedure",
       ProcedureArgsInputOutputPair(input = Some("table"))),
@@ -471,10 +471,10 @@ class HudiCallProcedureOutputTableExtractor
     val args = invokeAs[AnyRef](v1, "args")
     procedureArgsInputOutputPairs.get(procedure.getClass.getName)
       .filter(_.output.isDefined)
-      .map(argsPairs => {
+      .map { argsPairs =>
         val tableIdentifier = extractTableIdentifier(procedure, args, argsPairs.output.get)
         lookupExtractor[StringTableExtractor].apply(spark, tableIdentifier.get).orNull
-      })
+      }
   }
 }
 
@@ -485,9 +485,9 @@ class HudiCallProcedureInputTableExtractor
     val args = invokeAs[AnyRef](v1, "args")
     procedureArgsInputOutputPairs.get(procedure.getClass.getName)
       .filter(_.input.isDefined)
-      .map(argsPairs => {
+      .map { argsPairs =>
         val tableIdentifier = extractTableIdentifier(procedure, args, argsPairs.input.get)
         lookupExtractor[StringTableExtractor].apply(spark, tableIdentifier.get).orNull
-      })
+      }
   }
 }
