@@ -20,7 +20,6 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.kyuubi.util.AssertionUtils.interceptContains
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
@@ -37,6 +36,7 @@ import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
+import org.apache.kyuubi.util.AssertionUtils.interceptContains
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll {
@@ -952,24 +952,40 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                |SELECT count(*) as cnt, sum(id) as sum_id FROM $db1.$table1
               """.stripMargin))
         interceptContains[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$table1").show())
-        )(s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$table1").show()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
 
         interceptContains[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view1").show())
-        )(s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view1").show()))(
+          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
 
         interceptContains[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2").show())
-        )(s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2").show()))(
+          s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
 
         interceptContains[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2 WHERE cnt > 10").show())
-        )(s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
+          doAs(someone, sql(s"SELECT count(id) FROM $db1.$table1 WHERE id > 10").show()))(
+          s"does not have [select] privilege on [$db1/$table1/id]")
 
         interceptContains[AccessControlException](
-          doAs(someone, sql(s"SELECT count(cnt) FROM $db1.$view2 WHERE cnt > 10").show())
-        )(s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
+          doAs(someone, sql(s"SELECT count(id) FROM $db1.$view1 WHERE id > 10").show()))(
+          s"does not have [select] privilege on [$db1/$view1/id]")
+
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT count(sum_id) FROM $db1.$view2 WHERE sum_id > 10").show()))(
+          s"does not have [select] privilege on [$db1/$view2/sum_id]")
+
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT count(scope) FROM $db1.$table1 WHERE id > 10").show()))(
+          s"does not have [select] privilege on [$db1/$table1/scope,$db1/$table1/id]")
+
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT count(scope) FROM $db1.$view1 WHERE id > 10").show()))(
+          s"does not have [select] privilege on [$db1/$view1/scope,$db1/$view1/id]")
+
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT count(cnt) FROM $db1.$view2 WHERE sum_id > 10").show()))(
+          s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
       }
     }
   }

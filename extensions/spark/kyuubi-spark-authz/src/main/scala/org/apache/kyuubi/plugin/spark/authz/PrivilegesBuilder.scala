@@ -65,7 +65,12 @@ object PrivilegesBuilder {
 
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
+        plan match {
+          case pvm: PermanentViewMarker if pvm.output.isEmpty =>
+            privilegeObjects += PrivilegeObject(table, pvm.catalogTable.schema.map(_.name))
+          case _ =>
+            privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
+        }
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
@@ -118,11 +123,6 @@ object PrivilegesBuilder {
         val cols = conditionList ++ aggCols
         buildSubquery()
         buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
-
-      case pvm: PermanentViewMarker =>
-        getScanSpec(pvm).tables(pvm, spark).foreach { table =>
-          privilegeObjects += PrivilegeObject(table, pvm.catalogTable.schema.map(_.name))
-        }
 
       case scan if isKnownScan(scan) && scan.resolved =>
         getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))
