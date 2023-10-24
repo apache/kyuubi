@@ -35,7 +35,7 @@
 
 <script lang="ts" setup>
   import { getAllServer } from '@/api/server'
-  import { useTable } from '@/views/common/use-table'
+  import { useTable } from '@/utils/use-table'
 
   const { tableData, loading, getList: _getList } = useTable()
   const getList = () => {

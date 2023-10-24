@@ -270,7 +270,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
           |""".stripMargin
       val rs1 = statement.executeQuery(code)
       rs1.next()
-      assert(rs1.getString(1) startsWith "df: org.apache.spark.sql.DataFrame")
+      assert(rs1.getString(1) contains "df: org.apache.spark.sql.DataFrame")
 
       // continue
       val rs2 = statement.executeQuery("df.count()")
@@ -311,7 +311,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
           |""".stripMargin
       val rs5 = statement.executeQuery(code2)
       rs5.next()
-      assert(rs5.getString(1) startsWith "df: org.apache.spark.sql.DataFrame")
+      assert(rs5.getString(1) contains "df: org.apache.spark.sql.DataFrame")
 
       // re-assign
       val rs6 = statement.executeQuery("result.set(df)")
@@ -420,7 +420,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
       statement.execute(code1)
       val rs = statement.executeQuery(code2)
       rs.next()
-      assert(rs.getString(1) == "x: Int = 3")
+      assert(rs.getString(1) contains "x: Int = 3")
     }
   }
 

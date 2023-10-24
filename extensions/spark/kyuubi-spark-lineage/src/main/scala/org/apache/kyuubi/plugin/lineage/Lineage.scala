@@ -32,8 +32,9 @@ class Lineage(
 
   override def equals(other: Any): Boolean = other match {
     case otherLineage: Lineage =>
-      otherLineage.inputTables == inputTables && otherLineage.outputTables == outputTables &&
-      otherLineage.columnLineage == columnLineage
+      otherLineage.inputTables.toSet == inputTables.toSet &&
+      otherLineage.outputTables.toSet == outputTables.toSet &&
+      otherLineage.columnLineage.toSet == columnLineage.toSet
     case _ => false
   }
 

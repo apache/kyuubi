@@ -175,6 +175,23 @@ class HiveQuerySuite extends KyuubiHiveTest {
     }
   }
 
+  test("[KYUUBI #5414] Reader should not polluted the global hiveconf instance") {
+    withSparkSession() { spark =>
+      val table = "hive.default.hiveconf_test"
+      withTempPartitionedTable(spark, table, "ORC", hiveTable = true) {
+        spark.sql(
+          s"""
+             | INSERT OVERWRITE
+             | $table PARTITION(year = '2022')
+             | VALUES("yi", "08")
+             |""".stripMargin).collect()
+
+        checkQueryResult(s"select * from $table", spark, Array(Row.apply("yi", "2022", "08")))
+        checkQueryResult(s"select count(*) as c from $table", spark, Array(Row.apply(1)))
+      }
+    }
+  }
+
   test("Partitioned table insert and static partition value is empty string") {
     withSparkSession() { spark =>
       val table = "hive.default.employee"

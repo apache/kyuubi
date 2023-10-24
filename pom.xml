@@ -56,6 +56,7 @@
         <module>extensions/server/kyuubi-server-plugin</module>
         <module>extensions/spark/kyuubi-extension-spark-jdbc-dialect</module>
         <module>extensions/spark/kyuubi-spark-authz</module>
+        <module>extensions/spark/kyuubi-spark-authz-shaded</module>
         <module>extensions/spark/kyuubi-spark-connector-common</module>
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>extensions/spark/kyuubi-spark-connector-tpch</module>
@@ -133,12 +134,13 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <etcd.version>0.7.3</etcd.version>
+        <delta.artifact>delta-core</delta.artifact>
         <delta.version>2.4.0</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
         <flink.version>1.17.1</flink.version>
-        <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
+        <flink.archive.name>flink-${flink.version}-bin-scala_2.12.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
@@ -158,6 +160,8 @@
         <hive.archive.download.skip>false</hive.archive.download.skip>
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
+        <hudi.version>0.14.0</hudi.version>
+        <hudi.spark.binary.version>${spark.binary.version}</hudi.spark.binary.version>
         <iceberg.version>1.4.0</iceberg.version>
         <jackson.version>2.15.0</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
@@ -181,6 +185,8 @@
           -->
         <netty.version>4.1.93.Final</netty.version>
         <openai.java.version>0.12.0</openai.java.version>
+        <paimon.version>0.5.0-incubating</paimon.version>
+        <paimon.spark.binary.version>${spark.binary.version}</paimon.spark.binary.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -198,7 +204,8 @@
           -->
         <spark.version>3.4.1</spark.version>
         <spark.binary.version>3.4</spark.binary.version>
-        <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
+        <spark.archive.scala.suffix></spark.archive.scala.suffix>
+        <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <sqlite.version>3.42.0.0</sqlite.version>
@@ -233,7 +240,7 @@
         <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
         <maven.plugin.scala.version>4.8.0</maven.plugin.scala.version>
         <maven.plugin.scalatest.version>2.2.0</maven.plugin.scalatest.version>
-        <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
+        <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.scalatest.debug.enabled>false</maven.plugin.scalatest.debug.enabled>
         <maven.plugin.spotless.version>2.30.0</maven.plugin.spotless.version>
@@ -1189,7 +1196,7 @@
 
             <dependency>
                 <groupId>io.delta</groupId>
-                <artifactId>delta-core_${scala.binary.version}</artifactId>
+                <artifactId>${delta.artifact}_${scala.binary.version}</artifactId>
                 <version>${delta.version}</version>
                 <exclusions>
                     <!--
@@ -1473,6 +1480,18 @@
                 <groupId>org.threeten</groupId>
                 <artifactId>threeten-extra</artifactId>
                 <version>${threeten.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hudi</groupId>
+                <artifactId>hudi-spark${hudi.spark.binary.version}-bundle_${scala.binary.version}</artifactId>
+                <version>${hudi.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.paimon</groupId>
+                <artifactId>paimon-spark-${paimon.spark.binary.version}</artifactId>
+                <version>${paimon.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -2135,6 +2154,7 @@
             <properties>
                 <scala.binary.version>2.13</scala.binary.version>
                 <scala.version>2.13.8</scala.version>
+                <spark.archive.scala.suffix>-scala${scala.binary.version}</spark.archive.scala.suffix>
             </properties>
             <build>
                 <pluginManagement>
@@ -2189,6 +2209,7 @@
             <properties>
                 <spark.version>3.1.3</spark.version>
                 <spark.binary.version>3.1</spark.binary.version>
+                <delta.artifact>delta-core</delta.artifact>
                 <delta.version>1.0.1</delta.version>
                 <!-- Iceberg removed the support for Spark 3.1 in apache/iceberg#8661 since 1.4.0 -->
                 <iceberg.version>1.3.1</iceberg.version>
@@ -2206,8 +2227,9 @@
             <properties>
                 <spark.version>3.2.4</spark.version>
                 <spark.binary.version>3.2</spark.binary.version>
+                <delta.artifact>delta-core</delta.artifact>
                 <delta.version>2.0.2</delta.version>
-                <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.2${spark.archive.scala.suffix}.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -2221,6 +2243,7 @@
             </modules>
             <properties>
                 <delta.version>2.3.0</delta.version>
+                <delta.artifact>delta-core</delta.artifact>
                 <spark.version>3.3.3</spark.version>
                 <spark.binary.version>3.3</spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
@@ -2234,10 +2257,11 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
+                <delta.artifact>delta-core</delta.artifact>
                 <delta.version>2.4.0</delta.version>
                 <spark.version>3.4.1</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
@@ -2247,10 +2271,15 @@
                 <module>extensions/spark/kyuubi-extension-spark-3-5</module>
             </modules>
             <properties>
-                <delta.version>2.4.0</delta.version>
+                <delta.artifact>delta-spark</delta.artifact>
+                <delta.version>3.0.0</delta.version>
+                <!-- Remove this when Hudi supports Spark 3.5 -->
+                <hudi.spark.binary.version>3.4</hudi.spark.binary.version>
+                <!-- Remove this when Paimon supports Spark 3.5 -->
+                <paimon.spark.binary.version>3.4</paimon.spark.binary.version>
                 <spark.version>3.5.0</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.PySparkTest,org.apache.kyuubi.tags.PaimonTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
@@ -2258,7 +2287,7 @@
             <id>spark-master</id>
             <properties>
                 <spark.version>4.0.0-SNAPSHOT</spark.version>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <repositories>
                 <repository>

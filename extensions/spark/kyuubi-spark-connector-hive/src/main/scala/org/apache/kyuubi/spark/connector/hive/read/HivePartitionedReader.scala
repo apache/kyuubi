@@ -47,7 +47,7 @@ case class HivePartitionedReader(
 
   private val hiveConf = broadcastHiveConf.value.value
 
-  private val tableDeser = tableDesc.getDeserializerClass.newInstance()
+  private val tableDeser = tableDesc.getDeserializerClass.getDeclaredConstructor().newInstance()
   tableDeser.initialize(hiveConf, tableDesc.getProperties)
 
   private val localDeser: Deserializer = bindPartitionOpt match {
@@ -55,7 +55,8 @@ case class HivePartitionedReader(
       val tableProperties = tableDesc.getProperties
       val props = new Properties(tableProperties)
       val deserializer =
-        bindPartition.getDeserializer.getClass.asInstanceOf[Class[Deserializer]].newInstance()
+        bindPartition.getDeserializer.getClass.asInstanceOf[
+          Class[Deserializer]].getDeclaredConstructor().newInstance()
       deserializer.initialize(hiveConf, props)
       deserializer
     case _ => tableDeser

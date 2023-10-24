@@ -23,6 +23,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_BATCH_PRIORITY
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
@@ -61,9 +62,13 @@ class KyuubiBatchSession(
   override def createTime: Long = metadata.map(_.createTime).getOrElse(super.createTime)
 
   override def getNoOperationTime: Long = {
-    if (batchJobSubmissionOp != null && !OperationState.isTerminal(
-        batchJobSubmissionOp.getStatus.state)) {
-      0L
+    if (batchJobSubmissionOp != null) {
+      val batchStatus = batchJobSubmissionOp.getStatus
+      if (!OperationState.isTerminal(batchStatus.state)) {
+        0L
+      } else {
+        System.currentTimeMillis() - batchStatus.completed
+      }
     } else {
       super.getNoOperationTime
     }
@@ -177,7 +182,8 @@ class KyuubiBatchSession(
           requestArgs = batchArgs,
           createTime = createTime,
           engineType = batchType,
-          clusterManager = batchJobSubmissionOp.builder.clusterManager())
+          clusterManager = batchJobSubmissionOp.builder.clusterManager(),
+          priority = conf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
 
         // there is a chance that operation failed w/ duplicated key error
         sessionManager.insertMetadata(newMetadata)

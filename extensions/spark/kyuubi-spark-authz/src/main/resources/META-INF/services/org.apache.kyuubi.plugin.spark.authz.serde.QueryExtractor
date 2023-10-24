@@ -15,5 +15,6 @@
 # limitations under the License.
 #
 
+org.apache.kyuubi.plugin.spark.authz.serde.HudiMergeIntoSourceTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.LogicalPlanOptionQueryExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.LogicalPlanQueryExtractor

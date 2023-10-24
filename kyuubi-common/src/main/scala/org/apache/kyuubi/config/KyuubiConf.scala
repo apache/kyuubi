@@ -1876,6 +1876,15 @@ object KyuubiConf {
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
 
+  val OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.query.timeout.monitor.enabled")
+      .doc("Whether to monitor timeout query timeout check on server side.")
+      .version("1.8.0")
+      .serverOnly
+      .internal
+      .booleanConf
+      .createWithDefault(true)
+
   val OPERATION_RESULT_MAX_ROWS: ConfigEntry[Int] =
     buildConf("kyuubi.operation.result.max.rows")
       .doc("Max rows of Spark query results. Rows exceeding the limit would be ignored. " +

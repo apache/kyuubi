@@ -42,10 +42,6 @@ class PostgreSqlDialect extends JdbcDialect {
     statement
   }
 
-  override def getTypeInfoOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
   override def getCatalogsOperation(): String = "SELECT CATALOG_NAME " +
     "FROM INFORMATION_SCHEMA.INFORMATION_SCHEMA_CATALOG_NAME"
 

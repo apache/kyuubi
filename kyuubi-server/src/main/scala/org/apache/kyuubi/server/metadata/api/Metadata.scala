@@ -78,6 +78,9 @@ case class Metadata(
     engineState: String = null,
     engineError: Option[String] = None,
     endTime: Long = 0L,
+    // keep consistent with table creation DDL
+    // find why we set 10 as default in KYUUBI #5329
+    priority: Int = 10,
     peerInstanceClosed: Boolean = false) {
   def appMgrInfo: ApplicationManagerInfo = {
     ApplicationManagerInfo(

@@ -23,14 +23,16 @@ import java.util.Locale
 import scala.collection.Traversable
 import scala.io.Source
 import scala.reflect.ClassTag
+import scala.util.matching.Regex
 
-import org.scalactic.{source, Prettifier}
+import org.scalactic.Prettifier
+import org.scalactic.source.Position
 import org.scalatest.Assertions._
 
 object AssertionUtils {
 
   def assertEqualsIgnoreCase(expected: AnyRef)(actual: AnyRef)(
-      implicit pos: source.Position): Unit = {
+      implicit pos: Position): Unit = {
     val isEqualsIgnoreCase = (Option(expected), Option(actual)) match {
       case (Some(expectedStr: String), Some(actualStr: String)) =>
         expectedStr.equalsIgnoreCase(actualStr)
@@ -44,15 +46,15 @@ object AssertionUtils {
     }
   }
 
-  def assertStartsWithIgnoreCase(expectedPrefix: String)(actual: String)(
-      implicit pos: source.Position): Unit = {
+  def assertStartsWithIgnoreCase(expectedPrefix: String)(actual: String)(implicit
+      pos: Position): Unit = {
     if (!actual.toLowerCase(Locale.ROOT).startsWith(expectedPrefix.toLowerCase(Locale.ROOT))) {
       fail(s"Expected starting with '$expectedPrefix' ignoring case, but got [$actual]")(pos)
     }
   }
 
-  def assertExistsIgnoreCase(expected: String)(actual: Iterable[String])(
-      implicit pos: source.Position): Unit = {
+  def assertExistsIgnoreCase(expected: String)(actual: Iterable[String])(implicit
+      pos: Position): Unit = {
     if (!actual.exists(_.equalsIgnoreCase(expected))) {
       fail(s"Expected containing '$expected' ignoring case, but got [$actual]")(pos)
     }
@@ -73,7 +75,7 @@ object AssertionUtils {
       regenScript: String,
       splitFirstExpectedLine: Boolean = false)(implicit
       prettifier: Prettifier,
-      pos: source.Position): Unit = {
+      pos: Position): Unit = {
     val fileSource = Source.fromFile(path.toUri, StandardCharsets.UTF_8.name())
     try {
       def expectedLinesIter = if (splitFirstExpectedLine) {
@@ -105,12 +107,43 @@ object AssertionUtils {
   }
 
   /**
+   * Assert the iterable contains all the expected elements
+   */
+  def assertContains(actual: TraversableOnce[AnyRef], expected: AnyRef*)(implicit
+      prettifier: Prettifier,
+      pos: Position): Unit =
+    withClue(s", expected containing [${expected.mkString(", ")}]") {
+      val actualSeq = actual.toSeq
+      expected.foreach { elem => assert(actualSeq.contains(elem))(prettifier, pos) }
+    }
+
+  /**
+   * Asserts the string matches the regex
+   */
+  def assertMatches(actual: String, regex: Regex)(implicit
+      prettifier: Prettifier,
+      pos: Position): Unit =
+    withClue(s"'$actual' expected matching the regex '$regex'") {
+      assert(regex.findFirstMatchIn(actual).isDefined)(prettifier, pos)
+    }
+
+  /**
+   * Asserts the string does not match the regex
+   */
+  def assertNotMatches(actual: String, regex: Regex)(implicit
+      prettifier: Prettifier,
+      pos: Position): Unit =
+    withClue(s"'$actual' expected not matching the regex '$regex'") {
+      assert(regex.findFirstMatchIn(actual).isEmpty)(prettifier, pos)
+    }
+
+  /**
    * Asserts that the given function throws an exception of the given type
    * and with the exception message equals to expected string
    */
   def interceptEquals[T <: Exception](f: => Any)(expected: String)(implicit
       classTag: ClassTag[T],
-      pos: source.Position): Unit = {
+      pos: Position): Unit = {
     assert(expected != null)
     val exception = intercept[T](f)(classTag, pos)
     assertResult(expected)(exception.getMessage)
@@ -122,7 +155,7 @@ object AssertionUtils {
    */
   def interceptContains[T <: Exception](f: => Any)(contained: String)(implicit
       classTag: ClassTag[T],
-      pos: source.Position): Unit = {
+      pos: Position): Unit = {
     assert(contained != null)
     val exception = intercept[T](f)(classTag, pos)
     assert(exception.getMessage.contains(contained))
