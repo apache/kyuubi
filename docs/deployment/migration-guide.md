@@ -29,7 +29,7 @@
 
 * Since Kyuubi 1.8, Kyuubi Hive JDBC Driver offers protocol version v6 to server by default.
   To restore previous behavior, add `clientProtocolVersion=9;` to JDBC URL client properties section:
-  `jdbc:subprotocol://host:port[/catalog]/[schema];clientProtocolVersion=9;`
+  `jdbc:kyuubi://<host>:<port>[/catalog]/[schema];clientProtocolVersion=9;`
 
 ## Upgrading from Kyuubi 1.7.1 to 1.7.2
 
