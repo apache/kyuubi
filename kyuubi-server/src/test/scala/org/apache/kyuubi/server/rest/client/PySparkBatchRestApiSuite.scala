@@ -26,20 +26,19 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 
 class PySparkBatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
-  object PySparkJobPI {
-    val batchType = "PYSPARK"
-    val className: String = null // For PySpark, mainClass isn't needed.
-    val name = "PythonPi" // the app name is hard coded in spark example code
-    lazy val resource: Option[String] = {
-      val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", KyuubiConf())
-      Paths.get(
-        sparkProcessBuilder.sparkHome,
-        "examples",
-        "src",
-        "main",
-        "python").toFile.listFiles().find(
-        _.getName.equalsIgnoreCase("pi.py")) map (_.getCanonicalPath)
-    }
+  override val sparkBatchTestBatchType: String = "PYSPARK"
+  override val sparkBatchTestMainClass: String = null // For PySpark, mainClass isn't needed.
+  override val sparkBatchTestAppName: String =
+    "PythonPi" // the app name is hard coded in spark example code
+  override val sparkBatchTestResource: Option[String] = {
+    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", KyuubiConf())
+    Paths.get(
+      sparkProcessBuilder.sparkHome,
+      "examples",
+      "src",
+      "main",
+      "python").toFile.listFiles().find(
+      _.getName.equalsIgnoreCase("pi.py")) map (_.getCanonicalPath)
   }
 
   test("pyspark submit - basic batch rest client with existing resource file") {
@@ -52,11 +51,7 @@ class PySparkBatchRestApiSuite extends RestClientTestHelper with BatchTestHelper
         .build()
     val batchRestApi: BatchRestApi = new BatchRestApi(basicKyuubiRestClient)
 
-    val requestObj = newBatchRequest(
-      batchType = PySparkJobPI.batchType,
-      resource = PySparkJobPI.resource.get,
-      className = null,
-      name = PySparkJobPI.name,
+    val requestObj = newSparkBatchRequest(
       conf = Map("spark.master" -> "local"),
       args = Seq("10"))
     val batch: Batch = batchRestApi.createBatch(requestObj)
@@ -76,14 +71,10 @@ class PySparkBatchRestApiSuite extends RestClientTestHelper with BatchTestHelper
         .build()
     val batchRestApi: BatchRestApi = new BatchRestApi(basicKyuubiRestClient)
 
-    val requestObj = newBatchRequest(
-      batchType = PySparkJobPI.batchType,
-      resource = null,
-      className = null,
-      name = PySparkJobPI.name,
+    val requestObj = newSparkBatchRequest(
       conf = Map("spark.master" -> "local"),
       args = Seq("10"))
-    val resourceFile = Paths.get(PySparkJobPI.resource.get).toFile
+    val resourceFile = Paths.get(sparkBatchTestResource.get).toFile
     val batch: Batch = batchRestApi.createBatch(requestObj, resourceFile)
 
     assert(batch.getKyuubiInstance === fe.connectionUrl)

@@ -238,5 +238,4 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     assert(
       batchSession.conf.get(KyuubiReservedKeys.KYUUBI_CLIENT_VERSION_KEY) == Some(KYUUBI_VERSION))
   }
-
 }
