@@ -99,7 +99,7 @@ class SparkConsoleProgressBar(
         "[There is no job about this stage] ")
       val header = jobHeader + s"[Stage ${s.stageId}:"
       val tailer = s"(${s.numCompleteTasks} + ${s.numActiveTasks}) / $total]"
-      val w = width - header.length - tailer.length
+      val w = width + jobHeader.length - header.length - tailer.length
       val bar =
         if (w > 0) {
           val percent = w * s.numCompleteTasks.get / total
