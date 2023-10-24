@@ -39,13 +39,6 @@ build/scala-*/**
 **/*.output.schema
 **/apache-kyuubi-*-bin*/**
 **/benchmarks/**
-**/jquery-*.min.js
-**/semantic.min.js
-**/semantic.min.css
-**/icon.png
-**/icon.min.css
-**/org/apache/kyuubi/ui/static/assets/**
-**/org/apache/kyuubi/ui/swagger/**
 **/org.apache.spark.status.AppHistoryServerPlugin
 **/metadata-store-schema*.sql
 **/*.derby.sql

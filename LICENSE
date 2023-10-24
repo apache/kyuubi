@@ -199,20 +199,3 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
-------------------------------------------------------------------------------------
-This product bundles various third-party components under other open source licenses.
-This section summarizes those components and their licenses. See licenses/
-for text of these licenses.
-
-Apache License Version 2.0
---------------------------
-kyuubi-server/src/main/resources/org/apache/kyuubi/ui/swagger/*
-
-MIT license
------------
-kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/assets/fonts/*
-kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/icon.min.css
-kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/semantic.min.css
-kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/semantic.min.js
-kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/jquery-3.6.0.min.js
