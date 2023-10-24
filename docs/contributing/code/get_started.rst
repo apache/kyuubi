@@ -60,6 +60,31 @@ Since these problems are not urgent, you can take your time when fixing them.
   :class: dropdown, toggle
 
 
+Code Contribution Programs
+--------------------------
+
+Kyuubi Code Program is a **semi-annual** and **annual** coding program. It's
+a 2-month program and the first round will start in October, 2023.
+
+The program is open to all contributors and newbie-friendly as it will provide
+a mentor to help you get through the sub-tasks.
+
+You will be rewarded with a Kyuubi SWAG, such as a Kyuubi Contributor T-shirt,
+after you complete the program.
+
+.. image:: https://img.shields.io/badge/Kyuubi%20Code%20Program-2024H1-blue?style=for-the-badge
+
+- Status: Planning
+- Duration: 2024.02.01 - 2024.04.01
+- Sponsors: (keeping seats vacant in anticipation)
+
+.. image:: https://img.shields.io/badge/Kyuubi%20Code%20Program-2023-blue?style=for-the-badge
+   :target: https://github.com/apache/kyuubi/issues/5357
+
+- Status: In Progress
+- Duration: 2023.10.01 - 2023.12.01
+- Sponsors: NetEase
+
 .. _Good First Issues: https://github.com/apache/kyuubi/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22
 .. _develop environment: idea_setup.html
 .. _Build: build.html

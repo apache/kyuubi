@@ -33,7 +33,7 @@ import org.apache.kyuubi.util.AssertionUtils.interceptContains
  */
 @HudiTest
 class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
-  override protected val catalogImpl: String = "hive"
+  override protected val catalogImpl: String = "in-memory"
   // TODO: Apache Hudi not support Spark 3.5 and Scala 2.13 yet,
   //  should change after Apache Hudi support Spark 3.5 and Scala 2.13.
   private def isSupportedVersion = !isSparkV35OrGreater && !isScalaV213
@@ -123,10 +123,14 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s" on [$namespace1/$table1]")
 
       // AlterTableCommand && Spark31AlterTableCommand
-      sql("set hoodie.schema.on.read.enable=true")
-      interceptContains[AccessControlException](
-        doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
-        s"does not have [alter] privilege on [$namespace1/$table1]")
+      try {
+        sql("set hoodie.schema.on.read.enable=true")
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS(age int)")))(
+          s"does not have [alter] privilege on [$namespace1/$table1]")
+      } finally {
+        sql("set hoodie.schema.on.read.enable=false")
+      }
     }
   }
 
@@ -180,6 +184,67 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("CreateHoodieTableLikeCommand") {
+    withCleanTmpResources(Seq(
+      (s"$namespace1.$table1", "table"),
+      (s"$namespace1.$table2", "table"),
+      (namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING HUDI
+             |OPTIONS (
+             | type = 'cow',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |""".stripMargin))
+
+      val createTableSql =
+        s"""
+           |CREATE TABLE IF NOT EXISTS $namespace1.$table2
+           |LIKE  $namespace1.$table1
+           |USING HUDI
+           |""".stripMargin
+      interceptContains[AccessControlException] {
+        doAs(
+          someone,
+          sql(
+            createTableSql))
+      }(s"does not have [select] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(createTableSql))
+    }
+  }
+
+  test("DropHoodieTableCommand") {
+    withCleanTmpResources(Seq((namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING HUDI
+             |OPTIONS (
+             | type = 'cow',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |""".stripMargin))
+
+      val dropTableSql = s"DROP TABLE IF EXISTS $namespace1.$table1"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(dropTableSql))
+      }(s"does not have [drop] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(dropTableSql))
+    }
+  }
+
+  test("RepairHoodieTableCommand") {
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(
@@ -195,15 +260,216 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |)
              |PARTITIONED BY(city)
              |""".stripMargin))
-      interceptContains[AccessControlException](
+
+      val repairTableSql = s"MSCK REPAIR TABLE $namespace1.$table1"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(repairTableSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(repairTableSql))
+    }
+  }
+
+  test("TruncateHoodieTableCommand") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING HUDI
+             |OPTIONS (
+             | type = 'cow',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |""".stripMargin))
+
+      val truncateTableSql = s"TRUNCATE TABLE $namespace1.$table1"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(truncateTableSql))
+      }(s"does not have [update] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(truncateTableSql))
+    }
+  }
+
+  test("CompactionHoodieTableCommand / CompactionShowHoodieTableCommand") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING HUDI
+             |OPTIONS (
+             | type = 'mor',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |""".stripMargin))
+
+      val compactionTable = s"RUN COMPACTION ON $namespace1.$table1"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(compactionTable))
+      }(s"does not have [select] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(compactionTable))
+
+      val showCompactionTable = s"SHOW COMPACTION ON  $namespace1.$table1"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(showCompactionTable))
+      }(s"does not have [select] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(showCompactionTable))
+    }
+  }
+
+  test("InsertIntoHoodieTableCommand") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq(
+        (s"$namespace1.$table1", "table"),
+        (s"$namespace1.$table2", "table"),
+        (namespace1, "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
         doAs(
-          someone,
+          admin,
           sql(
             s"""
-               |CREATE TABLE IF NOT EXISTS $namespace1.$table2
-               |LIKE  $namespace1.$table1
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
                |USING HUDI
-               |""".stripMargin)))(s"does not have [select] privilege on [$namespace1/$table1]")
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin))
+
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table2(id int, name string, city string)
+               |USING $format
+               |""".stripMargin))
+
+        val insertIntoHoodieTableSql =
+          s"""
+             |INSERT INTO $namespace1.$table1
+             |PARTITION(city = 'hangzhou')
+             |SELECT id, name
+             |FROM $namespace1.$table2
+             |WHERE city = 'hangzhou'
+             |""".stripMargin
+        interceptContains[AccessControlException] {
+          doAs(someone, sql(insertIntoHoodieTableSql))
+        }(s"does not have [select] privilege on " +
+          s"[$namespace1/$table2/id,$namespace1/$table2/name,hudi_ns/$table2/city], " +
+          s"[update] privilege on [$namespace1/$table1]")
+      }
+    }
+  }
+
+  test("ShowHoodieTablePartitionsCommand") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq(
+        (s"$namespace1.$table1", "table"),
+        (s"$namespace1.$table2", "table"),
+        (namespace1, "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+               |USING HUDI
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin))
+
+        val showPartitionsSql = s"SHOW PARTITIONS $namespace1.$table1"
+        interceptContains[AccessControlException] {
+          doAs(someone, sql(showPartitionsSql))
+        }(s"does not have [select] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(showPartitionsSql))
+
+        val showPartitionSpecSql =
+          s"SHOW PARTITIONS $namespace1.$table1 PARTITION (city = 'hangzhou')"
+        interceptContains[AccessControlException] {
+          doAs(someone, sql(showPartitionSpecSql))
+        }(s"does not have [select] privilege on [$namespace1/$table1/city]")
+        doAs(admin, sql(showPartitionSpecSql))
+      }
+    }
+  }
+
+  test("DeleteHoodieTableCommand/UpdateHoodieTableCommand/MergeIntoHoodieTableCommand") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq(
+        (s"$namespace1.$table1", "table"),
+        (s"$namespace1.$table2", "table"),
+        (namespace1, "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+               |USING HUDI
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin))
+
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table2(id int, name string, city string)
+               |USING HUDI
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin))
+
+        val deleteFrom = s"DELETE FROM $namespace1.$table1 WHERE id = 10"
+        interceptContains[AccessControlException] {
+          doAs(someone, sql(deleteFrom))
+        }(s"does not have [update] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(deleteFrom))
+
+        val updateSql = s"UPDATE $namespace1.$table1 SET name = 'test' WHERE id > 10"
+        interceptContains[AccessControlException] {
+          doAs(someone, sql(updateSql))
+        }(s"does not have [update] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(updateSql))
+
+        val mergeIntoSQL =
+          s"""
+             |MERGE INTO $namespace1.$table1 target
+             |USING $namespace1.$table2 source
+             |ON target.id = source.id
+             |WHEN MATCHED
+             |AND target.name == 'test'
+             | THEN UPDATE SET id = source.id, name = source.name, city = source.city
+             |""".stripMargin
+        interceptContains[AccessControlException] {
+          doAs(someone, sql(mergeIntoSQL))
+        }(s"does not have [select] privilege on " +
+          s"[$namespace1/$table2/id,$namespace1/$table2/name,$namespace1/$table2/city]")
+        doAs(admin, sql(mergeIntoSQL))
+      }
     }
   }
 }

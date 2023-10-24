@@ -35,6 +35,7 @@ import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll {
@@ -833,6 +834,65 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       val e2 = intercept[AccessControlException](
         doAs(someone, sql(s"SELECT * FROM $db1.$view1".stripMargin).show()))
       assert(e2.getMessage.contains(s"does not have [select] privilege on [$db1/$view1/new_id]"))
+    }
+  }
+
+  test("[KYUUBI #5475] Check permanent view's subquery should check view's correct privilege") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val table2 = "table2"
+    val view1 = "view1"
+    withSingleCallEnabled {
+      withCleanTmpResources(
+        Seq((s"$db1.$table1", "table"), (s"$db1.$table2", "table"), (s"$db1.$view1", "view"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1(id int, scope int)"))
+        doAs(
+          admin,
+          sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS $db1.$table2(
+               |  id int,
+               |  name string,
+               |  age int,
+               |  scope int)
+               | """.stripMargin))
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE VIEW $db1.$view1
+               |AS
+               |WITH temp AS (
+               |    SELECT max(scope) max_scope
+               |    FROM $db1.$table1)
+               |SELECT id, name, max(scope) as max_scope, sum(age) sum_age
+               |FROM $db1.$table2
+               |WHERE scope in (SELECT max_scope FROM temp)
+               |GROUP BY id, name
+               |""".stripMargin))
+        // Will just check permanent view privilege.
+        val e2 = intercept[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT id as new_id, name, max_scope FROM $db1.$view1".stripMargin).show()))
+        assert(e2.getMessage.contains(
+          s"does not have [select] privilege on " +
+            s"[$db1/$view1/id,$db1/$view1/name,$db1/$view1/max_scope,$db1/$view1/sum_age]"))
+      }
+    }
+  }
+
+  test("[KYUUBI #5492] saveAsTable create DataSource table miss db info") {
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq.empty) {
+        val df = doAs(
+          admin,
+          sql(s"SELECT * FROM VALUES(1, 100),(2, 200),(3, 300) AS t(id, scope)")).persist()
+        interceptContains[AccessControlException](
+          doAs(someone, df.write.mode("overwrite").saveAsTable(table1)))(
+          s"does not have [create] privilege on [$defaultDb/$table1]")
+      }
     }
   }
 }

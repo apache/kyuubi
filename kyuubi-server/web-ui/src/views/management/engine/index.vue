@@ -124,7 +124,7 @@
   import { reactive } from 'vue'
   import { getAllEngines, deleteEngine } from '@/api/engine'
   import { IEngineSearch } from '@/api/engine/types'
-  import { useTable } from '@/views/common/use-table'
+  import { useTable } from '@/utils/use-table'
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import { getEngineType, getShareLevel } from '@/utils/engine'
