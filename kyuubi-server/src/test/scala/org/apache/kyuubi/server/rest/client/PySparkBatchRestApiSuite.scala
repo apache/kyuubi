@@ -28,8 +28,7 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 class PySparkBatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
   override val sparkBatchTestBatchType: String = "PYSPARK"
   override val sparkBatchTestMainClass: String = null // For PySpark, mainClass isn't needed.
-  override val sparkBatchTestAppName: String =
-    "PythonPi" // the app name is hard coded in spark example code
+  override val sparkBatchTestAppName: String = "PythonPi"
   override val sparkBatchTestResource: Option[String] = {
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", KyuubiConf())
     Paths.get(
