@@ -75,6 +75,10 @@ spec:
               containerPort: {{ $frontend.port }}
             {{- end }}
             {{- end }}
+            {{- if .Values.monitoring.prometheus.enabled }}
+            - name: prometheus
+              containerPort: {{ .Values.monitoring.prometheus.port }}
+            {{- end }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             exec:
