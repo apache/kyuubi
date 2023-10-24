@@ -549,7 +549,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptContains[AccessControlException](
         doAs(
           someone,
-          sql(createIndex)))(s"does not have [alter] privilege on [$namespace1/$table1]")
+          sql(createIndex)))(s"does not have [index] privilege on [$namespace1/$table1]")
       doAs(admin, sql(createIndex))
 
       // RefreshIndexCommand
@@ -557,7 +557,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptContains[AccessControlException](
         doAs(
           someone,
-          sql(refreshIndex)))(s"does not have [select] privilege on [$namespace1/$table1]")
+          sql(refreshIndex)))(s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(refreshIndex))
 
       // ShowIndexesCommand
@@ -573,7 +573,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptContains[AccessControlException](
         doAs(
           someone,
-          sql(dropIndex)))(s"does not have [alter] privilege on [$namespace1/$table1]")
+          sql(dropIndex)))(s"does not have [drop] privilege on [$namespace1/$table1]")
       doAs(admin, sql(dropIndex))
     }
   }

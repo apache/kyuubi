@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz
 
 import javax.annotation.Nonnull
 
+import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.serde.{Database, Function, Table}
@@ -64,15 +65,28 @@ object PrivilegeObject {
   def apply(
       table: Table,
       columns: Seq[String] = Nil,
-      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    new PrivilegeObject(
-      TABLE_OR_VIEW,
-      actionType,
-      table.database.orNull,
-      table.table,
-      columns,
-      table.owner,
-      table.catalog)
+      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER,
+      operationType: OperationType = QUERY): PrivilegeObject = {
+    operationType match {
+      case ALTERINDEX_REBUILD | CREATEINDEX | DROPINDEX | SHOWINDEXES =>
+        new PrivilegeObject(
+          INDEX,
+          actionType,
+          table.database.orNull,
+          table.table,
+          columns,
+          table.owner,
+          table.catalog)
+      case _ =>
+        new PrivilegeObject(
+          TABLE_OR_VIEW,
+          actionType,
+          table.database.orNull,
+          table.table,
+          columns,
+          table.owner,
+          table.catalog)
+    }
   }
 
   def apply(function: Function): PrivilegeObject = {

@@ -23,7 +23,7 @@ object ObjectType extends Enumeration {
 
   type ObjectType = Value
 
-  val DATABASE, TABLE, VIEW, COLUMN, FUNCTION = Value
+  val DATABASE, TABLE, VIEW, COLUMN, FUNCTION, INDEX = Value
 
   def apply(obj: PrivilegeObject, opType: OperationType): ObjectType = {
     obj.privilegeObjectType match {
@@ -32,6 +32,7 @@ object ObjectType extends Enumeration {
       case PrivilegeObjectType.TABLE_OR_VIEW if opType.toString.contains("VIEW") => VIEW
       case PrivilegeObjectType.TABLE_OR_VIEW => TABLE
       case PrivilegeObjectType.FUNCTION => FUNCTION
+      case PrivilegeObjectType.INDEX => INDEX
     }
   }
 }

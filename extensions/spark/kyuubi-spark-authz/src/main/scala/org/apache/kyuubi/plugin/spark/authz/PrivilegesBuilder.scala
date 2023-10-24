@@ -136,7 +136,7 @@ object PrivilegesBuilder {
       outputObjs: ArrayBuffer[PrivilegeObject],
       spark: SparkSession): OperationType = {
 
-    def getTablePriv(tableDesc: TableDesc): Seq[PrivilegeObject] = {
+    def getTablePriv(tableDesc: TableDesc, opType: OperationType): Seq[PrivilegeObject] = {
       try {
         val maybeTable = tableDesc.extract(plan, spark)
         maybeTable match {
@@ -151,7 +151,7 @@ object PrivilegesBuilder {
             } else {
               val actionType = tableDesc.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
               val columnNames = tableDesc.columnDesc.map(_.extract(plan)).getOrElse(Nil)
-              Seq(PrivilegeObject(newTable, columnNames, actionType))
+              Seq(PrivilegeObject(newTable, columnNames, actionType, opType))
             }
           case None => Nil
         }
@@ -184,9 +184,9 @@ object PrivilegesBuilder {
         val spec = TABLE_COMMAND_SPECS(classname)
         spec.tableDescs.foreach { td =>
           if (td.isInput) {
-            inputObjs ++= getTablePriv(td)
+            inputObjs ++= getTablePriv(td, spec.operationType)
           } else {
-            outputObjs ++= getTablePriv(td)
+            outputObjs ++= getTablePriv(td, spec.operationType)
           }
         }
         spec.queries(plan).foreach(buildQuery(_, inputObjs, spark = spark))
