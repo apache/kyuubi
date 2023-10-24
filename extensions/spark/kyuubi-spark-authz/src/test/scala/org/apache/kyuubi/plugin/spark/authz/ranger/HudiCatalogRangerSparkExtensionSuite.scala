@@ -472,4 +472,54 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("CallProcedureHoodieCommand") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq(
+        (s"$namespace1.$table1", "table"),
+        (s"$namespace1.$table2", "table"),
+        (namespace1, "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+               |USING HUDI
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin))
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table2(id int, name string, city string)
+               |USING HUDI
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin))
+
+        val copy_to_table =
+          s"CALL copy_to_table(table => '$namespace1.$table1', new_table => '$namespace1.$table2')"
+        interceptContains[AccessControlException] {
+          doAs(someone, sql(copy_to_table))
+        }(s"does not have [select] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(copy_to_table))
+
+        val show_table_properties = s"CALL show_table_properties(table => '$namespace1.$table1')"
+        interceptContains[AccessControlException] {
+          doAs(someone, sql(show_table_properties))
+        }(s"does not have [select] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(show_table_properties))
+      }
+    }
+  }
 }
