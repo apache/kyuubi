@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.kyuubi.util.AssertionUtils.interceptContains
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
@@ -950,30 +951,25 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                |AS
                |SELECT count(*) as cnt, sum(id) as sum_id FROM $db1.$table1
               """.stripMargin))
-        val e1 = intercept[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$table1").show()))
-        assert(e1.getMessage.contains(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]"))
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$table1").show())
+        )(s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
 
-        val e2 = intercept[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view1").show()))
-        assert(e2.getMessage.contains(
-          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]"))
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view1").show())
+        )(s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
 
-        val e3 = intercept[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2").show()))
-        assert(e3.getMessage.contains(
-          s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]"))
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2").show())
+        )(s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
 
-        val e4 = intercept[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2 WHERE cnt > 10").show()))
-        assert(e4.getMessage.contains(
-          s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]"))
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2 WHERE cnt > 10").show())
+        )(s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
 
-        val e5 = intercept[AccessControlException](
-          doAs(someone, sql(s"SELECT count(cnt) FROM $db1.$view2 WHERE cnt > 10").show()))
-        assert(e5.getMessage.contains(
-          s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]"))
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT count(cnt) FROM $db1.$view2 WHERE cnt > 10").show())
+        )(s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
       }
     }
   }
