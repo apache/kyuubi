@@ -31,13 +31,9 @@ class PySparkBatchRestApiSuite extends RestClientTestHelper with BatchTestHelper
   override val sparkBatchTestAppName: String = "PythonPi"
   override val sparkBatchTestResource: Option[String] = {
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", KyuubiConf())
-    Paths.get(
-      sparkProcessBuilder.sparkHome,
-      "examples",
-      "src",
-      "main",
-      "python").toFile.listFiles().find(
-      _.getName.equalsIgnoreCase("pi.py")) map (_.getCanonicalPath)
+    val piScript =
+      Paths.get(sparkProcessBuilder.sparkHome, "examples/src/main/python/pi.py")
+    Some(piScript.toAbsolutePath.toString)
   }
 
   test("pyspark submit - basic batch rest client with existing resource file") {
