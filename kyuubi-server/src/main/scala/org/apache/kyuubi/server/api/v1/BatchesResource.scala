@@ -480,6 +480,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED" &&
           batchService.get.cancelUnscheduledBatch(batchId)) {
           new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
+        } else if (metadata.kyuubiInstance == null) {
+          // We don't expect to encounter this situation, it may occur
+          // when Kyuubi enabled batch v2 is used. Specifically, if a batch job is
+          // picked to submit within a certain function implementation, it cannot be cancelled
+          // by using the cancelUnscheduledBatch function. Additionally, metadata.kyuubiInstance may
+          // be null if the latest metadata has not been obtained. In this case, we may need to call
+          // this function again to acquire the new state and delete the batch job.
+          closeBatchSession(batchId, hs2ProxyUser)
         } else if (metadata.kyuubiInstance != fe.connectionUrl) {
           info(s"Redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}")
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
