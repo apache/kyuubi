@@ -469,13 +469,12 @@ class HudiCallProcedureOutputTableExtractor
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val procedure = invokeAs[AnyRef](v1, "procedure")
     val args = invokeAs[AnyRef](v1, "args")
-    val inputOutputArgs = procedureArgsInputOutputPairs.get(procedure.getClass.getName)
-    if (inputOutputArgs.isDefined && inputOutputArgs.get.output.isDefined) {
-      val tableIdentifier = extractTableIdentifier(procedure, args, inputOutputArgs.get.output.get)
-      new StringTableExtractor().apply(spark, tableIdentifier.get)
-    } else {
-      None
-    }
+    procedureArgsInputOutputPairs.get(procedure.getClass.getName)
+      .filter(_.output.isDefined)
+      .map(argsPairs => {
+        val tableIdentifier = extractTableIdentifier(procedure, args, argsPairs.output.get)
+        lookupExtractor[StringTableExtractor].apply(spark, tableIdentifier.get).orNull
+      })
   }
 }
 
@@ -484,12 +483,11 @@ class HudiCallProcedureInputTableExtractor
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val procedure = invokeAs[AnyRef](v1, "procedure")
     val args = invokeAs[AnyRef](v1, "args")
-    val inputOutputArgs = procedureArgsInputOutputPairs.get(procedure.getClass.getName)
-    if (inputOutputArgs.isDefined && inputOutputArgs.get.input.isDefined) {
-      val tableIdentifier = extractTableIdentifier(procedure, args, inputOutputArgs.get.input.get)
-      new StringTableExtractor().apply(spark, tableIdentifier.get)
-    } else {
-      None
-    }
+    procedureArgsInputOutputPairs.get(procedure.getClass.getName)
+      .filter(_.input.isDefined)
+      .map(argsPairs => {
+        val tableIdentifier = extractTableIdentifier(procedure, args, argsPairs.input.get)
+        lookupExtractor[StringTableExtractor].apply(spark, tableIdentifier.get).orNull
+      })
   }
 }
