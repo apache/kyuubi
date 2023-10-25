@@ -110,14 +110,12 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
             s"[$bobNamespace/$bobSelectTable/id,$bobNamespace/$bobSelectTable/name," +
             s"$bobNamespace/$bobSelectTable/city,$bobNamespace/$bobSelectTable/_file," +
             s"$namespace1/$table1/id,$namespace1/$table1/city], " +
-            s"[update] privilege on [$bobNamespace/$bobSelectTable]"
-        )
+            s"[update] privilege on [$bobNamespace/$bobSelectTable]")
       } else {
         interceptContains[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
           s"does not have [select] privilege on " +
             s"[$namespace1/$table1/id,$namespace1/$table1/name,$namespace1/$table1/city], " +
-            s"[update] privilege on [$bobNamespace/$bobSelectTable]"
-        )
+            s"[update] privilege on [$bobNamespace/$bobSelectTable]")
       }
 
       interceptContains[AccessControlException] {
