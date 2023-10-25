@@ -60,21 +60,21 @@
           endColumn: word.endColumn
         }
         const suggestions = []
-        const sqlStr = [
-          'select',
-          'from',
-          'where',
-          'and',
-          'or',
-          'limit',
-          'order by',
-          'group by'
+        const keywords = [
+          'SELECT',
+          'FROM',
+          'WHERE',
+          'AND',
+          'OR',
+          'LIMIT',
+          'ORDER BY',
+          'GROUP BY'
         ]
-        for (const i in sqlStr) {
+        for (const i in keywords) {
           suggestions.push({
-            label: sqlStr[i],
+            label: keywords[i],
             kind: monaco.languages.CompletionItemKind['Function'],
-            insertText: sqlStr[i],
+            insertText: keywords[i],
             detail: '',
             range: range
           })
