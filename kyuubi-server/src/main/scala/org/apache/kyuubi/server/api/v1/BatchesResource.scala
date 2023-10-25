@@ -478,15 +478,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
         } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED" &&
+          // Since this code does not retrieve metadata to check,
+          // the metadata may be outdated, which means that the cancelUnscheduledBatch function
+          // here will not necessarily succeed
           batchService.get.cancelUnscheduledBatch(batchId)) {
           new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
         } else if (metadata.kyuubiInstance == null) {
-          // We don't expect to encounter this situation, it may occur
-          // when Kyuubi enabled batch v2 is used. Specifically, if a batch job is
-          // picked to submit within a certain function implementation, it cannot be cancelled
-          // by using the cancelUnscheduledBatch function. Additionally, metadata.kyuubiInstance may
-          // be null if the latest metadata has not been obtained. In this case, we may need to call
-          // this function again to acquire the new state and delete the batch job.
+          // Again, we may arrive here with an empty kyuubiInstance field because the metadata
+          // may be out of date, so let's call the method again here to refresh the metadata
           closeBatchSession(batchId, hs2ProxyUser)
         } else if (metadata.kyuubiInstance != fe.connectionUrl) {
           info(s"Redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}")
