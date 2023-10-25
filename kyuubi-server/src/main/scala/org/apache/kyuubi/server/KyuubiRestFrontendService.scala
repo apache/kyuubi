@@ -98,19 +98,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val proxyHandler = ApiRootResource.getEngineUIProxyHandler(this)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(proxyHandler))
 
-    server.addStaticHandler("org/apache/kyuubi/ui/static", "/static/")
-    server.addRedirectHandler("/", "/static/")
-    server.addRedirectHandler("/static", "/static/")
-    server.addStaticHandler("META-INF/resources/webjars/swagger-ui/4.9.1/", "/swagger-static/")
-    server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger/")
-    server.addRedirectHandler("/docs", "/swagger/")
-    server.addRedirectHandler("/docs/", "/swagger/")
-    server.addRedirectHandler("/swagger", "/swagger/")
-
     installWebUI()
   }
 
   private def installWebUI(): Unit = {
+    // redirect root path to Web UI home page
+    server.addRedirectHandler("/", "/ui")
+
     val servletHandler = JettyUtils.createStaticHandler("dist", "/ui")
     // HTML5 Web History Mode requires redirect any url path under Web UI Servlet to the main page.
     // See more details at https://router.vuejs.org/guide/essentials/history-mode.html#html5-mode
