@@ -106,7 +106,7 @@ jetty-util-ajax/9.4.52.v20230823//jetty-util-ajax-9.4.52.v20230823.jar
 jetty-util/9.4.52.v20230823//jetty-util-9.4.52.v20230823.jar
 jline/0.9.94//jline-0.9.94.jar
 jul-to-slf4j/1.7.36//jul-to-slf4j-1.7.36.jar
-kafka-clients/3.4.0//kafka-clients-3.4.0.jar
+kafka-clients/3.5.1//kafka-clients-3.5.1.jar
 kubernetes-client-api/6.8.1//kubernetes-client-api-6.8.1.jar
 kubernetes-client/6.8.1//kubernetes-client-6.8.1.jar
 kubernetes-httpclient-okhttp/6.8.1//kubernetes-httpclient-okhttp-6.8.1.jar
@@ -184,7 +184,7 @@ simpleclient_tracer_otel_agent/0.16.0//simpleclient_tracer_otel_agent-0.16.0.jar
 slf4j-api/1.7.36//slf4j-api-1.7.36.jar
 snakeyaml-engine/2.6//snakeyaml-engine-2.6.jar
 snakeyaml/2.2//snakeyaml-2.2.jar
-snappy-java/1.1.8.4//snappy-java-1.1.8.4.jar
+snappy-java/1.1.10.1//snappy-java-1.1.10.1.jar
 sqlite-jdbc/3.42.0.0//sqlite-jdbc-3.42.0.0.jar
 swagger-annotations/2.2.1//swagger-annotations-2.2.1.jar
 swagger-core/2.2.1//swagger-core-2.2.1.jar
@@ -196,4 +196,4 @@ units/1.6//units-1.6.jar
 vertx-core/4.3.2//vertx-core-4.3.2.jar
 vertx-grpc/4.3.2//vertx-grpc-4.3.2.jar
 zjsonpatch/0.3.0//zjsonpatch-0.3.0.jar
-zstd-jni/1.5.2-1//zstd-jni-1.5.2-1.jar
+zstd-jni/1.5.5-1//zstd-jni-1.5.5-1.jar
