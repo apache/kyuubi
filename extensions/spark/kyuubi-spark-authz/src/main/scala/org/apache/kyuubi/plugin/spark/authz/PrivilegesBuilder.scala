@@ -78,13 +78,6 @@ object PrivilegesBuilder {
       }
     }
 
-    // Should execute this for all plan and skip PermanentViewMaker
-    plan transformExpressions {
-      case subquery: SubqueryExpression =>
-        buildQuery(subquery.plan, privilegeObjects, projectionList, conditionList, spark)
-        subquery
-    }
-
     plan match {
       case p: Project =>
         buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
@@ -129,6 +122,13 @@ object PrivilegesBuilder {
         for (child <- p.children) {
           buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
         }
+    }
+
+    // Should execute this for all plan and skip PermanentViewMaker
+    plan transformExpressions {
+      case subquery: SubqueryExpression =>
+        buildQuery(subquery.plan, privilegeObjects, projectionList, conditionList, spark)
+        subquery
     }
   }
 

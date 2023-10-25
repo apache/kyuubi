@@ -775,7 +775,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         }
         // Will first check subquery privilege.
         assert(e1.getMessage.contains(s"does not have [select] privilege on " +
-          s"[$db1/$table1/scope,$db1/$table2/id,$db1/$table2/scope]"))
+          s"[$db1/$table2/id,$db1/$table2/scope,$db1/$table1/scope]"))
 
         doAs(
           admin,
@@ -822,7 +822,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         }
         // Will first check subquery privilege.
         assert(e1.getMessage.contains(s"does not have [select] privilege on " +
-          s"[$db1/$table1/scope,$db1/$table2/id,$db1/$table2/scope]"))
+          s"[$db1/$table2/id,$db1/$table2/scope,$db1/$table1/scope]"))
 
         doAs(
           admin,
