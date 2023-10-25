@@ -24,6 +24,10 @@ case class SparkStageAttempt(stageId: Int, stageAttemptId: Int) {
 }
 
 class SparkStageInfo(val stageId: Int, val numTasks: Int) {
-  var numActiveTasks = new AtomicInteger(0)
-  var numCompleteTasks = new AtomicInteger(0)
+  val numActiveTasks = new AtomicInteger(0)
+  val numCompleteTasks = new AtomicInteger(0)
+}
+
+class SparkJobInfo(val numStages: Int, val stageIds: Set[Int]) {
+  val numCompleteStages = new AtomicInteger(0)
 }
