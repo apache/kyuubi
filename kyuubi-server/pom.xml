@@ -546,6 +546,9 @@
                 <artifactId>frontend-maven-plugin</artifactId>
                 <configuration>
                     <workingDirectory>web-ui</workingDirectory>
+                    <nodeVersion>v16.15.1</nodeVersion>
+                    <npmVersion>8.1.2</npmVersion>
+                    <pnpmVersion>7.14.1</pnpmVersion>
                 </configuration>
                 <executions>
                     <execution>
