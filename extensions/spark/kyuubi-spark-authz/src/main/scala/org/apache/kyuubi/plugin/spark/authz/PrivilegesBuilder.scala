@@ -79,8 +79,7 @@ object PrivilegesBuilder {
     }
 
     plan match {
-      case p: Project =>
-        buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
+      case p: Project => buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
 
       case j: Join =>
         val cols =
