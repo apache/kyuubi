@@ -482,7 +482,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           // and returns false
           batchService.get.cancelUnscheduledBatch(batchId)) {
           new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
-        } else if (metadata.kyuubiInstance == null) {
+        } else if (batchV2Enabled(metadata.requestConf) && metadata.kyuubiInstance == null) {
           // code goes here indicates metadata is outdated, recursively calls itself to refresh
           // the metadata
           closeBatchSession(batchId, hs2ProxyUser)
