@@ -16,16 +16,11 @@
  */
 package org.apache.kyuubi.engine.jdbc.postgresql
 
-import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
+import org.apache.hive.service.rpc.thrift._
 
-class PostgreSqlConnectionProvider extends JdbcConnectionProvider {
+import org.apache.kyuubi.engine.jdbc.schema.SchemaHelper
 
-  override val name: String = classOf[PostgreSqlConnectionProvider].getSimpleName
+class PostgreSQLSchemaHelper extends SchemaHelper {
 
-  override val driverClass: String = "org.postgresql.Driver"
-
-  override def canHandle(providerClass: String): Boolean = {
-    driverClass.equalsIgnoreCase(providerClass)
-  }
-
+  override def smallIntToTTypeId: TTypeId = TTypeId.INT_TYPE
 }

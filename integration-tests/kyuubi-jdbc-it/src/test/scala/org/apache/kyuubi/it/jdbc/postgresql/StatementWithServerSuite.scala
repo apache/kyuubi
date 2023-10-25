@@ -20,7 +20,7 @@ package org.apache.kyuubi.it.jdbc.postgresql
 import org.apache.kyuubi.engine.jdbc.postgresql.StatementSuite
 
 class StatementWithServerSuite extends StatementSuite
-  with WithKyuubiServerAndPostgreSqlContainer {
+  with WithKyuubiServerAndPostgreSQLContainer {
 
   override protected def jdbcUrl: String = getJdbcUrl
 

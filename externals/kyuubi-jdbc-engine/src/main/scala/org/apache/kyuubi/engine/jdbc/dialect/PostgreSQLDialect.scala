@@ -25,13 +25,13 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.engine.jdbc.postgresql.{PostgreSqlRowSetHelper, PostgreSqlSchemaHelper}
+import org.apache.kyuubi.engine.jdbc.postgresql.{PostgreSQLRowSetHelper, PostgreSQLSchemaHelper}
 import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
-class PostgreSqlDialect extends JdbcDialect {
+class PostgreSQLDialect extends JdbcDialect {
 
   override def createStatement(connection: Connection, fetchSize: Int): Statement = {
     val statement =
@@ -62,7 +62,7 @@ class PostgreSqlDialect extends JdbcDialect {
     }
 
     if (StringUtils.isNotBlank(schema)) {
-      filters += s"SCHEMA_NAME LIKE '$schema'"
+      filters += s"SCHEMA_NAME = '$schema'"
     }
 
     if (filters.nonEmpty) {
@@ -99,11 +99,11 @@ class PostgreSqlDialect extends JdbcDialect {
     }
 
     if (StringUtils.isNotBlank(schema)) {
-      filters += s"$TABLE_SCHEMA LIKE '$schema'"
+      filters += s"$TABLE_SCHEMA = '$schema'"
     }
 
     if (StringUtils.isNotBlank(tableName)) {
-      filters += s"$TABLE_NAME LIKE '$tableName'"
+      filters += s"$TABLE_NAME = '$tableName'"
     }
 
     if (tTypes.nonEmpty) {
@@ -152,13 +152,13 @@ class PostgreSqlDialect extends JdbcDialect {
       filters += s"$TABLE_CATALOG = '$catalogName'"
     }
     if (StringUtils.isNotEmpty(schemaName)) {
-      filters += s"$TABLE_SCHEMA LIKE '$schemaName'"
+      filters += s"$TABLE_SCHEMA = '$schemaName'"
     }
     if (StringUtils.isNotEmpty(tableName)) {
-      filters += s"$TABLE_NAME LIKE '$tableName'"
+      filters += s"$TABLE_NAME = '$tableName'"
     }
     if (StringUtils.isNotEmpty(columnName)) {
-      filters += s"$COLUMN_NAME LIKE '$columnName'"
+      filters += s"$COLUMN_NAME = '$columnName'"
     }
 
     if (filters.nonEmpty) {
@@ -182,11 +182,11 @@ class PostgreSqlDialect extends JdbcDialect {
   }
 
   override def getRowSetHelper(): RowSetHelper = {
-    new PostgreSqlRowSetHelper
+    new PostgreSQLRowSetHelper
   }
 
   override def getSchemaHelper(): SchemaHelper = {
-    new PostgreSqlSchemaHelper
+    new PostgreSQLSchemaHelper
   }
 
   override def name(): String = {

@@ -17,10 +17,10 @@
 
 package org.apache.kyuubi.it.jdbc.postgresql
 
-import org.apache.kyuubi.engine.jdbc.postgresql.PostgreSqlOperationSuite
+import org.apache.kyuubi.engine.jdbc.postgresql.PostgreSQLOperationSuite
 
-class OperationWithServerSuite extends PostgreSqlOperationSuite
-  with WithKyuubiServerAndPostgreSqlContainer {
+class OperationWithServerSuite extends PostgreSQLOperationSuite
+  with WithKyuubiServerAndPostgreSQLContainer {
 
   override protected def jdbcUrl: String = getJdbcUrl
 

@@ -22,7 +22,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-class OperationWithPostgreSqlEngineSuite extends PostgreSqlOperationSuite with HiveJDBCTestHelper {
+class OperationWithPostgreSQLEngineSuite extends PostgreSQLOperationSuite with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = jdbcConnectionUrl
 

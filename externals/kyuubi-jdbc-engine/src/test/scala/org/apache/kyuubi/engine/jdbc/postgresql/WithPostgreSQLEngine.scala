@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.jdbc.postgresql
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
 
-trait WithPostgreSqlEngine extends WithJdbcEngine with WithPostgreSqlContainer {
+trait WithPostgreSQLEngine extends WithJdbcEngine with WithPostgreSQLContainer {
 
   override def withKyuubiConf: Map[String, String] = Map(
     ENGINE_SHARE_LEVEL.key -> "SERVER",

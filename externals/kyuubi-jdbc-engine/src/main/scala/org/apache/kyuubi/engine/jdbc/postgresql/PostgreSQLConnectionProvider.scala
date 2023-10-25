@@ -16,15 +16,16 @@
  */
 package org.apache.kyuubi.engine.jdbc.postgresql
 
-import org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
 
-import org.apache.kyuubi.engine.jdbc.schema.RowSetHelper
+class PostgreSQLConnectionProvider extends JdbcConnectionProvider {
 
-class PostgreSqlRowSetHelper extends RowSetHelper {
+  override val name: String = classOf[PostgreSQLConnectionProvider].getSimpleName
 
-  override def toSmallIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn =
-    toIntegerTColumn(rows, ordinal)
+  override val driverClass: String = "org.postgresql.Driver"
 
-  override def toSmallIntTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
-    toIntegerTColumnValue(row, ordinal)
+  override def canHandle(providerClass: String): Boolean = {
+    driverClass.equalsIgnoreCase(providerClass)
+  }
+
 }

@@ -23,7 +23,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-abstract class PostgreSqlOperationSuite extends WithPostgreSqlEngine with HiveJDBCTestHelper {
+abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJDBCTestHelper {
   test("postgreSql - get catalog") {
     case class Catalog(catalog: String)
 

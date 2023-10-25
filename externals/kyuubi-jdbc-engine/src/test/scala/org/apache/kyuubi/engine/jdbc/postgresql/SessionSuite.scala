@@ -18,7 +18,7 @@ package org.apache.kyuubi.engine.jdbc.postgresql
 
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-class SessionSuite extends WithPostgreSqlEngine with HiveJDBCTestHelper {
+class SessionSuite extends WithPostgreSQLEngine with HiveJDBCTestHelper {
 
   test("postgreSql - test session") {
     withJdbcStatement() { statement =>

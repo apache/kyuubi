@@ -20,7 +20,7 @@ import java.sql.{Date, Timestamp}
 
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-class StatementSuite extends WithPostgreSqlEngine with HiveJDBCTestHelper {
+class StatementSuite extends WithPostgreSQLEngine with HiveJDBCTestHelper {
 
   test("postgreSql - test select") {
     withJdbcStatement("test1") { statement =>

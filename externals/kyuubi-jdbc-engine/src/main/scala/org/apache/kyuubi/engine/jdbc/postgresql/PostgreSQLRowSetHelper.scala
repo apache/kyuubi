@@ -18,9 +18,13 @@ package org.apache.kyuubi.engine.jdbc.postgresql
 
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.engine.jdbc.schema.SchemaHelper
+import org.apache.kyuubi.engine.jdbc.schema.RowSetHelper
 
-class PostgreSqlSchemaHelper extends SchemaHelper {
+class PostgreSQLRowSetHelper extends RowSetHelper {
 
-  override def smallIntToTTypeId: TTypeId = TTypeId.INT_TYPE
+  override def toSmallIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn =
+    toIntegerTColumn(rows, ordinal)
+
+  override def toSmallIntTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
+    toIntegerTColumnValue(row, ordinal)
 }

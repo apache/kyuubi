@@ -22,9 +22,9 @@ import java.time.Duration
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
-import org.apache.kyuubi.engine.jdbc.postgresql.WithPostgreSqlEngine
+import org.apache.kyuubi.engine.jdbc.postgresql.WithPostgreSQLEngine
 
-trait WithKyuubiServerAndPostgreSqlContainer extends WithKyuubiServer with WithPostgreSqlEngine {
+trait WithKyuubiServerAndPostgreSQLContainer extends WithKyuubiServer with WithPostgreSQLEngine {
 
   private val kyuubiHome: String = Utils
     .getCodeSourceLocation(getClass).split("integration-tests").head

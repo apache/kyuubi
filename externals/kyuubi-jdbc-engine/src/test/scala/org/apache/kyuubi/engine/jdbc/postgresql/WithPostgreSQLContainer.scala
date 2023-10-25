@@ -21,7 +21,7 @@ import org.testcontainers.containers.wait.strategy.Wait
 
 import org.apache.kyuubi.engine.jdbc.WithJdbcServerContainer
 
-trait WithPostgreSqlContainer extends WithJdbcServerContainer {
+trait WithPostgreSQLContainer extends WithJdbcServerContainer {
 
   private val POSTGRESQL_PORT = 5432
 
