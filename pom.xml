@@ -2304,17 +2304,7 @@
             <id>flink-1.18</id>
             <properties>
                 <flink.version>1.18.0</flink.version>
-                <flink.archive.mirror>https://dist.apache.org/repos/dist/dev/flink/flink-1.18.0-rc3</flink.archive.mirror>
             </properties>
-            <repositories>
-                <repository>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                    <id>flink-snapshots</id>
-                    <url>https://repository.apache.org/content/repositories/orgapacheflink-1662</url>
-                </repository>
-            </repositories>
         </profile>
 
         <profile>
