@@ -50,7 +50,7 @@ export const editorProps = {
   },
   language: {
     type: String as PropType<string>,
-    default: 'javascript'
+    default: 'sql'
   },
   theme: {
     type: String as PropType<Theme>,

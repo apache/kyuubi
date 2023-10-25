@@ -53,7 +53,7 @@
   }
 
   const handleContentChange = (value: string) => {
-    console.log('value', value)
+    editorVariables.content = value
   }
 </script>
 
