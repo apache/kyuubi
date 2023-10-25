@@ -276,7 +276,6 @@ org.apache.logging.log4j:log4j-1.2-api
 org.apache.logging.log4j:log4j-api
 org.apache.logging.log4j:log4j-core
 org.apache.logging.log4j:log4j-slf4j-impl
-org.webjars:swagger-ui
 org.yaml:snakeyaml
 io.dropwizard.metrics:metrics-core
 io.dropwizard.metrics:metrics-jmx
