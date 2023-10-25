@@ -165,7 +165,7 @@ object HudiCommands {
 
   val RefreshIndexCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.RefreshIndexCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], isInput = true)
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
     TableCommandSpec(cmd, Seq(tableDesc), ALTERINDEX_REBUILD)
   }
 

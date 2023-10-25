@@ -1753,7 +1753,7 @@
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
-    "isInput" : true,
+    "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "ALTERINDEX_REBUILD",
