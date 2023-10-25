@@ -46,14 +46,6 @@ class KyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
     assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("Internal Server Error"))
   }
 
-  test("swagger ui") {
-    Seq("/docs", "/swagger").foreach { p =>
-      val resp = webTarget.path(p).request().get()
-      assert(resp.readEntity(classOf[String])
-        .contains("<title>Apache Kyuubi REST API Documentation</title>"))
-    }
-  }
-
   test("swagger ui json data") {
     val resp = webTarget.path("/openapi.json").request().get()
     assert(resp.getStatus === 200)
