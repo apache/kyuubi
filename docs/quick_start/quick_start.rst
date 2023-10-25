@@ -34,17 +34,17 @@ For quick start deployment, we need to prepare the following stuffs:
   use Spark for demonstration.
 
 These essential components are JVM-based applications. So, the JRE needs to be
-pre-installed and the `JAVA_HOME` is correctly set to each component.
+pre-installed and the ``JAVA_HOME`` is correctly set to each component.
 
  ================ ============ =============== ===========================================
   Component        Role         Version         Remarks
  ================ ============ =============== ===========================================
-  **Java**         JRE          8/11            Officially released against JDK8
+  **Java**         JRE          8/11/17         Officially released against JDK8
   **Kyuubi**       Gateway      \ |release| \   - Kyuubi Server
                    Engine lib                   - Kyuubi Engine
                    Beeline                      - Kyuubi Hive Beeline
   **Spark**        Engine       >=3.1           A Spark distribution
-  **Flink**        Engine       1.16/1.17       A Flink distribution
+  **Flink**        Engine       1.16/1.17/1.18  A Flink distribution
   **Trino**        Engine       >=363           A Trino cluster
   **Doris**        Engine       N/A             A Doris cluster
   **Hive**         Engine       - 3.1.x         - A Hive distribution
