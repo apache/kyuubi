@@ -129,7 +129,7 @@ upload_nexus_staging() {
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
     -pl extensions/spark/kyuubi-connector-tpcds,extensions/spark/kyuubi-connector-tpch
 
-  # All modules including Spark Extension Plugin and Connectors build with default(3.4) Spark version and default(2.12) Scala version
+  # All modules including Spark Extension Plugin and Connectors build with default Spark version (3.4) and default Scala version (2.12)
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.4 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml"
 }
