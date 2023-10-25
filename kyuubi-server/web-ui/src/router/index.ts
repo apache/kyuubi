@@ -23,6 +23,7 @@ import contactRoutes from './contact'
 import managementRoutes from './management'
 import detailRoutes from './detail'
 import swaggerRoutes from './swagger'
+import labRoutes from './lab'
 
 const routes = [
   {
@@ -44,7 +45,8 @@ const routes = [
       ...managementRoutes,
       ...detailRoutes,
       ...swaggerRoutes,
-      ...contactRoutes
+      ...contactRoutes,
+      ...labRoutes
     ]
   }
 ]
