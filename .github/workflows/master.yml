@@ -183,6 +183,7 @@ jobs:
         flink:
           - '1.16'
           - '1.17'
+          - '1.18'
         flink-archive: [ "" ]
         comment: [ "normal" ]
         include:
@@ -190,6 +191,10 @@ jobs:
             flink: '1.17'
             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.16.1 -Dflink.archive.name=flink-1.16.1-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.16-binary'
+          - java: 8
+            flink: '1.17'
+            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.18.0 -Dflink.archive.name=flink-1.18.0-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-1.18-binary'
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM
