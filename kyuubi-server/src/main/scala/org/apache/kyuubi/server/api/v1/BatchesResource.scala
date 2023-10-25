@@ -478,9 +478,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
         } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED" &&
-          // Since this code does not retrieve metadata to check,
-          // the metadata may be outdated, which means that the cancelUnscheduledBatch function
-          // here will not necessarily succeed
+          // there is a chance that metadata is outdated, then `cancelUnscheduledBatch` fails
+          // and returns false
           batchService.get.cancelUnscheduledBatch(batchId)) {
           new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
         } else if (metadata.kyuubiInstance == null) {
