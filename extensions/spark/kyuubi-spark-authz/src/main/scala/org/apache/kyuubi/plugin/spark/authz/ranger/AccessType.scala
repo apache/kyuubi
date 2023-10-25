@@ -25,7 +25,7 @@ object AccessType extends Enumeration {
 
   type AccessType = Value
 
-  val NONE, CREATE, ALTER, DROP, SELECT, UPDATE, USE, READ, WRITE, ALL, ADMIN = Value
+  val NONE, CREATE, ALTER, DROP, SELECT, UPDATE, USE, READ, WRITE, ALL, ADMIN, INDEX = Value
 
   def apply(obj: PrivilegeObject, opType: OperationType, isInput: Boolean): AccessType = {
     obj.actionType match {
@@ -48,14 +48,16 @@ object AccessType extends Enumeration {
               ALTERTABLE_REPLACECOLS |
               ALTERTABLE_SERDEPROPERTIES |
               ALTERVIEW_RENAME |
-              MSCK => ALTER
+              MSCK |
+              ALTERINDEX_REBUILD => ALTER
           case ALTERVIEW_AS => if (isInput) SELECT else ALTER
-          case DROPDATABASE | DROPTABLE | DROPFUNCTION | DROPVIEW => DROP
+          case DROPDATABASE | DROPTABLE | DROPFUNCTION | DROPVIEW | DROPINDEX => DROP
           case LOAD => if (isInput) SELECT else UPDATE
           case QUERY |
               SHOW_CREATETABLE |
               SHOW_TBLPROPERTIES |
               SHOWPARTITIONS |
+              SHOWINDEXES |
               ANALYZE_TABLE => SELECT
           case SHOWCOLUMNS | DESCTABLE => SELECT
           case SHOWDATABASES |
@@ -65,6 +67,7 @@ object AccessType extends Enumeration {
               SHOWFUNCTIONS |
               DESCFUNCTION => USE
           case TRUNCATETABLE => UPDATE
+          case CREATEINDEX => INDEX
           case _ => NONE
         }
       case PrivilegeObjectActionType.DELETE => DROP

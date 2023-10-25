@@ -145,6 +145,30 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc), SHOW_TBLPROPERTIES)
   }
 
+  val CreateIndexCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.CreateIndexCommand"
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc), CREATEINDEX)
+  }
+
+  val DropIndexCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.DropIndexCommand"
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc), DROPINDEX)
+  }
+
+  val ShowIndexCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.ShowIndexesCommand"
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], isInput = true)
+    TableCommandSpec(cmd, Seq(tableDesc), SHOWINDEXES)
+  }
+
+  val RefreshIndexCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.RefreshIndexCommand"
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc), ALTERINDEX_REBUILD)
+  }
+
   val InsertIntoHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.InsertIntoHoodieTableCommand"
     val tableDesc = TableDesc(
@@ -228,13 +252,17 @@ object HudiCommands {
     CreateHoodieTableAsSelectCommand,
     CreateHoodieTableCommand,
     CreateHoodieTableLikeCommand,
+    CreateIndexCommand,
     CompactionHoodieTableCommand,
     CompactionShowHoodieTableCommand,
     DeleteHoodieTableCommand,
     DropHoodieTableCommand,
+    DropIndexCommand,
     InsertIntoHoodieTableCommand,
     MergeIntoHoodieTableCommand,
+    RefreshIndexCommand,
     RepairHoodieTableCommand,
+    ShowIndexCommand,
     TruncateHoodieTableCommand,
     ShowHoodieTablePartitionsCommand,
     Spark31AlterTableCommand,

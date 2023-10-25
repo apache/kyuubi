@@ -57,7 +57,7 @@ object AccessResource {
         resource.setValue("database", firstLevelResource)
         resource.setValue("table", secondLevelResource)
         resource.setValue("column", thirdLevelResource)
-      case TABLE | VIEW => // fixme spark have added index support
+      case TABLE | VIEW | INDEX =>
         resource.setValue("database", firstLevelResource)
         resource.setValue("table", secondLevelResource)
     }
