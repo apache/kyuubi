@@ -109,27 +109,27 @@ upload_svn_staging() {
 }
 
 upload_nexus_staging() {
-  # spark extension plugin for spark 3.1
+  # Spark Extension Plugin for Spark 3.1
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.1 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
     -pl extensions/spark/kyuubi-extension-spark-3-1 -am
 
-  # spark extension plugin for spark 3.2
+  # Spark Extension Plugin for Spark 3.2
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.2 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
     -pl extensions/spark/kyuubi-extension-spark-3-2 -am
 
-  # spark extension plugin for spark 3.3
+  # Spark Extension Plugin for Spark 3.3
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.3 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
     -pl extensions/spark/kyuubi-extension-spark-3-3 -am
 
-  # spark tpcds/tpch connector using default(3.4) spark version and scala 2.13
+  # Spark TPC-DS/TPC-H Connector build with default(3.4) Spark version and Scala 2.13
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.4 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
     -pl extensions/spark/kyuubi-connector-tpcds,extensions/spark/kyuubi-connector-tpch
 
-  # all modules including extension plugin and connectors using default(3.4) spark version and default(2.12) scala version
+  # All modules including Spark Extension Plugin and Connectors build with default(3.4) Spark version and default(2.12) Scala version
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.4 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml"
 }
