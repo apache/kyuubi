@@ -2013,8 +2013,9 @@ object KyuubiConf {
       " all the capacity of the Trino.</li>" +
       " <li>HIVE_SQL: specify this engine type will launch a Hive engine which can provide" +
       " all the capacity of the Hive Server2.</li>" +
-      " <li>JDBC: specify this engine type will launch a JDBC engine which can provide" +
-      " a MySQL protocol connector, for now we only support Doris dialect.</li>" +
+      " <li>JDBC: specify this engine type will launch a JDBC engine which can forward " +
+      " queries to the database system through the certain JDBC driver, " +
+      " for now, it supports Doris and Phoenix.</li>" +
       " <li>CHAT: specify this engine type will launch a Chat engine.</li>" +
       "</ul>")
     .version("1.4.0")

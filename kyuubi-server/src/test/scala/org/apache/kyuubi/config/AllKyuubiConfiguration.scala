@@ -177,6 +177,36 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       """Please refer to the Flink official online documentation for [SET Statements]
         |(https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/set/)"""
 
+    builder ++=
+      """## Trino Configurations
+        |### Via config.properties""" += """Setting them in `$TRINO_HOME/etc/config.properties`
+        |
+        | supplies with default values for SQL engine application.
+        | Available properties can be found at Trino official online documentation for
+        | [Trino Configurations]
+        |(https://trino.io/docs/current/admin/properties.html)""" +=
+      "### Via kyuubi-defaults.conf" +=
+      """Setting them in `$KYUUBI_HOME/conf/kyuubi-defaults.conf`
+        | supplies with default values for SQL engine application too.
+        | You can use properties with the additional prefix `trino.` to override settings in
+        | `$TRINO_HOME/etc/config.properties`.""" ++=
+      """
+        |For example:
+        |```
+        |trino.query_max_stage_count 500
+        |trino.parse_decimal_literals_as_double true
+        |```""" +=
+      """The below options in `kyuubi-defaults.conf` will set `query_max_stage_count: 500`
+        | and `parse_decimal_literals_as_double: true` into trino session properties.""" +=
+      "### Via JDBC Connection URL" +=
+      """Setting them in the JDBC Connection URL supplies session-specific
+        | for each SQL engine. For example: ```jdbc:hive2://localhost:10009/default;
+        |#trino.query_max_stage_count=500;trino.parse_decimal_literals_as_double=true```
+        |""" +=
+      "### Via SET Statements" +=
+      """Please refer to the Trino official online documentation for [SET Statements]
+        |(https://trino.io/docs/current/sql/set-session.html)"""
+
     builder += "## Logging" +=
       """Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging.
         | You can configure it using `$KYUUBI_HOME/conf/log4j2.xml`, see
