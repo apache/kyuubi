@@ -191,7 +191,6 @@ swagger-core/2.2.1//swagger-core-2.2.1.jar
 swagger-integration/2.2.1//swagger-integration-2.2.1.jar
 swagger-jaxrs2/2.2.1//swagger-jaxrs2-2.2.1.jar
 swagger-models/2.2.1//swagger-models-2.2.1.jar
-swagger-ui/4.9.1//swagger-ui-4.9.1.jar
 trino-client/363//trino-client-363.jar
 units/1.6//units-1.6.jar
 vertx-core/4.3.2//vertx-core-4.3.2.jar
