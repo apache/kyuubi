@@ -23,7 +23,6 @@
 <script lang="ts" setup>
   import * as monaco from 'monaco-editor'
   import { format } from 'sql-formatter'
-  import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
   import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
   import { editorProps } from './type'
   import { useEditorStore } from '@/pinia/editor'
@@ -31,10 +30,7 @@
 
   // @ts-ignore: worker
   self.MonacoEnvironment = {
-    getWorker(_: string, label: string) {
-      if (label === 'json') {
-        return new jsonWorker()
-      }
+    getWorker() {
       return new EditorWorker()
     }
   }
@@ -54,14 +50,6 @@
   let editor: monaco.editor.IStandaloneCodeEditor
   const codeEditBox = ref()
   const init = () => {
-    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-      noSemanticValidation: true,
-      noSyntaxValidation: false
-    })
-    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-      target: monaco.languages.typescript.ScriptTarget.ES2020,
-      allowNonTsExtensions: true
-    })
     monaco.languages.registerCompletionItemProvider('sql', {
       provideCompletionItems: function (model: any, position: any) {
         const word = model.getWordUntilPosition(position)
