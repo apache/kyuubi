@@ -59,8 +59,8 @@ object ZookeeperConf {
 
   val ZK_DATA_DIR: ConfigEntry[String] = buildConf("kyuubi.zookeeper.embedded.data.dir")
     .doc("dataDir for the embedded zookeeper server where stores the in-memory database" +
-      " snapshots and, unless specified otherwise, the transaction log of updates to the database." +
-      " If it is a relative path, it is resolved relative to KYUUBI_HOME.")
+      " snapshots and, unless specified otherwise, the transaction log of updates to the" +
+      " database. If it is a relative path, it is resolved relative to KYUUBI_HOME.")
     .version("1.2.0")
     .fallbackConf(EMBEDDED_ZK_TEMP_DIR)
 
