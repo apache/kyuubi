@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz
 object OperationType extends Enumeration {
 
   type OperationType = Value
-
+  // According to https://scalameta.org/scalafmt/docs/known-issues.html
   // format: off
   val ALTERDATABASE, ALTERDATABASE_LOCATION, ALTERTABLE_ADDCOLS, ALTERTABLE_ADDPARTS,
       ALTERTABLE_RENAMECOL, ALTERTABLE_REPLACECOLS, ALTERTABLE_DROPPARTS, ALTERTABLE_RENAMEPART,
