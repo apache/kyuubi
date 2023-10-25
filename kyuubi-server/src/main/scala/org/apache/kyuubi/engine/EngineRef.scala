@@ -30,7 +30,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.EngineType._
-import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
+import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel, USER}
 import org.apache.kyuubi.engine.chat.ChatProcessBuilder
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder
@@ -90,11 +90,17 @@ private[kyuubi] class EngineRef(
 
   private[kyuubi] def getEngineRefId(): String = engineRefId
 
-  // Launcher of the engine
-  private[kyuubi] val appUser: String = shareLevel match {
+  // Used to look up the engine
+  private[kyuubi] val sessionUser: String = shareLevel match {
     case SERVER => Utils.currentUser
     case GROUP => groupProvider.primaryGroup(user, conf.getAll.asJava)
     case _ => user
+  }
+
+  // Used to launch the engine
+  private[kyuubi] val appUser: String = shareLevel match {
+    case USER | CONNECTION => conf.get(ENGINE_USER).getOrElse(sessionUser)
+    case _ => sessionUser
   }
 
   @VisibleForTesting
@@ -136,22 +142,34 @@ private[kyuubi] class EngineRef(
   }
 
   /**
-   * The EngineSpace used to expose itself to the KyuubiServers in `serverSpace`
-   *
+   * The EngineSpace used to expose itself to the KyuubiServers in `serverSpace`.
+   * By default, different share level's engineSpace are as follow:
    * For `CONNECTION` share level:
    *   /`serverSpace_version_CONNECTION_engineType`/`user`/`engineRefId`
    * For `USER` share level:
    *   /`serverSpace_version_USER_engineType`/`user`[/`subdomain`]
+   *   Here, USER value means sessionUser that is used to connect to the server
    * For `GROUP` share level:
    *   /`serverSpace_version_GROUP_engineType`/`primary group name`[/`subdomain`]
    * For `SERVER` share level:
    *   /`serverSpace_version_SERVER_engineType`/`kyuubi server user`[/`subdomain`]
+   *
+   * When org.apache.kyuubi.config.KyuubiConf#ENGINE_USER is set, there are some differents:
+   * For `USER` share level:
+   *  /`serverSpace_version_sessionUser_appUser_engineType`/`user`[/`subdomain`]
+   * Although this configuration parameter is valid for both USER and CONNECTION share levels,
+   * it does not affect the engineSpace of the CONNECTION share level due to the feature
+   * of CONNECTION share level.
    */
   @VisibleForTesting
   private[kyuubi] lazy val engineSpace: String = {
     val commonParent = s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType"
     shareLevel match {
       case CONNECTION => DiscoveryPaths.makePath(commonParent, appUser, engineRefId)
+      case USER => DiscoveryPaths.makePath(
+          commonParent,
+          if (appUser.equals(sessionUser)) appUser else s"${sessionUser}_$appUser",
+          subdomain)
       case _ => DiscoveryPaths.makePath(commonParent, appUser, subdomain)
     }
   }
