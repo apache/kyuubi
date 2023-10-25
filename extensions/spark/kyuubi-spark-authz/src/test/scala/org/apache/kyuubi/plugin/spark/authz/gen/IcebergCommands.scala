@@ -31,7 +31,7 @@ object IcebergCommands {
         "table",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
+    TableCommandSpec(cmd, Seq(tableDesc))
   }
 
   val UpdateIcebergTable = {

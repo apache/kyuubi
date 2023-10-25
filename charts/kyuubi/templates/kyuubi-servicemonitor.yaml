@@ -15,7 +15,7 @@
   limitations under the License.
 */}}
 
-{{- if and .Values.server.prometheus.enabled (eq .Values.metricsReporters "PROMETHEUS") .Values.serviceMonitor.enabled }}
+{{- if and .Values.monitoring.prometheus.enabled (eq .Values.metricsReporters "PROMETHEUS") .Values.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

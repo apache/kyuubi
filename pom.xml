@@ -210,7 +210,6 @@
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <sqlite.version>3.42.0.0</sqlite.version>
         <swagger.version>2.2.1</swagger.version>
-        <swagger-ui.version>4.9.1</swagger-ui.version>
         <testcontainers-scala.version>0.41.0</testcontainers-scala.version>
         <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
         <threeten.version>1.7.0</threeten.version>
@@ -831,18 +830,6 @@
                         <artifactId>jakarta.activation</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <!--
-              1. This library only contains swagger-ui static resource (.html/.css/.js/.png), for more detail, see
-                 https://github.com/swagger-api/swagger-ui/blob/master/dist/
-              2. Note that when trying to upgrade swagger-ui, we should also update the version in the file(
-                 kyuubi-server/src/main/scala/org/apache/kyuubi/server/KyuubiRestFrontendService.scala).
-            -->
-            <dependency>
-                <groupId>org.webjars</groupId>
-                <artifactId>swagger-ui</artifactId>
-                <version>${swagger-ui.version}</version>
             </dependency>
 
             <dependency>

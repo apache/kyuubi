@@ -22,11 +22,11 @@ import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 class JettyUtilsSuite extends KyuubiFunSuite {
 
   test("create static resource handler") {
-    val contextPath = "/static"
-    val handler = JettyUtils.createStaticHandler("org/apache/kyuubi/ui/static", contextPath)
+    val contextPath = "/dist"
+    val handler = JettyUtils.createStaticHandler("dist", contextPath)
     assert(handler.getContextPath === contextPath)
     val e = intercept[KyuubiException](JettyUtils
-      .createStaticHandler("org/apache/kyuubi/ui/static/nonexists", contextPath))
+      .createStaticHandler("nonexists", contextPath))
     assert(e.getMessage.startsWith("Could not find resource path"))
   }
 }
