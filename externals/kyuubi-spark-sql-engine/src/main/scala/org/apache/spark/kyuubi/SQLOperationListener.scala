@@ -146,11 +146,11 @@ class SQLOperationListener(
       if (activeStages.remove(stageAttempt) != null) {
         stageInfo.getStatusString match {
           case "succeeded" =>
-            activeJobs.asScala.foreach(item => {
-              if (item._2.stageIds.contains(stageId)) {
-                item._2.numCompleteStages.getAndIncrement()
+            activeJobs.asScala.foreach { case (_, jobInfo) =>
+              if (jobInfo.stageIds.contains(stageId)) {
+                jobInfo.numCompleteStages.getAndIncrement()
               }
-            })
+            }
         }
         withOperationLog(super.onStageCompleted(stageCompleted))
       }
