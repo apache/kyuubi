@@ -30,6 +30,7 @@ import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization._
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan match {
@@ -97,11 +98,19 @@ object RuleAuthorization {
   }
 
   private def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
-    plan.setTagValue(KYUUBI_AUTHZ_TAG, true)
+    plan match {
+      case _: PermanentViewMarker =>
+        plan.transformUp { case p =>
+          p.setTagValue(KYUUBI_AUTHZ_TAG, true)
+          p
+        }
+      case _ =>
+        plan.setTagValue(KYUUBI_AUTHZ_TAG, true)
+    }
     plan
   }
 
   private def isAuthChecked(plan: LogicalPlan): Boolean = {
-    plan.getTagValue(KYUUBI_AUTHZ_TAG).contains(true)
+    plan.find(_.getTagValue(KYUUBI_AUTHZ_TAG).contains(true)).nonEmpty
   }
 }
