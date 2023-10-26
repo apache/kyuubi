@@ -20,7 +20,7 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class SessionSuite extends WithPostgreSQLEngine with HiveJDBCTestHelper {
 
-  test("postgreSql - test session") {
+  test("postgreSQL - test session") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "select '1' as id")

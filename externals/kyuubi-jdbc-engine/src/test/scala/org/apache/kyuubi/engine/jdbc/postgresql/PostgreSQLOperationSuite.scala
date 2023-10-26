@@ -24,7 +24,7 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJDBCTestHelper {
-  test("postgreSql - get catalog") {
+  test("postgreSQL - get catalog") {
     case class Catalog(catalog: String)
 
     withJdbcStatement() { statement =>
@@ -42,7 +42,7 @@ abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJD
     }
   }
 
-  test("postgreSql - get schemas") {
+  test("postgreSQL - get schemas") {
     case class Schema(catalog: String, schema: String)
 
     withJdbcStatement() { statement =>
@@ -59,7 +59,7 @@ abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJD
     }
   }
 
-  test("postgreSql - get tables") {
+  test("postgreSQL - get tables") {
     case class Table(catalog: String, schema: String, tableName: String, tableType: String)
 
     withJdbcStatement() { statement =>
@@ -134,7 +134,7 @@ abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJD
     }
   }
 
-  test("postgreSql - get columns") {
+  test("postgreSQL - get columns") {
     case class Column(tableName: String, columnName: String)
 
     def buildColumn(resultSet: ResultSet): Column = {

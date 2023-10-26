@@ -22,7 +22,7 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class StatementSuite extends WithPostgreSQLEngine with HiveJDBCTestHelper {
 
-  test("postgreSql - test select") {
+  test("postgreSQL - test select") {
     withJdbcStatement("test1") { statement =>
       statement.execute("create table public.test1(id bigint primary key, " +
         "name varchar(255), age integer)")
@@ -40,7 +40,7 @@ class StatementSuite extends WithPostgreSQLEngine with HiveJDBCTestHelper {
     }
   }
 
-  test("postgreSql - test types") {
+  test("postgreSQL - test types") {
     withJdbcStatement("type_test") { statement =>
       statement.execute("create table public.type_test(" +
         "id bigint primary key, " +

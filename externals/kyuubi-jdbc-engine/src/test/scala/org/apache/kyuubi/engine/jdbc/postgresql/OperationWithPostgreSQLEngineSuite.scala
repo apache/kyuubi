@@ -26,7 +26,7 @@ class OperationWithPostgreSQLEngineSuite extends PostgreSQLOperationSuite with H
 
   override protected def jdbcUrl: String = jdbcConnectionUrl
 
-  test("postgreSql - test for Jdbc engine getInfo") {
+  test("postgreSQL - test for Jdbc engine getInfo") {
     val metaData = ConnectionProvider.create(kyuubiConf).getMetaData
 
     withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {

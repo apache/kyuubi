@@ -25,10 +25,10 @@ trait WithPostgreSQLContainer extends WithJdbcServerContainer {
 
   private val POSTGRESQL_PORT = 5432
 
-  private val postgreSqlDockerImage = "postgres"
+  private val postgreSQLDockerImage = "postgres"
 
   override val container: SingleContainer[_] = GenericContainer(
-    dockerImage = postgreSqlDockerImage,
+    dockerImage = postgreSQLDockerImage,
     exposedPorts = Seq(POSTGRESQL_PORT),
     env = Map[String, String](
       "POSTGRES_PASSWORD" -> "postgres"),
