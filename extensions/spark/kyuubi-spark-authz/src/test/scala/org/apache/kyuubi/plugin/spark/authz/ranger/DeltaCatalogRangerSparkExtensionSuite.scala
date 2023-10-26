@@ -34,6 +34,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
   val namespace1 = deltaNamespace
   val table1 = "table1_delta"
+  val table2 = "table2_delta"
 
   override def withFixture(test: NoArgTest): Outcome = {
     test()
@@ -57,9 +58,11 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     spark.sessionState.conf.clear()
   }
 
-  test("CreateDeltaTableCommand") {
-    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"))) {
-      val createTableSql =
+  test("create table") {
+    withCleanTmpResources(Seq(
+      (s"$namespace1.$table1", "table"),
+      (s"$namespace1.$table2", "table"))) {
+      val createNonPartitionTableSql =
         s"""
            |CREATE TABLE IF NOT EXISTS $namespace1.$table1 (
            |  id INT,
@@ -73,11 +76,33 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
            |) USING DELTA
            |""".stripMargin
       interceptContains[AccessControlException] {
-        doAs(someone, sql(createTableSql))
+        doAs(someone, sql(createNonPartitionTableSql))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
-      doAs(admin, createTableSql)
-    }
+      doAs(admin, createNonPartitionTableSql)
 
+      val createPartitionTableSql =
+        s"""
+           |CREATE TABLE IF NOT EXISTS $namespace1.$table2 (
+           |  id INT,
+           |  firstName STRING,
+           |  middleName STRING,
+           |  lastName STRING,
+           |  gender STRING,
+           |  birthDate TIMESTAMP,
+           |  ssn STRING,
+           |  salary INT
+           |)
+           |USING DELTA
+           |PARTITIONED BY (gender)
+           |""".stripMargin
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(createPartitionTableSql))
+      }(s"does not have [create] privilege on [$namespace1/$table2]")
+      doAs(admin, createPartitionTableSql)
+    }
+  }
+
+  test("create or replace table") {
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"))) {
       val createOrReplaceTableSql =
         s"""
@@ -96,28 +121,6 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(someone, sql(createOrReplaceTableSql))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
       doAs(admin, createOrReplaceTableSql)
-    }
-
-    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"))) {
-      val createPartitionTableSql =
-        s"""
-           |CREATE TABLE IF NOT EXISTS $namespace1.$table1 (
-           |  id INT,
-           |  firstName STRING,
-           |  middleName STRING,
-           |  lastName STRING,
-           |  gender STRING,
-           |  birthDate TIMESTAMP,
-           |  ssn STRING,
-           |  salary INT
-           |)
-           |USING DELTA
-           |PARTITIONED BY (gender)
-           |""".stripMargin
-      interceptContains[AccessControlException] {
-        doAs(someone, sql(createPartitionTableSql))
-      }(s"does not have [create] privilege on [$namespace1/$table1]")
-      doAs(admin, createPartitionTableSql)
     }
   }
 }
