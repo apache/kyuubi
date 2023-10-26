@@ -123,7 +123,6 @@ object PrivilegesBuilder {
         }
     }
 
-    // Should execute this for all plan and skip PermanentViewMaker
     plan transformExpressions {
       case subquery: SubqueryExpression =>
         buildQuery(subquery.plan, privilegeObjects, projectionList, conditionList, spark)
