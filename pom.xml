@@ -171,7 +171,7 @@
         <jetty.version>9.4.52.v20230823</jetty.version>
         <jline.version>0.9.94</jline.version>
         <junit.version>4.13.2</junit.version>
-        <kafka.version>3.4.0</kafka.version>
+        <kafka.version>3.5.1</kafka.version>
         <kubernetes-client.version>6.8.1</kubernetes-client.version>
         <kyuubi-shaded-zookeeper.artifacts>kyuubi-shaded-zookeeper-34</kyuubi-shaded-zookeeper.artifacts>
         <kyuubi-shaded-zookeeper.version>0.1.0</kyuubi-shaded-zookeeper.version>

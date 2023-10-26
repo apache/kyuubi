@@ -104,10 +104,10 @@ abstract class ServerKafkaLoggingEventHandlerSuite extends WithKyuubiServer with
 
 class ServerKafkaLoggingEventHandlerSuiteForKafka2 extends ServerKafkaLoggingEventHandlerSuite {
   // equivalent to Apache Kafka 2.8.x
-  override val imageTag = "6.2.10"
+  override val imageTag = "6.2.12"
 }
 
 class ServerKafkaLoggingEventHandlerSuiteForKafka3 extends ServerKafkaLoggingEventHandlerSuite {
-  // equivalent to Apache Kafka 3.3.x
-  override val imageTag = "7.3.3"
+  // equivalent to Apache Kafka 3.5.x
+  override val imageTag = "7.5.1"
 }
