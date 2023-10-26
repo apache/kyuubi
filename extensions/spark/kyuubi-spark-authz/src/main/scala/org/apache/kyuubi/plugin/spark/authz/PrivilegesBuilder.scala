@@ -65,9 +65,8 @@ object PrivilegesBuilder {
 
     def getOutput(plan: LogicalPlan): Seq[String] = {
       plan match {
-        case pvm: PermanentViewMarker if pvm.isSubqueryExpressionPlaceHolder =>
-          pvm.visitColNames
-        case pvm: PermanentViewMarker if pvm.output.isEmpty =>
+        case pvm: PermanentViewMarker
+            if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
           pvm.visitColNames
         case _ =>
           plan.output.map(_.name)
