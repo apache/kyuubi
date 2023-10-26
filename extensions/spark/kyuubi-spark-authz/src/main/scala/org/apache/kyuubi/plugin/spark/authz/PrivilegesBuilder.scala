@@ -63,9 +63,20 @@ object PrivilegesBuilder {
       conditionList: Seq[NamedExpression] = Nil,
       spark: SparkSession): Unit = {
 
+    def getOutput(plan: LogicalPlan): Seq[String] = {
+      plan match {
+        case pvm: PermanentViewMarker if pvm.isSubqueryExpressionPlaceHolder =>
+          pvm.visitColNames
+        case pvm: PermanentViewMarker if pvm.output.isEmpty =>
+          pvm.visitColNames
+        case _ =>
+          plan.output.map(_.name)
+      }
+    }
+
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
+        privilegeObjects += PrivilegeObject(table, getOutput(plan))
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
@@ -102,11 +113,6 @@ object PrivilegesBuilder {
           (a.aggregateExpressions ++ a.groupingExpressions).flatMap(e => collectLeaves(e))
         val cols = conditionList ++ aggCols
         buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
-
-      case pvm: PermanentViewMarker =>
-        getScanSpec(pvm).tables(pvm, spark).foreach { table =>
-          privilegeObjects += PrivilegeObject(table, pvm.visitColNames)
-        }
 
       case scan if isKnownScan(scan) && scan.resolved =>
         getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))

@@ -24,7 +24,8 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 case class PermanentViewMarker(
     child: LogicalPlan,
     catalogTable: CatalogTable,
-    visitColNames: Seq[String]) extends UnaryNode
+    visitColNames: Seq[String],
+    isSubqueryExpressionPlaceHolder: Boolean = false) extends UnaryNode
   with WithInternalChild {
 
   override def output: Seq[Attribute] = child.output
