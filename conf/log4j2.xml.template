@@ -23,8 +23,6 @@
     <Properties>
         <Property name="restAuditLogPath">rest-audit.log</Property>
         <Property name="restAuditLogFilePattern">rest-audit-%d{yyyy-MM-dd}-%i.log</Property>
-    </Properties>
-    <Properties>
         <Property name="k8sAuditLogPath">k8s-audit.log</Property>
         <Property name="k8sAuditLogFilePattern">k8s-audit-%d{yyyy-MM-dd}-%i.log</Property>
     </Properties>
