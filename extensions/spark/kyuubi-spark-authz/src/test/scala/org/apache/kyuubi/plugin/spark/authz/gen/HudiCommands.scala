@@ -147,7 +147,7 @@ object HudiCommands {
 
   val CompactionHoodiePathCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.CompactionHoodiePathCommand"
-    val uriDesc = URIDesc("path", classOf[StringURIExtractor])
+    val uriDesc = UriDesc("path", classOf[StringURIExtractor])
     TableCommandSpec(
       cmd,
       Seq.empty,
@@ -157,7 +157,7 @@ object HudiCommands {
 
   val CompactionShowHoodiePathCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.CompactionShowHoodiePathCommand"
-    val uriDesc = URIDesc("path", classOf[StringURIExtractor], isInput = true)
+    val uriDesc = UriDesc("path", classOf[StringURIExtractor], isInput = true)
     TableCommandSpec(cmd, Seq.empty, SHOW_TBLPROPERTIES, uriDescs = Seq(uriDesc))
   }
 

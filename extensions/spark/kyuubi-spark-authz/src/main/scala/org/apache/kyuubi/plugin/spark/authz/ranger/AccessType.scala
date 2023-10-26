@@ -35,9 +35,8 @@ object AccessType extends Enumeration {
           case CREATETABLE | CREATEVIEW | CREATETABLE_AS_SELECT
               if obj.privilegeObjectType == TABLE_OR_VIEW =>
             if (isInput) SELECT else CREATE
-          case CREATETABLE if obj.privilegeObjectType == DFS_URL =>
-            if (isInput) SELECT else CREATE
-          case CREATETABLE if obj.privilegeObjectType == LOCAL_URI =>
+          case CREATETABLE
+              if obj.privilegeObjectType == DFS_URL || obj.privilegeObjectType == LOCAL_URI =>
             if (isInput) SELECT else CREATE
           case ALTERDATABASE |
               ALTERDATABASE_LOCATION |

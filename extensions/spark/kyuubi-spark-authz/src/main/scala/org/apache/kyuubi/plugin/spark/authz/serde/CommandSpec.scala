@@ -80,7 +80,7 @@ case class TableCommandSpec(
     tableDescs: Seq[TableDesc],
     opType: String = OperationType.QUERY.toString,
     queryDescs: Seq[QueryDesc] = Nil,
-    uriDescs: Seq[URIDesc] = Nil) extends CommandSpec {
+    uriDescs: Seq[UriDesc] = Nil) extends CommandSpec {
   def queries: LogicalPlan => Seq[LogicalPlan] = plan => {
     queryDescs.flatMap { qd =>
       try {

@@ -314,7 +314,7 @@ case class ScanDesc(
  * @param fieldExtractor the key of a [[FunctionExtractor]] instance
  * @param isInput read or write
  */
-case class URIDesc(
+case class UriDesc(
     fieldName: String,
     fieldExtractor: String,
     isInput: Boolean = false) extends Descriptor {
