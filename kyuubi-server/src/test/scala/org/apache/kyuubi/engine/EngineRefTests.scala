@@ -168,6 +168,56 @@ trait EngineRefTests extends KyuubiFunSuite {
     assert(appName2.defaultEngineName === s"kyuubi_${SERVER}_${FLINK_SQL}_${user}_abc_$id")
   }
 
+  test("CONNECTION shared level engine name when kyuubi.engine.user is set") {
+    val id = UUID.randomUUID().toString
+    val engineUser = s"enginetest"
+    conf.set(KyuubiConf.ENGINE_USER, engineUser)
+    val engineType = conf.get(KyuubiConf.ENGINE_TYPE)
+    Seq(None, Some("suffix")).foreach { domain =>
+      conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, CONNECTION.toString)
+      domain.foreach(conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, _))
+      conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
+      val engine = new EngineRef(conf, user, PluginLoader.loadGroupProvider(conf), id, null)
+      assert(engine.engineSpace ===
+        DiscoveryPaths.makePath(
+          s"kyuubi_${KYUUBI_VERSION}_${CONNECTION}_${engineType}",
+          engineUser,
+          id))
+      assert(engine.defaultEngineName === s"kyuubi_${CONNECTION}_${engineType}_${engineUser}_$id")
+    }
+  }
+
+  test("USER shared level engine name when kyuubi.engine.user is set") {
+    val id = UUID.randomUUID().toString
+    val engineUser = s"enginetest"
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_USER, engineUser)
+    conf.set(KyuubiConf.ENGINE_TYPE, FLINK_SQL.toString)
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
+    val appName = new EngineRef(conf, user, PluginLoader.loadGroupProvider(conf), id, null)
+    assert(appName.engineSpace ===
+      DiscoveryPaths.makePath(
+        s"kyuubi_${KYUUBI_VERSION}_${USER}_$FLINK_SQL",
+        s"${user}_$engineUser",
+        "default"))
+    assert(appName.defaultEngineName === s"kyuubi_${USER}_${FLINK_SQL}_${engineUser}_default_$id")
+
+    Seq(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN, KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN).foreach {
+      k =>
+        conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN)
+        conf.set(k.key, "abc")
+        val appName2 = new EngineRef(conf, user, PluginLoader.loadGroupProvider(conf), id, null)
+        assert(appName2.engineSpace ===
+          DiscoveryPaths.makePath(
+            s"kyuubi_${KYUUBI_VERSION}_${USER}_${FLINK_SQL}",
+            s"${user}_$engineUser",
+            "abc"))
+        assert(appName2.defaultEngineName === s"kyuubi_${USER}_${FLINK_SQL}_${engineUser}_abc_$id")
+    }
+  }
+
   test("check the engine space of engine pool") {
     val id = UUID.randomUUID().toString
 

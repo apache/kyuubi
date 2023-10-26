@@ -2148,6 +2148,16 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val ENGINE_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.user")
+      .doc("The user used to run the engine, " +
+        "if not set, is equal to the user connected to the kyuubi server. " +
+        "This parameter is a server parameter, " +
+        "and it takes effect at the USER and CONNECTION session levels.")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_USER_ISOLATED_SPARK_SESSION: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.user.isolated.spark.session")
       .doc("When set to false, if the engine is running in a group or server share level, " +
