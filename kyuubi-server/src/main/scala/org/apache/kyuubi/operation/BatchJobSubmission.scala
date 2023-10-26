@@ -84,22 +84,21 @@ class BatchJobSubmission(
 
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
-    Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
-      case Some("SPARK") | Some("PYSPARK") =>
-        new SparkBatchProcessBuilder(
-          session.user,
-          session.sessionConf,
-          batchId,
-          batchName,
-          Option(resource),
-          className,
-          batchConf,
-          batchArgs,
-          getOperationLog)
-
-      case _ =>
-        throw new UnsupportedOperationException(s"Batch type $batchType unsupported")
+    val mainClass = Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
+      case Some("SPARK") => className
+      case Some("PYSPARK") => null
+      case _ => throw new UnsupportedOperationException(s"Batch type $batchType unsupported")
     }
+    new SparkBatchProcessBuilder(
+      session.user,
+      session.sessionConf,
+      batchId,
+      batchName,
+      Option(resource),
+      mainClass,
+      batchConf,
+      batchArgs,
+      getOperationLog)
   }
 
   override def currentApplicationInfo(): Option[ApplicationInfo] = {
