@@ -318,7 +318,7 @@ case class URIDesc(
     fieldName: String,
     fieldExtractor: String,
     isInput: Boolean = false) extends Descriptor {
-  override def extract(v: AnyRef): Uri = {
+  override def extract(v: AnyRef): Option[Uri] = {
     val uriVal = invokeAs[AnyRef](v, fieldName)
     val uriExtractor = lookupExtractor[URIExtractor](fieldExtractor)
     uriExtractor(uriVal)

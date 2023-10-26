@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-trait URIExtractor extends (AnyRef => Uri) with Extractor
+trait URIExtractor extends (AnyRef => Option[Uri]) with Extractor
 
 object URIExtractor {
   val uriExtractors: Map[String, URIExtractor] = {
@@ -29,7 +29,7 @@ object URIExtractor {
  * String
  */
 class StringURIExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Uri = {
-    Uri(v1.asInstanceOf[String])
+  override def apply(v1: AnyRef): Option[Uri] = {
+    Some(Uri(v1.asInstanceOf[String]))
   }
 }

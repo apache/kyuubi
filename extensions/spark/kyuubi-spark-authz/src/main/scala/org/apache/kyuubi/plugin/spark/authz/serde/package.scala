@@ -64,20 +64,6 @@ package object serde {
     TABLE_COMMAND_SPECS(r.getClass.getName)
   }
 
-  final lazy val URI_COMMAND_SPECS: Map[String, URICommandSpec] = {
-    val is = getClass.getClassLoader.getResourceAsStream("uri_command_spec.json")
-    mapper.readValue(is, new TypeReference[Array[URICommandSpec]] {})
-      .map(e => (e.classname, e)).toMap
-  }
-
-  def isKnownURICommand(r: AnyRef): Boolean = {
-    URI_COMMAND_SPECS.contains(r.getClass.getName)
-  }
-
-  def getURICommandSpec(r: AnyRef): URICommandSpec = {
-    URI_COMMAND_SPECS(r.getClass.getName)
-  }
-
   final lazy val FUNCTION_COMMAND_SPECS: Map[String, FunctionCommandSpec] = {
     val is = getClass.getClassLoader.getResourceAsStream("function_command_spec.json")
     mapper.readValue(is, new TypeReference[Array[FunctionCommandSpec]] {})

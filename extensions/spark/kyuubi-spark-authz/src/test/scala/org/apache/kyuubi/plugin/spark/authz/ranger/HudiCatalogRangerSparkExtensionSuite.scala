@@ -334,13 +334,12 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         interceptContains[AccessControlException](
           doAs(
             someone,
-            sql(compactOnPath))
-        )(s"does not have [select] privilege on [[$path, $path/]]")
+            sql(compactOnPath)))(s"does not have [select] privilege on [[$path, $path/]]")
 
         val showCompactOnPath = s"SHOW COMPACTION ON '$path'"
         interceptContains[AccessControlException](
-          doAs(someone, sql(showCompactOnPath))
-        )(s"does not have [select] privilege on [[$path, $path/]]")
+          doAs(someone, sql(showCompactOnPath)))(
+          s"does not have [select] privilege on [[$path, $path/]]")
       }
     }
   }

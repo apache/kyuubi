@@ -79,7 +79,8 @@ case class TableCommandSpec(
     classname: String,
     tableDescs: Seq[TableDesc],
     opType: String = OperationType.QUERY.toString,
-    queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec {
+    queryDescs: Seq[QueryDesc] = Nil,
+    uriDescs: Seq[URIDesc] = Nil) extends CommandSpec {
   def queries: LogicalPlan => Seq[LogicalPlan] = plan => {
     queryDescs.flatMap { qd =>
       try {
@@ -117,32 +118,6 @@ case class ScanSpec(
       } catch {
         case e: Exception =>
           LOG.debug(fd.error(expr, e))
-          None
-      }
-    }
-  }
-}
-
-/**
- * A specification describe a table command
- *
- * @param classname the database command classname
- * @param tableDescs a list of table descriptors
- * @param opType operation type, e.g. DROPFUNCTION
- * @param queryDescs the query descriptors a table command may have
- */
-case class URICommandSpec(
-    classname: String,
-    uriDescs: Seq[URIDesc],
-    opType: String = OperationType.QUERY.toString,
-    queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec {
-  def queries: LogicalPlan => Seq[LogicalPlan] = plan => {
-    queryDescs.flatMap { qd =>
-      try {
-        qd.extract(plan)
-      } catch {
-        case e: Exception =>
-          LOG.debug(qd.error(plan, e))
           None
       }
     }

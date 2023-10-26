@@ -46,7 +46,6 @@ class JsonSpecFileGenerator extends AnyFunSuite {
     writeCommandSpecJson("table", TableCommands.data ++ IcebergCommands.data ++ HudiCommands.data)
     writeCommandSpecJson("function", FunctionCommands.data)
     writeCommandSpecJson("scan", Scans.data)
-    writeCommandSpecJson("uri", HudiCommands.uriData)
   }
 
   def writeCommandSpecJson[T <: CommandSpec](
