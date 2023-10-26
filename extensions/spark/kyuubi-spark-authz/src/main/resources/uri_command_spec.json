@@ -1,0 +1,23 @@
+[ {
+  "classname" : "org.apache.spark.sql.hudi.command.CompactionHoodiePathCommand",
+  "uriDescs" : [ {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false
+  }, {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : true
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.CompactionShowHoodiePathCommand",
+  "uriDescs" : [ {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : true
+  } ],
+  "opType" : "SHOW_TBLPROPERTIES",
+  "queryDescs" : [ ]
+} ]

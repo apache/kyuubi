@@ -34,6 +34,7 @@ import org.apache.kyuubi.plugin.spark.authz.serde.FunctionTypeExtractor.function
 import org.apache.kyuubi.plugin.spark.authz.serde.QueryExtractor.queryExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.TableExtractor.tableExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.TableTypeExtractor.tableTypeExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.URIExtractor.uriExtractors
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 package object serde {
@@ -61,6 +62,20 @@ package object serde {
 
   def getTableCommandSpec(r: AnyRef): TableCommandSpec = {
     TABLE_COMMAND_SPECS(r.getClass.getName)
+  }
+
+  final lazy val URI_COMMAND_SPECS: Map[String, URICommandSpec] = {
+    val is = getClass.getClassLoader.getResourceAsStream("uri_command_spec.json")
+    mapper.readValue(is, new TypeReference[Array[URICommandSpec]] {})
+      .map(e => (e.classname, e)).toMap
+  }
+
+  def isKnownURICommand(r: AnyRef): Boolean = {
+    URI_COMMAND_SPECS.contains(r.getClass.getName)
+  }
+
+  def getURICommandSpec(r: AnyRef): URICommandSpec = {
+    URI_COMMAND_SPECS(r.getClass.getName)
   }
 
   final lazy val FUNCTION_COMMAND_SPECS: Map[String, FunctionCommandSpec] = {
@@ -129,6 +144,7 @@ package object serde {
       case c if classOf[FunctionExtractor].isAssignableFrom(c) => functionExtractors
       case c if classOf[FunctionTypeExtractor].isAssignableFrom(c) => functionTypeExtractors
       case c if classOf[ActionTypeExtractor].isAssignableFrom(c) => actionTypeExtractors
+      case c if classOf[URIExtractor].isAssignableFrom(c) => uriExtractors
       case _ => throw new IllegalArgumentException(s"Unknown extractor type: $ct")
     }
     extractors(extractorKey).asInstanceOf[T]

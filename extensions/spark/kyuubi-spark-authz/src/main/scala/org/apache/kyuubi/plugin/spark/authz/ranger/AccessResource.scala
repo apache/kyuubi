@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import java.io.File
+import java.util
+
 import scala.language.implicitConversions
 
 import org.apache.ranger.plugin.policyengine.RangerAccessResourceImpl
@@ -35,6 +38,7 @@ class AccessResource private (val objectType: ObjectType, val catalog: Option[St
     val columnStr = getColumn
     if (columnStr == null) Nil else columnStr.split(",").filter(_.nonEmpty)
   }
+  def getUrl: String = getValue("url")
 }
 
 object AccessResource {
@@ -60,6 +64,17 @@ object AccessResource {
       case TABLE | VIEW | INDEX =>
         resource.setValue("database", firstLevelResource)
         resource.setValue("table", secondLevelResource)
+      case URI =>
+        val objectList = new util.ArrayList[String]
+        if (firstLevelResource != null && firstLevelResource.nonEmpty) {
+          objectList.add(firstLevelResource)
+          if (!(firstLevelResource.substring(firstLevelResource.length - 1) == File.separator)) {
+            objectList.add(firstLevelResource + File.separator)
+          } else {
+            objectList.add(firstLevelResource.substring(firstLevelResource.length - 2))
+          }
+        }
+        resource.setValue("url", objectList)
     }
     resource.setServiceDef(SparkRangerAdminPlugin.getServiceDef)
     owner.foreach(resource.setOwnerUser)

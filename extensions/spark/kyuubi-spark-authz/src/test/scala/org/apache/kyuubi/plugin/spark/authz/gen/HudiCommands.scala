@@ -145,6 +145,18 @@ object HudiCommands {
     TableCommandSpec(cmd, Seq(tableDesc), SHOW_TBLPROPERTIES)
   }
 
+  val CompactionHoodiePathCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.CompactionHoodiePathCommand"
+    val uriDesc = URIDesc("path", classOf[StringURIExtractor])
+    URICommandSpec(cmd, Seq(uriDesc, uriDesc.copy(isInput = true)), CREATETABLE)
+  }
+
+  val CompactionShowHoodiePathCommand = {
+    val cmd = "org.apache.spark.sql.hudi.command.CompactionShowHoodiePathCommand"
+    val uriDesc = URIDesc("path", classOf[StringURIExtractor], isInput = true)
+    URICommandSpec(cmd, Seq(uriDesc), SHOW_TBLPROPERTIES)
+  }
+
   val CreateIndexCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.CreateIndexCommand"
     val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
@@ -267,4 +279,8 @@ object HudiCommands {
     ShowHoodieTablePartitionsCommand,
     Spark31AlterTableCommand,
     UpdateHoodieTableCommand)
+
+  val uriData: Array[URICommandSpec] = Array(
+    CompactionHoodiePathCommand,
+    CompactionShowHoodiePathCommand)
 }

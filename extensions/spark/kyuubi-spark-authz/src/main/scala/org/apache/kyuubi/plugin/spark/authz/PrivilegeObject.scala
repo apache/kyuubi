@@ -21,7 +21,7 @@ import javax.annotation.Nonnull
 
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
-import org.apache.kyuubi.plugin.spark.authz.serde.{Database, Function, Table}
+import org.apache.kyuubi.plugin.spark.authz.serde.{Database, Function, Table, Uri}
 
 /**
  * Build a Spark logical plan to different `PrivilegeObject`s
@@ -85,5 +85,16 @@ object PrivilegeObject {
       None,
       None
     ) // TODO: Support catalog for function
+  }
+
+  def apply(uri: Uri): PrivilegeObject = {
+    new PrivilegeObject(
+      URI,
+      PrivilegeObjectActionType.OTHER,
+      uri.path,
+      null,
+      Nil,
+      None,
+      None)
   }
 }
