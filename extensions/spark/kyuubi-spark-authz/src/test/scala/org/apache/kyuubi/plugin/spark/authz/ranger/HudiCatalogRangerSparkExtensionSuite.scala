@@ -17,10 +17,9 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.SparkConf
-import org.scalatest.Outcome
-
 import org.apache.spark.sql.catalyst.plans.logical.CompactionOperation
 import org.apache.spark.sql.hudi.command._
+import org.scalatest.Outcome
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
@@ -334,13 +333,16 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     withSingleCallEnabled {
       withCleanTmpResources(Seq.empty) {
         interceptContains[AccessControlException] {
-          doAs(someone, spark.sessionState.optimizer.execute(
-            CompactionHoodiePathCommand(path, CompactionOperation.RUN)))
+          doAs(
+            someone,
+            spark.sessionState.optimizer.execute(
+              CompactionHoodiePathCommand(path, CompactionOperation.RUN)))
         }(s"does not have [select] privilege on [[$path, $path/]]")
 
         interceptContains[AccessControlException] {
           doAs(
-            someone, spark.sessionState.optimizer.execute(
+            someone,
+            spark.sessionState.optimizer.execute(
               CompactionShowHoodiePathCommand(path, 1)))
         }(s"does not have [select] privilege on [[$path, $path/]]")
       }
