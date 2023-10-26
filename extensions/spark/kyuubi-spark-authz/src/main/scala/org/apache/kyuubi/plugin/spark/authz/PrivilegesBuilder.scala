@@ -75,7 +75,7 @@ object PrivilegesBuilder {
 
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += PrivilegeObject(table, getOutput(plan))
+        privilegeObjects += PrivilegeObject(table, getOutputColumnNames(plan))
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
