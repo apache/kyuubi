@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 
 import com.google.common.annotations.VisibleForTesting
 
@@ -196,6 +197,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       namespace: String,
       sizeOpt: Option[Int] = None,
       silent: Boolean = false): Seq[ServiceNodeInfo] = {
+    val serviceNodes = ListBuffer[ServiceNodeInfo]()
     try {
       val hosts = zkClient.getChildren.forPath(namespace)
       val size = sizeOpt.getOrElse(hosts.size())
@@ -211,7 +213,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         val engineIdStr = attributes.get(KYUUBI_ENGINE_ID).map(" engine id:" + _).getOrElse("")
         info(s"Get service instance:$instance$engineIdStr and version:${version.getOrElse("")} " +
           s"under $namespace")
-        ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes)
+        serviceNodes += ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes)
       }.toSeq
     } catch {
       case _: Exception if silent => Nil
@@ -219,6 +221,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         error(s"Failed to get service node info", e)
         Nil
     }
+    serviceNodes.toSeq
   }
 
   override def registerService(
