@@ -58,11 +58,11 @@ class PostgreSQLDialect extends JdbcDialect {
 
     val filters = ArrayBuffer[String]()
     if (StringUtils.isNotBlank(catalog)) {
-      filters += s"CATALOG_NAME = '$catalog'"
+      filters += s"catalog_name LIKE '$catalog'"
     }
 
     if (StringUtils.isNotBlank(schema)) {
-      filters += s"SCHEMA_NAME = '$schema'"
+      filters += s"schema_name LIKE '$schema'"
     }
 
     if (filters.nonEmpty) {
@@ -95,15 +95,15 @@ class PostgreSQLDialect extends JdbcDialect {
 
     val filters = ArrayBuffer[String]()
     if (StringUtils.isNotBlank(catalog)) {
-      filters += s"$TABLE_CATALOG = '$catalog'"
+      filters += s"$TABLE_CATALOG LIKE '$catalog'"
     }
 
     if (StringUtils.isNotBlank(schema)) {
-      filters += s"$TABLE_SCHEMA = '$schema'"
+      filters += s"$TABLE_SCHEMA LIKE '$schema'"
     }
 
     if (StringUtils.isNotBlank(tableName)) {
-      filters += s"$TABLE_NAME = '$tableName'"
+      filters += s"$TABLE_NAME LIKE '$tableName'"
     }
 
     if (tTypes.nonEmpty) {
@@ -149,16 +149,16 @@ class PostgreSQLDialect extends JdbcDialect {
 
     val filters = ArrayBuffer[String]()
     if (StringUtils.isNotEmpty(catalogName)) {
-      filters += s"$TABLE_CATALOG = '$catalogName'"
+      filters += s"$TABLE_CATALOG LIKE '$catalogName'"
     }
     if (StringUtils.isNotEmpty(schemaName)) {
-      filters += s"$TABLE_SCHEMA = '$schemaName'"
+      filters += s"$TABLE_SCHEMA LIKE '$schemaName'"
     }
     if (StringUtils.isNotEmpty(tableName)) {
-      filters += s"$TABLE_NAME = '$tableName'"
+      filters += s"$TABLE_NAME LIKE '$tableName'"
     }
     if (StringUtils.isNotEmpty(columnName)) {
-      filters += s"$COLUMN_NAME = '$columnName'"
+      filters += s"$COLUMN_NAME LIKE '$columnName'"
     }
 
     if (filters.nonEmpty) {
