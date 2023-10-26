@@ -63,7 +63,7 @@ object PrivilegesBuilder {
       conditionList: Seq[NamedExpression] = Nil,
       spark: SparkSession): Unit = {
 
-    def getOutput(plan: LogicalPlan): Seq[String] = {
+    def getOutputColumnNames(plan: LogicalPlan): Seq[String] = {
       plan match {
         case pvm: PermanentViewMarker
             if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
