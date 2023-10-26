@@ -648,7 +648,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
           assert(insertResult1.next())
           val jobId1 = insertResult1.getString(1)
 
-          Thread.sleep(5000)
+          Thread.sleep(3000)
 
           val showResult = statement.executeQuery("show jobs")
           val metadata = showResult.getMetaData
