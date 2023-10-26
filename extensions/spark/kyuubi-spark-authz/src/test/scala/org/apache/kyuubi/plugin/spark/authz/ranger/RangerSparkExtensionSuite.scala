@@ -958,7 +958,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             someone,
             sql(
               s"""
-                 |SELECT t1.id, t2.age
+                 |SELECT t1.id, age
                  |FROM $db1.$table1 t1,
                  |LATERAL (
                  |  SELECT *
