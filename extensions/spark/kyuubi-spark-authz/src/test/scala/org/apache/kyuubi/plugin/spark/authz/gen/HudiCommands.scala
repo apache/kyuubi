@@ -22,7 +22,7 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.serde.TableType._
 
-object HudiCommands {
+object HudiCommands extends CommandSpecs[TableCommandSpec] {
   val AlterHoodieTableAddColumnsCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.AlterHoodieTableAddColumnsCommand"
     val columnDesc = ColumnDesc("colsToAdd", classOf[StructFieldSeqColumnExtractor])
@@ -242,7 +242,7 @@ object HudiCommands {
           setCurrentDatabaseIfMissing = true)))
   }
 
-  val data: Array[TableCommandSpec] = Array(
+  override def specs: Seq[TableCommandSpec] = Seq(
     AlterHoodieTableAddColumnsCommand,
     AlterHoodieTableChangeColumnCommand,
     AlterHoodieTableDropPartitionCommand,

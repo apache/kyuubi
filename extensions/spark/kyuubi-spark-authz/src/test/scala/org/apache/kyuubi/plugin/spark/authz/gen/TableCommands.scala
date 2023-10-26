@@ -22,7 +22,7 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.serde.TableType._
 
-object TableCommands {
+object TableCommands extends CommandSpecs[TableCommandSpec] {
   // table extractors
   val tite = classOf[TableIdentifierTableExtractor]
   val tableNameDesc = TableDesc("tableName", tite)
@@ -594,7 +594,7 @@ object TableCommands {
     TableCommandSpec(cmd, Seq(tableIdentDesc.copy(isInput = true)))
   }
 
-  val data: Array[TableCommandSpec] = Array(
+  override def specs: Seq[TableCommandSpec] = Seq(
     AddPartitions,
     DropPartitions,
     RenamePartitions,
