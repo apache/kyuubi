@@ -51,13 +51,13 @@ class JsonSpecFileGenerator extends AnyFunSuite {
 
   def writeCommandSpecJson[T <: CommandSpec](
       commandType: String,
-      specArr: Seq[CommandSpecs[T]]): Unit = {
+      specsArr: Seq[CommandSpecs[T]]): Unit = {
     val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
       .split("target").head
     val filename = s"${commandType}_command_spec.json"
     val filePath = Paths.get(pluginHome, "src", "main", "resources", filename)
 
-    val allSpecs = specArr.flatMap(_.specs.sortBy(_.classname))
+    val allSpecs = specsArr.flatMap(_.specs.sortBy(_.classname))
     val duplicatedClassnames = allSpecs.groupBy(_.classname).values
       .filter(_.size > 1).flatMap(specs => specs.map(_.classname)).toSet
     withClue(s"Unexpected duplicated classnames: $duplicatedClassnames")(
