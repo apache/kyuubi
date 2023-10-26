@@ -97,13 +97,11 @@ object RuleAuthorization {
   }
 
   private def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUp { case p =>
-      p.setTagValue(KYUUBI_AUTHZ_TAG, true)
-      p
-    }
+    plan.setTagValue(KYUUBI_AUTHZ_TAG, true)
+    plan
   }
 
   private def isAuthChecked(plan: LogicalPlan): Boolean = {
-    plan.find(_.getTagValue(KYUUBI_AUTHZ_TAG).contains(true)).nonEmpty
+    plan.getTagValue(KYUUBI_AUTHZ_TAG).contains(true)
   }
 }

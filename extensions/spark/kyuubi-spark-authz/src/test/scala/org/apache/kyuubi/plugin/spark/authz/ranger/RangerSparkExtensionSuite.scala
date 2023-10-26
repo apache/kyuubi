@@ -941,4 +941,34 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("[KYUUBI #5503][AUTHZ] Auth check should not check Subquery") {
+    assume(isSparkV32OrGreater, "Spark 3.1 not support lateral subquery.")
+    val db1 = defaultDb
+    val table1 = "table1"
+    val table2 = "table2"
+    val view1 = "view1"
+    withSingleCallEnabled {
+      withCleanTmpResources(
+        Seq((s"$db1.$table1", "table"), (s"$db1.$table2", "table"), (s"$db1.$view1", "view"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table2 (id int, age int)"))
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(
+              s"""
+                 |SELECT t1.id, age
+                 |FROM $db1.$table1 t1,
+                 |LATERAL (
+                 |  SELECT *
+                 |  FROM $db1.$table2 t2
+                 |  WHERE t1.id = t2.id
+                 |)
+                 |""".stripMargin).show()))(
+          s"does not have [select] privilege on " +
+            s"[$db1/$table1/id,$db1/$table2/age,$db1/$table2/id]")
+      }
+    }
+  }
 }
