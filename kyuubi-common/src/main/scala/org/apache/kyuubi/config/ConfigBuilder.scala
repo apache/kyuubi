@@ -24,6 +24,7 @@ import java.util.regex.PatternSyntaxException
 import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
 
+import org.apache.kyuubi.engine.EngineType
 import org.apache.kyuubi.util.EnumUtils._
 
 private[kyuubi] case class ConfigBuilder(key: String) {
@@ -34,7 +35,9 @@ private[kyuubi] case class ConfigBuilder(key: String) {
   private[config] var _type = ""
   private[config] var _internal = false
   private[config] var _serverOnly = false
+  private[config] var _requiredByAllEngines = false
   private[config] var _alternatives = List.empty[String]
+  private[config] var _requiredByEngines = List.empty[EngineType.Value]
 
   def internal: ConfigBuilder = {
     _internal = true
@@ -43,6 +46,16 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
   def serverOnly: ConfigBuilder = {
     _serverOnly = true
+    this
+  }
+
+  def requiredByAllEngines: ConfigBuilder = {
+    _requiredByAllEngines = true
+    this
+  }
+
+  def requiredByEngines(engineTypes: List[EngineType.Value]): ConfigBuilder = {
+    _requiredByEngines = engineTypes
     this
   }
 
@@ -92,6 +105,7 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
   def booleanConf: TypedConfigBuilder[Boolean] = {
     _type = "boolean"
+
     def toBoolean(s: String) =
       try {
         s.trim.toBoolean
@@ -99,6 +113,7 @@ private[kyuubi] case class ConfigBuilder(key: String) {
         case e: IllegalArgumentException =>
           throw new IllegalArgumentException(s"$key should be boolean, but was $s", e)
       }
+
     new TypedConfigBuilder(this, toBoolean)
   }
 
@@ -109,6 +124,7 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
   def timeConf: TypedConfigBuilder[Long] = {
     _type = "duration"
+
     def timeFromStr(str: String): Long = {
       val trimmed = str.trim
       Try(Duration.parse(trimmed).toMillis)
@@ -139,7 +155,9 @@ private[kyuubi] case class ConfigBuilder(key: String) {
         _version,
         _internal,
         _serverOnly,
-        fallback)
+        fallback,
+        _requiredByAllEngines,
+        _requiredByEngines)
     _onCreate.foreach(_(entry))
     entry
   }
@@ -246,7 +264,9 @@ private[kyuubi] case class TypedConfigBuilder[T](
       parent._version,
       parent._type,
       parent._internal,
-      parent._serverOnly)
+      parent._serverOnly,
+      parent._requiredByAllEngines,
+      parent._requiredByEngines)
     parent._onCreate.foreach(_(entry))
     entry
   }
@@ -265,7 +285,9 @@ private[kyuubi] case class TypedConfigBuilder[T](
         parent._version,
         parent._type,
         parent._internal,
-        parent._serverOnly)
+        parent._serverOnly,
+        parent._requiredByAllEngines,
+        parent._requiredByEngines)
       parent._onCreate.foreach(_(entry))
       entry
   }
@@ -281,7 +303,9 @@ private[kyuubi] case class TypedConfigBuilder[T](
       parent._version,
       parent._type,
       parent._internal,
-      parent._serverOnly)
+      parent._serverOnly,
+      parent._requiredByAllEngines,
+      parent._requiredByEngines)
     parent._onCreate.foreach(_(entry))
     entry
   }

@@ -185,22 +185,23 @@ private[kyuubi] class EngineRef(
     conf.set(HA_ENGINE_REF_ID, engineRefId)
     val started = System.currentTimeMillis()
     conf.set(KYUUBI_ENGINE_SUBMIT_TIME_KEY, String.valueOf(started))
+    val engineConf = conf.getEngineOnlyConf(engineType)
     builder = engineType match {
       case SPARK_SQL =>
-        conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
-        new SparkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        engineConf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
+        new SparkProcessBuilder(appUser, engineConf, engineRefId, extraEngineLog)
       case FLINK_SQL =>
-        conf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
-        new FlinkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        engineConf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
+        new FlinkProcessBuilder(appUser, engineConf, engineRefId, extraEngineLog)
       case TRINO =>
-        new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        new TrinoProcessBuilder(appUser, engineConf, engineRefId, extraEngineLog)
       case HIVE_SQL =>
-        conf.setIfMissing(HiveProcessBuilder.HIVE_ENGINE_NAME, defaultEngineName)
-        new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        engineConf.setIfMissing(HiveProcessBuilder.HIVE_ENGINE_NAME, defaultEngineName)
+        new HiveProcessBuilder(appUser, engineConf, engineRefId, extraEngineLog)
       case JDBC =>
-        new JdbcProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        new JdbcProcessBuilder(appUser, engineConf, engineRefId, extraEngineLog)
       case CHAT =>
-        new ChatProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        new ChatProcessBuilder(appUser, engineConf, engineRefId, extraEngineLog)
     }
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))

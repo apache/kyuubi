@@ -20,6 +20,7 @@ package org.apache.kyuubi.config
 import java.time.Duration
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.engine.EngineType
 
 class KyuubiConfSuite extends KyuubiFunSuite {
 
@@ -88,6 +89,25 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     val cloned = conf.clone
     assert(conf !== cloned)
     assert(cloned.getOption(key).get === "xyz")
+  }
+
+  test("engineOnly") {
+    val jdbcConf = ConfigBuilder("kyuubi.jdbc.conf")
+      .requiredByEngines(List(EngineType.JDBC))
+      .stringConf
+      .createWithDefault("jdbc")
+
+    val allEngine = ConfigBuilder("kyuubi.all.conf")
+      .requiredByAllEngines
+      .stringConf
+      .createWithDefault("all")
+
+    jdbcConf.requiredByEngines
+
+    KyuubiConf.register(jdbcConf)
+    KyuubiConf.register(allEngine)
+    // Todo ADD assert //FIXME
+
   }
 
   test("get user specific defaults") {

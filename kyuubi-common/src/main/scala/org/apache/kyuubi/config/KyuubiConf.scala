@@ -25,6 +25,7 @@ import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.TreeMap
+import scala.collection.mutable
 import scala.util.matching.Regex
 
 import org.apache.kyuubi.{Logging, Utils}
@@ -202,6 +203,15 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     cloned
   }
 
+  def getEngineOnlyConf(engineType: EngineType.Value): KyuubiConf = {
+    val cloned = this.clone
+    val set = engineOnlyConfMultiMap.getOrElse(engineType, Set())
+    engineOnlyConfMultiMap.filter(!_._1.equals(engineType)).foreach(mm => {
+      mm._2.filter(!set.contains(_)).foreach(cloned.unset)
+    })
+    cloned
+  }
+
   /**
    * Logs a warning message if the given config key is deprecated.
    */
@@ -242,6 +252,9 @@ object KyuubiConf {
     java.util.Collections.emptyMap()
 
   private var serverOnlyConfEntries: Set[ConfigEntry[_]] = Set()
+  private val engineOnlyConfMultiMap =
+    new mutable.HashMap[EngineType.Value, mutable.Set[ConfigEntry[_]]]
+      with mutable.MultiMap[EngineType.Value, ConfigEntry[_]]
 
   private[config] def register(entry: ConfigEntry[_]): Unit =
     kyuubiConfEntriesUpdateLock.synchronized {
@@ -251,8 +264,12 @@ object KyuubiConf {
       val updatedMap = new java.util.HashMap[String, ConfigEntry[_]](kyuubiConfEntries)
       updatedMap.put(entry.key, entry)
       kyuubiConfEntries = updatedMap
-      if (entry.serverOnly) {
+      if (!entry.requiredByAllEngines && entry.requiredByEngines.isEmpty) {
         serverOnlyConfEntries += entry
+      } else if (entry.requiredByAllEngines) {
+        EngineType.values.foreach(et => engineOnlyConfMultiMap.addBinding(et, entry))
+      } else if (!entry.requiredByEngines.isEmpty) {
+        entry.requiredByEngines.foreach(et => engineOnlyConfMultiMap.addBinding(et, entry))
       }
     }
 

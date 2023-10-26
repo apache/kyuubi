@@ -17,18 +17,33 @@
 
 package org.apache.kyuubi.config
 
+import org.apache.kyuubi.engine.EngineType
+
 trait ConfigEntry[T] {
   def key: String
+
   def alternatives: List[String]
+
   def valueConverter: String => T
+
   def strConverter: T => String
+
   def doc: String
+
   def version: String
+
   def typ: String
+
   def internal: Boolean
-  def serverOnly: Boolean
+
+  def serverOnly: Boolean // to be removed
+
+  def requiredByAllEngines: Boolean
+
+  def requiredByEngines: List[EngineType.Value]
 
   def defaultValStr: String
+
   def defaultVal: Option[T]
 
   override def toString: String = {
@@ -53,7 +68,9 @@ class OptionalConfigEntry[T](
     _version: String,
     _type: String,
     _internal: Boolean,
-    _serverOnly: Boolean) extends ConfigEntry[Option[T]] {
+    _serverOnly: Boolean,
+    _requiredByAllEngines: Boolean,
+    _requiredByEngines: List[EngineType.Value]) extends ConfigEntry[Option[T]] {
   override def valueConverter: String => Option[T] = {
     s => Option(rawValueConverter(s))
   }
@@ -85,6 +102,10 @@ class OptionalConfigEntry[T](
   override def internal: Boolean = _internal
 
   override def serverOnly: Boolean = _serverOnly
+
+  override def requiredByAllEngines: Boolean = _requiredByAllEngines
+
+  override def requiredByEngines: List[EngineType.Value] = _requiredByEngines
 }
 
 class ConfigEntryWithDefault[T](
@@ -97,7 +118,9 @@ class ConfigEntryWithDefault[T](
     _version: String,
     _type: String,
     _internal: Boolean,
-    _serverOnly: Boolean) extends ConfigEntry[T] {
+    _serverOnly: Boolean,
+    _requiredByAllEngines: Boolean,
+    _requiredByEngines: List[EngineType.Value]) extends ConfigEntry[T] {
   override def defaultValStr: String = strConverter(_defaultVal)
 
   override def defaultVal: Option[T] = Option(_defaultVal)
@@ -123,6 +146,10 @@ class ConfigEntryWithDefault[T](
   override def internal: Boolean = _internal
 
   override def serverOnly: Boolean = _serverOnly
+
+  override def requiredByAllEngines: Boolean = _requiredByAllEngines
+
+  override def requiredByEngines: List[EngineType.Value] = _requiredByEngines
 }
 
 class ConfigEntryWithDefaultString[T](
@@ -135,7 +162,9 @@ class ConfigEntryWithDefaultString[T](
     _version: String,
     _type: String,
     _internal: Boolean,
-    _serverOnly: Boolean) extends ConfigEntry[T] {
+    _serverOnly: Boolean,
+    _requiredByAllEngines: Boolean,
+    _requiredByEngines: List[EngineType.Value]) extends ConfigEntry[T] {
   override def defaultValStr: String = _defaultVal
 
   override def defaultVal: Option[T] = Some(valueConverter(_defaultVal))
@@ -162,6 +191,10 @@ class ConfigEntryWithDefaultString[T](
   override def internal: Boolean = _internal
 
   override def serverOnly: Boolean = _serverOnly
+
+  override def requiredByAllEngines: Boolean = _requiredByAllEngines
+
+  override def requiredByEngines: List[EngineType.Value] = _requiredByEngines
 }
 
 class ConfigEntryFallback[T](
@@ -171,7 +204,9 @@ class ConfigEntryFallback[T](
     _version: String,
     _internal: Boolean,
     _serverOnly: Boolean,
-    fallback: ConfigEntry[T]) extends ConfigEntry[T] {
+    fallback: ConfigEntry[T],
+    _requiredByAllEngines: Boolean,
+    _requiredByEngines: List[EngineType.Value]) extends ConfigEntry[T] {
   override def defaultValStr: String = fallback.defaultValStr
 
   override def defaultVal: Option[T] = fallback.defaultVal
@@ -197,6 +232,10 @@ class ConfigEntryFallback[T](
   override def internal: Boolean = _internal
 
   override def serverOnly: Boolean = _serverOnly
+
+  override def requiredByAllEngines: Boolean = _requiredByAllEngines
+
+  override def requiredByEngines: List[EngineType.Value] = _requiredByEngines
 }
 
 object ConfigEntry {

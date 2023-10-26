@@ -18,6 +18,7 @@
 package org.apache.kyuubi.config
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.engine.EngineType
 
 class ConfigEntrySuite extends KyuubiFunSuite {
 
@@ -32,7 +33,9 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "<none>",
       "int",
       false,
-      false)
+      false,
+      false,
+      List.empty[EngineType.Value])
 
     assert(e1.key === "kyuubi.int.spark")
     assert(e1.valueConverter("2") === Some(3))
@@ -58,7 +61,9 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "<none>",
       "int",
       false,
-      false))
+      false,
+      false,
+      List.empty[EngineType.Value]))
     assert(e.getMessage ===
       "requirement failed: Config entry kyuubi.int.spark already registered!")
     conf.set(e1.key, "2")
@@ -77,7 +82,9 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "0.11.1",
       "long",
       false,
-      false)
+      false,
+      false,
+      List.empty[EngineType.Value])
 
     assert(e1.key === "kyuubi.long.spark")
     assert(e1.valueConverter("2") === 3)
@@ -109,7 +116,9 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "",
       "double",
       false,
-      false)
+      false,
+      false,
+      List.empty[EngineType.Value])
 
     assert(e1.key === "kyuubi.double.spark")
     assert(e1.valueConverter("2") === 2.0)
@@ -142,7 +151,9 @@ class ConfigEntrySuite extends KyuubiFunSuite {
         "1.2.0",
         false,
         false,
-        origin)
+        origin,
+        false,
+        List.empty[EngineType.Value])
 
     assert(fallback.key === "kyuubi.fallback.spark")
     assert(fallback.valueConverter("2") === "2")
@@ -174,7 +185,9 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "",
       "double",
       false,
-      false)
+      false,
+      false,
+      List.empty[EngineType.Value])
 
     val conf = KyuubiConf()
     KyuubiConf.register(config)
@@ -199,7 +212,9 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "",
       "double",
       false,
-      false)
+      false,
+      false,
+      List.empty[EngineType.Value])
 
     val conf = KyuubiConf()
     KyuubiConf.register(config)
