@@ -17,8 +17,6 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.catalyst.plans.logical.CompactionOperation
-import org.apache.spark.sql.hudi.command._
 import org.scalatest.Outcome
 
 import org.apache.kyuubi.Utils
@@ -332,19 +330,17 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val path = "hdfs://demo/test/hudi/path"
     withSingleCallEnabled {
       withCleanTmpResources(Seq.empty) {
-        interceptContains[AccessControlException] {
+        val compactOnPath = s"RUN COMPACTION ON '$path'"
+        interceptContains[AccessControlException](
           doAs(
             someone,
-            spark.sessionState.optimizer.execute(
-              CompactionHoodiePathCommand(path, CompactionOperation.RUN)))
-        }(s"does not have [select] privilege on [[$path, $path/]]")
+            sql(compactOnPath))
+        )(s"does not have [select] privilege on [[$path, $path/]]")
 
-        interceptContains[AccessControlException] {
-          doAs(
-            someone,
-            spark.sessionState.optimizer.execute(
-              CompactionShowHoodiePathCommand(path, 1)))
-        }(s"does not have [select] privilege on [[$path, $path/]]")
+        val showCompactOnPath = s"SHOW COMPACTION ON '$path'"
+        interceptContains[AccessControlException](
+          doAs(someone, sql(showCompactOnPath))
+        )(s"does not have [select] privilege on [[$path, $path/]]")
       }
     }
   }
