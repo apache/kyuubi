@@ -351,16 +351,16 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           doAs(someone, sql(showCompactOnPath2)))(
           s"does not have [select] privilege on [[$path2, $path2/]]")
 
-        val path3 = "hdfs://demo/test/hudi/path/"
+        val path3 = "hdfs://demo/test/hudi/path"
         val compactOnPath3 = s"RUN COMPACTION ON '$path3'"
         interceptContains[AccessControlException](
           doAs(someone, sql(compactOnPath3)))(
-          s"does not have [create] privilege on [[$path3, h/]]")
+          s"does not have [create] privilege on [[$path3, $path3/]]")
 
-        val showCompactOnPath3 = s"SHOW COMPACTION ON '$path3'"
+        val showCompactOnPath3 = s"SHOW COMPACTION ON '$path3/'"
         interceptContains[AccessControlException](
           doAs(someone, sql(showCompactOnPath3)))(
-          s"does not have [select] privilege on [[$path3, h/]]")
+          s"does not have [select] privilege on [[$path3, $path3/]]")
       }
     }
   }

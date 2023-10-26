@@ -66,14 +66,13 @@ object AccessResource {
         resource.setValue("table", secondLevelResource)
       case URI =>
         val objectList = new util.ArrayList[String]
-        if (firstLevelResource != null && firstLevelResource.nonEmpty) {
-          objectList.add(firstLevelResource)
-          if (!(firstLevelResource.substring(firstLevelResource.length - 1) == File.separator)) {
-            objectList.add(firstLevelResource + File.separator)
-          } else {
-            objectList.add(firstLevelResource.substring(firstLevelResource.length - 2))
+        Option(firstLevelResource)
+          .filter(_.nonEmpty)
+          .foreach { path =>
+            val s = path.stripSuffix(File.separator)
+            objectList.add(s)
+            objectList.add(s + File.separator)
           }
-        }
         resource.setValue("url", objectList)
     }
     resource.setServiceDef(SparkRangerAdminPlugin.getServiceDef)
