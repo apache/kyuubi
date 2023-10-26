@@ -967,7 +967,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |)
                  |""".stripMargin).show()))(
           s"does not have [select] privilege on " +
-            s"[$db1/$table2/age,$db1/$table2/id]")
+            s"[$db1/$table2/id,$db1/$table2/age]")
       }
     }
   }
