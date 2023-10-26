@@ -17,11 +17,17 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 import scala.collection.JavaConverters._
 import scala.io.{Codec, Source}
 
+import io.trino.tpcds.`type`.Date
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.types.{DateType, StructField, StructType}
 import org.scalatest.tags.Slow
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
@@ -77,6 +83,54 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
             fail(name, cause)
         }
       }
+    }
+  }
+
+  test("aa") {
+//    val d = new Decimal(1234, 3)
+//    println(d)
+//    val d2 = org.apache.spark.sql.types.Decimal(1234L, 200, 3)
+////    val d2 = org.apache.spark.sql.types.Decimal(100, 8, 2)
+//    println(d2)
+//
+//    println(new Decimal(0, 7))
+//    println(org.apache.spark.sql.types.Decimal(0, 2, 7))
+//    println(org.apache.spark.sql.types.Decimal("0.0000000"))
+//    println(org.apache.spark.sql.types.Decimal(388831L, 7, 2))
+//    println(Long.MaxValue.toString.size)
+//    println(org.apache.spark.sql.types.Decimal(123456L, 7, 2))
+//    println(org.apache.spark.sql.types.Decimal(-5, 5, 2))
+//    println(new Decimal(-5, 5))
+//    println(new Decimal(-5, 2))
+//    println(null.asInstanceOf[Long])
+//    println(org.apache.spark.sql.types.Decimal(-500, 5, 2))
+//    println(org.apache.spark.sql.types.Decimal("-5"))
+//    val ddd = org.apache.spark.sql.types.Decimal(-5)
+//    ddd.changePrecision(5, 2)
+//    println(ddd)
+//    println(org.apache.spark.sql.types.Decimal(""))
+//    println(org.apache.spark.sql.types.Decimal(123456789L, 7, 2))
+
+    val dateFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val i = 2450815
+    val d = Date.fromJulianDays(i)
+    println(d.toString)
+    val i2 = LocalDate.parse(d.toString, dateFmt).toEpochDay.toInt
+    println(i2)
+    val r = InternalRow(i2)
+    val schema = StructType(Seq(StructField("d", DateType)))
+//    val r = new GenericRowWithSchema(Array(i2), schema)
+//    Date
+    val sparkConf = new SparkConf().setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
+      .set("spark.sql.catalog.tpcds.useTableSchema_2_6", "true")
+//    val list = Seq(r).asJava
+//    val list = new util.ArrayList[Row]()
+//    list.add(r)
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      (spark.sparkContext.makeRDD(Seq(r)), schema)
     }
   }
 }
