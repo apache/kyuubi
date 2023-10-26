@@ -958,7 +958,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             someone,
             sql(
               s"""
-                 |SELECT t1.id, age
+                 |SELECT t1.id, t2.age
                  |FROM $db1.$table1 t1,
                  |LATERAL (
                  |  SELECT *
@@ -967,7 +967,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |)
                  |""".stripMargin).show()))(
           s"does not have [select] privilege on " +
-            s"[$db1/$table1/id,$db1/$table2/age,$db1/$table2/id]")
+            s"[$db1/$table2/age,$db1/$table2/id]")
       }
     }
   }
