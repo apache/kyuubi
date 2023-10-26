@@ -18,7 +18,9 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import javax.annotation.Nonnull
+
 import org.apache.hadoop.fs.Path
+
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.serde.{Database, Function, Table, Uri}
