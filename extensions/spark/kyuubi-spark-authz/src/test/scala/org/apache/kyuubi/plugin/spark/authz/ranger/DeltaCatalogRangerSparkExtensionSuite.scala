@@ -48,11 +48,9 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       s"spark.sql.catalog.$sparkCatalog.warehouse",
       Utils.createTempDir("delta-hadoop").toString)
     super.beforeAll()
-    doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
   }
 
   override def afterAll(): Unit = {
-    doAs(admin, sql(s"DROP DATABASE IF EXISTS $namespace1"))
     super.afterAll()
     spark.sessionState.catalog.reset()
     spark.sessionState.conf.clear()
@@ -61,7 +59,9 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   test("create table") {
     withCleanTmpResources(Seq(
       (s"$namespace1.$table1", "table"),
-      (s"$namespace1.$table2", "table"))) {
+      (s"$namespace1.$table2", "table"),
+      (s"$namespace1", "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       val createNonPartitionTableSql =
         s"""
            |CREATE TABLE IF NOT EXISTS $namespace1.$table1 (
@@ -103,7 +103,8 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("create or replace table") {
-    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"))) {
+    withCleanTmpResources(
+      Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
       val createOrReplaceTableSql =
         s"""
            |CREATE OR REPLACE TABLE $namespace1.$table1 (
