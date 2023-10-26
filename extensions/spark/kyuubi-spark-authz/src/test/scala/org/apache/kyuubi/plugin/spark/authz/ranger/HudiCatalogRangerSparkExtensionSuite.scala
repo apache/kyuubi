@@ -327,19 +327,29 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("CompactionHoodiePathCommand / CompactionShowHoodiePathCommand") {
-    val path = "hdfs://demo/test/hudi/path"
     withSingleCallEnabled {
       withCleanTmpResources(Seq.empty) {
-        val compactOnPath = s"RUN COMPACTION ON '$path'"
+        val path1 = "hdfs://demo/test/hudi/path"
+        val compactOnPath = s"RUN COMPACTION ON '$path1'"
         interceptContains[AccessControlException](
-          doAs(
-            someone,
-            sql(compactOnPath)))(s"does not have [select] privilege on [[$path, $path/]]")
+          doAs(someone, sql(compactOnPath)))(
+          s"does not have [select] privilege on [[$path1, $path1/]]")
 
-        val showCompactOnPath = s"SHOW COMPACTION ON '$path'"
+        val showCompactOnPath = s"SHOW COMPACTION ON '$path1'"
         interceptContains[AccessControlException](
           doAs(someone, sql(showCompactOnPath)))(
-          s"does not have [select] privilege on [[$path, $path/]]")
+          s"does not have [select] privilege on [[$path1, $path1/]]")
+
+        val path2 = "file:///demo/test/hudi/path"
+        val compactOnPath2 = s"RUN COMPACTION ON '$path2'"
+        interceptContains[AccessControlException](
+          doAs(someone, sql(compactOnPath2)))(
+          s"does not have [select] privilege on [[$path2, $path2/]]")
+
+        val showCompactOnPath2 = s"SHOW COMPACTION ON '$path2'"
+        interceptContains[AccessControlException](
+          doAs(someone, sql(showCompactOnPath2)))(
+          s"does not have [select] privilege on [[$path2, $path2/]]")
       }
     }
   }
