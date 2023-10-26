@@ -329,6 +329,12 @@
             <artifactId>paimon-spark-${paimon.spark.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>io.delta</groupId>
+            <artifactId>${delta.artifact}_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
