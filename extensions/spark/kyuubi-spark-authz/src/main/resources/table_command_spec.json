@@ -1628,10 +1628,6 @@
     "fieldName" : "path",
     "fieldExtractor" : "StringURIExtractor",
     "isInput" : false
-  }, {
-    "fieldName" : "path",
-    "fieldExtractor" : "StringURIExtractor",
-    "isInput" : true
   } ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CompactionHoodieTableCommand",
@@ -1643,15 +1639,6 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
-  }, {
-    "fieldName" : "table",
-    "fieldExtractor" : "CatalogTableTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "CREATETABLE",
