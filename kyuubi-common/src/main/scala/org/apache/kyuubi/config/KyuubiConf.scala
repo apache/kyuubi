@@ -205,7 +205,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
 
   def getEngineOnlyConf(engineType: EngineType.Value): KyuubiConf = {
     val cloned = this.clone
-    val set = engineOnlyConfMultiMap.getOrElse(engineType, Set())
+    val set = engineOnlyConfMultiMap.getOrElse(engineType, Set.empty[ConfigEntry[_]])
     engineOnlyConfMultiMap.filter(!_._1.equals(engineType)).foreach(mm => {
       mm._2.filter(!set.contains(_)).foreach(cloned.unset)
     })
