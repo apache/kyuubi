@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
-object DeltaCommands {
+object DeltaCommands extends CommandSpecs[TableCommandSpec] {
 
   val CreateDeltaTableCommand = {
     val cmd = "org.apache.spark.sql.delta.commands.CreateDeltaTableCommand"
@@ -28,6 +28,6 @@ object DeltaCommands {
     TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
   }
 
-  val data: Array[TableCommandSpec] = Array(
+  override def specs: Seq[TableCommandSpec] = Seq(
     CreateDeltaTableCommand)
 }
