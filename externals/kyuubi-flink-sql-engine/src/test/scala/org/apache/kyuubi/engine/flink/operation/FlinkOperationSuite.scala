@@ -637,7 +637,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
 
   test("execute statement - show/stop jobs") {
     if (FLINK_RUNTIME_VERSION >= "1.17") {
-      withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "10"))(Map.empty) {
+      withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "10000"))(Map.empty) {
         withMultipleConnectionJdbcStatement()({ statement =>
           statement.executeQuery(
             "create table tbl_a (a int) with (" +
@@ -648,7 +648,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
           assert(insertResult1.next())
           val jobId1 = insertResult1.getString(1)
 
-          Thread.sleep(3000)
+          Thread.sleep(5000)
 
           val showResult = statement.executeQuery("show jobs")
           val metadata = showResult.getMetaData
