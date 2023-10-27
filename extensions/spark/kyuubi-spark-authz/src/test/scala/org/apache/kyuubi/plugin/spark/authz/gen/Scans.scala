@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionType._
 
-object Scans {
+object Scans extends CommandSpecs[ScanSpec] {
 
   val HiveTableRelation = {
     val r = "org.apache.spark.sql.catalyst.catalog.HiveTableRelation"
@@ -79,7 +79,7 @@ object Scans {
 
   val HiveGenericUDTF = HiveSimpleUDF.copy(classname = "org.apache.spark.sql.hive.HiveGenericUDTF")
 
-  val data: Array[ScanSpec] = Array(
+  override def specs: Seq[ScanSpec] = Seq(
     HiveTableRelation,
     LogicalRelation,
     DataSourceV2Relation,

@@ -43,6 +43,10 @@ trait CommandSpec extends {
   final def operationType: OperationType = OperationType.withName(opType)
 }
 
+trait CommandSpecs[T <: CommandSpec] {
+  def specs: Seq[T]
+}
+
 /**
  * A specification describe a database command
  *
