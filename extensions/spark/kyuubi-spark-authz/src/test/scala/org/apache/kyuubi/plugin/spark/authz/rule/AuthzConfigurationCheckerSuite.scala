@@ -15,15 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.ranger
+package org.apache.kyuubi.plugin.spark.authz.rule
 
 import org.scalatest.BeforeAndAfterAll
-// scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
+// scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
-import org.apache.kyuubi.plugin.spark.authz.rule.AuthzConfigurationChecker
-import org.apache.kyuubi.plugin.spark.authz.rule.RuleAuthorization
 
 class AuthzConfigurationCheckerSuite extends AnyFunSuite with SparkSessionProvider
   with BeforeAndAfterAll {
