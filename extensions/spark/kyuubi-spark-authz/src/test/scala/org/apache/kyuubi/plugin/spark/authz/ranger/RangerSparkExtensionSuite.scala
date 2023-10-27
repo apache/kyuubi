@@ -113,12 +113,12 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       if (i == 1) {
         assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).isEmpty)
       } else {
-        assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+        assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
       }
       rule.apply(logicalPlan)
     }
 
-    assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+    assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
   }
 
   test("[KYUUBI #3226]: Another session should also check even if the plan is cached.") {
@@ -140,7 +140,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           // session1: first query, should auth once.[LogicalRelation]
           val df = sql(select)
           val plan1 = df.queryExecution.optimizedPlan
-          assert(plan1.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+          assert(plan1.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
 
           // cache
           df.cache()
@@ -148,7 +148,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           // session1: second query, should auth once.[InMemoryRelation]
           // (don't need to check in again, but it's okay to check in once)
           val plan2 = sql(select).queryExecution.optimizedPlan
-          assert(plan1 != plan2 && plan2.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+          assert(plan1 != plan2 && plan2.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
 
           // session2: should auth once.
           val otherSessionDf = spark.newSession().sql(select)
@@ -159,7 +159,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           // make sure it use cache.
           assert(plan3.isInstanceOf[InMemoryRelation])
           // auth once only.
-          assert(plan3.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+          assert(plan3.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
         })
     }
   }

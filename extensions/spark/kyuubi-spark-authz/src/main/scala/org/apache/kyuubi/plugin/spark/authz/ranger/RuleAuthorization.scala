@@ -42,7 +42,7 @@ class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
 
 object RuleAuthorization {
 
-  val KYUUBI_AUTHZ_TAG = TreeNodeTag[Boolean]("__KYUUBI_AUTHZ_TAG")
+  val KYUUBI_AUTHZ_TAG = TreeNodeTag[Unit]("__KYUUBI_AUTHZ_TAG")
 
   private def checkPrivileges(spark: SparkSession, plan: LogicalPlan): LogicalPlan = {
     val auditHandler = new SparkRangerAuditHandler
@@ -101,16 +101,16 @@ object RuleAuthorization {
     plan match {
       case _: PermanentViewMarker =>
         plan.transformUp { case p =>
-          p.setTagValue(KYUUBI_AUTHZ_TAG, true)
+          p.setTagValue(KYUUBI_AUTHZ_TAG, ())
           p
         }
       case _ =>
-        plan.setTagValue(KYUUBI_AUTHZ_TAG, true)
+        plan.setTagValue(KYUUBI_AUTHZ_TAG, ())
     }
     plan
   }
 
   private def isAuthChecked(plan: LogicalPlan): Boolean = {
-    plan.find(_.getTagValue(KYUUBI_AUTHZ_TAG).contains(true)).nonEmpty
+    plan.find(_.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty).nonEmpty
   }
 }
