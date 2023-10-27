@@ -1415,7 +1415,8 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DeleteFromIcebergTable",
   "tableDescs" : [ {
@@ -1433,7 +1434,8 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable",
   "tableDescs" : [ {
@@ -1454,7 +1456,8 @@
   "queryDescs" : [ {
     "fieldName" : "sourceTable",
     "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable",
   "tableDescs" : [ {
@@ -1475,7 +1478,8 @@
   "queryDescs" : [ {
     "fieldName" : "sourceTable",
     "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.UpdateIcebergTable",
   "tableDescs" : [ {
@@ -1493,7 +1497,8 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableAddColumnsCommand",
   "tableDescs" : [ {
