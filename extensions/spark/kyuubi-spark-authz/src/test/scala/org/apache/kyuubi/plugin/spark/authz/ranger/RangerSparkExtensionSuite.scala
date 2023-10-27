@@ -942,32 +942,46 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #5503][AUTHZ] Auth check should not check Subquery") {
+  test("[KYUUBI #5503][AUTHZ] Check plan auth checked should not set tag to all child nodes") {
     assume(isSparkV32OrGreater, "Spark 3.1 not support lateral subquery.")
     val db1 = defaultDb
     val table1 = "table1"
-    val table2 = "table2"
-    val view1 = "view1"
+    val perm_view = "perm_view"
     withSingleCallEnabled {
       withCleanTmpResources(
-        Seq((s"$db1.$table1", "table"), (s"$db1.$table2", "table"), (s"$db1.$view1", "view"))) {
+        Seq((s"$db1.$table1", "table"), (s"$db1.$perm_view", "view"))) {
         doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
-        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table2 (id int, age int)"))
+        doAs(admin, sql(s"CREATE VIEW $db1.$perm_view AS SELECT * FROM $db1.$table1"))
         interceptContains[AccessControlException](
           doAs(
             someone,
             sql(
               s"""
-                 |SELECT t1.id, age
+                 |SELECT t1.id
                  |FROM $db1.$table1 t1,
                  |LATERAL (
                  |  SELECT *
-                 |  FROM $db1.$table2 t2
+                 |  FROM $db1.$perm_view t2
                  |  WHERE t1.id = t2.id
                  |)
                  |""".stripMargin).show()))(
           s"does not have [select] privilege on " +
-            s"[$db1/$table2/id,$db1/$table2/age]")
+            s"[$db1/$perm_view/id,$db1/$perm_view/scope]")
+        interceptContains[AccessControlException](
+          doAs(
+            permViewOnlyUser,
+            sql(
+              s"""
+                 |SELECT t1.id
+                 |FROM $db1.$table1 t1,
+                 |LATERAL (
+                 |  SELECT *
+                 |  FROM $db1.$perm_view t2
+                 |  WHERE t1.id = t2.id
+                 |)
+                 |""".stripMargin).show()))(
+          s"does not have [select] privilege on " +
+            s"[$db1/$table1/id,$db1/$table1/scope]")
       }
     }
   }
