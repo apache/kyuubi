@@ -22,6 +22,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
+import org.apache.kyuubi.plugin.spark.authz.rule.AuthzConfigurationChecker
+import org.apache.kyuubi.plugin.spark.authz.rule.RuleAuthorization
 
 class AuthzConfigurationCheckerSuite extends AnyFunSuite with SparkSessionProvider
   with BeforeAndAfterAll {

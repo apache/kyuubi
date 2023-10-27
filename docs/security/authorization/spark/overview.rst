@@ -71,7 +71,7 @@ End-users can disable the AuthZ plugin by modifying Spark's configuration. For e
 
 .. code-block:: sql
 
-   set spark.sql.optimizer.excludedRules=org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization
+   set spark.sql.optimizer.excludedRules=org.apache.kyuubi.plugin.spark.authz.rule.RuleAuthorization
 
 Kyuubi provides a mechanism to ban security configurations to enhance the security of production environments
 
