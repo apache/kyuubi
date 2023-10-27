@@ -17,9 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import java.net.URI
 import javax.annotation.Nonnull
-
-import org.apache.hadoop.fs.Path
 
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
@@ -90,7 +89,7 @@ object PrivilegeObject {
   }
 
   def apply(uri: Uri): PrivilegeObject = {
-    val privilegeObjectType = Option(new Path(uri.path).toUri.getScheme) match {
+    val privilegeObjectType = Option(new URI(uri.path).getScheme) match {
       case Some("file") => LOCAL_URI
       case _ => DFS_URL
     }
