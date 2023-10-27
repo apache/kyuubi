@@ -18,9 +18,9 @@
 package org.apache.kyuubi.plugin.spark.authz.rule
 
 import org.scalatest.BeforeAndAfterAll
+// scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
-// scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 
 class AuthzConfigurationCheckerSuite extends AnyFunSuite with SparkSessionProvider
