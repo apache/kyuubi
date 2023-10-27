@@ -28,6 +28,7 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object PrivilegesBuilder {
@@ -62,9 +63,19 @@ object PrivilegesBuilder {
       conditionList: Seq[NamedExpression] = Nil,
       spark: SparkSession): Unit = {
 
+    def getOutputColumnNames(plan: LogicalPlan): Seq[String] = {
+      plan match {
+        case pvm: PermanentViewMarker
+            if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
+          pvm.visitColNames
+        case _ =>
+          plan.output.map(_.name)
+      }
+    }
+
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
+        privilegeObjects += PrivilegeObject(table, getOutputColumnNames(plan))
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
@@ -181,6 +192,23 @@ object PrivilegesBuilder {
             inputObjs ++= getTablePriv(td)
           } else {
             outputObjs ++= getTablePriv(td)
+          }
+        }
+        spec.uriDescs.foreach { ud =>
+          try {
+            val uri = ud.extract(plan)
+            uri match {
+              case Some(uri) =>
+                if (ud.isInput) {
+                  inputObjs += PrivilegeObject(uri)
+                } else {
+                  outputObjs += PrivilegeObject(uri)
+                }
+              case None =>
+            }
+          } catch {
+            case e: Exception =>
+              LOG.debug(ud.error(plan, e))
           }
         }
         spec.queries(plan).foreach(buildQuery(_, inputObjs, spark = spark))

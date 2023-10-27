@@ -94,5 +94,10 @@ export const MENUS = [
     label: 'Contact Us',
     icon: 'PhoneFilled',
     router: '/contact'
+  },
+  {
+    label: 'SQL Lab',
+    icon: 'Cpu',
+    router: '/lab'
   }
 ]

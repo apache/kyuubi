@@ -26,6 +26,8 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 
 trait BatchTestHelper {
+  val sparkBatchTestBatchType = "SPARK"
+
   val sparkBatchTestMainClass = "org.apache.spark.examples.SparkPi"
 
   val sparkBatchTestAppName = "Spark Pi" // the app name is hard coded in spark example code
@@ -56,7 +58,7 @@ trait BatchTestHelper {
       conf: Map[String, String] = Map.empty,
       args: Seq[String] = Seq.empty): BatchRequest = {
     newBatchRequest(
-      "SPARK",
+      sparkBatchTestBatchType,
       sparkBatchTestResource.get,
       sparkBatchTestMainClass,
       sparkBatchTestAppName,

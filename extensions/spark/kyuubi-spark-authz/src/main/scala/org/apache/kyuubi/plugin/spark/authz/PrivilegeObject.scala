@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import java.net.URI
 import javax.annotation.Nonnull
 
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
-import org.apache.kyuubi.plugin.spark.authz.serde.{Database, Function, Table}
+import org.apache.kyuubi.plugin.spark.authz.serde.{Database, Function, Table, Uri}
 
 /**
  * Build a Spark logical plan to different `PrivilegeObject`s
@@ -85,5 +86,20 @@ object PrivilegeObject {
       None,
       None
     ) // TODO: Support catalog for function
+  }
+
+  def apply(uri: Uri): PrivilegeObject = {
+    val privilegeObjectType = Option(new URI(uri.path).getScheme) match {
+      case Some("file") => LOCAL_URI
+      case _ => DFS_URL
+    }
+    new PrivilegeObject(
+      privilegeObjectType,
+      PrivilegeObjectActionType.OTHER,
+      uri.path,
+      null,
+      Nil,
+      None,
+      None)
   }
 }

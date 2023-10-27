@@ -15,32 +15,4 @@
  * limitations under the License.
  */
 
-'use strict';
-
-var kyuubiVersion = "";
-
-$.fn.api.settings.api = {
-	'get version' : '/api/v1/version',
-	'ping' : '/api/v1/version'
-};
-
-$('.item.server.version')
-	.api({
-		action: 'get version',
-		on: 'now',
-		onload: function (response) {
-			if (response) {
-				$('.item.server.version.right.padded').val(response.version)
-			}
-		}
-	})
-;
-
-$(function(){
-	if (kyuubiVersion === "") {
-		$.getJSON(location.origin + "/api/v1/version", function (response) {
-			kyuubiVersion = response.version;
-		});
-	}
-	$('.item.server.version.right.padded').val(kyuubiVersion)
-});
+export type Theme = 'dark' | 'light'

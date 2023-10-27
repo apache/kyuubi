@@ -16,4 +16,11 @@
 #
 
 codecov:
-  token: b624e642-b0c8-4d45-94a1-a370888435bb
+  token: 5115fd3e-2ef2-40ed-b012-376a2afdc382
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto # auto compares coverage to the previous base commit
+        threshold: 2% #this allows a 2% drop from the previous base commit coverage

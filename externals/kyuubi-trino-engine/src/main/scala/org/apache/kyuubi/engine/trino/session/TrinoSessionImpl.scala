@@ -22,6 +22,8 @@ import java.time.ZoneId
 import java.util.{Collections, Locale, Optional}
 import java.util.concurrent.TimeUnit
 
+import scala.collection.JavaConverters._
+
 import io.airlift.units.Duration
 import io.trino.client.ClientSession
 import io.trino.client.OkHttpUtil
@@ -89,6 +91,8 @@ class TrinoSessionImpl(
 
     val clientRequestTimeout = sessionConf.get(TrinoConf.CLIENT_REQUEST_TIMEOUT)
 
+    val properties = getTrinoSessionConf(sessionConf).asJava
+
     new ClientSession(
       URI.create(connectionUrl),
       username,
@@ -104,7 +108,7 @@ class TrinoSessionImpl(
       Locale.getDefault,
       Collections.emptyMap(),
       Collections.emptyMap(),
-      Collections.emptyMap(),
+      properties,
       Collections.emptyMap(),
       Collections.emptyMap(),
       null,
@@ -168,6 +172,12 @@ class TrinoSessionImpl(
 
     assert(resultSet.hasNext)
     resultSet.next().head.toString
+  }
+
+  private def getTrinoSessionConf(sessionConf: KyuubiConf): Map[String, String] = {
+    val trinoSessionConf = sessionConf.getAll.filterKeys(_.startsWith("trino."))
+      .map { case (k, v) => (k.stripPrefix("trino."), v) }
+    trinoSessionConf.toMap
   }
 
   override def close(): Unit = {

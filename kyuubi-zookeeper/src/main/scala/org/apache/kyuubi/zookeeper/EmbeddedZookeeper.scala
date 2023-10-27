@@ -19,9 +19,10 @@ package org.apache.kyuubi.zookeeper
 
 import java.io.File
 import java.net.InetSocketAddress
+import java.nio.file.Paths
 
 import org.apache.kyuubi.Utils._
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
 import org.apache.kyuubi.service.{AbstractService, ServiceState}
 import org.apache.kyuubi.shaded.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 import org.apache.kyuubi.zookeeper.ZookeeperConf._
@@ -37,8 +38,9 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
   private var host: String = _
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    dataDirectory = new File(conf.get(ZK_DATA_DIR))
-    dataLogDirectory = new File(conf.get(ZK_DATA_LOG_DIR))
+    dataDirectory = resolvePathIfRelative(conf, ZK_DATA_DIR)
+    dataLogDirectory = resolvePathIfRelative(conf, ZK_DATA_LOG_DIR)
+
     val clientPort = conf.get(ZK_CLIENT_PORT)
     val tickTime = conf.get(ZK_TICK_TIME)
     val maxClientCnxns = conf.get(ZK_MAX_CLIENT_CONNECTIONS)
@@ -93,4 +95,10 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
     assert(zks != null, s"$getName is in $getServiceState")
     s"$host:${serverFactory.getLocalPort}"
   }
+
+  def resolvePathIfRelative(conf: KyuubiConf, configEntry: ConfigEntry[String]): File = {
+    val dirFromConfig = conf.get(configEntry)
+    Paths.get(sys.env.getOrElse(KyuubiConf.KYUUBI_HOME, ".")).resolve(dirFromConfig).toFile
+  }
+
 }
