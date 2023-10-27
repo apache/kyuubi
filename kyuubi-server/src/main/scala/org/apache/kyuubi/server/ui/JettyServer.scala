@@ -17,15 +17,16 @@
 
 package org.apache.kyuubi.server.ui
 
+import org.eclipse.jetty.server._
+import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
+import org.eclipse.jetty.util.component.LifeCycle
+import org.eclipse.jetty.util.ssl.SslContextFactory
+import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.isWindows
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
-import org.eclipse.jetty.server._
-import org.eclipse.jetty.util.component.LifeCycle
-import org.eclipse.jetty.util.ssl.SslContextFactory
-import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 
 private[kyuubi] case class JettyServer(
     server: Server,
@@ -74,7 +75,7 @@ private[kyuubi] case class JettyServer(
   def getState: String = server.getState
 }
 
-object JettyServer extends Logging{
+object JettyServer extends Logging {
 
   def apply(name: String, host: String, port: Int, kyuubiConf: KyuubiConf): JettyServer = {
 
@@ -98,22 +99,22 @@ object JettyServer extends Logging{
 
     val serverExecutor = new ScheduledExecutorScheduler(s"$name-JettyScheduler", true)
 
-    val connector = getServerConnector(server, host, port , serverExecutor , kyuubiConf)
+    val connector = getServerConnector(server, host, port, serverExecutor, kyuubiConf)
 
     new JettyServer(server, connector, collection)
   }
 
   def getServerConnector(
-                          server: Server,
-                          host : String ,
-                          port : Int,
-                          serverExecutor : ScheduledExecutorScheduler,
-                          conf: KyuubiConf): ServerConnector ={
+      server: Server,
+      host: String,
+      port: Int,
+      serverExecutor: ScheduledExecutorScheduler,
+      conf: KyuubiConf): ServerConnector = {
     val httpConf = new HttpConfiguration()
     val useSsl = conf.get(FRONTEND_JETTYSERVER_USE_SSL)
 
     val connector = {
-      if (useSsl){
+      if (useSsl) {
         val keyStorePath = conf.get(FRONTEND_JETTYSERVER_SSL_KEYSTORE_PATH)
 
         if (keyStorePath.isEmpty) {

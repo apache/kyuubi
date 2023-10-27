@@ -751,7 +751,7 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  //------------------------Jetty Server-------------------------
+  // ------------------------Jetty Server-------------------------
   val FRONTEND_JETTYSERVER_USE_SSL: ConfigEntry[Boolean] =
     buildConf("kyuubi.frontend.jettyServer.use.SSL")
       .doc("Set this to true for using SSL encryption in http mode.")
@@ -800,8 +800,7 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-
-  //-------------------------------------------------------
+  // -------------------------------------------------------
   val FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER: ConfigEntry[String] =
     buildConf("kyuubi.frontend.proxy.http.client.ip.header")
       .doc("The HTTP header to record the real client IP address. If your server is behind a load" +
