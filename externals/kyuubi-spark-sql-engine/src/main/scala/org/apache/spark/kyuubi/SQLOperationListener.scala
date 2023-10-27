@@ -20,6 +20,8 @@ package org.apache.spark.kyuubi
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.scheduler._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd
@@ -44,7 +46,7 @@ class SQLOperationListener(
     spark: SparkSession) extends StatsReportListener with Logging {
 
   private val operationId: String = operation.getHandle.identifier.toString
-  private lazy val activeJobs = new java.util.HashSet[Int]()
+  private lazy val activeJobs = new ConcurrentHashMap[Int, SparkJobInfo]()
   private lazy val activeStages = new ConcurrentHashMap[SparkStageAttempt, SparkStageInfo]()
   private var executionId: Option[Long] = None
 
@@ -53,6 +55,7 @@ class SQLOperationListener(
     if (conf.get(ENGINE_SPARK_SHOW_PROGRESS)) {
       Some(new SparkConsoleProgressBar(
         operation,
+        activeJobs,
         activeStages,
         conf.get(ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL),
         conf.get(ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT)))
@@ -79,9 +82,10 @@ class SQLOperationListener(
     }
   }
 
-  override def onJobStart(jobStart: SparkListenerJobStart): Unit = activeJobs.synchronized {
+  override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
     if (sameGroupId(jobStart.properties)) {
       val jobId = jobStart.jobId
+      val stageIds = jobStart.stageInfos.map(_.stageId).toSet
       val stageSize = jobStart.stageInfos.size
       if (executionId.isEmpty) {
         executionId = Option(jobStart.properties.getProperty(SPARK_SQL_EXECUTION_ID_KEY))
@@ -93,17 +97,19 @@ class SQLOperationListener(
           case _ =>
         }
       }
+      activeJobs.put(
+        jobId,
+        new SparkJobInfo(stageSize, stageIds))
       withOperationLog {
-        activeJobs.add(jobId)
         info(s"Query [$operationId]: Job $jobId started with $stageSize stages," +
           s" ${activeJobs.size()} active jobs running")
       }
     }
   }
 
-  override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = activeJobs.synchronized {
+  override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
     val jobId = jobEnd.jobId
-    if (activeJobs.remove(jobId)) {
+    if (activeJobs.remove(jobId) != null) {
       val hint = jobEnd.jobResult match {
         case JobSucceeded => "succeeded"
         case _ => "failed" // TODO: Handle JobFailed(exception: Exception)
@@ -134,9 +140,18 @@ class SQLOperationListener(
 
   override def onStageCompleted(stageCompleted: SparkListenerStageCompleted): Unit = {
     val stageInfo = stageCompleted.stageInfo
+    val stageId = stageInfo.stageId
     val stageAttempt = SparkStageAttempt(stageInfo.stageId, stageInfo.attemptNumber())
     activeStages.synchronized {
       if (activeStages.remove(stageAttempt) != null) {
+        stageInfo.getStatusString match {
+          case "succeeded" =>
+            activeJobs.asScala.foreach { case (_, jobInfo) =>
+              if (jobInfo.stageIds.contains(stageId)) {
+                jobInfo.numCompleteStages.getAndIncrement()
+              }
+            }
+        }
         withOperationLog(super.onStageCompleted(stageCompleted))
       }
     }

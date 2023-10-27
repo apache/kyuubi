@@ -21,10 +21,9 @@
  Set to debug or trace if log4j initialization is failing. -->
 <Configuration status="INFO">
     <Properties>
+        <Property name="logDir">${env:KYUUBI_LOG_DIR}</Property>
         <Property name="restAuditLogPath">rest-audit.log</Property>
         <Property name="restAuditLogFilePattern">rest-audit-%d{yyyy-MM-dd}-%i.log</Property>
-    </Properties>
-    <Properties>
         <Property name="k8sAuditLogPath">k8s-audit.log</Property>
         <Property name="k8sAuditLogFilePattern">k8s-audit-%d{yyyy-MM-dd}-%i.log</Property>
     </Properties>
@@ -35,7 +34,7 @@
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
         </Console>
-        <RollingFile name="restAudit" fileName="${sys:restAuditLogPath}"
+        <RollingFile name="restAudit" fileName="${sys:logDir}/${sys:restAuditLogPath}"
                      filePattern="${sys:restAuditLogFilePattern}">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
             <Policies>
@@ -43,7 +42,7 @@
             </Policies>
             <DefaultRolloverStrategy max="10"/>
         </RollingFile>
-        <RollingFile name="k8sAudit" fileName="${sys:k8sAuditLogPath}"
+        <RollingFile name="k8sAudit" fileName="${sys:logDir}/${sys:k8sAuditLogPath}"
                      filePattern="${sys:k8sAuditLogFilePattern}">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
             <Policies>

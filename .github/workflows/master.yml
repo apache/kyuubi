@@ -108,7 +108,7 @@ jobs:
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
-          -Pspark-${{ matrix.spark }} -Pspark-authz-hudi-test ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
+          -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} -Pspark-authz-hudi-test ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
           matrix.java == 8 &&
@@ -183,6 +183,7 @@ jobs:
         flink:
           - '1.16'
           - '1.17'
+          - '1.18'
         flink-archive: [ "" ]
         comment: [ "normal" ]
         include:
@@ -190,6 +191,10 @@ jobs:
             flink: '1.17'
             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.16.1 -Dflink.archive.name=flink-1.16.1-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.16-binary'
+          - java: 8
+            flink: '1.17'
+            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.18.0 -Dflink.archive.name=flink-1.18.0-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-1.18-binary'
     steps:
       - uses: actions/checkout@v3
       - name: Tune Runner VM
@@ -403,6 +408,9 @@ jobs:
           minikube start --cpus 2 --memory 4096 --kubernetes-version=${KUBERNETES_VERSION} --force
           # https://minikube.sigs.k8s.io/docs/handbook/pushing/#7-loading-directly-to-in-cluster-container-runtime
           minikube image load apache/kyuubi:latest
+          # pre-install spark into minikube
+          docker pull apache/spark:3.4.1
+          minikube image load apache/spark:3.4.1
       - name: kubectl pre-check
         run: |
           kubectl get nodes
@@ -425,6 +433,9 @@ jobs:
       - name: Cat kyuubi server log
         if: failure()
         run: kubectl logs kyuubi-test
+      - name: Copy spark engine log from kyuubi pod
+        if: failure()
+        run: kubectl cp kyuubi-test:/opt/kyuubi/work ./target/work
       - name: Cat spark driver log
         if: failure()
         run: |
@@ -437,6 +448,7 @@ jobs:
           name: unit-tests-log-kyuubi-on-k8s-it
           path: |
             **/target/unit-tests.log
+            **/target/work/**
 
   spark-on-k8s-it:
     name: Spark Engine On Kubernetes Integration Test

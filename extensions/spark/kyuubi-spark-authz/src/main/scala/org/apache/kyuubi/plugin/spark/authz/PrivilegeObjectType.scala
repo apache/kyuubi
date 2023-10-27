@@ -20,5 +20,5 @@ package org.apache.kyuubi.plugin.spark.authz
 object PrivilegeObjectType extends Enumeration {
   type PrivilegeObjectType = Value
 
-  val DATABASE, TABLE_OR_VIEW, FUNCTION = Value
+  val DATABASE, TABLE_OR_VIEW, FUNCTION, LOCAL_URI, DFS_URL = Value
 }

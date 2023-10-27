@@ -477,16 +477,15 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         checkPermission(userName, metadata.username)
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
-        } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED") {
-          if (batchService.get.cancelUnscheduledBatch(batchId)) {
-            new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
-          } else if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
-            new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
-          } else {
-            info(s"Cancel batch[$batchId] with state ${metadata.state} by killing application")
-            val (killed, msg) = forceKill(metadata.appMgrInfo, batchId, userName)
-            new CloseBatchResponse(killed, msg)
-          }
+        } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED" &&
+          // there is a chance that metadata is outdated, then `cancelUnscheduledBatch` fails
+          // and returns false
+          batchService.get.cancelUnscheduledBatch(batchId)) {
+          new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
+        } else if (batchV2Enabled(metadata.requestConf) && metadata.kyuubiInstance == null) {
+          // code goes here indicates metadata is outdated, recursively calls itself to refresh
+          // the metadata
+          closeBatchSession(batchId, hs2ProxyUser)
         } else if (metadata.kyuubiInstance != fe.connectionUrl) {
           info(s"Redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}")
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)

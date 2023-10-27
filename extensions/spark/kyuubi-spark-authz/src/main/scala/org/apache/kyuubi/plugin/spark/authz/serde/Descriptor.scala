@@ -306,3 +306,21 @@ case class ScanDesc(
     }
   }
 }
+
+/**
+ * Function Descriptor
+ *
+ * @param fieldName the field name or method name of this function field
+ * @param fieldExtractor the key of a [[FunctionExtractor]] instance
+ * @param isInput read or write
+ */
+case class UriDesc(
+    fieldName: String,
+    fieldExtractor: String,
+    isInput: Boolean = false) extends Descriptor {
+  override def extract(v: AnyRef): Option[Uri] = {
+    val uriVal = invokeAs[AnyRef](v, fieldName)
+    val uriExtractor = lookupExtractor[URIExtractor](fieldExtractor)
+    uriExtractor(uriVal)
+  }
+}

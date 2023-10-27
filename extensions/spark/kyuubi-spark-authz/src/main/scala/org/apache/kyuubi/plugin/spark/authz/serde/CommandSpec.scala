@@ -43,6 +43,10 @@ trait CommandSpec extends {
   final def operationType: OperationType = OperationType.withName(opType)
 }
 
+trait CommandSpecs[T <: CommandSpec] {
+  def specs: Seq[T]
+}
+
 /**
  * A specification describe a database command
  *
@@ -79,7 +83,8 @@ case class TableCommandSpec(
     classname: String,
     tableDescs: Seq[TableDesc],
     opType: String = OperationType.QUERY.toString,
-    queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec {
+    queryDescs: Seq[QueryDesc] = Nil,
+    uriDescs: Seq[UriDesc] = Nil) extends CommandSpec {
   def queries: LogicalPlan => Seq[LogicalPlan] = plan => {
     queryDescs.flatMap { qd =>
       try {

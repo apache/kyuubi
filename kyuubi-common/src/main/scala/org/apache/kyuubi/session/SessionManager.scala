@@ -23,6 +23,7 @@ import java.util.concurrent.{ConcurrentHashMap, Future, ThreadPoolExecutor, Time
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
+import scala.util.control.NonFatal
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
@@ -312,8 +313,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
               try {
                 closeSession(session.handle)
               } catch {
-                case e: KyuubiSQLException =>
-                  warn(s"Error closing idle session ${session.handle}", e)
+                case NonFatal(e) => warn(s"Error closing idle session ${session.handle}", e)
               }
             } else {
               session.closeExpiredOperations()

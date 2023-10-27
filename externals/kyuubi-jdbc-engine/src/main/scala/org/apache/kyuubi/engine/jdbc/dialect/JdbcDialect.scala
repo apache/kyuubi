@@ -16,10 +16,10 @@
  */
 package org.apache.kyuubi.engine.jdbc.dialect
 
-import java.sql.{Connection, Statement}
+import java.sql.{Connection, ResultSet, Statement}
 import java.util
 
-import org.apache.kyuubi.{KyuubiException, Logging}
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_SHORT_NAME}
 import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
@@ -30,13 +30,24 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 abstract class JdbcDialect extends SupportServiceLoader with Logging {
 
-  def createStatement(connection: Connection, fetchSize: Int = 1000): Statement
+  def createStatement(connection: Connection, fetchSize: Int = 1000): Statement = {
+    val statement =
+      connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+    statement.setFetchSize(fetchSize)
+    statement
+  }
 
-  def getTypeInfoOperation(session: Session): Operation
+  def getTypeInfoOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 
-  def getCatalogsOperation(session: Session): Operation
+  def getCatalogsOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 
-  def getSchemasOperation(session: Session): Operation
+  def getSchemasOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 
   def getTablesQuery(
       catalog: String,
@@ -44,7 +55,9 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
       tableName: String,
       tableTypes: util.List[String]): String
 
-  def getTableTypesOperation(session: Session): Operation
+  def getTableTypesOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 
   def getColumnsQuery(
       session: Session,
@@ -53,16 +66,21 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
       tableName: String,
       columnName: String): String
 
-  def getFunctionsOperation(session: Session): Operation
+  def getFunctionsOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 
-  def getPrimaryKeysOperation(session: Session): Operation
+  def getPrimaryKeysOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 
-  def getCrossReferenceOperation(session: Session): Operation
+  def getCrossReferenceOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 
   def getRowSetHelper(): RowSetHelper
 
   def getSchemaHelper(): SchemaHelper
-
 }
 
 object JdbcDialects extends Logging {

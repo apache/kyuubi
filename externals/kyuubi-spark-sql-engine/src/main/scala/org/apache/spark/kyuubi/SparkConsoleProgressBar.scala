@@ -29,6 +29,7 @@ import org.apache.kyuubi.operation.Operation
 
 class SparkConsoleProgressBar(
     operation: Operation,
+    liveJobs: ConcurrentHashMap[Int, SparkJobInfo],
     liveStages: ConcurrentHashMap[SparkStageAttempt, SparkStageInfo],
     updatePeriodMSec: Long,
     timeFormat: String)
@@ -73,6 +74,17 @@ class SparkConsoleProgressBar(
   }
 
   /**
+   * Use stageId to find stage's jobId
+   * @param stageId
+   * @return jobId (Optional)
+   */
+  private def findJobId(stageId: Int): Option[Int] = {
+    liveJobs.asScala.collectFirst {
+      case (jobId, jobInfo) if jobInfo.stageIds.contains(stageId) => jobId
+    }
+  }
+
+  /**
    * Show progress bar in console. The progress bar is displayed in the next line
    * after your last output, keeps overwriting itself to hold in one line. The logging will follow
    * the progress bar, then progress bar will be showed in next line without overwrite logs.
@@ -81,9 +93,13 @@ class SparkConsoleProgressBar(
     val width = TerminalWidth / stages.size
     val bar = stages.map { s =>
       val total = s.numTasks
-      val header = s"[Stage ${s.stageId}:"
+      val jobHeader = findJobId(s.stageId).map(jobId =>
+        s"[Job $jobId (${liveJobs.get(jobId).numCompleteStages} " +
+          s"/ ${liveJobs.get(jobId).numStages}) Stages] ").getOrElse(
+        "[There is no job about this stage] ")
+      val header = jobHeader + s"[Stage ${s.stageId}:"
       val tailer = s"(${s.numCompleteTasks} + ${s.numActiveTasks}) / $total]"
-      val w = width - header.length - tailer.length
+      val w = width + jobHeader.length - header.length - tailer.length
       val bar =
         if (w > 0) {
           val percent = w * s.numCompleteTasks.get / total
