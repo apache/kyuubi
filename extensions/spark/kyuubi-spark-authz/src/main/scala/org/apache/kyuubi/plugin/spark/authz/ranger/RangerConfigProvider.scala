@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.util
+package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.hadoop.conf.Configuration
 
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.util.reflect.ReflectUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isRanger21orGreater
+import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
 
 trait RangerConfigProvider {
 

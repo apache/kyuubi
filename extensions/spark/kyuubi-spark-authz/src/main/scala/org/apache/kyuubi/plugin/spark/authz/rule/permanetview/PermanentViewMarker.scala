@@ -15,21 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.util
+package org.apache.kyuubi.plugin.spark.authz.rule.permanetview
 
-import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
-/**
- * Transforming up [[org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker]]
- */
-class RuleEliminateViewMarker extends Rule[LogicalPlan] {
-  override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUp {
-      case pvm: PermanentViewMarker => pvm.child.transformAllExpressions {
-          case s: SubqueryExpression => s.withNewPlan(apply(s.plan))
-        }
-    }
-  }
+import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
+
+case class PermanentViewMarker(
+    child: LogicalPlan,
+    catalogTable: CatalogTable,
+    visitColNames: Seq[String],
+    isSubqueryExpressionPlaceHolder: Boolean = false) extends UnaryNode
+  with WithInternalChild {
+
+  override def output: Seq[Attribute] = child.output
+
+  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
+    copy(child = newChild)
+
 }
