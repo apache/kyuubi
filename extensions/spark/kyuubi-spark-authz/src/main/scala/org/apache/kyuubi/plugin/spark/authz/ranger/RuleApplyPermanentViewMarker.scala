@@ -43,7 +43,8 @@ class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
               PermanentViewMarker(
                 subquery.plan,
                 permanentView.desc,
-                permanentView.output.map(_.name)))
+                permanentView.output.map(_.name),
+                true))
         }
         PermanentViewMarker(
           resolvedSubquery,
