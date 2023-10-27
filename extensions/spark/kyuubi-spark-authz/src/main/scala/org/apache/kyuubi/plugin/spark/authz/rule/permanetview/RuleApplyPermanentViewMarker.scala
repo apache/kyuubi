@@ -21,6 +21,7 @@ import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.catalyst.rules.Rule
 
+import org.apache.kyuubi.plugin.spark.authz.rule.{RuleAuthorization, RuleEliminatePermanentViewMarker}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 /**

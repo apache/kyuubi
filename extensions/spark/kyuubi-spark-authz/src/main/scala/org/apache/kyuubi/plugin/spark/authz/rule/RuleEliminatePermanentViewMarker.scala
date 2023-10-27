@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.rule.permanetview
+package org.apache.kyuubi.plugin.spark.authz.rule
 
 import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
+
+import org.apache.kyuubi.plugin.spark.authz.rule.permanetview.PermanentViewMarker
 
 /**
  * Transforming up [[PermanentViewMarker]]
