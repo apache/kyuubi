@@ -580,20 +580,6 @@
   "opType" : "QUERY",
   "queryDescs" : [ ]
 }, {
-  "classname" : "org.apache.spark.sql.delta.commands.CreateDeltaTableCommand",
-  "tableDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "CatalogTableTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
-  } ],
-  "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
-}, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand",
   "tableDescs" : [ {
     "fieldName" : "table",
@@ -1850,5 +1836,19 @@
     "setCurrentDatabaseIfMissing" : false
   } ],
   "opType" : "QUERY",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.delta.commands.CreateDeltaTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE",
   "queryDescs" : [ ]
 } ]
