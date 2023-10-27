@@ -25,54 +25,64 @@ import org.apache.spark.sql.execution.exchange.{REPARTITION_BY_NUM, ShuffleExcha
 import org.apache.spark.sql.hive.HiveSparkPlanHelper.HiveTableScanExec
 import org.apache.spark.sql.internal.SQLConf._
 
+import org.apache.kyuubi.sql.KyuubiSQLConf.{DYNAMIC_SHUFFLE_PARTITIONS, DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM}
+
 /**
  * Dynamically adjust the number of shuffle partitions according to the input data size
  */
 case class DynamicShufflePartitions(spark: SparkSession) extends Rule[SparkPlan] {
 
   override def apply(plan: SparkPlan): SparkPlan = {
-    def collectScanSizes(plan: SparkPlan): Seq[Long] = plan match {
-      case FileSourceScanExec(relation, _, _, _, _, _, _, _, _) =>
-        Seq(relation.location.sizeInBytes)
-      case t: HiveTableScanExec =>
-        t.relation.prunedPartitions match {
-          case Some(partitions) => Seq(partitions.flatMap(_.stats).map(_.sizeInBytes.toLong).sum)
-          case None => Seq(t.relation.computeStats().sizeInBytes.toLong)
-            .filter(_ != conf.defaultSizeInBytes)
-        }
-      case stage: ShuffleQueryStageExec if stage.isMaterialized =>
-        Seq(stage.mapStats.map(_.bytesByPartitionId.sum).getOrElse(0L))
-      case p =>
-        p.children.flatMap(collectScanSizes)
-    }
+    if (!conf.getConf(DYNAMIC_SHUFFLE_PARTITIONS)) {
+      plan
+    } else {
+      val maxDynamicShufflePartitions = conf.getConf(DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM)
 
-    val targetSize = conf.getConf(ADVISORY_PARTITION_SIZE_IN_BYTES)
-    val maxScanSizes = collectScanSizes(plan) match {
-      case sizes if sizes.nonEmpty => sizes.max
-      case _ => targetSize
-    }
-    val targetShufflePartitions =
-      Math.max(maxScanSizes / targetSize + 1, conf.numShufflePartitions).toInt
+      def collectScanSizes(plan: SparkPlan): Seq[Long] = plan match {
+        case FileSourceScanExec(relation, _, _, _, _, _, _, _, _) =>
+          Seq(relation.location.sizeInBytes)
+        case t: HiveTableScanExec =>
+          t.relation.prunedPartitions match {
+            case Some(partitions) => Seq(partitions.flatMap(_.stats).map(_.sizeInBytes.toLong).sum)
+            case None => Seq(t.relation.computeStats().sizeInBytes.toLong)
+                .filter(_ != conf.defaultSizeInBytes)
+          }
+        case stage: ShuffleQueryStageExec if stage.isMaterialized =>
+          Seq(stage.mapStats.map(_.bytesByPartitionId.sum).getOrElse(0L))
+        case p =>
+          p.children.flatMap(collectScanSizes)
+      }
 
-    plan transformUp {
-      case exchange @ ShuffleExchangeExec(outputPartitioning, _, shuffleOrigin, _)
-          if shuffleOrigin != REPARTITION_BY_NUM =>
-        val newOutPartitioning = outputPartitioning match {
-          case RoundRobinPartitioning(numPartitions) if targetShufflePartitions != numPartitions =>
-            Some(RoundRobinPartitioning(targetShufflePartitions))
-          case HashPartitioning(expressions, numPartitions)
-              if targetShufflePartitions != numPartitions =>
-            Some(HashPartitioning(expressions, targetShufflePartitions))
-          case RangePartitioning(ordering, numPartitions)
-              if targetShufflePartitions != numPartitions =>
-            Some(RangePartitioning(ordering, targetShufflePartitions))
-          case _ => None
-        }
-        if (newOutPartitioning.isDefined) {
-          exchange.copy(outputPartitioning = newOutPartitioning.get)
-        } else {
-          exchange
-        }
+      val targetSize = conf.getConf(ADVISORY_PARTITION_SIZE_IN_BYTES)
+      val maxScanSizes = collectScanSizes(plan) match {
+        case sizes if sizes.nonEmpty => sizes.max
+        case _ => targetSize
+      }
+      val targetShufflePartitions = Math.min(
+        Math.max(maxScanSizes / targetSize + 1, conf.numShufflePartitions).toInt,
+        maxDynamicShufflePartitions)
+
+      plan transformUp {
+        case exchange @ ShuffleExchangeExec(outputPartitioning, _, shuffleOrigin, _)
+            if shuffleOrigin != REPARTITION_BY_NUM =>
+          val newOutPartitioning = outputPartitioning match {
+            case RoundRobinPartitioning(numPartitions)
+                if targetShufflePartitions != numPartitions =>
+              Some(RoundRobinPartitioning(targetShufflePartitions))
+            case HashPartitioning(expressions, numPartitions)
+                if targetShufflePartitions != numPartitions =>
+              Some(HashPartitioning(expressions, targetShufflePartitions))
+            case RangePartitioning(ordering, numPartitions)
+                if targetShufflePartitions != numPartitions =>
+              Some(RangePartitioning(ordering, targetShufflePartitions))
+            case _ => None
+          }
+          if (newOutPartitioning.isDefined) {
+            exchange.copy(outputPartitioning = newOutPartitioning.get)
+          } else {
+            exchange
+          }
+      }
     }
   }
 

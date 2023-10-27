@@ -22,6 +22,8 @@ import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExch
 import org.apache.spark.sql.hive.HiveUtils.CONVERT_METASTORE_PARQUET
 import org.apache.spark.sql.internal.SQLConf._
 
+import org.apache.kyuubi.sql.KyuubiSQLConf.{DYNAMIC_SHUFFLE_PARTITIONS, DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM}
+
 class DynamicShufflePartitionsSuite extends KyuubiSparkSQLExtensionTest {
 
   override protected def beforeAll(): Unit = {
@@ -45,45 +47,92 @@ class DynamicShufflePartitionsSuite extends KyuubiSparkSQLExtensionTest {
       sql("create table table1 stored as parquet as select c1, c2 from t1")
       sql("create table table2 stored as parquet as select c1, c2 from t2")
       sql("create table table3 (c1 int, c2 string) stored as parquet")
-
-      withSQLConf(
-        AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1",
-        COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> "2",
-        ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "500") {
-        val df = sql("insert overwrite table3 " +
-          " select a.c1 as c1, b.c2 as c2 from table1 a join table2 b on a.c1 = b.c1")
-
-        val exchanges = collectExchanges(df.queryExecution.executedPlan)
-        val (joinExchanges, rebalanceExchanges) = exchanges
-          .partition(_.shuffleOrigin == ENSURE_REQUIREMENTS)
-        // table scan size: 7369 3287
-        assert(joinExchanges.size == 2)
-        joinExchanges.foreach(e => assert(e.outputPartitioning.numPartitions == 15))
-        // shuffle query size: 1742 509
-        assert(rebalanceExchanges.size == 1)
-        assert(rebalanceExchanges.head.outputPartitioning.numPartitions == 4)
-      }
-
-      // hive table scan
       sql("ANALYZE TABLE table1 COMPUTE STATISTICS")
       sql("ANALYZE TABLE table2 COMPUTE STATISTICS")
-      withSQLConf(
-        AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1",
-        COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> "2",
-        ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "500",
-        CONVERT_METASTORE_PARQUET.key -> "false") {
-        val df = sql("insert overwrite table3 " +
-          " select a.c1 as c1, b.c2 as c2 from table1 a join table2 b on a.c1 = b.c1")
 
-        val exchanges = collectExchanges(df.queryExecution.executedPlan)
-        val (joinExchanges, rebalanceExchanges) = exchanges
-          .partition(_.shuffleOrigin == ENSURE_REQUIREMENTS)
-        // table scan size: 7369 3287
-        assert(joinExchanges.size == 2)
-        joinExchanges.foreach(e => assert(e.outputPartitioning.numPartitions == 15))
-        // shuffle query size: 4820 720
-        assert(rebalanceExchanges.size == 1)
-        assert(rebalanceExchanges.head.outputPartitioning.numPartitions == 10)
+      val initialPartitionNum: Int = 2
+      Seq(false, true).foreach { dynamicShufflePartitions =>
+        val maxDynamicShufflePartitions = if (dynamicShufflePartitions) {
+          Seq(8, 2000)
+        } else {
+          Seq(2000)
+        }
+        maxDynamicShufflePartitions.foreach { maxDynamicShufflePartitionNum =>
+          withSQLConf(
+            DYNAMIC_SHUFFLE_PARTITIONS.key -> dynamicShufflePartitions.toString,
+            DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM.key -> maxDynamicShufflePartitionNum.toString,
+            AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1",
+            COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> initialPartitionNum.toString,
+            ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "500") {
+            val df = sql("insert overwrite table3 " +
+              " select a.c1 as c1, b.c2 as c2 from table1 a join table2 b on a.c1 = b.c1")
+
+            val exchanges = collectExchanges(df.queryExecution.executedPlan)
+            val (joinExchanges, rebalanceExchanges) = exchanges
+              .partition(_.shuffleOrigin == ENSURE_REQUIREMENTS)
+            // table scan size: 7369 3287
+            assert(joinExchanges.size == 2)
+            if (dynamicShufflePartitions) {
+              joinExchanges.foreach(e =>
+                assert(e.outputPartitioning.numPartitions
+                  == Math.min(15, maxDynamicShufflePartitionNum)))
+            } else {
+              joinExchanges.foreach(e =>
+                assert(e.outputPartitioning.numPartitions == initialPartitionNum))
+            }
+
+            assert(rebalanceExchanges.size == 1)
+            if (dynamicShufflePartitions) {
+              // shuffle query size: 1742 509
+              if (maxDynamicShufflePartitionNum == 8) {
+                assert(rebalanceExchanges.head.outputPartitioning.numPartitions ==
+                  Math.min(3, maxDynamicShufflePartitionNum))
+              } else {
+                // shuffle query size: 1424 451
+                assert(rebalanceExchanges.head.outputPartitioning.numPartitions ==
+                  Math.min(4, maxDynamicShufflePartitionNum))
+              }
+            } else {
+              assert(
+                rebalanceExchanges.head.outputPartitioning.numPartitions == initialPartitionNum)
+            }
+          }
+
+          // hive table scan
+          withSQLConf(
+            DYNAMIC_SHUFFLE_PARTITIONS.key -> dynamicShufflePartitions.toString,
+            DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM.key -> maxDynamicShufflePartitionNum.toString,
+            AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1",
+            COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> initialPartitionNum.toString,
+            ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "500",
+            CONVERT_METASTORE_PARQUET.key -> "false") {
+            val df = sql("insert overwrite table3 " +
+              " select a.c1 as c1, b.c2 as c2 from table1 a join table2 b on a.c1 = b.c1")
+
+            val exchanges = collectExchanges(df.queryExecution.executedPlan)
+            val (joinExchanges, rebalanceExchanges) = exchanges
+              .partition(_.shuffleOrigin == ENSURE_REQUIREMENTS)
+            // table scan size: 7369 3287
+            assert(joinExchanges.size == 2)
+            if (dynamicShufflePartitions) {
+              joinExchanges.foreach(e =>
+                assert(e.outputPartitioning.numPartitions ==
+                  Math.min(15, maxDynamicShufflePartitionNum)))
+            } else {
+              joinExchanges.foreach(e =>
+                assert(e.outputPartitioning.numPartitions == initialPartitionNum))
+            }
+            // shuffle query size: 4820 720
+            assert(rebalanceExchanges.size == 1)
+            if (dynamicShufflePartitions) {
+              assert(rebalanceExchanges.head.outputPartitioning.numPartitions
+                == Math.min(10, maxDynamicShufflePartitionNum))
+            } else {
+              assert(rebalanceExchanges.head.outputPartitioning.numPartitions ==
+                initialPartitionNum)
+            }
+          }
+        }
       }
     }
   }
