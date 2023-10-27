@@ -42,24 +42,24 @@ import org.apache.kyuubi.util.AssertionUtils._
 class JsonSpecFileGenerator extends AnyFunSuite {
   // scalastyle:on
   test("check spec json files") {
-    writeCommandSpecJson("database", DatabaseCommands.data)
+    writeCommandSpecJson("database", Seq(DatabaseCommands.data))
     writeCommandSpecJson(
       "table",
-      TableCommands.data ++ IcebergCommands.data ++ HudiCommands.data ++ DeltaCommands.data)
-    writeCommandSpecJson("function", FunctionCommands.data)
-    writeCommandSpecJson("scan", Scans.data)
+      Seq(TableCommands.data, IcebergCommands.data, HudiCommands.data, DeltaCommands.data))
+    writeCommandSpecJson("function", Seq(FunctionCommands.data))
+    writeCommandSpecJson("scan", Seq(Scans.data))
   }
 
   def writeCommandSpecJson[T <: CommandSpec](
       commandType: String,
-      specArr: Array[T]): Unit = {
+      specArr: Seq[Array[T]]): Unit = {
     val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
       .split("target").head
     val filename = s"${commandType}_command_spec.json"
     val filePath = Paths.get(pluginHome, "src", "main", "resources", filename)
 
     val generatedStr = mapper.writerWithDefaultPrettyPrinter()
-      .writeValueAsString(specArr.sortBy(_.classname))
+      .writeValueAsString(specArr.flatMap(_.sortBy(_.classname)))
 
     if (sys.env.get("KYUUBI_UPDATE").contains("1")) {
       // scalastyle:off println

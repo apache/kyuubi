@@ -15,19 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi
+const routes = [
+  {
+    path: '/lab',
+    name: 'lab',
+    component: () => import('@/views/lab/index.vue')
+  }
+]
 
-import java.util.concurrent.atomic.AtomicInteger
-
-case class SparkStageAttempt(stageId: Int, stageAttemptId: Int) {
-  override def toString: String = s"Stage $stageId (Attempt $stageAttemptId)"
-}
-
-class SparkStageInfo(val stageId: Int, val numTasks: Int) {
-  val numActiveTasks = new AtomicInteger(0)
-  val numCompleteTasks = new AtomicInteger(0)
-}
-
-class SparkJobInfo(val numStages: Int, val stageIds: Set[Int]) {
-  val numCompleteStages = new AtomicInteger(0)
-}
+export default routes

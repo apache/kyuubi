@@ -22,13 +22,16 @@ import scala.collection.JavaConverters.asScalaBufferConverter
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TOperationHandle}
 import org.scalatest.time.SpanSugar._
 
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_SPARK_LISTENER_ENABLED
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class SQLOperationListenerSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
-  override def withKyuubiConf: Map[String, String] = Map.empty
+  override def withKyuubiConf: Map[String, String] = Map(
+    KyuubiConf.ENGINE_SPARK_SHOW_PROGRESS.key -> "true",
+    KyuubiConf.ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL.key -> "200")
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -50,6 +53,24 @@ class SQLOperationListenerSuite extends WithSparkSQLEngine with HiveJDBCTestHelp
         assert(logs.exists(_.contains("started with 3 tasks")))
         assert(logs.exists(_.contains("Finished stage:")))
         assert(logs.exists(_.contains(s"Job ${0 + initJobId} succeeded")))
+      }
+    }
+  }
+
+  test("operation listener with progress job info") {
+    val sql = "SELECT java_method('java.lang.Thread', 'sleep', 10000l) FROM range(1, 3, 1, 2);"
+    withSessionHandle { (client, handle) =>
+      val req = new TExecuteStatementReq()
+      req.setSessionHandle(handle)
+      req.setStatement(sql)
+      val tExecuteStatementResp = client.ExecuteStatement(req)
+      val opHandle = tExecuteStatementResp.getOperationHandle
+      val fetchResultsReq = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1000)
+      fetchResultsReq.setFetchType(1.toShort)
+      eventually(timeout(90.seconds), interval(500.milliseconds)) {
+        val resultsResp = client.FetchResults(fetchResultsReq)
+        val logs = resultsResp.getResults.getColumns.get(0).getStringVal.getValues.asScala
+        assert(logs.exists(_.matches(".*\\[Job .* Stages\\] \\[Stage .*\\]")))
       }
     }
   }

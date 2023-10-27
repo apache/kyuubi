@@ -15,19 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi
+import { defineStore } from 'pinia'
+import { Theme } from './type'
 
-import java.util.concurrent.atomic.AtomicInteger
-
-case class SparkStageAttempt(stageId: Int, stageAttemptId: Int) {
-  override def toString: String = s"Stage $stageId (Attempt $stageAttemptId)"
-}
-
-class SparkStageInfo(val stageId: Int, val numTasks: Int) {
-  val numActiveTasks = new AtomicInteger(0)
-  val numCompleteTasks = new AtomicInteger(0)
-}
-
-class SparkJobInfo(val numStages: Int, val stageIds: Set[Int]) {
-  val numCompleteStages = new AtomicInteger(0)
-}
+export const useEditorStore = defineStore({
+  id: 'editor',
+  state: (): { theme: Theme } => ({
+    theme: 'light'
+  }),
+  persist: true,
+  getters: {
+    getCurrentTheme(): Theme {
+      return this.theme
+    }
+  },
+  actions: {
+    setCurrentTheme(theme: Theme): void {
+      this.theme = theme
+    }
+  }
+})
