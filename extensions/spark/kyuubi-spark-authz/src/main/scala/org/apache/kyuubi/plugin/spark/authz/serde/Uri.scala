@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz
+package org.apache.kyuubi.plugin.spark.authz.serde
 
-object PrivilegeObjectType extends Enumeration {
-  type PrivilegeObjectType = Value
-
-  val DATABASE, TABLE_OR_VIEW, FUNCTION, LOCAL_URI, DFS_URL = Value
-}
+/**
+ * :: Developer API ::
+ *
+ * Represents a URI identity
+ * @param path
+ */
+case class Uri(path: String)

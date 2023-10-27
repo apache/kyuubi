@@ -34,6 +34,7 @@ import org.apache.kyuubi.plugin.spark.authz.serde.FunctionTypeExtractor.function
 import org.apache.kyuubi.plugin.spark.authz.serde.QueryExtractor.queryExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.TableExtractor.tableExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.TableTypeExtractor.tableTypeExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.URIExtractor.uriExtractors
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 package object serde {
@@ -129,6 +130,7 @@ package object serde {
       case c if classOf[FunctionExtractor].isAssignableFrom(c) => functionExtractors
       case c if classOf[FunctionTypeExtractor].isAssignableFrom(c) => functionTypeExtractors
       case c if classOf[ActionTypeExtractor].isAssignableFrom(c) => actionTypeExtractors
+      case c if classOf[URIExtractor].isAssignableFrom(c) => uriExtractors
       case _ => throw new IllegalArgumentException(s"Unknown extractor type: $ct")
     }
     extractors(extractorKey).asInstanceOf[T]

@@ -15,10 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz
+package org.apache.kyuubi.plugin.spark.authz.serde
 
-object PrivilegeObjectType extends Enumeration {
-  type PrivilegeObjectType = Value
+trait URIExtractor extends (AnyRef => Option[Uri]) with Extractor
 
-  val DATABASE, TABLE_OR_VIEW, FUNCTION, LOCAL_URI, DFS_URL = Value
+object URIExtractor {
+  val uriExtractors: Map[String, URIExtractor] = {
+    loadExtractorsToMap[URIExtractor]
+  }
+}
+
+/**
+ * String
+ */
+class StringURIExtractor extends URIExtractor {
+  override def apply(v1: AnyRef): Option[Uri] = {
+    Some(Uri(v1.asInstanceOf[String]))
+  }
 }
