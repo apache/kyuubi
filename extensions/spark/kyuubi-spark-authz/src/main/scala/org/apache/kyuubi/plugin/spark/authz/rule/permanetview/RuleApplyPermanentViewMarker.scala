@@ -21,15 +21,14 @@ import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.catalyst.rules.Rule
 
-import org.apache.kyuubi.plugin.spark.authz.rule.{RuleAuthorization, RuleEliminatePermanentViewMarker}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 /**
  * Adding [[PermanentViewMarker]] for permanent views
  * for marking catalogTable of views used by privilege checking
- * in [[RuleAuthorization]].
+ * in [[org.apache.kyuubi.plugin.spark.authz.rule.RuleAuthorization]].
  * [[PermanentViewMarker]] must be transformed up later
- * in [[RuleEliminatePermanentViewMarker]] optimizer.
+ * in [[org.apache.kyuubi.plugin.spark.authz.rule.RuleEliminatePermanentViewMarker]] optimizer.
  */
 class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
 
