@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.rule
+package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -27,9 +27,8 @@ import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 
 import org.apache.kyuubi.plugin.spark.authz._
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
-import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessRequest, AccessResource, AccessType, SparkRangerAuditHandler}
+import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization._
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
-import org.apache.kyuubi.plugin.spark.authz.rule.RuleAuthorization._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {

@@ -26,7 +26,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 /**
  * Adding [[PermanentViewMarker]] for permanent views
  * for marking catalogTable of views used by privilege checking
- * in [[org.apache.kyuubi.plugin.spark.authz.rule.RuleAuthorization]].
+ * in [[org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization]].
  * [[PermanentViewMarker]] must be transformed up later
  * in [[org.apache.kyuubi.plugin.spark.authz.rule.RuleEliminatePermanentViewMarker]] optimizer.
  */

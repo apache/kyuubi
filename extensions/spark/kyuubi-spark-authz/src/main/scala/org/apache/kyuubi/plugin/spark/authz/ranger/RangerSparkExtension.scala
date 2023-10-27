@@ -19,7 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.plugin.spark.authz.rule.{RuleAuthorization, RuleEliminateMarker, RuleEliminatePermanentViewMarker}
+import org.apache.kyuubi.plugin.spark.authz.rule.{RuleEliminateMarker, RuleEliminatePermanentViewMarker}
 import org.apache.kyuubi.plugin.spark.authz.rule.config.AuthzConfigurationChecker
 import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{RuleApplyDataMaskingStage0, RuleApplyDataMaskingStage1}
 import org.apache.kyuubi.plugin.spark.authz.rule.permanetview.RuleApplyPermanentViewMarker
