@@ -249,10 +249,10 @@ class HudiDataSourceV2RelationTableExtractor extends TableExtractor {
     invokeAs[LogicalPlan](v1, "table") match {
       // Match multipartIdentifier with tableAlias
       case SubqueryAlias(_, SubqueryAlias(identifier, _)) =>
-        new StringTableExtractor().apply(spark, identifier.toString())
+        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
       // Match multipartIdentifier without tableAlias
       case SubqueryAlias(identifier, _) =>
-        new StringTableExtractor().apply(spark, identifier.toString())
+        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
     }
   }
 }
@@ -262,10 +262,10 @@ class HudiMergeIntoTargetTableExtractor extends TableExtractor {
     invokeAs[LogicalPlan](v1, "targetTable") match {
       // Match multipartIdentifier with tableAlias
       case SubqueryAlias(_, SubqueryAlias(identifier, relation)) =>
-        new StringTableExtractor().apply(spark, identifier.toString())
+        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
       // Match multipartIdentifier without tableAlias
       case SubqueryAlias(identifier, _) =>
-        new StringTableExtractor().apply(spark, identifier.toString())
+        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
     }
   }
 }
