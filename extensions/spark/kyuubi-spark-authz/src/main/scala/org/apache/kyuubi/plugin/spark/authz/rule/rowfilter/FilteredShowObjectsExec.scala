@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.plugin.spark.authz.rule.showobject
+package org.apache.kyuubi.plugin.spark.authz.rule.rowfilter
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkContext

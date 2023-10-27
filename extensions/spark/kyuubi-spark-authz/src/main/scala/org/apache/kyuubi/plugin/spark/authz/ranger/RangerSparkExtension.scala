@@ -19,11 +19,11 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.plugin.spark.authz.rule.{AuthzConfigurationChecker, RuleAuthorization, RuleEliminateMarker, RuleEliminatePermanentViewMarker}
+import org.apache.kyuubi.plugin.spark.authz.rule.{RuleAuthorization, RuleEliminateMarker, RuleEliminatePermanentViewMarker}
+import org.apache.kyuubi.plugin.spark.authz.rule.config.AuthzConfigurationChecker
 import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{RuleApplyDataMaskingStage0, RuleApplyDataMaskingStage1}
 import org.apache.kyuubi.plugin.spark.authz.rule.permanetview.RuleApplyPermanentViewMarker
-import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.RuleApplyRowFilter
-import org.apache.kyuubi.plugin.spark.authz.rule.showobject.{FilterDataSourceV2Strategy, RuleReplaceShowObjectCommands}
+import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.{FilterDataSourceV2Strategy, RuleApplyRowFilter, RuleReplaceShowObjectCommands}
 
 /**
  * ACL Management for Apache Spark SQL with Apache Ranger, enabling:
