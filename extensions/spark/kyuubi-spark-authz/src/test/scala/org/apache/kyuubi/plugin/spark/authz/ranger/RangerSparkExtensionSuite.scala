@@ -941,4 +941,27 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("[KYUUBI #xxx]") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val table2 = "table2"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1(id int, scope int)"))
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table2(id int, age int)"))
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(
+              s"""
+                 |SELECT id, 1 as age FROM $db1.$table1
+                 |UNION
+                 |SELECT t1.id, t2.age FROM $db1.$table1 t1
+                 |JOIN $db1.$table2 t2
+                 |ON t1.id = t2.id
+                 |""".stripMargin).show()))("xxx")
+      }
+    }
+  }
 }

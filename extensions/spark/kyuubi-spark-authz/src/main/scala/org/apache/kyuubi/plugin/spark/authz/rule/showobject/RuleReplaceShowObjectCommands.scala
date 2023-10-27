@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.ranger
+package org.apache.kyuubi.plugin.spark.authz.rule.showobject
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSession}
@@ -25,16 +25,18 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.{RunnableCommand, ShowColumnsCommand}
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
-import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, ObjectFilterPlaceHolder, WithInternalChildren}
+import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessRequest, AccessResource, AccessType, SparkRangerAdminPlugin}
+import org.apache.kyuubi.plugin.spark.authz.rule.showobject
+import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, WithInternalChildren}
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
     case r: RunnableCommand if r.nodeName == "ShowTablesCommand" => FilteredShowTablesCommand(r)
     case n: LogicalPlan if n.nodeName == "ShowTables" =>
-      ObjectFilterPlaceHolder(n)
+      showobject.ObjectFilterPlaceHolder(n)
     case n: LogicalPlan if n.nodeName == "ShowNamespaces" =>
-      ObjectFilterPlaceHolder(n)
+      showobject.ObjectFilterPlaceHolder(n)
     case r: RunnableCommand if r.nodeName == "ShowFunctionsCommand" =>
       FilteredShowFunctionsCommand(r)
     case r: RunnableCommand if r.nodeName == "ShowColumnsCommand" =>
