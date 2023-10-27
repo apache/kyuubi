@@ -79,16 +79,13 @@ object JettyServer extends Logging {
 
   def apply(name: String, host: String, port: Int, kyuubiConf: KyuubiConf): JettyServer = {
 
-    // set Jetty Server pool size
     val poolSize = kyuubiConf.get(FRONTEND_REST_MAX_WORKER_THREADS)
     val pool = new QueuedThreadPool(poolSize)
     pool.setName(name)
     pool.setDaemon(true)
 
-    // 启动一个eclipse jetty server
     val server = new Server(pool)
 
-    // set Error handler for Jetty Server
     val errorHandler = new ErrorHandler()
     errorHandler.setShowStacks(true)
     errorHandler.setServer(server)
@@ -111,28 +108,28 @@ object JettyServer extends Logging {
       serverExecutor: ScheduledExecutorScheduler,
       conf: KyuubiConf): ServerConnector = {
     val httpConf = new HttpConfiguration()
-    val useSsl = conf.get(FRONTEND_JETTYSERVER_USE_SSL)
+    val useSsl = conf.get(FRONTEND_REST_USE_SSL)
 
     val connector = {
       if (useSsl) {
-        val keyStorePath = conf.get(FRONTEND_JETTYSERVER_SSL_KEYSTORE_PATH)
+        val keyStorePath = conf.get(FRONTEND_REST_SSL_KEYSTORE_PATH)
 
         if (keyStorePath.isEmpty) {
-          throw new IllegalArgumentException(FRONTEND_JETTYSERVER_SSL_KEYSTORE_PATH.key +
+          throw new IllegalArgumentException(FRONTEND_REST_SSL_KEYSTORE_PATH.key +
             " Not configured for SSL connection, please set the key with: " +
-            FRONTEND_JETTYSERVER_SSL_KEYSTORE_PATH.doc)
+            FRONTEND_REST_SSL_KEYSTORE_PATH.doc)
         }
 
-        val keyStorePassword = conf.get(FRONTEND_JETTYSERVER_SSL_KEYSTORE_PASSWORD)
+        val keyStorePassword = conf.get(FRONTEND_REST_SSL_KEYSTORE_PASSWORD)
         if (keyStorePassword.isEmpty) {
-          throw new IllegalArgumentException(FRONTEND_JETTYSERVER_SSL_KEYSTORE_PASSWORD.key +
+          throw new IllegalArgumentException(FRONTEND_REST_SSL_KEYSTORE_PASSWORD.key +
             " Not configured for SSL connection. please set the key with: " +
-            FRONTEND_JETTYSERVER_SSL_KEYSTORE_PASSWORD.doc)
+            FRONTEND_REST_SSL_KEYSTORE_PASSWORD.doc)
         }
 
         val sslContextFactory = new SslContextFactory.Server
-        val excludedProtocols = conf.get(FRONTEND_JETTYSERVER_SSL_PROTOCOL_BLACKLIST)
-        val excludeCipherSuites = conf.get(FRONTEND_JETTYSERVER_SSL_EXCLUDE_CIPHER_SUITES)
+        val excludedProtocols = conf.get(FRONTEND_REST_SSL_PROTOCOL_BLACKLIST)
+        val excludeCipherSuites = conf.get(FRONTEND_REST_SSL_EXCLUDE_CIPHER_SUITES)
         val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
         val keyStoreAlgorithm = conf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
 

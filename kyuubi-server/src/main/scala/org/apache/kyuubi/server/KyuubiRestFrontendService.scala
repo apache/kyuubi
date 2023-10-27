@@ -72,9 +72,6 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
-    // server 是 JettyServer类，
-    // JettyServer.server 是 eclipse jetty类
-    // JettyServer.connector 是 eclipse jetty server的 serverConnector类
     server = JettyServer(
       getName,
       host,
@@ -95,7 +92,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private def startInternal(): Unit = {
     val contextHandler = ApiRootResource.getServletHandler(this)
     val holder = new FilterHolder(new AuthenticationFilter(conf))
-    // contextHandler 是一个
+
     contextHandler.addFilter(holder, "/v1/*", EnumSet.allOf(classOf[DispatcherType]))
     val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))
