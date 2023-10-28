@@ -50,13 +50,13 @@ class SQLOperationListener(
   private var executionId: Option[Long] = None
 
   private lazy val consoleProgressBar =
-    if (getSessionConf(ENGINE_SPARK_SHOW_PROGRESS, spark)) {
+    if (getSessionConf(ENGINE_SPARK_SHOW_PROGRESS, spark, operation.getSession)) {
       Some(new SparkConsoleProgressBar(
         operation,
         activeJobs,
         activeStages,
-        getSessionConf(ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL, spark),
-        getSessionConf(ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT, spark)))
+        getSessionConf(ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL, spark, operation.getSession),
+        getSessionConf(ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT, spark, operation.getSession)))
     } else {
       None
     }
