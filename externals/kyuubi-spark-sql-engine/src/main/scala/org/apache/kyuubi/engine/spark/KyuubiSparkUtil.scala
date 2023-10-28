@@ -112,6 +112,6 @@ object KyuubiSparkUtil extends Logging {
       .orElse(SparkSQLEngine.kyuubiConf.getOption(configEntry.key))
       .orElse(session.sessionManager.getConf.getOption(configEntry.key))
       .map(configEntry.valueConverter)
-      .getOrElse(null, asInstanceOf[T])
+      .getOrElse(null.asInstanceOf[T])
   }
 }
