@@ -113,12 +113,12 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       if (i == 1) {
         assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).isEmpty)
       } else {
-        assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+        assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
       }
       rule.apply(logicalPlan)
     }
 
-    assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+    assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
   }
 
   test("[KYUUBI #3226]: Another session should also check even if the plan is cached.") {
@@ -140,7 +140,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           // session1: first query, should auth once.[LogicalRelation]
           val df = sql(select)
           val plan1 = df.queryExecution.optimizedPlan
-          assert(plan1.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+          assert(plan1.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
 
           // cache
           df.cache()
@@ -148,7 +148,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           // session1: second query, should auth once.[InMemoryRelation]
           // (don't need to check in again, but it's okay to check in once)
           val plan2 = sql(select).queryExecution.optimizedPlan
-          assert(plan1 != plan2 && plan2.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+          assert(plan1 != plan2 && plan2.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
 
           // session2: should auth once.
           val otherSessionDf = spark.newSession().sql(select)
@@ -159,7 +159,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           // make sure it use cache.
           assert(plan3.isInstanceOf[InMemoryRelation])
           // auth once only.
-          assert(plan3.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+          assert(plan3.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
         })
     }
   }
@@ -949,6 +949,50 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         interceptContains[AccessControlException](
           doAs(someone, sql(s"SELECT count(cnt) FROM $db1.$view2 WHERE sum_id > 10").show()))(
           s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
+      }
+    }
+  }
+
+  test("[KYUUBI #5503][AUTHZ] Check plan auth checked should not set tag to all child nodes") {
+    assume(isSparkV32OrGreater, "Spark 3.1 not support lateral subquery.")
+    val db1 = defaultDb
+    val table1 = "table1"
+    val perm_view = "perm_view"
+    withSingleCallEnabled {
+      withCleanTmpResources(
+        Seq((s"$db1.$table1", "table"), (s"$db1.$perm_view", "view"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        doAs(admin, sql(s"CREATE VIEW $db1.$perm_view AS SELECT * FROM $db1.$table1"))
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(
+              s"""
+                 |SELECT t1.id
+                 |FROM $db1.$table1 t1,
+                 |LATERAL (
+                 |  SELECT *
+                 |  FROM $db1.$perm_view t2
+                 |  WHERE t1.id = t2.id
+                 |)
+                 |""".stripMargin).show()))(
+          s"does not have [select] privilege on " +
+            s"[$db1/$perm_view/id,$db1/$perm_view/scope]")
+        interceptContains[AccessControlException](
+          doAs(
+            permViewOnlyUser,
+            sql(
+              s"""
+                 |SELECT t1.id
+                 |FROM $db1.$table1 t1,
+                 |LATERAL (
+                 |  SELECT *
+                 |  FROM $db1.$perm_view t2
+                 |  WHERE t1.id = t2.id
+                 |)
+                 |""".stripMargin).show()))(
+          s"does not have [select] privilege on " +
+            s"[$db1/$table1/id,$db1/$table1/scope]")
       }
     }
   }

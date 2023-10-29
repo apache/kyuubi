@@ -30,6 +30,8 @@ import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization._
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
+
 class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan match {
@@ -41,7 +43,7 @@ class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
 
 object RuleAuthorization {
 
-  val KYUUBI_AUTHZ_TAG = TreeNodeTag[Boolean]("__KYUUBI_AUTHZ_TAG")
+  val KYUUBI_AUTHZ_TAG = TreeNodeTag[Unit]("__KYUUBI_AUTHZ_TAG")
 
   private def checkPrivileges(spark: SparkSession, plan: LogicalPlan): LogicalPlan = {
     val auditHandler = new SparkRangerAuditHandler
@@ -97,13 +99,19 @@ object RuleAuthorization {
   }
 
   private def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUp { case p =>
-      p.setTagValue(KYUUBI_AUTHZ_TAG, true)
-      p
+    plan match {
+      case _: PermanentViewMarker =>
+        plan.transformUp { case p =>
+          p.setTagValue(KYUUBI_AUTHZ_TAG, ())
+          p
+        }
+      case _ =>
+        plan.setTagValue(KYUUBI_AUTHZ_TAG, ())
     }
+    plan
   }
 
   private def isAuthChecked(plan: LogicalPlan): Boolean = {
-    plan.find(_.getTagValue(KYUUBI_AUTHZ_TAG).contains(true)).nonEmpty
+    plan.find(_.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty).nonEmpty
   }
 }
