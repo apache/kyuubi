@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.rule
+package org.apache.kyuubi.plugin.spark.authz.util
 
 import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 
-import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{DataMaskingStage0Marker, DataMaskingStage1Marker}
-import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.RowFilterMarker
+import org.apache.kyuubi.plugin.spark.authz.ranger.datamasking.{DataMaskingStage0Marker, DataMaskingStage1Marker}
+import org.apache.kyuubi.plugin.spark.authz.ranger.rowfilter.RowFilterMarker
 
 class RuleEliminateMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {

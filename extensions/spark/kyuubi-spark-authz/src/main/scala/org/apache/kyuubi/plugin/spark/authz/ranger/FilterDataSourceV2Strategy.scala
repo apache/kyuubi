@@ -14,11 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.plugin.spark.authz.rule.rowfilter
+package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.SparkPlan
+
+import org.apache.kyuubi.plugin.spark.authz.util.ObjectFilterPlaceHolder
 
 class FilterDataSourceV2Strategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {

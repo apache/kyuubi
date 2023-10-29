@@ -1,5 +1,5 @@
 [ {
-  "classname" : "org.apache.kyuubi.plugin.spark.authz.rule.permanetview.PermanentViewMarker",
+  "classname" : "org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker",
   "scanDescs" : [ {
     "fieldName" : "catalogTable",
     "fieldExtractor" : "CatalogTableTableExtractor",

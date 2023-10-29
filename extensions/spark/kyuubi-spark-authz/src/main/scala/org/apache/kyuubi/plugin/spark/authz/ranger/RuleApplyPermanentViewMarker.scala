@@ -15,20 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.rule.permanentview
+package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.catalyst.rules.Rule
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 
 /**
- * Adding [[PermanentViewMarker]] for permanent views
+ * Adding [[org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker]] for permanent views
  * for marking catalogTable of views used by privilege checking
  * in [[org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization]].
- * [[PermanentViewMarker]] must be transformed up later
- * in [[org.apache.kyuubi.plugin.spark.authz.rule.RuleEliminatePermanentViewMarker]] optimizer.
+ * [[org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker]] must be transformed up later
+ * in [[org.apache.kyuubi.plugin.spark.authz.util.RuleEliminateViewMarker]] optimizer.
  */
 class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
 

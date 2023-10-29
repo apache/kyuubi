@@ -15,24 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.rule.permanentview
+package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
 
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.expressions.{Attribute, ExprId}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
 import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
+case class DataMaskingStage0Marker(child: LogicalPlan, scan: LogicalPlan)
+  extends UnaryNode with WithInternalChild {
 
-case class PermanentViewMarker(
-    child: LogicalPlan,
-    catalogTable: CatalogTable,
-    visitColNames: Seq[String],
-    isSubqueryExpressionPlaceHolder: Boolean = false) extends UnaryNode
-  with WithInternalChild {
+  def exprToMaskers(): Map[ExprId, Attribute] = {
+    scan.output.map(_.exprId).zip(child.output).flatMap { case (id, expr) =>
+      if (id == expr.exprId) None else Some(id -> expr)
+    }.toMap
+  }
 
   override def output: Seq[Attribute] = child.output
 
-  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
-    copy(child = newChild)
+  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = copy(child = newChild)
 
 }

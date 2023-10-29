@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.rule
+package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.SparkSession
