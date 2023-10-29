@@ -22,6 +22,7 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
+import org.apache.kyuubi.plugin.spark.authz.ranger.DeltaCatalogRangerSparkExtensionSuite._
 import org.apache.kyuubi.tags.DeltaTest
 import org.apache.kyuubi.util.AssertionUtils._
 
@@ -31,6 +32,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 @DeltaTest
 class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  override protected val sqlExtensions: String = "io.delta.sql.DeltaSparkSessionExtension"
 
   val namespace1 = deltaNamespace
   val table1 = "table1_delta"
@@ -41,9 +43,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   override def beforeAll(): Unit = {
-    spark.conf.set(
-      s"spark.sql.catalog.$sparkCatalog",
-      "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+    spark.conf.set(s"spark.sql.catalog.$sparkCatalog", deltaCatalogClassName)
     spark.conf.set(
       s"spark.sql.catalog.$sparkCatalog.warehouse",
       Utils.createTempDir("delta-hadoop").toString)
@@ -163,7 +163,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(
           someone,
           sql(s"ALTER TABLE $namespace1.$table1" +
-            s" REPLACE COLUMNs (id INT, firstName STRING)")))(
+            s" REPLACE COLUMNS (id INT, firstName STRING)")))(
         s"does not have [alter] privilege on [$namespace1/$table1]")
 
       // rename column
@@ -180,4 +180,8 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s"does not have [alter] privilege on [$namespace1/$table1]")
     }
   }
+}
+
+object DeltaCatalogRangerSparkExtensionSuite {
+  val deltaCatalogClassName: String = "org.apache.spark.sql.delta.catalog.DeltaCatalog"
 }
