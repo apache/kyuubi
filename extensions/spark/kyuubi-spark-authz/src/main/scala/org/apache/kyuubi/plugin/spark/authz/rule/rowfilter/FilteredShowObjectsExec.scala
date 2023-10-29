@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.plugin.spark.authz.ranger
+package org.apache.kyuubi.plugin.spark.authz.rule.rowfilter
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkContext
@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.{LeafExecNode, SparkPlan}
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessRequest, AccessResource, AccessType, SparkRangerAdminPlugin}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 
 trait FilteredShowObjectsExec extends LeafExecNode {
