@@ -103,8 +103,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("create or replace table") {
-    withCleanTmpResources(
-      Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
       val createOrReplaceTableSql =
         s"""
            |CREATE OR REPLACE TABLE $namespace1.$table1 (
@@ -122,6 +121,63 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(someone, sql(createOrReplaceTableSql))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
       doAs(admin, createOrReplaceTableSql)
+    }
+  }
+
+  test("alter table") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1 (
+             |  id INT,
+             |  firstName STRING,
+             |  middleName STRING,
+             |  lastName STRING,
+             |  gender STRING,
+             |  birthDate TIMESTAMP,
+             |  ssn STRING,
+             |  salary INT
+             |)
+             |USING DELTA
+             |PARTITIONED BY (gender)
+             |""".stripMargin))
+
+      // add columns
+      interceptContains[AccessControlException](
+        doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS (age int)")))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
+
+      // change column
+      interceptContains[AccessControlException](
+        doAs(
+          someone,
+          sql(s"ALTER TABLE $namespace1.$table1" +
+            s" CHANGE COLUMN gender gender STRING AFTER birthDate")))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
+
+      // replace columns
+      interceptContains[AccessControlException](
+        doAs(
+          someone,
+          sql(s"ALTER TABLE $namespace1.$table1" +
+            s" REPLACE COLUMNs (id INT, firstName STRING)")))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
+
+      // rename column
+      interceptContains[AccessControlException](
+        doAs(
+          someone,
+          sql(s"ALTER TABLE $namespace1.$table1" +
+            s" RENAME COLUMN birthDate TO dateOfBirth")))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
+
+      // drop column
+      interceptContains[AccessControlException](
+        doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 DROP COLUMN birthDate")))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
     }
   }
 }
