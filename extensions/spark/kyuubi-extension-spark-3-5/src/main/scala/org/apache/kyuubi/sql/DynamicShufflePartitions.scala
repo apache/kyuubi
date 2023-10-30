@@ -53,13 +53,14 @@ case class DynamicShufflePartitions(spark: SparkSession) extends Rule[SparkPlan]
           p.children.flatMap(collectScanSizes)
       }
 
-      val targetSize = conf.getConf(ADVISORY_PARTITION_SIZE_IN_BYTES)
-      val sumScanSizes = collectScanSizes(plan) match {
-        case sizes if sizes.nonEmpty => sizes.sum
-        case _ => targetSize
+      val scanSizes = collectScanSizes(plan)
+      if (scanSizes.isEmpty) {
+        return plan
       }
+
+      val targetSize = conf.getConf(ADVISORY_PARTITION_SIZE_IN_BYTES)
       val targetShufflePartitions = Math.min(
-        Math.max(sumScanSizes / targetSize + 1, conf.numShufflePartitions).toInt,
+        Math.max(scanSizes.sum / targetSize + 1, conf.numShufflePartitions).toInt,
         maxDynamicShufflePartitions)
 
       val newPlan = plan transformUp {
