@@ -2718,7 +2718,9 @@ object KyuubiConf {
   val SERVER_ADMINISTRATORS: ConfigEntry[Set[String]] =
     buildConf("kyuubi.server.administrators")
       .doc("Comma-separated list of Kyuubi service administrators. " +
-        "We use this config to grant admin permission to any service accounts.")
+        "We use this config to grant admin permission to any service accounts when " +
+        s"security mechanism is enabled. Note, when ${AUTHENTICATION_METHOD.key} is " +
+        "configured to NOSASL or NONE, everyone is treated as administrator.")
       .version("1.8.0")
       .serverOnly
       .stringConf
