@@ -58,6 +58,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT).toInt
   private lazy val internalConnectTimeout =
     fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT).toInt
+  private lazy val internalSecurityEnabled =
+    fe.getConf.get(ENGINE_SECURITY_ENABLED)
 
   private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
     KyuubiServer.kyuubiServer.getConf.get(BATCH_SUBMITTER_ENABLED) &&
@@ -67,7 +69,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private def getInternalRestClient(kyuubiInstance: String): InternalRestClient = {
     internalRestClients.computeIfAbsent(
       kyuubiInstance,
-      k => new InternalRestClient(k, internalSocketTimeout, internalConnectTimeout))
+      kyuubiInstance =>
+        new InternalRestClient(
+          kyuubiInstance,
+          internalSocketTimeout,
+          internalConnectTimeout,
+          internalSecurityEnabled))
   }
 
   private def sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
