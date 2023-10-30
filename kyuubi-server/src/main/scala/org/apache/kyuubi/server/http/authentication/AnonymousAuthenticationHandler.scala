@@ -24,46 +24,42 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
-import org.apache.kyuubi.service.authentication.{AuthenticationProviderFactory, AuthMethods}
-import org.apache.kyuubi.service.authentication.AuthTypes._
 
-class BasicAuthenticationHandler(basicAuthType: AuthType)
-  extends AuthenticationHandler with Logging {
+class AnonymousAuthenticationHandler extends AuthenticationHandler with Logging {
   import AuthenticationHandler._
 
   private var conf: KyuubiConf = _
 
+  // support extracting username from basic authentication header
   override val authScheme: AuthScheme = AuthSchemes.BASIC
 
   override def init(conf: KyuubiConf): Unit = {
     this.conf = conf
   }
 
-  override def authenticationSupported: Boolean = {
-    Set(LDAP, JDBC, CUSTOM).contains(basicAuthType)
+  override def authenticationSupported: Boolean = true
+
+  override def matchAuthScheme(authorization: String): Boolean = {
+    authorization == null || authorization.isEmpty || super.matchAuthScheme(authorization)
+  }
+
+  override def getAuthorization(request: HttpServletRequest): String = {
+    val authHeader = request.getHeader(AUTHORIZATION_HEADER)
+    if (authHeader == null || authHeader.isEmpty) {
+      ""
+    } else {
+      super.getAuthorization(request)
+    }
   }
 
   override def authenticate(
       request: HttpServletRequest,
       response: HttpServletResponse): String = {
-    var authUser: String = null
-
     val authorization = getAuthorization(request)
     val inputToken = Option(authorization).map(a => Base64.getDecoder.decode(a.getBytes()))
       .getOrElse(Array.empty[Byte])
     val creds = new String(inputToken, StandardCharsets.UTF_8).split(":")
-    if (creds.size < 2 || creds(0).trim.isEmpty || creds(1).trim.isEmpty) {
-      response.setHeader(WWW_AUTHENTICATE, authScheme.toString)
-      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
-    } else {
-      val Seq(user, password) = creds.toSeq.take(2)
-      val passwdAuthenticationProvider = AuthenticationProviderFactory
-        .getAuthenticationProvider(AuthMethods.withName(basicAuthType.toString), conf)
-      passwdAuthenticationProvider.authenticate(user, password)
-      response.setStatus(HttpServletResponse.SC_OK)
-      authUser = user
-    }
-    authUser
+    creds.take(1).headOption.filterNot(_.isEmpty).getOrElse("anonymous")
   }
 
   override def destroy(): Unit = {}

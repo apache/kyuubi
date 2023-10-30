@@ -103,7 +103,7 @@ trait AuthenticationHandler {
       authorization = authorization.stripPrefix(":").trim
     }
     // Authorization header must have a payload
-    if (authorization == null || authorization.isEmpty()) {
+    if (authorization == null || authorization.isEmpty) {
       throw new AuthenticationException(
         "Authorization header received from the client does not contain any data.")
     }
