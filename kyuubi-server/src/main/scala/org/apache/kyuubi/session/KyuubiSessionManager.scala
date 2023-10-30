@@ -58,7 +58,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     if (conf.isRESTEnabled) Some(new MetadataManager()) else None
 
   // lazy is required for plugins since the conf is null when this class initialization
-  lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
+  lazy val sessionConfAdvisor: Seq[SessionConfAdvisor] = PluginLoader.loadSessionConfAdvisor(conf)
   lazy val groupProvider: GroupProvider = PluginLoader.loadGroupProvider(conf)
 
   private var limiter: Option[SessionLimiter] = None

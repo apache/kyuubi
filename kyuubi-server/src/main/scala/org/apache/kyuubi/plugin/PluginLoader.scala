@@ -25,20 +25,22 @@ import org.apache.kyuubi.util.reflect.DynConstructors
 
 private[kyuubi] object PluginLoader {
 
-  def loadSessionConfAdvisor(conf: KyuubiConf): SessionConfAdvisor = {
+  def loadSessionConfAdvisor(conf: KyuubiConf): Seq[SessionConfAdvisor] = {
     val advisorClass = conf.get(KyuubiConf.SESSION_CONF_ADVISOR)
     if (advisorClass.isEmpty) {
-      return new DefaultSessionConfAdvisor()
+      return new DefaultSessionConfAdvisor() :: Nil
     }
-
-    try {
-      DynConstructors.builder.impl(advisorClass.get).buildChecked[SessionConfAdvisor].newInstance()
-    } catch {
-      case _: ClassCastException =>
-        throw new KyuubiException(
-          s"Class ${advisorClass.get} is not a child of '${classOf[SessionConfAdvisor].getName}'.")
-      case NonFatal(e) =>
-        throw new IllegalArgumentException(s"Error while instantiating '${advisorClass.get}': ", e)
+    advisorClass.get.map { advisorClassName =>
+      try {
+        DynConstructors.builder.impl(advisorClassName)
+          .buildChecked[SessionConfAdvisor].newInstance()
+      } catch {
+        case _: ClassCastException =>
+          throw new KyuubiException(
+            s"Class $advisorClassName is not a child of '${classOf[SessionConfAdvisor].getName}'.")
+        case NonFatal(e) =>
+          throw new IllegalArgumentException(s"Error while instantiating '$advisorClassName': ", e)
+      }
     }
   }
 
