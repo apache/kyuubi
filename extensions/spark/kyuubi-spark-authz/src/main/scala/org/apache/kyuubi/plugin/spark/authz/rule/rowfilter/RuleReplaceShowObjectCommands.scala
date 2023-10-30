@@ -36,7 +36,7 @@ class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
     case n: LogicalPlan if n.nodeName == "ShowTables" =>
       ObjectFilterPlaceHolder(n)
     case n: LogicalPlan if n.nodeName == "ShowNamespaces" =>
-      rowfilter.ObjectFilterPlaceHolder(n)
+      ObjectFilterPlaceHolder(n)
     case r: RunnableCommand if r.nodeName == "ShowFunctionsCommand" =>
       FilteredShowFunctionsCommand(r)
     case r: RunnableCommand if r.nodeName == "ShowColumnsCommand" =>
