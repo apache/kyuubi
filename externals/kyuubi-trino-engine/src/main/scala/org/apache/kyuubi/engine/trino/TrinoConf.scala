@@ -22,6 +22,7 @@ import java.time.Duration
 import org.apache.kyuubi.config.ConfigBuilder
 import org.apache.kyuubi.config.ConfigEntry
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.EngineType
 
 object TrinoConf {
   private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
@@ -30,6 +31,7 @@ object TrinoConf {
     buildConf("kyuubi.trino.client.data.processing.pool.size")
       .doc("The size of the thread pool used by the trino client to processing data")
       .version("1.5.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .intConf
       .createWithDefault(3)
 
@@ -37,6 +39,7 @@ object TrinoConf {
     buildConf("kyuubi.trino.client.request.timeout")
       .doc("Timeout for Trino client request to trino cluster")
       .version("1.5.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .timeConf
       .createWithDefault(Duration.ofMinutes(2).toMillis)
 }

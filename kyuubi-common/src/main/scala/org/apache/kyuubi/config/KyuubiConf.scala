@@ -300,21 +300,18 @@ object KyuubiConf {
   val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("kyuubi.kinit.principal")
     .doc("Name of the Kerberos principal.")
     .version("1.0.0")
-    .serverOnly
     .stringConf
     .createOptional
 
   val SERVER_KEYTAB: OptionalConfigEntry[String] = buildConf("kyuubi.kinit.keytab")
     .doc("Location of Kyuubi server's keytab.")
     .version("1.0.0")
-    .serverOnly
     .stringConf
     .createOptional
 
   val SERVER_SPNEGO_KEYTAB: OptionalConfigEntry[String] = buildConf("kyuubi.spnego.keytab")
     .doc("Keytab file for SPNego principal")
     .version("1.6.0")
-    .serverOnly
     .stringConf
     .createOptional
 
@@ -323,7 +320,6 @@ object KyuubiConf {
       " SPNego service principal would be used when restful Kerberos security is enabled." +
       " This needs to be set only if SPNEGO is to be used in authentication.")
     .version("1.6.0")
-    .serverOnly
     .stringConf
     .createOptional
 
@@ -331,7 +327,6 @@ object KyuubiConf {
     .doc("How often will the Kyuubi server run `kinit -kt [keytab] [principal]` to renew the" +
       " local Kerberos credentials cache")
     .version("1.0.0")
-    .serverOnly
     .timeConf
     .createWithDefaultString("PT1H")
 
@@ -440,7 +435,6 @@ object KyuubiConf {
   val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("kyuubi.frontend.bind.host")
     .doc("Hostname or IP of the machine on which to run the frontend services.")
     .version("1.0.0")
-    .serverOnly
     .stringConf
     .createOptional
 
@@ -450,7 +444,6 @@ object KyuubiConf {
         "external systems such as the service discovery ensemble and metadata store. " +
         "Use it when you want to advertise a different hostname or IP than the bind host.")
       .version("1.8.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -459,7 +452,6 @@ object KyuubiConf {
       .doc("Hostname or IP of the machine on which to run the thrift frontend service " +
         "via the binary protocol.")
       .version("1.4.0")
-      .serverOnly
       .fallbackConf(FRONTEND_BIND_HOST)
 
   val FRONTEND_THRIFT_BINARY_SSL_ENABLED: ConfigEntry[Boolean] =
@@ -480,7 +472,6 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.ssl.keystore.password")
       .doc("SSL certificate keystore password.")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -519,7 +510,6 @@ object KyuubiConf {
     .doc("(deprecated) Port of the machine on which to run the thrift frontend service " +
       "via the binary protocol.")
     .version("1.0.0")
-    .serverOnly
     .intConf
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(10009)
@@ -529,7 +519,6 @@ object KyuubiConf {
       .doc("Port of the machine on which to run the thrift frontend service " +
         "via the binary protocol.")
       .version("1.4.0")
-      .serverOnly
       .fallbackConf(FRONTEND_BIND_PORT)
 
   val FRONTEND_THRIFT_HTTP_BIND_HOST: ConfigEntry[Option[String]] =
@@ -537,14 +526,12 @@ object KyuubiConf {
       .doc("Hostname or IP of the machine on which to run the thrift frontend service " +
         "via http protocol.")
       .version("1.6.0")
-      .serverOnly
       .fallbackConf(FRONTEND_BIND_HOST)
 
   val FRONTEND_THRIFT_HTTP_BIND_PORT: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.thrift.http.bind.port")
       .doc("Port of the machine on which to run the thrift frontend service via http protocol.")
       .version("1.6.0")
-      .serverOnly
       .intConf
       .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
       .createWithDefault(10010)
@@ -739,7 +726,6 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.thrift.http.ssl.keystore.password")
       .doc("SSL certificate keystore password.")
       .version("1.6.0")
-      .serverOnly
       .withAlternative("kyuubi.frontend.ssl.keystore.password")
       .stringConf
       .createOptional
@@ -813,7 +799,6 @@ object KyuubiConf {
       " Note that: for SASL authentication, KERBEROS and PLAIN auth types are supported" +
       " at the same time, and only the first specified PLAIN auth type is valid.")
     .version("1.0.0")
-    .serverOnly
     .stringConf
     .transformToUpperCase
     .toSet()
@@ -825,7 +810,6 @@ object KyuubiConf {
       .doc("User-defined authentication implementation of " +
         "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider")
       .version("1.3.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -833,7 +817,6 @@ object KyuubiConf {
     buildConf("kyuubi.authentication.ldap.url")
       .doc("SPACE character separated LDAP connection URL(s).")
       .version("1.0.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -842,7 +825,6 @@ object KyuubiConf {
       .withAlternative("kyuubi.authentication.ldap.base.dn")
       .doc("LDAP base DN.")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -850,7 +832,6 @@ object KyuubiConf {
     buildConf("kyuubi.authentication.ldap.domain")
       .doc("LDAP domain.")
       .version("1.0.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -860,7 +841,6 @@ object KyuubiConf {
         "this directory. Use %s where the actual group name is to be substituted for. " +
         "For example: CN=%s,CN=Groups,DC=subdomain,DC=domain,DC=com.")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -870,7 +850,6 @@ object KyuubiConf {
         "Use %s where the actual group name is to be substituted for. " +
         "For example: CN=%s,CN=Users,DC=subdomain,DC=domain,DC=com.")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -879,7 +858,6 @@ object KyuubiConf {
       .doc("COMMA-separated list of LDAP Group names (short name not full DNs). " +
         "For example: HiveAdmins,HadoopAdmins,Administrators")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .toSet()
       .createWithDefault(Set.empty)
@@ -889,7 +867,6 @@ object KyuubiConf {
       .doc("COMMA-separated list of LDAP usernames (just short names, not full DNs). " +
         "For example: hiveuser,impalauser,hiveadmin,hadoopadmin")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .toSet()
       .createWithDefault(Set.empty)
@@ -899,7 +876,6 @@ object KyuubiConf {
       .doc("LDAP attribute name whose values are unique in this LDAP server. " +
         "For example: uid or CN.")
       .version("1.2.0")
-      .serverOnly
       .stringConf
       .createWithDefault("uid")
 
@@ -909,7 +885,6 @@ object KyuubiConf {
         "names for the user, group, and contact objects that are members of the group. " +
         "For example: member, uniqueMember or memberUid")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .createWithDefault("member")
 
@@ -919,7 +894,6 @@ object KyuubiConf {
         "a direct member, except for the primary group, which is represented by the " +
         "primaryGroupId. For example: memberOf")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -928,7 +902,6 @@ object KyuubiConf {
       .doc("LDAP attribute name on the group entry that is to be used in LDAP group searches. " +
         "For example: group, groupOfNames or groupOfUniqueNames.")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .createWithDefault("groupOfNames")
 
@@ -942,7 +915,6 @@ object KyuubiConf {
         "(|(memberOf=CN=Domain Admins,CN=Users,DC=domain,DC=com)" +
         "(memberOf=CN=Administrators,CN=Builtin,DC=domain,DC=com))))`")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -954,7 +926,6 @@ object KyuubiConf {
         "the user being authenticated will be used as the bind user. " +
         "For example: CN=bindUser,CN=Users,DC=subdomain,DC=domain,DC=com")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -964,7 +935,6 @@ object KyuubiConf {
         "user being authenticated. If the username is specified, this parameter must also be " +
         "specified.")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -972,7 +942,6 @@ object KyuubiConf {
     buildConf("kyuubi.authentication.jdbc.driver.class")
       .doc("Driver class name for JDBC Authentication Provider.")
       .version("1.6.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -980,7 +949,6 @@ object KyuubiConf {
     buildConf("kyuubi.authentication.jdbc.url")
       .doc("JDBC URL for JDBC Authentication Provider.")
       .version("1.6.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -988,7 +956,6 @@ object KyuubiConf {
     buildConf("kyuubi.authentication.jdbc.user")
       .doc("Database user for JDBC Authentication Provider.")
       .version("1.6.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -996,7 +963,6 @@ object KyuubiConf {
     buildConf("kyuubi.authentication.jdbc.password")
       .doc("Database password for JDBC Authentication Provider.")
       .version("1.6.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -1008,7 +974,6 @@ object KyuubiConf {
         "The SQL statement must start with the `SELECT` clause. " +
         "Available placeholders are `${user}` and `${password}`.")
       .version("1.6.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -1047,7 +1012,6 @@ object KyuubiConf {
       " <li>auth-conf - authentication plus integrity and confidentiality protection. This is" +
       " applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul>")
     .version("1.0.0")
-    .serverOnly
     .stringConf
     .checkValues(SaslQOP)
     .transformToLowerCase
@@ -1057,13 +1021,11 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.rest.bind.host")
       .doc("Hostname or IP of the machine on which to run the REST frontend service.")
       .version("1.4.0")
-      .serverOnly
       .fallbackConf(FRONTEND_BIND_HOST)
 
   val FRONTEND_REST_BIND_PORT: ConfigEntry[Int] = buildConf("kyuubi.frontend.rest.bind.port")
     .doc("Port of the machine on which to run the REST frontend service.")
     .version("1.4.0")
-    .serverOnly
     .intConf
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(10099)
@@ -1072,13 +1034,11 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.mysql.bind.host")
       .doc("Hostname or IP of the machine on which to run the MySQL frontend service.")
       .version("1.4.0")
-      .serverOnly
       .fallbackConf(FRONTEND_BIND_HOST)
 
   val FRONTEND_MYSQL_BIND_PORT: ConfigEntry[Int] = buildConf("kyuubi.frontend.mysql.bind.port")
     .doc("Port of the machine on which to run the MySQL frontend service.")
     .version("1.4.0")
-    .serverOnly
     .intConf
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(3309)
@@ -1129,13 +1089,11 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.trino.bind.host")
       .doc("Hostname or IP of the machine on which to run the TRINO frontend service.")
       .version("1.7.0")
-      .serverOnly
       .fallbackConf(FRONTEND_BIND_HOST)
 
   val FRONTEND_TRINO_BIND_PORT: ConfigEntry[Int] = buildConf("kyuubi.frontend.trino.bind.port")
     .doc("Port of the machine on which to run the TRINO frontend service.")
     .version("1.7.0")
-    .serverOnly
     .intConf
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(10999)
@@ -1257,6 +1215,7 @@ object KyuubiConf {
       .doc("During engine bootstrapping, if anderror occurs, using this config to limit" +
         " the length of error message(characters).")
       .version("1.1.0")
+      .requiredByAllEngines
       .intConf
       .checkValue(v => v >= 200 && v <= 8192, s"must in [200, 8192]")
       .createWithDefault(8192)
@@ -1265,6 +1224,7 @@ object KyuubiConf {
     .doc("If we use Spark as the engine then the session submit log is the console output of " +
       "spark-submit. We will retain the session submit log until over the config value.")
     .version("1.1.0")
+    .requiredByAllEngines
     .timeConf
     .checkValue(_ > 0, "must be positive number")
     .createWithDefault(Duration.ofDays(1).toMillis)
@@ -1274,6 +1234,7 @@ object KyuubiConf {
       .doc("The package used to create Spark SQL engine remote application. If it is undefined," +
         " Kyuubi will use the default")
       .version("1.0.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .stringConf
       .createOptional
 
@@ -1302,6 +1263,7 @@ object KyuubiConf {
       .doc("Max lifetime for Spark engine, the engine will self-terminate when it reaches the" +
         " end of life. 0 or negative means not to self-terminate.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .timeConf
       .createWithDefault(0)
 
@@ -1312,6 +1274,7 @@ object KyuubiConf {
         " This setting only applies at the CONNECTION share level." +
         " 0 or negative means not to self-terminate.")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .timeConf
       .createWithDefault(Duration.ofSeconds(60).toMillis)
 
@@ -1320,6 +1283,7 @@ object KyuubiConf {
       .doc("The package used to create Flink SQL engine remote job. If it is undefined," +
         " Kyuubi will use the default")
       .version("1.4.0")
+      .requiredByEngines(List(EngineType.FLINK_SQL))
       .stringConf
       .createOptional
 
@@ -1329,6 +1293,7 @@ object KyuubiConf {
         "would be ignored. For streaming queries, the query would be canceled if the limit " +
         "is reached.")
       .version("1.5.0")
+      .requiredByEngines(List(EngineType.FLINK_SQL))
       .intConf
       .createWithDefault(1000000)
 
@@ -1338,6 +1303,7 @@ object KyuubiConf {
         "fetch would be stopped and the current fetched would be returned. If no data are " +
         "fetched, a TimeoutException would be thrown.")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.FLINK_SQL))
       .timeConf
       .createOptional
 
@@ -1346,6 +1312,7 @@ object KyuubiConf {
       .doc("The package used to create Trino engine remote job. If it is undefined," +
         " Kyuubi will use the default")
       .version("1.5.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -1353,6 +1320,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.engine.trino.connection.url")
       .doc("The server url that Trino engine will connect to")
       .version("1.5.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -1360,6 +1328,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.engine.trino.connection.catalog")
       .doc("The default catalog that Trino engine will connect to")
       .version("1.5.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -1367,6 +1336,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.trino.connection.password")
       .doc("The password used for connecting to trino cluster")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -1374,6 +1344,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.trino.connection.keystore.path")
       .doc("The keystore path used for connecting to trino cluster")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -1381,6 +1352,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.trino.connection.keystore.password")
       .doc("The keystore password used for connecting to trino cluster")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -1388,6 +1360,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.trino.connection.keystore.type")
       .doc("The keystore type used for connecting to trino cluster")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -1395,6 +1368,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.trino.connection.truststore.path")
       .doc("The truststore path used for connecting to trino cluster")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -1402,6 +1376,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.trino.connection.truststore.password")
       .doc("The truststore password used for connecting to trino cluster")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -1409,6 +1384,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.trino.connection.truststore.type")
       .doc("The truststore type used for connecting to trino cluster")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -1416,6 +1392,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.engine.trino.showProgress")
       .doc("When true, show the progress bar and final info in the Trino engine log.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .booleanConf
       .createWithDefault(true)
 
@@ -1423,6 +1400,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.engine.trino.showProgress.debug")
       .doc("When true, show the progress debug info in the Trino engine log.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .booleanConf
       .createWithDefault(false)
 
@@ -1431,6 +1409,7 @@ object KyuubiConf {
       .doc("The package used to create Hive engine remote job. If it is undefined," +
         " Kyuubi will use the default")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.HIVE_SQL))
       .stringConf
       .createOptional
 
@@ -1527,6 +1506,7 @@ object KyuubiConf {
   val ENGINE_CHECK_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.session.engine.check.interval")
     .doc("The check interval for engine timeout")
     .version("1.0.0")
+    .requiredByAllEngines
     .timeConf
     .checkValue(_ >= Duration.ofSeconds(1).toMillis, "Minimum 1 seconds")
     .createWithDefault(Duration.ofMinutes(1).toMillis)
@@ -1535,6 +1515,7 @@ object KyuubiConf {
     .doc("engine timeout, the engine will self-terminate when it's not accessed for this " +
       "duration. 0 or negative means not to self-terminate.")
     .version("1.0.0")
+    .requiredByAllEngines
     .timeConf
     .createWithDefault(Duration.ofMinutes(30L).toMillis)
 
@@ -1569,6 +1550,7 @@ object KyuubiConf {
       .doc("Whether to verify the integrity of session user name" +
         " on the engine side, e.g. Authz plugin in Spark.")
       .version("1.7.0")
+      .requiredByAllEngines
       .booleanConf
       .createWithDefault(false)
 
@@ -1578,6 +1560,7 @@ object KyuubiConf {
         " startup phase. Note that this config effects on client-side to" +
         " help track engine startup issues.")
       .version("1.4.0")
+      .requiredByAllEngines
       .intConf
       .checkValue(_ > 0, "the maximum must be positive integer.")
       .createWithDefault(10)
@@ -1589,6 +1572,7 @@ object KyuubiConf {
         " Note that only use it when the driver is not running locally," +
         " such as in yarn-cluster mode; Otherwise, the engine will be killed.")
       .version("1.5.0")
+      .requiredByAllEngines
       .booleanConf
       .createWithDefault(true)
 
@@ -1598,6 +1582,7 @@ object KyuubiConf {
         "stop after this time, force destroy instead. This configuration only " +
         s"takes effect when `${SESSION_ENGINE_STARTUP_WAIT_COMPLETION.key}=false`.")
       .version("1.8.0")
+      .requiredByAllEngines
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
@@ -1619,7 +1604,6 @@ object KyuubiConf {
         " check whether the path to upload is in the allow list. Note that, if it is empty, there" +
         " is no limitation for that. And please use absolute paths.")
       .version("1.6.0")
-      .serverOnly
       .stringConf
       .checkValue(dir => dir.startsWith(File.separator), "the dir should be absolute path")
       .transform(dir => dir.stripSuffix(File.separator) + File.separator)
@@ -1630,6 +1614,7 @@ object KyuubiConf {
     buildConf("kyuubi.batch.application.check.interval")
       .doc("The interval to check batch job application information.")
       .version("1.6.0")
+      .requiredByAllEngines
       .timeConf
       .createWithDefaultString("PT5S")
 
@@ -1637,6 +1622,7 @@ object KyuubiConf {
     buildConf("kyuubi.batch.application.starvation.timeout")
       .doc("Threshold above which to warn batch application may be starved.")
       .version("1.7.0")
+      .requiredByAllEngines
       .timeConf
       .createWithDefault(Duration.ofMinutes(3).toMillis)
 
@@ -1651,6 +1637,7 @@ object KyuubiConf {
         " kyuubi.batchConf.[batchType]. For example, you can pre-define `spark.master`" +
         " for the Spark batch job with key `kyuubi.batchConf.spark.spark.master`.")
       .version("1.6.0")
+      .requiredByAllEngines
       .stringConf
       .toSet()
       .createWithDefault(Set.empty)
@@ -1694,7 +1681,6 @@ object KyuubiConf {
   val BATCH_SUBMITTER_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.batch.submitter.enabled")
       .internal
-      .serverOnly
       .doc("Batch API v2 requires batch submitter to pick the INITIALIZED batch job " +
         "from metastore and submits it to Resource Manager. " +
         "Note: Batch API v2 is experimental and under rapid development, this configuration " +
@@ -1707,7 +1693,6 @@ object KyuubiConf {
   val BATCH_SUBMITTER_THREADS: ConfigEntry[Int] =
     buildConf("kyuubi.batch.submitter.threads")
       .internal
-      .serverOnly
       .doc("Number of threads in batch job submitter, this configuration only take effects " +
         s"when ${BATCH_SUBMITTER_ENABLED.key} is enabled")
       .version("1.8.0")
@@ -1717,7 +1702,6 @@ object KyuubiConf {
   val BATCH_IMPL_VERSION: ConfigEntry[String] =
     buildConf("kyuubi.batch.impl.version")
       .internal
-      .serverOnly
       .doc("Batch API version, candidates: 1, 2. Only take effect when " +
         s"${BATCH_SUBMITTER_ENABLED.key} is true, otherwise always use v1 implementation. " +
         "Note: Batch API v2 is experimental and under rapid development, this configuration " +
@@ -1860,6 +1844,7 @@ object KyuubiConf {
     buildConf("kyuubi.operation.status.polling.timeout")
       .doc("Timeout(ms) for long polling asynchronous running sql query's status")
       .version("1.0.0")
+      .requiredByAllEngines
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
@@ -1868,6 +1853,7 @@ object KyuubiConf {
       .internal
       .doc("Interval(ms) for updating the same status for a query.")
       .version("1.7.0")
+      .requiredByAllEngines
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
@@ -1876,6 +1862,7 @@ object KyuubiConf {
       .doc("When true, all running tasks will be interrupted if one cancels a query. " +
         "When false, all running tasks will remain until finished.")
       .version("1.2.0")
+      .requiredByAllEngines
       .booleanConf
       .createWithDefault(true)
 
@@ -1889,6 +1876,7 @@ object KyuubiConf {
         " To cancel the queries right away without waiting for task to finish," +
         s" consider enabling ${OPERATION_FORCE_CANCEL.key} together.")
       .version("1.2.0")
+      .requiredByAllEngines
       .timeConf
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
@@ -1898,6 +1886,7 @@ object KyuubiConf {
       .doc("Max rows of Spark query results. Rows exceeding the limit would be ignored. " +
         "By setting this value to 0 to disable the max rows limit.")
       .version("1.6.0")
+      .requiredByAllEngines
       .intConf
       .createWithDefault(0)
 
@@ -1908,6 +1897,7 @@ object KyuubiConf {
         s" the Spark driver side. Note that, ${OPERATION_RESULT_MAX_ROWS.key} will be ignored" +
         " on incremental collect mode.")
       .version("1.4.0")
+      .requiredByAllEngines
       .booleanConf
       .createWithDefault(false)
 
@@ -1919,6 +1909,7 @@ object KyuubiConf {
         " by the driver, and deserialized at the client side. note that it only takes effect for" +
         " kyuubi-hive-jdbc clients now.</li></ul>")
       .version("1.7.0")
+      .requiredByAllEngines
       .stringConf
       .checkValues(Set("arrow", "thrift"))
       .transformToLowerCase
@@ -1929,6 +1920,7 @@ object KyuubiConf {
       .doc("When true, arrow-based rowsets will convert columns of type timestamp to strings for" +
         " transmission.")
       .version("1.7.0")
+      .requiredByAllEngines
       .booleanConf
       .createWithDefault(false)
 
@@ -1936,7 +1928,6 @@ object KyuubiConf {
     buildConf("kyuubi.operation.log.dir.root")
       .doc("Root directory for query operation log at server-side.")
       .version("1.4.0")
-      .serverOnly
       .stringConf
       .createWithDefault("server_operation_logs")
 
@@ -1945,6 +1936,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.engine.share.level")
       .doc(s"(deprecated) - Using kyuubi.engine.share.level instead")
       .version("1.0.0")
+      .requiredByAllEngines
       .stringConf
       .transformToUpperCase
       .checkValues(ShareLevel)
@@ -1960,6 +1952,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.share.level.sub.domain")
       .doc("(deprecated) - Using kyuubi.engine.share.level.subdomain instead")
       .version("1.2.0")
+      .requiredByAllEngines
       .stringConf
       .transformToLowerCase
       .checkValue(validZookeeperSubPath.matcher(_).matches(), "must be valid zookeeper sub path.")
@@ -1973,6 +1966,7 @@ object KyuubiConf {
         " a subdomain, not for all of its clients. End-users are free to create multiple" +
         " engines in the `USER` share level. When disable engine pool, use 'default' if absent.")
       .version("1.4.0")
+      .requiredByAllEngines
       .fallbackConf(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
 
   @deprecated("using kyuubi.frontend.connection.url.use.hostname instead, 1.5.0")
@@ -1982,6 +1976,7 @@ object KyuubiConf {
         "When true, the engine registers with hostname to zookeeper. When Spark runs on K8s" +
         " with cluster mode, set to false to ensure that server can connect to engine")
       .version("1.3.0")
+      .requiredByAllEngines
       .booleanConf
       .createWithDefault(true)
 
@@ -1991,6 +1986,7 @@ object KyuubiConf {
         "the default value is set to `false` when engine running on Kubernetes to prevent " +
         "potential network issues.")
       .version("1.5.0")
+      .requiredByAllEngines
       .fallbackConf(ENGINE_CONNECTION_URL_USE_HOSTNAME)
 
   val ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("kyuubi.engine.share.level")
@@ -2008,6 +2004,7 @@ object KyuubiConf {
       " primary group is not found, it fallback to the USER level." +
       " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.2.0")
+    .requiredByAllEngines
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
 
   val ENGINE_TYPE: ConfigEntry[String] = buildConf("kyuubi.engine.type")
@@ -2026,6 +2023,7 @@ object KyuubiConf {
       " <li>CHAT: specify this engine type will launch a Chat engine.</li>" +
       "</ul>")
     .version("1.4.0")
+    .requiredByAllEngines
     .stringConf
     .transformToUpperCase
     .checkValues(EngineType)
@@ -2051,7 +2049,6 @@ object KyuubiConf {
     .doc("This parameter is introduced as a server-side parameter " +
       "controlling the upper limit of the engine pool.")
     .version("1.4.0")
-    .serverOnly
     .intConf
     .checkValue(s => s > 0 && s < 33, "Invalid engine pool threshold, it should be in [1, 32]")
     .createWithDefault(9)
@@ -2103,6 +2100,7 @@ object KyuubiConf {
       .doc("A comma-separated list of exception classes. If there is any exception thrown," +
         " whose class matches the specified classes, the engine would deregister itself.")
       .version("1.2.0")
+      .requiredByAllEngines
       .stringConf
       .toSet()
       .createWithDefault(Set.empty)
@@ -2113,6 +2111,7 @@ object KyuubiConf {
         " whose message or stacktrace matches the specified message list, the engine would" +
         " deregister itself.")
       .version("1.2.0")
+      .requiredByAllEngines
       .stringConf
       .toSet()
       .createWithDefault(Set.empty)
@@ -2121,6 +2120,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.deregister.job.max.failures")
       .doc("Number of failures of job before deregistering the engine.")
       .version("1.2.0")
+      .requiredByAllEngines
       .intConf
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(4)
@@ -2134,6 +2134,7 @@ object KyuubiConf {
         s" engine will deregister itself and wait for self-terminated. Otherwise, we suppose" +
         s" that the engine has recovered from temporary failures.")
       .version("1.2.0")
+      .requiredByAllEngines
       .timeConf
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofMinutes(30).toMillis)
@@ -2143,6 +2144,7 @@ object KyuubiConf {
       .doc("The scheduler pool of job. Note that, this config should be used after changing " +
         "Spark config spark.scheduler.mode=FAIR.")
       .version("1.1.1")
+      .requiredByAllEngines
       .stringConf
       .createOptional
 
@@ -2152,6 +2154,7 @@ object KyuubiConf {
         "All the JDBC/ODBC connections share the temporary views, function registries, " +
         "SQL configuration and the current database.")
       .version("1.3.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .booleanConf
       .createWithDefault(false)
 
@@ -2162,6 +2165,7 @@ object KyuubiConf {
         "the temporary views, function registries, SQL configuration, and the current database. " +
         "Note that, it does not affect if the share level is connection or user.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .booleanConf
       .createWithDefault(true)
 
@@ -2170,6 +2174,7 @@ object KyuubiConf {
       .doc(s"If ${ENGINE_USER_ISOLATED_SPARK_SESSION.key} is false, we will release the " +
         s"Spark session if its corresponding user is inactive after this configured timeout.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .timeConf
       .createWithDefault(Duration.ofHours(6).toMillis)
 
@@ -2177,6 +2182,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.user.isolated.spark.session.idle.interval")
       .doc(s"The interval to check if the user-isolated Spark session is timeout.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .timeConf
       .createWithDefault(Duration.ofMinutes(1).toMillis)
 
@@ -2184,7 +2190,6 @@ object KyuubiConf {
     buildConf("kyuubi.backend.server.event.json.log.path")
       .doc("The location of server events go for the built-in JSON logger")
       .version("1.4.0")
-      .serverOnly
       .stringConf
       .createWithDefault("file:///tmp/kyuubi/events")
 
@@ -2194,6 +2199,7 @@ object KyuubiConf {
         "<li>Local Path: start with 'file://'</li>" +
         "<li>HDFS Path: start with 'hdfs://'</li></ul>")
       .version("1.3.0")
+      .requiredByAllEngines
       .stringConf
       .createWithDefault("file:///tmp/kyuubi/events")
 
@@ -2201,7 +2207,6 @@ object KyuubiConf {
     buildConf("kyuubi.backend.server.event.kafka.topic")
       .doc("The topic of server events go for the built-in Kafka logger")
       .version("1.8.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -2209,7 +2214,6 @@ object KyuubiConf {
     buildConf("kyuubi.backend.server.event.kafka.close.timeout")
       .doc("Period to wait for Kafka producer of server event handlers to close.")
       .version("1.8.0")
-      .serverOnly
       .timeConf
       .createWithDefault(Duration.ofMillis(5000).toMillis)
 
@@ -2233,7 +2237,6 @@ object KyuubiConf {
         " which is a child of org.apache.kyuubi.events.handler.CustomEventHandlerProvider" +
         " which has a zero-arg constructor.")
       .version("1.4.0")
-      .serverOnly
       .stringConf
       .transformToUpperCase
       .toSequence()
@@ -2258,6 +2261,7 @@ object KyuubiConf {
         " of `org.apache.kyuubi.events.handler.CustomEventHandlerProvider`" +
         " which has a zero-arg constructor.")
       .version("1.3.0")
+      .requiredByAllEngines
       .stringConf
       .transformToUpperCase
       .toSequence()
@@ -2270,6 +2274,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.ui.stop.enabled")
       .doc("When true, allows Kyuubi engine to be killed from the Spark Web UI.")
       .version("1.3.0")
+      .requiredByAllEngines
       .booleanConf
       .createWithDefault(true)
 
@@ -2277,6 +2282,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.ui.retainedSessions")
       .doc("The number of SQL client sessions kept in the Kyuubi Query Engine web UI.")
       .version("1.4.0")
+      .requiredByAllEngines
       .intConf
       .checkValue(_ > 0, "retained sessions must be positive.")
       .createWithDefault(200)
@@ -2285,6 +2291,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.ui.retainedStatements")
       .doc("The number of statements kept in the Kyuubi Query Engine web UI.")
       .version("1.4.0")
+      .requiredByAllEngines
       .intConf
       .checkValue(_ > 0, "retained statements must be positive.")
       .createWithDefault(200)
@@ -2293,6 +2300,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.operation.log.dir.root")
       .doc("Root directory for query operation log at engine-side.")
       .version("1.4.0")
+      .requiredByAllEngines
       .stringConf
       .createWithDefault("engine_operation_logs")
 
@@ -2303,6 +2311,7 @@ object KyuubiConf {
         " access between kyuubi server and kyuubi engine. Since 1.6.0, kyuubi supports internal" +
         " secure across kyuubi server instances.")
       .version("1.5.0")
+      .requiredByAllEngines
       .booleanConf
       .createWithDefault(false)
 
@@ -2311,6 +2320,7 @@ object KyuubiConf {
       .internal
       .doc("The max lifetime of the token used for internal secure access.")
       .version("1.5.0")
+      .requiredByAllEngines
       .timeConf
       .createWithDefault(Duration.ofMinutes(10).toMillis)
 
@@ -2320,6 +2330,7 @@ object KyuubiConf {
       .doc("The class used to manage the internal security secret. This class must be a " +
         "subclass of `EngineSecuritySecretProvider`.")
       .version("1.5.0")
+      .requiredByAllEngines
       .stringConf
       .transform {
         case "simple" =>
@@ -2336,6 +2347,7 @@ object KyuubiConf {
       .doc("The secret key used for internal security access. Only take affects when " +
         s"${ENGINE_SECURITY_SECRET_PROVIDER.key} is 'simple'")
       .version("1.7.0")
+      .requiredByAllEngines
       .stringConf
       .createOptional
 
@@ -2345,6 +2357,7 @@ object KyuubiConf {
       .doc("The length in bits of the encryption key to generate. " +
         "Valid values are 128, 192 and 256")
       .version("1.5.0")
+      .requiredByAllEngines
       .intConf
       .checkValues(Set(128, 192, 256))
       .createWithDefault(128)
@@ -2354,6 +2367,7 @@ object KyuubiConf {
       .internal
       .doc("Initial vector length, in bytes.")
       .version("1.5.0")
+      .requiredByAllEngines
       .intConf
       .createWithDefault(16)
 
@@ -2362,6 +2376,7 @@ object KyuubiConf {
       .internal
       .doc("The algorithm for generated secret keys.")
       .version("1.5.0")
+      .requiredByAllEngines
       .stringConf
       .createWithDefault("AES")
 
@@ -2370,6 +2385,7 @@ object KyuubiConf {
       .internal
       .doc("The cipher transformation to use for encrypting internal access token.")
       .version("1.5.0")
+      .requiredByAllEngines
       .stringConf
       .createWithDefault("AES/CBC/PKCS5PADDING")
 
@@ -2379,6 +2395,7 @@ object KyuubiConf {
         "This name will be recorded in the event. Note that, we only apply this value from " +
         "session conf.")
       .version("1.4.0")
+      .requiredByAllEngines
       .stringConf
       .createOptional
 
@@ -2391,6 +2408,7 @@ object KyuubiConf {
         "modes, the Spark engine supports all modes, and the Flink engine supports 'parse', " +
         "'physical', and 'execution', other engines do not support planOnly currently.")
       .version("1.4.0")
+      .requiredByAllEngines
       .stringConf
       .transformToUpperCase
       .checkValue(
@@ -2415,6 +2433,7 @@ object KyuubiConf {
         "the default value is 'plain'. This configuration supports only the output styles " +
         "of the Spark engine")
       .version("1.7.0")
+      .requiredByAllEngines
       .stringConf
       .transformToUpperCase
       .checkValues(Set("PLAIN", "JSON"))
@@ -2429,6 +2448,7 @@ object KyuubiConf {
         "we can use this config to exclude them and let them take effect. " +
         s"See also ${OPERATION_PLAN_ONLY_MODE.key}.")
       .version("1.5.0")
+      .requiredByAllEngines
       .stringConf
       .toSet()
       .createWithDefault(Set(
@@ -2442,6 +2462,7 @@ object KyuubiConf {
     buildConf("kyuubi.lineage.parser.plugin.provider")
       .doc("The provider for the Spark lineage parser plugin.")
       .version("1.8.0")
+      .requiredByAllEngines
       .stringConf
       .createWithDefault("org.apache.kyuubi.plugin.lineage.LineageParserProvider")
 
@@ -2470,6 +2491,7 @@ object KyuubiConf {
         "</li>" +
         "</ul>")
       .version("1.5.0")
+      .requiredByAllEngines
       .stringConf
       .transformToUpperCase
       .checkValues(OperationLanguages)
@@ -2504,7 +2526,6 @@ object KyuubiConf {
     buildConf("kyuubi.server.name")
       .doc("The name of Kyuubi Server.")
       .version("1.5.0")
-      .serverOnly
       .stringConf
       .createOptional
 
@@ -2522,6 +2543,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.engine.spark.showProgress")
       .doc("When true, show the progress bar in the Spark's engine log.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .booleanConf
       .createWithDefault(false)
 
@@ -2529,6 +2551,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.engine.spark.progress.update.interval")
       .doc("Update period of progress bar.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .timeConf
       .checkValue(_ >= 200, "Minimum 200 milliseconds")
       .createWithDefault(1000)
@@ -2537,6 +2560,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.engine.spark.progress.timeFormat")
       .doc("The time format of the progress bar")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .stringConf
       .createWithDefault("yyyy-MM-dd HH:mm:ss.SSS")
 
@@ -2544,6 +2568,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.trino.memory")
       .doc("The heap memory for the Trino query engine")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createWithDefault("1g")
 
@@ -2551,6 +2576,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.trino.java.options")
       .doc("The extra Java options for the Trino query engine")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -2559,6 +2585,7 @@ object KyuubiConf {
       .doc("The extra classpath for the Trino query engine, " +
         "for configuring other libs which may need by the Trino engine ")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .createOptional
 
@@ -2566,6 +2593,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.hive.memory")
       .doc("The heap memory for the Hive query engine")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.HIVE_SQL))
       .stringConf
       .createWithDefault("1g")
 
@@ -2573,6 +2601,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.hive.java.options")
       .doc("The extra Java options for the Hive query engine")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.HIVE_SQL))
       .stringConf
       .createOptional
 
@@ -2581,6 +2610,7 @@ object KyuubiConf {
       .doc("The extra classpath for the Hive query engine, for configuring location" +
         " of the hadoop client jars and etc.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.HIVE_SQL))
       .stringConf
       .createOptional
 
@@ -2588,6 +2618,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.flink.memory")
       .doc("The heap memory for the Flink SQL engine. Only effective in yarn session mode.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.FLINK_SQL))
       .stringConf
       .createWithDefault("1g")
 
@@ -2595,6 +2626,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.flink.java.options")
       .doc("The extra Java options for the Flink SQL engine. Only effective in yarn session mode.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.FLINK_SQL))
       .stringConf
       .createOptional
 
@@ -2603,6 +2635,7 @@ object KyuubiConf {
       .doc("The extra classpath for the Flink SQL engine, for configuring the location" +
         " of hadoop client jars, etc. Only effective in yarn session mode.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.FLINK_SQL))
       .stringConf
       .createOptional
 
@@ -2611,6 +2644,7 @@ object KyuubiConf {
       .doc("A comma-separated list of the local jars to be shipped with the job to the cluster. " +
         "For example, SQL UDF jars. Only effective in yarn application mode.")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.FLINK_SQL))
       .stringConf
       .createOptional
 
@@ -2619,7 +2653,6 @@ object KyuubiConf {
       .doc("Maximum kyuubi server connections per user." +
         " Any user exceeding this limit will not be allowed to connect.")
       .version("1.6.0")
-      .serverOnly
       .intConf
       .createOptional
 
@@ -2628,7 +2661,6 @@ object KyuubiConf {
       .doc("Maximum kyuubi server connections per ipaddress." +
         " Any user exceeding this limit will not be allowed to connect.")
       .version("1.6.0")
-      .serverOnly
       .intConf
       .createOptional
 
@@ -2637,7 +2669,6 @@ object KyuubiConf {
       .doc("Maximum kyuubi server connections per user:ipaddress combination." +
         " Any user-ipaddress exceeding this limit will not be allowed to connect.")
       .version("1.6.0")
-      .serverOnly
       .intConf
       .createOptional
 
@@ -2645,7 +2676,6 @@ object KyuubiConf {
     buildConf("kyuubi.server.limit.connections.user.unlimited.list")
       .doc("The maximum connections of the user in the white list will not be limited.")
       .version("1.7.0")
-      .serverOnly
       .stringConf
       .toSet()
       .createWithDefault(Set.empty)
@@ -2656,7 +2686,6 @@ object KyuubiConf {
         "if the user has configured both user.unlimited.list and user.deny.list, " +
         "the priority of the latter is higher.")
       .version("1.8.0")
-      .serverOnly
       .stringConf
       .toSet()
       .createWithDefault(Set.empty)
@@ -2666,7 +2695,6 @@ object KyuubiConf {
       .doc("Maximum kyuubi server batch connections per user." +
         " Any user exceeding this limit will not be allowed to connect.")
       .version("1.7.0")
-      .serverOnly
       .intConf
       .createOptional
 
@@ -2675,7 +2703,6 @@ object KyuubiConf {
       .doc("Maximum kyuubi server batch connections per ipaddress." +
         " Any user exceeding this limit will not be allowed to connect.")
       .version("1.7.0")
-      .serverOnly
       .intConf
       .createOptional
 
@@ -2684,7 +2711,6 @@ object KyuubiConf {
       .doc("Maximum kyuubi server batch connections per user:ipaddress combination." +
         " Any user-ipaddress exceeding this limit will not be allowed to connect.")
       .version("1.7.0")
-      .serverOnly
       .intConf
       .createOptional
 
@@ -2693,7 +2719,6 @@ object KyuubiConf {
       .doc("Max rows limit for getting result row set operation. If the max rows specified " +
         "by client-side is larger than the limit, request will fail directly.")
       .version("1.8.0")
-      .serverOnly
       .intConf
       .createOptional
 
@@ -2702,6 +2727,7 @@ object KyuubiConf {
       .doc("Whether to enable the operation progress. When true," +
         " the operation progress will be returned in `GetOperationStatus`.")
       .version("1.6.0")
+      .requiredByAllEngines
       .booleanConf
       .createWithDefault(false)
 
@@ -2717,7 +2743,6 @@ object KyuubiConf {
     buildConf("kyuubi.server.periodicGC.interval")
       .doc("How often to trigger a garbage collection.")
       .version("1.7.0")
-      .serverOnly
       .timeConf
       .createWithDefaultString("PT30M")
 
@@ -2726,7 +2751,6 @@ object KyuubiConf {
       .doc("Comma-separated list of Kyuubi service administrators. " +
         "We use this config to grant admin permission to any service accounts.")
       .version("1.8.0")
-      .serverOnly
       .stringConf
       .toSet()
       .createWithDefault(Set.empty)
@@ -2736,6 +2760,7 @@ object KyuubiConf {
       .doc("When set to true, Spark engine registers an SQLOperationListener before executing " +
         "the statement, logging a few summary statistics when each stage completes.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .booleanConf
       .createWithDefault(true)
 
@@ -2743,6 +2768,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.jdbc.driver.class")
       .doc("The driver class for JDBC engine connection")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .createOptional
 
@@ -2750,6 +2776,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.jdbc.connection.url")
       .doc("The server url that engine will connect to")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .createOptional
 
@@ -2757,6 +2784,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.jdbc.connection.propagateCredential")
       .doc("Whether to use the session's user and password to connect to database")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .booleanConf
       .createWithDefault(false)
 
@@ -2764,6 +2792,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.jdbc.connection.user")
       .doc("The user is used for connecting to server")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .createOptional
 
@@ -2771,6 +2800,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.jdbc.connection.password")
       .doc("The password is used for connecting to server")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .createOptional
 
@@ -2778,6 +2808,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.jdbc.connection.properties")
       .doc("The additional properties are used for connecting to server")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .toSequence()
       .createWithDefault(Nil)
@@ -2786,6 +2817,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.jdbc.connection.provider")
       .doc("The connection provider is used for getting a connection from the server")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .createOptional
 
@@ -2793,6 +2825,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.jdbc.type")
       .doc("The short name of JDBC type")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .createOptional
 
@@ -2801,6 +2834,7 @@ object KyuubiConf {
       .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
         "engine before queries. i.e. use `SELECT 1` to eagerly active JDBCClient.")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .toSequence(";")
       .createWithDefaultString("SELECT 1")
@@ -2810,6 +2844,7 @@ object KyuubiConf {
       .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
         "engine session before queries.")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .toSequence(";")
       .createWithDefault(Nil)
@@ -2819,6 +2854,7 @@ object KyuubiConf {
       .doc("When set to true, The engine converts the JDBC methods of set/get Catalog " +
         "and set/get Schema to the implementation of different engines")
       .version("1.6.0")
+      .requiredByAllEngines
       .booleanConf
       .createWithDefault(true)
 
@@ -2828,6 +2864,7 @@ object KyuubiConf {
         "In some Resource Managers, e.g. K8s, the Driver Pod is not visible immediately " +
         "after `spark-submit` is returned.")
       .version("1.7.1")
+      .requiredByAllEngines
       .timeConf
       .createWithDefaultString("PT30S")
 
@@ -2835,12 +2872,14 @@ object KyuubiConf {
     buildConf("kyuubi.engine.kubernetes.submit.timeout")
       .doc("The engine submit timeout for Kubernetes application.")
       .version("1.7.2")
+      .requiredByAllEngines
       .fallbackConf(ENGINE_SUBMIT_TIMEOUT)
 
   val ENGINE_YARN_SUBMIT_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.engine.yarn.submit.timeout")
       .doc("The engine submit timeout for YARN application.")
       .version("1.7.2")
+      .requiredByAllEngines
       .fallbackConf(ENGINE_SUBMIT_TIMEOUT)
 
   object YarnUserStrategy extends Enumeration {
@@ -2944,6 +2983,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.chat.memory")
       .doc("The heap memory for the Chat engine")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.CHAT))
       .stringConf
       .createWithDefault("1g")
 
@@ -2951,6 +2991,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.chat.java.options")
       .doc("The extra Java options for the Chat engine")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.CHAT))
       .stringConf
       .createOptional
 
@@ -2961,6 +3002,7 @@ object KyuubiConf {
         " <li>GPT: a.k.a ChatGPT, powered by OpenAI.</li>" +
         "</ul>")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.CHAT))
       .stringConf
       .transform {
         case "ECHO" | "echo" => "org.apache.kyuubi.engine.chat.provider.EchoProvider"
@@ -2974,6 +3016,7 @@ object KyuubiConf {
       .doc("The key to access OpenAI open API, which could be got at " +
         "https://platform.openai.com/account/api-keys")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.CHAT))
       .stringConf
       .createOptional
 
@@ -2982,6 +3025,7 @@ object KyuubiConf {
       .doc("ID of the model used in ChatGPT. Available models refer to OpenAI's " +
         "[Model overview](https://platform.openai.com/docs/models/overview).")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.CHAT))
       .stringConf
       .createWithDefault("gpt-3.5-turbo")
 
@@ -2990,6 +3034,7 @@ object KyuubiConf {
       .doc("The extra classpath for the Chat engine, for configuring the location " +
         "of the SDK and etc.")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.CHAT))
       .stringConf
       .createOptional
 
@@ -2997,6 +3042,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.chat.gpt.http.proxy")
       .doc("HTTP proxy url for API calling in Chat GPT engine. e.g. http://127.0.0.1:1087")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.CHAT))
       .stringConf
       .createOptional
 
@@ -3005,6 +3051,7 @@ object KyuubiConf {
       .doc("The timeout[ms] for establishing the connection with the Chat GPT server. " +
         "A timeout value of zero is interpreted as an infinite timeout.")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.CHAT))
       .timeConf
       .checkValue(_ >= 0, "must be 0 or positive number")
       .createWithDefault(Duration.ofSeconds(120).toMillis)
@@ -3014,6 +3061,7 @@ object KyuubiConf {
       .doc("The timeout[ms] for waiting for data packets after Chat GPT server " +
         "connection is established. A timeout value of zero is interpreted as an infinite timeout.")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.CHAT))
       .timeConf
       .checkValue(_ >= 0, "must be 0 or positive number")
       .createWithDefault(Duration.ofSeconds(120).toMillis)
@@ -3022,6 +3070,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.jdbc.memory")
       .doc("The heap memory for the JDBC query engine")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .createWithDefault("1g")
 
@@ -3029,6 +3078,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.jdbc.java.options")
       .doc("The extra Java options for the JDBC query engine")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .createOptional
 
@@ -3037,6 +3087,7 @@ object KyuubiConf {
       .doc("The extra classpath for the JDBC query engine, for configuring the location" +
         " of the JDBC driver and etc.")
       .version("1.6.0")
+      .requiredByEngines(List(EngineType.JDBC))
       .stringConf
       .createOptional
 
@@ -3050,6 +3101,7 @@ object KyuubiConf {
         " <li>JDBC: to be done</li>" +
         " <li>CUSTOM: to be done.</li></ul>")
       .version("1.7.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .fallbackConf(ENGINE_EVENT_LOGGERS)
 
   val ENGINE_SPARK_PYTHON_HOME_ARCHIVE: OptionalConfigEntry[String] =
@@ -3057,6 +3109,7 @@ object KyuubiConf {
       .doc("Spark archive containing $SPARK_HOME/python directory, which is used to init session" +
         " Python worker for Python language mode.")
       .version("1.7.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .stringConf
       .createOptional
 
@@ -3064,6 +3117,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.spark.python.env.archive")
       .doc("Portable Python env archive used for Spark engine Python language mode.")
       .version("1.7.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .stringConf
       .createOptional
 
@@ -3071,6 +3125,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.spark.python.env.archive.exec.path")
       .doc("The Python exec path under the Python env archive.")
       .version("1.7.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .stringConf
       .createWithDefault("bin/python")
 
@@ -3079,6 +3134,7 @@ object KyuubiConf {
       .internal
       .doc("The extra attributes to expose when registering for Spark engine.")
       .version("1.8.0")
+      .requiredByEngines(List(EngineType.SPARK_SQL))
       .stringConf
       .toSequence()
       .createWithDefault(Seq("spark.driver.memory", "spark.executor.memory"))
@@ -3092,6 +3148,7 @@ object KyuubiConf {
         " <li>JDBC: to be done</li>" +
         " <li>CUSTOM: to be done.</li></ul>")
       .version("1.7.0")
+      .requiredByEngines(List(EngineType.HIVE_SQL))
       .stringConf
       .transformToUpperCase
       .toSequence()
@@ -3109,6 +3166,7 @@ object KyuubiConf {
         " <li>JDBC: to be done</li>" +
         " <li>CUSTOM: to be done.</li></ul>")
       .version("1.7.0")
+      .requiredByEngines(List(EngineType.TRINO))
       .stringConf
       .transformToUpperCase
       .toSequence()
@@ -3143,6 +3201,7 @@ object KyuubiConf {
     buildConf("kyuubi.operation.getTables.ignoreTableProperties")
       .doc("Speed up the `GetTables` operation by returning table identities only.")
       .version("1.8.0")
+      .requiredByAllEngines
       .booleanConf
       .createWithDefault(false)
 
@@ -3154,7 +3213,6 @@ object KyuubiConf {
         " this configuration is used to limit the number of engine startup processes" +
         " running at the same time to avoid it.")
       .version("1.8.0")
-      .serverOnly
       .intConf
       .createOptional
 }
