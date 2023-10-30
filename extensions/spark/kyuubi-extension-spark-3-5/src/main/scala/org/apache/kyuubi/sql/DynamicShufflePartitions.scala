@@ -21,7 +21,7 @@ import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, RangePart
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{FileSourceScanExec, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.ShuffleQueryStageExec
-import org.apache.spark.sql.execution.exchange.{REPARTITION_BY_NUM, ShuffleExchangeExec}
+import org.apache.spark.sql.execution.exchange.{REPARTITION_BY_NUM, ShuffleExchangeExec, ValidateRequirements}
 import org.apache.spark.sql.hive.HiveSparkPlanHelper.HiveTableScanExec
 import org.apache.spark.sql.internal.SQLConf._
 
@@ -47,8 +47,8 @@ case class DynamicShufflePartitions(spark: SparkSession) extends Rule[SparkPlan]
             case None => Seq(t.relation.computeStats().sizeInBytes.toLong)
                 .filter(_ != conf.defaultSizeInBytes)
           }
-        case stage: ShuffleQueryStageExec if stage.isMaterialized =>
-          Seq(stage.mapStats.map(_.bytesByPartitionId.sum).getOrElse(0L))
+        case stage: ShuffleQueryStageExec if stage.isMaterialized && stage.mapStats.isDefined =>
+          Seq(stage.mapStats.get.bytesByPartitionId.sum)
         case p =>
           p.children.flatMap(collectScanSizes)
       }
@@ -62,7 +62,7 @@ case class DynamicShufflePartitions(spark: SparkSession) extends Rule[SparkPlan]
         Math.max(maxScanSizes / targetSize + 1, conf.numShufflePartitions).toInt,
         maxDynamicShufflePartitions)
 
-      plan transformUp {
+      val newPlan = plan transformUp {
         case exchange @ ShuffleExchangeExec(outputPartitioning, _, shuffleOrigin, _)
             if shuffleOrigin != REPARTITION_BY_NUM =>
           val newOutPartitioning = outputPartitioning match {
@@ -82,6 +82,14 @@ case class DynamicShufflePartitions(spark: SparkSession) extends Rule[SparkPlan]
           } else {
             exchange
           }
+      }
+
+      if (ValidateRequirements.validate(newPlan)) {
+        newPlan
+      } else {
+        logInfo("DynamicShufflePartitions rule generated an invalid plan. " +
+          "Falling back to the original plan.")
+        plan
       }
     }
   }
