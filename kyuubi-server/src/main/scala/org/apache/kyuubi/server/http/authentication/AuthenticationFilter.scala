@@ -28,7 +28,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER}
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
-import org.apache.kyuubi.service.authentication.AuthTypes._
+import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 
 class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthenticationFilter._
@@ -36,7 +36,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthSchemes._
 
   private[authentication] val authSchemeHandlers =
-    new mutable.LinkedHashMap[AuthScheme, AuthenticationHandler]()
+    new mutable.HashMap[AuthScheme, AuthenticationHandler]()
 
   private[authentication] def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
     authHandler.init(conf)
@@ -56,20 +56,17 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
 
   private[kyuubi] def initAuthHandlers(): Unit = {
     val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
-    val spnegoEnabled = authTypes.contains(KERBEROS)
-    val anonymousEnabled = authTypes.contains(NOSASL) || authTypes.contains(NONE)
-    val basicAuthTypeOpt = authTypes
-      .filterNot(_.equals(KERBEROS))
-      .filterNot(_.equals(NOSASL))
-      .filterNot(_.equals(NONE))
-      .headOption
-    if (spnegoEnabled) {
+    val spnegoKerberosEnabled = authTypes.contains(KERBEROS)
+    val basicAuthTypeOpt = {
+      if (authTypes == Set(NOSASL)) {
+        authTypes.headOption
+      } else {
+        authTypes.filterNot(_.equals(KERBEROS)).filterNot(_.equals(NOSASL)).headOption
+      }
+    }
+    if (spnegoKerberosEnabled) {
       val kerberosHandler = new KerberosAuthenticationHandler
       addAuthHandler(kerberosHandler)
-    }
-    if (anonymousEnabled) {
-      val anonymousHandler = new AnonymousAuthenticationHandler()
-      addAuthHandler(anonymousHandler)
     }
     basicAuthTypeOpt.foreach { basicAuthType =>
       val basicHandler = new BasicAuthenticationHandler(basicAuthType)

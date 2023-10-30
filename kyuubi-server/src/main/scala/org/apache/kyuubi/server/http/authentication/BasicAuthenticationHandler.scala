@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server.http.authentication
 
-import java.nio.charset.StandardCharsets
+import java.nio.charset.Charset
 import java.util.Base64
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
@@ -32,6 +32,7 @@ class BasicAuthenticationHandler(basicAuthType: AuthType)
   import AuthenticationHandler._
 
   private var conf: KyuubiConf = _
+  private val allowAnonymous = basicAuthType == NOSASL || basicAuthType == NONE
 
   override val authScheme: AuthScheme = AuthSchemes.BASIC
 
@@ -40,7 +41,24 @@ class BasicAuthenticationHandler(basicAuthType: AuthType)
   }
 
   override def authenticationSupported: Boolean = {
-    Set(LDAP, JDBC, CUSTOM).contains(basicAuthType)
+    basicAuthType != null
+  }
+
+  override def matchAuthScheme(authorization: String): Boolean = {
+    if (authorization == null || authorization.isEmpty) {
+      allowAnonymous
+    } else {
+      super.matchAuthScheme(authorization)
+    }
+  }
+
+  override def getAuthorization(request: HttpServletRequest): String = {
+    val authHeader = request.getHeader(AUTHORIZATION_HEADER)
+    if (allowAnonymous && (authHeader == null || authHeader.isEmpty)) {
+      ""
+    } else {
+      super.getAuthorization(request)
+    }
   }
 
   override def authenticate(
@@ -51,17 +69,22 @@ class BasicAuthenticationHandler(basicAuthType: AuthType)
     val authorization = getAuthorization(request)
     val inputToken = Option(authorization).map(a => Base64.getDecoder.decode(a.getBytes()))
       .getOrElse(Array.empty[Byte])
-    val creds = new String(inputToken, StandardCharsets.UTF_8).split(":")
-    if (creds.size < 2 || creds(0).trim.isEmpty || creds(1).trim.isEmpty) {
-      response.setHeader(WWW_AUTHENTICATE, authScheme.toString)
-      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
+    val creds = new String(inputToken, Charset.forName("UTF-8")).split(":")
+
+    if (allowAnonymous) {
+      authUser = creds.take(1).headOption.filterNot(_.isEmpty).getOrElse("anonymous")
     } else {
-      val Seq(user, password) = creds.toSeq.take(2)
-      val passwdAuthenticationProvider = AuthenticationProviderFactory
-        .getAuthenticationProvider(AuthMethods.withName(basicAuthType.toString), conf)
-      passwdAuthenticationProvider.authenticate(user, password)
-      response.setStatus(HttpServletResponse.SC_OK)
-      authUser = user
+      if (creds.size < 2 || creds(0).trim.isEmpty || creds(1).trim.isEmpty) {
+        response.setHeader(WWW_AUTHENTICATE, authScheme.toString)
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
+      } else {
+        val Seq(user, password) = creds.toSeq.take(2)
+        val passwdAuthenticationProvider = AuthenticationProviderFactory
+          .getAuthenticationProvider(AuthMethods.withName(basicAuthType.toString), conf)
+        passwdAuthenticationProvider.authenticate(user, password)
+        response.setStatus(HttpServletResponse.SC_OK)
+        authUser = user
+      }
     }
     authUser
   }
