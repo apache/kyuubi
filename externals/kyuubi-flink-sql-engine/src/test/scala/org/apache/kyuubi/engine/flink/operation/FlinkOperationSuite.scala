@@ -637,7 +637,8 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
 
   test("execute statement - show/stop jobs") {
     if (FLINK_RUNTIME_VERSION >= "1.17") {
-      // we need set the conf's value to make sure it will not cancel stream query before stop job
+      // use a bigger value to ensure all tasks of the streaming query run until
+      // we explicitly stop the job.
       withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "10000"))(Map.empty) {
         withMultipleConnectionJdbcStatement()({ statement =>
           statement.executeQuery(
