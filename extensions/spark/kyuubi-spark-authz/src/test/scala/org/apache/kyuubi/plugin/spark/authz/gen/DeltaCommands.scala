@@ -15,10 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz
+package org.apache.kyuubi.plugin.spark.authz.gen
 
-object PrivilegeObjectType extends Enumeration {
-  type PrivilegeObjectType = Value
+import org.apache.kyuubi.plugin.spark.authz.OperationType._
+import org.apache.kyuubi.plugin.spark.authz.serde._
 
-  val DATABASE, TABLE_OR_VIEW, FUNCTION, LOCAL_URI, DFS_URL = Value
+object DeltaCommands extends CommandSpecs[TableCommandSpec] {
+
+  val CreateDeltaTableCommand = {
+    val cmd = "org.apache.spark.sql.delta.commands.CreateDeltaTableCommand"
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
+  }
+
+  override def specs: Seq[TableCommandSpec] = Seq(
+    CreateDeltaTableCommand)
 }

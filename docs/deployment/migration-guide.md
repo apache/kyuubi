@@ -17,13 +17,19 @@
 
 # Kyuubi Migration Guide
 
+## Upgrading from Kyuubi 1.8 to 1.9
+
+* Since Kyuubi 1.9.0, `kyuubi.session.conf.advisor` can be set as a sequence, Kyuubi supported chaining SessionConfAdvisors.
+
 ## Upgrading from Kyuubi 1.7 to 1.8
 
 * Since Kyuubi 1.8, SQLite is added and becomes the default database type of Kyuubi metastore, as Derby has been deprecated.
   Both Derby and SQLite are mainly for testing purposes, and they're not supposed to be used in production.
   To restore previous behavior, set `kyuubi.metadata.store.jdbc.database.type=DERBY` and
   `kyuubi.metadata.store.jdbc.url=jdbc:derby:memory:kyuubi_state_store_db;create=true`.
-
+* Since Kyuubi 1.8, if the directory of the embedded zookeeper configuration (`kyuubi.zookeeper.embedded.directory`
+  & `kyuubi.zookeeper.embedded.data.dir` & `kyuubi.zookeeper.embedded.data.log.dir`) is a relative path, it is resolved
+  relative to `$KYUUBI_HOME` instead of `$PWD`.
 * Since Kyuubi 1.8, PROMETHEUS is changed as the default metrics reporter. To restore previous behavior,
   set `kyuubi.metrics.reporters=JSON`.
 

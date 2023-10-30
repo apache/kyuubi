@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
-object DatabaseCommands {
+object DatabaseCommands extends CommandSpecs[DatabaseCommandSpec] {
 
   val AlterDatabaseProperties = {
     DatabaseCommandSpec(
@@ -141,7 +141,7 @@ object DatabaseCommands {
     DatabaseCommandSpec(cmd, Seq(databaseDesc), DESCDATABASE)
   }
 
-  val data: Array[DatabaseCommandSpec] = Array(
+  override def specs: Seq[DatabaseCommandSpec] = Seq(
     AlterDatabaseProperties,
     AlterDatabaseProperties.copy(
       classname = "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",

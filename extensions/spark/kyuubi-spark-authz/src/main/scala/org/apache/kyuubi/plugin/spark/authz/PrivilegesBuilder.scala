@@ -194,6 +194,23 @@ object PrivilegesBuilder {
             outputObjs ++= getTablePriv(td)
           }
         }
+        spec.uriDescs.foreach { ud =>
+          try {
+            val uri = ud.extract(plan)
+            uri match {
+              case Some(uri) =>
+                if (ud.isInput) {
+                  inputObjs += PrivilegeObject(uri)
+                } else {
+                  outputObjs += PrivilegeObject(uri)
+                }
+              case None =>
+            }
+          } catch {
+            case e: Exception =>
+              LOG.debug(ud.error(plan, e))
+          }
+        }
         spec.queries(plan).foreach(buildQuery(_, inputObjs, spark = spark))
         spec.operationType
 

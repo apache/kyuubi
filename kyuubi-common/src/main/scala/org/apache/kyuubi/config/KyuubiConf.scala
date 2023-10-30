@@ -2468,14 +2468,15 @@ object KyuubiConf {
       .checkValues(OperationLanguages)
       .createWithDefault(OperationLanguages.SQL.toString)
 
-  val SESSION_CONF_ADVISOR: OptionalConfigEntry[String] =
+  val SESSION_CONF_ADVISOR: OptionalConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.conf.advisor")
-      .doc("A config advisor plugin for Kyuubi Server. This plugin can provide some custom " +
+      .doc("A config advisor plugin for Kyuubi Server. This plugin can provide a list of custom " +
         "configs for different users or session configs and overwrite the session configs before " +
         "opening a new session. This config value should be a subclass of " +
         "`org.apache.kyuubi.plugin.SessionConfAdvisor` which has a zero-arg constructor.")
       .version("1.5.0")
       .stringConf
+      .toSequence()
       .createOptional
 
   val GROUP_PROVIDER: ConfigEntry[String] =
