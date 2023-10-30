@@ -42,21 +42,20 @@ object Authorization {
 
   val KYUUBI_AUTHZ_TAG = TreeNodeTag[Unit]("__KYUUBI_AUTHZ_TAG")
 
+  private def markAllNodesAuthChecked(plan: LogicalPlan): LogicalPlan = {
+    plan.transformDown { case p =>
+      p.setTagValue(KYUUBI_AUTHZ_TAG, ())
+      p
+    }
+  }
+
   protected def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
     plan.setTagValue(KYUUBI_AUTHZ_TAG, ())
     plan transformDown {
       case pvm: PermanentViewMarker =>
-        pvm.transformDown { case p =>
-          p.setTagValue(KYUUBI_AUTHZ_TAG, ())
-          p
-        }
-        pvm
+        markAllNodesAuthChecked(pvm)
       case subquery: Subquery =>
-        subquery.transformDown { case p =>
-          p.setTagValue(KYUUBI_AUTHZ_TAG, ())
-          p
-        }
-        subquery
+        markAllNodesAuthChecked(subquery)
     }
   }
 
