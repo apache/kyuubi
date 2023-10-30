@@ -24,13 +24,12 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
-
 import org.apache.kyuubi.plugin.spark.authz._
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization._
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
+import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 
 class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
