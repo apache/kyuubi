@@ -63,19 +63,15 @@ object PrivilegesBuilder {
       conditionList: Seq[NamedExpression] = Nil,
       spark: SparkSession): Unit = {
 
-    def getOutputColumnNames(plan: LogicalPlan): Seq[String] = {
-      plan match {
-        case pvm: PermanentViewMarker
-            if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
-          pvm.visitColNames
-        case _ =>
-          plan.output.map(_.name)
-      }
-    }
-
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += PrivilegeObject(table, getOutputColumnNames(plan))
+        plan match {
+          case pvm: PermanentViewMarker
+              if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
+            privilegeObjects += PrivilegeObject(table, pvm.outputColNames)
+          case _ =>
+            privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
+        }
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
