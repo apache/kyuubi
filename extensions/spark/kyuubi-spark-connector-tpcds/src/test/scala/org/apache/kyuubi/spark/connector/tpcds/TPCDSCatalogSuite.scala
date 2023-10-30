@@ -79,84 +79,6 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     }
   }
 
-  test("tpcds.tiny count") {
-    val sparkConf = new SparkConf()
-      .setMaster("local[*]")
-      .set("spark.ui.enabled", "false")
-      .set("spark.sql.catalogImplementation", "in-memory")
-      .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
-      .set("spark.sql.cbo.enabled", "true")
-      .set("spark.sql.cbo.planStats.enabled", "true")
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-      assert(spark.table("tpcds.tiny.call_center").count === 2)
-      assert(spark.table("tpcds.tiny.catalog_page").count === 11718)
-      assert(spark.table("tpcds.tiny.catalog_returns").count === 8923)
-      assert(spark.table("tpcds.tiny.catalog_sales").count === 89807)
-      assert(spark.table("tpcds.tiny.customer").count === 1000)
-      assert(spark.table("tpcds.tiny.customer_address").count === 1000)
-      assert(spark.table("tpcds.tiny.customer_demographics").count === 1920800)
-      assert(spark.table("tpcds.tiny.date_dim").count === 73049)
-      assert(spark.table("tpcds.tiny.household_demographics").count === 7200)
-      assert(spark.table("tpcds.tiny.income_band").count === 20)
-      assert(spark.table("tpcds.tiny.inventory").count === 261261)
-      assert(spark.table("tpcds.tiny.item").count === 2000)
-      assert(spark.table("tpcds.tiny.promotion").count === 3)
-      assert(spark.table("tpcds.tiny.reason").count === 1)
-      assert(spark.table("tpcds.tiny.ship_mode").count === 20)
-      assert(spark.table("tpcds.tiny.store").count === 2)
-      assert(spark.table("tpcds.tiny.store_returns").count === 11925)
-      assert(spark.table("tpcds.tiny.store_sales").count === 120527)
-      assert(spark.table("tpcds.tiny.time_dim").count === 86400)
-      assert(spark.table("tpcds.tiny.warehouse").count === 1)
-      assert(spark.table("tpcds.tiny.web_page").count === 2)
-      assert(spark.table("tpcds.tiny.web_returns").count === 1152)
-      assert(spark.table("tpcds.tiny.web_sales").count === 11876)
-      assert(spark.table("tpcds.tiny.web_site").count === 2)
-    }
-  }
-
-  test("tpcds.tiny count and checksum") {
-    val sparkConf = new SparkConf()
-      .setMaster("local[*]")
-      .set("spark.ui.enabled", "false")
-      .set("spark.sql.catalogImplementation", "in-memory")
-      .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
-      .set("spark.sql.cbo.enabled", "true")
-      .set("spark.sql.cbo.planStats.enabled", "true")
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-      tableInfo.foreach {
-        case (table, (expectCount, expectChecksum)) =>
-          val (count, checksum) = countAndchecksum(spark, table)
-          assert(count == expectCount)
-          assert(checksum == expectChecksum, s"table $table")
-      }
-    }
-  }
-
-  test("debug") {
-    val sparkConf = new SparkConf()
-      .setMaster("local[*]")
-      .set("spark.ui.enabled", "false")
-      .set("spark.sql.catalogImplementation", "in-memory")
-      .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
-      .set("spark.sql.cbo.enabled", "true")
-      .set("spark.sql.cbo.planStats.enabled", "true")
-    val table = "store"
-//    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-//      val schema = spark.table(s"tpcds.tiny.$table").schema.map(_.name)
-//      checksum(spark, s"tpcds.tiny.$table", schema).foreach(println)
-//    }
-//    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-//      spark.table("tpcds.tiny.customer").schema.map {f =>
-//        spark.sql(s"select ${f.name} from tpcds.tiny.customer").show(truncate = false)
-//      }
-//    }
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-      spark.sql(s"select * from tpcds.tiny.$table").printSchema()
-      spark.sql(s"select s_rec_start_date from tpcds.tiny.$table").show(truncate = false)
-    }
-  }
-
   test("tpcds.sf1 stats") {
     val sparkConf = new SparkConf()
       .setMaster("local[*]")
@@ -219,7 +141,7 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     }
   }
 
-  test("aa") {
+  test("tpcds.tiny count and checksum") {
     val sparkConf = new SparkConf()
       .setMaster("local[*]")
       .set("spark.ui.enabled", "false")
@@ -228,6 +150,12 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
       .set("spark.sql.cbo.enabled", "true")
       .set("spark.sql.cbo.planStats.enabled", "true")
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      tableInfo.foreach {
+        case (table, (expectCount, expectChecksum)) =>
+          val (count, checksum) = countAndchecksum(spark, table)
+          assert(count == expectCount)
+          assert(checksum == expectChecksum, s"table $table")
+      }
     }
   }
 
@@ -242,7 +170,6 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
 
     df.select(
       crc32(concat(cols: _*))
-        // 每行的crc32值之和不会超过10^19*10^19=10^38，也就是说不会超过Decimal(38, 0)可表示的范围
         .cast(DataTypes.createDecimalType(38, 0))
         .as("row_checksum"))
       .agg(
@@ -251,31 +178,6 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
       .collect()
       .map(r => (r.getString(0), r.getString(1)))
       .head
-  }
-
-  def checksum(
-      spark: SparkSession,
-      tableName: String,
-      schema: Seq[String]): Seq[(String, String)] = {
-    val df = spark.table(tableName)
-    schema.map { name =>
-      val expression = concat(
-        when(col(name).isNull, lit('\u0000').cast("string"))
-          .otherwise(col(name).cast("string")),
-        lit('\u0001').cast("string"))
-
-      val colCheckSum = df.select(
-        crc32(expression)
-          // 每行的crc32值之和不会超过10^19*10^19=10^38，也就是说不会超过Decimal(38, 0)可表示的范围
-          .cast(DataTypes.createDecimalType(38, 0))
-          .as("row_checksum"))
-        .agg(
-          sum("row_checksum").cast("string").as("checksum"))
-        .collect()
-        .map(r => (r.getString(0)))
-        .head
-      (name, colCheckSum)
-    }
   }
 
   private val tableInfo = Seq(

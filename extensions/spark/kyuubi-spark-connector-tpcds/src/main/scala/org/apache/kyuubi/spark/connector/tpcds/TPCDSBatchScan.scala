@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.types._
 
-case class TPCDSTableChuck(table: String, scale: Double, parallelism: Int, index: Int)
+case class TPCDSTableChunk(table: String, scale: Double, parallelism: Int, index: Int)
   extends InputPartition
 
 class TPCDSBatchScan(
@@ -57,10 +57,10 @@ class TPCDSBatchScan(
   override def readSchema: StructType = schema
 
   override def planInputPartitions: Array[InputPartition] =
-    (1 to parallelism).map { i => TPCDSTableChuck(table.getName, scale, parallelism, i) }.toArray
+    (1 to parallelism).map { i => TPCDSTableChunk(table.getName, scale, parallelism, i) }.toArray
 
   def createReaderFactory: PartitionReaderFactory = (partition: InputPartition) => {
-    val chuck = partition.asInstanceOf[TPCDSTableChuck]
+    val chuck = partition.asInstanceOf[TPCDSTableChunk]
     new TPCDSPartitionReader(chuck.table, chuck.scale, chuck.parallelism, chuck.index, schema)
   }
 

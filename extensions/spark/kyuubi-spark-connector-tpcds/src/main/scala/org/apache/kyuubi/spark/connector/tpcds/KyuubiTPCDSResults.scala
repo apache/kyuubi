@@ -78,12 +78,12 @@ class KyuubiResultsIterator(
       s"starting row number is greater than the total rows in $table: $endingRowNumber")
     rowNumber = startingRowNumber
     rowGenerator = table.getRowGeneratorClass().getDeclaredConstructor().newInstance()
-    parentRowGenerator = if (table.isChild())
+    parentRowGenerator = if (table.isChild()) {
       Some(table.getParent().getRowGeneratorClass().getDeclaredConstructor().newInstance())
-    else None
-    childRowGenerator = if (table.hasChild())
+    } else None
+    childRowGenerator = if (table.hasChild()) {
       Some(table.getChild().getRowGeneratorClass().getDeclaredConstructor().newInstance())
-    else None
+    } else None
   } catch {
     case e @ (_: NoSuchMethodException |
         _: InstantiationException |
@@ -165,5 +165,4 @@ class KyuubiResultsIterator(
 object KyuubiResultsIterator {
   private val TRUE_STRING = UTF8String.fromString("Y")
   private val FALSE_STRING = UTF8String.fromString("N")
-//  private lazy val dateFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 }
