@@ -52,7 +52,6 @@ object Authorization {
         }
         pvm
     }
-    plan
   }
 
   protected def isAuthChecked(plan: LogicalPlan): Boolean = {
