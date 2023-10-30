@@ -26,7 +26,6 @@ import org.apache.spark.sql.execution.command.{RunnableCommand, ShowColumnsComma
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessRequest, AccessResource, AccessType, SparkRangerAdminPlugin}
-import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter
 import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, WithInternalChildren}
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
