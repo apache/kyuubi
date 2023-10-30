@@ -740,7 +740,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         TProtocolVersion.findByValue(Integer.parseInt(clientProtocolStr));
     if (clientProtocol == null) {
       throw new IllegalArgumentException(
-          "Unsupported Hive2 protocol specified by session conf key " + CLIENT_PROTOCOL_VERSION);
+          String.format(
+              "Unsupported Hive2 protocol version %s specified by session conf key %s",
+              clientProtocolStr, CLIENT_PROTOCOL_VERSION));
     }
     openReq.setClient_protocol(clientProtocol);
     try {
