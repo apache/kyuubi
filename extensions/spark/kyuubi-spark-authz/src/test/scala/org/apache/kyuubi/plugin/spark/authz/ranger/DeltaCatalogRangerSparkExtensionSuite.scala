@@ -178,6 +178,14 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptContains[AccessControlException](
         doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 DROP COLUMN birthDate")))(
         s"does not have [alter] privilege on [$namespace1/$table1]")
+
+      // set properties
+      interceptContains[AccessControlException](
+        doAs(
+          someone,
+          sql(s"ALTER TABLE $namespace1.$table1" +
+            s" SET TBLPROPERTIES ('delta.appendOnly' = 'true')")))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
     }
   }
 }
