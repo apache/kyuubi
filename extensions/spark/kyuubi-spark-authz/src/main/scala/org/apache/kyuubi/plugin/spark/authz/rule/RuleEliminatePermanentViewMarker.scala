@@ -15,17 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.ranger.rowfilter
+package org.apache.kyuubi.plugin.spark.authz.rule
 
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
+import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.rules.Rule
 
-import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
+import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
 
-case class RowFilterMarker(child: LogicalPlan) extends UnaryNode with WithInternalChild {
-
-  override def output: Seq[Attribute] = child.output
-
-  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = copy(child = newChild)
-
+/**
+ * Transforming up [[PermanentViewMarker]]
+ */
+class RuleEliminatePermanentViewMarker extends Rule[LogicalPlan] {
+  override def apply(plan: LogicalPlan): LogicalPlan = {
+    plan.transformUp {
+      case pvm: PermanentViewMarker => pvm.child.transformAllExpressions {
+          case s: SubqueryExpression => s.withNewPlan(apply(s.plan))
+        }
+    }
+  }
 }

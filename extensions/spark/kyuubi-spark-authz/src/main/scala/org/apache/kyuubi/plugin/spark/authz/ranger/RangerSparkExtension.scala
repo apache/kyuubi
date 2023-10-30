@@ -19,9 +19,11 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.plugin.spark.authz.ranger.datamasking.{RuleApplyDataMaskingStage0, RuleApplyDataMaskingStage1}
-import org.apache.kyuubi.plugin.spark.authz.ranger.rowfilter.RuleApplyRowFilter
-import org.apache.kyuubi.plugin.spark.authz.util.{RuleEliminateMarker, RuleEliminateViewMarker}
+import org.apache.kyuubi.plugin.spark.authz.rule.{RuleEliminateMarker, RuleEliminatePermanentViewMarker}
+import org.apache.kyuubi.plugin.spark.authz.rule.config.AuthzConfigurationChecker
+import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{RuleApplyDataMaskingStage0, RuleApplyDataMaskingStage1}
+import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.RuleApplyPermanentViewMarker
+import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.{FilterDataSourceV2Strategy, RuleApplyRowFilter, RuleReplaceShowObjectCommands}
 
 /**
  * ACL Management for Apache Spark SQL with Apache Ranger, enabling:
@@ -49,7 +51,7 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
     v1.injectResolutionRule(RuleApplyDataMaskingStage1)
     v1.injectOptimizerRule(_ => new RuleEliminateMarker())
     v1.injectOptimizerRule(new RuleAuthorization(_))
-    v1.injectOptimizerRule(_ => new RuleEliminateViewMarker())
+    v1.injectOptimizerRule(_ => new RuleEliminatePermanentViewMarker())
     v1.injectPlannerStrategy(new FilterDataSourceV2Strategy(_))
   }
 }

@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
+package org.apache.kyuubi.plugin.spark.authz.rule.datamasking
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.NamedExpression
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 
-import org.apache.kyuubi.plugin.spark.authz.ranger.RuleHelper
+import org.apache.kyuubi.plugin.spark.authz.rule.RuleHelper
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
 /**
