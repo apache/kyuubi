@@ -38,6 +38,18 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val table1 = "table1_delta"
   val table2 = "table2_delta"
 
+  def createTableSql(namespace: String, table: String): String =
+    s"""
+       |CREATE TABLE IF NOT EXISTS $namespace.$table (
+       |  id INT,
+       |  name STRING,
+       |  gender STRING,
+       |  birthDate TIMESTAMP
+       |)
+       |USING DELTA
+       |PARTITIONED BY (gender)
+       |""".stripMargin
+
   override def withFixture(test: NoArgTest): Outcome = {
     test()
   }
@@ -66,13 +78,9 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s"""
            |CREATE TABLE IF NOT EXISTS $namespace1.$table1 (
            |  id INT,
-           |  firstName STRING,
-           |  middleName STRING,
-           |  lastName STRING,
+           |  name STRING,
            |  gender STRING,
-           |  birthDate TIMESTAMP,
-           |  ssn STRING,
-           |  salary INT
+           |  birthDate TIMESTAMP
            |) USING DELTA
            |""".stripMargin
       interceptContains[AccessControlException] {
@@ -80,21 +88,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }(s"does not have [create] privilege on [$namespace1/$table1]")
       doAs(admin, createNonPartitionTableSql)
 
-      val createPartitionTableSql =
-        s"""
-           |CREATE TABLE IF NOT EXISTS $namespace1.$table2 (
-           |  id INT,
-           |  firstName STRING,
-           |  middleName STRING,
-           |  lastName STRING,
-           |  gender STRING,
-           |  birthDate TIMESTAMP,
-           |  ssn STRING,
-           |  salary INT
-           |)
-           |USING DELTA
-           |PARTITIONED BY (gender)
-           |""".stripMargin
+      val createPartitionTableSql = createTableSql(namespace1, table2)
       interceptContains[AccessControlException] {
         doAs(someone, sql(createPartitionTableSql))
       }(s"does not have [create] privilege on [$namespace1/$table2]")
@@ -108,13 +102,9 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s"""
            |CREATE OR REPLACE TABLE $namespace1.$table1 (
            |  id INT,
-           |  firstName STRING,
-           |  middleName STRING,
-           |  lastName STRING,
+           |  name STRING,
            |  gender STRING,
-           |  birthDate TIMESTAMP,
-           |  ssn STRING,
-           |  salary INT
+           |  birthDate TIMESTAMP
            |) USING DELTA
            |""".stripMargin
       interceptContains[AccessControlException] {
@@ -127,23 +117,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   test("alter table") {
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
-      doAs(
-        admin,
-        sql(
-          s"""
-             |CREATE TABLE IF NOT EXISTS $namespace1.$table1 (
-             |  id INT,
-             |  firstName STRING,
-             |  middleName STRING,
-             |  lastName STRING,
-             |  gender STRING,
-             |  birthDate TIMESTAMP,
-             |  ssn STRING,
-             |  salary INT
-             |)
-             |USING DELTA
-             |PARTITIONED BY (gender)
-             |""".stripMargin))
+      doAs(admin, sql(createTableSql(namespace1, table1)))
 
       // add columns
       interceptContains[AccessControlException](
@@ -163,7 +137,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(
           someone,
           sql(s"ALTER TABLE $namespace1.$table1" +
-            s" REPLACE COLUMNS (id INT, firstName STRING)")))(
+            s" REPLACE COLUMNS (id INT, name STRING)")))(
         s"does not have [alter] privilege on [$namespace1/$table1]")
 
       // rename column
@@ -186,6 +160,62 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           sql(s"ALTER TABLE $namespace1.$table1" +
             s" SET TBLPROPERTIES ('delta.appendOnly' = 'true')")))(
         s"does not have [alter] privilege on [$namespace1/$table1]")
+    }
+  }
+
+  test("delete from table") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(admin, sql(createTableSql(namespace1, table1)))
+      interceptContains[AccessControlException](
+        doAs(someone, sql(s"DELETE FROM $namespace1.$table1 WHERE birthDate < '1955-01-01'")))(
+        s"does not have [update] privilege on [$namespace1/$table1]")
+    }
+  }
+
+  test("insert table") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq(
+        (s"$namespace1.$table1", "table"),
+        (s"$namespace1.$table2", "table"),
+        (s"$namespace1", "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+        doAs(admin, sql(createTableSql(namespace1, table1)))
+        doAs(admin, sql(createTableSql(namespace1, table2)))
+
+        // insert into
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"INSERT INTO $namespace1.$table1" +
+              s" SELECT * FROM $namespace1.$table2")))(
+          s"does not have [select] privilege on [$namespace1/$table2/id,$namespace1/$table2/name," +
+            s"$namespace1/$table2/gender,$namespace1/$table2/birthDate]," +
+            s" [update] privilege on [$namespace1/$table1]")
+
+        // insert overwrite
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"INSERT INTO $namespace1.$table1" +
+              s" SELECT * FROM $namespace1.$table2")))(
+          s"does not have [select] privilege on [$namespace1/$table2/id,$namespace1/$table2/name," +
+            s"$namespace1/$table2/gender,$namespace1/$table2/birthDate]," +
+            s" [update] privilege on [$namespace1/$table1]")
+      }
+    }
+  }
+
+  test("update table") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(admin, sql(createTableSql(namespace1, table1)))
+      interceptContains[AccessControlException](
+        doAs(
+          someone,
+          sql(s"UPDATE $namespace1.$table1" +
+            s" SET gender = 'Female' WHERE gender = 'F'")))(
+        s"does not have [update] privilege on [$namespace1/$table1]")
     }
   }
 }

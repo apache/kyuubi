@@ -17,17 +17,32 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
-import org.apache.kyuubi.plugin.spark.authz.OperationType._
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
 object DeltaCommands extends CommandSpecs[TableCommandSpec] {
 
-  val CreateDeltaTableCommand = {
-    val cmd = "org.apache.spark.sql.delta.commands.CreateDeltaTableCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
-    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
+  val DeleteCommand = {
+    val cmd = "org.apache.spark.sql.delta.commands.DeleteCommand"
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val tableDesc = TableDesc(
+      "catalogTable",
+      classOf[CatalogTableOptionTableExtractor],
+      actionTypeDesc = Some(actionTypeDesc))
+    TableCommandSpec(cmd, Seq(tableDesc))
+    val targetDesc = TableDesc(
+      "target",
+      classOf[SubqueryAliasTableExtractor],
+      actionTypeDesc = Some(actionTypeDesc))
+    TableCommandSpec(cmd, Seq(tableDesc, targetDesc))
+  }
+
+  val UpdateCommand = {
+    val cmd = "org.apache.spark.sql.delta.commands.UpdateCommand"
+    DeleteCommand.copy(classname = cmd)
   }
 
   override def specs: Seq[TableCommandSpec] = Seq(
-    CreateDeltaTableCommand)
+    DeleteCommand,
+    UpdateCommand)
 }

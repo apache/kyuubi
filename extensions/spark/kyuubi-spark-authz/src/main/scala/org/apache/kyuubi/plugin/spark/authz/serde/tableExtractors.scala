@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -241,6 +242,19 @@ class TableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val tableName = invokeAs[String](v1, "name")
     lookupExtractor[StringTableExtractor].apply(spark, tableName)
+  }
+}
+
+/**
+ * org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
+ */
+class SubqueryAliasTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    invokeAs[AnyRef](v1, "child") match {
+      case lr: LogicalRelation =>
+        lookupExtractor[LogicalRelationTableExtractor].apply(spark, lr)
+      case _ => None
+    }
   }
 }
 
