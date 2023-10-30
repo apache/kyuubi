@@ -22,30 +22,15 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 
 import org.apache.kyuubi.plugin.spark.authz._
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
-import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization._
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
-import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
+import org.apache.kyuubi.plugin.spark.authz.rule.Authorization
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
-class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
-  override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan match {
-      case plan if isAuthChecked(plan) => plan // do nothing if checked privileges already.
-      case p => checkPrivileges(spark, p)
-    }
-  }
-}
-
-object RuleAuthorization {
-
-  val KYUUBI_AUTHZ_TAG = TreeNodeTag[Unit]("__KYUUBI_AUTHZ_TAG")
-
-  private def checkPrivileges(spark: SparkSession, plan: LogicalPlan): LogicalPlan = {
+class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
+  override def checkPrivileges(spark: SparkSession, plan: LogicalPlan): Unit = {
     val auditHandler = new SparkRangerAuditHandler
     val ugi = getAuthzUgi(spark.sparkContext)
     val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
@@ -95,23 +80,5 @@ object RuleAuthorization {
         verify(Seq(req), auditHandler)
       }
     }
-    markAuthChecked(plan)
-  }
-
-  private def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
-    plan match {
-      case _: PermanentViewMarker =>
-        plan.transformUp { case p =>
-          p.setTagValue(KYUUBI_AUTHZ_TAG, ())
-          p
-        }
-      case _ =>
-        plan.setTagValue(KYUUBI_AUTHZ_TAG, ())
-    }
-    plan
-  }
-
-  private def isAuthChecked(plan: LogicalPlan): Boolean = {
-    plan.find(_.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty).nonEmpty
   }
 }
