@@ -27,9 +27,10 @@ public class KerberosAuthenticationManager {
   private static final Map<String, CachingKerberosAuthentication> KEYTAB_AUTHENTICATION_CACHE =
       new ConcurrentHashMap<>();
 
-  public static synchronized CachingKerberosAuthentication getTgtCacheAuthentication() {
+  public static synchronized CachingKerberosAuthentication getTgtCacheAuthentication(
+      String ticketCache) {
     if (GLOBAL_TGT_CACHE_AUTHENTICATION == null) {
-      KerberosAuthentication tgtCacheAuth = new KerberosAuthentication();
+      KerberosAuthentication tgtCacheAuth = new KerberosAuthentication(ticketCache);
       GLOBAL_TGT_CACHE_AUTHENTICATION = new CachingKerberosAuthentication(tgtCacheAuth);
     }
     return GLOBAL_TGT_CACHE_AUTHENTICATION;

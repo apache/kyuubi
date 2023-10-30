@@ -48,8 +48,8 @@ public class KerberosAuthentication {
   private KerberosPrincipal principal = null;
   private final Configuration configuration;
 
-  KerberosAuthentication() {
-    this.configuration = createLoginFromTgtCacheConfiguration();
+  KerberosAuthentication(String ticketCache) {
+    this.configuration = createLoginFromTgtCacheConfiguration(ticketCache);
   }
 
   KerberosAuthentication(String principal, String keytabLocation) {
@@ -96,13 +96,15 @@ public class KerberosAuthentication {
     }
   }
 
-  private static Configuration createLoginFromTgtCacheConfiguration() {
+  private static Configuration createLoginFromTgtCacheConfiguration(String ticketCache) {
     ImmutableMap.Builder<String, String> optionsBuilder =
         ImmutableMap.<String, String>builder()
             .put("useTicketCache", "true")
             .put("renewTGT", "true");
 
-    String ticketCache = System.getenv("KRB5CCNAME");
+    if (ticketCache == null) {
+      ticketCache = System.getenv("KRB5CCNAME");
+    }
     if (ticketCache != null) {
       optionsBuilder.put("ticketCache", ticketCache);
     }
