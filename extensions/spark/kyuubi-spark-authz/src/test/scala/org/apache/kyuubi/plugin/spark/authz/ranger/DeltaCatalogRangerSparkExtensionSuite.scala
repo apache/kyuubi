@@ -22,6 +22,7 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
+import org.apache.kyuubi.plugin.spark.authz.ranger.DeltaCatalogRangerSparkExtensionSuite._
 import org.apache.kyuubi.tags.DeltaTest
 import org.apache.kyuubi.util.AssertionUtils._
 
@@ -31,6 +32,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 @DeltaTest
 class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  override protected val sqlExtensions: String = "io.delta.sql.DeltaSparkSessionExtension"
 
   val namespace1 = deltaNamespace
   val table1 = "table1_delta"
@@ -41,9 +43,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   override def beforeAll(): Unit = {
-    spark.conf.set(
-      s"spark.sql.catalog.$sparkCatalog",
-      "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+    spark.conf.set(s"spark.sql.catalog.$sparkCatalog", deltaCatalogClassName)
     spark.conf.set(
       s"spark.sql.catalog.$sparkCatalog.warehouse",
       Utils.createTempDir("delta-hadoop").toString)
@@ -103,8 +103,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("create or replace table") {
-    withCleanTmpResources(
-      Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
       val createOrReplaceTableSql =
         s"""
            |CREATE OR REPLACE TABLE $namespace1.$table1 (
@@ -124,4 +123,65 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, createOrReplaceTableSql)
     }
   }
+
+  test("alter table") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1 (
+             |  id INT,
+             |  firstName STRING,
+             |  middleName STRING,
+             |  lastName STRING,
+             |  gender STRING,
+             |  birthDate TIMESTAMP,
+             |  ssn STRING,
+             |  salary INT
+             |)
+             |USING DELTA
+             |PARTITIONED BY (gender)
+             |""".stripMargin))
+
+      // add columns
+      interceptContains[AccessControlException](
+        doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS (age int)")))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
+
+      // change column
+      interceptContains[AccessControlException](
+        doAs(
+          someone,
+          sql(s"ALTER TABLE $namespace1.$table1" +
+            s" CHANGE COLUMN gender gender STRING AFTER birthDate")))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
+
+      // replace columns
+      interceptContains[AccessControlException](
+        doAs(
+          someone,
+          sql(s"ALTER TABLE $namespace1.$table1" +
+            s" REPLACE COLUMNS (id INT, firstName STRING)")))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
+
+      // rename column
+      interceptContains[AccessControlException](
+        doAs(
+          someone,
+          sql(s"ALTER TABLE $namespace1.$table1" +
+            s" RENAME COLUMN birthDate TO dateOfBirth")))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
+
+      // drop column
+      interceptContains[AccessControlException](
+        doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 DROP COLUMN birthDate")))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
+    }
+  }
+}
+
+object DeltaCatalogRangerSparkExtensionSuite {
+  val deltaCatalogClassName: String = "org.apache.spark.sql.delta.catalog.DeltaCatalog"
 }
