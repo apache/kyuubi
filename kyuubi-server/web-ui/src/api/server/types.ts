@@ -15,11 +15,14 @@
  * limitations under the License.
  */
 
-import request from '@/utils/request'
-
-export function getAllServer(): any {
-  return request({
-    url: 'api/v1/admin/server',
-    method: 'get'
-  })
+interface IServer {
+  attributes: any | null
+  host: string
+  instance: string
+  namespace: string
+  nodeName: string
+  port: number
+  status: string
 }
+
+export { IServer }

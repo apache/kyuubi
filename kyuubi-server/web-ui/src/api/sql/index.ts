@@ -17,9 +17,34 @@
 
 import request from '@/utils/request'
 
-export function getAllServer(): any {
+export function openSession(host: string, data: any): any {
   return request({
-    url: 'api/v1/admin/server',
-    method: 'get'
+    url: `http://${host}/api/v1/sessions`,
+    method: 'post',
+    data
+  })
+}
+
+export function runSql(data: any, identifier: string): any {
+  return request({
+    url: `api/v1/sessions/${identifier}/operations/statement`,
+    method: 'post',
+    data
+  })
+}
+
+export function getSqlRowset(params: any): any {
+  return request({
+    url: `api/v1/operations/${params.operationHandleStr}/rowset`,
+    method: 'get',
+    params
+  })
+}
+
+export function getSqlMetadata(params: any): any {
+  return request({
+    url: `api/v1/operations/${params.operationHandleStr}/resultsetmetadata`,
+    method: 'get',
+    params
   })
 }

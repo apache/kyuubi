@@ -18,47 +18,89 @@
 
 <template>
   <div class="container">
-    <MonacoEditor
-      v-model="editorVariables.content"
-      :language="editorVariables.language"
-      @editor-mounted="editorMounted"
-      @change="handleContentChange"
-      @editor-save="editorSave" />
+    <el-tabs
+      v-model="editableTabsValue"
+      type="card"
+      class="sql-lab-tabs"
+      editable
+      @edit="handleTabsEdit">
+      <el-tab-pane
+        v-for="item in editableTabs"
+        :key="item.name"
+        :label="item.title"
+        :name="item.name">
+        <Editor />
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import MonacoEditor from '@/components/monaco-editor/index.vue'
-  import { reactive, toRaw } from 'vue'
-  import * as monaco from 'monaco-editor'
-  import { format } from 'sql-formatter'
+  import Editor from './components/Editor.vue'
+  import { ref } from 'vue'
+  import { TabPaneName } from 'element-plus'
 
-  const editorVariables = reactive({
-    editor: {} as any,
-    language: 'sql',
-    content: ''
-  })
+  const editableTabsValue = ref('0')
+  const editableTabs = ref([
+    {
+      title: 'Sql',
+      name: '0'
+    }
+  ])
 
-  const editorMounted = (editor: monaco.editor.IStandaloneCodeEditor) => {
-    editorVariables.editor = editor
-  }
-  const handleFormat = () => {
-    toRaw(editorVariables.editor).setValue(
-      format(toRaw(editorVariables.editor).getValue())
-    )
-  }
+  const handleTabsEdit = (
+    targetName: TabPaneName | undefined,
+    action: 'remove' | 'add'
+  ) => {
+    if (action === 'add') {
+      const tabLength = editableTabs.value.length
+      const newTabName = `${tabLength}`
+      editableTabs.value.push({
+        title: `Sql${tabLength}`,
+        name: newTabName
+      })
+      editableTabsValue.value = newTabName
+    } else if (action === 'remove') {
+      const tabs = editableTabs.value
+      let activeName = editableTabsValue.value
+      if (activeName === targetName) {
+        tabs.forEach((tab, index) => {
+          if (tab.name === targetName) {
+            const nextTab = tabs[index + 1] || tabs[index - 1]
+            if (nextTab) {
+              activeName = nextTab.name
+            }
+          }
+        })
+      }
 
-  const editorSave = () => {
-    handleFormat()
-  }
-
-  const handleContentChange = (value: string) => {
-    editorVariables.content = value
+      editableTabsValue.value = activeName
+      editableTabs.value = tabs.filter((tab) => tab.name !== targetName)
+    }
   }
 </script>
 
 <style lang="scss" scoped>
   .container {
     height: 70%;
+
+    :deep(.sql-lab-tabs) {
+      height: 100%;
+      .el-tabs__header {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+      }
+
+      /* 自定义选项卡面板的高度 */
+      .el-tabs__content {
+        height: 300px; /* 你可以根据需要设置高度 */
+        overflow: auto; /* 如果内容溢出，可以启用滚动条 */
+
+        .el-tab-pane {
+          height: 100%;
+        }
+      }
+    }
   }
 </style>
