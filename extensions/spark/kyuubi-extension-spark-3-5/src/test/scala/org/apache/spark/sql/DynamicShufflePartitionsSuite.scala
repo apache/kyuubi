@@ -75,7 +75,7 @@ class DynamicShufflePartitionsSuite extends KyuubiSparkSQLExtensionTest {
             if (dynamicShufflePartitions) {
               joinExchanges.foreach(e =>
                 assert(e.outputPartitioning.numPartitions
-                  == Math.min(15, maxDynamicShufflePartitionNum)))
+                  == Math.min(22, maxDynamicShufflePartitionNum)))
             } else {
               joinExchanges.foreach(e =>
                 assert(e.outputPartitioning.numPartitions == initialPartitionNum))
@@ -83,14 +83,14 @@ class DynamicShufflePartitionsSuite extends KyuubiSparkSQLExtensionTest {
 
             assert(rebalanceExchanges.size == 1)
             if (dynamicShufflePartitions) {
-              // shuffle query size: 1742 509
               if (maxDynamicShufflePartitionNum == 8) {
-                assert(rebalanceExchanges.head.outputPartitioning.numPartitions ==
-                  Math.min(3, maxDynamicShufflePartitionNum))
-              } else {
                 // shuffle query size: 1424 451
                 assert(rebalanceExchanges.head.outputPartitioning.numPartitions ==
                   Math.min(4, maxDynamicShufflePartitionNum))
+              } else {
+                // shuffle query size: 2057 664
+                assert(rebalanceExchanges.head.outputPartitioning.numPartitions ==
+                  Math.min(6, maxDynamicShufflePartitionNum))
               }
             } else {
               assert(
@@ -117,16 +117,16 @@ class DynamicShufflePartitionsSuite extends KyuubiSparkSQLExtensionTest {
             if (dynamicShufflePartitions) {
               joinExchanges.foreach(e =>
                 assert(e.outputPartitioning.numPartitions ==
-                  Math.min(15, maxDynamicShufflePartitionNum)))
+                  Math.min(22, maxDynamicShufflePartitionNum)))
             } else {
               joinExchanges.foreach(e =>
                 assert(e.outputPartitioning.numPartitions == initialPartitionNum))
             }
-            // shuffle query size: 4820 720
+            // shuffle query size: 5154 720
             assert(rebalanceExchanges.size == 1)
             if (dynamicShufflePartitions) {
               assert(rebalanceExchanges.head.outputPartitioning.numPartitions
-                == Math.min(10, maxDynamicShufflePartitionNum))
+                == Math.min(12, maxDynamicShufflePartitionNum))
             } else {
               assert(rebalanceExchanges.head.outputPartitioning.numPartitions ==
                 initialPartitionNum)
