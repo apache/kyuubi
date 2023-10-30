@@ -106,7 +106,7 @@ public class KerberosAuthentication {
     if (StringUtils.isBlank(ticketCache)) {
       ticketCache = System.getenv("KRB5CCNAME");
     }
-    if (ticketCache != null) {
+    if (StringUtils.isNotBlank(ticketCache)) {
       optionsBuilder.put("ticketCache", ticketCache);
     }
     return createConfiguration(optionsBuilder);
