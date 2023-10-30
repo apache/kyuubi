@@ -154,15 +154,15 @@ HiveServer2 Compatibility
 
 JDBC Drivers need to negotiate a protocol version with Kyuubi Server/HiveServer2 when connecting.
 
-In order to support most HiveServer2 versions (since Hive 0.13.0),
-Kyuubi Hive JDBC Driver offers protocol version v6 (`clientProtocolVersion=5`) to server by default.
+Kyuubi Hive JDBC Driver offers protocol version v10 (`clientProtocolVersion=9`, supported since Hive 2.3.0)
+to server by default.
 
-If you need to connect to HiveServer2 before 0.13.0,
+If you need to connect to HiveServer2 before 2.3.0,
 please set client property `clientProtocolVersion` to a lower number.
 
 .. code-block:: jdbc
 
-   jdbc:subprotocol://host:port[/catalog]/[schema];clientProtocolVersion=5;
+   jdbc:subprotocol://host:port[/catalog]/[schema];clientProtocolVersion=9;
 
 
 .. tip::
