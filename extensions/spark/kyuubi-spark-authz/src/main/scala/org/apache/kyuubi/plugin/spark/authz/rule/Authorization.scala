@@ -51,6 +51,12 @@ object Authorization {
           p
         }
         pvm
+      case subquery: Subquery =>
+        subquery.transformDown { case p =>
+          p.setTagValue(KYUUBI_AUTHZ_TAG, ())
+          p
+        }
+        subquery
     }
   }
 
