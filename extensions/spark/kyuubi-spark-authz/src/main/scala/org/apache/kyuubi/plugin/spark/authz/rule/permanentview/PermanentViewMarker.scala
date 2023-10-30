@@ -26,7 +26,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
 case class PermanentViewMarker(
     child: LogicalPlan,
     catalogTable: CatalogTable,
-    visitColNames: Seq[String],
+    outputColNames: Seq[String],
     isSubqueryExpressionPlaceHolder: Boolean = false) extends UnaryNode
   with WithInternalChild {
 
