@@ -24,7 +24,6 @@ import java.util.{Iterator => JIterator}
 import com.google.common.collect.AbstractIterator
 import io.trino.tpcds._
 import io.trino.tpcds.`type`.{Decimal => TPCDSDecimal}
-import io.trino.tpcds.{Session, Table}
 import io.trino.tpcds.row.generator.RowGenerator
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
