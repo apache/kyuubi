@@ -37,7 +37,7 @@ import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
 import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.events.KyuubiEvent
@@ -120,7 +120,7 @@ class ElasticSearchLoggingEventHandler(
   }
 
   private def throwExceptionIndexNotfound(indexId: String) =
-    throw new RuntimeException(s"the index '$indexId' is not found on ElasticSearch")
+    throw new KyuubiException()(s"the index '$indexId' is not found on ElasticSearch")
 }
 
 object ElasticSearchLoggingEventHandler {
