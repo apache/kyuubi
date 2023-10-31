@@ -18,11 +18,12 @@ package org.apache.kyuubi.engine.jdbc.operation
 
 import java.sql.{Connection, Statement, Types}
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.ResultSetWrapper
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchOrientation, IterableFetchIterator, OperationState}
+import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -67,7 +68,9 @@ class ExecuteStatement(
         iter =
           if (incrementalCollect) {
             info("Execute in incremental collect mode")
-            new IterableFetchIterator(resultSetWrapper.toIterable)
+            new IterableFetchIterator(new Iterable[Row] {
+              override def iterator: Iterator[Row] = resultSetWrapper
+            })
           } else {
             warn(s"Execute in full collect mode")
             new ArrayFetchIterator(resultSetWrapper.toArray())
@@ -95,4 +98,13 @@ class ExecuteStatement(
       shutdownTimeoutMonitor()
     }
   }
+
+  override def validateFetchOrientation(order: FetchOrientation): Unit = {
+    if (incrementalCollect && order != FetchOrientation.FETCH_FIRST) {
+      throw KyuubiSQLException(s"The fetch type $order is not supported" +
+        s" of incremental collect mode.")
+    }
+    super.validateFetchOrientation(order)
+  }
+
 }

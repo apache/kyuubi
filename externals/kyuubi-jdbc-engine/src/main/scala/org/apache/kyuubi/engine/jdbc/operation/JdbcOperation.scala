@@ -36,10 +36,13 @@ abstract class JdbcOperation(session: Session) extends AbstractOperation(session
 
   protected lazy val dialect: JdbcDialect = JdbcDialects.get(conf)
 
+  def validateFetchOrientation(order: FetchOrientation): Unit =
+    validateDefaultFetchOrientation(order)
+
   override def getNextRowSetInternal(
       order: FetchOrientation,
       rowSetSize: Int): TFetchResultsResp = {
-    validateDefaultFetchOrientation(order)
+    validateFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
     order match {
