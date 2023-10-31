@@ -36,7 +36,7 @@ import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, Kyuub
 import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.{AuthTypes, KyuubiAuthenticationFactory}
-import org.apache.kyuubi.service.authentication.AuthTypes.{NONE, NOSASL}
+import org.apache.kyuubi.service.authentication.AuthTypes.NONE
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
 import org.apache.kyuubi.util.ThreadUtils
 
@@ -71,16 +71,16 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private lazy val port: Int = conf.get(FRONTEND_REST_BIND_PORT)
 
-  private lazy val isSecurityEnabled = {
+  private lazy val securityEnabled = {
     val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
-    !authTypes.contains(NONE) && authTypes != Set(NOSASL)
+    KyuubiAuthenticationFactory.getValidPasswordAuthMethod(authTypes) != NONE
   }
 
-  private lazy val administrators =
+  private lazy val administrators: Set[String] =
     conf.get(KyuubiConf.SERVER_ADMINISTRATORS) + Utils.currentUser
 
   def isAdministrator(userName: String): Boolean =
-    if (isSecurityEnabled) administrators.contains(userName) else true
+    if (securityEnabled) administrators.contains(userName) else true
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
