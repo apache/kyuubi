@@ -17,10 +17,15 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.util.Optional
+
 import scala.concurrent.duration.Duration
 
 import org.apache.flink.api.common.JobID
+import org.apache.flink.table.api.TableException
 import org.apache.flink.table.gateway.api.operation.OperationHandle
+import org.apache.flink.table.operations.Operation
+import org.apache.flink.table.operations.command.HelpOperation
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils
@@ -28,6 +33,8 @@ import org.apache.kyuubi.engine.flink.result.ResultSetUtil
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.reflect.DynConstructors
+import org.apache.kyuubi.util.reflect.ReflectUtils.{getField, invokeAs}
 
 class ExecuteStatement(
     session: Session,
@@ -59,16 +66,49 @@ class ExecuteStatement(
   private def executeStatement(): Unit = {
     try {
       setState(OperationState.RUNNING)
+
+      val operation = parseExtendedStatement(statement)
+      if (operation.isPresent && operation.get().isInstanceOf[HelpOperation]) {
+        resultSet = ResultSetUtil.helpMessageResultSet
+        setState(OperationState.FINISHED)
+        return
+      }
+
       val resultFetcher = executor.executeStatement(
         new OperationHandle(getHandle.identifier),
         statement)
       jobId = FlinkEngineUtils.getResultJobId(resultFetcher)
-      resultSet = ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows, resultFetchTimeout)
+      resultSet = ResultSetUtil
+        .fromResultFetcher(resultFetcher, resultMaxRows, resultFetchTimeout)
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
+    }
+  }
+
+  private def parseExtendedStatement(statement: String): Optional[Operation] = {
+    val plannerModuleClassLoader: ClassLoader = getPlannerModuleClassLoader
+    val extendedParser: AnyRef =
+      DynConstructors.builder()
+        .loader(plannerModuleClassLoader)
+        .impl("org.apache.flink.table.planner.parse.ExtendedParser")
+        .build().newInstance()
+    invokeAs(extendedParser, "parse", (classOf[String], statement))
+      .asInstanceOf[Optional[Operation]]
+  }
+
+  private def getPlannerModuleClassLoader: ClassLoader = {
+    try {
+      val plannerModule =
+        invokeAs("org.apache.flink.table.planner.loader.PlannerModule", "getInstance")
+          .asInstanceOf[AnyRef]
+
+      getField(plannerModule, "submoduleClassLoader").asInstanceOf[ClassLoader]
+    } catch {
+      case e: Exception =>
+        throw new TableException("Error obtaining Flink planner module ClassLoader", e)
     }
   }
 }

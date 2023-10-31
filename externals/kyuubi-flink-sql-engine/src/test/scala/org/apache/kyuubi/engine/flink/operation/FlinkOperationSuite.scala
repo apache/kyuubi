@@ -25,6 +25,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.PipelineOptions
+import org.apache.flink.table.client.cli.CliStrings
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.hive.service.rpc.thrift._
 
@@ -1264,5 +1265,15 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
         }
       })
     assert(exception.getMessage === "Futures timed out after [60000 milliseconds]")
+  }
+
+  test("execute statement - help") {
+    withJdbcStatement() { stmt =>
+      val resultSet = stmt.executeQuery("help")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) === "result")
+      assert(resultSet.next())
+      assert(resultSet.getString(1).equals(CliStrings.MESSAGE_HELP.toString))
+    }
   }
 }
