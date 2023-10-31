@@ -1450,7 +1450,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val directory = File(tableDirectory).createDirectory()
     val plan = sql(
       s"""
-         |INSERT OVERWRITE DIRECTORY '$directory.path'
+         |INSERT OVERWRITE DIRECTORY '${directory.path}'
          |USING parquet
          |SELECT * FROM $reusedPartTable""".stripMargin)
       .queryExecution.analyzed
@@ -1574,7 +1574,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val directory = File(tableDirectory).createDirectory()
     val plan = sql(
       s"""
-         |INSERT OVERWRITE DIRECTORY '$directory.path'
+         |INSERT OVERWRITE DIRECTORY '${directory.path}'
          |USING parquet
          |SELECT * FROM $reusedPartTable""".stripMargin)
       .queryExecution.analyzed
@@ -1599,7 +1599,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val directory = File(tableDirectory).createDirectory()
     val plan = sql(
       s"""
-         |INSERT OVERWRITE DIRECTORY '$directory.path'
+         |INSERT OVERWRITE DIRECTORY '${directory.path}'
          |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
          |SELECT * FROM $reusedPartTable""".stripMargin)
       .queryExecution.analyzed
