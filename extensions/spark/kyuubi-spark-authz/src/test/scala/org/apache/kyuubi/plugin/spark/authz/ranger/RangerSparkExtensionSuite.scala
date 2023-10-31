@@ -21,11 +21,10 @@ import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{DataFrame, SparkSessionExtensions}
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedRelation}
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
-import org.apache.spark.sql.catalyst.expressions.{AttributeReference, PythonUDF}
-import org.apache.spark.sql.catalyst.plans.logical.{MapInPandas, Statistics}
+import org.apache.spark.sql.catalyst.expressions.PythonUDF
+import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{LongType, StructField, StructType}
