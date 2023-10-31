@@ -17,9 +17,14 @@
 
 package org.apache.kyuubi.events.handler
 
+import java.util.concurrent.Executors
+
+import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success}
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.sksamuel.elastic4s.{ElasticClient, ElasticProperties, RequestFailure}
+import com.sksamuel.elastic4s.{ElasticClient, ElasticProperties}
 import com.sksamuel.elastic4s.ElasticApi.indexInto
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.http.JavaClient
@@ -52,6 +57,9 @@ class ElasticSearchLoggingEventHandler(
     kyuubiConf.get(SERVER_EVENT_ELASTICSEARCH_INDEX_AUTOCREATE_ENABLED)
 
   private val esClient: ElasticClient = getElasticClient(serverUrl, username, password)
+
+  implicit val ec: ExecutionContext =
+    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
 
   private def checkIndexExisted: String => Boolean = (indexId: String) => {
     checkArgument(
@@ -100,10 +108,10 @@ class ElasticSearchLoggingEventHandler(
     }
     esClient.execute {
       indexInto(indexId).fields(fields).refresh(RefreshPolicy.Immediate)
-    }.await match {
-      case f: RequestFailure =>
-        error(s"Failed to send event in ElasticSearchLoggingEventHandler, ${f.error}")
-      case _ =>
+    }.onComplete {
+      case Success(_) =>
+      case Failure(f) =>
+        error(s"Failed to send event in ElasticSearchLoggingEventHandler, ${f.getMessage}", f)
     }
   }
 
