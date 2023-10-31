@@ -85,7 +85,8 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
   test("CreateTableAs") {
     val table2 = "table2"
-    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table1", "table"),
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"),
       (s"$catalogV2.$namespace1.$table2", "table"))) {
       doAs(
         admin,
@@ -97,10 +98,8 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |OPTIONS (
              |  primaryKey = 'id'
              |)
-             |""".stripMargin
-        )
-      )
-      val createTable =
+             |""".stripMargin))
+      val createTableAs =
         s"""
            |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2
            |USING PAIMON
@@ -108,14 +107,9 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
            |SELECT * FROM $catalogV2.$namespace1.$table1
            |""".stripMargin
       interceptContains[AccessControlException] {
-        doAs(
-          someone,
-          sql(
-            createTable
-          )
-        )
+        doAs(someone, sql(createTableAs))
       }(s"does not have [select] privilege on [$table1/id]")
-      doAs(admin, createTable)
+      doAs(admin, createTableAs)
     }
   }
 }
