@@ -100,7 +100,7 @@ class ExecuteStatement(
   }
 
   override def validateFetchOrientation(order: FetchOrientation): Unit = {
-    if (incrementalCollect && order != FetchOrientation.FETCH_FIRST) {
+    if (incrementalCollect && order != FetchOrientation.FETCH_NEXT) {
       throw KyuubiSQLException(s"The fetch type $order is not supported" +
         s" of incremental collect mode.")
     }
