@@ -600,8 +600,49 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
   }
 
+  val FlatMapGroupsInPandas = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.FlatMapGroupsInPandas"
+    TableCommandSpec(cmd, Seq.empty, QUERY, queryDescs = Seq(QueryDesc("child")))
+  }
+
+  val MapInPandas = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.MapInPandas"
+    TableCommandSpec(cmd, Seq.empty, QUERY, queryDescs = Seq(QueryDesc("child")))
+  }
+
+  val PythonMapInArrow = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.PythonMapInArrow"
+    TableCommandSpec(cmd, Seq.empty, QUERY, queryDescs = Seq(QueryDesc("child")))
+  }
+
+  val FlatMapCoGroupsInPandas = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.FlatMapCoGroupsInPandas"
+    TableCommandSpec(cmd, Seq.empty, QUERY, queryDescs = Seq(QueryDesc("left"), QueryDesc("right")))
+  }
+
+  val FlatMapGroupsInPandasWithState = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.FlatMapGroupsInPandasWithState"
+    TableCommandSpec(cmd, Seq.empty, QUERY, queryDescs = Seq(QueryDesc("child")))
+  }
+
+  val BatchEvalPython = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.BatchEvalPython"
+    TableCommandSpec(cmd, Seq.empty, QUERY, queryDescs = Seq(QueryDesc("child")))
+  }
+
+  val ArrowEvalPython = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.ArrowEvalPython"
+    TableCommandSpec(cmd, Seq.empty, QUERY, queryDescs = Seq(QueryDesc("child")))
+  }
+  val AttachDistributedSequence = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.AttachDistributedSequence"
+    TableCommandSpec(cmd, Seq.empty, QUERY, queryDescs = Seq(QueryDesc("child")))
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     AddPartitions,
+    ArrowEvalPython,
+    AttachDistributedSequence,
     DropPartitions,
     RenamePartitions,
     TruncatePartition,
@@ -629,6 +670,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     AnalyzePartition,
     AnalyzeTable,
     AppendDataV2,
+    BatchEvalPython,
     CacheTable,
     CacheTableAsSelect,
     CacheTableV2,
@@ -657,6 +699,9 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     DescribeRelationTable,
     DropTable,
     DropTableV2,
+    FlatMapCoGroupsInPandas,
+    FlatMapGroupsInPandas,
+    FlatMapGroupsInPandasWithState,
     InsertIntoDataSource,
     InsertIntoDataSourceDir,
     InsertIntoDataSourceDir.copy(classname =
@@ -666,6 +711,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand"),
     InsertIntoHiveTable,
     LoadData,
+    MapInPandas,
     MergeIntoTable,
     OverwriteByExpression,
     OverwritePartitionsDynamic,
@@ -674,6 +720,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     RefreshTableV2,
     RefreshTable3d0,
     ReplaceData,
+    PythonMapInArrow,
     SetTableProperties,
     ShowColumns,
     ShowCreateTable,

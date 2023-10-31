@@ -81,6 +81,33 @@
   } ],
   "uriDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ArrowEvalPython",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.AttachDistributedSequence",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.BatchEvalPython",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ],
+  "uriDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CacheTable",
   "tableDescs" : [ ],
   "opType" : "CREATEVIEW",
@@ -295,6 +322,45 @@
   "queryDescs" : [ ],
   "uriDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.FlatMapCoGroupsInPandas",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "left",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  }, {
+    "fieldName" : "right",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.FlatMapGroupsInPandas",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.FlatMapGroupsInPandasWithState",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.MapInPandas",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ],
+  "uriDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.MergeIntoTable",
   "tableDescs" : [ {
     "fieldName" : "targetTable",
@@ -357,6 +423,15 @@
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.PythonMapInArrow",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "child",
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ],
   "uriDescs" : [ ]
