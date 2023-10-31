@@ -18,14 +18,8 @@
 
 <template>
   <header>
-    <el-row>
-      <el-col :span="6">
-        <img src="@/assets/kyuubi.png" />
-      </el-col>
-      <el-col :span="18">
-        <pre class="header_title">{{ title }}</pre>
-      </el-col>
-    </el-row>
+    <img src="@/assets/kyuubi.png" />
+    <pre class="header_title">{{ title }}</pre>
   </header>
   <c-menu :is-collapse="isCollapse" :active-path="activePath" :menus="menus" />
 </template>
@@ -63,10 +57,11 @@
       width: 32px;
       height: 32px;
       position: relative;
-      top: -4px;
+      top: -12.5px;
       vertical-align: middle;
     }
     pre {
+      display: inline-block;
       width: 160px;
       margin-top: 10px;
       line-height: 25px;
