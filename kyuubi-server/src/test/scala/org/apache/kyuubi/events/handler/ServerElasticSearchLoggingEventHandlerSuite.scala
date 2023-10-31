@@ -72,6 +72,7 @@ abstract class ServerElasticSearchLoggingEventHandlerSuite extends WithKyuubiSer
     withContainers { _ =>
       val esClient = getElasticClient(esServerUrl, Some(esUser), Some(esPassword))
       try {
+        Thread.sleep(1000)
         val hits = esClient.execute {
           search(destIndex).matchAllQuery()
         }.await.result.hits.hits
