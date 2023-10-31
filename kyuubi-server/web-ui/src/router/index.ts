@@ -17,7 +17,6 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 import overviewRoutes from './overview'
-import contactRoutes from './contact'
 import managementRoutes from './management'
 import detailRoutes from './detail'
 import swaggerRoutes from './swagger'
@@ -41,7 +40,6 @@ const routes = [
       ...managementRoutes,
       ...detailRoutes,
       ...swaggerRoutes,
-      ...contactRoutes,
       ...labRoutes
     ]
   }

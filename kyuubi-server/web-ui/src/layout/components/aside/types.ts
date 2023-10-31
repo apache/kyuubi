@@ -49,11 +49,6 @@ export const MENUS = [
     router: '/swagger'
   },
   {
-    label: 'Contact Us',
-    icon: 'PhoneFilled',
-    router: '/contact'
-  },
-  {
     label: 'SQL Lab',
     icon: 'Cpu',
     router: '/lab'
