@@ -15,17 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.ranger.rowfilter
+package org.apache.kyuubi.plugin.spark.authz.gen
 
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
+import org.apache.kyuubi.plugin.spark.authz.OperationType._
+import org.apache.kyuubi.plugin.spark.authz.serde._
 
-import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
+object DeltaCommands extends CommandSpecs[TableCommandSpec] {
 
-case class RowFilterMarker(child: LogicalPlan) extends UnaryNode with WithInternalChild {
+  val CreateDeltaTableCommand = {
+    val cmd = "org.apache.spark.sql.delta.commands.CreateDeltaTableCommand"
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
+  }
 
-  override def output: Seq[Attribute] = child.output
-
-  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = copy(child = newChild)
-
+  override def specs: Seq[TableCommandSpec] = Seq(
+    CreateDeltaTableCommand)
 }

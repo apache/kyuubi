@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.ranger.rowfilter
+package org.apache.kyuubi.plugin.spark.authz.rule.rowfilter
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan}
@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType
 import org.apache.kyuubi.plugin.spark.authz.OperationType.QUERY
 import org.apache.kyuubi.plugin.spark.authz.ranger._
+import org.apache.kyuubi.plugin.spark.authz.rule.RuleHelper
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
 case class RuleApplyRowFilter(spark: SparkSession) extends RuleHelper {

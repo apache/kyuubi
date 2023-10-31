@@ -41,6 +41,7 @@ object RangerTestNamespace {
   val sparkCatalog = "spark_catalog"
   val icebergNamespace = "iceberg_ns"
   val hudiNamespace = "hudi_ns"
+  val deltaNamespace = "delta_ns"
   val namespace1 = "ns1"
   val namespace2 = "ns2"
 }

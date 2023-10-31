@@ -17,6 +17,10 @@
 
 # Kyuubi Migration Guide
 
+## Upgrading from Kyuubi 1.8 to 1.9
+
+* Since Kyuubi 1.9.0, `kyuubi.session.conf.advisor` can be set as a sequence, Kyuubi supported chaining SessionConfAdvisors.
+
 ## Upgrading from Kyuubi 1.7 to 1.8
 
 * Since Kyuubi 1.8, SQLite is added and becomes the default database type of Kyuubi metastore, as Derby has been deprecated.

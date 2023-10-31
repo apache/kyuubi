@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.ranger
+package org.apache.kyuubi.plugin.spark.authz.rule.rowfilter
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSession}
@@ -25,7 +25,8 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.{RunnableCommand, ShowColumnsCommand}
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
-import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, ObjectFilterPlaceHolder, WithInternalChildren}
+import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessRequest, AccessResource, AccessType, SparkRangerAdminPlugin}
+import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, WithInternalChildren}
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {

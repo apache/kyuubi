@@ -15,22 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.util
+package org.apache.kyuubi.plugin.spark.authz.rule.permanentview
 
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
-case class ObjectFilterPlaceHolder(child: LogicalPlan) extends UnaryNode
+import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
+
+case class PermanentViewMarker(
+    child: LogicalPlan,
+    catalogTable: CatalogTable,
+    outputColNames: Seq[String],
+    isSubqueryExpressionPlaceHolder: Boolean = false) extends UnaryNode
   with WithInternalChild {
 
   override def output: Seq[Attribute] = child.output
 
-  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = {
-    // `FilterDataSourceV2Strategy` requires child.nodename not changed
-    if (child.nodeName == newChild.nodeName) {
-      copy(newChild)
-    } else {
-      this
-    }
-  }
+  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
+    copy(child = newChild)
+
 }

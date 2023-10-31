@@ -15,17 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
+package org.apache.kyuubi.plugin.spark.authz.rule.rowfilter
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
 import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
 
-case class DataMaskingStage1Marker(child: LogicalPlan) extends UnaryNode with WithInternalChild {
+case class ObjectFilterPlaceHolder(child: LogicalPlan) extends UnaryNode
+  with WithInternalChild {
 
   override def output: Seq[Attribute] = child.output
 
-  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = copy(child = newChild)
-
+  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = {
+    // `FilterDataSourceV2Strategy` requires child.nodename not changed
+    if (child.nodeName == newChild.nodeName) {
+      copy(newChild)
+    } else {
+      this
+    }
+  }
 }

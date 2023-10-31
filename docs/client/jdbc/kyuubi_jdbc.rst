@@ -147,6 +147,28 @@ Connection URL over Service Discovery
 - zookeeper quorum is the corresponding zookeeper cluster configured by `kyuubi.ha.addresses` at the server side.
 - zooKeeperNamespace is  the corresponding namespace configured by `kyuubi.ha.namespace` at the server side.
 
+HiveServer2 Compatibility
+*************************
+
+.. versionadded:: 1.8.0
+
+JDBC Drivers need to negotiate a protocol version with Kyuubi Server/HiveServer2 when connecting.
+
+Kyuubi Hive JDBC Driver offers protocol version v10 (`clientProtocolVersion=9`, supported since Hive 2.3.0)
+to server by default.
+
+If you need to connect to HiveServer2 before 2.3.0,
+please set client property `clientProtocolVersion` to a lower number.
+
+.. code-block:: jdbc
+
+   jdbc:subprotocol://host:port[/catalog]/[schema];clientProtocolVersion=9;
+
+
+.. tip::
+    All supported protocol versions and corresponding Hive versions can be found in `TProtocolVersion.java`_
+    and its git commits.
+
 Kerberos Authentication
 -----------------------
 Since 1.6.0, Kyuubi JDBC driver implements the Kerberos authentication based on JAAS framework instead of `Hadoop UserGroupInformation`_,
@@ -219,3 +241,4 @@ Authentication by Subject (programing only)
 .. _java.sql.DriverManager: https://docs.oracle.com/javase/8/docs/api/java/sql/DriverManager.html
 .. _Hadoop UserGroupInformation: https://hadoop.apache.org/docs/stable/api/org/apache/hadoop/security/UserGroupInformation.html
 .. _krb5.conf instruction: https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html
+.. _TProtocolVersion.java: https://github.com/apache/hive/blob/master/service-rpc/src/gen/thrift/gen-javabean/org/apache/hive/service/rpc/thrift/TProtocolVersion.java

@@ -594,6 +594,12 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Seq(tableIdentDesc.copy(isInput = true)))
   }
 
+  val SetTableProperties = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.SetTableProperties"
+    val tableDesc = TableDesc("table", classOf[ResolvedTableTableExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     AddPartitions,
     DropPartitions,
@@ -668,6 +674,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     RefreshTableV2,
     RefreshTable3d0,
     ReplaceData,
+    SetTableProperties,
     ShowColumns,
     ShowCreateTable,
     ShowCreateTable.copy(classname =
