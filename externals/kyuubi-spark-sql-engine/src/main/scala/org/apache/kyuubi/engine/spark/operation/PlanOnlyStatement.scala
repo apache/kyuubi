@@ -73,7 +73,7 @@ class PlanOnlyStatement(
       withLocalProperties {
         SQLConf.withExistingConf(spark.sessionState.conf) {
           val parsed = spark.sessionState.sqlParser.parsePlan(statement)
-
+          logger.warn("planExcludes: {}", planExcludes.toString())
           parsed match {
             case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
               result = spark.sql(statement)
