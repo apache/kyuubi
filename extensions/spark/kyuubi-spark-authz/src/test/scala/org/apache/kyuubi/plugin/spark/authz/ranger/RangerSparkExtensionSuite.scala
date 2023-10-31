@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.sql.SparkSessionExtensions
+import org.apache.spark.sql.{DataFrame, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
@@ -1037,7 +1037,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("[KYUUBI #5583][AUTHZ] Authz support PythonLogicalOperator") {
-    assume(isSparkV32OrGreater, "Spark 3.1 not support lateral subquery.")
     val db1 = defaultDb
     val table1 = "table1"
     withSingleCallEnabled {
@@ -1053,14 +1052,11 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         interceptContains[AccessControlException](
           doAs(
             someone,
-            spark.sessionState.optimizer.execute(
-              MapInPandas(
-                mapInPandasUDF,
-                mapInPandasUDF.dataType.asInstanceOf[StructType].map { case field =>
-                  AttributeReference(field.name, field.dataType, field.nullable, field.metadata)()
-                },
-                spark.sessionState.analyzer.execute(
-                  UnresolvedRelation(TableIdentifier(table1, Some(db1))))))))(
+            invokeAs(
+              spark.read.table(s"$db1.$table1"),
+              "mapInPandas",
+              (classOf[PythonUDF], mapInPandasUDF))
+              .asInstanceOf[DataFrame].collect()))(
           s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
       }
     }
