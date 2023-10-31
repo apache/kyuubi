@@ -19,7 +19,7 @@
 <template>
   <header>
     <img src="@/assets/kyuubi.png" />
-    <pre class="header_title">{{ title }}</pre>
+    <pre v-if="!isCollapse" class="header_title">{{ title }}</pre>
   </header>
   <c-menu :is-collapse="isCollapse" :active-path="activePath" :menus="menus" />
 </template>
