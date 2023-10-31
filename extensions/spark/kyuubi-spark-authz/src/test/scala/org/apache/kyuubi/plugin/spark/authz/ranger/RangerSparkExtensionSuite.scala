@@ -21,11 +21,14 @@ import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.SparkSessionExtensions
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
-import org.apache.spark.sql.catalyst.plans.logical.Statistics
+import org.apache.spark.sql.catalyst.expressions.{AttributeReference, PythonUDF}
+import org.apache.spark.sql.catalyst.plans.logical.{MapInPandas, Statistics}
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.types.{LongType, StructField, StructType}
 import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
@@ -1029,6 +1032,36 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |""".stripMargin).show()))(
           s"does not have [select] privilege on " +
             s"[$db1/$table1/id]")
+      }
+    }
+  }
+
+  test("[KYUUBI #5583][AUTHZ] Authz support PythonLogicalOperator") {
+    assume(isSparkV32OrGreater, "Spark 3.1 not support lateral subquery.")
+    val db1 = defaultDb
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        val mapInPandasUDF = PythonUDF(
+          "mapInPandasUDF",
+          null,
+          StructType(Seq(StructField("x", LongType), StructField("y", LongType))),
+          Seq.empty,
+          205,
+          true)
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            spark.sessionState.optimizer.execute(
+              MapInPandas(
+                mapInPandasUDF,
+                mapInPandasUDF.dataType.asInstanceOf[StructType].map { case field =>
+                  AttributeReference(field.name, field.dataType, field.nullable, field.metadata)()
+                },
+                spark.sessionState.analyzer.execute(
+                  UnresolvedRelation(TableIdentifier(table1, Some(db1))))))))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
       }
     }
   }
