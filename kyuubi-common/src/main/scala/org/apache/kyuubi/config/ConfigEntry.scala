@@ -36,8 +36,6 @@ trait ConfigEntry[T] {
 
   def internal: Boolean
 
-  def serverOnly: Boolean // to be removed
-
   def requiredByAllEngines: Boolean
 
   def requiredByEngines: List[EngineType.Value]
@@ -68,7 +66,6 @@ class OptionalConfigEntry[T](
     _version: String,
     _type: String,
     _internal: Boolean,
-    _serverOnly: Boolean,
     _requiredByAllEngines: Boolean,
     _requiredByEngines: List[EngineType.Value]) extends ConfigEntry[Option[T]] {
   override def valueConverter: String => Option[T] = {
@@ -101,8 +98,6 @@ class OptionalConfigEntry[T](
 
   override def internal: Boolean = _internal
 
-  override def serverOnly: Boolean = _serverOnly
-
   override def requiredByAllEngines: Boolean = _requiredByAllEngines
 
   override def requiredByEngines: List[EngineType.Value] = _requiredByEngines
@@ -118,7 +113,6 @@ class ConfigEntryWithDefault[T](
     _version: String,
     _type: String,
     _internal: Boolean,
-    _serverOnly: Boolean,
     _requiredByAllEngines: Boolean,
     _requiredByEngines: List[EngineType.Value]) extends ConfigEntry[T] {
   override def defaultValStr: String = strConverter(_defaultVal)
@@ -145,8 +139,6 @@ class ConfigEntryWithDefault[T](
 
   override def internal: Boolean = _internal
 
-  override def serverOnly: Boolean = _serverOnly
-
   override def requiredByAllEngines: Boolean = _requiredByAllEngines
 
   override def requiredByEngines: List[EngineType.Value] = _requiredByEngines
@@ -162,7 +154,6 @@ class ConfigEntryWithDefaultString[T](
     _version: String,
     _type: String,
     _internal: Boolean,
-    _serverOnly: Boolean,
     _requiredByAllEngines: Boolean,
     _requiredByEngines: List[EngineType.Value]) extends ConfigEntry[T] {
   override def defaultValStr: String = _defaultVal
@@ -190,8 +181,6 @@ class ConfigEntryWithDefaultString[T](
 
   override def internal: Boolean = _internal
 
-  override def serverOnly: Boolean = _serverOnly
-
   override def requiredByAllEngines: Boolean = _requiredByAllEngines
 
   override def requiredByEngines: List[EngineType.Value] = _requiredByEngines
@@ -203,7 +192,6 @@ class ConfigEntryFallback[T](
     _doc: String,
     _version: String,
     _internal: Boolean,
-    _serverOnly: Boolean,
     fallback: ConfigEntry[T],
     _requiredByAllEngines: Boolean,
     _requiredByEngines: List[EngineType.Value]) extends ConfigEntry[T] {
@@ -230,8 +218,6 @@ class ConfigEntryFallback[T](
   override def typ: String = fallback.typ
 
   override def internal: Boolean = _internal
-
-  override def serverOnly: Boolean = _serverOnly
 
   override def requiredByAllEngines: Boolean = _requiredByAllEngines
 
