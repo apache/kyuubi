@@ -957,12 +957,17 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     assume(isSparkV32OrGreater, "Spark 3.1 not support lateral subquery.")
     val db1 = defaultDb
     val table1 = "table1"
+    val table2 = "table2"
     val perm_view = "perm_view"
     withSingleCallEnabled {
       withCleanTmpResources(
-        Seq((s"$db1.$table1", "table"), (s"$db1.$perm_view", "view"))) {
+        Seq(
+          (s"$db1.$table1", "table"),
+          (s"$db1.$table2", "table"),
+          (s"$db1.$perm_view", "view"))) {
         doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
-        doAs(admin, sql(s"CREATE VIEW $db1.$perm_view AS SELECT * FROM $db1.$table1"))
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table2 (id int, scope int)"))
+        doAs(admin, sql(s"CREATE VIEW $db1.$perm_view AS SELECT * FROM $db1.$table2"))
         interceptContains[AccessControlException](
           doAs(
             someone,
@@ -992,7 +997,38 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |)
                  |""".stripMargin).show()))(
           s"does not have [select] privilege on " +
-            s"[$db1/$table1/id,$db1/$table1/scope]")
+            s"[$db1/$table1/id]")
+
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(
+              s"""
+                 |SELECT t1.id
+                 |FROM $db1.$table1 t1,
+                 |LATERAL (
+                 |  SELECT *
+                 |  FROM $db1.$table2 t2
+                 |  WHERE t1.id = t2.id
+                 |)
+                 |""".stripMargin).show()))(
+          s"does not have [select] privilege on " +
+            s"[$db1/$table2/id,$db1/$table2/scope]")
+        interceptContains[AccessControlException](
+          doAs(
+            table2OnlyUser,
+            sql(
+              s"""
+                 |SELECT t1.id
+                 |FROM $db1.$table1 t1,
+                 |LATERAL (
+                 |  SELECT *
+                 |  FROM $db1.$table2 t2
+                 |  WHERE t1.id = t2.id
+                 |)
+                 |""".stripMargin).show()))(
+          s"does not have [select] privilege on " +
+            s"[$db1/$table1/id]")
       }
     }
   }

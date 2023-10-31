@@ -108,6 +108,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
       policyAccessForDefaultBobUse,
       policyAccessForDefaultBobSelect,
       policyAccessForPermViewAccessOnly,
+      policyAccessForTable2AccessOnly,
       // row filter
       policyFilterForSrcTableKeyLessThan20,
       policyFilterForPermViewKeyLessThan20,
@@ -343,6 +344,18 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     policyItems = List(
       KRangerPolicyItem(
         users = List(permViewOnlyUser),
+        accesses = allowTypes(select),
+        delegateAdmin = true)))
+
+  private val policyAccessForTable2AccessOnly = KRangerPolicy(
+    name = "someone_access_table2",
+    resources = Map(
+      databaseRes(defaultDb),
+      tableRes("table2"),
+      allColumnRes),
+    policyItems = List(
+      KRangerPolicyItem(
+        users = List(table2OnlyUser),
         accesses = allowTypes(select),
         delegateAdmin = true)))
 }
