@@ -22,6 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, LogicalRelation}
 import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
@@ -111,6 +112,10 @@ object PrivilegesBuilder {
           (a.aggregateExpressions ++ a.groupingExpressions).flatMap(e => collectLeaves(e))
         val cols = conditionList ++ aggCols
         buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
+
+      case logicalRelation @ LogicalRelation(_: HadoopFsRelation, _, None, _) =>
+        getScanSpec(logicalRelation).uris(logicalRelation)
+          .foreach(privilegeObjects += PrivilegeObject(_))
 
       case scan if isKnownScan(scan) && scan.resolved =>
         getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import scala.reflect.io.File
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -1029,6 +1030,33 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |""".stripMargin).show()))(
           s"does not have [select] privilege on " +
             s"[$db1/$table1/id]")
+      }
+    }
+  }
+
+  test("HadoopFsRelation") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val tableDirectory = getClass.getResource("/").getPath + "table_directory"
+    val directory = File(tableDirectory).createDirectory()
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        doAs(
+          admin,
+          sql(
+            s"""
+               |INSERT OVERWRITE DIRECTORY '${directory.path}'
+               |USING parquet
+               |SELECT * FROM $db1.$table1""".stripMargin))
+
+        interceptContains[AccessControlException](doAs(
+          someone,
+          sql(
+            s"""
+               |SELECT * FROM parquet.`${directory.path}`""".stripMargin).explain(true)))(
+          s"does not have [select] privilege on " +
+            s"[[file:${directory.path}, file:${directory.path}/]]")
       }
     }
   }

@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
+import org.apache.spark.sql.execution.datasources.HadoopFsRelation
+
 trait URIExtractor extends (AnyRef => Option[Uri]) with Extractor
 
 object URIExtractor {
@@ -31,5 +33,11 @@ object URIExtractor {
 class StringURIExtractor extends URIExtractor {
   override def apply(v1: AnyRef): Option[Uri] = {
     Some(Uri(v1.asInstanceOf[String]))
+  }
+}
+
+class HadoopFsRelationFileIndexURIExtractor extends URIExtractor {
+  override def apply(v1: AnyRef): Option[Uri] = {
+    Some(Uri(v1.asInstanceOf[HadoopFsRelation].location.rootPaths.map(_.toString).mkString(",")))
   }
 }
