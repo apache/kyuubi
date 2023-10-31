@@ -18,13 +18,15 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.{Instant, LocalDateTime, ZoneId}
+
 import scala.annotation.meta.getter
+
 import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.kvstore.KVIndex
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.ConfigEntry
-import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.SemanticVersion
 
 object KyuubiSparkUtil extends Logging {
@@ -102,16 +104,13 @@ object KyuubiSparkUtil extends Logging {
    * Get session level config value
    * @param configEntry configEntry
    * @param spark sparkSession
-   * @param session Session
    * @tparam T any type
    * @return session level config value, if spark not set this config,
    *         default return kyuubi's config
    */
-  def getSessionConf[T](configEntry: ConfigEntry[T], spark: SparkSession, session: Session): T = {
-    spark.conf.getOption(configEntry.key)
-      .orElse(SparkSQLEngine.kyuubiConf.getOption(configEntry.key))
-      .orElse(session.sessionManager.getConf.getOption(configEntry.key))
-      .map(configEntry.valueConverter)
-      .getOrElse(null.asInstanceOf[T])
+  def getSessionConf[T](configEntry: ConfigEntry[T], spark: SparkSession): T = {
+    spark.conf.getOption(configEntry.key).map(configEntry.valueConverter).getOrElse {
+      SparkSQLEngine.kyuubiConf.get(configEntry)
+    }
   }
 }
