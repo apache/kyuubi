@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vue-tsc --noEmit && vite --port 9090",
-    "build": "vite build --mode production",
+    "build": "vue-tsc --noEmit && vite build --mode production",
     "build-check": "npm run lint && npm run build",
     "preview": "vite preview",
     "lint": "eslint --ext .ts,vue --ignore-path .gitignore .",
