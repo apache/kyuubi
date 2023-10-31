@@ -37,8 +37,8 @@
   const { isCollapse } = storeToRefs(store)
   const router = useRoute()
   const activePath = ref(router.path)
-  // define __APP_VERSION__ in vite.config.ts
   /* eslint-disable */
+  // define __APP_VERSION__ in vite.config.ts
   // @ts-ignore
   const title = `Apache Kyuubi\n${__APP_VERSION__}`
   /* eslint-enable */
