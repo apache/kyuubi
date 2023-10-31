@@ -33,7 +33,7 @@ import org.apache.kyuubi.sql.KyuubiSQLConf.{DYNAMIC_SHUFFLE_PARTITIONS, DYNAMIC_
 case class DynamicShufflePartitions(spark: SparkSession) extends Rule[SparkPlan] {
 
   override def apply(plan: SparkPlan): SparkPlan = {
-    if (!conf.getConf(DYNAMIC_SHUFFLE_PARTITIONS)) {
+    if (!conf.getConf(DYNAMIC_SHUFFLE_PARTITIONS) || !conf.getConf(ADAPTIVE_EXECUTION_ENABLED)) {
       plan
     } else {
       val maxDynamicShufflePartitions = conf.getConf(DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM)
