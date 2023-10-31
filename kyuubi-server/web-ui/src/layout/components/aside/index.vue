@@ -18,8 +18,14 @@
 
 <template>
   <header>
-    <img src="@/assets/kyuubi.png" />
-    <article v-if="!isCollapse">Apache Kyuubi Dashboard</article>
+    <el-row>
+      <el-col :span="6">
+        <img src="@/assets/kyuubi.png" />
+      </el-col>
+      <el-col :span="18">
+        <pre class="header_title">{{ title }}</pre>
+      </el-col>
+    </el-row>
   </header>
   <c-menu :is-collapse="isCollapse" :active-path="activePath" :menus="menus" />
 </template>
@@ -37,6 +43,11 @@
   const { isCollapse } = storeToRefs(store)
   const router = useRoute()
   const activePath = ref(router.path)
+  // define __APP_VERSION__ in vite.config.ts
+  /* eslint-disable */
+  // @ts-ignore
+  const title = `Apache Kyuubi\n${__APP_VERSION__}`
+  /* eslint-enable */
 </script>
 
 <style lang="scss" scoped>
@@ -55,13 +66,11 @@
       top: -4px;
       vertical-align: middle;
     }
-    article {
-      display: inline-block;
-      margin-left: 12px;
-      color: #fff;
-      font-weight: 600;
-      font-size: 14px;
-      font-family: 'Myriad Pro', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    pre {
+      width: 160px;
+      margin-top: 10px;
+      line-height: 25px;
+      text-align: center;
     }
   }
   .el-menu {
