@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import scala.reflect.io.File
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -466,6 +467,25 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       doAs(admin, sql(s"DESC FUNCTION $fun").collect().length == 1)
       val e = intercept[AccessControlException](doAs(denyUser, sql(s"DESC FUNCTION $fun")))
       assert(e.getMessage === errorMessage("_any", "default/function1", denyUser))
+    }
+  }
+
+  test("InsertIntoDataSourceDirCommand") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val tableDirectory = getClass.getResource("/").getPath + "table_directory"
+    val directory = File(tableDirectory).createDirectory()
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        interceptContains[AccessControlException](doAs(someone, sql(
+          s"""
+             |INSERT OVERWRITE DIRECTORY '${directory.path}'
+             |USING parquet
+             |SELECT * FROM $db1.$table1""".stripMargin)))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope," +
+            s"[${directory.path}, ${directory.path}/]]")
+      }
     }
   }
 }
@@ -993,6 +1013,25 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |""".stripMargin).show()))(
           s"does not have [select] privilege on " +
             s"[$db1/$table1/id,$db1/$table1/scope]")
+      }
+    }
+  }
+
+  test("InsertIntoHiveDirCommand") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val tableDirectory = getClass.getResource("/").getPath + "table_directory"
+    val directory = File(tableDirectory).createDirectory()
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        interceptContains[AccessControlException](doAs(someone, sql(
+          s"""
+             |INSERT OVERWRITE DIRECTORY '${directory.path}'
+             |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+             |SELECT * FROM $db1.$table1""".stripMargin)))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope," +
+            s"[${directory.path}, ${directory.path}/]]")
       }
     }
   }
