@@ -24,6 +24,7 @@ import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.ResultSetWrapper
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchOrientation, IterableFetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -37,6 +38,8 @@ class ExecuteStatement(
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
+
+  @volatile private var jdbcStatement: Statement = _
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
@@ -56,7 +59,6 @@ class ExecuteStatement(
 
   private def executeStatement(): Unit = {
     setState(OperationState.RUNNING)
-    var jdbcStatement: Statement = null
     try {
       val connection: Connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
       jdbcStatement = dialect.createStatement(connection)
@@ -73,6 +75,7 @@ class ExecuteStatement(
             })
           } else {
             warn(s"Execute in full collect mode")
+            jdbcStatement.closeOnCompletion()
             new ArrayFetchIterator(resultSetWrapper.toArray())
           }
       } else {
@@ -92,9 +95,6 @@ class ExecuteStatement(
     } catch {
       onError(true)
     } finally {
-      if (jdbcStatement != null) {
-        jdbcStatement.closeOnCompletion()
-      }
       shutdownTimeoutMonitor()
     }
   }
@@ -105,6 +105,17 @@ class ExecuteStatement(
         s" of incremental collect mode.")
     }
     super.validateFetchOrientation(order)
+  }
+
+  override def cleanup(targetState: OperationState): Unit = withLockRequired {
+    try {
+      super.cleanup(targetState)
+    } finally {
+      if (jdbcStatement != null && !jdbcStatement.isClosed) {
+        jdbcStatement.close()
+        jdbcStatement = null
+      }
+    }
   }
 
 }
