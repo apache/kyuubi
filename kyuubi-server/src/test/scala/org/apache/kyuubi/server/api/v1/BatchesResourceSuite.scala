@@ -45,7 +45,7 @@ import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.server.{KyuubiBatchService, KyuubiRestFrontendService}
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
-import org.apache.kyuubi.service.authentication.{InternalSecurityAccessor, KyuubiAuthenticationFactory}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
 
 class BatchesV1ResourceSuite extends BatchesResourceSuiteBase {
@@ -83,20 +83,12 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
   override protected lazy val conf: KyuubiConf = {
     val kyuubiConf = KyuubiConf()
-      .set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
-      .set(KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER, "simple")
-      .set(KyuubiConf.SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET, "ENGINE____SECRET")
       .set(KyuubiConf.BATCH_IMPL_VERSION, batchVersion)
       .set(
         KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST,
         Set(Paths.get(sparkBatchTestResource.get).getParent.toString))
     customConf.foreach { case (k, v) => kyuubiConf.set(k, v) }
     kyuubiConf
-  }
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    InternalSecurityAccessor.initialize(conf, true)
   }
 
   override def afterEach(): Unit = {

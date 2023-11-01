@@ -38,9 +38,11 @@ class InternalRestClient(
     socketTimeout: Int,
     connectTimeout: Int,
     securityEnabled: Boolean) {
-  require(
-    InternalSecurityAccessor.get() != null,
-    "Internal secure access across Kyuubi instances is not enabled")
+  if (securityEnabled) {
+    require(
+      InternalSecurityAccessor.get() != null,
+      "Internal secure access across Kyuubi instances is not enabled")
+  }
 
   private val internalBatchRestApi = new BatchRestApi(initKyuubiRestClient())
 
