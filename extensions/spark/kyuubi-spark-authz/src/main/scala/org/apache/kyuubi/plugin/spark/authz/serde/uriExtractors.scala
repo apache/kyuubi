@@ -38,6 +38,6 @@ class StringURIExtractor extends URIExtractor {
 
 class CatalogStorageFormatURIExtractor extends URIExtractor {
   override def apply(v1: AnyRef): Option[Uri] = {
-    Some(Uri(v1.asInstanceOf[CatalogStorageFormat].locationUri.get.getPath))
+    v1.asInstanceOf[CatalogStorageFormat].locationUri.map(uri => Uri(uri.getPath))
   }
 }
