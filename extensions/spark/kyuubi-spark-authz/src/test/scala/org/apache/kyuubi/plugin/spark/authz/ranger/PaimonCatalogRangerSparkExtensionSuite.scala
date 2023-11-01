@@ -79,7 +79,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptContains[AccessControlException] {
         doAs(someone, sql(createTable))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
-      doAs(admin, createTable)
+      doAs(admin, sql(createTable))
     }
   }
 
@@ -109,7 +109,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptContains[AccessControlException] {
         doAs(someone, sql(createTableAs))
       }(s"does not have [select] privilege on [$table1/id]")
-      doAs(admin, createTableAs)
+      doAs(admin, sql(createTableAs))
     }
   }
 }
