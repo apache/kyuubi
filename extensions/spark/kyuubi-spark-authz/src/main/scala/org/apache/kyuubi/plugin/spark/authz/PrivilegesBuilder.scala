@@ -122,8 +122,9 @@ object PrivilegesBuilder {
         privilegeObjects += PrivilegeObject(table)
 
       case p =>
+        val newProjection = projectionList ++ p.inputSet.map(_.toAttribute)
         for (child <- p.children) {
-          buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
+          buildQuery(child, privilegeObjects, newProjection, conditionList, spark)
         }
     }
   }
