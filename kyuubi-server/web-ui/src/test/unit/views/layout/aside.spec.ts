@@ -34,5 +34,10 @@ test('mount component', () => {
       plugins: [mockRouter, getStore()]
     }
   })
-  expect(wrapper.text()).toContain('Apache Kyuubi Dashboard')
+  expect(wrapper.text())
+    /* eslint-disable */
+    // define __APP_VERSION__ in vitest.config.ts
+    // @ts-ignore
+    .toContain(`${__APP_VERSION__}`)
+  /* eslint-enable */
 })
