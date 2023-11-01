@@ -1017,6 +1017,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             s"[${directory.path}, ${directory.path}/]]")
       }
     }
+    directory.deleteRecursively()
   }
 
   test("InsertIntoDataSourceDirCommand") {
@@ -1038,5 +1039,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             s"[${directory.path}, ${directory.path}/]]")
       }
     }
+    directory.deleteRecursively()
   }
 }
