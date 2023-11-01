@@ -249,6 +249,7 @@ mkdir -p "$DISTDIR/pid"
 mkdir -p "$DISTDIR/logs"
 mkdir -p "$DISTDIR/work"
 mkdir -p "$DISTDIR/jars"
+mkdir -p "$DISTDIR/db-scripts"
 mkdir -p "$DISTDIR/beeline-jars"
 mkdir -p "$DISTDIR/web-ui"
 mkdir -p "$DISTDIR/externals/engines/flink"
@@ -269,6 +270,9 @@ echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 
 # Copy kyuubi server jars
 cp -r "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/*.jar "$DISTDIR/jars/"
+
+# Copy kyuubi database scripts
+cp -r "$KYUUBI_HOME"/kyuubi-server/src/main/resources/sql/* "$DISTDIR/db-scripts/"
 
 # Copy kyuubi beeline jars
 cp "$KYUUBI_HOME"/kyuubi-hive-beeline/target/*.jar "$DISTDIR/beeline-jars/"
