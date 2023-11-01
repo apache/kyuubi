@@ -131,18 +131,24 @@ object PrivilegesBuilder {
 
       case p =>
         for (child <- p.children) {
-          val childCols = columnPrune(
-            projectionList ++ conditionList,
-            child.outputSet)
-          if (childCols.isEmpty) {
-            buildQuery(
-              child,
-              privilegeObjects,
-              p.inputSet.map(_.toAttribute).toSeq,
-              conditionList,
-              spark)
-          } else {
-            buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
+          child match {
+            case pvm: PermanentViewMarker
+              if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
+              buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
+            case _ =>
+              val childCols = columnPrune(
+                projectionList ++ conditionList,
+                child.outputSet)
+              if (childCols.isEmpty) {
+                buildQuery(
+                  child,
+                  privilegeObjects,
+                  p.inputSet.map(_.toAttribute).toSeq,
+                  conditionList,
+                  spark)
+              } else {
+                buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
+              }
           }
         }
     }
