@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import scala.reflect.io.File
+import scala.reflect.io.{Directory, File}
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -86,6 +86,19 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           // If the test failed part way, we don't want to mask the failure by failing to remove
           // global temp views that never got created.
           case _: NoSuchTableException =>
+        }
+      }
+    }
+  }
+
+  protected def withTempDir(dirs: Directory*)(f: => Unit): Unit = {
+    try {
+      f
+    } finally {
+      dirs.foreach { dir =>
+        try dir.deleteRecursively()
+        catch {
+          case _: Exception =>
         }
       }
     }
@@ -1003,21 +1016,22 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val table1 = "table1"
     val tableDirectory = getClass.getResource("/").getPath + "table_directory"
     val directory = File(tableDirectory).createDirectory()
-    withSingleCallEnabled {
-      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
-        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
-        interceptContains[AccessControlException](doAs(
-          someone,
-          sql(
-            s"""
-               |INSERT OVERWRITE DIRECTORY '${directory.path}'
-               |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-               |SELECT * FROM $db1.$table1""".stripMargin)))(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope," +
-            s"[${directory.path}, ${directory.path}/]]")
+    withTempDir(directory) {
+      withSingleCallEnabled {
+        withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+          doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+          interceptContains[AccessControlException](doAs(
+            someone,
+            sql(
+              s"""
+                 |INSERT OVERWRITE DIRECTORY '${directory.path}'
+                 |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+                 |SELECT * FROM $db1.$table1""".stripMargin)))(
+            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope," +
+              s"[${directory.path}, ${directory.path}/]]")
+        }
       }
     }
-    directory.deleteRecursively()
   }
 
   test("InsertIntoDataSourceDirCommand") {
@@ -1025,20 +1039,21 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val table1 = "table1"
     val tableDirectory = getClass.getResource("/").getPath + "table_directory"
     val directory = File(tableDirectory).createDirectory()
-    withSingleCallEnabled {
-      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
-        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
-        interceptContains[AccessControlException](doAs(
-          someone,
-          sql(
-            s"""
-               |INSERT OVERWRITE DIRECTORY '${directory.path}'
-               |USING parquet
-               |SELECT * FROM $db1.$table1""".stripMargin)))(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope," +
-            s"[${directory.path}, ${directory.path}/]]")
+    withTempDir(directory) {
+      withSingleCallEnabled {
+        withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+          doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+          interceptContains[AccessControlException](doAs(
+            someone,
+            sql(
+              s"""
+                 |INSERT OVERWRITE DIRECTORY '${directory.path}'
+                 |USING parquet
+                 |SELECT * FROM $db1.$table1""".stripMargin)))(
+            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope," +
+              s"[${directory.path}, ${directory.path}/]]")
+        }
       }
     }
-    directory.deleteRecursively()
   }
 }
