@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
+import org.apache.kyuubi.plugin.spark.authz.rule.Authorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -80,6 +81,8 @@ object PrivilegesBuilder {
     }
 
     plan match {
+      case p if p.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty =>
+
       case p: Project => buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
 
       case j: Join =>

@@ -273,4 +273,20 @@ object KyuubiSQLConf {
       .version("1.8.0")
       .stringConf
       .createOptional
+
+  val DYNAMIC_SHUFFLE_PARTITIONS =
+    buildConf("spark.sql.optimizer.dynamicShufflePartitions")
+      .doc("If true, adjust the number of shuffle partitions dynamically based on the job" +
+        " input size. The new number of partitions is the maximum input size" +
+        " divided by `spark.sql.adaptive.advisoryPartitionSizeInBytes`.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM =
+    buildConf("spark.sql.optimizer.dynamicShufflePartitions.maxNum")
+      .doc("The maximum partition number of DynamicShufflePartitions.")
+      .version("1.9.0")
+      .intConf
+      .createWithDefault(2000)
 }

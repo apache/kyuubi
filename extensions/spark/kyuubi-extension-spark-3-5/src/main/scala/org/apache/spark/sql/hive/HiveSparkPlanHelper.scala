@@ -14,18 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.spark.sql.hive
 
-const routes = [
-  {
-    path: '/operation/runningJobs',
-    name: 'operation-runningJobs',
-    component: () => import('@/views/operation/runningJobs/index.vue')
-  },
-  {
-    path: '/operation/completedJobs',
-    name: 'operation-completedJobs',
-    component: () => import('@/views/operation/completedJobs/index.vue')
-  }
-]
-
-export default routes
+object HiveSparkPlanHelper {
+  type HiveTableScanExec = org.apache.spark.sql.hive.execution.HiveTableScanExec
+}

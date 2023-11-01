@@ -18,7 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.rule
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 
@@ -42,20 +42,27 @@ object Authorization {
 
   val KYUUBI_AUTHZ_TAG = TreeNodeTag[Unit]("__KYUUBI_AUTHZ_TAG")
 
-  protected def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
-    plan match {
-      case _: PermanentViewMarker =>
-        plan.transformUp { case p =>
-          p.setTagValue(KYUUBI_AUTHZ_TAG, ())
-          p
-        }
-      case _ =>
-        plan.setTagValue(KYUUBI_AUTHZ_TAG, ())
+  private def markAllNodesAuthChecked(plan: LogicalPlan): LogicalPlan = {
+    plan.transformDown { case p =>
+      p.setTagValue(KYUUBI_AUTHZ_TAG, ())
+      p
     }
-    plan
+  }
+
+  protected def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
+    plan.setTagValue(KYUUBI_AUTHZ_TAG, ())
+    plan transformDown {
+      case pvm: PermanentViewMarker =>
+        markAllNodesAuthChecked(pvm)
+      case subquery: Subquery =>
+        markAllNodesAuthChecked(subquery)
+    }
   }
 
   protected def isAuthChecked(plan: LogicalPlan): Boolean = {
-    plan.find(_.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty).nonEmpty
+    plan match {
+      case subquery: Subquery => isAuthChecked(subquery.child)
+      case p => p.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty
+    }
   }
 }
