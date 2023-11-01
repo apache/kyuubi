@@ -122,7 +122,11 @@ object PrivilegesBuilder {
         privilegeObjects += PrivilegeObject(table)
 
       case p =>
-        val newProjection = projectionList ++ p.inputSet.map(_.toAttribute)
+        val newProjection = if (projectionList.isEmpty) {
+          p.inputSet.map(_.toAttribute).toSeq
+        } else {
+          projectionList
+        }
         for (child <- p.children) {
           buildQuery(child, privilegeObjects, newProjection, conditionList, spark)
         }
