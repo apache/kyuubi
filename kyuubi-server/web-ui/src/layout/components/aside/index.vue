@@ -18,7 +18,7 @@
 
 <template>
   <header>
-    <img v-if="!isCollapse" src="@/assets/kyuubi-official-logo.svg" />
+    <img v-if="!isCollapse" src="@/assets/kyuubi-logo.svg" />
     <img v-else class="collapsed-logo" src="@/assets/kyuubi.png" />
     <pre v-if="!isCollapse">{{ title }}</pre>
   </header>
