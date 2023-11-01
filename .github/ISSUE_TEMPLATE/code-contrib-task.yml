@@ -88,9 +88,9 @@ body:
       description: Which skills are required for contributors who want to take this task?
       placeholder: |
         e.g.
-        - Basic knowledge on Scala Programming Language
+        - Basic knowledge on Scala programming language
         - Familiar with Apache Maven, Docker and GitHub Action
-        - Basic knowledge on network programing and Apache Thrift RPC framework
+        - Basic knowledge on network programming and Apache Thrift RPC framework
         - Familiar with Apache Spark
         - ...
     validations:
