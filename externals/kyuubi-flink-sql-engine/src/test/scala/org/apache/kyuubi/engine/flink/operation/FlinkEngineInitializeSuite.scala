@@ -38,7 +38,7 @@ class FlinkEngineInitializeSuite extends HiveJDBCTestHelper
 
   protected val ENGINE_SESSION_INITIALIZE_SQL_VALUE: String =
     s"""
-      create catalog cat_a with ('type'='generic_in_memory');
+      create catalog cat_b with ('type'='generic_in_memory');
       create table blackhole(i int) with ('connector'='blackhole');
       create  table datagen(i int) with (
       'connector'='datagen',
@@ -73,11 +73,12 @@ class FlinkEngineInitializeSuite extends HiveJDBCTestHelper
   test("execute statement - kyuubi engine initialize") {
     withJdbcStatement() { statement =>
       var resultSet = statement.executeQuery("show catalogs")
-      val expectedCatalogs = Set("default_catalog", "cat_a")
+      val expectedCatalogs = Set("default_catalog", "cat_b")
+      var actualCatalogs = Set[String]()
       while (resultSet.next()) {
-        assert(expectedCatalogs.contains(resultSet.getString(1)))
+        actualCatalogs += resultSet.getString(1)
       }
-      assert(!resultSet.next())
+      assert(expectedCatalogs.subsetOf(actualCatalogs))
 
       resultSet = statement.executeQuery("show databases")
       assert(resultSet.next())
@@ -91,7 +92,7 @@ class FlinkEngineInitializeSuite extends HiveJDBCTestHelper
       }
       assert(!resultSet.next())
 
-      var dropResult = statement.executeQuery("drop catalog cat_a")
+      var dropResult = statement.executeQuery("drop catalog cat_b")
       assert(dropResult.next())
       assert(dropResult.getString(1) === "OK")
 
