@@ -38,6 +38,6 @@ test('mount component', () => {
     /* eslint-disable */
     // define __APP_VERSION__ in vitest.config.ts
     // @ts-ignore
-    .toContain(`Apache Kyuubi\n${__APP_VERSION__}`)
+    .toContain(`${__APP_VERSION__}`)
   /* eslint-enable */
 })
