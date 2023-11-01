@@ -469,27 +469,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       assert(e.getMessage === errorMessage("_any", "default/function1", denyUser))
     }
   }
-
-  test("InsertIntoDataSourceDirCommand") {
-    val db1 = defaultDb
-    val table1 = "table1"
-    val tableDirectory = getClass.getResource("/").getPath + "table_directory"
-    val directory = File(tableDirectory).createDirectory()
-    withSingleCallEnabled {
-      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
-        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
-        interceptContains[AccessControlException](doAs(
-          someone,
-          sql(
-            s"""
-               |INSERT OVERWRITE DIRECTORY '${directory.path}'
-               |USING parquet
-               |SELECT * FROM $db1.$table1""".stripMargin)))(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope," +
-            s"[${directory.path}, ${directory.path}/]]")
-      }
-    }
-  }
 }
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
@@ -1033,6 +1012,27 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             s"""
                |INSERT OVERWRITE DIRECTORY '${directory.path}'
                |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+               |SELECT * FROM $db1.$table1""".stripMargin)))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope," +
+            s"[${directory.path}, ${directory.path}/]]")
+      }
+    }
+  }
+
+  test("InsertIntoDataSourceDirCommand") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val tableDirectory = getClass.getResource("/").getPath + "table_directory"
+    val directory = File(tableDirectory).createDirectory()
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        interceptContains[AccessControlException](doAs(
+          someone,
+          sql(
+            s"""
+               |INSERT OVERWRITE DIRECTORY '${directory.path}'
+               |USING parquet
                |SELECT * FROM $db1.$table1""".stripMargin)))(
           s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope," +
             s"[${directory.path}, ${directory.path}/]]")
