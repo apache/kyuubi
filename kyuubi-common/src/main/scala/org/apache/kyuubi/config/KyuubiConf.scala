@@ -2810,6 +2810,13 @@ object KyuubiConf {
       .toSequence(";")
       .createWithDefault(Nil)
 
+  val ENGINE_JDBC_DEFAULT_FETCH_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.engine.jdbc.default.fetch.size")
+      .doc("The default fetch size of JDBC engine")
+      .version("1.9.0")
+      .intConf
+      .createWithDefault(1000)
+
   val ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.operation.convert.catalog.database.enabled")
       .doc("When set to true, The engine converts the JDBC methods of set/get Catalog " +
