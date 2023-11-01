@@ -19,7 +19,7 @@
 <template>
   <header>
     <img v-if="!isCollapse" src="@/assets/kyuubi-official-logo.svg" />
-    <img v-else class="collapse-logo" src="@/assets/kyuubi.png" />
+    <img v-else class="collapsed-logo" src="@/assets/kyuubi.png" />
     <pre v-if="!isCollapse">{{ title }}</pre>
   </header>
   <c-menu :is-collapse="isCollapse" :active-path="activePath" :menus="menus" />
@@ -68,7 +68,7 @@
       margin-top: 20px;
       text-align: center;
     }
-    .collapse-logo {
+    .collapsed-logo {
       width: 40px;
       height: 40px;
       margin-top: 30px;
