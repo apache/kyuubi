@@ -78,7 +78,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptContains[AccessControlException] {
         doAs(someone, sql(createNonPartitionTableSql))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
-      doAs(admin, createNonPartitionTableSql)
+      doAs(admin, sql(createNonPartitionTableSql))
 
       val createPartitionTableSql =
         s"""
@@ -98,12 +98,13 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptContains[AccessControlException] {
         doAs(someone, sql(createPartitionTableSql))
       }(s"does not have [create] privilege on [$namespace1/$table2]")
-      doAs(admin, createPartitionTableSql)
+      doAs(admin, sql(createPartitionTableSql))
     }
   }
 
   test("create or replace table") {
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       val createOrReplaceTableSql =
         s"""
            |CREATE OR REPLACE TABLE $namespace1.$table1 (
@@ -120,7 +121,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptContains[AccessControlException] {
         doAs(someone, sql(createOrReplaceTableSql))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
-      doAs(admin, createOrReplaceTableSql)
+      doAs(admin, sql(createOrReplaceTableSql))
     }
   }
 
