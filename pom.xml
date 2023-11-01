@@ -1389,7 +1389,6 @@
                 <groupId>org.apache.flink</groupId>
                 <artifactId>flink-table-planner-loader</artifactId>
                 <version>${flink.version}</version>
-                <scope>provided</scope>
             </dependency>
 
             <dependency>

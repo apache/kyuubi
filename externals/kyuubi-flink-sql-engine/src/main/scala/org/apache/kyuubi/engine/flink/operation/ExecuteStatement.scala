@@ -33,8 +33,7 @@ import org.apache.kyuubi.engine.flink.result.ResultSetUtil
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.util.reflect.DynConstructors
-import org.apache.kyuubi.util.reflect.ReflectUtils.{getField, invokeAs}
+import org.apache.kyuubi.util.reflect.{DynConstructors, DynFields, DynMethods}
 
 class ExecuteStatement(
     session: Session,
@@ -78,8 +77,7 @@ class ExecuteStatement(
         new OperationHandle(getHandle.identifier),
         statement)
       jobId = FlinkEngineUtils.getResultJobId(resultFetcher)
-      resultSet = ResultSetUtil
-        .fromResultFetcher(resultFetcher, resultMaxRows, resultFetchTimeout)
+      resultSet = ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows, resultFetchTimeout)
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
@@ -95,17 +93,22 @@ class ExecuteStatement(
         .loader(plannerModuleClassLoader)
         .impl("org.apache.flink.table.planner.parse.ExtendedParser")
         .build().newInstance()
-    invokeAs(extendedParser, "parse", (classOf[String], statement))
-      .asInstanceOf[Optional[Operation]]
+    DynMethods.builder("parse")
+      .hiddenImpl(extendedParser.getClass, classOf[String])
+      .buildChecked()
+      .invoke(extendedParser, statement)
   }
 
   private def getPlannerModuleClassLoader: ClassLoader = {
     try {
-      val plannerModule =
-        invokeAs("org.apache.flink.table.planner.loader.PlannerModule", "getInstance")
-          .asInstanceOf[AnyRef]
+      val plannerModule = DynMethods.builder("getInstance")
+        .hiddenImpl("org.apache.flink.table.planner.loader.PlannerModule")
+        .buildStaticChecked()
+        .invoke().asInstanceOf[AnyRef]
 
-      getField(plannerModule, "submoduleClassLoader").asInstanceOf[ClassLoader]
+      DynFields.builder()
+        .hiddenImpl(plannerModule.getClass, "submoduleClassLoader")
+        .build[ClassLoader].bind(plannerModule).get
     } catch {
       case e: Exception =>
         throw new TableException("Error obtaining Flink planner module ClassLoader", e)
