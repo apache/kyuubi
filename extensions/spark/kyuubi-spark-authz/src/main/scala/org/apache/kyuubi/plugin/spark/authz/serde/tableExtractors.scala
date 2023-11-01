@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -229,6 +230,19 @@ class ResolvedIdentifierTableExtractor extends TableExtractor {
         val maybeTable = lookupExtractor[IdentifierTableExtractor].apply(spark, identifier)
         val owner = catalog.flatMap(name => TableExtractor.getOwner(spark, name, identifier))
         maybeTable.map(_.copy(catalog = catalog, owner = owner))
+      case _ => None
+    }
+  }
+}
+
+/**
+ * org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
+ */
+class SubqueryAliasTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    invokeAs[AnyRef](v1, "child") match {
+      case lr: LogicalRelation =>
+        lookupExtractor[LogicalRelationTableExtractor].apply(spark, lr)
       case _ => None
     }
   }
