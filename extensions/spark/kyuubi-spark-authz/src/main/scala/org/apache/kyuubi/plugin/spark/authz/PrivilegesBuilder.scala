@@ -133,7 +133,7 @@ object PrivilegesBuilder {
         for (child <- p.children) {
           child match {
             case pvm: PermanentViewMarker
-              if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
+                if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
               buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
             case _ =>
               val childCols = columnPrune(
