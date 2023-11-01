@@ -85,7 +85,7 @@ body:
   - type: textarea
     attributes:
       label: Skill requirements
-      description: Which skills are required for contributors who want to take this task?
+      description: What skills are required for contributors who want to take this task?
       placeholder: |
         e.g.
         - Basic knowledge on Scala programming language
