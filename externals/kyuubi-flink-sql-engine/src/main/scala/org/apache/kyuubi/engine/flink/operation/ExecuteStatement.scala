@@ -111,7 +111,10 @@ class ExecuteStatement(
         .build[ClassLoader].bind(plannerModule).get
     } catch {
       case e: Exception =>
-        throw new TableException("Error obtaining Flink planner module ClassLoader", e)
+        throw new TableException(
+          "Error obtaining Flink planner module ClassLoader. " +
+            "Make sure a flink-table-planner-loader.jar is on the classpath",
+          e)
     }
   }
 }
