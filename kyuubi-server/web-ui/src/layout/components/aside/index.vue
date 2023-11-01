@@ -18,8 +18,8 @@
 
 <template>
   <header>
-    <img src="@/assets/kyuubi.png" />
-    <pre v-if="!isCollapse" class="header_title">{{ title }}</pre>
+    <img src="@/assets/kyuubi-official-logo.svg" />
+    <pre v-if="!isCollapse">{{ title }}</pre>
   </header>
   <c-menu :is-collapse="isCollapse" :active-path="activePath" :menus="menus" />
 </template>
@@ -40,7 +40,7 @@
   /* eslint-disable */
   // define __APP_VERSION__ in vite.config.ts
   // @ts-ignore
-  const title = `Apache Kyuubi\n${__APP_VERSION__}`
+  const title = `${__APP_VERSION__}`
   /* eslint-enable */
 </script>
 
@@ -54,17 +54,17 @@
     line-height: 64px;
     img {
       display: inline-block;
-      width: 32px;
-      height: 32px;
+      width: 140px;
+      height: 50px;
+      top: -10px;
       position: relative;
-      top: -12.5px;
       vertical-align: middle;
     }
     pre {
+      font-size: 10px;
       display: inline-block;
-      width: 160px;
-      margin-top: 10px;
-      line-height: 25px;
+      width: 100px;
+      margin-top: 20px;
       text-align: center;
     }
   }
