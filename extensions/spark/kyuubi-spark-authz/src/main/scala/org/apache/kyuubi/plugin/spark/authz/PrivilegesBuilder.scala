@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{AttributeSet, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.slf4j.LoggerFactory
 
@@ -74,10 +74,18 @@ object PrivilegesBuilder {
             privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
         }
       } else {
-        val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
-          .filter(plan.outputSet.contains).map(_.name).distinct
+        val cols = columnPrune(
+          projectionList ++ conditionList,
+          plan.outputSet)
         privilegeObjects += PrivilegeObject(table, cols)
       }
+    }
+
+    def columnPrune(
+        projectionList: Seq[NamedExpression],
+        output: AttributeSet): Seq[String] = {
+      (projectionList ++ conditionList).flatMap(collectLeaves)
+        .filter(output.contains).map(_.name).distinct
     }
 
     plan match {
@@ -122,13 +130,20 @@ object PrivilegesBuilder {
         privilegeObjects += PrivilegeObject(table)
 
       case p =>
-        val newProjection = if (projectionList.isEmpty) {
-          p.inputSet.map(_.toAttribute).toSeq
-        } else {
-          projectionList
-        }
         for (child <- p.children) {
-          buildQuery(child, privilegeObjects, newProjection, conditionList, spark)
+          val childCols = columnPrune(
+            projectionList ++ conditionList,
+            child.outputSet)
+          if (childCols.isEmpty) {
+            buildQuery(
+              child,
+              privilegeObjects,
+              p.inputSet.map(_.toAttribute).toSeq,
+              conditionList,
+              spark)
+          } else {
+            buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
+          }
         }
     }
   }
@@ -290,6 +305,7 @@ object PrivilegesBuilder {
       spark: SparkSession): PrivilegesAndOpType = {
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
+    println(plan)
     val opType = plan match {
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
