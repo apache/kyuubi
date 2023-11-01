@@ -65,15 +65,6 @@ class FlinkSessionImpl(
   override def open(): Unit = {
     val executor = fSession.createExecutor(Configuration.fromMap(fSession.getSessionConfig))
 
-    sessionManager.getConf.get(ENGINE_INITIALIZE_SQL).foreach { sql =>
-      try {
-        executor.executeStatement(OperationHandle.create, sql)
-      } catch {
-        case NonFatal(e) =>
-          throw KyuubiSQLException(s"execute ${ENGINE_INITIALIZE_SQL.key}  $sql ", e)
-      }
-    }
-
     sessionManager.getConf.get(ENGINE_SESSION_INITIALIZE_SQL).foreach { sql =>
       try {
         executor.executeStatement(OperationHandle.create, sql)

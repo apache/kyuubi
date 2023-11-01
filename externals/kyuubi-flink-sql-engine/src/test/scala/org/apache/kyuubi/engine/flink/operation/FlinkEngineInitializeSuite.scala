@@ -33,11 +33,13 @@ class FlinkEngineInitializeSuite extends HiveJDBCTestHelper
 
   protected val ENGINE_INITIALIZE_SQL_VALUE: String =
     s"""
-      create catalog cat_a with ('type'='generic_in_memory');
-      create table blackhole(i int) with ('connector'='blackhole')
+      show databases;
      """
+
   protected val ENGINE_SESSION_INITIALIZE_SQL_VALUE: String =
     s"""
+      create catalog cat_a with ('type'='generic_in_memory');
+      create table blackhole(i int) with ('connector'='blackhole');
       create  table datagen(i int) with (
       'connector'='datagen',
       'fields.i.kind'='sequence',
