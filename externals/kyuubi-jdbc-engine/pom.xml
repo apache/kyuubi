@@ -59,6 +59,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.dimafeng</groupId>
+            <artifactId>testcontainers-scala-mysql_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>${hive.jdbc.artifact}</artifactId>
             <version>${project.version}</version>
