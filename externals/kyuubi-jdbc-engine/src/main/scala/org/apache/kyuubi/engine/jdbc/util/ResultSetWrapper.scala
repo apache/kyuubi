@@ -30,6 +30,7 @@ class ResultSetWrapper(statement: Statement)
   private lazy val metadata = currentResult.getMetaData
 
   override def hasNext: Boolean = {
+    if (currentResult == null) return false
     val result = currentResult.next()
     if (!result) {
       val hasMoreResults = statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT)
@@ -37,6 +38,7 @@ class ResultSetWrapper(statement: Statement)
         currentResult = statement.getResultSet
         currentResult.next()
       } else {
+        currentResult = null
         false
       }
     } else {
