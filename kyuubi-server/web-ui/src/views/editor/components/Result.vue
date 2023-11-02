@@ -23,7 +23,7 @@
       v-fit-columns
       stripe
       :data="data"
-      class="lab-el-table">
+      class="editor-el-table">
       <el-table-column type="index" width="50" />
       <el-table-column
         v-for="(_value, key) in data[0]"
@@ -89,7 +89,7 @@
 </script>
 
 <style lang="scss" scoped>
-  :deep(.lab-el-table.r-table) {
+  :deep(.editor-el-table.r-table) {
     .cell {
       display: inline-block;
       white-space: nowrap;
