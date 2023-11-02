@@ -15,4 +15,5 @@
 # limitations under the License.
 #
 
+org.apache.kyuubi.plugin.spark.authz.serde.CatalogStorageFormatURIExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.StringURIExtractor

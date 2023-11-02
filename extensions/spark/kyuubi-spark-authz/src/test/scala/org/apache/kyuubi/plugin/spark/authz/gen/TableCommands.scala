@@ -552,6 +552,13 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
   val InsertIntoDataSourceDir = {
     val cmd = "org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand"
     val queryDesc = queryQueryDesc
+    val uriDesc = UriDesc("storage", classOf[CatalogStorageFormatURIExtractor])
+    TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
+  }
+
+  val SaveIntoDataSourceCommand = {
+    val cmd = "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand"
+    val queryDesc = queryQueryDesc
     TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc))
   }
 
@@ -659,8 +666,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     DropTableV2,
     InsertIntoDataSource,
     InsertIntoDataSourceDir,
-    InsertIntoDataSourceDir.copy(classname =
-      "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand"),
+    SaveIntoDataSourceCommand,
     InsertIntoHadoopFsRelationCommand,
     InsertIntoDataSourceDir.copy(classname =
       "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand"),

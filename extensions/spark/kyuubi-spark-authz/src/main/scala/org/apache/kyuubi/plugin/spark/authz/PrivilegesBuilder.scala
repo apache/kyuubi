@@ -195,15 +195,11 @@ object PrivilegesBuilder {
         }
         spec.uriDescs.foreach { ud =>
           try {
-            val uri = ud.extract(plan)
-            uri match {
-              case Some(uri) =>
-                if (ud.isInput) {
-                  inputObjs += PrivilegeObject(uri)
-                } else {
-                  outputObjs += PrivilegeObject(uri)
-                }
-              case None =>
+            val uris = ud.extract(plan)
+            if (ud.isInput) {
+              inputObjs ++= uris.map(PrivilegeObject(_))
+            } else {
+              outputObjs ++= uris.map(PrivilegeObject(_))
             }
           } catch {
             case e: Exception =>
