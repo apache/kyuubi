@@ -61,7 +61,6 @@ class AdminControlCliArguments(args: Seq[String], env: Map[String, String] = sys
            |  type                    ${cliConfig.engineOpts.engineType}
            |  sharelevel              ${cliConfig.engineOpts.engineShareLevel}
            |  sharesubdomain          ${cliConfig.engineOpts.engineSubdomain}
-           |  all                     ${cliConfig.engineOpts.all}
         """.stripMargin
       case ControlObject.SERVER =>
         s"""Parsed arguments:
