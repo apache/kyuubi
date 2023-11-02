@@ -17,11 +17,18 @@
 
 import request from '@/utils/request'
 
-export function openSession(host: string, data: any): any {
+export function openSession(data: any): any {
   return request({
-    url: `http://${host}/api/v1/sessions`,
+    url: 'api/v1/sessions',
     method: 'post',
     data
+  })
+}
+
+export function closeSession(identifier: string): any {
+  return request({
+    url: `api/v1/sessions/${identifier}`,
+    method: 'delete'
   })
 }
 
@@ -46,5 +53,12 @@ export function getSqlMetadata(params: any): any {
     url: `api/v1/operations/${params.operationHandleStr}/resultsetmetadata`,
     method: 'get',
     params
+  })
+}
+
+export function log(identifier: string): any {
+  return request({
+    url: `api/v1/operations/${identifier}/log`,
+    method: 'get'
   })
 }

@@ -20,8 +20,8 @@
   <div class="container">
     <el-tabs
       v-model="editableTabsValue"
-      type="card"
-      class="sql-lab-tabs"
+      type="border-card"
+      class="lab-el-tabs"
       editable
       @edit="handleTabsEdit">
       <el-tab-pane
@@ -40,11 +40,11 @@
   import { ref } from 'vue'
   import { TabPaneName } from 'element-plus'
 
-  const editableTabsValue = ref('0')
+  const editableTabsValue = ref('1')
   const editableTabs = ref([
     {
-      title: 'Sql',
-      name: '0'
+      title: 'Sql1',
+      name: '1'
     }
   ])
 
@@ -53,7 +53,7 @@
     action: 'remove' | 'add'
   ) => {
     if (action === 'add') {
-      const tabLength = editableTabs.value.length
+      const tabLength = editableTabs.value.length + 1
       const newTabName = `${tabLength}`
       editableTabs.value.push({
         title: `Sql${tabLength}`,
@@ -82,25 +82,43 @@
 
 <style lang="scss" scoped>
   .container {
-    height: 70%;
+    height: calc(100vh - 66px);
+    margin: -20px;
+  }
 
-    :deep(.sql-lab-tabs) {
-      height: 100%;
-      .el-tabs__header {
-        display: flex;
-        flex-direction: row-reverse;
-        justify-content: flex-end;
+  :deep(.lab-el-tabs) {
+    height: 100%;
+    overflow: auto;
+    .el-tabs__header {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: flex-end;
+      background: #f5f5f5;
+    }
+    .el-tabs__content {
+      overflow: auto;
+      padding: 12px;
+      .el-tab-pane {
+        height: 100%;
       }
+    }
+  }
 
-      /* 自定义选项卡面板的高度 */
-      .el-tabs__content {
-        height: 300px; /* 你可以根据需要设置高度 */
-        overflow: auto; /* 如果内容溢出，可以启用滚动条 */
-
-        .el-tab-pane {
-          height: 100%;
-        }
+  :deep(.result-el-tabs) {
+    .el-tabs__header {
+      margin-bottom: 0;
+      background: transparent;
+      .el-tabs__nav-wrap {
+        border-bottom: 1px solid #e4e7ed;
       }
+      .el-tabs__nav {
+        background: #f5f5f5;
+      }
+    }
+    .el-tabs__content {
+      padding: 10px 0 0 0;
+      border: 1px solid #e4e7ed;
+      border-top: none;
     }
   }
 </style>

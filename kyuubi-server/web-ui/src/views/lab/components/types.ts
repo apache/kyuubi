@@ -19,4 +19,19 @@ interface IResponse {
   identifier: string
 }
 
-export { IResponse }
+interface ISqlResult {
+  dataName?: string
+  dataType: string
+  value: any
+}
+
+interface IFields {
+  fields: ISqlResult[]
+}
+
+interface ILog {
+  logRowSet: string[]
+  rowCount: number
+}
+
+export { IResponse, ISqlResult, IFields, ILog }
