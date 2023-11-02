@@ -31,6 +31,7 @@ object KyuubiSparkSQLCommonExtension {
   def injectCommonExtensions(extensions: SparkSessionExtensions): Unit = {
     // inject zorder parser and related rules
     extensions.injectParser { case (_, parser) => new SparkKyuubiSparkSQLParser(parser) }
+    extensions.injectResolutionRule(MockOutputTable)
     extensions.injectResolutionRule(ResolveZorder)
 
     // Note that:

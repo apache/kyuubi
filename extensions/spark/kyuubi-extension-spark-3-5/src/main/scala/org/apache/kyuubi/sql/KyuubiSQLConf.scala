@@ -289,4 +289,11 @@ object KyuubiSQLConf {
       .version("1.9.0")
       .intConf
       .createWithDefault(2000)
+
+  val MOCK_OUTPUT_TABLE =
+    buildConf("spark.sql.optimizer.mockOutputTable")
+      .doc("If true, replace the output table with a mock suffix table.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
 }
