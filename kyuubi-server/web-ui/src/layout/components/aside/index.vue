@@ -67,8 +67,6 @@
       width: 100px;
       margin-top: 20px;
       text-align: center;
-      font-family: 'Myriad Pro', 'Helvetica Neue', Arial, Helvetica, sans-serif;
-      color: rgba(255, 255, 255, 0.87);
     }
     .collapsed-logo {
       width: 40px;
