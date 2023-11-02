@@ -20,6 +20,7 @@ interface IEngineSearch {
   sharelevel: null | string
   'hive.server2.proxy.user': null | string
   subdomain?: null | string
+  all?: boolean
 }
 
 export { IEngineSearch }

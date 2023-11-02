@@ -133,12 +133,24 @@
   const { tableData, loading, getList: _getList } = useTable()
   // default search params
   const searchParam: IEngineSearch = reactive({
-    type: 'SPARK_SQL',
-    sharelevel: 'USER',
-    'hive.server2.proxy.user': 'anonymous'
+    type: 'ALL',
+    sharelevel: 'ALL',
+    'hive.server2.proxy.user': '',
+    all: true
   })
   const getList = () => {
-    _getList(getAllEngines, searchParam)
+    const params: IEngineSearch = {
+      type: searchParam.type == 'ALL' ? null : searchParam.type,
+      sharelevel:
+        searchParam.sharelevel == 'ALL' ? null : searchParam.sharelevel,
+      'hive.server2.proxy.user': searchParam['hive.server2.proxy.user'],
+      all:
+        searchParam.type == 'ALL' ||
+        searchParam.sharelevel == 'ALL' ||
+        searchParam['hive.server2.proxy.user'] == null ||
+        searchParam['hive.server2.proxy.user'].length == 0
+    }
+    _getList(getAllEngines, params)
   }
   const init = () => {
     getList()

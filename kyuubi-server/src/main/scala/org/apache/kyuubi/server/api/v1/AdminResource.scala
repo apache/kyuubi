@@ -304,8 +304,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         val commonParent = s"/${engineSpace}_${KYUUBI_VERSION}_${finalShareLevel}_$finalEngineType"
         info(s"Listing engine nodes for $commonParent")
         try {
-          discoveryClient.getChildren(commonParent).map {
-            user =>
+          val users = discoveryClient.getChildren(commonParent)
+          Option(hs2ProxyUser).map(user => users.filter(_.equals(user))).getOrElse(users)
+            .foreach { user =>
               val engine = getEngine(user, finalEngineType, finalShareLevel, "", "")
               val engineSpace = getEngineSpace(engine)
               discoveryClient.getChildren(engineSpace).map { child =>
@@ -321,7 +322,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
                     node.namespace,
                     node.attributes.asJava))
               }
-          }
+            }
         } catch {
           case nne: NoNodeException =>
             error(
