@@ -49,8 +49,8 @@ export const MENUS = [
     router: '/swagger'
   },
   {
-    label: 'SQL Lab',
+    label: 'SQL Editor',
     icon: 'Cpu',
-    router: '/lab'
+    router: '/editor'
   }
 ]

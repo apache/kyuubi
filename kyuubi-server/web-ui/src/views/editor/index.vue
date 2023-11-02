@@ -21,7 +21,7 @@
     <el-tabs
       v-model="editableTabsValue"
       type="border-card"
-      class="lab-el-tabs"
+      class="editor-el-tabs"
       editable
       @edit="handleTabsEdit">
       <el-tab-pane
@@ -86,7 +86,7 @@
     margin: -20px;
   }
 
-  :deep(.lab-el-tabs) {
+  :deep(.editor-el-tabs) {
     height: 100%;
     overflow: auto;
     .el-tabs__header {

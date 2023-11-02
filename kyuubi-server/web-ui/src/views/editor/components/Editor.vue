@@ -88,7 +88,7 @@
     getSqlRowset,
     getSqlMetadata,
     log
-  } from '@/api/lab'
+  } from '@/api/editor'
   import type { IResponse, ISqlResult, IFields, ILog } from './types'
 
   const { t } = useI18n()
@@ -259,4 +259,3 @@
     }
   }
 </style>
-@/api/lab
