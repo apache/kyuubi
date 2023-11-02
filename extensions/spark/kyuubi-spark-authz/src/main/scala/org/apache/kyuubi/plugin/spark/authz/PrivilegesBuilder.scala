@@ -74,18 +74,17 @@ object PrivilegesBuilder {
             privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
         }
       } else {
-        val cols = columnPrune(
-          projectionList ++ conditionList,
-          plan.outputSet)
+        val cols = columnPrune(projectionList ++ conditionList, plan.outputSet)
         privilegeObjects += PrivilegeObject(table, cols)
       }
     }
 
-    def columnPrune(
-        projectionList: Seq[NamedExpression],
-        output: AttributeSet): Seq[String] = {
-      (projectionList ++ conditionList).flatMap(collectLeaves)
-        .filter(output.contains).map(_.name).distinct
+    def columnPrune(projectionList: Seq[NamedExpression], output: AttributeSet): Seq[String] = {
+      (projectionList ++ conditionList)
+        .flatMap(collectLeaves)
+        .filter(output.contains)
+        .map(_.name)
+        .distinct
     }
 
     plan match {
@@ -136,12 +135,9 @@ object PrivilegesBuilder {
                 if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
               buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
             case _ =>
-              val childCols = columnPrune(
-                projectionList ++ conditionList,
-                child.outputSet)
+              val childCols = columnPrune(projectionList ++ conditionList, child.outputSet)
               if (childCols.isEmpty) {
-                buildQuery(
-                  child,
+                buildQuery(child,
                   privilegeObjects,
                   p.inputSet.map(_.toAttribute).toSeq,
                   conditionList,
