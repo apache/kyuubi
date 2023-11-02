@@ -139,8 +139,9 @@ object FlinkSQLEngine extends Logging {
       tableEnv.executeSql("select 'kyuubi'").await()
     }
 
-    kyuubiConf.get(ENGINE_INITIALIZE_SQL).foreach(
-      tableEnv.executeSql(_).await())
+    kyuubiConf.get(ENGINE_INITIALIZE_SQL).foreach { stmt =>
+      tableEnv.executeSql(stmt).await()
+    }
 
     info("Bootstrap SQL finished.")
   }
