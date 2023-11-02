@@ -45,7 +45,7 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
 
   private var zkServer: EmbeddedZookeeper = _
 
-  protected val conf: KyuubiConf = FlinkSQLEngine.kyuubiConf
+  protected val conf: KyuubiConf = new KyuubiConf(false)
 
   protected def engineRefId: String
 
@@ -60,7 +60,6 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
       }
     }
     withKyuubiConf.foreach { case (k, v) =>
-      System.setProperty(k, v)
       conf.set(k, v)
     }
 

@@ -32,6 +32,7 @@ import org.apache.flink.table.gateway.service.context.DefaultContext
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, currentUser, FLINK_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_INITIALIZE_SQL
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_NAME, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.service.Serverable
@@ -102,9 +103,7 @@ object FlinkSQLEngine extends Logging {
       startEngine(engineContext)
       info("Flink engine started")
 
-      if ("yarn-application".equalsIgnoreCase(executionTarget)) {
-        bootstrapFlinkApplicationExecutor()
-      }
+      bootstrap(executionTarget)
 
       // blocking main thread
       countDownLatch.await()
@@ -129,15 +128,22 @@ object FlinkSQLEngine extends Logging {
     }
   }
 
-  private def bootstrapFlinkApplicationExecutor() = {
-    // trigger an execution to initiate EmbeddedExecutor with the default flink conf
+  private def bootstrap(executionTarget: String) = {
     val flinkConf = new Configuration()
-    flinkConf.set(PipelineOptions.NAME, "kyuubi-bootstrap-sql")
-    debug(s"Running bootstrap Flink SQL in application mode with flink conf: $flinkConf.")
     val tableEnv = TableEnvironment.create(flinkConf)
-    val res = tableEnv.executeSql("select 'kyuubi'")
-    res.await()
-    info("Bootstrap Flink SQL finished.")
+
+    if ("yarn-application".equalsIgnoreCase(executionTarget)) {
+      // trigger an execution to initiate EmbeddedExecutor with the default flink conf
+      flinkConf.set(PipelineOptions.NAME, "kyuubi-bootstrap-sql")
+      debug(s"Running bootstrap Flink SQL in application mode with flink conf: $flinkConf.")
+      tableEnv.executeSql("select 'kyuubi'").await()
+    }
+
+    kyuubiConf.get(ENGINE_INITIALIZE_SQL).foreach { stmt =>
+      tableEnv.executeSql(stmt).await()
+    }
+
+    info("Bootstrap SQL finished.")
   }
 
   private def setDeploymentConf(executionTarget: String, flinkConf: Configuration): Unit = {
