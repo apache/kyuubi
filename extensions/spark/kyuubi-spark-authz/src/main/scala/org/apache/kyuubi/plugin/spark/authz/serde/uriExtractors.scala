@@ -44,7 +44,7 @@ class CatalogStorageFormatURIExtractor extends URIExtractor {
 }
 
 class HadoopFsRelationFileIndexURIExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Option[Uri] = {
-    Some(Uri(v1.asInstanceOf[HadoopFsRelation].location.rootPaths.map(_.toString).mkString(",")))
+  override def apply(v1: AnyRef): Seq[Uri] = {
+    v1.asInstanceOf[HadoopFsRelation].location.rootPaths.map(_.toString).map(Uri)
   }
 }
