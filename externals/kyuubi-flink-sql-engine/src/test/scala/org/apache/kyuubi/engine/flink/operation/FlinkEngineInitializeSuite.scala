@@ -32,20 +32,16 @@ class FlinkEngineInitializeSuite extends HiveJDBCTestHelper
   protected def jdbcUrl: String = getFlinkEngineServiceUrl
 
   protected val ENGINE_INITIALIZE_SQL_VALUE: String =
-    s"""
-      show databases;
-     """
+    "show databases;"
 
   protected val ENGINE_SESSION_INITIALIZE_SQL_VALUE: String =
-    s"""
-      create catalog cat_b with ('type'='generic_in_memory');
+    """create catalog cat_b with ('type'='generic_in_memory');
       create table blackhole(i int) with ('connector'='blackhole');
-      create  table datagen(i int) with (
+      create table datagen(i int) with (
       'connector'='datagen',
       'fields.i.kind'='sequence',
       'fields.i.start'='1',
-      'fields.i.end'='10')
-     """
+      'fields.i.end'='10')""".stripMargin
 
   override def withKyuubiConf: Map[String, String] = {
     Map(
