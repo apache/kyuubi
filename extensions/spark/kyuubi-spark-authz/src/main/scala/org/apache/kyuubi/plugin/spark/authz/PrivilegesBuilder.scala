@@ -137,7 +137,8 @@ object PrivilegesBuilder {
             case _ =>
               val childCols = columnPrune(projectionList ++ conditionList, child.outputSet)
               if (childCols.isEmpty) {
-                buildQuery(child,
+                buildQuery(
+                  child,
                   privilegeObjects,
                   p.inputSet.map(_.toAttribute).toSeq,
                   conditionList,
