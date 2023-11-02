@@ -36,12 +36,12 @@ class FlinkEngineInitializeSuite extends HiveJDBCTestHelper
 
   protected val ENGINE_SESSION_INITIALIZE_SQL_VALUE: String =
     """create catalog cat_b with ('type'='generic_in_memory');
-      create table blackhole(i int) with ('connector'='blackhole');
-      create table datagen(i int) with (
-      'connector'='datagen',
-      'fields.i.kind'='sequence',
-      'fields.i.start'='1',
-      'fields.i.end'='10')""".stripMargin
+      |create table blackhole(i int) with ('connector'='blackhole');
+      |create table datagen(i int) with (
+      |'connector'='datagen',
+      |'fields.i.kind'='sequence',
+      |'fields.i.start'='1',
+      |'fields.i.end'='10')""".stripMargin
 
   override def withKyuubiConf: Map[String, String] = {
     Map(
