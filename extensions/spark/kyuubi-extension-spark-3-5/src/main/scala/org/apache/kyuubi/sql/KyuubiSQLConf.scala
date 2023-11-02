@@ -296,4 +296,12 @@ object KyuubiSQLConf {
       .version("1.9.0")
       .booleanConf
       .createWithDefault(false)
+
+  val MOCK_OUTPUT_TABLE_SUFFIX =
+    buildConf("spark.sql.optimizer.mockOutputTable.suffix")
+      .doc("Suffix of mock output table, if not specified it will" +
+        " end with `_mock_${System.currentTimeMillis()}`.")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
 }

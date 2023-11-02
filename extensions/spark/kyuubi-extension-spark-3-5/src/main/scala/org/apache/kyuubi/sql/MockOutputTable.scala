@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.util.CharVarcharUtils
 import org.apache.spark.sql.execution.command.DDLUtils
 import org.apache.spark.sql.execution.datasources.CreateTable
 
-import org.apache.kyuubi.sql.KyuubiSQLConf.MOCK_OUTPUT_TABLE
+import org.apache.kyuubi.sql.KyuubiSQLConf.{MOCK_OUTPUT_TABLE, MOCK_OUTPUT_TABLE_SUFFIX}
 
 case class MockOutputTable(spark: SparkSession) extends Rule[LogicalPlan] {
 
@@ -32,24 +32,28 @@ case class MockOutputTable(spark: SparkSession) extends Rule[LogicalPlan] {
     if (!conf.getConf(MOCK_OUTPUT_TABLE)) {
       plan
     } else {
+      val suffix = conf.getConf(MOCK_OUTPUT_TABLE_SUFFIX).getOrElse(defaultMockSuffix)
       plan resolveOperators {
         // InsertInto
         case i @ InsertIntoStatement(r: HiveTableRelation, _, _, _, _, _, _)
             if !isMockTable(r.tableMeta) =>
-          val newTable = mockTable(r.tableMeta, true)
+          val newTable = mockTable(r.tableMeta, suffix, true)
           i.copy(table = DDLUtils.readHiveTable(newTable))
         // CTAS
         case c @ CreateTable(tableDesc, _, Some(query))
             if !isMockTable(tableDesc) && query.resolved =>
-          val newTable = mockTable(tableDesc, false)
+          val newTable = mockTable(tableDesc, suffix, false)
           c.copy(tableDesc = newTable)
       }
     }
   }
 
-  private def mockTable(sourceTable: CatalogTable, needCreateTable: Boolean): CatalogTable = {
+  private def mockTable(
+      sourceTable: CatalogTable,
+      suffix: String,
+      needCreateTable: Boolean): CatalogTable = {
     val newIdentifier = sourceTable.identifier
-      .copy(table = mockTableName(sourceTable.identifier.table))
+      .copy(table = mockTableName(sourceTable.identifier.table, suffix))
 
     val newStorage = sourceTable.storage.copy(locationUri = None)
 
@@ -88,8 +92,12 @@ case class MockOutputTable(spark: SparkSession) extends Rule[LogicalPlan] {
     pattern.findFirstIn(table.identifier.table).isDefined
   }
 
-  private def mockTableName(rawName: String): String = {
-    s"${rawName}_mock_${System.currentTimeMillis()}"
+  private def defaultMockSuffix: String = {
+    s"_mock_${System.currentTimeMillis()}"
+  }
+
+  private def mockTableName(rawName: String, suffix: String): String = {
+    s"$rawName$suffix"
   }
 
 }
