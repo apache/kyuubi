@@ -219,6 +219,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
     request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
 
+    val userName = fe.getSessionUser(request.getConf.asScala.toMap)
+    val ipAddress = fe.getIpAddress
     val userProvidedBatchId = request.getConf.asScala.get(KYUUBI_BATCH_ID_KEY)
     userProvidedBatchId.foreach { batchId =>
       try UUID.fromString(batchId)
@@ -234,8 +236,6 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       case Some(batch) =>
         markDuplicated(batch)
       case None =>
-        val userName = fe.getSessionUser(request.getConf.asScala.toMap)
-        val ipAddress = fe.getIpAddress
         val batchId = userProvidedBatchId.getOrElse(UUID.randomUUID().toString)
         request.setConf(
           (request.getConf.asScala ++ Map(

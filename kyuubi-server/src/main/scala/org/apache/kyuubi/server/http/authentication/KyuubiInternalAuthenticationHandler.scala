@@ -17,17 +17,17 @@
 
 package org.apache.kyuubi.server.http.authentication
 
-import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.util.Base64
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
+import org.apache.kyuubi.server.http.util.HttpAuthUtils.WWW_AUTHENTICATE_HEADER
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 
 class KyuubiInternalAuthenticationHandler extends AuthenticationHandler with Logging {
-  import AuthenticationHandler._
 
   private var conf: KyuubiConf = _
   override val authScheme: AuthScheme = AuthSchemes.KYUUBI_INTERNAL
@@ -48,10 +48,10 @@ class KyuubiInternalAuthenticationHandler extends AuthenticationHandler with Log
     val authorization = getAuthorization(request)
     val inputToken = Option(authorization).map(a => Base64.getDecoder.decode(a.getBytes()))
       .getOrElse(Array.empty[Byte])
-    val creds = new String(inputToken, Charset.forName("UTF-8")).split(":")
+    val creds = new String(inputToken, StandardCharsets.UTF_8).split(":")
 
     if (creds.size < 2 || creds(0).trim.isEmpty || creds(1).trim.isEmpty) {
-      response.setHeader(WWW_AUTHENTICATE, authScheme.toString)
+      response.setHeader(WWW_AUTHENTICATE_HEADER, authScheme.toString)
       response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
     } else {
       val Seq(user, password) = creds.toSeq.take(2)
