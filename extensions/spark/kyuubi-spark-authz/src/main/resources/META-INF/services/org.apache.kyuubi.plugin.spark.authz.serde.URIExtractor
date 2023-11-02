@@ -16,4 +16,5 @@
 #
 
 org.apache.kyuubi.plugin.spark.authz.serde.CatalogStorageFormatURIExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.OptionsUriExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.StringURIExtractor

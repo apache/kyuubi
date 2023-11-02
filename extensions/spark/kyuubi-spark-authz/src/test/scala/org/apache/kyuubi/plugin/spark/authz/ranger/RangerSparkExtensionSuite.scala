@@ -1085,4 +1085,15 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+  test("SaveIntoDataSourceCommand") {
+    withTempDir { path =>
+      withSingleCallEnabled {
+        val df = sql("SELECT 1 as id, 'Tony' as name")
+        interceptContains[AccessControlException](doAs(
+          someone,
+          df.write.format("console").save(path.toString)))(
+          s"does not have [select] privilege on [[$path, $path/]]")
+      }
+    }
+  }
 }

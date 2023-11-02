@@ -559,7 +559,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
   val SaveIntoDataSourceCommand = {
     val cmd = "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand"
     val queryDesc = queryQueryDesc
-    TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc))
+    val uriDesc = UriDesc("options", classOf[OptionsUriExtractor])
+    TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
   }
 
   val InsertIntoHadoopFsRelationCommand = {
