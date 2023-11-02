@@ -29,7 +29,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
 
-import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
+import org.apache.kyuubi.{KYUUBI_VERSION, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -45,8 +45,6 @@ import org.apache.kyuubi.shaded.zookeeper.KeeperException.NoNodeException
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class AdminResource extends ApiRequestContext with Logging {
-  private lazy val administrators = fe.getConf.get(KyuubiConf.SERVER_ADMINISTRATORS) +
-    Utils.currentUser
 
   @ApiResponse(
     responseCode = "200",
@@ -59,7 +57,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive refresh Kyuubi server hadoop conf request from $userName/$ipAddress")
-    if (!isAdministrator(userName)) {
+    if (!fe.isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to refresh the Kyuubi server hadoop conf")
     }
@@ -78,7 +76,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive refresh user defaults conf request from $userName/$ipAddress")
-    if (!isAdministrator(userName)) {
+    if (!fe.isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to refresh the user defaults conf")
     }
@@ -97,7 +95,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive refresh kubernetes conf request from $userName/$ipAddress")
-    if (!isAdministrator(userName)) {
+    if (!fe.isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to refresh the kubernetes conf")
     }
@@ -116,7 +114,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive refresh unlimited users request from $userName/$ipAddress")
-    if (!isAdministrator(userName)) {
+    if (!fe.isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to refresh the unlimited users")
     }
@@ -135,7 +133,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive refresh deny users request from $userName/$ipAddress")
-    if (!isAdministrator(userName)) {
+    if (!fe.isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to refresh the deny users")
     }
@@ -156,7 +154,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Received listing all live sessions request from $userName/$ipAddress")
-    if (!isAdministrator(userName)) {
+    if (!fe.isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to list all live sessions")
     }
@@ -178,7 +176,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Received closing a session request from $userName/$ipAddress")
-    if (!isAdministrator(userName)) {
+    if (!fe.isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to close the session $sessionHandleStr")
     }
@@ -202,7 +200,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Received listing all of the active operations request from $userName/$ipAddress")
-    if (!isAdministrator(userName)) {
+    if (!fe.isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to list all the operations")
     }
@@ -229,7 +227,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Received close an operation request from $userName/$ipAddress")
-    if (!isAdministrator(userName)) {
+    if (!fe.isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to close the operation $operationHandleStr")
     }
@@ -249,7 +247,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
-    val userName = if (isAdministrator(fe.getRealUser())) {
+    val userName = if (fe.isAdministrator(fe.getRealUser())) {
       Option(hs2ProxyUser).getOrElse(fe.getRealUser())
     } else {
       fe.getSessionUser(hs2ProxyUser)
@@ -292,7 +290,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       val userName = fe.getSessionUser(Map.empty[String, String])
       val ipAddress = fe.getIpAddress
       info(s"Received list all kyuubi engine request from $userName/$ipAddress")
-      if (!isAdministrator(userName)) {
+      if (!fe.isAdministrator(userName)) {
         throw new NotAllowedException(
           s"$userName is not allowed to list all kyuubi engine")
       }
@@ -334,7 +332,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       }
       return engines.toSeq
     }
-    val userName = if (isAdministrator(fe.getRealUser())) {
+    val userName = if (fe.isAdministrator(fe.getRealUser())) {
       Option(hs2ProxyUser).getOrElse(fe.getRealUser())
     } else {
       fe.getSessionUser(hs2ProxyUser)
@@ -394,7 +392,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Received list all live kyuubi servers request from $userName/$ipAddress")
-    if (!isAdministrator(userName)) {
+    if (!fe.isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to list all live kyuubi servers")
     }
@@ -466,7 +464,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Received counting batches request from $userName/$ipAddress")
-    if (!isAdministrator(userName)) {
+    if (!fe.isAdministrator(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to count the batches")
     }
@@ -474,9 +472,5 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       .map(_.countBatch(batchType, Option(batchUser), Option(batchState)))
       .getOrElse(0)
     new Count(batchCount)
-  }
-
-  private def isAdministrator(userName: String): Boolean = {
-    administrators.contains(userName)
   }
 }

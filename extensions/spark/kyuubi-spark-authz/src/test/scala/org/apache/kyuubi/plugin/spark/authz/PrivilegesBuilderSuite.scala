@@ -1467,7 +1467,15 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
-    assert(out.isEmpty)
+    assert(out.size == 1)
+    val po1 = out.head
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URL)
+    assert(po1.dbname === directory.path)
+    assert(po1.objectName === null)
+    assert(po1.columns === Seq.empty)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
+    assert(accessType1 == AccessType.SELECT)
   }
 
   test("InsertIntoDataSourceCommand") {
@@ -1591,7 +1599,15 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
-    assert(out.isEmpty)
+    assert(out.size == 1)
+    val po1 = out.head
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URL)
+    assert(po1.dbname === directory.path)
+    assert(po1.objectName === null)
+    assert(po1.columns === Seq.empty)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
+    assert(accessType1 == AccessType.SELECT)
   }
 
   test("InsertIntoHiveDirCommand") {
@@ -1616,7 +1632,15 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
-    assert(out.isEmpty)
+    assert(out.size == 1)
+    val po1 = out.head
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URL)
+    assert(po1.dbname === directory.path)
+    assert(po1.objectName === null)
+    assert(po1.columns === Seq.empty)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
+    assert(accessType1 == AccessType.SELECT)
   }
 
   test("InsertIntoHiveTableCommand") {

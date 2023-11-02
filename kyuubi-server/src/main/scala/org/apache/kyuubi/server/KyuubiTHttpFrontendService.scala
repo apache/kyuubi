@@ -43,6 +43,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.http.ThriftHttpServlet
 import org.apache.kyuubi.server.http.util.SessionManager
 import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TFrontendService}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.util.NamedThreadFactory
 
 /**
@@ -74,9 +75,9 @@ final class KyuubiTHttpFrontendService(
    */
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
-    if (authFactory.isKerberosEnabled) {
+    if (authFactory.kerberosEnabled) {
       try {
-        authFactory.getValidPasswordAuthMethod
+        KyuubiAuthenticationFactory.getValidPasswordAuthMethod(authFactory.authTypes)
       } catch {
         case _: IllegalArgumentException =>
           throw new AuthenticationException("Kerberos is not supported for thrift http mode")

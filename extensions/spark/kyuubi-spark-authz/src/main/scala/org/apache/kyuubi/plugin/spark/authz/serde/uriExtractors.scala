@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
+import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
 import org.apache.spark.sql.execution.datasources.HadoopFsRelation
 
-trait URIExtractor extends (AnyRef => Option[Uri]) with Extractor
+trait URIExtractor extends (AnyRef => Seq[Uri]) with Extractor
 
 object URIExtractor {
   val uriExtractors: Map[String, URIExtractor] = {
@@ -31,8 +32,14 @@ object URIExtractor {
  * String
  */
 class StringURIExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Option[Uri] = {
-    Some(Uri(v1.asInstanceOf[String]))
+  override def apply(v1: AnyRef): Seq[Uri] = {
+    Seq(Uri(v1.asInstanceOf[String]))
+  }
+}
+
+class CatalogStorageFormatURIExtractor extends URIExtractor {
+  override def apply(v1: AnyRef): Seq[Uri] = {
+    v1.asInstanceOf[CatalogStorageFormat].locationUri.map(uri => Uri(uri.getPath)).toSeq
   }
 }
 

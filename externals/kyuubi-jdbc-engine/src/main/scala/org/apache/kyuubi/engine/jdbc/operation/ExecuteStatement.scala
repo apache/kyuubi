@@ -18,11 +18,13 @@ package org.apache.kyuubi.engine.jdbc.operation
 
 import java.sql.{Connection, Statement, Types}
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.ResultSetWrapper
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchOrientation, IterableFetchIterator, OperationState}
+import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -36,6 +38,8 @@ class ExecuteStatement(
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
+
+  @volatile private var jdbcStatement: Statement = _
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
@@ -55,7 +59,6 @@ class ExecuteStatement(
 
   private def executeStatement(): Unit = {
     setState(OperationState.RUNNING)
-    var jdbcStatement: Statement = null
     try {
       val connection: Connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
       jdbcStatement = dialect.createStatement(connection)
@@ -67,9 +70,12 @@ class ExecuteStatement(
         iter =
           if (incrementalCollect) {
             info("Execute in incremental collect mode")
-            new IterableFetchIterator(resultSetWrapper.toIterable)
+            new IterableFetchIterator(new Iterable[Row] {
+              override def iterator: Iterator[Row] = resultSetWrapper
+            })
           } else {
             warn(s"Execute in full collect mode")
+            jdbcStatement.closeOnCompletion()
             new ArrayFetchIterator(resultSetWrapper.toArray())
           }
       } else {
@@ -89,10 +95,27 @@ class ExecuteStatement(
     } catch {
       onError(true)
     } finally {
-      if (jdbcStatement != null) {
-        jdbcStatement.closeOnCompletion()
-      }
       shutdownTimeoutMonitor()
     }
   }
+
+  override def validateFetchOrientation(order: FetchOrientation): Unit = {
+    if (incrementalCollect && order != FetchOrientation.FETCH_NEXT) {
+      throw KyuubiSQLException(s"The fetch type $order is not supported" +
+        " of incremental collect mode.")
+    }
+    super.validateFetchOrientation(order)
+  }
+
+  override def cleanup(targetState: OperationState): Unit = withLockRequired {
+    try {
+      super.cleanup(targetState)
+    } finally {
+      if (jdbcStatement != null && !jdbcStatement.isClosed) {
+        jdbcStatement.close()
+        jdbcStatement = null
+      }
+    }
+  }
+
 }

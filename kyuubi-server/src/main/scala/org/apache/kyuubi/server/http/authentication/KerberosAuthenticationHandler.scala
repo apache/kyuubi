@@ -27,15 +27,15 @@ import javax.servlet.ServletException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import org.apache.hadoop.security.authentication.util.KerberosName
+import org.apache.hadoop.security.authentication.util.KerberosUtil._
 import org.ietf.jgss.{GSSContext, GSSCredential, GSSManager, Oid}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
+import org.apache.kyuubi.server.http.util.HttpAuthUtils.{NEGOTIATE, WWW_AUTHENTICATE_HEADER}
 
 class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
-  import AuthenticationHandler._
-  import AuthSchemes._
-  import KerberosUtil._
 
   private var gssManager: GSSManager = _
   private var conf: KyuubiConf = _
@@ -143,7 +143,7 @@ class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
       val serverToken = gssContext.acceptSecContext(clientToken, 0, clientToken.length)
       if (serverToken != null && serverToken.nonEmpty) {
         val authenticate = Base64.getEncoder.encodeToString(serverToken)
-        response.setHeader(WWW_AUTHENTICATE, s"$NEGOTIATE $authenticate")
+        response.setHeader(WWW_AUTHENTICATE_HEADER, s"$NEGOTIATE $authenticate")
       }
       if (!gssContext.isEstablished) {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)

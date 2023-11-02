@@ -41,6 +41,19 @@ body:
           have good logical thinking and the ability to solve complex problems, be proficient in programming
           skills or algorithms
 
+  - type: dropdown
+    id: level
+    attributes:
+      label: What's the level of this task?
+      multiple: false
+      options:
+        - TRIVIAL
+        - EASY
+        - MEDIUM
+        - CHALLENGE
+    validations:
+      required: true
+
   - type: checkboxes
     attributes:
       label: Code of Conduct
@@ -65,19 +78,19 @@ body:
       description: Mentor is required for MEDIUM and CHALLENGE tasks, to guide contributors to complete the task.
       options:
         - label: >
-            I have sufficient knowledge and experience of this task, and I volunteer to be the mentor of this task
-            to guide contributors to complete the task.
+            I have sufficient expertise on this task, and I volunteer to be a mentor of this task to guide
+            contributors through the task.
           required: false
 
   - type: textarea
     attributes:
       label: Skill requirements
-      description: Which stills are required for contributors who want to take this task?
+      description: What skills are required for contributors who want to take this task?
       placeholder: |
         e.g.
-        - Basic knowledge on Scala Programing Language
+        - Basic knowledge on Scala programming language
         - Familiar with Apache Maven, Docker and GitHub Action
-        - Basic knowledge on network programing and Apache Thrift RPC framework
+        - Basic knowledge on network programming and Apache Thrift RPC framework
         - Familiar with Apache Spark
         - ...
     validations:
@@ -105,8 +118,9 @@ body:
   - type: textarea
     attributes:
       label: Additional context
-      placeholder: >
-        Anything else that related to this task that the contributors need to know.
+      description: Anything else that related to this task that the contributors need to know.
+      value: |
+        Introduction of [2023 Kyuubi Code Contribution Program](https://github.com/apache/kyuubi/issues/5357)
     validations:
       required: false
 
