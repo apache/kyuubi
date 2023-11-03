@@ -252,8 +252,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     } else {
       fe.getSessionUser(hs2ProxyUser)
     }
-    val engine = getEngine(userName, engineType, shareLevel, subdomain, "default")
-    val engineSpace = getEngineSpace(engine)
+    val engineFilter = normalizeEngineFilter(userName, engineType, shareLevel, subdomain, "default")
+    val engineSpace = calculateEngineSpace(engineFilter)
 
     withDiscoveryClient(fe.getConf) { discoveryClient =>
       val engineNodes = discoveryClient.getChildren(engineSpace)
@@ -290,40 +290,31 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     } else {
       fe.getSessionUser(hs2ProxyUser)
     }
-    val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
-    val engineSpace = getEngineSpace(engine)
+    val engineFilter = normalizeEngineFilter(userName, engineType, shareLevel, subdomain, "")
+    val engineSpace = calculateEngineSpace(engineFilter)
 
     val engineNodes = ListBuffer[ServiceNodeInfo]()
-    Option(subdomain).filter(_.nonEmpty) match {
-      case Some(_) =>
-        withDiscoveryClient(fe.getConf) { discoveryClient =>
-          info(s"Listing engine nodes for $engineSpace")
+    withDiscoveryClient(fe.getConf) { discoveryClient =>
+      Option(subdomain).filter(_.nonEmpty) match {
+        case Some(_) =>
+          info(s"Listing engine nodes under $engineSpace")
           engineNodes ++= discoveryClient.getServiceNodesInfo(engineSpace)
-        }
-      case None =>
-        withDiscoveryClient(fe.getConf) { discoveryClient =>
-          try {
-            discoveryClient.getChildren(engineSpace).map { child =>
-              info(s"Listing engine nodes for $engineSpace/$child")
-              engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
-            }
-          } catch {
-            case nne: NoNodeException =>
-              error(
-                s"No such engine for user: $userName, " +
-                  s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain",
-                nne)
-              throw new NotFoundException(s"No such engine for user: $userName, " +
-                s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain")
+        case None if discoveryClient.pathNonExists(engineSpace) =>
+          warn(s"Path $engineSpace does not exist. user: $userName, engine type: $engineType, " +
+            s"share level: $shareLevel, subdomain: $subdomain")
+        case None =>
+          discoveryClient.getChildren(engineSpace).map { child =>
+            info(s"Listing engine nodes under $engineSpace/$child")
+            engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
           }
-        }
+      }
     }
     engineNodes.map(node =>
       new Engine(
-        engine.getVersion,
-        engine.getUser,
-        engine.getEngineType,
-        engine.getSharelevel,
+        engineFilter.getVersion,
+        engineFilter.getUser,
+        engineFilter.getEngineType,
+        engineFilter.getSharelevel,
         node.namespace.split("/").last,
         node.instance,
         node.namespace,
@@ -360,7 +351,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     servers.toSeq
   }
 
-  private def getEngine(
+  private def normalizeEngineFilter(
       userName: String,
       engineType: String,
       shareLevel: String,
@@ -388,7 +379,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       Collections.emptyMap())
   }
 
-  private def getEngineSpace(engine: Engine): String = {
+  private def calculateEngineSpace(engine: Engine): String = {
     val serverSpace = fe.getConf.get(HA_NAMESPACE)
     val appUser = engine.getSharelevel match {
       case "GROUP" =>
