@@ -20,7 +20,7 @@
   <header>
     <img v-if="!isCollapse" src="@/assets/kyuubi-logo.svg" />
     <img v-else class="collapsed-logo" src="@/assets/kyuubi.png" />
-    <pre v-if="!isCollapse">{{ title }}</pre>
+    <pre v-if="!isCollapse">{{ version }}</pre>
   </header>
   <c-menu :is-collapse="isCollapse" :active-path="activePath" :menus="menus" />
 </template>
@@ -38,11 +38,7 @@
   const { isCollapse } = storeToRefs(store)
   const router = useRoute()
   const activePath = ref(router.path)
-  /* eslint-disable */
-  // define __APP_VERSION__ in vite.config.ts
-  // @ts-ignore
-  const title = `${__APP_VERSION__}`
-  /* eslint-enable */
+  const version = import.meta.env.VITE_APP_VERSION
 </script>
 
 <style lang="scss" scoped>
