@@ -96,7 +96,7 @@ object InferRebalanceAndSortOrders {
         case f: Filter => candidateKeys(f.child, output)
         case s: SubqueryAlias => candidateKeys(s.child, output)
         case v: View => candidateKeys(v.child, output)
-        case g: Generate => candidateKeys(g.child, AttributeSet(g.output))
+        case g: Generate => candidateKeys(g.child, AttributeSet(g.requiredChildOutput))
         case w: Window =>
           val aliasMap = getAliasMap(w.windowExpressions)
           Some((
