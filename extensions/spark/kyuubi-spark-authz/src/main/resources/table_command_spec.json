@@ -2030,6 +2030,28 @@
   "queryDescs" : [ ],
   "uriDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.delta.commands.MergeIntoCommand",
+  "tableDescs" : [ {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "source",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ],
+  "uriDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.delta.commands.UpdateCommand",
   "tableDescs" : [ {
     "fieldName" : "catalogTable",
