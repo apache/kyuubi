@@ -18,8 +18,8 @@
 
 <template>
   <header>
-    <img v-if="!isCollapse" src="@/assets/kyuubi-logo.svg" />
-    <img v-else class="collapsed-logo" src="@/assets/kyuubi.png" />
+    <img v-if="!isCollapse" src="@/assets/images/kyuubi-logo.svg" />
+    <img v-else class="collapsed-logo" src="@/assets/images/kyuubi.png" />
     <pre v-if="!isCollapse">{{ title }}</pre>
   </header>
   <c-menu :is-collapse="isCollapse" :active-path="activePath" :menus="menus" />
