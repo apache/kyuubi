@@ -36,6 +36,7 @@ import org.apache.hadoop.util.Preconditions.checkArgument
 import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
 import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
+import org.elasticsearch.client.RestClientBuilder.HttpClientConfigCallback
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
@@ -120,7 +121,7 @@ class ElasticSearchLoggingEventHandler(
   }
 
   private def throwExceptionIndexNotfound(indexId: String) =
-    throw new KyuubiException()(s"the index '$indexId' is not found on ElasticSearch")
+    throw new KyuubiException(s"the index '$indexId' is not found on ElasticSearch")
 }
 
 object ElasticSearchLoggingEventHandler {
@@ -129,17 +130,18 @@ object ElasticSearchLoggingEventHandler {
       user: Option[String],
       password: Option[String]): ElasticClient = {
     val props = ElasticProperties(serverUrl)
-    val credentialsProvider = {
-      val provider = new BasicCredentialsProvider
-      val credentials = new UsernamePasswordCredentials(user.orNull, password.orNull)
-      provider.setCredentials(AuthScope.ANY, credentials)
-      provider
-    }
-    val javaClient = JavaClient.apply(
-      props,
-      (httpClientBuilder: HttpAsyncClientBuilder) => {
-        httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
-      })
+    val configCallback: HttpClientConfigCallback =
+      (httpAsyncClientBuilder: HttpAsyncClientBuilder) => {
+        (user, password) match {
+          case (Some(userStr), Some(passwordStr)) =>
+            val provider = new BasicCredentialsProvider
+            val credentials = new UsernamePasswordCredentials(userStr, passwordStr)
+            provider.setCredentials(AuthScope.ANY, credentials)
+            httpAsyncClientBuilder.setDefaultCredentialsProvider(provider)
+          case _ => httpAsyncClientBuilder
+        }
+      }
+    val javaClient = JavaClient.apply(props, configCallback)
     ElasticClient(javaClient)
   }
 }
