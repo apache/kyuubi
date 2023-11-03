@@ -28,6 +28,7 @@ import org.apache.flink.table.gateway.service.session.{Session => FSession}
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils
 import org.apache.kyuubi.engine.flink.udf.KDFRegistry
@@ -63,6 +64,15 @@ class FlinkSessionImpl(
 
   override def open(): Unit = {
     val executor = fSession.createExecutor(Configuration.fromMap(fSession.getSessionConfig))
+
+    sessionManager.getConf.get(ENGINE_SESSION_INITIALIZE_SQL).foreach { sql =>
+      try {
+        executor.executeStatement(OperationHandle.create, sql)
+      } catch {
+        case NonFatal(e) =>
+          throw KyuubiSQLException(s"execute ${ENGINE_SESSION_INITIALIZE_SQL.key}  $sql ", e)
+      }
+    }
 
     val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
       Array(USE_CATALOG, USE_DATABASE).contains(k)
