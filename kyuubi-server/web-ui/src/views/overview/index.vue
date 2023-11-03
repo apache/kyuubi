@@ -20,7 +20,7 @@
   <main>
     <el-row :gutter="12">
       <el-col v-for="(card, index) in cards" :key="index" :md="8">
-        <c-card :title="card.title" :value="card.value" />
+        <c-card />
       </el-col>
     </el-row>
   </main>
