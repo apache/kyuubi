@@ -1085,7 +1085,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
-  
+
   test("SaveIntoDataSourceCommand") {
     withTempDir { path =>
       withSingleCallEnabled {
@@ -1097,7 +1097,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
-  
+
   test("HadoopFsRelation") {
     val db1 = defaultDb
     val table1 = "table1"
