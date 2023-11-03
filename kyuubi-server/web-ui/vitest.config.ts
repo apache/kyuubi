@@ -39,8 +39,5 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom'
-  },
-  define: {
-    __APP_VERSION__: JSON.stringify(require('./package.json').version)
   }
 })

@@ -35,9 +35,5 @@ test('mount component', () => {
     }
   })
   expect(wrapper.text())
-    /* eslint-disable */
-    // define __APP_VERSION__ in vitest.config.ts
-    // @ts-ignore
-    .toContain(`${__APP_VERSION__}`)
-  /* eslint-enable */
+    .toContain(import.meta.env.VITE_APP_VERSION)
 })
