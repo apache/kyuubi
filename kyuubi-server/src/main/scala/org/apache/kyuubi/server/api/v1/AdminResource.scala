@@ -40,7 +40,6 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
-import org.apache.kyuubi.shaded.zookeeper.KeeperException.NoNodeException
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
