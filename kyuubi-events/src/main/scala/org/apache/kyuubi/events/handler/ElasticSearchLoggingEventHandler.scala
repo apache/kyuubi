@@ -17,10 +17,8 @@
 
 package org.apache.kyuubi.events.handler
 
-import java.util.concurrent.Executors
-
-import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import scala.util.Failure
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
@@ -43,6 +41,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.events.handler.ElasticSearchLoggingEventHandler.getElasticClient
+import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * This event logger logs events to ElasticSearch.
@@ -59,8 +58,10 @@ class ElasticSearchLoggingEventHandler(
 
   private val esClient: ElasticClient = getElasticClient(serverUrl, username, password)
 
-  implicit val ec: ExecutionContext =
-    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
+  private val executorService =
+    ThreadUtils.newDaemonFixedThreadPool(1, "elasticsearch-event-handler-execution")
+  implicit private val executionContext: ExecutionContextExecutor =
+    ExecutionContext.fromExecutor(executorService)
 
   private def checkIndexExisted: String => Boolean = (indexId: String) => {
     checkArgument(
@@ -110,13 +111,14 @@ class ElasticSearchLoggingEventHandler(
     esClient.execute {
       indexInto(indexId).fields(fields).refresh(RefreshPolicy.Immediate)
     }.onComplete {
-      case Success(_) =>
       case Failure(f) =>
         error(s"Failed to send event in ElasticSearchLoggingEventHandler, ${f.getMessage}", f)
+      case _ =>
     }
   }
 
   override def close(): Unit = {
+    executorService.shutdown()
     esClient.close()
   }
 
