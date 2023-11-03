@@ -42,11 +42,6 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: env['VITE_APP_DEV_WEB_URL'],
           changeOrigin: true
-        },
-        '/api2': {
-          target: 'http://172.17.150.84:10009/',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api2/, '')
         }
       }
     },
