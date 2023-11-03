@@ -168,9 +168,11 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(admin, sql(createTableSql(namespace1, table1)))
+      val deleteFromTableSql = s"DELETE FROM $namespace1.$table1 WHERE birthDate < '1955-01-01'"
       interceptContains[AccessControlException](
-        doAs(someone, sql(s"DELETE FROM $namespace1.$table1 WHERE birthDate < '1955-01-01'")))(
+        doAs(someone, sql(deleteFromTableSql)))(
         s"does not have [update] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(deleteFromTableSql))
     }
   }
 
@@ -185,24 +187,24 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(admin, sql(createTableSql(namespace1, table2)))
 
         // insert into
+        val insertIntoSql = s"INSERT INTO $namespace1.$table1" +
+          s" SELECT * FROM $namespace1.$table2"
         interceptContains[AccessControlException](
-          doAs(
-            someone,
-            sql(s"INSERT INTO $namespace1.$table1" +
-              s" SELECT * FROM $namespace1.$table2")))(
+          doAs(someone, sql(insertIntoSql)))(
           s"does not have [select] privilege on [$namespace1/$table2/id,$namespace1/$table2/name," +
             s"$namespace1/$table2/gender,$namespace1/$table2/birthDate]," +
             s" [update] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(insertIntoSql))
 
         // insert overwrite
+        val insertOverwriteSql = s"INSERT OVERWRITE $namespace1.$table1" +
+          s" SELECT * FROM $namespace1.$table2"
         interceptContains[AccessControlException](
-          doAs(
-            someone,
-            sql(s"INSERT OVERWRITE $namespace1.$table1" +
-              s" SELECT * FROM $namespace1.$table2")))(
+          doAs(someone, sql(insertOverwriteSql)))(
           s"does not have [select] privilege on [$namespace1/$table2/id,$namespace1/$table2/name," +
             s"$namespace1/$table2/gender,$namespace1/$table2/birthDate]," +
             s" [update] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(insertOverwriteSql))
       }
     }
   }
@@ -211,12 +213,12 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(admin, sql(createTableSql(namespace1, table1)))
+      val updateTableSql = s"UPDATE $namespace1.$table1" +
+        s" SET gender = 'Female' WHERE gender = 'F'"
       interceptContains[AccessControlException](
-        doAs(
-          someone,
-          sql(s"UPDATE $namespace1.$table1" +
-            s" SET gender = 'Female' WHERE gender = 'F'")))(
+        doAs(someone, sql(updateTableSql)))(
         s"does not have [update] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(updateTableSql))
     }
   }
 }
