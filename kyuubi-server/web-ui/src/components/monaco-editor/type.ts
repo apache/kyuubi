@@ -54,9 +54,6 @@ export const editorProps = {
   },
   theme: {
     type: String as PropType<any>,
-    // validator(value: string): boolean {
-    //   return ['vs', 'vs-dark'].includes(value)
-    // },
     default: 'vs'
   },
   options: {

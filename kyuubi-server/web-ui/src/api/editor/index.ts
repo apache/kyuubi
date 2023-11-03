@@ -17,7 +17,7 @@
 
 import request from '@/utils/request'
 
-export function openSession(data: any): any {
+export function openSession(data: Map<string, string>): any {
   return request({
     url: 'api/v1/sessions',
     method: 'post',
