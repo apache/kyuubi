@@ -30,20 +30,7 @@
   import { reactive } from 'vue'
   import cCard from '@/components/card/index.vue'
 
-  const cards = reactive([
-    {
-      title: 'Opened Session',
-      value: 1
-    },
-    {
-      title: 'ExecPool Size',
-      value: 2
-    },
-    {
-      title: 'ExecPool ActiveCount',
-      value: 3
-    }
-  ])
+  const cards = reactive([])
 </script>
 
 <style scoped></style>
