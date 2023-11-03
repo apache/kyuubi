@@ -90,7 +90,7 @@
 
 <style lang="scss" scoped>
   :deep(.editor-el-table.r-table) {
-    .cell {
+    th .cell {
       display: inline-block;
       white-space: nowrap;
       width: auto;
