@@ -41,3 +41,9 @@ class CatalogStorageFormatURIExtractor extends URIExtractor {
     v1.asInstanceOf[CatalogStorageFormat].locationUri.map(uri => Uri(uri.getPath)).toSeq
   }
 }
+
+class OptionsUriExtractor extends URIExtractor {
+  override def apply(v1: AnyRef): Seq[Uri] = {
+    v1.asInstanceOf[Map[String, String]].get("path").map(Uri).toSeq
+  }
+}
