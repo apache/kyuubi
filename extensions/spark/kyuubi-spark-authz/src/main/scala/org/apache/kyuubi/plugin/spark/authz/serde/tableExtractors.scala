@@ -235,6 +235,20 @@ class ResolvedIdentifierTableExtractor extends TableExtractor {
 }
 
 /**
+ * org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
+ */
+class SubqueryAliasTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    v1.asInstanceOf[SubqueryAlias] match {
+      case SubqueryAlias(_, SubqueryAlias(identifier, _)) =>
+        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case SubqueryAlias(identifier, _) =>
+        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+    }
+  }
+}
+
+/**
  * org.apache.spark.sql.connector.catalog.Table
  */
 class TableTableExtractor extends TableExtractor {
