@@ -36,7 +36,6 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val catalogV2 = "paimon_catalog"
   val namespace1 = "paimon_ns"
   val table1 = "table1"
-  val table2 = "table2"
 
   override def withFixture(test: NoArgTest): Outcome = {
     assume(isSupportedVersion)
@@ -85,7 +84,9 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("CreateTableAs") {
-    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table1", "table"),
+    val table2 = "table2"
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"),
       (s"$catalogV2.$namespace1.$table2", "table"))) {
       doAs(
         admin,
@@ -97,9 +98,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |OPTIONS (
              |  primaryKey = 'id'
              |)
-             |""".stripMargin
-        )
-      )
+             |""".stripMargin))
       interceptContains[AccessControlException] {
         doAs(
           someone,
@@ -108,10 +107,8 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2
                |USING PAIMON
                |AS
-               |SELECT id FROM $catalogV2.$namespace1.$table1
-               |""".stripMargin
-          )
-        )
+               |SELECT * FROM $catalogV2.$namespace1.$table1
+               |""".stripMargin))
       }(s"does not have [select] privilege on [$table1/id]")
       doAs(
         admin,
@@ -121,9 +118,39 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |USING PAIMON
              |AS
              |SELECT * FROM $catalogV2.$namespace1.$table1
-             |""".stripMargin
-        )
-      )
+             |""".stripMargin))
+    }
+  }
+  test("CreateTableAs1") {
+    val table2 = "table2"
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"),
+      (s"$catalogV2.$namespace1.$table2", "table"))) {
+
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
+             |(id int, name string, city string)
+             |USING paimon
+             |OPTIONS (
+             |  primaryKey = 'id'
+             |)
+             |""".stripMargin))
+
+      val createTableAs =
+        s"""
+           |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2
+           |USING PAIMON
+           |AS
+           |SELECT * FROM $catalogV2.$namespace1.$table1
+           |""".stripMargin
+      doAs(
+        admin, {
+          val logicPlan = sql(createTableAs).queryExecution.logical
+          print(logicPlan)
+        })
     }
   }
 }

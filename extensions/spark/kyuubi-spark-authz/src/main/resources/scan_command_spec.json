@@ -28,6 +28,10 @@
     "fieldName" : null,
     "fieldExtractor" : "DataSourceV2RelationTableExtractor",
     "catalogDesc" : null
+  }, {
+    "fieldName" : null,
+    "fieldExtractor" : "PaimonDataSourceV2RelationTableExtractor",
+    "catalogDesc" : null
   } ],
   "functionDescs" : [ ]
 }, {
