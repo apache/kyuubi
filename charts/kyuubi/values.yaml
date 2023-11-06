@@ -235,3 +235,9 @@ prometheusRule:
   enabled: false
   # Contents of Prometheus rules file
   groups: []
+
+service:
+  sessionAffinity: None
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
