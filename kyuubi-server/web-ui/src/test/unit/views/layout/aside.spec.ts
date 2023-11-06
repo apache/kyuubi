@@ -34,5 +34,6 @@ test('mount component', () => {
       plugins: [mockRouter, getStore()]
     }
   })
-  expect(wrapper.text()).toContain('Apache Kyuubi Dashboard')
+  expect(wrapper.text())
+    .toContain(import.meta.env.VITE_APP_VERSION)
 })

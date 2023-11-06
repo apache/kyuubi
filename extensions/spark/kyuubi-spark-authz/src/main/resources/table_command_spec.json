@@ -1097,7 +1097,16 @@
     "fieldName" : "query",
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "storage",
+    "fieldExtractor" : "CatalogStorageFormatURIExtractor",
+    "actionTypeDesc" : {
+      "fieldName" : "overwrite",
+      "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",
+      "actionType" : null
+    },
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.LoadDataCommand",
   "tableDescs" : [ {
@@ -1340,7 +1349,16 @@
     "fieldName" : "query",
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "options",
+    "fieldExtractor" : "OptionsUriExtractor",
+    "actionTypeDesc" : {
+      "fieldName" : "mode",
+      "fieldExtractor" : "SaveModeActionTypeExtractor",
+      "actionType" : null
+    },
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand",
   "tableDescs" : [ {
@@ -1370,7 +1388,16 @@
     "fieldName" : "query",
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "storage",
+    "fieldExtractor" : "CatalogStorageFormatURIExtractor",
+    "actionTypeDesc" : {
+      "fieldName" : "overwrite",
+      "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",
+      "actionType" : null
+    },
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.hive.execution.InsertIntoHiveTable",
   "tableDescs" : [ {
@@ -1642,6 +1669,7 @@
   "uriDescs" : [ {
     "fieldName" : "path",
     "fieldExtractor" : "StringURIExtractor",
+    "actionTypeDesc" : null,
     "isInput" : false
   } ]
 }, {
@@ -1667,6 +1695,7 @@
   "uriDescs" : [ {
     "fieldName" : "path",
     "fieldExtractor" : "StringURIExtractor",
+    "actionTypeDesc" : null,
     "isInput" : true
   } ]
 }, {
@@ -1954,6 +1983,70 @@
   "tableDescs" : [ {
     "fieldName" : "ut",
     "fieldExtractor" : "HudiDataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.delta.commands.DeleteCommand",
+  "tableDescs" : [ {
+    "fieldName" : "catalogTable",
+    "fieldExtractor" : "CatalogTableOptionTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.delta.commands.UpdateCommand",
+  "tableDescs" : [ {
+    "fieldName" : "catalogTable",
+    "fieldExtractor" : "CatalogTableOptionTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : {
       "fieldName" : null,

@@ -37,10 +37,9 @@ import org.apache.kyuubi.service.authentication.AuthTypes._
 
 class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
 
-  private val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
-  private val none = authTypes.contains(NONE)
-  private val noSasl = authTypes == Set(NOSASL)
-  private val kerberosEnabled = authTypes.contains(KERBEROS)
+  val authTypes: Set[AuthType] = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+  val noSaslEnabled: Boolean = authTypes == Set(NOSASL)
+  val kerberosEnabled: Boolean = authTypes.contains(KERBEROS)
   private val plainAuthTypeOpt = authTypes.filterNot(_.equals(KERBEROS))
     .filterNot(_.equals(NOSASL)).headOption
 
@@ -71,7 +70,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
   }
 
   def getTTransportFactory: TTransportFactory = {
-    if (noSasl) {
+    if (noSaslEnabled) {
       new TTransportFactory()
     } else {
       var transportFactory: TSaslServerTransport.Factory = null
@@ -119,33 +118,8 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
     hadoopAuthServer.map(_.getRemoteAddress).map(_.getHostAddress)
       .orElse(Option(TSetIpAddressProcessor.getUserIpAddress))
   }
-
-  def isNoSaslEnabled: Boolean = {
-    noSasl
-  }
-
-  def isKerberosEnabled: Boolean = {
-    kerberosEnabled
-  }
-
-  def isPlainAuthEnabled: Boolean = {
-    plainAuthTypeOpt.isDefined
-  }
-
-  def isNoneEnabled: Boolean = {
-    none
-  }
-
-  def getValidPasswordAuthMethod: AuthMethod = {
-    debug(authTypes)
-    if (none) AuthMethods.NONE
-    else if (authTypes.contains(LDAP)) AuthMethods.LDAP
-    else if (authTypes.contains(JDBC)) AuthMethods.JDBC
-    else if (authTypes.contains(CUSTOM)) AuthMethods.CUSTOM
-    else throw new IllegalArgumentException("No valid Password Auth detected")
-  }
 }
-object KyuubiAuthenticationFactory {
+object KyuubiAuthenticationFactory extends Logging {
   val HS2_PROXY_USER = "hive.server2.proxy.user"
 
   @throws[KyuubiSQLException]
@@ -176,5 +150,14 @@ object KyuubiAuthenticationFactory {
           "Failed to validate proxy privilege of " + realUser + " for " + proxyUser,
           e)
     }
+  }
+
+  def getValidPasswordAuthMethod(authTypes: Set[AuthType]): AuthMethod = {
+    if (authTypes == Set(NOSASL)) AuthMethods.NONE
+    else if (authTypes.contains(NONE)) AuthMethods.NONE
+    else if (authTypes.contains(LDAP)) AuthMethods.LDAP
+    else if (authTypes.contains(JDBC)) AuthMethods.JDBC
+    else if (authTypes.contains(CUSTOM)) AuthMethods.CUSTOM
+    else throw new IllegalArgumentException("No valid Password Auth detected")
   }
 }

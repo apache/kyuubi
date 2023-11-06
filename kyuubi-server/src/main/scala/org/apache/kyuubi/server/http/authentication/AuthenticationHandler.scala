@@ -20,13 +20,11 @@ package org.apache.kyuubi.server.http.authentication
 import javax.security.sasl.AuthenticationException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
-import org.apache.hadoop.security.authentication.server.HttpConstants
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
+import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 
 trait AuthenticationHandler {
-  import AuthenticationHandler._
 
   /**
    * HTTP header prefix used during the authentication sequence.
@@ -103,23 +101,10 @@ trait AuthenticationHandler {
       authorization = authorization.stripPrefix(":").trim
     }
     // Authorization header must have a payload
-    if (authorization == null || authorization.isEmpty()) {
+    if (authorization == null || authorization.isEmpty) {
       throw new AuthenticationException(
         "Authorization header received from the client does not contain any data.")
     }
     authorization
   }
-}
-
-object AuthenticationHandler {
-
-  /**
-   * HTTP header used by the SPNEGO server endpoint during an authentication sequence.
-   */
-  final val WWW_AUTHENTICATE: String = HttpConstants.WWW_AUTHENTICATE_HEADER
-
-  /**
-   * HTTP header used by the client endpoint during an authentication sequence.
-   */
-  final val AUTHORIZATION_HEADER = "Authorization"
 }

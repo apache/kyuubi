@@ -35,8 +35,8 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
-import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils, SessionManager}
+import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 
 class ThriftHttpServlet(
@@ -136,7 +136,7 @@ class ThriftHttpServlet(
       } else SessionManager.setForwardedAddresses(List.empty[String])
 
       // Generate new cookie and add it to the response
-      if (requireNewCookie && !authFactory.isNoSaslEnabled) {
+      if (requireNewCookie && !authFactory.noSaslEnabled) {
         val cookieToken = HttpAuthUtils.createCookieToken(clientUserName)
         val hs2Cookie = createCookie(signer.signCookie(cookieToken))
         if (isHttpOnlyCookie) response.setHeader("SET-COOKIE", getHttpOnlyCookieHeader(hs2Cookie))

@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.api.v1
 
 import java.net.InetAddress
 import java.nio.file.Paths
-import java.util.{Base64, UUID}
+import java.util.UUID
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
 
@@ -43,9 +43,9 @@ import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.server.{KyuubiBatchService, KyuubiRestFrontendService}
-import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
+import org.apache.kyuubi.server.http.util.HttpAuthUtils.{basicAuthorizationHeader, AUTHORIZATION_HEADER}
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
-import org.apache.kyuubi.service.authentication.{InternalSecurityAccessor, KyuubiAuthenticationFactory}
+import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, KyuubiAuthenticationFactory}
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
 
 class BatchesV1ResourceSuite extends BatchesResourceSuiteBase {
@@ -58,8 +58,8 @@ class BatchesV2ResourceSuite extends BatchesResourceSuiteBase {
   override def batchVersion: String = "2"
 
   override def customConf: Map[String, String] = Map(
-    KyuubiConf.METADATA_REQUEST_ASYNC_RETRY_ENABLED.key -> "false",
-    KyuubiConf.BATCH_SUBMITTER_ENABLED.key -> "true")
+    METADATA_REQUEST_ASYNC_RETRY_ENABLED.key -> "false",
+    BATCH_SUBMITTER_ENABLED.key -> "true")
 
   override def afterEach(): Unit = {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
@@ -82,21 +82,15 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
   def customConf: Map[String, String]
 
   override protected lazy val conf: KyuubiConf = {
+    val testResourceDir = Paths.get(sparkBatchTestResource.get).getParent
     val kyuubiConf = KyuubiConf()
-      .set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
-      .set(KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER, "simple")
-      .set(KyuubiConf.SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET, "ENGINE____SECRET")
-      .set(KyuubiConf.BATCH_IMPL_VERSION, batchVersion)
-      .set(
-        KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST,
-        Set(Paths.get(sparkBatchTestResource.get).getParent.toString))
+      .set(AUTHENTICATION_METHOD, Set("CUSTOM"))
+      .set(AUTHENTICATION_CUSTOM_CLASS, classOf[AnonymousAuthenticationProviderImpl].getName)
+      .set(SERVER_ADMINISTRATORS, Set("admin"))
+      .set(BATCH_IMPL_VERSION, batchVersion)
+      .set(SESSION_LOCAL_DIR_ALLOW_LIST, Set(testResourceDir.toString))
     customConf.foreach { case (k, v) => kyuubiConf.set(k, v) }
     kyuubiConf
-  }
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    InternalSecurityAccessor.initialize(conf, true)
   }
 
   override def afterEach(): Unit = {
@@ -115,6 +109,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     val response = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
     assert(response.getStatus === 200)
     var batch = response.readEntity(classOf[Batch])
@@ -138,6 +133,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     val proxyUserRequest = requestObj
     val proxyUserResponse = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .post(Entity.entity(proxyUserRequest, MediaType.APPLICATION_JSON_TYPE))
     assert(proxyUserResponse.getStatus === 405)
     var errorMessage = "Failed to validate proxy privilege of anonymous for root"
@@ -145,6 +141,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     var getBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId}")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
     assert(getBatchResponse.getStatus === 200)
     batch = getBatchResponse.readEntity(classOf[Batch])
@@ -169,6 +166,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     // invalid batchId
     getBatchResponse = webTarget.path(s"api/v1/batches/invalidBatchId")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
     assert(getBatchResponse.getStatus === 404)
 
@@ -180,6 +178,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         .queryParam("from", "0")
         .queryParam("size", "1")
         .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
         .get()
       log = logResponse.readEntity(classOf[OperationLog])
       assert(log.getRowCount === 1)
@@ -193,6 +192,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         .queryParam("from", "-1")
         .queryParam("size", "100")
         .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
         .get()
       log = logResponse.readEntity(classOf[OperationLog])
       if (log.getRowCount > 0) {
@@ -206,11 +206,9 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     }
 
     // invalid user name
-    val encodeAuthorization =
-      new String(Base64.getEncoder.encode(batch.getId.getBytes()), "UTF-8")
     var deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId}")
       .request(MediaType.APPLICATION_JSON_TYPE)
-      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(batch.getId))
       .delete()
     assert(deleteBatchResponse.getStatus === 405)
     errorMessage = s"${batch.getId} is not allowed to close the session belong to anonymous"
@@ -219,12 +217,14 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     // invalid batchId
     deleteBatchResponse = webTarget.path(s"api/v1/batches/notValidUUID")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .delete()
     assert(deleteBatchResponse.getStatus === 404)
 
     // non-existed batch session
     deleteBatchResponse = webTarget.path(s"api/v1/batches/${UUID.randomUUID().toString}")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .delete()
     assert(deleteBatchResponse.getStatus === 404)
 
@@ -232,6 +232,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId}")
       .queryParam("hive.server2.proxy.user", "invalidProxy")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .delete()
     assert(deleteBatchResponse.getStatus === 405)
     errorMessage = "Failed to validate proxy privilege of anonymous for invalidProxy"
@@ -240,6 +241,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     // check close batch session
     deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId}")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .delete()
     assert(deleteBatchResponse.getStatus === 200)
     val closeBatchResponse = deleteBatchResponse.readEntity(classOf[CloseBatchResponse])
@@ -247,6 +249,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     // check state after close batch session
     getBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId}")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
     assert(getBatchResponse.getStatus === 200)
     batch = getBatchResponse.readEntity(classOf[Batch])
@@ -260,6 +263,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     // close the closed batch session
     deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId}")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .delete()
     assert(deleteBatchResponse.getStatus === 200)
     assert(!deleteBatchResponse.readEntity(classOf[CloseBatchResponse]).isSuccess)
@@ -275,6 +279,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     val response = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .post(Entity.entity(multipart, MediaType.MULTIPART_FORM_DATA))
     assert(response.getStatus === 200)
     val batch = response.readEntity(classOf[Batch])
@@ -297,6 +302,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     eventually(timeout(5.seconds), interval(200.millis)) {
       val resp = webTarget.path(s"api/v1/batches/${batch.getId}")
         .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
         .get()
       val batchState = resp.readEntity(classOf[Batch]).getState
       assert(batchState === "PENDING" || batchState === "RUNNING")
@@ -304,6 +310,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     webTarget.path(s"api/v1/batches/${batch.getId}")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .delete()
     eventually(timeout(5.seconds), interval(200.millis)) {
       assert(KyuubiApplicationManager.uploadWorkDir.toFile.listFiles().isEmpty)
@@ -318,6 +325,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     val resp1 = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .post(Entity.entity(reqObj, MediaType.APPLICATION_JSON_TYPE))
     assert(resp1.getStatus === 200)
     val batch1 = resp1.readEntity(classOf[Batch])
@@ -325,6 +333,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     val resp2 = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .post(Entity.entity(reqObj, MediaType.APPLICATION_JSON_TYPE))
     assert(resp2.getStatus === 200)
     val batch2 = resp2.readEntity(classOf[Batch])
@@ -348,6 +357,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "0")
       .queryParam("size", "2")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
 
     assert(response.getStatus === 200)
@@ -402,6 +412,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "0")
       .queryParam("size", "2")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
 
     assert(response2.getStatus === 200)
@@ -414,6 +425,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "2")
       .queryParam("size", "2")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
 
     assert(response3.getStatus === 200)
@@ -426,6 +438,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "3")
       .queryParam("size", "2")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
 
     assert(response4.getStatus === 200)
@@ -437,6 +450,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "2")
       .queryParam("size", "2")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
 
     assert(response5.getStatus === 200)
@@ -449,6 +463,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "2")
       .queryParam("size", "2")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
 
     assert(response6.getStatus === 200)
@@ -463,6 +478,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "2")
       .queryParam("size", "2")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
     assert(response7.getStatus === 500)
   }
@@ -493,6 +509,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         "resource is a required parameter")).foreach { case (req, msg) =>
       val response = webTarget.path("api/v1/batches")
         .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
         .post(Entity.entity(req, MediaType.APPLICATION_JSON_TYPE))
       assert(response.getStatus === 500)
       assert(response.readEntity(classOf[String]).contains(msg))
@@ -506,6 +523,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         "Invalid batchId: 3ea7ddbe-0c35-45da-85ad-3186770181a7")).foreach { case (batchId, msg) =>
       val response = webTarget.path(s"api/v1/batches/$batchId")
         .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
         .get
       assert(response.getStatus === 404)
       assert(response.readEntity(classOf[String]).contains(msg))
@@ -622,6 +640,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "0")
       .queryParam("size", "1")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
     batchVersion match {
       case "1" =>
@@ -640,6 +659,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "0")
       .queryParam("size", "1")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
     assert(logResponse.getStatus === 404)
     assert(logResponse.readEntity(classOf[String]).contains("Invalid batchId"))
@@ -654,6 +674,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "0")
       .queryParam("size", "1")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
     assert(logResponse.getStatus === 500)
     assert(logResponse.readEntity(classOf[String]).contains(
@@ -676,13 +697,10 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       engineType = "SPARK")
     sessionManager.insertMetadata(metadata)
 
-    val encodeAuthorization =
-      new String(Base64.getEncoder.encode("kyuubi".getBytes()), "UTF-8")
-
     // delete the batch in the same kyuubi instance but not found in-memory
     var deleteResp = webTarget.path(s"api/v1/batches/${metadata.identifier}")
       .request(MediaType.APPLICATION_JSON_TYPE)
-      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("kyuubi"))
       .delete()
     assert(deleteResp.getStatus === 200)
     assert(!deleteResp.readEntity(classOf[CloseBatchResponse]).isSuccess)
@@ -690,7 +708,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     // delete batch that is not existing
     deleteResp = webTarget.path(s"api/v1/batches/${UUID.randomUUID.toString}")
       .request(MediaType.APPLICATION_JSON_TYPE)
-      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("kyuubi"))
       .delete()
     assert(deleteResp.getStatus === 404)
     assert(deleteResp.readEntity(classOf[String]).contains("Invalid batchId:"))
@@ -703,7 +721,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     // delete batch that need make redirection
     deleteResp = webTarget.path(s"api/v1/batches/${metadata2.identifier}")
       .request(MediaType.APPLICATION_JSON_TYPE)
-      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("kyuubi"))
       .delete()
     assert(deleteResp.getStatus === 200)
     assert(deleteResp.readEntity(classOf[CloseBatchResponse]).getMsg.contains(
@@ -718,6 +736,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     val response = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .header(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER), realClientIp)
       .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
     assert(response.getStatus === 200)
@@ -748,6 +767,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     eventually(timeout(10.seconds)) {
       val response = webTarget.path("api/v1/batches")
         .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
         .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
       assert(response.getStatus === 200)
       val batch = response.readEntity(classOf[Batch])
@@ -763,6 +783,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     val deleteResp = webTarget.path(s"api/v1/batches/$batchId")
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .delete()
     assert(deleteResp.getStatus === 200)
 
@@ -824,6 +845,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     val response = webTarget.path("api/v1/batches")
       .queryParam("batchName", uniqueName)
       .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
 
     assert(response.getStatus == 200)

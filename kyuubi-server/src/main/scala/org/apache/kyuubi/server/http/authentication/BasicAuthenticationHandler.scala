@@ -24,12 +24,12 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
+import org.apache.kyuubi.server.http.util.HttpAuthUtils.{AUTHORIZATION_HEADER, WWW_AUTHENTICATE_HEADER}
 import org.apache.kyuubi.service.authentication.{AuthenticationProviderFactory, AuthMethods}
 import org.apache.kyuubi.service.authentication.AuthTypes._
 
 class BasicAuthenticationHandler(basicAuthType: AuthType)
   extends AuthenticationHandler with Logging {
-  import AuthenticationHandler._
 
   private var conf: KyuubiConf = _
   private val allowAnonymous = basicAuthType == NOSASL || basicAuthType == NONE
@@ -75,7 +75,7 @@ class BasicAuthenticationHandler(basicAuthType: AuthType)
       authUser = creds.take(1).headOption.filterNot(_.isEmpty).getOrElse("anonymous")
     } else {
       if (creds.size < 2 || creds(0).trim.isEmpty || creds(1).trim.isEmpty) {
-        response.setHeader(WWW_AUTHENTICATE, authScheme.toString)
+        response.setHeader(WWW_AUTHENTICATE_HEADER, authScheme.toString)
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
       } else {
         val Seq(user, password) = creds.toSeq.take(2)
