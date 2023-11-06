@@ -1133,4 +1133,21 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("Add/List Jars/Files/Archives command") {
+    withTempDir { path =>
+      withSingleCallEnabled {
+        Seq("JAR", "FILE", "ARCHIVE").foreach { cmd =>
+          doAs(admin, sql(s"ADD $cmd '$path'"))
+          interceptContains[AccessControlException](
+            doAs(someone, sql(s"ADD $cmd '$path'")))(
+            s"does not have [select] privilege on [[$path, $path/]]")
+          doAs(admin, sql(s"LIST $cmd '$path'"))
+          interceptContains[AccessControlException](
+            doAs(someone, sql(s"LIST $cmd '$path'")))(
+            s"does not have [select] privilege on [[$path, $path/]]")
+        }
+      }
+    }
+  }
 }
