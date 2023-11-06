@@ -22,7 +22,6 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, LogicalRelation}
 import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
@@ -113,12 +112,16 @@ object PrivilegesBuilder {
         val cols = conditionList ++ aggCols
         buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
 
-      case logicalRelation @ LogicalRelation(_: HadoopFsRelation, _, None, _) =>
-        getScanSpec(logicalRelation).uris(logicalRelation)
-          .foreach(privilegeObjects += PrivilegeObject(_, PrivilegeObjectActionType.OTHER))
-
       case scan if isKnownScan(scan) && scan.resolved =>
-        getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))
+        val tables = getScanSpec(scan).tables(scan, spark)
+        // If the the scan is table-based, we check privileges on the table we found
+        // otherwise, we check privileges on the uri we found
+        if (tables.nonEmpty) {
+          tables.foreach(mergeProjection(_, scan))
+        } else {
+          getScanSpec(scan).uris(scan).foreach(
+            privilegeObjects += PrivilegeObject(_, PrivilegeObjectActionType.OTHER))
+        }
 
       case u if u.nodeName == "UnresolvedRelation" =>
         val parts = invokeAs[String](u, "tableName").split("\\.")
