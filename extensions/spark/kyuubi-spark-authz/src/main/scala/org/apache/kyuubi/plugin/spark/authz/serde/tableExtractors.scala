@@ -21,6 +21,7 @@ import java.util.{Map => JMap}
 import java.util.LinkedHashMap
 
 import scala.collection.JavaConverters._
+import scala.util.matching.Regex
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
@@ -184,49 +185,35 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
         lookupExtractor[TableTableExtractor].apply(spark, invokeAs[AnyRef](v2Relation, "table"))
           .map { table =>
             val maybeOwner = TableExtractor.getOwner(v2Relation)
-            table.copy(catalog = maybeCatalog, owner = maybeOwner)
+            if (isPaimonPlugin(v2Relation)) {
+              val maybeDatabase = getDatabase(v2Relation)
+              table.copy(catalog = maybeCatalog, database = maybeDatabase, owner = maybeOwner)
+            } else {
+              table.copy(catalog = maybeCatalog, owner = maybeOwner)
+            }
+
           }
     }
   }
-}
 
-/**
- * org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
- */
-class PaimonDataSourceV2RelationTableExtractor extends TableExtractor {
+  def isPaimonPlugin(v: AnyRef): Boolean = {
+    val table = invokeAs[AnyRef](v, "table")
+    table.getClass.getName == "org.apache.paimon.spark.SparkTable"
+  }
 
-  def getPaimonPath(v: AnyRef): Option[String] = {
+  def getDatabase(v: AnyRef): Option[String] = {
     val table = invokeAs[AnyRef](v, "table")
     val properties = invokeAs[JMap[String, String]](table, "properties").asScala
     val path = properties.get("path")
     path match {
-      case Some(v) =>
-        val databaseLastSlash = v.substring(v.lastIndexOf("/")).lastIndexOf("/")
-        val sub = v.substring(databaseLastSlash + 1)
-        Some(sub)
+      case Some(p) =>
+        val pattern = new Regex("/([^/]+)\\.db/")
+        val database = (pattern findFirstMatchIn p).map(_.group(1))
+        database
       case _ => Some("")
     }
   }
-
-  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val plan = v1.asInstanceOf[LogicalPlan]
-    val maybeV2Relation = plan.find(_.getClass.getSimpleName == "DataSourceV2Relation")
-    maybeV2Relation match {
-      case None => None
-      case Some(v2Relation) =>
-        val maybeCatalogPlugin = invokeAs[Option[AnyRef]](v2Relation, "catalog")
-        val maybeCatalog = maybeCatalogPlugin.flatMap(catalogPlugin =>
-          lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
-        lookupExtractor[TableTableExtractor].apply(spark, invokeAs[AnyRef](v2Relation, "table"))
-          .map { table =>
-            val maybeOwner = TableExtractor.getOwner(v2Relation)
-            val paimonPath = getPaimonPath(v2Relation)
-            table.copy(catalog = maybeCatalog, database = paimonPath, owner = maybeOwner)
-          }
-    }
-  }
 }
-
 
 /**
  * org.apache.spark.sql.execution.datasources.LogicalRelation

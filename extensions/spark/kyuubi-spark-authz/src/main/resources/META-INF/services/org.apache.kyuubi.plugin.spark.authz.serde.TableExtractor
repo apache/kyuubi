@@ -18,7 +18,6 @@
 org.apache.kyuubi.plugin.spark.authz.serde.CatalogTableOptionTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.CatalogTableTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.DataSourceV2RelationTableExtractor
-org.apache.kyuubi.plugin.spark.authz.serde.PaimonDataSourceV2RelationTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.ExpressionSeqTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.HudiDataSourceV2RelationTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.HudiMergeIntoTargetTableExtractor
