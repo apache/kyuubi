@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
+import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
@@ -53,8 +54,16 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
   }
 
+  val OptimizeTableCommand = {
+    val cmd = "org.apache.spark.sql.delta.commands.OptimizeTableCommand"
+    val tableDesc = TableDesc("tableId", classOf[TableIdentifierOptionTableExtractor])
+    val childDesc = TableDesc("child", classOf[ResolvedTableTableExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc, childDesc), OPTIMIZETABLE)
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     DeleteCommand,
     MergeIntoCommand,
+    OptimizeTableCommand,
     UpdateCommand)
 }

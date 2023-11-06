@@ -69,7 +69,7 @@ object AccessType extends Enumeration {
               SHOWTABLES |
               SHOWFUNCTIONS |
               DESCFUNCTION => USE
-          case TRUNCATETABLE => UPDATE
+          case TRUNCATETABLE | OPTIMIZETABLE => UPDATE
           case CREATEINDEX => INDEX
           case _ => NONE
         }
