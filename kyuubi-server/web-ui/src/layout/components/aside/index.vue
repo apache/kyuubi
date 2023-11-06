@@ -75,6 +75,6 @@
     }
   }
   .el-menu {
-    margin-top: 64px;
+    margin-top: $height;
   }
 </style>
