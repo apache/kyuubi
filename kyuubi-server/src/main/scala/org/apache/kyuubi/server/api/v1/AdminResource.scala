@@ -40,7 +40,6 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
-import org.apache.kyuubi.shaded.zookeeper.KeeperException.NoNodeException
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -252,8 +251,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     } else {
       fe.getSessionUser(hs2ProxyUser)
     }
-    val engine = getEngine(userName, engineType, shareLevel, subdomain, "default")
-    val engineSpace = getEngineSpace(engine)
+    val engine = normalizeEngineInfo(userName, engineType, shareLevel, subdomain, "default")
+    val engineSpace = calculateEngineSpace(engine)
 
     withDiscoveryClient(fe.getConf) { discoveryClient =>
       val engineNodes = discoveryClient.getChildren(engineSpace)
@@ -290,33 +289,24 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     } else {
       fe.getSessionUser(hs2ProxyUser)
     }
-    val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
-    val engineSpace = getEngineSpace(engine)
+    val engine = normalizeEngineInfo(userName, engineType, shareLevel, subdomain, "")
+    val engineSpace = calculateEngineSpace(engine)
 
     val engineNodes = ListBuffer[ServiceNodeInfo]()
-    Option(subdomain).filter(_.nonEmpty) match {
-      case Some(_) =>
-        withDiscoveryClient(fe.getConf) { discoveryClient =>
-          info(s"Listing engine nodes for $engineSpace")
+    withDiscoveryClient(fe.getConf) { discoveryClient =>
+      Option(subdomain).filter(_.nonEmpty) match {
+        case Some(_) =>
+          info(s"Listing engine nodes under $engineSpace")
           engineNodes ++= discoveryClient.getServiceNodesInfo(engineSpace)
-        }
-      case None =>
-        withDiscoveryClient(fe.getConf) { discoveryClient =>
-          try {
-            discoveryClient.getChildren(engineSpace).map { child =>
-              info(s"Listing engine nodes for $engineSpace/$child")
-              engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
-            }
-          } catch {
-            case nne: NoNodeException =>
-              error(
-                s"No such engine for user: $userName, " +
-                  s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain",
-                nne)
-              throw new NotFoundException(s"No such engine for user: $userName, " +
-                s"engine type: $engineType, share level: $shareLevel, subdomain: $subdomain")
+        case None if discoveryClient.pathNonExists(engineSpace) =>
+          warn(s"Path $engineSpace does not exist. user: $userName, engine type: $engineType, " +
+            s"share level: $shareLevel, subdomain: $subdomain")
+        case None =>
+          discoveryClient.getChildren(engineSpace).map { child =>
+            info(s"Listing engine nodes under $engineSpace/$child")
+            engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
           }
-        }
+      }
     }
     engineNodes.map(node =>
       new Engine(
@@ -360,7 +350,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     servers.toSeq
   }
 
-  private def getEngine(
+  private def normalizeEngineInfo(
       userName: String,
       engineType: String,
       shareLevel: String,
@@ -373,6 +363,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       .foreach(_ => clonedConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN, Option(subdomain)))
     Option(shareLevel).filter(_.nonEmpty).foreach(clonedConf.set(ENGINE_SHARE_LEVEL, _))
 
+    val serverSpace = clonedConf.get(HA_NAMESPACE)
     val normalizedEngineType = clonedConf.get(ENGINE_TYPE)
     val engineSubdomain = clonedConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse(subdomainDefault)
     val engineShareLevel = clonedConf.get(ENGINE_SHARE_LEVEL)
@@ -384,22 +375,20 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       engineShareLevel,
       engineSubdomain,
       null,
-      null,
+      serverSpace,
       Collections.emptyMap())
   }
 
-  private def getEngineSpace(engine: Engine): String = {
-    val serverSpace = fe.getConf.get(HA_NAMESPACE)
-    val appUser = engine.getSharelevel match {
+  private def calculateEngineSpace(engine: Engine): String = {
+    val userOrGroup = engine.getSharelevel match {
       case "GROUP" =>
         fe.sessionManager.groupProvider.primaryGroup(engine.getUser, fe.getConf.getAll.asJava)
       case _ => engine.getUser
     }
 
-    DiscoveryPaths.makePath(
-      s"${serverSpace}_${engine.getVersion}_${engine.getSharelevel}_${engine.getEngineType}",
-      appUser,
-      engine.getSubdomain)
+    val engineSpace =
+      s"${engine.getNamespace}_${engine.getVersion}_${engine.getSharelevel}_${engine.getEngineType}"
+    DiscoveryPaths.makePath(engineSpace, userOrGroup, engine.getSubdomain)
   }
 
   @ApiResponse(

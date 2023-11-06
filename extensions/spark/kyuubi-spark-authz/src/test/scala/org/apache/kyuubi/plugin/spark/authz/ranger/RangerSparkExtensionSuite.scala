@@ -1058,8 +1058,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |INSERT OVERWRITE DIRECTORY '$path'
                  |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
                  |SELECT * FROM $db1.$table1""".stripMargin)))(
-            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope," +
-              s"[$path, $path/]]")
+            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
+              s"[update] privilege on [[$path, $path/]]")
         }
       }
     }
@@ -1079,20 +1079,21 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |INSERT OVERWRITE DIRECTORY '$path'
                  |USING parquet
                  |SELECT * FROM $db1.$table1""".stripMargin)))(
-            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope," +
-              s"[$path, $path/]]")
+            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
+              s"[update] privilege on [[$path, $path/]]")
         }
       }
     }
   }
+
   test("SaveIntoDataSourceCommand") {
     withTempDir { path =>
       withSingleCallEnabled {
         val df = sql("SELECT 1 as id, 'Tony' as name")
         interceptContains[AccessControlException](doAs(
           someone,
-          df.write.format("console").save(path.toString)))(
-          s"does not have [select] privilege on [[$path, $path/]]")
+          df.write.format("console").mode("append").save(path.toString)))(
+          s"does not have [update] privilege on [[$path, $path/]]")
       }
     }
   }

@@ -44,7 +44,7 @@ class JsonSpecFileGenerator extends AnyFunSuite {
   // scalastyle:on
   test("check spec json files") {
     writeCommandSpecJson("database", Seq(DatabaseCommands))
-    writeCommandSpecJson("table", Seq(TableCommands, IcebergCommands, HudiCommands))
+    writeCommandSpecJson("table", Seq(TableCommands, IcebergCommands, HudiCommands, DeltaCommands))
     writeCommandSpecJson("function", Seq(FunctionCommands))
     writeCommandSpecJson("scan", Seq(Scans))
   }
