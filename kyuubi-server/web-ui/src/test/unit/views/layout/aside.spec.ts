@@ -34,6 +34,5 @@ test('mount component', () => {
       plugins: [mockRouter, getStore()]
     }
   })
-  expect(wrapper.text())
-    .toContain(import.meta.env.VITE_APP_VERSION)
+  expect(wrapper.text()).toContain(import.meta.env.VITE_APP_VERSION)
 })
