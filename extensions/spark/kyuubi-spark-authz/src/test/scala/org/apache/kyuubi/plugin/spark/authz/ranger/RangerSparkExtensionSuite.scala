@@ -1114,15 +1114,15 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |SELECT * FROM $db1.$table1""".stripMargin))
 
           interceptContains[AccessControlException](
-          doAs(
-            someone,
-            sql(
-              s"""
-                 |INSERT OVERWRITE DIRECTORY '$path'
-                 |USING parquet
-                 |SELECT * FROM $db1.$table1""".stripMargin))
-          )(s"does not have [select] privilege on " +
-            s"[$db1/$table1/id,$db1/$table1/scope,[$path, $path/]]")
+            doAs(
+              someone,
+              sql(
+                s"""
+                   |INSERT OVERWRITE DIRECTORY '$path'
+                   |USING parquet
+                   |SELECT * FROM $db1.$table1""".stripMargin)))(
+            s"does not have [select] privilege on " +
+              s"[$db1/$table1/id,$db1/$table1/scope,[$path, $path/]]")
 
           doAs(admin, sql(s"SELECT * FROM parquet.`$path`".stripMargin).explain(true))
           interceptContains[AccessControlException](
