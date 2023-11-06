@@ -642,12 +642,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
 
   override def specs: Seq[TableCommandSpec] = Seq(
     AddArchivesCommand,
-    AddArchivesCommand.copy(
-      classname = "org.apache.spark.sql.execution.command.AddFilesCommand"
-    ),
-    AddArchivesCommand.copy(
-      classname = "org.apache.spark.sql.execution.command.AddJarsCommand"
-    ),
+    AddArchivesCommand.copy(classname = "org.apache.spark.sql.execution.command.AddFilesCommand"),
+    AddArchivesCommand.copy(classname = "org.apache.spark.sql.execution.command.AddJarsCommand"),
     AddPartitions,
     DropPartitions,
     RenamePartitions,
