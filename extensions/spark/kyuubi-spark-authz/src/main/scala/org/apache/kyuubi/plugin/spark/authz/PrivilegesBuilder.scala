@@ -115,7 +115,7 @@ object PrivilegesBuilder {
 
       case logicalRelation @ LogicalRelation(_: HadoopFsRelation, _, None, _) =>
         getScanSpec(logicalRelation).uris(logicalRelation)
-          .foreach(privilegeObjects += PrivilegeObject(_))
+          .foreach(privilegeObjects += PrivilegeObject(_, PrivilegeObjectActionType.OTHER))
 
       case scan if isKnownScan(scan) && scan.resolved =>
         getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))

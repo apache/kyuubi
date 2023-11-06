@@ -1121,8 +1121,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                    |INSERT OVERWRITE DIRECTORY '$path'
                    |USING parquet
                    |SELECT * FROM $db1.$table1""".stripMargin)))(
-            s"does not have [select] privilege on " +
-              s"[$db1/$table1/id,$db1/$table1/scope,[$path, $path/]]")
+            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
+              s"[update] privilege on [[$path, $path/]]")
 
           doAs(admin, sql(s"SELECT * FROM parquet.`$path`".stripMargin).explain(true))
           interceptContains[AccessControlException](
