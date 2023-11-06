@@ -5,7 +5,8 @@
     "fieldExtractor" : "CatalogTableTableExtractor",
     "catalogDesc" : null
   } ],
-  "functionDescs" : [ ]
+  "functionDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.catalog.HiveTableRelation",
   "scanDescs" : [ {
@@ -13,7 +14,8 @@
     "fieldExtractor" : "CatalogTableTableExtractor",
     "catalogDesc" : null
   } ],
-  "functionDescs" : [ ]
+  "functionDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.LogicalRelation",
   "scanDescs" : [ {
@@ -21,7 +23,13 @@
     "fieldExtractor" : "CatalogTableOptionTableExtractor",
     "catalogDesc" : null
   } ],
-  "functionDescs" : [ ]
+  "functionDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "relation",
+    "fieldExtractor" : "BaseRelationFileIndexURIExtractor",
+    "actionTypeDesc" : null,
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation",
   "scanDescs" : [ {
@@ -29,7 +37,8 @@
     "fieldExtractor" : "DataSourceV2RelationTableExtractor",
     "catalogDesc" : null
   } ],
-  "functionDescs" : [ ]
+  "functionDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hive.HiveGenericUDF",
   "scanDescs" : [ ],
@@ -43,7 +52,8 @@
       "skipTypes" : [ "TEMP", "SYSTEM" ]
     },
     "isInput" : true
-  } ]
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hive.HiveGenericUDTF",
   "scanDescs" : [ ],
@@ -57,7 +67,8 @@
       "skipTypes" : [ "TEMP", "SYSTEM" ]
     },
     "isInput" : true
-  } ]
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hive.HiveSimpleUDF",
   "scanDescs" : [ ],
@@ -71,7 +82,8 @@
       "skipTypes" : [ "TEMP", "SYSTEM" ]
     },
     "isInput" : true
-  } ]
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hive.HiveUDAFFunction",
   "scanDescs" : [ ],
@@ -85,5 +97,6 @@
       "skipTypes" : [ "TEMP", "SYSTEM" ]
     },
     "isInput" : true
-  } ]
+  } ],
+  "uriDescs" : [ ]
 } ]

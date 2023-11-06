@@ -113,7 +113,15 @@ object PrivilegesBuilder {
         buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
 
       case scan if isKnownScan(scan) && scan.resolved =>
-        getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))
+        val tables = getScanSpec(scan).tables(scan, spark)
+        // If the the scan is table-based, we check privileges on the table we found
+        // otherwise, we check privileges on the uri we found
+        if (tables.nonEmpty) {
+          tables.foreach(mergeProjection(_, scan))
+        } else {
+          getScanSpec(scan).uris(scan).foreach(
+            privilegeObjects += PrivilegeObject(_, PrivilegeObjectActionType.OTHER))
+        }
 
       case u if u.nodeName == "UnresolvedRelation" =>
         val parts = invokeAs[String](u, "tableName").split("\\.")

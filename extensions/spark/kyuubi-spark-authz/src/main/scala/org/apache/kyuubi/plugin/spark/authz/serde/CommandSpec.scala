@@ -101,7 +101,8 @@ case class TableCommandSpec(
 case class ScanSpec(
     classname: String,
     scanDescs: Seq[ScanDesc],
-    functionDescs: Seq[FunctionDesc] = Seq.empty) extends CommandSpec {
+    functionDescs: Seq[FunctionDesc] = Seq.empty,
+    uriDescs: Seq[UriDesc] = Seq.empty) extends CommandSpec {
   override def opType: String = OperationType.QUERY.toString
   def tables: (LogicalPlan, SparkSession) => Seq[Table] = (plan, spark) => {
     scanDescs.flatMap { td =>
@@ -110,6 +111,18 @@ case class ScanSpec(
       } catch {
         case e: Exception =>
           LOG.debug(td.error(plan, e))
+          None
+      }
+    }
+  }
+
+  def uris: LogicalPlan => Seq[Uri] = plan => {
+    uriDescs.flatMap { ud =>
+      try {
+        ud.extract(plan)
+      } catch {
+        case e: Exception =>
+          LOG.debug(ud.error(plan, e))
           None
       }
     }
