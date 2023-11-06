@@ -235,3 +235,16 @@ prometheusRule:
   enabled: false
   # Contents of Prometheus rules file
   groups: []
+
+ha:
+  etcd:
+    ssl:
+      enabled: false
+      ca:
+        path: ~
+      client:
+        certificate:
+          path: ~
+        key:
+          path: ~
+
