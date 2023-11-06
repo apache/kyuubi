@@ -22,12 +22,15 @@ import java.nio.file.Path
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.sql.SparkSessionExtensions
+import org.apache.spark.sql.{DataFrame, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
+import org.apache.spark.sql.catalyst.expressions.PythonUDF
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.types.{IntegerType, StructField, StructType}
 import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
@@ -1094,6 +1097,33 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           someone,
           df.write.format("console").mode("append").save(path.toString)))(
           s"does not have [update] privilege on [[$path, $path/]]")
+      }
+    }
+  }
+
+  test("[KYUUBI #5594][AUTHZ] BuildQuery should respect normal node's input ") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        val df = spark.read.table(s"$db1.$table1")
+        val mapInPandasUDF = PythonUDF(
+          "mapInPandasUDF",
+          null,
+          StructType(Seq(StructField("id", IntegerType), StructField("scope", IntegerType))),
+          df.queryExecution.analyzed.output,
+          205,
+          true)
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            invokeAs(
+              df,
+              "mapInPandas",
+              (classOf[PythonUDF], mapInPandasUDF))
+              .asInstanceOf[DataFrame].select(col("id"), col("scope")).limit(1).show(true)))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
       }
     }
   }
