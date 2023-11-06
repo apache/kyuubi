@@ -1102,6 +1102,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("[KYUUBI #5594][AUTHZ] BuildQuery should respect normal node's input ") {
+    assume(!isSparkV35OrGreater, "mapInPandas not supported after spark 3.5")
     val db1 = defaultDb
     val table1 = "table1"
     withSingleCallEnabled {
