@@ -73,14 +73,12 @@ class TPCDSRunQueryContext(spark: SparkSession, database: Option[String]) extend
     if (database.isEmpty) {
       f
     } else {
-      val currentCatalog = spark.catalog.currentCatalog()
-      val originalDatabase = spark.catalog.currentDatabase
+      val currentNamespace = spark.sessionState.catalogManager.currentNamespace
       try {
         spark.sql(s"use ${database.get}")
         f
       } finally {
-        spark.catalog.setCurrentCatalog(currentCatalog)
-        spark.catalog.setCurrentDatabase(originalDatabase)
+        spark.sessionState.catalogManager.setCurrentNamespace(currentNamespace)
       }
     }
   }
