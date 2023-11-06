@@ -199,9 +199,10 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
     }
 
     withView("v") {
-      withTable("t", "input1", "input2") {
+      withTable("t", "t2", "input1", "input2") {
         withSQLConf(KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS.key -> "true") {
           sql(s"CREATE TABLE t (c1 int, c2 long) USING PARQUET PARTITIONED BY (p string)")
+          sql(s"CREATE TABLE t2 (c1 int, c2 long, c3 long) USING PARQUET PARTITIONED BY (p string)")
           sql(s"CREATE TABLE input1 USING PARQUET AS SELECT * FROM VALUES(1,2),(1,3)")
           sql(s"CREATE TABLE input2 USING PARQUET AS SELECT * FROM VALUES(1,3),(1,3)")
           sql(s"CREATE VIEW v as SELECT col1, count(*) as col2 FROM input1 GROUP BY col1")
@@ -264,6 +265,30 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
                |SELECT * FROM v
                |""".stripMargin)
           checkShuffleAndSort(df5.queryExecution.analyzed, 1, 1)
+
+          // generate
+          val df6 = sql(
+            s"""
+               |INSERT INTO TABLE t2 PARTITION(p='a')
+               |SELECT /*+ broadcast(input2) */ input1.col1, input2.col1, cast(cc.action1 as bigint)
+               |FROM input1
+               |JOIN input2
+               |ON input1.col1 = input2.col1
+               |  lateral view explode(ARRAY(input1.col1, input1.col2)) cc as action1
+               |""".stripMargin)
+          checkShuffleAndSort(df6.queryExecution.analyzed, 1, 1)
+
+          // window
+          val df7 = sql(
+            s"""
+               |INSERT INTO TABLE t2 PARTITION(p='a')
+               |SELECT /*+ broadcast(input2) */ input1.col1, input2.col2,
+               | RANK() OVER (PARTITION BY input2.col2 ORDER BY input1.col1) AS rank
+               |FROM input1
+               |JOIN input2
+               |ON input1.col1 = input2.col1
+               |""".stripMargin)
+          checkShuffleAndSort(df7.queryExecution.analyzed, 1, 1)
         }
       }
     }

@@ -552,14 +552,22 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
   val InsertIntoDataSourceDir = {
     val cmd = "org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand"
     val queryDesc = queryQueryDesc
-    val uriDesc = UriDesc("storage", classOf[CatalogStorageFormatURIExtractor])
+    val actionTypeDesc = overwriteActionTypeDesc
+    val uriDesc = UriDesc(
+      "storage",
+      classOf[CatalogStorageFormatURIExtractor],
+      actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
   }
 
   val SaveIntoDataSourceCommand = {
     val cmd = "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand"
     val queryDesc = queryQueryDesc
-    val uriDesc = UriDesc("options", classOf[OptionsUriExtractor])
+    val actionTypeDesc = ActionTypeDesc("mode", classOf[SaveModeActionTypeExtractor])
+    val uriDesc = UriDesc(
+      "options",
+      classOf[OptionsUriExtractor],
+      actionTypeDesc = Some(actionTypeDesc))
     TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
   }
 

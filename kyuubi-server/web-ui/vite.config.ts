@@ -44,9 +44,6 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true
         }
       }
-    },
-    define: {
-      __APP_VERSION__: JSON.stringify(require('./package.json').version)
     }
   }
 })
