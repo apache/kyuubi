@@ -19,7 +19,10 @@
 <template>
   <div class="editor">
     <el-space>
-      <el-select v-model="param.engineType" :placeholder="$t('engine_type')">
+      <el-select
+        v-model="param.engineType"
+        disabled
+        :placeholder="$t('engine_type')">
         <el-option
           v-for="item in getEngineType()"
           :key="item"
@@ -43,7 +46,7 @@
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item v-for="l in limits" :key="l" :command="l">
+            <el-dropdown-item v-for="l in [10, 50, 100]" :key="l" :command="l">
               Limit: {{ l }}
             </el-dropdown-item>
           </el-dropdown-menu>
@@ -87,7 +90,7 @@
     runSql,
     getSqlRowset,
     getSqlMetadata,
-    log
+    getLog
   } from '@/api/editor'
   import type { IResponse, ISqlResult, IFields, ILog } from './types'
 
@@ -96,7 +99,6 @@
     engineType: 'SPARK_SQL'
   })
   const limit = ref(10)
-  const limits = ref([10, 50, 100])
   const sqlResult: Ref<any[] | null> = ref(null)
   const sqlLog = ref('')
   const activeTab = ref('result')
@@ -166,17 +168,27 @@
         })
       })
       .catch(() => {
+        ElMessage({
+          message: t('message.get_sql_result_failed'),
+          type: 'error'
+        })
         sqlResult.value = []
       })
       .finally(() => {
         resultLoading.value = false
       })
 
-    sqlLog.value = await log(runSqlResponse.identifier)
+    sqlLog.value = await getLog(runSqlResponse.identifier)
       .then((res: ILog) => {
         return res?.logRowSet?.join('\r\n')
       })
-      .catch(() => '')
+      .catch(() => {
+        ElMessage({
+          message: t('message.get_sql_log_failed'),
+          type: 'error'
+        })
+        return ''
+      })
       .finally(() => {
         logLoading.value = false
       })

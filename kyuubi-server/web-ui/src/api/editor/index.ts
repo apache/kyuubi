@@ -16,8 +16,14 @@
  */
 
 import request from '@/utils/request'
+import type {
+  IOpenSessionRequest,
+  IRunSqlRequest,
+  IGetSqlRowsetRequest,
+  IGetSqlMetadataRequest
+} from './types'
 
-export function openSession(data: Map<string, string>): any {
+export function openSession(data: IOpenSessionRequest): any {
   return request({
     url: 'api/v1/sessions',
     method: 'post',
@@ -32,7 +38,7 @@ export function closeSession(identifier: string): any {
   })
 }
 
-export function runSql(data: any, identifier: string): any {
+export function runSql(data: IRunSqlRequest, identifier: string): any {
   return request({
     url: `api/v1/sessions/${identifier}/operations/statement`,
     method: 'post',
@@ -40,7 +46,7 @@ export function runSql(data: any, identifier: string): any {
   })
 }
 
-export function getSqlRowset(params: any): any {
+export function getSqlRowset(params: IGetSqlRowsetRequest): any {
   return request({
     url: `api/v1/operations/${params.operationHandleStr}/rowset`,
     method: 'get',
@@ -48,7 +54,7 @@ export function getSqlRowset(params: any): any {
   })
 }
 
-export function getSqlMetadata(params: any): any {
+export function getSqlMetadata(params: IGetSqlMetadataRequest): any {
   return request({
     url: `api/v1/operations/${params.operationHandleStr}/resultsetmetadata`,
     method: 'get',
@@ -56,7 +62,7 @@ export function getSqlMetadata(params: any): any {
   })
 }
 
-export function log(identifier: string): any {
+export function getLog(identifier: string): any {
   return request({
     url: `api/v1/operations/${identifier}/log`,
     method: 'get'

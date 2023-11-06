@@ -37,7 +37,7 @@ export default {
   engine_ui: 'Engine UI',
   failure_reason: 'Failure Reason',
   session_properties: 'Session Properties',
-  no_data: 'No data yet',
+  no_data: 'No data',
   run_sql_tips: 'Run a sql to get result',
   operation: {
     text: 'Operation',
@@ -56,6 +56,8 @@ export default {
     close_failed: 'Close {name} Failed',
     cancel_succeeded: 'Cancel {name} Succeeded',
     cancel_failed: 'Cancel {name} Failed',
-    run_failed: 'Run Sql Failed'
+    run_failed: 'Run Sql Failed',
+    get_sql_log_failed: 'Get Sql Log Failed',
+    get_sql_result_failed: 'Get Sql Result Failed'
   }
 }

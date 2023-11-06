@@ -56,6 +56,8 @@ export default {
     close_failed: '关闭 {name} 失败',
     cancel_succeeded: '取消 {name} 成功',
     cancel_failed: '取消 {name} 失败',
-    run_failed: '运行失败'
+    run_failed: '运行失败',
+    get_sql_log_failed: '获取sql日志失败',
+    get_sql_result_failed: '获取sql结果失败'
   }
 }
