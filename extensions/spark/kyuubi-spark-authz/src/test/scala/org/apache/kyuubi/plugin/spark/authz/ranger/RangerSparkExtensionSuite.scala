@@ -1133,4 +1133,26 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("LoadDataCommand") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withTempDir { path =>
+        withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+          doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+          val loadDataSql =
+            s"""
+               |LOAD DATA LOCAL INPATH '$path'
+               |OVERWRITE INTO TABLE $db1.$table1
+               |""".stripMargin
+          doAs(admin, sql(loadDataSql).explain(true))
+          interceptContains[AccessControlException](
+            doAs(someone, sql(loadDataSql).explain(true)))(
+            s"does not have [select] privilege on " +
+              s"[[$path, $path/]]")
+        }
+      }
+    }
+  }
 }
