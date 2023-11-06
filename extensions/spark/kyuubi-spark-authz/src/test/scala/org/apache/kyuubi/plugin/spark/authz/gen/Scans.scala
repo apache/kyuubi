@@ -37,7 +37,7 @@ object Scans extends CommandSpecs[ScanSpec] {
       ScanDesc(
         "catalogTable",
         classOf[CatalogTableOptionTableExtractor])
-    val uriDesc = UriDesc("relation", classOf[HadoopFsRelationFileIndexURIExtractor])
+    val uriDesc = UriDesc("relation", classOf[BaseRelationFileIndexURIExtractor])
     ScanSpec(r, Seq(tableDesc), uriDescs = Seq(uriDesc))
   }
 

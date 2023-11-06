@@ -49,7 +49,7 @@ class OptionsUriExtractor extends URIExtractor {
   }
 }
 
-class HadoopFsRelationFileIndexURIExtractor extends URIExtractor {
+class BaseRelationFileIndexURIExtractor extends URIExtractor {
   override def apply(v1: AnyRef): Seq[Uri] = {
     v1.asInstanceOf[HadoopFsRelation].location.rootPaths.map(_.toString).map(Uri)
   }

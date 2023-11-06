@@ -26,7 +26,8 @@
   "functionDescs" : [ ],
   "uriDescs" : [ {
     "fieldName" : "relation",
-    "fieldExtractor" : "HadoopFsRelationFileIndexURIExtractor",
+    "fieldExtractor" : "BaseRelationFileIndexURIExtractor",
+    "actionTypeDesc" : null,
     "isInput" : false
   } ]
 }, {
