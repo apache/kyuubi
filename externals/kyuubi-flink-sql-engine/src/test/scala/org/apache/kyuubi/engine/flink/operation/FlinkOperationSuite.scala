@@ -25,7 +25,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.PipelineOptions
-import org.apache.flink.table.client.cli.CliStrings
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.hive.service.rpc.thrift._
 
@@ -33,7 +32,7 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils.FLINK_RUNTIME_VERSION
 import org.apache.kyuubi.engine.flink.WithFlinkTestResources
-import org.apache.kyuubi.engine.flink.result.Constants
+import org.apache.kyuubi.engine.flink.result.{CommandStrings, Constants}
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 import org.apache.kyuubi.jdbc.hive.{KyuubiSQLException, KyuubiStatement}
 import org.apache.kyuubi.jdbc.hive.common.TimestampTZ
@@ -1273,7 +1272,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       val metadata = resultSet.getMetaData
       assert(metadata.getColumnName(1) === "result")
       assert(resultSet.next())
-      assert(resultSet.getString(1).equals(CliStrings.MESSAGE_HELP.toString))
+      assert(resultSet.getString(1).equals(CommandStrings.MESSAGE_HELP.toString))
     }
   }
 }

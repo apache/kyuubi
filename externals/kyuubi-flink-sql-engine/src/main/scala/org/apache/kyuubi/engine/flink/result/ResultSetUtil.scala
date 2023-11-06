@@ -22,7 +22,6 @@ import scala.concurrent.duration.Duration
 import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.catalog.Column
-import org.apache.flink.table.client.cli.CliStrings
 import org.apache.flink.table.gateway.service.result.ResultFetcher
 import org.apache.flink.types.Row
 
@@ -63,7 +62,7 @@ object ResultSetUtil {
     ResultSet.builder
       .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
       .columns(Column.physical("result", DataTypes.STRING))
-      .data(Array[Row](Row.of(CliStrings.MESSAGE_HELP.toString)))
+      .data(Array[Row](Row.of(CommandStrings.MESSAGE_HELP.toString)))
       .build
 
   def fromResultFetcher(
