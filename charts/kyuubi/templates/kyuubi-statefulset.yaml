@@ -105,6 +105,8 @@ spec:
           volumeMounts:
             - name: conf
               mountPath: {{ .Values.kyuubiConfDir }}
+            - name: etcd-cert
+              mountPath: {{ .Values.ha.etcd.ssl.mountParentPath }}
             {{- with .Values.volumeMounts }}
               {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
@@ -115,6 +117,9 @@ spec:
         - name: conf
           configMap:
             name: {{ .Release.Name }}
+        - name: etcd-cert
+          secret:
+            secretName: {{ .Release.Name }}
         {{- with .Values.volumes }}
           {{- tpl (toYaml .) $ | nindent 8 }}
         {{- end }}

@@ -41,6 +41,15 @@ data:
     kyuubi.metrics.enabled={{ .Values.monitoring.prometheus.enabled }}
     kyuubi.metrics.reporters={{ .Values.metricsReporters }}
 
+    # Kyuubi ha
+    {{- if .Values.ha.etcd.ssl.enabled }}
+    kyuubi.ha.client.class=org.apache.kyuubi.ha.client.etcd.EtcdDiscoveryClient
+    kyuubi.ha.etcd.ssl.enabled=true
+    kyuubi.ha.etcd.ssl.ca.path={{ .Values.ha.etcd.ssl.ca.mountPath }}
+    kyuubi.ha.etcd.ssl.client.certificate.path={{ .Values.ha.etcd.ssl.client.certificate.mountPath }}
+    kyuubi.ha.etcd.ssl.client.key.path={{ .Values.ha.etcd.ssl.client.key.mountPath }}
+    {{- end }}
+
     ## User provided Kyuubi configurations
     {{- with .Values.kyuubiConf.kyuubiDefaults }}
       {{- tpl . $ | nindent 4 }}
