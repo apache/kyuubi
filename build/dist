@@ -272,7 +272,7 @@ echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 cp -r "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/*.jar "$DISTDIR/jars/"
 
 # Copy custom jars to server jars
-custom_server_jars_path="./custom-server-jars"
+custom_server_jars_path="$KYUUBI_HOME/custom-server-jars"
 if [ -d "$custom_server_jars_path" ]; then
   find "$custom_server_jars_path" -name "*.jar" -exec cp -f {} "$DISTDIR/jars/" \;
 fi
