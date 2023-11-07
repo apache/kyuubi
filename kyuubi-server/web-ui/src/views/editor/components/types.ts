@@ -34,4 +34,9 @@ interface ILog {
   rowCount: number
 }
 
-export { IResponse, ISqlResult, IFields, ILog }
+interface IErrorMessage {
+  title: string
+  description: string
+}
+
+export { IResponse, ISqlResult, IFields, ILog, IErrorMessage }

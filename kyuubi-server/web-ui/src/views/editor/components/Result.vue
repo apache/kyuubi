@@ -33,19 +33,39 @@
         show-overflow-tooltip
         sortable />
     </el-table>
-    <div v-else class="no-data">
-      <img src="@/assets/images/document.svg" />
-      <div>{{ data === null ? $t('run_sql_tips') : $t('no_data') }}</div>
-    </div>
+    <template v-else>
+      <template v-if="errorMessages.length">
+        <el-alert
+          v-for="(m, idx) in errorMessages"
+          :key="idx"
+          :title="m.title"
+          type="error"
+          show-icon>
+          <template #default>
+            <pre> {{ m.description }} </pre>
+          </template>
+        </el-alert>
+      </template>
+      <div v-else class="no-data">
+        <img src="@/assets/images/document.svg" />
+        <div>{{ data === null ? $t('run_sql_tips') : $t('no_data') }}</div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { PropType } from 'vue'
+  import type { IErrorMessage } from './types'
   defineProps({
     data: {
       type: [Array, null] as PropType<Array<any> | null>,
       default: null,
+      required: true
+    },
+    errorMessages: {
+      type: Array as PropType<Array<IErrorMessage>>,
+      default: [],
       required: true
     }
   })
@@ -103,6 +123,21 @@
   .result {
     min-height: 200px;
     position: relative;
+    .el-alert {
+      width: auto;
+      margin: 10px;
+      border: 1px solid #db2828;
+
+      :deep(.el-alert__description) {
+        max-height: 300px;
+        overflow: auto;
+
+        pre {
+          margin-top: 0;
+          white-space: pre-wrap;
+        }
+      }
+    }
     .no-data {
       position: absolute;
       left: 50%;
