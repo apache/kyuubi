@@ -52,6 +52,7 @@ object AccessType extends Enumeration {
               ALTERTABLE_SERDEPROPERTIES |
               ALTERVIEW_RENAME |
               MSCK |
+              OPTIMIZETABLE |
               ALTERINDEX_REBUILD => ALTER
           case ALTERVIEW_AS => if (isInput) SELECT else ALTER
           case DROPDATABASE | DROPTABLE | DROPFUNCTION | DROPVIEW | DROPINDEX => DROP
@@ -69,7 +70,7 @@ object AccessType extends Enumeration {
               SHOWTABLES |
               SHOWFUNCTIONS |
               DESCFUNCTION => USE
-          case TRUNCATETABLE | OPTIMIZETABLE => UPDATE
+          case TRUNCATETABLE => UPDATE
           case CREATEINDEX => INDEX
           case _ => NONE
         }
