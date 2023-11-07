@@ -1097,4 +1097,62 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("HadoopFsRelation") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    withTempDir { path =>
+      withSingleCallEnabled {
+        withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+          doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+          doAs(
+            admin,
+            sql(
+              s"""
+                 |INSERT OVERWRITE DIRECTORY '$path'
+                 |USING parquet
+                 |SELECT * FROM $db1.$table1""".stripMargin))
+
+          interceptContains[AccessControlException](
+            doAs(
+              someone,
+              sql(
+                s"""
+                   |INSERT OVERWRITE DIRECTORY '$path'
+                   |USING parquet
+                   |SELECT * FROM $db1.$table1""".stripMargin)))(
+            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
+              s"[update] privilege on [[$path, $path/]]")
+
+          doAs(admin, sql(s"SELECT * FROM parquet.`$path`".stripMargin).explain(true))
+          interceptContains[AccessControlException](
+            doAs(someone, sql(s"SELECT * FROM parquet.`$path`".stripMargin).explain(true)))(
+            s"does not have [select] privilege on " +
+              s"[[file:$path, file:$path/]]")
+        }
+      }
+    }
+  }
+
+  test("LoadDataCommand") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withTempDir { path =>
+        withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+          doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+          val loadDataSql =
+            s"""
+               |LOAD DATA LOCAL INPATH '$path'
+               |OVERWRITE INTO TABLE $db1.$table1
+               |""".stripMargin
+          doAs(admin, sql(loadDataSql).explain(true))
+          interceptContains[AccessControlException](
+            doAs(someone, sql(loadDataSql).explain(true)))(
+            s"does not have [select] privilege on " +
+              s"[[$path, $path/]]")
+        }
+      }
+    }
+  }
 }

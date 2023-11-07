@@ -37,7 +37,8 @@ object Scans extends CommandSpecs[ScanSpec] {
       ScanDesc(
         "catalogTable",
         classOf[CatalogTableOptionTableExtractor])
-    ScanSpec(r, Seq(tableDesc))
+    val uriDesc = UriDesc("relation", classOf[BaseRelationFileIndexURIExtractor])
+    ScanSpec(r, Seq(tableDesc), uriDescs = Seq(uriDesc))
   }
 
   val DataSourceV2Relation = {

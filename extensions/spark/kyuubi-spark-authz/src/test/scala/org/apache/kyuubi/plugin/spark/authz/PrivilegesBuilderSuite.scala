@@ -1430,17 +1430,24 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         .queryExecution.analyzed
       val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
       assert(operationType === LOAD)
-      assert(in.isEmpty)
-
-      assert(out.size === 1)
-      val po0 = out.head
-      assert(po0.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
-      assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-      assertEqualsIgnoreCase(reusedDb)(po0.dbname)
-      assert(po0.objectName equalsIgnoreCase tableName.split("\\.").last)
+      assert(in.size === 1)
+      val po0 = in.head
+      assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po0.privilegeObjectType === PrivilegeObjectType.DFS_URL)
+      assert(po0.dbname === dataPath)
+      assert(po0.objectName === null)
       assert(po0.columns.isEmpty)
       checkTableOwner(po0)
-      val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
+
+      assert(out.size === 1)
+      val po1 = out.head
+      assert(po1.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
+      assert(po1.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assertEqualsIgnoreCase(reusedDb)(po1.dbname)
+      assert(po1.objectName equalsIgnoreCase tableName.split("\\.").last)
+      assert(po1.columns.isEmpty)
+      checkTableOwner(po1)
+      val accessType0 = ranger.AccessType(po1, operationType, isInput = false)
       assert(accessType0 === AccessType.UPDATE)
     }
   }

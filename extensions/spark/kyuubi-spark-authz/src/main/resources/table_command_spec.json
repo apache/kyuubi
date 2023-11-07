@@ -1128,7 +1128,12 @@
   } ],
   "opType" : "LOAD",
   "queryDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "actionTypeDesc" : null,
+    "isInput" : true
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.RefreshTableCommand",
   "tableDescs" : [ {
@@ -2028,6 +2033,28 @@
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.delta.commands.MergeIntoCommand",
+  "tableDescs" : [ {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "source",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ],
   "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.UpdateCommand",

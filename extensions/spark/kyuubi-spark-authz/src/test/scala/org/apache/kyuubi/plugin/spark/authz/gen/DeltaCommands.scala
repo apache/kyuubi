@@ -42,7 +42,19 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
     DeleteCommand.copy(classname = cmd)
   }
 
+  val MergeIntoCommand = {
+    val cmd = "org.apache.spark.sql.delta.commands.MergeIntoCommand"
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val tableDesc = TableDesc(
+      "target",
+      classOf[SubqueryAliasTableExtractor],
+      actionTypeDesc = Some(actionTypeDesc))
+    val queryDesc = QueryDesc("source")
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     DeleteCommand,
+    MergeIntoCommand,
     UpdateCommand)
 }

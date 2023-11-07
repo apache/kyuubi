@@ -20,7 +20,7 @@
   <header>
     <img v-if="!isCollapse" src="@/assets/images/kyuubi-logo.svg" />
     <img v-else class="collapsed-logo" src="@/assets/images/kyuubi.png" />
-    <pre v-if="!isCollapse">{{ title }}</pre>
+    <pre v-if="!isCollapse">{{ version }}</pre>
   </header>
   <c-menu :is-collapse="isCollapse" :active-path="activePath" :menus="menus" />
 </template>
@@ -42,37 +42,39 @@
 </script>
 
 <style lang="scss" scoped>
+  $height: 64px;
   header {
+    width: 100%;
     position: absolute;
     top: 0;
     left: 0;
-    height: 64px;
-    padding-left: 16px;
-    line-height: 64px;
+    height: $height;
+    line-height: $height;
+    padding: 0 16px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    box-sizing: border-box;
     img {
-      display: inline-block;
       width: 140px;
       height: 50px;
-      top: -10px;
-      position: relative;
-      vertical-align: middle;
+      &.collapsed-logo {
+        width: 40px;
+        height: 40px;
+        position: relative;
+        top: -4px;
+        left: -4px;
+      }
     }
-    pre {
+    span {
+      position: relative;
+      top: 17px;
       font-size: 10px;
-      display: inline-block;
-      width: 100px;
-      margin-top: 20px;
-      text-align: center;
       font-family: 'Myriad Pro', 'Helvetica Neue', Arial, Helvetica, sans-serif;
       color: rgba(255, 255, 255, 0.87);
     }
-    .collapsed-logo {
-      width: 40px;
-      height: 40px;
-      margin-top: 30px;
-    }
   }
   .el-menu {
-    margin-top: 64px;
+    margin-top: $height;
   }
 </style>

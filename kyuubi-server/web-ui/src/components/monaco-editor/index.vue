@@ -24,7 +24,7 @@
   import * as monaco from 'monaco-editor'
   import { format } from 'sql-formatter'
   import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-  import { editorProps } from './type'
+  import { editorProps } from './types'
   import { useEditorStore } from '@/pinia/editor'
   import { ref, toRaw, watch, onBeforeUnmount, onMounted } from 'vue'
 

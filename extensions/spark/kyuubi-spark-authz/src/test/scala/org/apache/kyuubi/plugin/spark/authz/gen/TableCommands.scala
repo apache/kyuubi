@@ -592,7 +592,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       fieldName = "table",
       columnDesc = Some(columnDesc),
       actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), "LOAD")
+    val uriDesc = UriDesc("path", classOf[StringURIExtractor], isInput = true)
+    TableCommandSpec(cmd, Seq(tableDesc), LOAD, uriDescs = Seq(uriDesc))
   }
 
   val RefreshTable = {
