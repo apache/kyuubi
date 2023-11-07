@@ -111,13 +111,15 @@ object PrivilegesBuilder {
       case s: Sort =>
         val sortCols = s.order.flatMap(sortOrder => collectLeaves(sortOrder))
         val cols = conditionList ++ sortCols
-        buildQuery(s.child, privilegeObjects, projectionList, cols, spark)
+        val output = projectionList ++ s.inputSet
+        buildQuery(s.child, privilegeObjects, output, cols, spark)
 
       case a: Aggregate =>
         val aggCols =
           (a.aggregateExpressions ++ a.groupingExpressions).flatMap(e => collectLeaves(e))
         val cols = conditionList ++ aggCols
-        buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
+        val output = projectionList ++ a.inputSet
+        buildQuery(a.child, privilegeObjects, output, cols, spark)
 
       case scan if isKnownScan(scan) && scan.resolved =>
         getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))
