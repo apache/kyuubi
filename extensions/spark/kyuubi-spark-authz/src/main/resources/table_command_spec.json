@@ -629,7 +629,7 @@
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AddArchivesCommand",
   "tableDescs" : [ ],
-  "opType" : "QUERY",
+  "opType" : "ADD",
   "queryDescs" : [ ],
   "uriDescs" : [ {
     "fieldName" : "paths",
@@ -640,7 +640,7 @@
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AddFilesCommand",
   "tableDescs" : [ ],
-  "opType" : "QUERY",
+  "opType" : "ADD",
   "queryDescs" : [ ],
   "uriDescs" : [ {
     "fieldName" : "paths",
@@ -651,7 +651,7 @@
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AddJarsCommand",
   "tableDescs" : [ ],
-  "opType" : "QUERY",
+  "opType" : "ADD",
   "queryDescs" : [ ],
   "uriDescs" : [ {
     "fieldName" : "paths",
@@ -1139,39 +1139,6 @@
       "actionType" : null
     },
     "isInput" : false
-  } ]
-}, {
-  "classname" : "org.apache.spark.sql.execution.command.ListArchivesCommand",
-  "tableDescs" : [ ],
-  "opType" : "QUERY",
-  "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "archives",
-    "fieldExtractor" : "StringSeqURIExtractor",
-    "actionTypeDesc" : null,
-    "isInput" : true
-  } ]
-}, {
-  "classname" : "org.apache.spark.sql.execution.command.ListFilesCommand",
-  "tableDescs" : [ ],
-  "opType" : "QUERY",
-  "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "files",
-    "fieldExtractor" : "StringSeqURIExtractor",
-    "actionTypeDesc" : null,
-    "isInput" : true
-  } ]
-}, {
-  "classname" : "org.apache.spark.sql.execution.command.ListJarsCommand",
-  "tableDescs" : [ ],
-  "opType" : "QUERY",
-  "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "jars",
-    "fieldExtractor" : "StringSeqURIExtractor",
-    "actionTypeDesc" : null,
-    "isInput" : true
   } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.LoadDataCommand",

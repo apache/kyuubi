@@ -620,25 +620,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
   val AddArchivesCommand = {
     val cmd = "org.apache.spark.sql.execution.command.AddArchivesCommand"
     val uriDesc = UriDesc("paths", classOf[StringSeqURIExtractor], isInput = true)
-    TableCommandSpec(cmd, Nil, uriDescs = Seq(uriDesc))
-  }
-
-  val ListArchivesCommand = {
-    val cmd = "org.apache.spark.sql.execution.command.ListArchivesCommand"
-    val uriDesc = UriDesc("archives", classOf[StringSeqURIExtractor], isInput = true)
-    TableCommandSpec(cmd, Nil, uriDescs = Seq(uriDesc))
-  }
-
-  val ListFilesCommand = {
-    val cmd = "org.apache.spark.sql.execution.command.ListFilesCommand"
-    val uriDesc = UriDesc("files", classOf[StringSeqURIExtractor], isInput = true)
-    TableCommandSpec(cmd, Nil, uriDescs = Seq(uriDesc))
-  }
-
-  val ListJarsCommand = {
-    val cmd = "org.apache.spark.sql.execution.command.ListJarsCommand"
-    val uriDesc = UriDesc("jars", classOf[StringSeqURIExtractor], isInput = true)
-    TableCommandSpec(cmd, Nil, uriDescs = Seq(uriDesc))
+    TableCommandSpec(cmd, Nil, ADD, uriDescs = Seq(uriDesc))
   }
 
   override def specs: Seq[TableCommandSpec] = Seq(
@@ -708,9 +690,6 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     InsertIntoDataSourceDir.copy(classname =
       "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand"),
     InsertIntoHiveTable,
-    ListArchivesCommand,
-    ListFilesCommand,
-    ListJarsCommand,
     LoadData,
     MergeIntoTable,
     OverwriteByExpression,
