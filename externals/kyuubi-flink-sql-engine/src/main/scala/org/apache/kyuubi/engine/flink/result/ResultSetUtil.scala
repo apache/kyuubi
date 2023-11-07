@@ -58,6 +58,13 @@ object ResultSetUtil {
       .data(Array[Row](Row.of("OK")))
       .build
 
+  def helpMessageResultSet: ResultSet =
+    ResultSet.builder
+      .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(Column.physical("result", DataTypes.STRING))
+      .data(Array[Row](Row.of(CommandStrings.MESSAGE_HELP.toString)))
+      .build
+
   def fromResultFetcher(
       resultFetcher: ResultFetcher,
       maxRows: Int,
