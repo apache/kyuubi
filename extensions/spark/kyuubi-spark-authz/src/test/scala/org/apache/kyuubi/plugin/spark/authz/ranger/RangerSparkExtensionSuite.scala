@@ -1105,26 +1105,74 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     assume(!isSparkV35OrGreater, "mapInPandas not supported after spark 3.5")
     val db1 = defaultDb
     val table1 = "table1"
+    val view1 = "view1"
     withSingleCallEnabled {
-      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$view1", "view"))) {
         doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
-        val df = spark.read.table(s"$db1.$table1")
-        val mapInPandasUDF = PythonUDF(
+        doAs(admin, sql(s"CREATE VIEW $db1.$view1 AS SELECT * FROM $db1.$table1"))
+
+        val table = spark.read.table(s"$db1.$table1")
+        val mapTableInPandasUDF = PythonUDF(
           "mapInPandasUDF",
           null,
           StructType(Seq(StructField("id", IntegerType), StructField("scope", IntegerType))),
-          df.queryExecution.analyzed.output,
+          table.queryExecution.analyzed.output,
           205,
           true)
         interceptContains[AccessControlException](
           doAs(
             someone,
             invokeAs(
-              df,
+              table,
               "mapInPandas",
-              (classOf[PythonUDF], mapInPandasUDF))
+              (classOf[PythonUDF], mapTableInPandasUDF))
               .asInstanceOf[DataFrame].select(col("id"), col("scope")).limit(1).show(true)))(
           s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
+
+        val view = spark.read.table(s"$db1.$view1")
+        val mapViewInPandasUDF = PythonUDF(
+          "mapInPandasUDF",
+          null,
+          StructType(Seq(StructField("id", IntegerType), StructField("scope", IntegerType))),
+          view.queryExecution.analyzed.output,
+          205,
+          true)
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            invokeAs(
+              view,
+              "mapInPandas",
+              (classOf[PythonUDF], mapViewInPandasUDF))
+              .asInstanceOf[DataFrame].select(col("id"), col("scope")).limit(1).show(true)))(
+          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
+      }
+    }
+  }
+
+  test("[KYUUBI #5594][AUTHZ] BuildQuery should respect sort agg input") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val view1 = "view1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$view1", "view"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        doAs(admin, sql(s"CREATE VIEW $db1.$view1 AS SELECT * FROM $db1.$table1"))
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT count(*) FROM $db1.$table1 WHERE id > 1").show()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT count(*) FROM $db1.$view1 WHERE id > 1").explain(true)))(
+          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT count(id) FROM $db1.$view1 WHERE id > 1").explain(true)))(
+          s"does not have [select] privilege on [$db1/$view1/id]")
       }
     }
   }

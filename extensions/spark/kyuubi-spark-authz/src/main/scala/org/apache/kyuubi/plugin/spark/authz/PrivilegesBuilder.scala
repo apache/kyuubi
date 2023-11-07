@@ -67,8 +67,7 @@ object PrivilegesBuilder {
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
         plan match {
-          case pvm: PermanentViewMarker
-              if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
+          case pvm: PermanentViewMarker =>
             privilegeObjects += PrivilegeObject(table, pvm.outputColNames)
           case _ =>
             privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
