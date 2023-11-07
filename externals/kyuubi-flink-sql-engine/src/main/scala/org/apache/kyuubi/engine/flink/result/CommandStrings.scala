@@ -99,7 +99,7 @@ object CommandStrings {
       // About Documentation Link.
       .style(AttributedStyle.DEFAULT)
       .append(
-        "\nYou can also type any Flink SQL statement, please visit https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/overview/ for more details.")
+        "\nThe above list includes only the most frequently used statements.\nYou can also type any Flink SQL statement, please visit https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/overview/ for more details.")
       .toAttributedString
 
   def COMMANDS_DESCRIPTIONS: AttributedString =
@@ -179,7 +179,7 @@ object CommandStrings {
         "Describes the schema of a table with the given name. Syntax: \"{ DESCRIBE | DESC } [catalog_name.][db_name.]table_name\"")
       .commandDescription(
         "ANALYZE",
-        "ANALYZE statements are used to collect statistics for existing tables and store the result to catalog. Only Supports in batch mode. Syntax: \"ANALYZE TABLE [catalog_name.][db_name.]table_name PARTITION(partcol1[=val1] [, partcol2[=val2], ...]) COMPUTE STATISTICS [FOR COLUMNS col1 [, col2, ...] | FOR ALL COLUMNS]\"")
+        "ANALYZE statements are used to collect statistics for existing tables and store the result to catalog. Only supports in batch mode. Syntax: \"ANALYZE TABLE [catalog_name.][db_name.]table_name PARTITION(partcol1[=val1] [, partcol2[=val2], ...]) COMPUTE STATISTICS [FOR COLUMNS col1 [, col2, ...] | FOR ALL COLUMNS]\"")
       .commandDescription(
         "ALTER TABLE",
         "Renames a table or change a table's properties. Syntax: \"ALTER TABLE [catalog_name.][db_name.]table_name RENAME TO new_table_name\", the other syntax: \"ALTER TABLE [catalog_name.][db_name.]table_name SET ( key1=val1[, key2=val2, ...] )\"")
@@ -222,6 +222,24 @@ object CommandStrings {
       .commandDescription(
         "CREATE FUNCTION",
         "Creates a catalog function with the given function properties. Syntax: \"CREATE [TEMPORARY|TEMPORARY SYSTEM] FUNCTION [IF NOT EXISTS] [catalog_name.][db_name.]function_name AS identifier [LANGUAGE JAVA|SCALA|PYTHON] [USING JAR '<path_to_filename>.jar' [, JAR '<path_to_filename>.jar']* ]\"")
+      .commandDescription(
+        "SHOW JOBS",
+        "Show the jobs in the Flink cluster. Supports in version 1.17 and later.")
+      .commandDescription(
+        "STOP JOB",
+        "Stop the job with the given job ID. Supports in version 1.17 and later. Syntax: \"STOP JOB '<job_id>' [WITH SAVEPOINT] [WITH DRAIN]\"")
+      .commandDescription(
+        "UPDATE",
+        "Performs row-level updating on the target table. Only supports in batch mode. Supports in version 1.17 and later. Syntax: \"UPDATE [catalog_name.][db_name.]table_name SET col_name1 = col_val1 [, col_name2 = col_val2 ...] [WHERE condition]\"")
+      .commandDescription(
+        "DELETE",
+        "Performs row-level deleting on the target table. Only supports in batch mode. Supports in version 1.17 and later. Syntax: \"DELETE FROM [catalog_name.][db_name.]table_name [WHERE condition]\"")
+      .commandDescription(
+        "TRUNCATE TABLE",
+        "Truncates the target table. Only supports in batch mode. Supports in version 1.18 and later. Syntax: \"TRUNCATE TABLE [catalog_name.][db_name.]table_name\"")
+      .commandDescription(
+        "CALL",
+        "Calls a stored procedure. Supports in version 1.18 and later. Syntax: \"CALL [catalog_name.][database_name.]procedure_name ([ expression [, expression]* ] )\"")
       .build()
   // scalastyle:on
 }
