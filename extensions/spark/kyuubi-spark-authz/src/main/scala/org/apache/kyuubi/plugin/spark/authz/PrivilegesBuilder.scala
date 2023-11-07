@@ -67,7 +67,8 @@ object PrivilegesBuilder {
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
         plan match {
-          case pvm: PermanentViewMarker =>
+          case pvm: PermanentViewMarker
+              if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
             privilegeObjects += PrivilegeObject(table, pvm.outputColNames)
           case _ =>
             privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
@@ -132,7 +133,8 @@ object PrivilegesBuilder {
       case p =>
         for (child <- p.children) {
           child match {
-            case pvm: PermanentViewMarker =>
+            case pvm: PermanentViewMarker
+                if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
               buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
             case _ =>
               val childCols = columnPrune(projectionList ++ conditionList, child.outputSet)
