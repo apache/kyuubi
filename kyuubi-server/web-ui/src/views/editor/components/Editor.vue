@@ -68,7 +68,7 @@
         v-loading="resultLoading"
         :label="`Result${sqlResult?.length ? ` (${sqlResult?.length})` : ''}`"
         name="result">
-        <Result :data="sqlResult" />
+        <Result :data="sqlResult" :error-messages="errorMessages" />
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -92,7 +92,13 @@
     getSqlMetadata,
     getLog
   } from '@/api/editor'
-  import type { IResponse, ISqlResult, IFields, ILog } from './types'
+  import type {
+    IResponse,
+    ISqlResult,
+    IFields,
+    ILog,
+    IErrorMessage
+  } from './types'
 
   const { t } = useI18n()
   const param = reactive({
@@ -106,6 +112,7 @@
   const logLoading = ref(false)
   const sessionIdentifier = ref('')
   const theme = ref('customTheme')
+  const errorMessages: Ref<IErrorMessage[]> = ref([])
   const editorVariables = reactive({
     editor: {} as any,
     language: 'sql',
@@ -133,9 +140,10 @@
   const handleQuerySql = async () => {
     resultLoading.value = true
     logLoading.value = true
+    errorMessages.value = []
     const openSessionResponse: IResponse = await openSession({
       'kyuubi.engine.type': param.engineType
-    }).catch(errorCatch)
+    }).catch(catchSessionError)
     if (!openSessionResponse) return
     sessionIdentifier.value = openSessionResponse.identifier
 
@@ -145,7 +153,7 @@
         runAsync: false
       },
       sessionIdentifier.value
-    ).catch(errorCatch)
+    ).catch(catchSessionError)
     if (!runSqlResponse) return
 
     Promise.all([
@@ -153,10 +161,14 @@
         operationHandleStr: runSqlResponse.identifier,
         fetchorientation: 'FETCH_NEXT',
         maxrows: limit.value
+      }).catch((err: any) => {
+        catchOperationError(err, t('message.get_sql_result_failed'))
       }),
       getSqlMetadata({
         operationHandleStr: runSqlResponse.identifier
-      })
+      }).catch((err: any) =>
+        catchOperationError(err, t('message.get_sql_metadata_failed'))
+      )
     ])
       .then((result: any[]) => {
         sqlResult.value = result[0]?.rows?.map((row: IFields) => {
@@ -167,13 +179,6 @@
           return map
         })
       })
-      .catch(() => {
-        ElMessage({
-          message: t('message.get_sql_result_failed'),
-          type: 'error'
-        })
-        sqlResult.value = []
-      })
       .finally(() => {
         resultLoading.value = false
       })
@@ -182,11 +187,8 @@
       .then((res: ILog) => {
         return res?.logRowSet?.join('\r\n')
       })
-      .catch(() => {
-        ElMessage({
-          message: t('message.get_sql_log_failed'),
-          type: 'error'
-        })
+      .catch((err: any) => {
+        postError(err, t('message.get_sql_log_failed'))
         return ''
       })
       .finally(() => {
@@ -194,15 +196,29 @@
       })
   }
 
-  const errorCatch = (err: any) => {
-    sqlResult.value = []
-    sqlLog.value = err?.response?.data?.message || err?.message || ''
+  const postError = (err: any, title = t('message.run_failed')) => {
+    errorMessages.value.push({
+      title,
+      description: err?.response?.data?.message || err?.message || ''
+    })
     ElMessage({
-      message: t('message.run_failed'),
+      message: title,
       type: 'error'
     })
+  }
+
+  const catchSessionError = (err: any) => {
+    sqlResult.value = []
+    sqlLog.value = ''
+    postError(err)
     resultLoading.value = false
     logLoading.value = false
+  }
+
+  const catchOperationError = (err: any, title: string) => {
+    postError(err, title)
+    sqlResult.value = []
+    return Promise.reject()
   }
 
   const handleChangeLimit = (command: number) => {

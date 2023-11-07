@@ -58,6 +58,7 @@ export default {
     cancel_failed: 'Cancel {name} Failed',
     run_failed: 'Run Sql Failed',
     get_sql_log_failed: 'Get Sql Log Failed',
-    get_sql_result_failed: 'Get Sql Result Failed'
+    get_sql_result_failed: 'Get Sql Result Failed',
+    get_sql_metadata_failed: 'Get Sql Metadata Failed'
   }
 }
