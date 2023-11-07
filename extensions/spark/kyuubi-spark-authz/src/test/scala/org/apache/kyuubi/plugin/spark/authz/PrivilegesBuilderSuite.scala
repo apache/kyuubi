@@ -1433,11 +1433,13 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(in.size === 1)
       val po0 = in.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po0.privilegeObjectType === PrivilegeObjectType.DFS_URL)
+      assert(po0.privilegeObjectType === PrivilegeObjectType.DFS_URI)
       assert(po0.dbname === dataPath)
       assert(po0.objectName === null)
       assert(po0.columns.isEmpty)
       checkTableOwner(po0)
+      val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
+      assert(accessType0 === AccessType.READ)
 
       assert(out.size === 1)
       val po1 = out.head
@@ -1447,8 +1449,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po1.objectName equalsIgnoreCase tableName.split("\\.").last)
       assert(po1.columns.isEmpty)
       checkTableOwner(po1)
-      val accessType0 = ranger.AccessType(po1, operationType, isInput = false)
-      assert(accessType0 === AccessType.UPDATE)
+      val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+      assert(accessType1 === AccessType.UPDATE)
     }
   }
 
@@ -1477,12 +1479,12 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(out.size == 1)
     val po1 = out.head
     assert(po1.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
-    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URL)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URI)
     assert(po1.dbname === directory.path)
     assert(po1.objectName === null)
     assert(po1.columns === Seq.empty)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
-    assert(accessType1 == AccessType.UPDATE)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+    assert(accessType1 == AccessType.WRITE)
   }
 
   test("InsertIntoDataSourceCommand") {
@@ -1538,7 +1540,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         checkTableOwner(po)
         val accessType = ranger.AccessType(po, operationType, isInput = false)
         assert(accessType === AccessType.UPDATE)
-
       }
     }
   }
@@ -1609,12 +1610,12 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(out.size == 1)
     val po1 = out.head
     assert(po1.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
-    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URL)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URI)
     assert(po1.dbname === directory.path)
     assert(po1.objectName === null)
     assert(po1.columns === Seq.empty)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
-    assert(accessType1 == AccessType.UPDATE)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+    assert(accessType1 == AccessType.WRITE)
   }
 
   test("InsertIntoHiveDirCommand") {
@@ -1642,12 +1643,12 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(out.size == 1)
     val po1 = out.head
     assert(po1.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
-    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URL)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URI)
     assert(po1.dbname === directory.path)
     assert(po1.objectName === null)
     assert(po1.columns === Seq.empty)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
-    assert(accessType1 == AccessType.UPDATE)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+    assert(accessType1 == AccessType.WRITE)
   }
 
   test("InsertIntoHiveTableCommand") {

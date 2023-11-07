@@ -93,7 +93,7 @@ object PrivilegeObject {
       actionType: PrivilegeObjectActionType): PrivilegeObject = {
     val privilegeObjectType = Option(new URI(uri.path).getScheme) match {
       case Some("file") => LOCAL_URI
-      case _ => DFS_URL
+      case _ => DFS_URI
     }
     new PrivilegeObject(
       privilegeObjectType,
