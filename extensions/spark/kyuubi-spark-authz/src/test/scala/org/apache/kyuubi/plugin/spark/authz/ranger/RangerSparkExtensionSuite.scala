@@ -1160,7 +1160,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     withTempDir { path =>
       withSingleCallEnabled {
         Seq("JAR", "FILE", "ARCHIVE").foreach { cmd =>
-          doAs(admin, sql(s"ADD $cmd '$path'"))
           interceptContains[AccessControlException](
             doAs(someone, sql(s"ADD $cmd '$path'")))(
             s"does not have [tempudfadmin] privilege on [[$path, $path/]]")
