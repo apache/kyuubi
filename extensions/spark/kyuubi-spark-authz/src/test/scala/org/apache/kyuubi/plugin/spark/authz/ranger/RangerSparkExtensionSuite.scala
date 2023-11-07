@@ -1162,7 +1162,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         Seq("JAR", "FILE", "ARCHIVE").foreach { cmd =>
           interceptContains[AccessControlException](
             doAs(someone, sql(s"ADD $cmd '$path'")))(
-            s"does not have [tempudfadmin] privilege on [[$path, $path/]]")
+            s"does not have [read] privilege on [[$path, $path/]]")
         }
       }
     }
