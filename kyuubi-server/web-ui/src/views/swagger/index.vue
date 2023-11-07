@@ -18,7 +18,6 @@
 
 <template>
   <main>
-    Swagger
     <div id="swagger-ui" class="swagger-ui"> </div>
   </main>
 </template>
