@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.nio.file.Path
 
+import scala.collection.Seq
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -1151,6 +1152,27 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             doAs(someone, sql(loadDataSql).explain(true)))(
             s"does not have [read] privilege on " +
               s"[[$path, $path/]]")
+        }
+      }
+    }
+  }
+
+  test("CreateDatabaseCommand/AlterDatabaseSetLocationCommand") {
+    assume(SPARK_RUNTIME_VERSION <= "3.2")
+    val db1 = "db1"
+    withSingleCallEnabled {
+      withTempDir { path1 =>
+        withTempDir { path2 =>
+          withCleanTmpResources(Seq((s"$db1", "database"))) {
+            interceptContains[AccessControlException](
+              doAs(someone, sql(s"CREATE DATABASE $db1 LOCATION '$path1'")))(
+              s"does not have [create] privilege on [$db1], " +
+                s"[write] privilege on [[$path1, $path1/]]")
+            interceptContains[AccessControlException](
+              doAs(someone, sql(s"ALTER DATABASE $db1 SET LOCATION '$path2'")))(
+              s"does not have [alter] privilege on [$db1], " +
+                s"[write] privilege on [[$path2, $path2/]]")
+          }
         }
       }
     }

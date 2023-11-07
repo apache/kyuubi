@@ -22,6 +22,22 @@ import org.apache.kyuubi.plugin.spark.authz.serde._
 
 object DatabaseCommands extends CommandSpecs[DatabaseCommandSpec] {
 
+  val CreateDatabaseCommand = {
+    DatabaseCommandSpec(
+      "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
+      Seq(DatabaseDesc("databaseName", classOf[StringDatabaseExtractor])),
+      CREATEDATABASE,
+      Seq(UriDesc("path", classOf[StringURIExtractor])))
+  }
+
+  val AlterDatabaseSetLocationCommand = {
+    DatabaseCommandSpec(
+      "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",
+      Seq(DatabaseDesc("databaseName", classOf[StringDatabaseExtractor])),
+      ALTERDATABASE_LOCATION,
+      Seq(UriDesc("location", classOf[StringURIExtractor])))
+  }
+
   val AlterDatabaseProperties = {
     DatabaseCommandSpec(
       "org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand",
@@ -143,16 +159,12 @@ object DatabaseCommands extends CommandSpecs[DatabaseCommandSpec] {
 
   override def specs: Seq[DatabaseCommandSpec] = Seq(
     AlterDatabaseProperties,
-    AlterDatabaseProperties.copy(
-      classname = "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",
-      opType = ALTERDATABASE_LOCATION),
-    AlterDatabaseProperties.copy(
-      classname = "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
-      opType = CREATEDATABASE),
+    AlterDatabaseSetLocationCommand,
     AlterDatabaseProperties.copy(
       classname = "org.apache.spark.sql.execution.command.DropDatabaseCommand",
       opType = DROPDATABASE),
     AnalyzeTables,
+    CreateDatabaseCommand,
     CreateNamespace,
     CommentOnNamespace,
     DescribeDatabase,

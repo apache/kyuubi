@@ -33,7 +33,11 @@ object URIExtractor {
  */
 class StringURIExtractor extends URIExtractor {
   override def apply(v1: AnyRef): Seq[Uri] = {
-    Seq(Uri(v1.asInstanceOf[String]))
+    v1 match {
+      case str: String => Seq(Uri(str))
+      case Some(str: String) => Seq(Uri(str))
+      case _ => Nil
+    }
   }
 }
 
