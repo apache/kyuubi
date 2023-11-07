@@ -2059,8 +2059,8 @@
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.OptimizeTableCommand",
   "tableDescs" : [ {
-    "fieldName" : "tableId",
-    "fieldExtractor" : "TableIdentifierOptionTableExtractor",
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
@@ -2068,8 +2068,8 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   }, {
-    "fieldName" : "child",
-    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "fieldName" : "tableId",
+    "fieldExtractor" : "TableIdentifierOptionTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
