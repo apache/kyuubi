@@ -333,34 +333,34 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         val compactOnPath = s"RUN COMPACTION ON '$path1'"
         interceptContains[AccessControlException](
           doAs(someone, sql(compactOnPath)))(
-          s"does not have [create] privilege on [[$path1, $path1/]]")
+          s"does not have [write] privilege on [[$path1, $path1/]]")
 
         val showCompactOnPath = s"SHOW COMPACTION ON '$path1'"
         interceptContains[AccessControlException](
           doAs(someone, sql(showCompactOnPath)))(
-          s"does not have [select] privilege on [[$path1, $path1/]]")
+          s"does not have [read] privilege on [[$path1, $path1/]]")
 
         val path2 = "file:///demo/test/hudi/path"
         val compactOnPath2 = s"RUN COMPACTION ON '$path2'"
         interceptContains[AccessControlException](
           doAs(someone, sql(compactOnPath2)))(
-          s"does not have [create] privilege on [[$path2, $path2/]]")
+          s"does not have [write] privilege on [[$path2, $path2/]]")
 
         val showCompactOnPath2 = s"SHOW COMPACTION ON '$path2'"
         interceptContains[AccessControlException](
           doAs(someone, sql(showCompactOnPath2)))(
-          s"does not have [select] privilege on [[$path2, $path2/]]")
+          s"does not have [read] privilege on [[$path2, $path2/]]")
 
         val path3 = "hdfs://demo/test/hudi/path"
         val compactOnPath3 = s"RUN COMPACTION ON '$path3'"
         interceptContains[AccessControlException](
           doAs(someone, sql(compactOnPath3)))(
-          s"does not have [create] privilege on [[$path3, $path3/]]")
+          s"does not have [write] privilege on [[$path3, $path3/]]")
 
         val showCompactOnPath3 = s"SHOW COMPACTION ON '$path3/'"
         interceptContains[AccessControlException](
           doAs(someone, sql(showCompactOnPath3)))(
-          s"does not have [select] privilege on [[$path3, $path3/]]")
+          s"does not have [read] privilege on [[$path3, $path3/]]")
       }
     }
   }
