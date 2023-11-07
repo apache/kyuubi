@@ -29,6 +29,11 @@ object AccessType extends Enumeration {
     Value
 
   def apply(obj: PrivilegeObject, opType: OperationType, isInput: Boolean): AccessType = {
+    if (obj.privilegeObjectType == DFS_URI || obj.privilegeObjectType == LOCAL_URI) {
+      // This is equivalent to ObjectType.URI
+      return if (isInput) READ else WRITE
+    }
+
     obj.actionType match {
       case PrivilegeObjectActionType.OTHER => opType match {
           case ADD => TEMPUDFADMIN
@@ -36,9 +41,6 @@ object AccessType extends Enumeration {
           case CREATEFUNCTION if obj.privilegeObjectType == FUNCTION => CREATE
           case CREATETABLE | CREATEVIEW | CREATETABLE_AS_SELECT
               if obj.privilegeObjectType == TABLE_OR_VIEW =>
-            if (isInput) SELECT else CREATE
-          case CREATETABLE
-              if obj.privilegeObjectType == DFS_URL || obj.privilegeObjectType == LOCAL_URI =>
             if (isInput) SELECT else CREATE
           case ALTERDATABASE |
               ALTERDATABASE_LOCATION |

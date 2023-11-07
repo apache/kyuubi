@@ -1059,7 +1059,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
                  |SELECT * FROM $db1.$table1""".stripMargin)))(
             s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
-              s"[update] privilege on [[$path, $path/]]")
+              s"[write] privilege on [[$path, $path/]]")
         }
       }
     }
@@ -1080,7 +1080,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |USING parquet
                  |SELECT * FROM $db1.$table1""".stripMargin)))(
             s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
-              s"[update] privilege on [[$path, $path/]]")
+              s"[write] privilege on [[$path, $path/]]")
         }
       }
     }
@@ -1093,7 +1093,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         interceptContains[AccessControlException](doAs(
           someone,
           df.write.format("console").mode("append").save(path.toString)))(
-          s"does not have [update] privilege on [[$path, $path/]]")
+          s"does not have [write] privilege on [[$path, $path/]]")
       }
     }
   }
@@ -1122,12 +1122,12 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                    |USING parquet
                    |SELECT * FROM $db1.$table1""".stripMargin)))(
             s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
-              s"[update] privilege on [[$path, $path/]]")
+              s"[write] privilege on [[$path, $path/]]")
 
           doAs(admin, sql(s"SELECT * FROM parquet.`$path`".stripMargin).explain(true))
           interceptContains[AccessControlException](
             doAs(someone, sql(s"SELECT * FROM parquet.`$path`".stripMargin).explain(true)))(
-            s"does not have [select] privilege on " +
+            s"does not have [read] privilege on " +
               s"[[file:$path, file:$path/]]")
         }
       }
@@ -1149,7 +1149,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           doAs(admin, sql(loadDataSql).explain(true))
           interceptContains[AccessControlException](
             doAs(someone, sql(loadDataSql).explain(true)))(
-            s"does not have [select] privilege on " +
+            s"does not have [read] privilege on " +
               s"[[$path, $path/]]")
         }
       }
