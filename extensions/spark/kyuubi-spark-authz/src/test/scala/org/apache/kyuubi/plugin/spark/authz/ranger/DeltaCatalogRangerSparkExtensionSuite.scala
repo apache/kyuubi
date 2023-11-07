@@ -277,7 +277,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       val optimizeTableSql = s"OPTIMIZE $namespace1.$table1"
       interceptContains[AccessControlException](
         doAs(someone, sql(optimizeTableSql)))(
-        s"does not have [update] privilege on [$namespace1/$table1]")
+        s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(optimizeTableSql))
     }
   }
