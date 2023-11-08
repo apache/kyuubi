@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark.operation
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.getSessionConf
 import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
@@ -34,10 +35,7 @@ class GetTables(
   extends SparkOperation(session) {
 
   protected val ignoreTableProperties =
-    spark.conf.getOption(OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES.key) match {
-      case Some(s) => s.toBoolean
-      case _ => session.sessionManager.getConf.get(OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES)
-    }
+    getSessionConf(OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES, spark)
 
   override def statement: String = {
     super.statement +

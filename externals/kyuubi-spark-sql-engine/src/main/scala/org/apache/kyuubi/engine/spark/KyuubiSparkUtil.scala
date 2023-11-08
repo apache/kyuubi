@@ -26,6 +26,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.kvstore.KVIndex
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.ConfigEntry
 import org.apache.kyuubi.util.SemanticVersion
 
 object KyuubiSparkUtil extends Logging {
@@ -98,4 +99,18 @@ object KyuubiSparkUtil extends Logging {
   // Given that we are on the Spark SQL engine side, the [[org.apache.spark.SPARK_VERSION]] can be
   // represented as the runtime version of the Spark SQL engine.
   lazy val SPARK_ENGINE_RUNTIME_VERSION: SemanticVersion = SemanticVersion(SPARK_VERSION)
+
+  /**
+   * Get session level config value
+   * @param configEntry configEntry
+   * @param spark sparkSession
+   * @tparam T any type
+   * @return session level config value, if spark not set this config,
+   *         default return kyuubi's config
+   */
+  def getSessionConf[T](configEntry: ConfigEntry[T], spark: SparkSession): T = {
+    spark.conf.getOption(configEntry.key).map(configEntry.valueConverter).getOrElse {
+      SparkSQLEngine.kyuubiConf.get(configEntry)
+    }
+  }
 }

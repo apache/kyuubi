@@ -27,10 +27,9 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_SHOW_PROGRESS, ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT, ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SQL_EXECUTION_ID_KEY
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, SPARK_SQL_EXECUTION_ID_KEY}
 import org.apache.kyuubi.engine.spark.operation.ExecuteStatement
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.log.OperationLog
@@ -50,15 +49,14 @@ class SQLOperationListener(
   private lazy val activeStages = new ConcurrentHashMap[SparkStageAttempt, SparkStageInfo]()
   private var executionId: Option[Long] = None
 
-  private val conf: KyuubiConf = operation.getSession.sessionManager.getConf
   private lazy val consoleProgressBar =
-    if (conf.get(ENGINE_SPARK_SHOW_PROGRESS)) {
+    if (getSessionConf(ENGINE_SPARK_SHOW_PROGRESS, spark)) {
       Some(new SparkConsoleProgressBar(
         operation,
         activeJobs,
         activeStages,
-        conf.get(ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL),
-        conf.get(ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT)))
+        getSessionConf(ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL, spark),
+        getSessionConf(ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT, spark)))
     } else {
       None
     }
