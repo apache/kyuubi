@@ -63,7 +63,8 @@ object DatabaseCommands extends CommandSpecs[DatabaseCommandSpec] {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation",
       Seq(DatabaseDesc("namespace", classOf[ResolvedNamespaceDatabaseExtractor])),
-      ALTERDATABASE_LOCATION)
+      ALTERDATABASE_LOCATION,
+      Seq(UriDesc("location", classOf[StringURIExtractor])))
   }
 
   val CreateNamespace = {
@@ -78,7 +79,8 @@ object DatabaseCommands extends CommandSpecs[DatabaseCommandSpec] {
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
       Seq(databaseDesc1, databaseDesc2, databaseDesc3),
-      CREATEDATABASE)
+      CREATEDATABASE,
+      Seq(UriDesc("properties", classOf[PropertiesLocationUriExtractor])))
   }
 
   val DropNamespace = {

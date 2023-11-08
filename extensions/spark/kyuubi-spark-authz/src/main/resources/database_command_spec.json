@@ -30,7 +30,11 @@
     "isInput" : false
   } ],
   "opType" : "CREATEDATABASE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "properties",
+    "fieldExtractor" : "PropertiesLocationUriExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace",
   "databaseDescs" : [ {
@@ -83,7 +87,11 @@
     "isInput" : false
   } ],
   "opType" : "ALTERDATABASE_LOCATION",
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "location",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties",
   "databaseDescs" : [ {

@@ -19,7 +19,6 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.nio.file.Path
 
-import scala.collection.Seq
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -1158,7 +1157,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("CreateDatabaseCommand/AlterDatabaseSetLocationCommand") {
-    assume(!isSparkV33OrGreater)
     val db1 = "db1"
     withSingleCallEnabled {
       withTempDir { path1 =>

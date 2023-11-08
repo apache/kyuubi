@@ -47,9 +47,15 @@ class CatalogStorageFormatURIExtractor extends URIExtractor {
   }
 }
 
-class OptionsUriExtractor extends URIExtractor {
+class PropertiesPathUriExtractor extends URIExtractor {
   override def apply(v1: AnyRef): Seq[Uri] = {
     v1.asInstanceOf[Map[String, String]].get("path").map(Uri).toSeq
+  }
+}
+
+class PropertiesLocationUriExtractor extends URIExtractor {
+  override def apply(v1: AnyRef): Seq[Uri] = {
+    v1.asInstanceOf[Map[String, String]].get("location").map(Uri).toSeq
   }
 }
 
