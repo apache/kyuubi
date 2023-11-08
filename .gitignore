@@ -42,6 +42,7 @@
 .settings
 build/apache-maven*
 build/release/tmp
+build/release/*.txt
 build/scala*
 build/test
 target/
