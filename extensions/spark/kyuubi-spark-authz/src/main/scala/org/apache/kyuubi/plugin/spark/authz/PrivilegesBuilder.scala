@@ -119,8 +119,7 @@ object PrivilegesBuilder {
         if (tables.nonEmpty) {
           tables.foreach(mergeProjection(_, scan))
         } else {
-          getScanSpec(scan).uris(scan).foreach(
-            privilegeObjects += PrivilegeObject(_, PrivilegeObjectActionType.OTHER))
+          getScanSpec(scan).uris(scan).foreach(privilegeObjects += PrivilegeObject(_))
         }
 
       case u if u.nodeName == "UnresolvedRelation" =>
@@ -204,11 +203,10 @@ object PrivilegesBuilder {
         spec.uriDescs.foreach { ud =>
           try {
             val uris = ud.extract(plan)
-            val actionType = ud.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
             if (ud.isInput) {
-              inputObjs ++= uris.map(PrivilegeObject(_, actionType))
+              inputObjs ++= uris.map(PrivilegeObject(_))
             } else {
-              outputObjs ++= uris.map(PrivilegeObject(_, actionType))
+              outputObjs ++= uris.map(PrivilegeObject(_))
             }
           } catch {
             case e: Exception =>

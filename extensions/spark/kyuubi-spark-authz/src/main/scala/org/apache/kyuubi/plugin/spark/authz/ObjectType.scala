@@ -33,7 +33,7 @@ object ObjectType extends Enumeration {
       case PrivilegeObjectType.TABLE_OR_VIEW if opType.toString.contains("VIEW") => VIEW
       case PrivilegeObjectType.TABLE_OR_VIEW => TABLE
       case PrivilegeObjectType.FUNCTION => FUNCTION
-      case PrivilegeObjectType.DFS_URL | PrivilegeObjectType.LOCAL_URI => URI
+      case PrivilegeObjectType.DFS_URI | PrivilegeObjectType.LOCAL_URI => URI
     }
   }
 }

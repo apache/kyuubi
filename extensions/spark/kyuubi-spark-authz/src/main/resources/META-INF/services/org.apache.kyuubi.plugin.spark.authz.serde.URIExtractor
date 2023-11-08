@@ -19,3 +19,4 @@ org.apache.kyuubi.plugin.spark.authz.serde.CatalogStorageFormatURIExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.BaseRelationFileIndexURIExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.OptionsUriExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.StringURIExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.StringSeqURIExtractor

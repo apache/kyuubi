@@ -27,7 +27,6 @@
   "uriDescs" : [ {
     "fieldName" : "relation",
     "fieldExtractor" : "BaseRelationFileIndexURIExtractor",
-    "actionTypeDesc" : null,
     "isInput" : false
   } ]
 }, {

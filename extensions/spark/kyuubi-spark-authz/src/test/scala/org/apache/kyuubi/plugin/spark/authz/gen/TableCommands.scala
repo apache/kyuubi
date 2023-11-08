@@ -552,22 +552,14 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
   val InsertIntoDataSourceDir = {
     val cmd = "org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand"
     val queryDesc = queryQueryDesc
-    val actionTypeDesc = overwriteActionTypeDesc
-    val uriDesc = UriDesc(
-      "storage",
-      classOf[CatalogStorageFormatURIExtractor],
-      actionTypeDesc = Some(actionTypeDesc))
+    val uriDesc = UriDesc("storage", classOf[CatalogStorageFormatURIExtractor])
     TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
   }
 
   val SaveIntoDataSourceCommand = {
     val cmd = "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand"
     val queryDesc = queryQueryDesc
-    val actionTypeDesc = ActionTypeDesc("mode", classOf[SaveModeActionTypeExtractor])
-    val uriDesc = UriDesc(
-      "options",
-      classOf[OptionsUriExtractor],
-      actionTypeDesc = Some(actionTypeDesc))
+    val uriDesc = UriDesc("options", classOf[OptionsUriExtractor])
     TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
   }
 
@@ -617,7 +609,25 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
   }
 
+  val AddArchivesCommand = {
+    val cmd = "org.apache.spark.sql.execution.command.AddArchivesCommand"
+    val uriDesc = UriDesc("paths", classOf[StringSeqURIExtractor], isInput = true)
+    TableCommandSpec(cmd, Nil, ADD, uriDescs = Seq(uriDesc))
+  }
+
+  // For spark-3.1
+  val AddFileCommand = {
+    val cmd = "org.apache.spark.sql.execution.command.AddFileCommand"
+    val uriDesc = UriDesc("path", classOf[StringURIExtractor], isInput = true)
+    TableCommandSpec(cmd, Nil, ADD, uriDescs = Seq(uriDesc))
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
+    AddArchivesCommand,
+    AddArchivesCommand.copy(classname = "org.apache.spark.sql.execution.command.AddFilesCommand"),
+    AddArchivesCommand.copy(classname = "org.apache.spark.sql.execution.command.AddJarsCommand"),
+    AddFileCommand,
+    AddFileCommand.copy(classname = "org.apache.spark.sql.execution.command.AddJarCommand"),
     AddPartitions,
     DropPartitions,
     RenamePartitions,
