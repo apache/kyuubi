@@ -634,7 +634,6 @@
   "uriDescs" : [ {
     "fieldName" : "paths",
     "fieldExtractor" : "StringSeqURIExtractor",
-    "actionTypeDesc" : null,
     "isInput" : true
   } ]
 }, {
@@ -645,7 +644,6 @@
   "uriDescs" : [ {
     "fieldName" : "paths",
     "fieldExtractor" : "StringSeqURIExtractor",
-    "actionTypeDesc" : null,
     "isInput" : true
   } ]
 }, {
@@ -656,7 +654,6 @@
   "uriDescs" : [ {
     "fieldName" : "paths",
     "fieldExtractor" : "StringSeqURIExtractor",
-    "actionTypeDesc" : null,
     "isInput" : true
   } ]
 }, {
