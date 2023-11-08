@@ -1156,6 +1156,23 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("Add resource command") {
+    withTempDir { path =>
+      withSingleCallEnabled {
+        val supportedCommand = if (isSparkV32OrGreater) {
+          Seq("JAR", "FILE", "ARCHIVE")
+        } else {
+          Seq("JAR", "FILE")
+        }
+        supportedCommand.foreach { cmd =>
+          interceptContains[AccessControlException](
+            doAs(someone, sql(s"ADD $cmd $path")))(
+            s"does not have [read] privilege on [[$path, $path/]]")
+        }
+      }
+    }
+  }
+
   test("CreateDatabaseCommand/AlterDatabaseSetLocationCommand") {
     val db1 = "db1"
     withSingleCallEnabled {
