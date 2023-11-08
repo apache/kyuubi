@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.phoenix
+package org.apache.kyuubi.engine.jdbc.postgresql
 
 import org.apache.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
 
@@ -22,11 +22,11 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-class OperationWithPhoenixEngineSuite extends PhoenixOperationSuite with HiveJDBCTestHelper {
+class OperationWithPostgreSQLEngineSuite extends PostgreSQLOperationSuite with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = jdbcConnectionUrl
 
-  test("phoenix - test for Jdbc engine getInfo") {
+  test("postgreSQL - test for Jdbc engine getInfo") {
     val metaData = ConnectionProvider.create(kyuubiConf).getMetaData
 
     withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {

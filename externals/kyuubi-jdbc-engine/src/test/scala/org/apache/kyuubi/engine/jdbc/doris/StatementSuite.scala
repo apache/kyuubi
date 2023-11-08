@@ -22,7 +22,7 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class StatementSuite extends WithDorisEngine with HiveJDBCTestHelper {
 
-  test("test select") {
+  test("doris - test select") {
     withJdbcStatement("test1") { statement =>
       statement.execute("create database if not exists db1")
       statement.execute("use db1")
@@ -44,7 +44,7 @@ class StatementSuite extends WithDorisEngine with HiveJDBCTestHelper {
     }
   }
 
-  test("test types") {
+  test("doris - test types") {
     withJdbcStatement("test1") { statement =>
       statement.execute("create database if not exists db1")
       statement.execute("use db1")

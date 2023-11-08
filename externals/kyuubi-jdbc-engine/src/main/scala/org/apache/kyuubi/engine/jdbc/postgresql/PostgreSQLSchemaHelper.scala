@@ -14,26 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.phoenix
+package org.apache.kyuubi.engine.jdbc.postgresql
 
-import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.hive.service.rpc.thrift._
 
-class SessionSuite extends WithPhoenixEngine with HiveJDBCTestHelper {
+import org.apache.kyuubi.engine.jdbc.schema.SchemaHelper
 
-  test("phoenix - test session") {
-    withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery(
-        "select '1' as id")
-      val metadata = resultSet.getMetaData
-      for (i <- 1 to metadata.getColumnCount) {
-        assert(metadata.getColumnName(i) == "ID")
-      }
-      while (resultSet.next()) {
-        val id = resultSet.getObject(1)
-        assert(id == "1")
-      }
-    }
-  }
+class PostgreSQLSchemaHelper extends SchemaHelper {
 
-  override protected def jdbcUrl: String = jdbcConnectionUrl
+  override def smallIntToTTypeId: TTypeId = TTypeId.INT_TYPE
 }

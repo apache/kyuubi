@@ -41,11 +41,11 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
     throw KyuubiSQLException.featureNotSupported()
   }
 
-  def getCatalogsOperation(session: Session): Operation = {
+  def getCatalogsOperation(): String = {
     throw KyuubiSQLException.featureNotSupported()
   }
 
-  def getSchemasOperation(session: Session): Operation = {
+  def getSchemasOperation(catalog: String, schema: String): String = {
     throw KyuubiSQLException.featureNotSupported()
   }
 

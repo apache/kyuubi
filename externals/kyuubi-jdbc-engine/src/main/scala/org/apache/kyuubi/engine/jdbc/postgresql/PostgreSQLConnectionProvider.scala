@@ -14,26 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.phoenix
+package org.apache.kyuubi.engine.jdbc.postgresql
 
-import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
 
-class SessionSuite extends WithPhoenixEngine with HiveJDBCTestHelper {
+class PostgreSQLConnectionProvider extends JdbcConnectionProvider {
 
-  test("phoenix - test session") {
-    withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery(
-        "select '1' as id")
-      val metadata = resultSet.getMetaData
-      for (i <- 1 to metadata.getColumnCount) {
-        assert(metadata.getColumnName(i) == "ID")
-      }
-      while (resultSet.next()) {
-        val id = resultSet.getObject(1)
-        assert(id == "1")
-      }
-    }
+  override val name: String = classOf[PostgreSQLConnectionProvider].getSimpleName
+
+  override val driverClass: String = "org.postgresql.Driver"
+
+  override def canHandle(providerClass: String): Boolean = {
+    driverClass.equalsIgnoreCase(providerClass)
   }
 
-  override protected def jdbcUrl: String = jdbcConnectionUrl
 }

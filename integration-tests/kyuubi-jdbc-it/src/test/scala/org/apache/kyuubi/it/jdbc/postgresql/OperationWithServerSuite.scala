@@ -14,26 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.phoenix
 
-import org.apache.kyuubi.operation.HiveJDBCTestHelper
+package org.apache.kyuubi.it.jdbc.postgresql
 
-class SessionSuite extends WithPhoenixEngine with HiveJDBCTestHelper {
+import org.apache.kyuubi.engine.jdbc.postgresql.PostgreSQLOperationSuite
 
-  test("phoenix - test session") {
-    withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery(
-        "select '1' as id")
-      val metadata = resultSet.getMetaData
-      for (i <- 1 to metadata.getColumnCount) {
-        assert(metadata.getColumnName(i) == "ID")
-      }
-      while (resultSet.next()) {
-        val id = resultSet.getObject(1)
-        assert(id == "1")
-      }
-    }
-  }
+class OperationWithServerSuite extends PostgreSQLOperationSuite
+  with WithKyuubiServerAndPostgreSQLContainer {
 
-  override protected def jdbcUrl: String = jdbcConnectionUrl
+  override protected def jdbcUrl: String = getJdbcUrl
+
 }

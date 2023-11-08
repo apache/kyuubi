@@ -14,26 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.phoenix
+package org.apache.kyuubi.engine.jdbc.postgresql
 
-import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
 
-class SessionSuite extends WithPhoenixEngine with HiveJDBCTestHelper {
+trait WithPostgreSQLEngine extends WithJdbcEngine with WithPostgreSQLContainer {
 
-  test("phoenix - test session") {
-    withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery(
-        "select '1' as id")
-      val metadata = resultSet.getMetaData
-      for (i <- 1 to metadata.getColumnCount) {
-        assert(metadata.getColumnName(i) == "ID")
-      }
-      while (resultSet.next()) {
-        val id = resultSet.getObject(1)
-        assert(id == "1")
-      }
-    }
-  }
+  override def withKyuubiConf: Map[String, String] = Map(
+    ENGINE_SHARE_LEVEL.key -> "SERVER",
+    ENGINE_JDBC_CONNECTION_URL.key -> s"jdbc:postgresql://$queryUrl/postgres",
+    ENGINE_JDBC_CONNECTION_USER.key -> "postgres",
+    ENGINE_JDBC_CONNECTION_PASSWORD.key -> "postgres",
+    ENGINE_TYPE.key -> "jdbc",
+    ENGINE_JDBC_SHORT_NAME.key -> "postgresql",
+    ENGINE_JDBC_DRIVER_CLASS.key -> "org.postgresql.Driver")
 
-  override protected def jdbcUrl: String = jdbcConnectionUrl
 }

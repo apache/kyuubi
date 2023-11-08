@@ -22,7 +22,7 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class StatementSuite extends WithPhoenixEngine with HiveJDBCTestHelper {
 
-  test("test select") {
+  test("phoenix - test select") {
     withJdbcStatement("test1") { statement =>
       statement.execute("create table db1.test1(id bigint primary key, " +
         "name varchar(255), age integer)")
