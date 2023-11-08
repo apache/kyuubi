@@ -2077,7 +2077,7 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "OPTIMIZETABLE",
+  "opType" : "ALTERTABLE_COMPACT",
   "queryDescs" : [ ],
   "uriDescs" : [ ]
 }, {

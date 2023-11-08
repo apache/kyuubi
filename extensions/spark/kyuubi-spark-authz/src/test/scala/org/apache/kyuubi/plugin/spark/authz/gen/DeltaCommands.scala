@@ -58,7 +58,7 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
     val cmd = "org.apache.spark.sql.delta.commands.OptimizeTableCommand"
     val childDesc = TableDesc("child", classOf[ResolvedTableTableExtractor])
     val tableDesc = TableDesc("tableId", classOf[TableIdentifierOptionTableExtractor])
-    TableCommandSpec(cmd, Seq(childDesc, tableDesc), OPTIMIZETABLE)
+    TableCommandSpec(cmd, Seq(childDesc, tableDesc), ALTERTABLE_COMPACT)
   }
 
   override def specs: Seq[TableCommandSpec] = Seq(
