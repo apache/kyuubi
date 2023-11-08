@@ -31,7 +31,7 @@ import org.apache.thrift.transport.TTransport
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, SESSION_CLOSE_ON_DISCONNECT}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, PROXY_USER, SESSION_CLOSE_ON_DISCONNECT}
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -127,7 +127,8 @@ abstract class TFrontendService(name: String)
       sessionConf: java.util.Map[String, String],
       ipAddress: String,
       realUser: String): String = {
-    val proxyUser = sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER)
+    val proxyUser = Option(sessionConf.get(PROXY_USER.key))
+      .getOrElse(sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER))
     if (proxyUser == null) {
       realUser
     } else {

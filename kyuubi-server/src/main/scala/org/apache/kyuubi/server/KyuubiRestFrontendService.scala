@@ -219,9 +219,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       Option(AuthenticationFilter.getUserName).filter(_.nonEmpty).getOrElse("anonymous"))
   }
 
-  def getSessionUser(hs2ProxyUser: String): String = {
-    val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
-      Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
+  def getSessionUser(proxyUser: String): String = {
+    // Internally, we use PROXY_USER to unify the key as proxyUser
+    val sessionConf = Option(proxyUser).filter(_.nonEmpty).map(proxyUser =>
+      Map(PROXY_USER.key -> proxyUser)).getOrElse(Map())
     getSessionUser(sessionConf)
   }
 
@@ -250,7 +251,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     if (sessionConf == null) {
       realUser
     } else {
-      sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER).map { proxyUser =>
+      sessionConf.get(PROXY_USER.key).map { proxyUser =>
         if (!isAdministrator(realUser)) {
           KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
         }

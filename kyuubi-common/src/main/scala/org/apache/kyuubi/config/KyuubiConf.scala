@@ -1932,6 +1932,17 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("server_operation_logs")
 
+  val PROXY_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.proxy.user")
+      .doc("An alternative to hive.server2.proxy.user. " +
+        "The current behavior is consistent with hive.server2.proxy.user " +
+        "and takes effect only in FrontendServices, " +
+        "which contains TFrontendService and KyuubiRestFrontendService. " +
+        "When both parameters are set, kyuubi.proxy.user takes precedence.")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
+
   @deprecated("using kyuubi.engine.share.level instead", "1.2.0")
   val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] =
     buildConf("kyuubi.session.engine.share.level")
@@ -2718,9 +2729,7 @@ object KyuubiConf {
   val SERVER_ADMINISTRATORS: ConfigEntry[Set[String]] =
     buildConf("kyuubi.server.administrators")
       .doc("Comma-separated list of Kyuubi service administrators. " +
-        "We use this config to grant admin permission to any service accounts when " +
-        s"security mechanism is enabled. Note, when ${AUTHENTICATION_METHOD.key} is " +
-        "configured to NOSASL or NONE, everyone is treated as administrator.")
+        "We use this config to grant admin permission to any service accounts.")
       .version("1.8.0")
       .serverOnly
       .stringConf
