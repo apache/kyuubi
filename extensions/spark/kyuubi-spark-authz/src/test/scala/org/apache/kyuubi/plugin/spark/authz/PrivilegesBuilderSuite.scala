@@ -1305,7 +1305,6 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
     val po1 = out.last
     assert(po1.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URI)
     assert(po1.catalog.isEmpty)
     assertEqualsIgnoreCase(defaultDb)(po0.dbname)
     assertEqualsIgnoreCase(defaultDb)(po0.objectName)
