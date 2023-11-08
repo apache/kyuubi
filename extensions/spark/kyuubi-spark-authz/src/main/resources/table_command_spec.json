@@ -637,6 +637,16 @@
     "isInput" : true
   } ]
 }, {
+  "classname" : "org.apache.spark.sql.execution.command.AddFileCommand",
+  "tableDescs" : [ ],
+  "opType" : "ADD",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : true
+  } ]
+}, {
   "classname" : "org.apache.spark.sql.execution.command.AddFilesCommand",
   "tableDescs" : [ ],
   "opType" : "ADD",
@@ -644,6 +654,16 @@
   "uriDescs" : [ {
     "fieldName" : "paths",
     "fieldExtractor" : "StringSeqURIExtractor",
+    "isInput" : true
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AddJarCommand",
+  "tableDescs" : [ ],
+  "opType" : "ADD",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
     "isInput" : true
   } ]
 }, {

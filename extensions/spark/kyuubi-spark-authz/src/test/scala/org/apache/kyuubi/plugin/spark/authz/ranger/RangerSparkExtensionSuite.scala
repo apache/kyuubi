@@ -1159,9 +1159,14 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   test("Add resource command") {
     withTempDir { path =>
       withSingleCallEnabled {
-        Seq("JAR", "FILE", "ARCHIVE").foreach { cmd =>
+        val supportedCommand = if (isSparkV32OrGreater) {
+          Seq("JAR", "FILE", "ARCHIVE")
+        } else {
+          Seq("JAR", "FILE")
+        }
+        supportedCommand.foreach { cmd =>
           interceptContains[AccessControlException](
-            doAs(someone, sql(s"ADD $cmd '$path'")))(
+            doAs(someone, sql(s"ADD $cmd $path")))(
             s"does not have [read] privilege on [[$path, $path/]]")
         }
       }

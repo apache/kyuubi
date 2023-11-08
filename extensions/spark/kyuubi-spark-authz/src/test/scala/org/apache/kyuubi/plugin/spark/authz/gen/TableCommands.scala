@@ -615,10 +615,19 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Nil, ADD, uriDescs = Seq(uriDesc))
   }
 
+  // For spark-3.1
+  val AddFileCommand = {
+    val cmd = "org.apache.spark.sql.execution.command.AddFileCommand"
+    val uriDesc = UriDesc("path", classOf[StringURIExtractor], isInput = true)
+    TableCommandSpec(cmd, Nil, ADD, uriDescs = Seq(uriDesc))
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     AddArchivesCommand,
     AddArchivesCommand.copy(classname = "org.apache.spark.sql.execution.command.AddFilesCommand"),
     AddArchivesCommand.copy(classname = "org.apache.spark.sql.execution.command.AddJarsCommand"),
+    AddFileCommand,
+    AddFileCommand.copy(classname = "org.apache.spark.sql.execution.command.AddJarCommand"),
     AddPartitions,
     DropPartitions,
     RenamePartitions,
