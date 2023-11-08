@@ -88,16 +88,14 @@ object PrivilegeObject {
     ) // TODO: Support catalog for function
   }
 
-  def apply(
-      uri: Uri,
-      actionType: PrivilegeObjectActionType): PrivilegeObject = {
+  def apply(uri: Uri): PrivilegeObject = {
     val privilegeObjectType = Option(new URI(uri.path).getScheme) match {
       case Some("file") => LOCAL_URI
       case _ => DFS_URI
     }
     new PrivilegeObject(
       privilegeObjectType,
-      actionType,
+      PrivilegeObjectActionType.OTHER,
       uri.path,
       null,
       Nil,
