@@ -27,6 +27,7 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.{LINEAGE_PARSER_PLUGIN_PROVIDER, OPERATION_PLAN_ONLY_EXCLUDES, OPERATION_PLAN_ONLY_OUT_STYLE}
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.getSessionConf
 import org.apache.kyuubi.operation.{AnalyzeMode, ArrayFetchIterator, ExecutionMode, IterableFetchIterator, JsonStyle, LineageMode, OperationHandle, OptimizeMode, OptimizeWithStatsMode, ParseMode, PhysicalMode, PlainStyle, PlanOnlyMode, PlanOnlyStyle, UnknownMode, UnknownStyle}
 import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
 import org.apache.kyuubi.operation.PlanOnlyStyle.{notSupportedStyleError, unknownStyleError}
@@ -49,9 +50,7 @@ class PlanOnlyStatement(
       .getOrElse(session.sessionManager.getConf.get(OPERATION_PLAN_ONLY_EXCLUDES))
   }
 
-  private val style = PlanOnlyStyle.fromString(spark.conf.get(
-    OPERATION_PLAN_ONLY_OUT_STYLE.key,
-    session.sessionManager.getConf.get(OPERATION_PLAN_ONLY_OUT_STYLE)))
+  private val style = PlanOnlyStyle.fromString(getSessionConf(OPERATION_PLAN_ONLY_OUT_STYLE, spark))
   spark.conf.set(OPERATION_PLAN_ONLY_OUT_STYLE.key, style.name)
 
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
@@ -74,7 +73,6 @@ class PlanOnlyStatement(
       withLocalProperties {
         SQLConf.withExistingConf(spark.sessionState.conf) {
           val parsed = spark.sessionState.sqlParser.parsePlan(statement)
-
           parsed match {
             case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
               result = spark.sql(statement)

@@ -31,7 +31,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE, SESSION_USER_SIGN_ENABLED}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, SPARK_SCHEDULER_POOL_KEY}
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.engine.spark.schema.{RowSet, SchemaHelper}
@@ -63,11 +63,8 @@ abstract class SparkOperation(session: Session)
   override def redactedStatement: String =
     redact(spark.sessionState.conf.stringRedactionPattern, statement)
 
-  protected val operationSparkListenerEnabled =
-    spark.conf.getOption(OPERATION_SPARK_LISTENER_ENABLED.key) match {
-      case Some(s) => s.toBoolean
-      case _ => session.sessionManager.getConf.get(OPERATION_SPARK_LISTENER_ENABLED)
-    }
+  protected val operationSparkListenerEnabled: Boolean =
+    getSessionConf(OPERATION_SPARK_LISTENER_ENABLED, spark)
 
   protected val operationListener: Option[SQLOperationListener] =
     if (operationSparkListenerEnabled) {
@@ -80,10 +77,7 @@ abstract class SparkOperation(session: Session)
     operationListener.foreach(spark.sparkContext.addSparkListener(_))
   }
 
-  private val progressEnable = spark.conf.getOption(SESSION_PROGRESS_ENABLE.key) match {
-    case Some(s) => s.toBoolean
-    case _ => session.sessionManager.getConf.get(SESSION_PROGRESS_ENABLE)
-  }
+  private val progressEnable: Boolean = getSessionConf(SESSION_PROGRESS_ENABLE, spark)
 
   protected def supportProgress: Boolean = false
 
@@ -113,9 +107,7 @@ abstract class SparkOperation(session: Session)
   protected val forceCancel =
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
 
-  protected val schedulerPool =
-    spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
-      session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
+  protected val schedulerPool = getSessionConf(KyuubiConf.OPERATION_SCHEDULER_POOL, spark)
 
   protected val isSessionUserSignEnabled: Boolean = spark.sparkContext.getConf.getBoolean(
     s"spark.${SESSION_USER_SIGN_ENABLED.key}",

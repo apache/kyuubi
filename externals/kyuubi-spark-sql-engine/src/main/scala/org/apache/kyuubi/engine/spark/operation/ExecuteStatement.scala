@@ -148,8 +148,7 @@ class ExecuteStatement(
       s"__kyuubi_operation_result_arrow_timestampAsString__=$timestampAsString")
 
   private def collectAsIterator(resultDF: DataFrame): FetchIterator[_] = {
-    val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
-      .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
+    val resultMaxRows: Int = getSessionConf(OPERATION_RESULT_MAX_ROWS, spark)
     if (incrementalCollect) {
       if (resultMaxRows > 0) {
         warn(s"Ignore ${OPERATION_RESULT_MAX_ROWS.key} on incremental collect mode.")
