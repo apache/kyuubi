@@ -26,7 +26,7 @@ object DatabaseCommands extends CommandSpecs[DatabaseCommandSpec] {
     DatabaseCommandSpec(
       "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
       Seq(DatabaseDesc("databaseName", classOf[StringDatabaseExtractor])),
-      CREATEDATABASE,
+      CREATEDATABASE  ,
       Seq(UriDesc("path", classOf[StringURIExtractor])))
   }
 

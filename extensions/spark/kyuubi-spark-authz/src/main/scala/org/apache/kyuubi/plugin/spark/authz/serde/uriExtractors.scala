@@ -34,8 +34,8 @@ object URIExtractor {
 class StringURIExtractor extends URIExtractor {
   override def apply(v1: AnyRef): Seq[Uri] = {
     v1 match {
-      case str: String => Seq(Uri(str))
-      case Some(str: String) => Seq(Uri(str))
+      case uriPath: String => Seq(Uri(uriPath))
+      case Some(uriPath: String) => Seq(Uri(uriPath))
       case _ => Nil
     }
   }

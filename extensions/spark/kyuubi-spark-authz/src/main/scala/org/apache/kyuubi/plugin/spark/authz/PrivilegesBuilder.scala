@@ -192,11 +192,10 @@ object PrivilegesBuilder {
         desc.uriDescs.foreach { ud =>
           try {
             val uris = ud.extract(plan)
-            val actionType = ud.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
             if (ud.isInput) {
-              inputObjs ++= uris.map(PrivilegeObject(_, actionType))
+              inputObjs ++= uris.map(PrivilegeObject(_))
             } else {
-              outputObjs ++= uris.map(PrivilegeObject(_, actionType))
+              outputObjs ++= uris.map(PrivilegeObject(_))
             }
           } catch {
             case e: Exception =>

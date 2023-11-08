@@ -57,7 +57,7 @@ trait CommandSpecs[T <: CommandSpec] {
 case class DatabaseCommandSpec(
     classname: String,
     databaseDescs: Seq[DatabaseDesc],
-    opType: String = "QUERY",
+    opType: String = OperationType.QUERY.toString,
     uriDescs: Seq[UriDesc] = Nil) extends CommandSpec {}
 
 /**

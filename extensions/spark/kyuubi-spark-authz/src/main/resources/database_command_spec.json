@@ -116,7 +116,6 @@
   "uriDescs" : [ {
     "fieldName" : "location",
     "fieldExtractor" : "StringURIExtractor",
-    "actionTypeDesc" : null,
     "isInput" : false
   } ]
 }, {
@@ -141,7 +140,6 @@
   "uriDescs" : [ {
     "fieldName" : "path",
     "fieldExtractor" : "StringURIExtractor",
-    "actionTypeDesc" : null,
     "isInput" : false
   } ]
 }, {

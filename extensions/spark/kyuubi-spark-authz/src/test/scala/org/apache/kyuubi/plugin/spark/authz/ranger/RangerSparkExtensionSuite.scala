@@ -1158,7 +1158,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("CreateDatabaseCommand/AlterDatabaseSetLocationCommand") {
-    assume(SPARK_RUNTIME_VERSION <= "3.2")
+    assume(!isSparkV33OrGreater)
     val db1 = "db1"
     withSingleCallEnabled {
       withTempDir { path1 =>
