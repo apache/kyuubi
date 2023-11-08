@@ -738,7 +738,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation")
     assert(operationType === ALTERDATABASE_LOCATION)
     assert(in.isEmpty)
-    assert(out.size === 1)
+    assert(out.size === 2)
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
