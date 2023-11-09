@@ -1197,4 +1197,47 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("AlterTableSetLocationCommand/AlterTableAddPartitionCommand") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val table2 = "table2"
+    withSingleCallEnabled {
+      withTempDir { path1 =>
+        withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$table2", "table"))) {
+          doAs(
+            admin,
+            sql(
+              s"""
+                 |CREATE TABLE IF NOT EXISTS $db1.$table1(
+                 |id int,
+                 |scope int,
+                 |day string)
+                 |PARTITIONED BY (day)
+                 |""".stripMargin))
+          interceptContains[AccessControlException](
+            doAs(someone, sql(s"ALTER TABLE $db1.$table1 SET LOCATION '$path1'")))(
+            s"does not have [alter] privilege on [$db1/$table1], " +
+              s"[write] privilege on [[$path1, $path1/]]")
+
+          withTempDir { path2 =>
+            withTempDir { path3 =>
+              interceptContains[AccessControlException](
+                doAs(
+                  someone,
+                  sql(
+                    s"""
+                       |ALTER TABLE $db1.$table1
+                       |ADD
+                       |PARTITION (day='2023-01-01') LOCATION '$path2'
+                       |PARTITION (day='2023-01-02') LOCATION '$path3'
+                       |""".stripMargin)))(
+                s"does not have [alter] privilege on [$db1/$table1/day], " +
+                  s"[write] privilege on [[$path2, $path2/],[$path3, $path3/]]")
+            }
+          }
+        }
+      }
+    }
+  }
 }

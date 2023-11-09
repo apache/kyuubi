@@ -306,17 +306,26 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
 
     assert(in.isEmpty)
-    assert(out.size === 1)
-    val po = out.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.catalog.isEmpty)
-    assertEqualsIgnoreCase(reusedDb)(po.dbname)
-    assertEqualsIgnoreCase(reusedPartTableShort)(po.objectName)
-    assert(po.columns.head === "pid")
-    checkTableOwner(po)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    assert(out.size === 2)
+    val po0 = out.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.catalog.isEmpty)
+    assertEqualsIgnoreCase(reusedDb)(po0.dbname)
+    assertEqualsIgnoreCase(reusedPartTableShort)(po0.objectName)
+    assert(po0.columns.head === "pid")
+    checkTableOwner(po0)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
+    assert(accessType0 === AccessType.ALTER)
+
+    val po1 = out.last
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.catalog.isEmpty)
+    assert(po1.dbname === newLoc)
+    assert(po1.columns === Seq.empty)
+    checkTableOwner(po1)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+    assert(accessType1 === AccessType.WRITE)
   }
 
   test("AlterTable(Un)SetPropertiesCommand") {
