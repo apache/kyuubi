@@ -21,7 +21,7 @@ import java.util
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DEFAULT_FETCH_SIZE, ENGINE_JDBC_SHORT_NAME}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_FETCH_SIZE, ENGINE_JDBC_SHORT_NAME}
 import org.apache.kyuubi.engine.jdbc.dialect.JdbcDialects.defaultFetchSize
 import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
 import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
@@ -88,7 +88,7 @@ object JdbcDialects extends Logging {
 
   var defaultFetchSize: Int = 0
   def get(conf: KyuubiConf): JdbcDialect = {
-    defaultFetchSize = conf.get(ENGINE_JDBC_DEFAULT_FETCH_SIZE)
+    defaultFetchSize = conf.get(ENGINE_JDBC_FETCH_SIZE)
     val shortName: String = conf.get(ENGINE_JDBC_SHORT_NAME).getOrElse {
       val url = conf.get(ENGINE_JDBC_CONNECTION_URL).get
       assert(url.length > 5 && url.substring(5).contains(":"))

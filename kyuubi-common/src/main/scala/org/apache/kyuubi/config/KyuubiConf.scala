@@ -2810,8 +2810,8 @@ object KyuubiConf {
       .toSequence(";")
       .createWithDefault(Nil)
 
-  val ENGINE_JDBC_DEFAULT_FETCH_SIZE: ConfigEntry[Int] =
-    buildConf("kyuubi.engine.jdbc.default.fetch.size")
+  val ENGINE_JDBC_FETCH_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.engine.jdbc.fetch.size")
       .doc("The default fetch size of JDBC engine")
       .version("1.9.0")
       .intConf
