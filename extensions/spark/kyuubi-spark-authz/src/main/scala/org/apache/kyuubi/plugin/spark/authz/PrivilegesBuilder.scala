@@ -301,7 +301,6 @@ object PrivilegesBuilder {
       spark: SparkSession): PrivilegesAndOpType = {
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
-    println(plan)
     val opType = plan match {
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
