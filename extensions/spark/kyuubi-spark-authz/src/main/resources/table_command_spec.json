@@ -711,7 +711,11 @@
   } ],
   "opType" : "ALTERTABLE_ADDPARTS",
   "queryDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "partitionSpecsAndLocs",
+    "fieldExtractor" : "PartitionLocsSeqURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableChangeColumnCommand",
   "tableDescs" : [ {
@@ -835,7 +839,11 @@
   } ],
   "opType" : "ALTERTABLE_LOCATION",
   "queryDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "location",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableSetPropertiesCommand",
   "tableDescs" : [ {

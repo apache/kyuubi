@@ -73,3 +73,9 @@ class BaseRelationFileIndexURIExtractor extends URIExtractor {
     }
   }
 }
+
+class PartitionLocsSeqURIExtractor extends URIExtractor {
+  override def apply(v1: AnyRef): Seq[Uri] = {
+    v1.asInstanceOf[Seq[(_, Option[String])]].flatMap(_._2).map(Uri)
+  }
+}
