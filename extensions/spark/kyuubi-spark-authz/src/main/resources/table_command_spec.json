@@ -476,11 +476,7 @@
     "fieldName" : "query",
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ],
-  "uriDescs" : [ {
-    "fieldName" : "tableSpec",
-    "fieldExtractor" : "TableSpecURIExtractor",
-    "isInput" : false
-  } ]
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceTable",
   "tableDescs" : [ {
