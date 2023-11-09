@@ -189,6 +189,19 @@ object PrivilegesBuilder {
               LOG.debug(databaseDesc.error(plan, e))
           }
         }
+        desc.uriDescs.foreach { ud =>
+          try {
+            val uris = ud.extract(plan)
+            if (ud.isInput) {
+              inputObjs ++= uris.map(PrivilegeObject(_))
+            } else {
+              outputObjs ++= uris.map(PrivilegeObject(_))
+            }
+          } catch {
+            case e: Exception =>
+              LOG.debug(ud.error(plan, e))
+          }
+        }
         desc.operationType
 
       case classname if TABLE_COMMAND_SPECS.contains(classname) =>

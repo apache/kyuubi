@@ -559,7 +559,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
   val SaveIntoDataSourceCommand = {
     val cmd = "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand"
     val queryDesc = queryQueryDesc
-    val uriDesc = UriDesc("options", classOf[OptionsUriExtractor])
+    val uriDesc = UriDesc("options", classOf[PropertiesPathUriExtractor])
     TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
   }
 

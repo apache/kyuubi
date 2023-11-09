@@ -1400,7 +1400,7 @@
   } ],
   "uriDescs" : [ {
     "fieldName" : "options",
-    "fieldExtractor" : "OptionsUriExtractor",
+    "fieldExtractor" : "PropertiesPathUriExtractor",
     "isInput" : false
   } ]
 }, {

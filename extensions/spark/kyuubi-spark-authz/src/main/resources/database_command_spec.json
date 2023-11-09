@@ -6,7 +6,8 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "ALTERDATABASE"
+  "opType" : "ALTERDATABASE",
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
   "databaseDescs" : [ {
@@ -28,7 +29,12 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "CREATEDATABASE"
+  "opType" : "CREATEDATABASE",
+  "uriDescs" : [ {
+    "fieldName" : "properties",
+    "fieldExtractor" : "PropertiesLocationUriExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace",
   "databaseDescs" : [ {
@@ -37,7 +43,8 @@
     "catalogDesc" : null,
     "isInput" : true
   } ],
-  "opType" : "DESCDATABASE"
+  "opType" : "DESCDATABASE",
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropNamespace",
   "databaseDescs" : [ {
@@ -46,7 +53,8 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "DROPDATABASE"
+  "opType" : "DROPDATABASE",
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace",
   "databaseDescs" : [ {
@@ -68,7 +76,8 @@
     },
     "isInput" : true
   } ],
-  "opType" : "SWITCHDATABASE"
+  "opType" : "SWITCHDATABASE",
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation",
   "databaseDescs" : [ {
@@ -77,7 +86,12 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "ALTERDATABASE_LOCATION"
+  "opType" : "ALTERDATABASE_LOCATION",
+  "uriDescs" : [ {
+    "fieldName" : "location",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties",
   "databaseDescs" : [ {
@@ -86,7 +100,8 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "ALTERDATABASE"
+  "opType" : "ALTERDATABASE",
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand",
   "databaseDescs" : [ {
@@ -95,7 +110,8 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "ALTERDATABASE"
+  "opType" : "ALTERDATABASE",
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",
   "databaseDescs" : [ {
@@ -104,7 +120,12 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "ALTERDATABASE_LOCATION"
+  "opType" : "ALTERDATABASE_LOCATION",
+  "uriDescs" : [ {
+    "fieldName" : "location",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
   "databaseDescs" : [ {
@@ -113,7 +134,8 @@
     "catalogDesc" : null,
     "isInput" : true
   } ],
-  "opType" : "ANALYZE_TABLE"
+  "opType" : "ANALYZE_TABLE",
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
   "databaseDescs" : [ {
@@ -122,7 +144,12 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "CREATEDATABASE"
+  "opType" : "CREATEDATABASE",
+  "uriDescs" : [ {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeDatabaseCommand",
   "databaseDescs" : [ {
@@ -131,7 +158,8 @@
     "catalogDesc" : null,
     "isInput" : true
   } ],
-  "opType" : "DESCDATABASE"
+  "opType" : "DESCDATABASE",
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DropDatabaseCommand",
   "databaseDescs" : [ {
@@ -140,7 +168,8 @@
     "catalogDesc" : null,
     "isInput" : false
   } ],
-  "opType" : "DROPDATABASE"
+  "opType" : "DROPDATABASE",
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.SetDatabaseCommand",
   "databaseDescs" : [ {
@@ -149,7 +178,8 @@
     "catalogDesc" : null,
     "isInput" : true
   } ],
-  "opType" : "SWITCHDATABASE"
+  "opType" : "SWITCHDATABASE",
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.SetNamespaceCommand",
   "databaseDescs" : [ {
@@ -158,5 +188,6 @@
     "catalogDesc" : null,
     "isInput" : true
   } ],
-  "opType" : "SWITCHDATABASE"
+  "opType" : "SWITCHDATABASE",
+  "uriDescs" : [ ]
 } ]

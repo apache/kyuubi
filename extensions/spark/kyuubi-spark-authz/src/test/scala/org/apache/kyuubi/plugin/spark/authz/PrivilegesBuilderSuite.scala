@@ -1292,16 +1292,25 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand")
     assert(operationType === ALTERDATABASE_LOCATION)
     assert(in.isEmpty)
-    assert(out.size === 1)
-    val po = out.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    assert(po.catalog.isEmpty)
-    assertEqualsIgnoreCase(defaultDb)(po.dbname)
-    assertEqualsIgnoreCase(defaultDb)(po.objectName)
-    assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    assert(out.size === 2)
+    val po0 = out.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.DATABASE)
+    assert(po0.catalog.isEmpty)
+    assertEqualsIgnoreCase(defaultDb)(po0.dbname)
+    assertEqualsIgnoreCase(defaultDb)(po0.objectName)
+    assert(po0.columns.isEmpty)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
+    assert(accessType0 === AccessType.ALTER)
+
+    val po1 = out.last
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.catalog.isEmpty)
+    assertEqualsIgnoreCase(defaultDb)(po0.dbname)
+    assertEqualsIgnoreCase(defaultDb)(po0.objectName)
+    assert(po1.columns.isEmpty)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+    assert(accessType1 === AccessType.WRITE)
   }
 
   test("CreateDataSourceTableAsSelectCommand") {
