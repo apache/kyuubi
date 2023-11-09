@@ -281,6 +281,18 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(optimizeTableSql))
     }
   }
+
+  test("vacuum table") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(admin, sql(createTableSql(namespace1, table1)))
+      val vacuumTableSql = s"VACUUM $namespace1.$table1"
+      interceptContains[AccessControlException](
+        doAs(someone, sql(vacuumTableSql)))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(vacuumTableSql))
+    }
+  }
 }
 
 object DeltaCatalogRangerSparkExtensionSuite {
