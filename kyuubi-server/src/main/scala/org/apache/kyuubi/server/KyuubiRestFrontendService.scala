@@ -251,12 +251,12 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     if (sessionConf == null) {
       realUser
     } else {
-      sessionConf.get(PROXY_USER.key).map { proxyUser =>
-        if (!isAdministrator(realUser)) {
-          KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
-        }
-        proxyUser
-      }.getOrElse(realUser)
+      val proxyUser = sessionConf.getOrElse(PROXY_USER.key,
+        sessionConf.getOrElse(KyuubiAuthenticationFactory.HS2_PROXY_USER, realUser))
+      if (!proxyUser.equals(realUser) && !isAdministrator(realUser)) {
+        KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+      }
+      proxyUser
     }
   }
 
