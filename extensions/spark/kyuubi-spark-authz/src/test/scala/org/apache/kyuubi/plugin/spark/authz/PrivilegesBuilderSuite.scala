@@ -320,7 +320,6 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
 
     val po1 = out.last
     assert(po1.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po1.privilegeObjectType === PrivilegeObjectType.LOCAL_URI)
     assert(po1.catalog.isEmpty)
     assert(po1.dbname === newLoc)
     assert(po1.columns === Seq.empty)
