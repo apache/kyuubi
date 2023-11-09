@@ -19,6 +19,8 @@ package org.apache.kyuubi.spark.connector.tpcds
 import io.trino.tpcds.{Table, TpcdsException}
 import org.apache.spark.sql.SparkSession
 
+import org.apache.kyuubi.spark.connector.tpcds.TPCDSGenerateContext.PERSIST_SESSION_CONFIGS
+
 class TPCDSGenerateContext(spark: SparkSession, database: Option[String]) {
 
   def persistAll(opts: TPCDSPersistOpts): Unit = {
@@ -26,39 +28,67 @@ class TPCDSGenerateContext(spark: SparkSession, database: Option[String]) {
   }
 
   def persistTables(opts: TPCDSPersistOpts, tables: String*): Unit = {
-    tables.foreach { table =>
-      try {
-        spark.sparkContext.setJobGroup(table, s"Generate $table", true)
+    withSessionConf(PERSIST_SESSION_CONFIGS) {
+      tables.foreach { table =>
+        try {
+          spark.sparkContext.setJobGroup(table, s"Generate $table", true)
 
-        val tpcdsTable = Table.getTable(table)
-        val tableName = if (database.isDefined) {
-          s"${database.get}.$table"
-        } else {
-          table
+          val tpcdsTable = Table.getTable(table)
+          val tableName = if (database.isDefined) {
+            s"${database.get}.$table"
+          } else {
+            table
+          }
+          val sparkTable = spark.table(tableName)
+
+          val writer = sparkTable.write.format(opts.format)
+
+          if (opts.overwrite) {
+            writer.mode("overwrite")
+          }
+
+          val partitionColumns = TPCDSSchemaUtils
+            .tablePartitionColumnNames(tpcdsTable, tpcdsConf.useTableSchema_2_6)
+          if (partitionColumns.nonEmpty) {
+            writer.partitionBy(partitionColumns: _*)
+          }
+
+          writer.saveAsTable(s"${opts.targetDb}.$table")
+        } finally {
+          spark.sparkContext.clearJobGroup()
         }
-        val sparkTable = spark.table(tableName)
-
-        val writer = sparkTable.write.format(opts.format)
-
-        if (opts.overwrite) {
-          writer.mode("overwrite")
-        }
-
-        val partitionColumns = TPCDSSchemaUtils
-          .tablePartitionColumnNames(tpcdsTable, tpcdsConf.useTableSchema_2_6)
-        if (partitionColumns.nonEmpty) {
-          writer.partitionBy(partitionColumns: _*)
-        }
-
-        writer.saveAsTable(s"${opts.targetDb}.$table")
-      } finally {
-        spark.sparkContext.clearJobGroup()
       }
     }
   }
 
   def persistTable(opts: TPCDSPersistOpts, table: String): Unit = {
     persistTables(opts, table)
+  }
+
+  def withSessionConf[T](configs: Map[String, String] = Map.empty)(f: => T): T = {
+    val needChangeConfigs = configs.flatMap {
+      case (k, v) =>
+        val originalVal = spark.conf.getOption(k)
+        if (originalVal.contains(v)) {
+          None
+        } else {
+          Some(k -> originalVal)
+        }
+    }
+    try {
+      configs.filter(kv => needChangeConfigs.contains(kv._1))
+        .foreach(kv => spark.conf.set(kv._1, kv._2))
+      f
+    } finally {
+      needChangeConfigs.foreach {
+        case (k, v) =>
+          if (v.isDefined) {
+            spark.conf.set(k, v.get)
+          } else {
+            spark.conf.unset(k)
+          }
+      }
+    }
   }
 
   lazy val tpcdsConf: TPCDSConf = {
@@ -92,6 +122,12 @@ object TPCDSGenerateContext {
 
   def apply(database: String): TPCDSGenerateContext =
     new TPCDSGenerateContext(SparkSession.active, Some(database))
+
+  private val KYUUBI_INSERT_REPARTITION_BEFORE_WRITE_IFNOSHUFFLE_KEY =
+    "spark.sql.optimizer.insertRepartitionBeforeWriteIfNoShuffle.enabled"
+
+  private val PERSIST_SESSION_CONFIGS = Map(
+    KYUUBI_INSERT_REPARTITION_BEFORE_WRITE_IFNOSHUFFLE_KEY -> "true")
 
 }
 
