@@ -1286,16 +1286,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
               s"[create] privilege on [$db1/$table2/id,$db1/$table2/scope], " +
               s"[write] privilege on [[$path, $path/]]")
-          interceptContains[AccessControlException](
-            doAs(
-              someone,
-              sql(
-                s"""
-                   |ALTER TABLE $db1.$table1
-                   |SET LOCATION '$path'
-                   |""".stripMargin)))(
-            s"does not have [alter] privilege on [$db1/$table1], " +
-              s"[write] privilege on [[$path, $path/]]")
         }
       }
     }

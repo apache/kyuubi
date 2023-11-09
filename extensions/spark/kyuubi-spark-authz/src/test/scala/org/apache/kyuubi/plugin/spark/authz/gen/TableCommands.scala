@@ -273,13 +273,12 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
   val ReplaceData = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.ReplaceData"
     val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
-    val uriDescs = Seq(UriDesc("tableSpec", classOf[TableSpecURIExtractor]))
     val tableDesc =
       TableDesc(
         "originalTable",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc), uriDescs = uriDescs)
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
   }
 
   val UpdateTable = {
