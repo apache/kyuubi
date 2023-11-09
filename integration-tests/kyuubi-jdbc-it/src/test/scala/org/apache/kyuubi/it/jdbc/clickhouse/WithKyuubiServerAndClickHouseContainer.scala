@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.it.jdbc.clickhouse
 
+import java.nio.file.{Files, Path, Paths}
+
+import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
 import org.apache.kyuubi.engine.jdbc.doris.WithDorisEngine
-
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
-
-import java.nio.file.{Files, Path, Paths}
 
 trait WithKyuubiServerAndClickHouseContainer extends WithKyuubiServer with WithDorisEngine {
 
