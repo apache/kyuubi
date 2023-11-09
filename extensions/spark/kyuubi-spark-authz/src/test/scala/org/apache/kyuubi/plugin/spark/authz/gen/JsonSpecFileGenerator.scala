@@ -26,6 +26,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.apache.kyuubi.plugin.spark.authz.serde.{mapper, CommandSpec}
 import org.apache.kyuubi.plugin.spark.authz.serde.CommandSpecs
 import org.apache.kyuubi.util.AssertionUtils._
+import org.apache.kyuubi.util.GoldenFileUtils._
 
 /**
  * Generates the default command specs to src/main/resources dir.
@@ -52,10 +53,9 @@ class JsonSpecFileGenerator extends AnyFunSuite {
   def writeCommandSpecJson[T <: CommandSpec](
       commandType: String,
       specsArr: Seq[CommandSpecs[T]]): Unit = {
-    val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-      .split("target").head
     val filename = s"${commandType}_command_spec.json"
-    val filePath = Paths.get(pluginHome, "src", "main", "resources", filename)
+    val filePath = Paths.get(
+      s"${getCurrentModuleHome(this)}/src/main/resources/$filename")
 
     val allSpecs = specsArr.flatMap(_.specs.sortBy(_.classname))
     val duplicatedClassnames = allSpecs.groupBy(_.classname).values
