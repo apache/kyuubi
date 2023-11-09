@@ -46,6 +46,7 @@ object AccessType extends Enumeration {
               ALTERDATABASE_LOCATION |
               ALTERTABLE_ADDCOLS |
               ALTERTABLE_ADDPARTS |
+              ALTERTABLE_COMPACT |
               ALTERTABLE_DROPPARTS |
               ALTERTABLE_LOCATION |
               ALTERTABLE_RENAME |

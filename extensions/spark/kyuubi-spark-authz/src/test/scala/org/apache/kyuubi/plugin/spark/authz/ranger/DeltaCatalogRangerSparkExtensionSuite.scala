@@ -23,6 +23,7 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.DeltaCatalogRangerSparkExtensionSuite._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isSparkV32OrGreater
 import org.apache.kyuubi.tags.DeltaTest
 import org.apache.kyuubi.util.AssertionUtils._
 
@@ -264,6 +265,20 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             s" [update] privilege on [$namespace1/$table1]")
         doAs(admin, sql(mergeIntoSql))
       }
+    }
+  }
+
+  test("optimize table") {
+    assume(isSparkV32OrGreater)
+
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(admin, sql(createTableSql(namespace1, table1)))
+      val optimizeTableSql = s"OPTIMIZE $namespace1.$table1"
+      interceptContains[AccessControlException](
+        doAs(someone, sql(optimizeTableSql)))(
+        s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(optimizeTableSql))
     }
   }
 }

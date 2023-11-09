@@ -90,6 +90,16 @@ class TableIdentifierTableExtractor extends TableExtractor {
 }
 
 /**
+ * org.apache.spark.sql.catalyst.TableIdentifier Option
+ */
+class TableIdentifierOptionTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val tableIdentifier = v1.asInstanceOf[Option[TableIdentifier]]
+    tableIdentifier.flatMap(lookupExtractor[TableIdentifierTableExtractor].apply(spark, _))
+  }
+}
+
+/**
  * org.apache.spark.sql.catalyst.catalog.CatalogTable
  */
 class CatalogTableTableExtractor extends TableExtractor {
