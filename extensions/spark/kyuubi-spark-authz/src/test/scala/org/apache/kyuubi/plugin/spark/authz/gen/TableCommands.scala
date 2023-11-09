@@ -78,10 +78,12 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableAddPartitionCommand"
     val columnDesc =
       ColumnDesc("partitionSpecsAndLocs", classOf[PartitionLocsSeqColumnExtractor])
+    val uriDesc = UriDesc("partitionSpecsAndLocs", classOf[PartitionLocsSeqURIExtractor])
     TableCommandSpec(
       cmd,
       Seq(tableNameDesc.copy(columnDesc = Some(columnDesc))),
-      ALTERTABLE_ADDPARTS)
+      ALTERTABLE_ADDPARTS,
+      uriDescs = Seq(uriDesc))
   }
 
   val AlterTableChangeColumn = {

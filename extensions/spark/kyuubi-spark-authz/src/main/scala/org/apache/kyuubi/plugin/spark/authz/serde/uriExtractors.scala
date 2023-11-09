@@ -87,3 +87,9 @@ class CatalogTableURIExtractor extends URIExtractor {
     v1.asInstanceOf[CatalogTable].storage.locationUri.map(_.toString).map(Uri).toSeq
   }
 }
+
+class PartitionLocsSeqURIExtractor extends URIExtractor {
+  override def apply(v1: AnyRef): Seq[Uri] = {
+    v1.asInstanceOf[Seq[(_, Option[String])]].flatMap(_._2).map(Uri)
+  }
+}
