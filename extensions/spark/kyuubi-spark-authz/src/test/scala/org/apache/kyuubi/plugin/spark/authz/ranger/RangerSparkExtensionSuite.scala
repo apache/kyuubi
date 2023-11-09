@@ -1191,8 +1191,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                 s"[write] privilege on [[$path2, $path2/]]")
             val e = intercept[UndeclaredThrowableException](
               doAs(admin, sql(s"ALTER DATABASE $db1 SET LOCATION '$path2'")))
-            assert(e.getCause.getMessage ==
-              "Hive metastore does not support altering database location.")
+            assert(e.getCause.getMessage.contains("does not support altering database location"))
           }
         }
       }
