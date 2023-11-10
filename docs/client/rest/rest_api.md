@@ -414,7 +414,7 @@ Kill the batch if it is still running.
 #### Request Parameters
 
 | Name                    | Description                   | Type             |
-| :---------------------- | :---------------------------- | :--------------- |
+|:------------------------|:------------------------------|:-----------------|
 | proxyUser               | the proxy user to impersonate | String(optional) |
 | hive.server2.proxy.user | the proxy user to impersonate | String(optional) |
 
@@ -471,7 +471,7 @@ Delete the specified engine.
 #### Request Parameters
 
 | Name                    | Description                   | Type             |
-| :---------------------- | :---------------------------- | :--------------- |
+|:------------------------|:------------------------------|:-----------------|
 | type                    | the engine type               | String(optional) |
 | sharelevel              | the engine share level        | String(optional) |
 | subdomain               | the engine subdomain          | String(optional) |
@@ -488,7 +488,7 @@ Get a list of satisfied engines.
 #### Request Parameters
 
 | Name                    | Description                   | Type             |
-| :---------------------- | :---------------------------- | :--------------- |
+|:------------------------|:------------------------------|:-----------------|
 | type                    | the engine type               | String(optional) |
 | sharelevel              | the engine share level        | String(optional) |
 | subdomain               | the engine subdomain          | String(optional) |
