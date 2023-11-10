@@ -1933,12 +1933,11 @@ object KyuubiConf {
       .createWithDefault("server_operation_logs")
 
   val PROXY_USER: OptionalConfigEntry[String] =
-    buildConf("kyuubi.proxy.user")
+    buildConf("kyuubi.session.proxy.user")
       .doc("An alternative to hive.server2.proxy.user. " +
         "The current behavior is consistent with hive.server2.proxy.user " +
-        "and takes effect only in FrontendServices, " +
-        "which contains TFrontendService and KyuubiRestFrontendService. " +
-        "When both parameters are set, kyuubi.proxy.user takes precedence.")
+        "and now only takes effect in RESTFul API. " +
+        "When both parameters are set, kyuubi.session.proxy.user takes precedence.")
       .version("1.9.0")
       .stringConf
       .createOptional
