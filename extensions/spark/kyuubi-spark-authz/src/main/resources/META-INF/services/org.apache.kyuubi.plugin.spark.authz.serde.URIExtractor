@@ -21,5 +21,6 @@ org.apache.kyuubi.plugin.spark.authz.serde.CatalogTableURIExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.PartitionLocsSeqURIExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.PropertiesLocationUriExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.PropertiesPathUriExtractor
-org.apache.kyuubi.plugin.spark.authz.serde.TableSpecURIExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.StringSeqURIExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.StringURIExtractor
+org.apache.kyuubi.plugin.spark.authz.serde.TableSpecURIExtractor
