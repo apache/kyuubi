@@ -19,20 +19,10 @@
 <template>
   <div class="editor">
     <el-space>
-      <el-select
-        v-model="param.engineType"
-        disabled
-        :placeholder="$t('engine_type')">
-        <el-option
-          v-for="item in getEngineType()"
-          :key="item"
-          :label="item"
-          :value="item" />
-      </el-select>
       <el-button
         :disabled="!param.engineType || !editorVariables.content"
         :loading="resultLoading"
-        type="primary"
+        type="success"
         icon="VideoPlay"
         @click="handleQuerySql">
         {{ $t('operation.run') }}
@@ -52,6 +42,16 @@
           </el-dropdown-menu>
         </template>
       </el-dropdown>
+      <el-select
+        v-model="param.engineType"
+        disabled
+        :placeholder="$t('engine_type')">
+        <el-option
+          v-for="item in getEngineType()"
+          :key="item"
+          :label="item"
+          :value="item" />
+      </el-select>
     </el-space>
     <section>
       <MonacoEditor
@@ -196,7 +196,7 @@
       })
   }
 
-  const postError = (err: any, title = t('message.run_failed')) => {
+  const postError = (err: any, title = t('message.run_sql_failed')) => {
     errorMessages.value.push({
       title,
       description: err?.response?.data?.message || err?.message || ''
@@ -266,6 +266,7 @@
       }
       .el-dropdown {
         margin-left: 4px;
+        margin-right: 8px;
       }
     }
 
