@@ -214,10 +214,14 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
+    val uriDescs = Seq(
+      UriDesc("tableSpec", classOf[TableSpecURIExtractor]),
+      UriDesc("properties", classOf[PropertiesLocationUriExtractor]))
     TableCommandSpec(
       cmd,
       Seq(resolvedIdentifierTableDesc, tableDesc, resolvedDbObjectNameDesc),
-      CREATETABLE)
+      CREATETABLE,
+      uriDescs = uriDescs)
   }
 
   val CreateV2Table = {
@@ -226,7 +230,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
-    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
+    val uriDescs = Seq(UriDesc("properties", classOf[PropertiesLocationUriExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE, uriDescs = uriDescs)
   }
 
   val CreateTableAsSelectV2 = {
@@ -235,6 +240,9 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
+    val uriDescs = Seq(
+      UriDesc("tableSpec", classOf[TableSpecURIExtractor]),
+      UriDesc("properties", classOf[PropertiesLocationUriExtractor]))
     TableCommandSpec(
       cmd,
       Seq(
@@ -242,7 +250,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
         tableDesc,
         resolvedDbObjectNameDesc.copy(fieldName = "name")),
       CREATETABLE_AS_SELECT,
-      Seq(queryQueryDesc))
+      Seq(queryQueryDesc),
+      uriDescs = uriDescs)
   }
 
   val CommentOnTable = {
@@ -376,14 +385,21 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     val cmd = "org.apache.spark.sql.execution.datasources.CreateTable"
     val tableDesc = TableDesc("tableDesc", classOf[CatalogTableTableExtractor])
     val queryDesc = QueryDesc("query", "LogicalPlanOptionQueryExtractor")
-    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE, queryDescs = Seq(queryDesc))
+    val uriDesc = UriDesc("tableDesc", classOf[CatalogTableURIExtractor])
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      CREATETABLE,
+      queryDescs = Seq(queryDesc),
+      uriDescs = Seq(uriDesc))
   }
 
   val CreateDataSourceTable = {
     val cmd = "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand"
     val tableDesc =
       TableDesc("table", classOf[CatalogTableTableExtractor], setCurrentDatabaseIfMissing = true)
-    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
+    val uriDesc = UriDesc("table", classOf[CatalogTableURIExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE, uriDescs = Seq(uriDesc))
   }
 
   val CreateDataSourceTableAsSelect = {
@@ -399,8 +415,14 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     val columnDesc = ColumnDesc("outputColumnNames", classOf[StringSeqColumnExtractor])
     val tableDesc =
       TableDesc("tableDesc", classOf[CatalogTableTableExtractor], Some(columnDesc))
+    val uriDesc = UriDesc("tableDesc", classOf[CatalogTableURIExtractor])
     val queryDesc = queryQueryDesc
-    TableCommandSpec(cmd, Seq(tableDesc), "CREATETABLE_AS_SELECT", queryDescs = Seq(queryDesc))
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      "CREATETABLE_AS_SELECT",
+      queryDescs = Seq(queryDesc),
+      uriDescs = Seq(uriDesc))
   }
 
   val CreateTableLike = {
@@ -414,7 +436,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       classOf[TableIdentifierTableExtractor],
       isInput = true,
       setCurrentDatabaseIfMissing = true)
-    TableCommandSpec(cmd, Seq(tableDesc1, tableDesc2), CREATETABLE)
+    val uriDesc = UriDesc("fileFormat", classOf[CatalogStorageFormatURIExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc1, tableDesc2), CREATETABLE, uriDescs = Seq(uriDesc))
   }
 
   val DescribeColumn = {

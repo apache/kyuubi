@@ -1240,4 +1240,60 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("Table Command location privilege") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val table2 = "table2"
+    withSingleCallEnabled {
+      withTempDir { path =>
+        withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$table2", "table"))) {
+          interceptContains[AccessControlException](doAs(
+            someone,
+            sql(
+              s"""
+                 |CREATE TABLE IF NOT EXISTS $db1.$table1(id int, scope int)
+                 |LOCATION '$path'""".stripMargin)))(
+            s"does not have [create] privilege on [$db1/$table1]")
+          doAs(
+            admin,
+            sql(
+              s"""
+                 |CREATE TABLE IF NOT EXISTS $db1.$table1(id int, scope int)
+                 |LOCATION '$path'""".stripMargin))
+          interceptContains[AccessControlException](
+            doAs(
+              someone,
+              sql(
+                s"""
+                   |CREATE TABLE $db1.$table2
+                   |LIKE $db1.$table1
+                   |LOCATION '$path'
+                   |""".stripMargin)))(
+            s"does not have [select] privilege on [$db1/$table1], " +
+              s"[create] privilege on [$db1/$table2], " +
+              s"[write] privilege on [[$path, $path/]]")
+          interceptContains[AccessControlException](
+            doAs(
+              someone,
+              sql(
+                s"""
+                   |CREATE TABLE $db1.$table2
+                   |LOCATION '$path'
+                   |AS
+                   |SELECT * FROM $db1.$table1
+                   |""".stripMargin)))(
+            if (!isSparkV35OrGreater) {
+              s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
+                s"[create] privilege on [$db1/$table2/id,$db1/$table2/scope], " +
+                s"[write] privilege on [[$path, $path/]]"
+            } else {
+              s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
+                s"[create] privilege on [$db1/$table2/id,$db1/$table2/scope], " +
+                s"[write] privilege on [[file://$path, file://$path/]]"
+            })
+        }
+      }
+    }
+  }
 }

@@ -17,8 +17,10 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
+import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable}
 import org.apache.spark.sql.execution.datasources.HadoopFsRelation
+
+import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
 
 trait URIExtractor extends (AnyRef => Seq[Uri]) with Extractor
 
@@ -71,6 +73,18 @@ class BaseRelationFileIndexURIExtractor extends URIExtractor {
       case h: HadoopFsRelation => h.location.rootPaths.map(_.toString).map(Uri)
       case _ => Nil
     }
+  }
+}
+
+class TableSpecURIExtractor extends URIExtractor {
+  override def apply(v1: AnyRef): Seq[Uri] = {
+    new StringURIExtractor().apply(invokeAs[Option[String]](v1, "location"))
+  }
+}
+
+class CatalogTableURIExtractor extends URIExtractor {
+  override def apply(v1: AnyRef): Seq[Uri] = {
+    v1.asInstanceOf[CatalogTable].storage.locationUri.map(_.toString).map(Uri).toSeq
   }
 }
 
