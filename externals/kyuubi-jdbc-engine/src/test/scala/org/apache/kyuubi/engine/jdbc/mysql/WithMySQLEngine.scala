@@ -27,7 +27,7 @@ trait WithMySQLEngine extends WithJdbcEngine with TestContainerForAll {
 
   private val mysqlDockerImage = "mysql:8.0.32"
 
-  override val containerDef: MySQLContainer.Def = MySQLContainer.Def(
+  override val containerDef = MySQLContainer.Def(
     dockerImageName = DockerImageName.parse(mysqlDockerImage),
     username = "root",
     password = "kyuubi")
@@ -40,9 +40,6 @@ trait WithMySQLEngine extends WithJdbcEngine with TestContainerForAll {
       ENGINE_JDBC_CONNECTION_PASSWORD.key -> "kyuubi",
       ENGINE_TYPE.key -> "jdbc",
       ENGINE_JDBC_SHORT_NAME.key -> "mysql",
-      ENGINE_JDBC_DRIVER_CLASS.key -> "com.mysql.cj.jdbc.Driver",
-      ENGINE_JDBC_CONNECTION_PROVIDER.key ->
-        "MySQLConnectionProvider")
+      ENGINE_JDBC_DRIVER_CLASS.key -> "com.mysql.cj.jdbc.Driver")
   }
-
 }

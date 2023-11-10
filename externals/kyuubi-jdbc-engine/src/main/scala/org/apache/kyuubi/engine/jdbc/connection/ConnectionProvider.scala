@@ -57,10 +57,9 @@ abstract class AbstractConnectionProvider extends Logging {
       case None =>
         // TODO
         if (filteredProviders.size != 1) {
-          throw new IllegalArgumentException(
-            "JDBC connection initiated but more than one connection provider was found. Use " +
-              s"${ENGINE_JDBC_CONNECTION_PROVIDER.key} option to select a specific provider. " +
-              s"Found active providers ${filteredProviders.mkString("[", ", ", "]")}")
+          warn("JDBC connection initiated but more than one connection provider was found. Use " +
+            s"${ENGINE_JDBC_CONNECTION_PROVIDER.key} option to select a specific provider. " +
+            s"Found active providers ${filteredProviders.mkString("[", ", ", "]")}")
         }
         filteredProviders.head
     }
