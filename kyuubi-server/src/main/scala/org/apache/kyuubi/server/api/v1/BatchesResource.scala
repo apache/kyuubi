@@ -450,7 +450,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @Path("{batchId}")
   def closeBatchSession(
       @PathParam("batchId") batchId: String,
-      @QueryParam("kyuubi.proxy.user") kyuubiProxyUser: String,
+      @QueryParam("proxyUser") kyuubiProxyUser: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): CloseBatchResponse = {
 
     def checkPermission(operator: String, owner: String): Unit = {

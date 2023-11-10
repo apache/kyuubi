@@ -414,12 +414,12 @@ Kill the batch if it is still running.
 #### Request Parameters
 
 | Name                    | Description                   | Type             |
-|:------------------------|:------------------------------|:-----------------|
-| kyuubi.proxy.user       | the proxy user to impersonate | String(optional) |
+| :---------------------- | :---------------------------- | :--------------- |
+| proxyUser               | the proxy user to impersonate | String(optional) |
 | hive.server2.proxy.user | the proxy user to impersonate | String(optional) |
 
-`kyuubi.proxy.user` is an alternative to hive.server2.proxy.user, and the current behavior is consistent with
-hive.server2.proxy.user. When both parameters are set, kyuubi.proxy.user takes precedence.
+`proxyUser` is an alternative to `hive.server2.proxy.user`, and the current behavior is consistent with
+`hive.server2.proxy.user`. When both parameters are set, `proxyUser` takes precedence.
 
 #### Response Body
 
@@ -471,15 +471,15 @@ Delete the specified engine.
 #### Request Parameters
 
 | Name                    | Description                   | Type             |
-|:------------------------|:------------------------------|:-----------------|
+| :---------------------- | :---------------------------- | :--------------- |
 | type                    | the engine type               | String(optional) |
 | sharelevel              | the engine share level        | String(optional) |
 | subdomain               | the engine subdomain          | String(optional) |
-| kyuubi.proxy.user       | the proxy user to impersonate | String(optional) |
+| proxyUser               | the proxy user to impersonate | String(optional) |
 | hive.server2.proxy.user | the proxy user to impersonate | String(optional) |
 
-`kyuubi.proxy.user` is an alternative to hive.server2.proxy.user, and the current behavior is consistent with
-hive.server2.proxy.user. When both parameters are set, kyuubi.proxy.user takes precedence.
+`proxyUser` is an alternative to `hive.server2.proxy.user`, and the current behavior is consistent with
+`hive.server2.proxy.user`. When both parameters are set, `proxyUser` takes precedence.
 
 ### GET /admin/engine
 
@@ -488,15 +488,15 @@ Get a list of satisfied engines.
 #### Request Parameters
 
 | Name                    | Description                   | Type             |
-|:------------------------|:------------------------------|:-----------------|
+| :---------------------- | :---------------------------- | :--------------- |
 | type                    | the engine type               | String(optional) |
 | sharelevel              | the engine share level        | String(optional) |
 | subdomain               | the engine subdomain          | String(optional) |
-| kyuubi.proxy.user       | the proxy user to impersonate | String(optional) |
+| proxyUser               | the proxy user to impersonate | String(optional) |
 | hive.server2.proxy.user | the proxy user to impersonate | String(optional) |
 
-`kyuubi.proxy.user` is an alternative to hive.server2.proxy.user, and the current behavior is consistent with
-hive.server2.proxy.user. When both parameters are set, kyuubi.proxy.user takes precedence.
+`proxyUser` is an alternative to hive.server2.proxy.user, and the current behavior is consistent with
+hive.server2.proxy.user. When both parameters are set, proxyUser takes precedence.
 
 #### Response Body
 
