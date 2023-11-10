@@ -37,13 +37,12 @@ spec:
       {{- end }}
   selector:
     {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
-  sessionAffinity: {{ .Values.service.sessionAffinity }}
-  {{- if (eq .Values.service.sessionAffinity "ClientIP") }}
-  sessionAffinityConfig:
-    clientIP:
-      timeoutSeconds: {{ .Values.service.sessionAffinityConfig.clientIP.timeoutSeconds }}
+  {{- if $frontend.service.sessionAffinity}}
+  sessionAffinity: {{ $frontend.service.sessionAffinity}}
   {{- end }}
-
+  {{- if $frontend.service.sessionAffinityConfig.clientIP.timeoutSeconds}}
+  sessionAffinityConfig: {{- toYaml $frontend.service.sessionAffinityConfig | nindent 4 }}
+  {{- end }}
 ---
 {{- end }}
 {{- end }}

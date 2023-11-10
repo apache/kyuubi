@@ -85,6 +85,12 @@ server:
       port: "{{ .Values.server.thriftBinary.port }}"
       nodePort: ~
       annotations: {}
+      #candidates are ClientIP or None, ClientIP is required to set if session affinity is enabled
+      sessionAffinity: ~
+      #default is 10800s
+      sessionAffinityConfig:
+        clientIP:
+          timeoutSeconds: ~
 
   # Thrift HTTP protocol (HiveServer2 compatible)
   thriftHttp:
@@ -95,6 +101,12 @@ server:
       port: "{{ .Values.server.thriftHttp.port }}"
       nodePort: ~
       annotations: {}
+      #candidates are ClientIP or None, ClientIP is required to set if session affinity is enabled
+      sessionAffinity: ~
+      #default is 10800s
+      sessionAffinityConfig:
+        clientIP:
+          timeoutSeconds: ~
 
   # REST API protocol (experimental)
   rest:
@@ -105,6 +117,12 @@ server:
       port: "{{ .Values.server.rest.port }}"
       nodePort: ~
       annotations: {}
+      #candidates are ClientIP or None, ClientIP is required to set if session affinity is enabled
+      sessionAffinity: ~
+      #default is 10800s
+      sessionAffinityConfig:
+        clientIP:
+          timeoutSeconds: 10800s
 
   # MySQL compatible text protocol (experimental)
   mysql:
@@ -115,6 +133,12 @@ server:
       port: "{{ .Values.server.mysql.port }}"
       nodePort: ~
       annotations: {}
+      #candidates are ClientIP or None, ClientIP is required to set if session affinity is enabled
+      sessionAffinity: ~
+      #default is 10800s
+      sessionAffinityConfig:
+        clientIP:
+          timeoutSeconds: ~
 
 monitoring:
   # Exposes metrics in Prometheus format
@@ -235,9 +259,3 @@ prometheusRule:
   enabled: false
   # Contents of Prometheus rules file
   groups: []
-
-service:
-  sessionAffinity: None
-  sessionAffinityConfig:
-    clientIP:
-      timeoutSeconds: 10800
