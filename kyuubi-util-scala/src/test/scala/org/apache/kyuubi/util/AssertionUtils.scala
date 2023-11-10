@@ -17,9 +17,10 @@
 package org.apache.kyuubi.util
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import java.util.Locale
 
+import scala.collection.JavaConverters._
 import scala.collection.Traversable
 import scala.io.Source
 import scala.reflect.ClassTag
@@ -28,6 +29,8 @@ import scala.util.matching.Regex
 import org.scalactic.Prettifier
 import org.scalactic.source.Position
 import org.scalatest.Assertions._
+
+import org.apache.kyuubi.util.GoldenFileUtils.getLicenceContent
 
 object AssertionUtils {
 
@@ -104,6 +107,24 @@ object AssertionUtils {
     } finally {
       fileSource.close()
     }
+  }
+
+  def assertFileContentSorted(
+      filePath: Path,
+      headerSkipPrefix: String = "#",
+      licenceHeader: Iterable[String] = getLicenceContent(),
+      distinct: Boolean = true): Unit = {
+    val sortedLines = Files.readAllLines(filePath).asScala
+      .dropWhile(line => line.trim == "" || line.trim.startsWith(headerSkipPrefix))
+      .map(_.trim).filter(_.nonEmpty)
+      .sorted
+    val expectedSortedLines = if (distinct) {
+      sortedLines.distinct
+    } else {
+      sortedLines
+    }
+    val expectedLines = licenceHeader ++ Seq("") ++ expectedSortedLines
+    assertFileContent(filePath, expectedLines, s"Check SPI provider file sorted $filePath")
   }
 
   /**

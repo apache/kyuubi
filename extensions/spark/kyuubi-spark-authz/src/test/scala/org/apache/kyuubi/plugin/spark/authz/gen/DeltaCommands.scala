@@ -61,9 +61,17 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Seq(childDesc, tableDesc), ALTERTABLE_COMPACT)
   }
 
+  val VacuumTableCommand = {
+    val cmd = "io.delta.tables.execution.VacuumTableCommand"
+    val childDesc = TableDesc("child", classOf[ResolvedTableTableExtractor])
+    val tableDesc = TableDesc("table", classOf[TableIdentifierOptionTableExtractor])
+    TableCommandSpec(cmd, Seq(childDesc, tableDesc), MSCK)
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     DeleteCommand,
     MergeIntoCommand,
     OptimizeTableCommand,
-    UpdateCommand)
+    UpdateCommand,
+    VacuumTableCommand)
 }
