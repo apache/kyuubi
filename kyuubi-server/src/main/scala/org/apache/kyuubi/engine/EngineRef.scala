@@ -121,7 +121,7 @@ private[kyuubi] class EngineRef(
           }
 
         case "ADAPTIVE" =>
-          getPoolId(clientPoolSize)
+          getAdaptivePoolId(clientPoolSize)
 
         case "RANDOM" =>
           Random.nextInt(poolSize)
@@ -371,7 +371,7 @@ private[kyuubi] class EngineRef(
     }
   }
 
-  def getPoolId(poolSize: Int): Int = {
+  def getAdaptivePoolId(poolSize: Int): Int = {
     val sessionThreshold = conf.get(ENGINE_POOL_ADAPTIVE_SESSION_THRESHOLD)
     val metricsSpace =
       s"/metrics/${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}/$user"
@@ -396,18 +396,19 @@ private[kyuubi] class EngineRef(
                 .toMap)
             if (engineMetricsMap.isEmpty) {
               return Random.nextInt(poolSize)
-            }
-            val sortedEngineMetrics =
-              engineMetricsMap.sortBy(map =>
+            } else {
+              val sortedEngineMetrics = engineMetricsMap.sortBy { map =>
                 (
                   map.getOrElse("openSessionCount", sessionThreshold),
-                  map.getOrElse("activeTask", 0)))
-            val candidate = sortedEngineMetrics.head
-            if (candidate.contains("poolId") && (candidate(
-                "openSessionCount") < sessionThreshold || metrics.size == poolSize)) {
-              candidate("poolId")
-            } else {
-              Random.nextInt(poolSize)
+                  map.getOrElse("activeTask", 0))
+              }
+              val candidate = sortedEngineMetrics.head
+              if (candidate.contains("poolId") && (candidate(
+                  "openSessionCount") < sessionThreshold || metrics.size == poolSize)) {
+                candidate("poolId")
+              } else {
+                Random.nextInt(poolSize)
+              }
             }
           // TODO: other engine support adaptive
           case _ => Random.nextInt(poolSize)
