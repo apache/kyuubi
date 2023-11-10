@@ -18,7 +18,10 @@
 package org.apache.kyuubi.plugin.spark.authz.serde
 
 import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
+import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.HadoopFsRelation
+
+import org.apache.kyuubi.plugin.spark.authz.util.PathIdentifier
 
 trait URIExtractor extends (AnyRef => Seq[Uri]) with Extractor
 
@@ -77,5 +80,16 @@ class BaseRelationFileIndexURIExtractor extends URIExtractor {
 class PartitionLocsSeqURIExtractor extends URIExtractor {
   override def apply(v1: AnyRef): Seq[Uri] = {
     v1.asInstanceOf[Seq[(_, Option[String])]].flatMap(_._2).map(Uri)
+  }
+}
+
+class IdentifierURIExtractor extends URIExtractor {
+  override def apply(v1: AnyRef): Seq[Uri] = {
+    val identifier = v1.asInstanceOf[Identifier]
+    if (PathIdentifier.isPathIdentifier(identifier)) {
+      Seq(identifier.name()).map(Uri)
+    } else {
+      Nil
+    }
   }
 }

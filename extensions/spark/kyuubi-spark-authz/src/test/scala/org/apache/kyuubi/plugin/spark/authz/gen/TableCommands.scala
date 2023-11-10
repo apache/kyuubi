@@ -214,10 +214,12 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
+    val uriDesc = UriDesc("tableName", classOf[IdentifierURIExtractor])
     TableCommandSpec(
       cmd,
       Seq(resolvedIdentifierTableDesc, tableDesc, resolvedDbObjectNameDesc),
-      CREATETABLE)
+      CREATETABLE,
+      uriDescs = Seq(uriDesc))
   }
 
   val CreateV2Table = {
@@ -226,7 +228,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
-    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
+    val uriDesc = UriDesc("tableName", classOf[IdentifierURIExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE, uriDescs = Seq(uriDesc))
   }
 
   val CreateTableAsSelectV2 = {

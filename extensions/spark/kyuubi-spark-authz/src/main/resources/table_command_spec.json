@@ -148,7 +148,11 @@
   } ],
   "opType" : "CREATETABLE",
   "queryDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "IdentifierURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateTableAsSelect",
   "tableDescs" : [ {
@@ -205,7 +209,11 @@
   } ],
   "opType" : "CREATETABLE",
   "queryDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "IdentifierURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DeleteFromTable",
   "tableDescs" : [ {
@@ -492,7 +500,11 @@
   } ],
   "opType" : "CREATETABLE",
   "queryDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "IdentifierURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceTableAsSelect",
   "tableDescs" : [ {
