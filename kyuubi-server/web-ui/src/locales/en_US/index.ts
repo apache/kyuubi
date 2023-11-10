@@ -38,7 +38,7 @@ export default {
   failure_reason: 'Failure Reason',
   session_properties: 'Session Properties',
   no_data: 'No data',
-  run_sql_tips: 'Run a sql to get result',
+  run_sql_tips: 'Run a SQL to get result',
   operation: {
     text: 'Operation',
     delete_confirm: 'Delete Confirm',

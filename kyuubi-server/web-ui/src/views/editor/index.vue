@@ -43,7 +43,7 @@
   const editableTabsValue = ref('1')
   const editableTabs = ref([
     {
-      title: 'Sql1',
+      title: 'Session 1',
       name: '1'
     }
   ])
@@ -56,7 +56,7 @@
       const tabLength = editableTabs.value.length + 1
       const newTabName = `${tabLength}`
       editableTabs.value.push({
-        title: `Sql${tabLength}`,
+        title: `Session ${tabLength}`,
         name: newTabName
       })
       editableTabsValue.value = newTabName
