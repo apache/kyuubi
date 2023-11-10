@@ -27,9 +27,9 @@ import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.ranger.plugin.model.RangerPolicy
+// scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
-// scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess.allowTypes
@@ -37,6 +37,7 @@ import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyResource._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerAccessType._
 import org.apache.kyuubi.plugin.spark.authz.gen.RangerClassConversions._
 import org.apache.kyuubi.util.AssertionUtils._
+import org.apache.kyuubi.util.GoldenFileUtils._
 
 /**
  * Generates the policy file to test/main/resources dir.
@@ -59,11 +60,9 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     .build()
 
   test("check ranger policy file") {
-    val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-      .split("target").head
     val policyFileName = "sparkSql_hive_jenkins.json"
-    val policyFilePath =
-      Paths.get(pluginHome, "src", "test", "resources", policyFileName)
+    val policyFilePath = Paths.get(
+      s"${getCurrentModuleHome(this)}/src/test/resources/$policyFileName")
     val generatedStr = mapper.writerWithDefaultPrettyPrinter()
       .writeValueAsString(servicePolicies)
 
