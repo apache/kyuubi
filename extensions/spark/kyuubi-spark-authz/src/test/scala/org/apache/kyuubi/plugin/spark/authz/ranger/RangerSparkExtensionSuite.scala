@@ -1267,20 +1267,42 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
               sql(
                 s"""
                    |CREATE TABLE $db1.$table2
+                   |LIKE $db1.$table1
                    |LOCATION '$path'
-                   |AS
-                   |SELECT * FROM $db1.$table1
-                   |""".stripMargin))) {
-            if (isSparkV35OrGreater) {
+                   |""".stripMargin)))(
+            s"does not have [select] privilege on [$db1/$table1], " +
+              s"[create] privilege on [$db1/$table2], " +
+              s"[write] privilege on [[$path, $path/]]")
+          if (!isSparkV35OrGreater) {
+            interceptContains[AccessControlException](
+              doAs(
+                someone,
+                sql(
+                  s"""
+                     |CREATE TABLE $db1.$table2
+                     |LOCATION '$path'
+                     |AS
+                     |SELECT * FROM $db1.$table1
+                     |""".stripMargin)))(
               s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
                 s"[create] privilege on [$db1/$table2/id,$db1/$table2/scope], " +
-                s"[write] privilege on [[file://$path, file://$path/]]"
-            } else {
+                s"[write] privilege on [[$path, $path/]]")
+          } else {
+            interceptContains[AccessControlException](
+              doAs(
+                someone,
+                sql(
+                  s"""
+                     |CREATE TABLE $db1.$table2
+                     |LOCATION '$path'
+                     |AS
+                     |SELECT * FROM $db1.$table1
+                     |""".stripMargin)))(
               s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
                 s"[create] privilege on [$db1/$table2/id,$db1/$table2/scope], " +
-                s"[write] privilege on [[$path, $path/]]"
-            }
+                s"[write] privilege on [[file://$path, file://$path/]]")
           }
+        }
       }
     }
   }
