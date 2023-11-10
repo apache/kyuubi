@@ -20,7 +20,7 @@
   <header>
     <img v-if="!isCollapse" src="@/assets/images/kyuubi-logo.svg" />
     <img v-else class="collapsed-logo" src="@/assets/images/kyuubi.png" />
-    <pre v-if="!isCollapse">{{ version }}</pre>
+    <span v-if="!isCollapse">{{ version }}</span>
   </header>
   <c-menu :is-collapse="isCollapse" :active-path="activePath" :menus="menus" />
 </template>
