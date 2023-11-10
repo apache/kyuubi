@@ -16,9 +16,16 @@
  */
 package org.apache.kyuubi.engine.jdbc.clickhouse
 
-import org.apache.kyuubi.engine.jdbc.mysql.Mysql8ConnectionProvider
+import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
 
-class ClickHouseConnectionProvider extends Mysql8ConnectionProvider {
+class ClickHouseConnectionProvider extends JdbcConnectionProvider {
 
   override val name: String = classOf[ClickHouseConnectionProvider].getSimpleName
+
+  override val driverClass: String = "com.clickhouse.jdbc.ClickHouseDriver"
+
+  override def canHandle(providerClass: String): Boolean = {
+    driverClass.equalsIgnoreCase(providerClass)
+  }
+
 }

@@ -115,6 +115,13 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.clickhouse</groupId>
+                                    <artifactId>clickhouse-jdbc</artifactId>
+                                    <version>${clickhouse.version}</version>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
