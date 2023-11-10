@@ -313,7 +313,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       val createTableSql = createPathBasedTableSql(path)
       interceptContains[AccessControlException] {
         doAs(someone, sql(createTableSql))
-      }(s"does not have [create] privilege on [delta/$path]")
+      }(s"does not have [write] privilege on [[$path, $path/]]")
       doAs(admin, sql(createTableSql))
     })
   }
@@ -331,7 +331,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
            |""".stripMargin
       interceptContains[AccessControlException] {
         doAs(someone, sql(createOrReplaceTableSql))
-      }(s"does not have [create] privilege on [delta/$path]")
+      }(s"does not have [write] privilege on [[$path, $path/]]")
       doAs(admin, sql(createOrReplaceTableSql))
     })
   }

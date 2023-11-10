@@ -66,14 +66,18 @@ object PrivilegeObject {
       table: Table,
       columns: Seq[String] = Nil,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    new PrivilegeObject(
-      TABLE_OR_VIEW,
-      actionType,
-      table.database.orNull,
-      table.table,
-      columns,
-      table.owner,
-      table.catalog)
+    if (table.table.contains("/")) {
+      PrivilegeObject(Uri(table.table))
+    } else {
+      new PrivilegeObject(
+        TABLE_OR_VIEW,
+        actionType,
+        table.database.orNull,
+        table.table,
+        columns,
+        table.owner,
+        table.catalog)
+    }
   }
 
   def apply(function: Function): PrivilegeObject = {
