@@ -130,21 +130,27 @@ object KubernetesUtils extends Logging {
       .replaceAll("^[0-9]", "x")
   }
 
-  def generateDriverPodName(appName: String, engineRefId: String): String = {
-    val resolvedResourceName = s"kyuubi-${getResourceNamePrefix(appName, engineRefId)}-driver"
-    if (resolvedResourceName.length <= DRIVER_POD_NAME_MAX_LENGTH) {
-      resolvedResourceName
-    } else {
+  def generateDriverPodName(
+      appName: String,
+      engineRefId: String,
+      forciblyRewrite: Boolean): String = {
+    lazy val resolvedResourceName = s"kyuubi-${getResourceNamePrefix(appName, engineRefId)}-driver"
+    if (forciblyRewrite || resolvedResourceName.length > DRIVER_POD_NAME_MAX_LENGTH) {
       s"kyuubi-$engineRefId-driver"
+    } else {
+      resolvedResourceName
     }
   }
 
-  def generateExecutorPodNamePrefix(appName: String, engineRefId: String): String = {
+  def generateExecutorPodNamePrefix(
+      appName: String,
+      engineRefId: String,
+      forciblyRewrite: Boolean): String = {
     val resolvedResourceName = s"kyuubi-${getResourceNamePrefix(appName, engineRefId)}"
-    if (resolvedResourceName.length <= EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
-      resolvedResourceName
-    } else {
+    if (forciblyRewrite || resolvedResourceName.length > EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
       s"kyuubi-$engineRefId"
+    } else {
+      resolvedResourceName
     }
   }
 }

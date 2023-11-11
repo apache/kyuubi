@@ -3153,4 +3153,24 @@ object KyuubiConf {
       .serverOnly
       .intConf
       .createOptional
+
+  val KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.spark.forciblyRewriteDriverPodName.enabled")
+      .doc("Whether to forcibly rewrite Spark driver pod name with 'kyuubi-<uuid>-driver'. " +
+        "If disabled, Kyuubi will try to preserve the application name while satisfying K8s' " +
+        "pod name policy, but some vendors may have stricter pod name policies, thus the " +
+        "generated name may become illegal.")
+      .version("1.8.1")
+      .booleanConf
+      .createWithDefault(false)
+
+  val KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.spark.forciblyRewriteExecutorPodNamePrefix.enabled")
+      .doc("Whether to forcibly rewrite Spark executor pod name prefix with 'kyuubi-<uuid>'. " +
+        "If disabled, Kyuubi will try to preserve the application name while satisfying K8s' " +
+        "pod name policy, but some vendors may have stricter Pod name policies, thus the " +
+        "generated name may become illegal.")
+      .version("1.8.1")
+      .booleanConf
+      .createWithDefault(false)
 }
