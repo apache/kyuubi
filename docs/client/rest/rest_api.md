@@ -297,7 +297,7 @@ Get a list of operation log lines of the running operation by the specified oper
 
 | Name    | Description                           | Type |
 |:--------|:--------------------------------------|:-----|
-| maxRows | The max row that are pulled each time | Int  |
+| maxrows | The max row that are pulled each time | Int  |
 
 #### Response Body
 
