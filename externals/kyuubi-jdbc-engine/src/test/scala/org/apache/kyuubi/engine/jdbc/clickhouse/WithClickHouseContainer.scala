@@ -16,47 +16,28 @@
  */
 package org.apache.kyuubi.engine.jdbc.clickhouse
 
-import java.io.File
-import java.time.Duration
+import com.dimafeng.testcontainers.{GenericContainer, SingleContainer}
+import org.testcontainers.containers.wait.strategy.Wait
 
-import com.dimafeng.testcontainers.{DockerComposeContainer, ExposedService}
-import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy
-
-import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.jdbc.WithJdbcServerContainer
 
 trait WithClickHouseContainer extends WithJdbcServerContainer {
 
-  private val DORIS_FE_PORT = 9030
+  private val CLICKHOUSE_PORT = 8123
 
-  private val DORIS_BE_PORT = 8040
+  private val clickHouseDockerImage = "clickhouse/clickhouse-docker:1.0"
 
-  private val DORIS_FE_SERVICE_NAME = "doris-fe"
+  override val container: SingleContainer[_] = GenericContainer(
+    dockerImage = clickHouseDockerImage,
+    exposedPorts = Seq(CLICKHOUSE_PORT),
+    env = Map[String, String](
+      "CLICKHOUSE_PASSWORD" -> "clickhouse"),
+    waitStrategy = Wait.forListeningPort)
 
-  private val DORIS_BE_SERVICE_NAME = "doris-be"
-
-  override val container: DockerComposeContainer =
-    DockerComposeContainer
-      .Def(
-        composeFiles = new File(Utils.getContextOrKyuubiClassLoader
-          .getResource("doris-compose.yml").toURI),
-        exposedServices = Seq[ExposedService](
-          ExposedService(
-            DORIS_FE_SERVICE_NAME,
-            DORIS_FE_PORT,
-            waitStrategy =
-              new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofMinutes(5))),
-          ExposedService(
-            DORIS_BE_SERVICE_NAME,
-            DORIS_BE_PORT,
-            waitStrategy =
-              new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofMinutes(5)))))
-      .createContainer()
-
-  protected def feUrl: String = {
-    val feHost: String = container.getServiceHost(DORIS_FE_SERVICE_NAME, DORIS_FE_PORT)
-    val fePort: Int = container.getServicePort(DORIS_FE_SERVICE_NAME, DORIS_FE_PORT)
-    val url = s"$feHost:$fePort"
+  protected def queryServerUrl: String = {
+    val queryServerHost: String = container.host
+    val queryServerPort: Int = container.mappedPort(CLICKHOUSE_PORT)
+    val url = s"$queryServerHost:$queryServerPort"
     url
   }
 
@@ -64,4 +45,5 @@ trait WithClickHouseContainer extends WithJdbcServerContainer {
     super.afterAll()
     container.close()
   }
+
 }

@@ -580,6 +580,12 @@
             </dependency>
 
             <dependency>
+                <groupId>com.dimafeng</groupId>
+                <artifactId>testcontainers-scala-clickhouse_${scala.binary.version}</artifactId>
+                <version>${testcontainers-scala.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-client</artifactId>
                 <version>${kubernetes-client.version}</version>
@@ -1347,6 +1353,7 @@
                 <groupId>com.clickhouse</groupId>
                 <artifactId>clickhouse-jdbc</artifactId>
                 <version>${clickhouse.version}</version>
+                <classifier>all</classifier>
             </dependency>
 
             <!-- flink -->

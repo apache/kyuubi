@@ -20,7 +20,7 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class SessionSuite extends WithClickHouseEngine with HiveJDBCTestHelper {
 
-  test("test session") {
+  test("clickHouse - test session") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "select '1' as id")

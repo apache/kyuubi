@@ -23,10 +23,10 @@ trait WithClickHouseEngine extends WithJdbcEngine with WithClickHouseContainer {
 
   override def withKyuubiConf: Map[String, String] = Map(
     ENGINE_SHARE_LEVEL.key -> "SERVER",
-    ENGINE_JDBC_CONNECTION_URL.key -> s"jdbc:mysql://$feUrl",
-    ENGINE_JDBC_CONNECTION_USER.key -> "root",
-    ENGINE_JDBC_CONNECTION_PASSWORD.key -> "",
+    ENGINE_JDBC_CONNECTION_URL.key -> s"jdbc:clickhouse://$queryServerUrl",
+    ENGINE_JDBC_CONNECTION_USER.key -> "clickhouse",
+    ENGINE_JDBC_CONNECTION_PASSWORD.key -> "clickhouse",
     ENGINE_TYPE.key -> "jdbc",
     ENGINE_JDBC_SHORT_NAME.key -> "clickhouse",
-    ENGINE_JDBC_DRIVER_CLASS.key -> "com.mysql.cj.jdbc.Driver")
+    ENGINE_JDBC_DRIVER_CLASS.key -> "com.clickhouse.jdbc.ClickHouseDriver")
 }

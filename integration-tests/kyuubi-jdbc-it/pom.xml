@@ -78,6 +78,12 @@
             <artifactId>testcontainers-scala-scalatest_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.dimafeng</groupId>
+            <artifactId>testcontainers-scala-clickhouse_${scala.binary.version}</artifactId>
+            <version>${testcontainers-scala.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -119,6 +125,7 @@
                                     <groupId>com.clickhouse</groupId>
                                     <artifactId>clickhouse-jdbc</artifactId>
                                     <version>${clickhouse.version}</version>
+                                    <classifier>all</classifier>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
                                 </artifactItem>
