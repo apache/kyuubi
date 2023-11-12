@@ -24,8 +24,10 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.commons.lang3.StringUtils
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.jdbc.clickhouse.{ClickHouseRowSetHelper, ClickHouseSchemaHelper}
 import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
+import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
@@ -37,22 +39,51 @@ class ClickHouseDialect extends JdbcDialect {
     statement
   }
 
-  override def getTablesQuery(
+  override def getCatalogsOperation(): String = "SELECT CATALOG_NAME " +
+    "FROM INFORMATION_SCHEMA.INFORMATION_SCHEMA_CATALOG_NAME"
+
+  override def getSchemasOperation(
       catalog: String,
-      schema: String,
-      tableName: String,
-      tableTypes: util.List[String]): String = {
+      schema: String): String = {
+    val query = new StringBuilder(
+      s"""
+         |SELECT CATALOG_NAME, SCHEMA_NAME, SCHEMA_OWNER,
+         |DEFAULT_CHARACTER_SET_CATALOG, DEFAULT_CHARACTER_SET_SCHEMA,
+         |DEFAULT_CHARACTER_SET_NAME, SQL_PATH
+         |FROM INFORMATION_SCHEMA.SCHEMATA
+         |""".stripMargin)
+
+    val filters = ArrayBuffer[String]()
+    if (StringUtils.isNotBlank(catalog)) {
+      filters += s"catalog_name LIKE '$catalog'"
+    }
+
+    if (StringUtils.isNotBlank(schema)) {
+      filters += s"schema_name LIKE '$schema'"
+    }
+
+    if (filters.nonEmpty) {
+      query.append(" WHERE ")
+      query.append(filters.mkString(" AND "))
+    }
+
+    query.toString()
+  }
+
+  override def getTablesQuery(
+                               catalog: String,
+                               schema: String,
+                               tableName: String,
+                               tableTypes: util.List[String]): String = {
     val tTypes =
       if (tableTypes == null || tableTypes.isEmpty) {
-        Set("BASE TABLE", "SYSTEM VIEW", "VIEW")
+        Set("BASE TABLE", "VIEW", "FOREIGN TABLE", "LOCAL TEMPORARY", "SYSTEM VIEW")
       } else {
         tableTypes.asScala.toSet
       }
     val query = new StringBuilder(
       s"""
-         |SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE, ENGINE,
-         |TABLE_ROWS, AVG_ROW_LENGTH, DATA_LENGTH,
-         |CREATE_TIME, UPDATE_TIME, TABLE_COLLATION, TABLE_COMMENT
+         |SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE
          |FROM INFORMATION_SCHEMA.TABLES
          |""".stripMargin)
 
@@ -71,7 +102,7 @@ class ClickHouseDialect extends JdbcDialect {
 
     if (tTypes.nonEmpty) {
       filters += s"(${tTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
-          .mkString(" OR ")})"
+        .mkString(" OR ")})"
     }
 
     if (filters.nonEmpty) {
@@ -82,21 +113,24 @@ class ClickHouseDialect extends JdbcDialect {
     query.toString()
   }
 
+  override def getTableTypesOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
   override def getColumnsQuery(
-      session: Session,
-      catalogName: String,
-      schemaName: String,
-      tableName: String,
-      columnName: String): String = {
+    session: Session,
+    catalogName: String,
+    schemaName: String,
+    tableName: String,
+    columnName: String): String = {
     val query = new StringBuilder(
-      """
-        |SELECT
-        |`TABLE_CATALOG`,`TABLE_SCHEMA`,`TABLE_NAME`, `COLUMN_NAME`,`ORDINAL_POSITION`,
-        |`COLUMN_DEFAULT`,`IS_NULLABLE`,`DATA_TYPE`,`CHARACTER_MAXIMUM_LENGTH`,
-        |`CHARACTER_OCTET_LENGTH`,`NUMERIC_PRECISION`,`NUMERIC_SCALE`,`DATETIME_PRECISION`,
-        |`CHARACTER_SET_NAME`,`COLLATION_NAME`,`COLUMN_TYPE`,`COLUMN_KEY`,`EXTRA`,`PRIVILEGES`,
-        |`COLUMN_COMMENT`,`COLUMN_SIZE`,`DECIMAL_DIGITS`,`GENERATION_EXPRESSION`,`SRS_ID`
-        |FROM information_schema.columns
+      s"""
+        |SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION,
+        |COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH,
+        |CHARACTER_OCTET_LENGTH, NUMERIC_PRECISION, NUMERIC_PRECISION_RADIX,
+        |NUMERIC_SCALE, DATETIME_PRECISION, CHARACTER_SET_CATALOG, CHARACTER_SET_SCHEMA,
+        |CHARACTER_SET_NAME, COLLATION_CATALOG, COLLATION_SCHEMA, COLLATION_NAME,
+        |DOMAIN_CATALOG, DOMAIN_SCHEMA, DOMAIN_NAME, COLUMN_COMMENT, COLUMN_TYPE
+        |FROM INFORMATION_SCHEMA.COLUMNS
         |""".stripMargin)
 
     val filters = ArrayBuffer[String]()
@@ -119,6 +153,18 @@ class ClickHouseDialect extends JdbcDialect {
     }
 
     query.toString()
+  }
+
+  override def getFunctionsOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
+
+  override def getPrimaryKeysOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
+
+  override def getCrossReferenceOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
   }
 
   override def getRowSetHelper(): RowSetHelper = {
