@@ -75,10 +75,10 @@ class ClickHouseDialect extends JdbcDialect {
   }
 
   override def getTablesQuery(
-                               catalog: String,
-                               schema: String,
-                               tableName: String,
-                               tableTypes: util.List[String]): String = {
+      catalog: String,
+      schema: String,
+      tableName: String,
+      tableTypes: util.List[String]): String = {
     val tTypes =
       if (tableTypes == null || tableTypes.isEmpty) {
         Set("BASE TABLE", "VIEW", "FOREIGN TABLE", "LOCAL TEMPORARY", "SYSTEM VIEW")
@@ -106,7 +106,7 @@ class ClickHouseDialect extends JdbcDialect {
 
     if (tTypes.nonEmpty) {
       filters += s"(${tTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
-        .mkString(" OR ")})"
+          .mkString(" OR ")})"
     }
 
     if (filters.nonEmpty) {
@@ -121,21 +121,21 @@ class ClickHouseDialect extends JdbcDialect {
     throw KyuubiSQLException.featureNotSupported()
   }
   override def getColumnsQuery(
-    session: Session,
-    catalogName: String,
-    schemaName: String,
-    tableName: String,
-    columnName: String): String = {
+      session: Session,
+      catalogName: String,
+      schemaName: String,
+      tableName: String,
+      columnName: String): String = {
     val query = new StringBuilder(
       s"""
-        |SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION,
-        |COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH,
-        |CHARACTER_OCTET_LENGTH, NUMERIC_PRECISION, NUMERIC_PRECISION_RADIX,
-        |NUMERIC_SCALE, DATETIME_PRECISION, CHARACTER_SET_CATALOG, CHARACTER_SET_SCHEMA,
-        |CHARACTER_SET_NAME, COLLATION_CATALOG, COLLATION_SCHEMA, COLLATION_NAME,
-        |DOMAIN_CATALOG, DOMAIN_SCHEMA, DOMAIN_NAME, COLUMN_COMMENT, COLUMN_TYPE
-        |FROM INFORMATION_SCHEMA.COLUMNS
-        |""".stripMargin)
+         |SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION,
+         |COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH,
+         |CHARACTER_OCTET_LENGTH, NUMERIC_PRECISION, NUMERIC_PRECISION_RADIX,
+         |NUMERIC_SCALE, DATETIME_PRECISION, CHARACTER_SET_CATALOG, CHARACTER_SET_SCHEMA,
+         |CHARACTER_SET_NAME, COLLATION_CATALOG, COLLATION_SCHEMA, COLLATION_NAME,
+         |DOMAIN_CATALOG, DOMAIN_SCHEMA, DOMAIN_NAME, COLUMN_COMMENT, COLUMN_TYPE
+         |FROM INFORMATION_SCHEMA.COLUMNS
+         |""".stripMargin)
 
     val filters = ArrayBuffer[String]()
     if (StringUtils.isNotEmpty(catalogName)) {
