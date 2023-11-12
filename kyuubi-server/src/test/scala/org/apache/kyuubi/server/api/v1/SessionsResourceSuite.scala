@@ -17,6 +17,17 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.nio.charset.StandardCharsets
+import java.util
+import java.util.{Base64, Collections}
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.{GenericType, MediaType, Response}
+
+import scala.collection.JavaConverters._
+
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
+
+import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto.{SessionData, _}
 import org.apache.kyuubi.config.KyuubiConf
@@ -24,17 +35,8 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.server.http.util.HttpAuthUtils.{AUTHORIZATION_HEADER, basicAuthorizationHeader}
+import org.apache.kyuubi.server.http.util.HttpAuthUtils.{basicAuthorizationHeader, AUTHORIZATION_HEADER}
 import org.apache.kyuubi.session.SessionType
-import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
-import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
-
-import java.nio.charset.StandardCharsets
-import java.util
-import java.util.{Base64, Collections}
-import javax.ws.rs.client.Entity
-import javax.ws.rs.core.{GenericType, MediaType, Response}
-import scala.collection.JavaConverters._
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -65,7 +67,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     // so we can not guarantee the poolActiveThread count must equal to 1
     assert(execPoolStatistic1.getExecPoolSize == 1 &&
       (execPoolStatistic1.getExecPoolActiveCount == 1 ||
-        execPoolStatistic1.getExecPoolActiveCount == 0) )
+        execPoolStatistic1.getExecPoolActiveCount == 0))
 
     response = webTarget.path("api/v1/sessions/count").request().get()
     val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
