@@ -101,19 +101,15 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
     assert(200 == response.getStatus)
 
-    // because delete is a asynchronous operation, we need use eventually to
-    // make sure the delete complete
-    def validateSessionEmpty(): Boolean = {
-      // get session list again
-      response2 = webTarget.path("api/v1/sessions").request().get()
-      assert(200 == response2.getStatus)
-      val sessions = response.readEntity(classOf[Seq[SessionData]])
-      sessions.isEmpty
-    }
-    eventually(timeout(5.seconds)) {
-      assert(validateSessionEmpty())
-    }
+    // get session list again
+    response2 = webTarget.path("api/v1/sessions").request().get()
+    assert(200 == response2.getStatus)
 
+    // because delete is a asynchronous operation, we need sleep to
+    // make sure the delete complete
+    Thread.sleep(3000)
+    val sessions = response2.readEntity(classOf[Seq[SessionData]])
+    assert(sessions.isEmpty)
   }
 
   test("get session event") {
