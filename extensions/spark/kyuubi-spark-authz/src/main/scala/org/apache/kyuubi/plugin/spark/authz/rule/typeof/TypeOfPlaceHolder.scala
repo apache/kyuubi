@@ -17,18 +17,18 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule.typeof
 
-import org.apache.spark.sql.catalyst.expressions.{Expression, TypeOf, UnaryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Expression, UnaryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode}
-import org.apache.spark.sql.types.DataType
+import org.apache.spark.sql.types.{DataType, StringType}
 
-case class TypeOfPlaceHolder(expr: TypeOf) extends UnaryExpression {
-
-  override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode =
-    expr.doGenCode(ctx, ev)
-
-  override def dataType: DataType = expr.dataType
+case class TypeOfPlaceHolder(expr: Expression) extends UnaryExpression {
+  override def dataType: DataType = StringType
   override protected def withNewChildInternal(newChild: Expression): Expression =
-    copy(expr = newChild.asInstanceOf[TypeOf])
+    copy(expr = newChild)
 
-  override def child: Expression = expr.child
+  override def child: Expression = expr
+
+  override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
+    defineCodeGen(ctx, ev, _ => s"""UTF8String.fromString(${child.dataType.catalogString})""")
+  }
 }

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule
 
+import org.apache.spark.sql.catalyst.expressions.TypeOf
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 
@@ -26,7 +27,7 @@ class RuleEliminateTypeOf extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan.transformUp { case p =>
       p.transformExpressionsUp {
-        case toph: TypeOfPlaceHolder => toph.expr
+        case toph: TypeOfPlaceHolder => TypeOf(toph.expr)
       }
     }
   }
