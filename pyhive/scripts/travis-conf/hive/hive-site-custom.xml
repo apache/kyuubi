@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+  <property>
+    <name>hive.metastore.uris</name>
+    <value>thrift://localhost:9083</value>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:derby:;databaseName=/var/lib/hive/metastore/metastore_db;create=true</value>
+  </property>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>file:///</value>
+  </property>
+  <property>
+    <name>hive.server2.authentication</name>
+    <value>CUSTOM</value>
+  </property>
+  <property>
+    <name>hive.server2.custom.authentication.class</name>
+    <value>com.dropbox.DummyPasswdAuthenticationProvider</value>
+  </property>
+</configuration>
