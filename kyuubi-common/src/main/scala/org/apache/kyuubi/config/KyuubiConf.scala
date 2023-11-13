@@ -1932,6 +1932,16 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("server_operation_logs")
 
+  val PROXY_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.session.proxy.user")
+      .doc("An alternative to hive.server2.proxy.user. " +
+        "The current behavior is consistent with hive.server2.proxy.user " +
+        "and now only takes effect in RESTFul API. " +
+        "When both parameters are set, kyuubi.session.proxy.user takes precedence.")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
+
   @deprecated("using kyuubi.engine.share.level instead", "1.2.0")
   val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] =
     buildConf("kyuubi.session.engine.share.level")
