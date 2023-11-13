@@ -18,18 +18,14 @@
 
 <template>
   <div class="result">
-    <el-table
-      v-if="data?.length"
-      v-fit-columns
-      stripe
-      :data="data"
-      class="editor-el-table">
-      <el-table-column type="index" width="50" />
+    <el-table v-if="data?.length" stripe :data="data" class="editor-el-table">
+      <el-table-column type="index" class-name="index" :width="indexWidth" />
       <el-table-column
-        v-for="(_value, key) in data[0]"
+        v-for="(width, key) in columns"
         :key="key"
         :prop="key"
         :label="key"
+        :width="width"
         show-overflow-tooltip
         sortable />
     </el-table>
@@ -55,11 +51,13 @@
 </template>
 
 <script lang="ts" setup>
-  import { PropType } from 'vue'
+  import { PropType, computed } from 'vue'
   import type { IErrorMessage } from './types'
-  defineProps({
+
+  const font = '14px Myriad Pro,Helvetica Neue,Arial,Helvetica,sans-serif'
+  const props = defineProps({
     data: {
-      type: [Array, null] as PropType<Array<any> | null>,
+      type: [Array, null] as PropType<Array<Object> | null>,
       default: null,
       required: true
     },
@@ -70,54 +68,59 @@
     }
   })
 
-  function adjustColumnWidth(table: any, padding = 12) {
-    const colgroup = table.querySelector('colgroup')
-    const colDefs = [...colgroup.querySelectorAll('col')]
-    colDefs.forEach((col) => {
-      const clsName = col.getAttribute('name')
-      // ...table.querySelectorAll(`td.${clsName}`),
-      const cells = [...table.querySelectorAll(`th.${clsName}`)]
-      if (cells[0]?.classList?.contains?.('leave-alone')) {
-        return
-      }
-      const widthList = cells.map((el) => {
-        return el.querySelector('.cell')?.scrollWidth || 0
-      })
-      const max = Math.max(...widthList)
-      table.querySelectorAll(`col[name=${clsName}]`).forEach((el: any) => {
-        el.setAttribute('width', max + padding)
-      })
-      table.querySelectorAll(`td.${clsName} .cell`).forEach((el: any) => {
-        el.style.width = max + padding + 'px'
-      })
-    })
+  const measureTextWidth = (text: string, font: string, deviation = 48) => {
+    const canvas = document.createElement('canvas')
+    const context: CanvasRenderingContext2D = canvas.getContext(
+      '2d'
+    ) as CanvasRenderingContext2D
+    context.font = font
+    const width = context.measureText(text).width
+    return width + deviation
   }
 
-  const vFitColumns = {
-    mounted(el: any, binding: any) {
-      setTimeout(() => {
-        adjustColumnWidth(el, binding.value)
-      }, 200)
-    },
-    updated(el: any, binding: any) {
-      el.classList.add('r-table')
-      setTimeout(() => {
-        adjustColumnWidth(el, binding.value)
-      }, 200)
+  const indexWidth = computed(() => {
+    if (props.data?.length) {
+      return measureTextWidth(String(props.data?.length), font, 16)
+    } else {
+      return 0
     }
-  }
+  })
+
+  const columns = computed(() => {
+    if (props.data?.length) {
+      const maxColumnLength = 600
+      const obj: { [key: string]: number } = {}
+      props.data?.forEach((item: { [key: string]: any }) => {
+        for (const key in item) {
+          if (!obj[key]) {
+            obj[key] = measureTextWidth(key, font, 80)
+          }
+          obj[key] = Math.min(
+            maxColumnLength,
+            Math.max(obj[key], measureTextWidth(String(item[key]), font))
+          )
+        }
+      })
+      return obj
+    } else {
+      return {}
+    }
+  })
 </script>
 
 <style lang="scss" scoped>
-  :deep(.editor-el-table.r-table) {
-    th .cell {
-      display: inline-block;
-      white-space: nowrap;
-      width: auto;
-      overflow: auto;
+  @import '../styles/shared-styles.scss';
+
+  :deep(.editor-el-table) {
+    .el-table__header,
+    .el-table__body,
+    .el-table__body-wrapper .el-scrollbar__view,
+    tbody td .cell {
+      min-width: 100%;
     }
-    .el-table__body-wrapper {
-      overflow-x: auto;
+
+    tbody td.index .cell {
+      text-align: center;
     }
   }
   .result {
@@ -139,14 +142,7 @@
       }
     }
     .no-data {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 14px;
-      color: #999;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      text-align: center;
+      @include sharedNoData;
     }
   }
 </style>

@@ -68,3 +68,10 @@ export function getLog(identifier: string): any {
     method: 'get'
   })
 }
+
+export function closeOperation(identifier: string) {
+  return request({
+    url: `api/v1/admin/operations/${identifier}`,
+    method: 'delete'
+  })
+}

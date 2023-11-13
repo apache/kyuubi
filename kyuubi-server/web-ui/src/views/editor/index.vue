@@ -105,19 +105,36 @@
   }
 
   :deep(.result-el-tabs) {
+    $border: 1px solid #e4e7ed;
     .el-tabs__header {
       margin-bottom: 0;
       background: transparent;
       .el-tabs__nav-wrap {
-        border-bottom: 1px solid #e4e7ed;
+        border-bottom: $border;
       }
       .el-tabs__nav {
-        background: #f5f5f5;
+        border: 0;
+
+        .el-tabs__item {
+          border: $border;
+          border-bottom: 0;
+          margin-right: 4px;
+          background: #f5f5f5;
+          border-radius: 2px 2px 0 0;
+
+          &.is-active {
+            background: #fff;
+          }
+
+          &:not(.is-active) {
+            color: #909399;
+          }
+        }
       }
     }
     .el-tabs__content {
       padding: 10px 0 0 0;
-      border: 1px solid #e4e7ed;
+      border: $border;
       border-top: none;
     }
   }

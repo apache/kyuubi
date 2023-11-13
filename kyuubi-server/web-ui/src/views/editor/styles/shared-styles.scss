@@ -14,37 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-interface IResponse {
-  identifier: string
+ 
+@mixin sharedNoData {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    color: #999;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    text-align: center;
 }
-
-interface ISqlResult {
-  dataName?: string
-  dataType: string
-  value: any
-}
-
-interface IFields {
-  fields: ISqlResult[]
-}
-
-interface ILog {
-  logRowSet: string[]
-  rowCount: number
-}
-
-interface IErrorMessage {
-  title: string
-  description: string
-}
-
-interface IError extends Error {
-  response?: {
-    data?: {
-      message?: string
-    }
-  }
-}
-
-export { IResponse, ISqlResult, IFields, ILog, IErrorMessage, IError }

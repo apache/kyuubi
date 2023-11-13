@@ -38,7 +38,10 @@ export default {
   failure_reason: '失败原因',
   session_properties: 'Session 参数',
   no_data: '无数据',
+  no_log: '无日志',
   run_sql_tips: '请运行SQL获取结果',
+  result: '结果',
+  log: '日志',
   operation: {
     text: '操作',
     delete_confirm: '确认删除',

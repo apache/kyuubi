@@ -62,13 +62,17 @@
         @change="handleContentChange"
         @editor-save="editorSave" />
     </section>
-    <pre v-show="sqlLog" v-loading="logLoading">{{ sqlLog }}</pre>
     <el-tabs v-model="activeTab" type="card" class="result-el-tabs">
       <el-tab-pane
         v-loading="resultLoading"
-        :label="`Result${sqlResult?.length ? ` (${sqlResult?.length})` : ''}`"
+        :label="`${$t('result')}${
+          sqlResult?.length ? ` (${sqlResult?.length})` : ''
+        }`"
         name="result">
         <Result :data="sqlResult" :error-messages="errorMessages" />
+      </el-tab-pane>
+      <el-tab-pane v-loading="logLoading" :label="$t('log')" name="log">
+        <Log :data="sqlLog" />
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -77,6 +81,7 @@
 <script lang="ts" setup>
   import MonacoEditor from '@/components/monaco-editor/index.vue'
   import Result from './Result.vue'
+  import Log from './Log.vue'
   import { ref, reactive, onUnmounted, toRaw } from 'vue'
   import type { Ref } from 'vue'
   import * as monaco from 'monaco-editor'
@@ -90,14 +95,16 @@
     runSql,
     getSqlRowset,
     getSqlMetadata,
-    getLog
+    getLog,
+    closeOperation
   } from '@/api/editor'
   import type {
     IResponse,
     ISqlResult,
     IFields,
     ILog,
-    IErrorMessage
+    IErrorMessage,
+    IError
   } from './types'
 
   const { t } = useI18n()
@@ -141,11 +148,14 @@
     resultLoading.value = true
     logLoading.value = true
     errorMessages.value = []
-    const openSessionResponse: IResponse = await openSession({
-      'kyuubi.engine.type': param.engineType
-    }).catch(catchSessionError)
-    if (!openSessionResponse) return
-    sessionIdentifier.value = openSessionResponse.identifier
+
+    if (!sessionIdentifier.value) {
+      const openSessionResponse: IResponse = await openSession({
+        'kyuubi.engine.type': param.engineType
+      }).catch(catchSessionError)
+      if (!openSessionResponse) return
+      sessionIdentifier.value = openSessionResponse.identifier
+    }
 
     const runSqlResponse: IResponse = await runSql(
       {
@@ -156,21 +166,21 @@
     ).catch(catchSessionError)
     if (!runSqlResponse) return
 
-    Promise.all([
+    const getSqlResultPromise = Promise.all([
       getSqlRowset({
         operationHandleStr: runSqlResponse.identifier,
         fetchorientation: 'FETCH_NEXT',
         maxrows: limit.value
-      }).catch((err: any) => {
+      }).catch((err: IError) => {
         catchOperationError(err, t('message.get_sql_result_failed'))
       }),
       getSqlMetadata({
         operationHandleStr: runSqlResponse.identifier
-      }).catch((err: any) =>
+      }).catch((err: IError) =>
         catchOperationError(err, t('message.get_sql_metadata_failed'))
       )
     ])
-      .then((result: any[]) => {
+      .then((result) => {
         sqlResult.value = result[0]?.rows?.map((row: IFields) => {
           const map: { [key: string]: any } = {}
           row.fields?.forEach(({ value }: ISqlResult, index: number) => {
@@ -183,20 +193,24 @@
         resultLoading.value = false
       })
 
-    sqlLog.value = await getLog(runSqlResponse.identifier)
+    const getSqlLogPromise = getLog(runSqlResponse.identifier)
       .then((res: ILog) => {
-        return res?.logRowSet?.join('\r\n')
+        sqlLog.value = res?.logRowSet?.join('\r\n')
       })
-      .catch((err: any) => {
+      .catch((err: IError) => {
         postError(err, t('message.get_sql_log_failed'))
-        return ''
+        sqlLog.value = ''
       })
       .finally(() => {
         logLoading.value = false
       })
+
+    Promise.all([getSqlResultPromise, getSqlLogPromise]).then(() =>
+      closeOperation(runSqlResponse.identifier)
+    )
   }
 
-  const postError = (err: any, title = t('message.run_sql_failed')) => {
+  const postError = (err: IError, title = t('message.run_sql_failed')) => {
     errorMessages.value.push({
       title,
       description: err?.response?.data?.message || err?.message || ''
@@ -207,7 +221,7 @@
     })
   }
 
-  const catchSessionError = (err: any) => {
+  const catchSessionError = (err: IError) => {
     sqlResult.value = []
     sqlLog.value = ''
     postError(err)
@@ -215,10 +229,9 @@
     logLoading.value = false
   }
 
-  const catchOperationError = (err: any, title: string) => {
+  const catchOperationError = (err: IError, title: string) => {
     postError(err, title)
     sqlResult.value = []
-    return Promise.reject()
   }
 
   const handleChangeLimit = (command: number) => {
@@ -252,7 +265,6 @@
   .editor {
     > .el-space,
     > section,
-    > pre,
     > .el-tabs {
       margin-bottom: 12px;
     }
@@ -273,18 +285,6 @@
     > section {
       height: 180px;
       border: 1px solid #e0e0e0;
-    }
-
-    > pre {
-      max-height: 120px;
-      overflow: auto;
-      border-left: 6px solid #e2e2e2;
-      padding: 9.5px;
-      margin: 24px 0;
-      font-size: 12px;
-      line-height: 20px;
-      background-color: #f8f8f8;
-      color: #444;
     }
   }
 </style>
