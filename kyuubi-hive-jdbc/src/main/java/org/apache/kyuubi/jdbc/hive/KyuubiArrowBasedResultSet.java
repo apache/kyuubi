@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import java.util.Calendar;
 import java.util.List;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -196,6 +197,32 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
   @Override
   public Date getDate(String columnName) throws SQLException {
     return getDate(findColumn(columnName));
+  }
+
+  public Date getDate(int columnIndex, Calendar cal) throws SQLException {
+    Date value = getDate(columnIndex);
+    if (value == null) {
+      return null;
+    } else {
+      try {
+        return parseDate(value, cal);
+      } catch (IllegalArgumentException e) {
+        throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to date: " + e, e);
+      }
+    }
+  }
+
+  @Override
+  public Date getDate(String columnLabel, Calendar cal) throws SQLException {
+    return this.getDate(findColumn(columnLabel), cal);
+  }
+
+  private Date parseDate(Date value, Calendar cal) {
+    if (cal == null) {
+      cal = Calendar.getInstance();
+    }
+    cal.setTime(value);
+    return new Date(cal.getTimeInMillis());
   }
 
   @Override
