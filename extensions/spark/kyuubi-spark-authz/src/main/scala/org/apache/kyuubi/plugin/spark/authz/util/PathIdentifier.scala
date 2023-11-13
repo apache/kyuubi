@@ -25,14 +25,12 @@ import org.apache.spark.sql.SparkSession
  */
 object PathIdentifier {
 
-  private val spark = SparkSession.active
-
   private val SEPARATOR = "/"
 
-  private def supportSQLOnFile: Boolean = spark.sessionState.conf.runSQLonFile
+  private def supportSQLOnFile(spark: SparkSession): Boolean = spark.sessionState.conf.runSQLonFile
 
   private def isAbsolute(path: String): Boolean = Option(path) != None && path.startsWith(SEPARATOR)
 
-  def isPathIdentifier(path: String): Boolean = supportSQLOnFile && isAbsolute(path)
-
+  def isPathIdentifier(path: String, spark: SparkSession): Boolean =
+    supportSQLOnFile(spark) && isAbsolute(path)
 }

@@ -146,7 +146,7 @@ class ResolvedTableTableExtractor extends TableExtractor {
  */
 class IdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = v1 match {
-    case identifier: Identifier if !isPathIdentifier(identifier.name()) =>
+    case identifier: Identifier if !isPathIdentifier(identifier.name(), spark) =>
       Some(Table(None, Some(quote(identifier.namespace())), identifier.name(), None))
     case _ => None
   }
@@ -221,7 +221,7 @@ class ResolvedDbObjectNameTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val nameParts = invokeAs[Seq[String]](v1, "nameParts")
     val table = nameParts.last
-    if (isPathIdentifier(table)) {
+    if (isPathIdentifier(table, spark)) {
       None
     } else {
       val catalogVal = invokeAs[AnyRef](v1, "catalog")
