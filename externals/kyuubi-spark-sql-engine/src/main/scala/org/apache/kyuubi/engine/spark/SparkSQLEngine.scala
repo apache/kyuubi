@@ -376,12 +376,12 @@ object SparkSQLEngine extends Logging {
         }
       } catch {
         case i: InterruptedException if !sparkSessionCreated.get =>
-          error(
+          val msg =
             s"The Engine main thread was interrupted, possibly due to `createSpark` timeout." +
               s" The `${ENGINE_INIT_TIMEOUT.key}` is ($initTimeout ms) " +
-              s" and submitted at $submitTime.",
-            i)
-          throw i
+              s" and submitted at $submitTime."
+          error(msg, i)
+          throw new InterruptedException(msg)
         case e: KyuubiException => throw e
         case t: Throwable =>
           error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
