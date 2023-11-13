@@ -1241,7 +1241,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-<<<<<<< Updated upstream
   test("Table Command location privilege") {
     val db1 = defaultDb
     val table1 = "table1"
@@ -1294,8 +1293,11 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                 s"[write] privilege on [[file://$path, file://$path/]]"
             })
         }
-=======
-  test("TYPEOF") {
+      }
+    }
+  }
+
+  test("[KYUUBI #5677][AUTHZ] Typeof expression miss column information") {
     val db1 = defaultDb
     val table1 = "table1"
     withSingleCallEnabled {
@@ -1324,7 +1326,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |FROM $db1.$table1""".stripMargin).show()))(
           s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/day]")
         doAs(admin, sql(s"SELECT typeof(id), typeof(day) FROM $db1.$table1").show())
->>>>>>> Stashed changes
       }
     }
   }
