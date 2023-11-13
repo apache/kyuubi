@@ -22,15 +22,15 @@ import org.apache.kyuubi.engine.jdbc.schema.RowSetHelper
 
 class ClickHouseRowSetHelper extends RowSetHelper {
 
-  override def toTinyIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn =
+  override def toBigIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn =
     toIntegerTColumn(rows, ordinal)
 
-  override def toSmallIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn =
-    toIntegerTColumn(rows, ordinal)
+  override def toDoubleTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn =
+    toRealTColumn(rows, ordinal)
 
-  override def toTinyIntTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
+  override def toBigIntTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
     toIntegerTColumnValue(row, ordinal)
 
-  override def toSmallIntTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
-    toIntegerTColumnValue(row, ordinal)
+  override def toDoubleTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
+    toRealTColumnValue(row, ordinal)
 }
