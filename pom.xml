@@ -175,10 +175,6 @@
         <log4j.version>2.20.0</log4j.version>
         <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
         <mockito.version>4.11.0</mockito.version>
-        <!--
-          Do NOT upgrade Netty 4.1.94.Final or above, because
-          https://github.com/netty/netty/pull/13408 breaks the Arrow
-          -->
         <netty.version>4.1.100.Final</netty.version>
         <openai.java.version>0.12.0</openai.java.version>
         <parquet.version>1.10.1</parquet.version>
