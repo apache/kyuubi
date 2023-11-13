@@ -376,8 +376,7 @@ The created [Batch](#batch) object.
 
 Create a new batch with uploading resource file.
 
-Example of using `curl` command to send POST request to `/v1/batches` in `multipart-formdata` media type with uploading
-resource file from local path.
+Example of using `curl` command to send POST request to `/v1/batches` in `multipart-formdata` media type with uploading resource file from local path.
 
 ```shell
 curl --location --request POST 'http://localhost:10099/api/v1/batches' \
@@ -454,15 +453,13 @@ Refresh the Hadoop configurations of the Kyuubi server.
 
 ### POST /admin/refresh/user_defaults_conf
 
-Refresh the [user defaults configs](../../configuration/settings.html#user-defaults) with key in format in the form
-of `___{username}___.{config key}` from default property file.
+Refresh the [user defaults configs](../../configuration/settings.html#user-defaults) with key in format in the form of `___{username}___.{config key}` from default property file.
 
 ### POST /admin/refresh/kubernetes_conf
 
 Refresh the kubernetes configs with key prefixed with `kyuubi.kubernetes` from default property file.
 
-It is helpful if you need to support multiple kubernetes contexts and namespaces,
-see [KYUUBI #4843](https://github.com/apache/kyuubi/issues/4843).
+It is helpful if you need to support multiple kubernetes contexts and namespaces, see [KYUUBI #4843](https://github.com/apache/kyuubi/issues/4843).
 
 ### DELETE /admin/engine
 

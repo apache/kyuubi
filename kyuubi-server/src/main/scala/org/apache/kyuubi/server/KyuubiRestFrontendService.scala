@@ -220,7 +220,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   def getSessionUser(proxyUser: String): String = {
-    // Internally, we use PROXY_USER to unify the key as proxyUser
+    // Internally, we use kyuubi.session.proxy.user to unify the key as proxyUser
     val sessionConf = Option(proxyUser).filter(_.nonEmpty).map(proxyUser =>
       Map(PROXY_USER.key -> proxyUser)).getOrElse(Map())
     getSessionUser(sessionConf)
