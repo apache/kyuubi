@@ -100,7 +100,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
     assert(200 == response.getStatus)
 
-    // because delete is a asynchronous operation, we need sleep to
+    // because delete is a asynchronous operation, we need eventually to
     // make sure the delete operation process complete
     eventually(timeout(3.seconds)) {
       // get session list again
