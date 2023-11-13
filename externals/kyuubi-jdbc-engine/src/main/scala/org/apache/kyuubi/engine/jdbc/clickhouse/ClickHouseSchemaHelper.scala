@@ -22,6 +22,8 @@ import org.apache.kyuubi.engine.jdbc.schema.SchemaHelper
 
 class ClickHouseSchemaHelper extends SchemaHelper {
 
+  override def bitToTTypeId: TTypeId = TTypeId.INT_TYPE
+
   override def bigintToTTypeId: TTypeId = TTypeId.INT_TYPE
 
   override def doubleToTTypeId: TTypeId = TTypeId.FLOAT_TYPE
