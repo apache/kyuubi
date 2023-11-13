@@ -1241,6 +1241,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+<<<<<<< Updated upstream
   test("Table Command location privilege") {
     val db1 = defaultDb
     val table1 = "table1"
@@ -1293,6 +1294,37 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                 s"[write] privilege on [[file://$path, file://$path/]]"
             })
         }
+=======
+  test("TYPEOF") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $db1.$table1(
+               |id int,
+               |scope int,
+               |day string)
+               |""".stripMargin))
+        doAs(admin, sql(s"INSERT INTO $db1.$table1 SELECT 1, 2, 'TONY'"))
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT typeof(id), typeof(day) FROM $db1.$table1").show()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/day]")
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(
+              s"""
+                 |SELECT
+                 |typeof(cast(id as string)),
+                 |typeof(substring(day, 1, 3))
+                 |FROM $db1.$table1""".stripMargin).show()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/day]")
+        doAs(admin, sql(s"SELECT typeof(id), typeof(day) FROM $db1.$table1").show())
+>>>>>>> Stashed changes
       }
     }
   }
