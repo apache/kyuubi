@@ -110,7 +110,11 @@ class SparkEngineSuites extends KyuubiFunSuite {
       SparkSQLEngine.currentEngine = None
       val logAppender = new LogAppender("test createSpark timeout")
       withLogAppender(logAppender) {
-        SparkSQLEngine.main(Array.empty)
+        try {
+          SparkSQLEngine.main(Array.empty)
+        } catch {
+          case e: Exception => error("", e)
+        }
       }
       assert(SparkSQLEngine.currentEngine.isEmpty)
       val errorMsg = s"The Engine main thread was interrupted, possibly due to `createSpark`" +
