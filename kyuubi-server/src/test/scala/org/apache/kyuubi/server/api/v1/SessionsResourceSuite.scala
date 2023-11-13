@@ -66,8 +66,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     // there is no guarantee that it will complete quickly or fail in the process
     // so we can not guarantee the poolActiveThread count must equal to 1
     assert(execPoolStatistic1.getExecPoolSize == 1 &&
-      (execPoolStatistic1.getExecPoolActiveCount == 1 ||
-        execPoolStatistic1.getExecPoolActiveCount == 0))
+      execPoolStatistic1.getExecPoolActiveCount <= 1)
 
     response = webTarget.path("api/v1/sessions/count").request().get()
     val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
@@ -103,13 +102,14 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     // because delete is a asynchronous operation, we need sleep to
     // make sure the delete operation process complete
-    Thread.sleep(3000)
-    // get session list again
-    response2 = webTarget.path("api/v1/sessions").request().get()
-    assert(200 == response2.getStatus)
+    eventually(timeout(3.seconds)) {
+      // get session list again
+      response2 = webTarget.path("api/v1/sessions").request().get()
+      assert(200 == response2.getStatus)
 
-    val sessions = response2.readEntity(classOf[Seq[SessionData]])
-    assert(sessions.isEmpty)
+      val sessions = response2.readEntity(classOf[Seq[SessionData]])
+      assert(sessions.isEmpty)
+    }
   }
 
   test("get session event") {
