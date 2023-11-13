@@ -78,13 +78,9 @@
     return width + deviation
   }
 
-  const indexWidth = computed(() => {
-    if (props.data?.length) {
-      return measureTextWidth(String(props.data?.length), font, 16)
-    } else {
-      return 0
-    }
-  })
+  const indexWidth = computed(() =>
+    props.data?.length ? measureTextWidth(String(props.data?.length), font) : 0
+  )
 
   const columns = computed(() => {
     if (props.data?.length) {
