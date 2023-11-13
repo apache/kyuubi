@@ -191,7 +191,7 @@ object PrivilegesBuilder {
         }
         desc.uriDescs.foreach { ud =>
           try {
-            val uris = ud.extract(plan)
+            val uris = ud.extract(plan, spark)
             if (ud.isInput) {
               inputObjs ++= uris.map(PrivilegeObject(_))
             } else {
@@ -215,7 +215,7 @@ object PrivilegesBuilder {
         }
         spec.uriDescs.foreach { ud =>
           try {
-            val uris = ud.extract(plan)
+            val uris = ud.extract(plan, spark)
             if (ud.isInput) {
               inputObjs ++= uris.map(PrivilegeObject(_))
             } else {

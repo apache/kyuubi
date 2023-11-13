@@ -27,10 +27,12 @@ import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.PathIdentifier._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 /**
@@ -143,10 +145,10 @@ class ResolvedTableTableExtractor extends TableExtractor {
  * org.apache.spark.sql.connector.catalog.Identifier
  */
 class IdentifierTableExtractor extends TableExtractor {
-  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val namespace = invokeAs[Array[String]](v1, "namespace")
-    val table = invokeAs[String](v1, "name")
-    Some(Table(None, Some(quote(namespace)), table, None))
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = v1 match {
+    case identifier: Identifier if !isPathIdentifier(identifier.name(), spark) =>
+      Some(Table(None, Some(quote(identifier.namespace())), identifier.name(), None))
+    case _ => None
   }
 }
 
@@ -217,12 +219,16 @@ class LogicalRelationTableExtractor extends TableExtractor {
  */
 class ResolvedDbObjectNameTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val catalogVal = invokeAs[AnyRef](v1, "catalog")
-    val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
     val nameParts = invokeAs[Seq[String]](v1, "nameParts")
-    val namespace = nameParts.init.toArray
     val table = nameParts.last
-    Some(Table(catalog, Some(quote(namespace)), table, None))
+    if (isPathIdentifier(table, spark)) {
+      None
+    } else {
+      val catalogVal = invokeAs[AnyRef](v1, "catalog")
+      val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
+      val namespace = nameParts.init.toArray
+      Some(Table(catalog, Some(quote(namespace)), table, None))
+    }
   }
 }
 

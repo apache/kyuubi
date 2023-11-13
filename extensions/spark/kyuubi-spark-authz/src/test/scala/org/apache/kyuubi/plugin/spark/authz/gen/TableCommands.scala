@@ -216,7 +216,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       catalogDesc = Some(CatalogDesc()))
     val uriDescs = Seq(
       UriDesc("tableSpec", classOf[TableSpecURIExtractor]),
-      UriDesc("properties", classOf[PropertiesLocationUriExtractor]))
+      UriDesc("properties", classOf[PropertiesLocationUriExtractor]),
+      UriDesc("tableName", classOf[IdentifierURIExtractor]))
     TableCommandSpec(
       cmd,
       Seq(resolvedIdentifierTableDesc, tableDesc, resolvedDbObjectNameDesc),
@@ -230,7 +231,9 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
-    val uriDescs = Seq(UriDesc("properties", classOf[PropertiesLocationUriExtractor]))
+    val uriDescs = Seq(
+      UriDesc("properties", classOf[PropertiesLocationUriExtractor]),
+      UriDesc("tableName", classOf[IdentifierURIExtractor]))
     TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE, uriDescs = uriDescs)
   }
 

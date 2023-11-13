@@ -16,6 +16,8 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import java.nio.file.Path
+
 import org.scalatest.Outcome
 
 import org.apache.kyuubi.Utils
@@ -42,6 +44,18 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $namespace.$table (
+       |  id INT,
+       |  name STRING,
+       |  gender STRING,
+       |  birthDate TIMESTAMP
+       |)
+       |USING DELTA
+       |PARTITIONED BY (gender)
+       |""".stripMargin
+
+  def createPathBasedTableSql(path: Path): String =
+    s"""
+       |CREATE TABLE IF NOT EXISTS delta.`$path` (
        |  id INT,
        |  name STRING,
        |  gender STRING,
@@ -292,6 +306,34 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(vacuumTableSql))
     }
+  }
+
+  test("create path-based table") {
+    withTempDir(path => {
+      val createTableSql = createPathBasedTableSql(path)
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(createTableSql))
+      }(s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(createTableSql))
+    })
+  }
+
+  test("create or replace path-based table") {
+    withTempDir(path => {
+      val createOrReplaceTableSql =
+        s"""
+           |CREATE OR REPLACE TABLE delta.`$path` (
+           |  id INT,
+           |  name STRING,
+           |  gender STRING,
+           |  birthDate TIMESTAMP
+           |) USING DELTA
+           |""".stripMargin
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(createOrReplaceTableSql))
+      }(s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(createOrReplaceTableSql))
+    })
   }
 }
 

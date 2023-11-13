@@ -17,12 +17,15 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable}
+import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.HadoopFsRelation
 
+import org.apache.kyuubi.plugin.spark.authz.util.PathIdentifier._
 import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
 
-trait URIExtractor extends (AnyRef => Seq[Uri]) with Extractor
+trait URIExtractor extends ((SparkSession, AnyRef) => Seq[Uri]) with Extractor
 
 object URIExtractor {
   val uriExtractors: Map[String, URIExtractor] = {
@@ -34,7 +37,7 @@ object URIExtractor {
  * String
  */
 class StringURIExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Seq[Uri] = {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
     v1 match {
       case uriPath: String => Seq(Uri(uriPath))
       case Some(uriPath: String) => Seq(Uri(uriPath))
@@ -44,31 +47,31 @@ class StringURIExtractor extends URIExtractor {
 }
 
 class StringSeqURIExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Seq[Uri] = {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
     v1.asInstanceOf[Seq[String]].map(Uri)
   }
 }
 
 class CatalogStorageFormatURIExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Seq[Uri] = {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
     v1.asInstanceOf[CatalogStorageFormat].locationUri.map(uri => Uri(uri.getPath)).toSeq
   }
 }
 
 class PropertiesPathUriExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Seq[Uri] = {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
     v1.asInstanceOf[Map[String, String]].get("path").map(Uri).toSeq
   }
 }
 
 class PropertiesLocationUriExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Seq[Uri] = {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
     v1.asInstanceOf[Map[String, String]].get("location").map(Uri).toSeq
   }
 }
 
 class BaseRelationFileIndexURIExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Seq[Uri] = {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
     v1 match {
       case h: HadoopFsRelation => h.location.rootPaths.map(_.toString).map(Uri)
       case _ => Nil
@@ -77,19 +80,27 @@ class BaseRelationFileIndexURIExtractor extends URIExtractor {
 }
 
 class TableSpecURIExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Seq[Uri] = {
-    new StringURIExtractor().apply(invokeAs[Option[String]](v1, "location"))
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
+    new StringURIExtractor().apply(spark, invokeAs[Option[String]](v1, "location"))
   }
 }
 
 class CatalogTableURIExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Seq[Uri] = {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
     v1.asInstanceOf[CatalogTable].storage.locationUri.map(_.toString).map(Uri).toSeq
   }
 }
 
 class PartitionLocsSeqURIExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Seq[Uri] = {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
     v1.asInstanceOf[Seq[(_, Option[String])]].flatMap(_._2).map(Uri)
+  }
+}
+
+class IdentifierURIExtractor extends URIExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = v1 match {
+    case identifier: Identifier if isPathIdentifier(identifier.name(), spark) =>
+      Seq(identifier.name()).map(Uri)
+    case _ => Nil
   }
 }
