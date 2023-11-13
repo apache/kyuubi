@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
-import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SparkSession
 
 /**
@@ -28,13 +27,12 @@ object PathIdentifier {
 
   private val spark = SparkSession.active
 
+  private val SEPARATOR = "/"
+
   private def supportSQLOnFile: Boolean = spark.sessionState.conf.runSQLonFile
 
-  def isPathIdentifier(table: String): Boolean = {
-    try {
-      supportSQLOnFile && new Path(table).isAbsolute
-    } catch {
-      case _: IllegalArgumentException => false
-    }
-  }
+  private def isAbsolute(path: String): Boolean = Option(path) != None && path.startsWith(SEPARATOR)
+
+  def isPathIdentifier(path: String): Boolean = supportSQLOnFile && isAbsolute(path)
+
 }
