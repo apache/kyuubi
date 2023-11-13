@@ -15,11 +15,36 @@
  * limitations under the License.
  */
 
-import request from '@/utils/request'
-
-export function getAllServer(): any {
-  return request({
-    url: 'api/v1/admin/server',
-    method: 'get'
-  })
+interface IResponse {
+  identifier: string
 }
+
+interface ISqlResult {
+  dataName?: string
+  dataType: string
+  value: any
+}
+
+interface IFields {
+  fields: ISqlResult[]
+}
+
+interface ILog {
+  logRowSet: string[]
+  rowCount: number
+}
+
+interface IErrorMessage {
+  title: string
+  description: string
+}
+
+interface IError extends Error {
+  response?: {
+    data?: {
+      message?: string
+    }
+  }
+}
+
+export { IResponse, ISqlResult, IFields, ILog, IErrorMessage, IError }

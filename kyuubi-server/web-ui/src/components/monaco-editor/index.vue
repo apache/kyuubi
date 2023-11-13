@@ -88,7 +88,7 @@
     editor = monaco.editor.create(codeEditBox.value, {
       value: props.modelValue,
       language: props.language,
-      theme: monacoEditorThemeRef.value,
+      theme: props.theme || monacoEditorThemeRef.value,
       ...props.options
     })
 

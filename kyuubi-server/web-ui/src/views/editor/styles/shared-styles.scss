@@ -14,12 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import request from '@/utils/request'
-
-export function getAllServer(): any {
-  return request({
-    url: 'api/v1/admin/server',
-    method: 'get'
-  })
+ 
+@mixin sharedNoData {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    color: #999;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    text-align: center;
 }

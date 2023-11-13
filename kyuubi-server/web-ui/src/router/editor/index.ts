@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-import request from '@/utils/request'
+const routes = [
+  {
+    path: '/editor',
+    name: 'editor',
+    component: () => import('@/views/editor/index.vue')
+  }
+]
 
-export function getAllServer(): any {
-  return request({
-    url: 'api/v1/admin/server',
-    method: 'get'
-  })
-}
+export default routes

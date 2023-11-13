@@ -37,6 +37,11 @@ export default {
   engine_ui: 'Engine UI',
   failure_reason: 'Failure Reason',
   session_properties: 'Session Properties',
+  no_data: 'No data',
+  no_log: 'No log',
+  run_sql_tips: 'Run a SQL to get result',
+  result: 'Result',
+  log: 'Log',
   operation: {
     text: 'Operation',
     delete_confirm: 'Delete Confirm',
@@ -44,7 +49,8 @@ export default {
     cancel_confirm: 'Cancel Confirm',
     close: 'Close',
     cancel: 'Cancel',
-    delete: 'Delete'
+    delete: 'Delete',
+    run: 'Run'
   },
   message: {
     delete_succeeded: 'Delete {name} Succeeded',
@@ -52,6 +58,10 @@ export default {
     close_succeeded: 'Close {name} Succeeded',
     close_failed: 'Close {name} Failed',
     cancel_succeeded: 'Cancel {name} Succeeded',
-    cancel_failed: 'Cancel {name} Failed'
+    cancel_failed: 'Cancel {name} Failed',
+    run_sql_failed: 'Run SQL Failed',
+    get_sql_log_failed: 'Get SQL Log Failed',
+    get_sql_result_failed: 'Get SQL Result Failed',
+    get_sql_metadata_failed: 'Get SQL Metadata Failed'
   }
 }
