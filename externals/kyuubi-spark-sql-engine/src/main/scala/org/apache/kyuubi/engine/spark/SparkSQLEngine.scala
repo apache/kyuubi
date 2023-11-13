@@ -361,7 +361,8 @@ object SparkSQLEngine extends Logging {
           // blocking main thread
           countDownLatch.await()
         } catch {
-          case e: KyuubiException => currentEngine match {
+          case e: KyuubiException =>
+            currentEngine match {
               case Some(engine) =>
                 engine.stop()
                 val event = EngineEvent(engine)
@@ -370,16 +371,21 @@ object SparkSQLEngine extends Logging {
                 error(event, e)
               case _ => error("Current SparkSQLEngine is not created.")
             }
+            throw e
 
         }
       } catch {
         case i: InterruptedException if !sparkSessionCreated.get =>
-          error(
+          val msg =
             s"The Engine main thread was interrupted, possibly due to `createSpark` timeout." +
               s" The `${ENGINE_INIT_TIMEOUT.key}` is ($initTimeout ms) " +
-              s" and submitted at $submitTime.",
-            i)
-        case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
+              s" and submitted at $submitTime."
+          error(msg, i)
+          throw new InterruptedException(msg)
+        case e: KyuubiException => throw e
+        case t: Throwable =>
+          error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
+          throw t
       } finally {
         if (spark != null) {
           spark.stop()
