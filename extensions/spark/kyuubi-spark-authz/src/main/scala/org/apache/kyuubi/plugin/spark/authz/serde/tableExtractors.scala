@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.DataType
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.util.PathIdentifier
+import org.apache.kyuubi.plugin.spark.authz.util.PathIdentifier._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 /**
@@ -145,13 +145,10 @@ class ResolvedTableTableExtractor extends TableExtractor {
  * org.apache.spark.sql.connector.catalog.Identifier
  */
 class IdentifierTableExtractor extends TableExtractor {
-  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val identifier = v1.asInstanceOf[Identifier]
-    if (PathIdentifier.isPathIdentifier(identifier)) {
-      None
-    } else {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = v1 match {
+    case identifier: Identifier if !isPathIdentifier(identifier.name()) =>
       Some(Table(None, Some(quote(identifier.namespace())), identifier.name(), None))
-    }
+    case _ => None
   }
 }
 
@@ -222,14 +219,14 @@ class LogicalRelationTableExtractor extends TableExtractor {
  */
 class ResolvedDbObjectNameTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val catalogVal = invokeAs[AnyRef](v1, "catalog")
-    val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
     val nameParts = invokeAs[Seq[String]](v1, "nameParts")
-    val namespace = nameParts.init.toArray
     val table = nameParts.last
-    if (PathIdentifier.isPathIdentifier(namespace, table)) {
+    if (isPathIdentifier(table)) {
       None
     } else {
+      val catalogVal = invokeAs[AnyRef](v1, "catalog")
+      val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
+      val namespace = nameParts.init.toArray
       Some(Table(catalog, Some(quote(namespace)), table, None))
     }
   }

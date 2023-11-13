@@ -21,7 +21,7 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.HadoopFsRelation
 
-import org.apache.kyuubi.plugin.spark.authz.util.PathIdentifier
+import org.apache.kyuubi.plugin.spark.authz.util.PathIdentifier._
 import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
 
 trait URIExtractor extends (AnyRef => Seq[Uri]) with Extractor
@@ -97,12 +97,9 @@ class PartitionLocsSeqURIExtractor extends URIExtractor {
 }
 
 class IdentifierURIExtractor extends URIExtractor {
-  override def apply(v1: AnyRef): Seq[Uri] = {
-    val identifier = v1.asInstanceOf[Identifier]
-    if (PathIdentifier.isPathIdentifier(identifier)) {
+  override def apply(v1: AnyRef): Seq[Uri] = v1 match {
+    case identifier: Identifier if isPathIdentifier(identifier.name()) =>
       Seq(identifier.name()).map(Uri)
-    } else {
-      Nil
-    }
+    case _ => Nil
   }
 }

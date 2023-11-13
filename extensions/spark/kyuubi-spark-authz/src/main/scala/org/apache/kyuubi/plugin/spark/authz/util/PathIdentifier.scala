@@ -17,41 +17,24 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
-import java.util.Locale
-
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.connector.catalog.Identifier
 
 /**
- * An object for handling table access through delta.`/some/path`. This is a stop-gap solution
- * until PathIdentifiers are implemented in Apache Spark. Borrowed from class
- * org.apache.spark.sql.delta.catalog.SupportsPathIdentifier of Delta Lake.
+ * An object for handling table access on path-based table. This is a stop-gap solution
+ * until PathIdentifiers are implemented in Apache Spark.
  */
-private[authz] object PathIdentifier {
+object PathIdentifier {
 
-  val spark = SparkSession.active
+  private val spark = SparkSession.active
 
   private def supportSQLOnFile: Boolean = spark.sessionState.conf.runSQLonFile
 
-  private def isDeltaDataSourceName(name: String): Boolean = {
-    name.toLowerCase(Locale.ROOT) == "delta"
-  }
-
-  private def hasDeltaNamespace(namespace: Seq[String]): Boolean = {
-    namespace.length == 1 && isDeltaDataSourceName(namespace.head)
-  }
-
-  def isPathIdentifier(namespace: Seq[String], table: String): Boolean = {
-    // Should be a simple check of a special PathIdentifier class in the future
+  def isPathIdentifier(table: String): Boolean = {
     try {
-      supportSQLOnFile && hasDeltaNamespace(namespace) && new Path(table).isAbsolute
+      supportSQLOnFile && new Path(table).isAbsolute
     } catch {
       case _: IllegalArgumentException => false
     }
-  }
-
-  def isPathIdentifier(ident: Identifier): Boolean = {
-    isPathIdentifier(ident.namespace(), ident.name())
   }
 }
