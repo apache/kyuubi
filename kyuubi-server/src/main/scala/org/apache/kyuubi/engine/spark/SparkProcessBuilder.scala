@@ -30,6 +30,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
@@ -229,17 +230,28 @@ class SparkProcessBuilder(
       kubernetesNamespace())
   }
 
+  private val forciblyRewriteDriverPodName: Boolean =
+    conf.get(KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME)
+  private val forciblyRewriteExecPodNamePrefix: Boolean =
+    conf.get(KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX)
+
   def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
     val appName = conf.getOrElse(APP_KEY, "spark")
     val map = mutable.Map.newBuilder[String, String]
     if (clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s"))) {
       if (!conf.contains(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)) {
-        val prefix = KubernetesUtils.generateExecutorPodNamePrefix(appName, engineRefId)
+        val prefix = KubernetesUtils.generateExecutorPodNamePrefix(
+          appName,
+          engineRefId,
+          forciblyRewriteExecPodNamePrefix)
         map += (KUBERNETES_EXECUTOR_POD_NAME_PREFIX -> prefix)
       }
       if (deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")) {
         if (!conf.contains(KUBERNETES_DRIVER_POD_NAME)) {
-          val name = KubernetesUtils.generateDriverPodName(appName, engineRefId)
+          val name = KubernetesUtils.generateDriverPodName(
+            appName,
+            engineRefId,
+            forciblyRewriteDriverPodName)
           map += (KUBERNETES_DRIVER_POD_NAME -> name)
         }
       }
