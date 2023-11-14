@@ -357,6 +357,36 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(updateTableSql))
     })
   }
+
+  test("insert path-based table") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$namespace1.$table2", "table"), (s"$namespace1", "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+        doAs(admin, sql(createTableSql(namespace1, table2)))
+        withTempDir(path => {
+          doAs(admin, sql(createPathBasedTableSql(path)))
+          // insert into
+          val insertIntoSql = s"INSERT INTO delta.`$path` SELECT * FROM $namespace1.$table2"
+          interceptContains[AccessControlException](
+            doAs(someone, sql(insertIntoSql)))(
+            s"does not have [select] privilege on [$namespace1/$table2/id," +
+              s"$namespace1/$table2/name,$namespace1/$table2/gender," +
+              s"$namespace1/$table2/birthDate], [write] privilege on [[$path, $path/]]")
+          doAs(admin, sql(insertIntoSql))
+
+          // insert overwrite
+          val insertOverwriteSql =
+            s"INSERT OVERWRITE delta.`$path` SELECT * FROM $namespace1.$table2"
+          interceptContains[AccessControlException](
+            doAs(someone, sql(insertOverwriteSql)))(
+            s"does not have [select] privilege on [$namespace1/$table2/id," +
+              s"$namespace1/$table2/name,$namespace1/$table2/gender," +
+              s"$namespace1/$table2/birthDate], [write] privilege on [[$path, $path/]]")
+          doAs(admin, sql(insertOverwriteSql))
+        })
+      }
+    }
+  }
 }
 
 object DeltaCatalogRangerSparkExtensionSuite {

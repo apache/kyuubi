@@ -28,6 +28,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.connector.catalog.Identifier
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -184,21 +185,17 @@ class ExpressionSeqTableExtractor extends TableExtractor {
  * org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
  */
 class DataSourceV2RelationTableExtractor extends TableExtractor {
-  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val plan = v1.asInstanceOf[LogicalPlan]
-    val maybeV2Relation = plan.find(_.getClass.getSimpleName == "DataSourceV2Relation")
-    maybeV2Relation match {
-      case None => None
-      case Some(v2Relation) =>
-        val maybeCatalogPlugin = invokeAs[Option[AnyRef]](v2Relation, "catalog")
-        val maybeCatalog = maybeCatalogPlugin.flatMap(catalogPlugin =>
-          lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
-        lookupExtractor[TableTableExtractor].apply(spark, invokeAs[AnyRef](v2Relation, "table"))
-          .map { table =>
-            val maybeOwner = TableExtractor.getOwner(v2Relation)
-            table.copy(catalog = maybeCatalog, owner = maybeOwner)
-          }
-    }
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = v1 match {
+    case DataSourceV2Relation(table, _, catalog, identifier, _)
+        if identifier == None || !isPathIdentifier(identifier.get.name(), spark) =>
+      val maybeCatalog = catalog.flatMap(catalogPlugin =>
+        lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
+      lookupExtractor[TableTableExtractor].apply(spark, table)
+        .map { table =>
+          val maybeOwner = TableExtractor.getOwner(v1)
+          table.copy(catalog = maybeCatalog, owner = maybeOwner)
+        }
+    case _ => None
   }
 }
 
