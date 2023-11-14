@@ -335,6 +335,28 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(createOrReplaceTableSql))
     })
   }
+
+  test("delete from path-based table") {
+    withTempDir(path => {
+      doAs(admin, sql(createPathBasedTableSql(path)))
+      val deleteFromTableSql = s"DELETE FROM delta.`$path` WHERE birthDate < '1955-01-01'"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(deleteFromTableSql))
+      }(s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(deleteFromTableSql))
+    })
+  }
+
+  test("update path-based table") {
+    withTempDir(path => {
+      doAs(admin, sql(createPathBasedTableSql(path)))
+      val updateTableSql = s"UPDATE delta.`$path` SET gender = 'Female' WHERE gender = 'F'"
+      interceptContains[AccessControlException] {
+        doAs(someone, sql(updateTableSql))
+      }(s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(updateTableSql))
+    })
+  }
 }
 
 object DeltaCatalogRangerSparkExtensionSuite {

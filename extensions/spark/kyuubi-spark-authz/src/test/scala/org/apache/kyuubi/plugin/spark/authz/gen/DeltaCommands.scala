@@ -27,15 +27,11 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
     val cmd = "org.apache.spark.sql.delta.commands.DeleteCommand"
     val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
     val tableDesc = TableDesc(
-      "catalogTable",
-      classOf[CatalogTableOptionTableExtractor],
-      actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc))
-    val targetDesc = TableDesc(
       "target",
       classOf[SubqueryAliasTableExtractor],
       actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc, targetDesc))
+    val uriDescs = Seq(UriDesc("target", classOf[SubqueryAliasURIExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), uriDescs = uriDescs)
   }
 
   val UpdateCommand = {

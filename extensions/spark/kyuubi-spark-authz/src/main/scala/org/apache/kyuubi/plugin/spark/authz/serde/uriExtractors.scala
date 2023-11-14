@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable}
+import org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.HadoopFsRelation
 
@@ -102,5 +103,15 @@ class IdentifierURIExtractor extends URIExtractor {
     case identifier: Identifier if isPathIdentifier(identifier.name(), spark) =>
       Seq(identifier.name()).map(Uri)
     case _ => Nil
+  }
+}
+
+class SubqueryAliasURIExtractor extends URIExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = v1 match {
+    case SubqueryAlias(_, SubqueryAlias(identifier, _))
+        if isPathIdentifier(identifier.name, spark) =>
+      Seq(identifier.name).map(Uri)
+    case SubqueryAlias(identifier, _) if isPathIdentifier(identifier.name, spark) =>
+      Seq(identifier.name).map(Uri)
   }
 }
