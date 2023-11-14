@@ -136,6 +136,21 @@ private[kyuubi] class EngineRef(
   }
 
   /**
+ * Generate app key, enrich `spark.app.name` content
+ * Example: connection_spark-sql_root_myappname
+ */
+@VisibleForTesting
+private[kyuubi] def generateAppKey(appKey: String): String = {
+  var commonNamePrefix: String = ""
+  if (appKey != null){
+    commonNamePrefix = s"${shareLevel}_${engineType}_${appUser}_${appKey}"
+  }else {
+    commonNamePrefix = s"${shareLevel}_${engineType}_${appUser}"
+  }
+  commonNamePrefix
+}
+
+  /**
    * The EngineSpace used to expose itself to the KyuubiServers in `serverSpace`
    *
    * For `CONNECTION` share level:
@@ -187,7 +202,7 @@ private[kyuubi] class EngineRef(
     conf.set(KYUUBI_ENGINE_SUBMIT_TIME_KEY, String.valueOf(started))
     builder = engineType match {
       case SPARK_SQL =>
-        conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
+        conf.set(SparkProcessBuilder.APP_KEY, generateAppKey(conf.getOption(SparkProcessBuilder.APP_KEY).getOrElse(null)))
         new SparkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case FLINK_SQL =>
         conf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
