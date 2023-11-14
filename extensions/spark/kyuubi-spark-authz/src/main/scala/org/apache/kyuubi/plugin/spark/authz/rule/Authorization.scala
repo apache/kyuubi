@@ -21,6 +21,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
+import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
+import org.apache.spark.sql.execution.command.ExplainCommand
 
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization._
 import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
@@ -28,6 +30,11 @@ import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMark
 abstract class Authorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan match {
+      // ExplainCommand run will execute the plan, should avoid check privilege for the plan.
+      case ExplainCommand(_, _) =>
+        EXPLAIN_COMMAND_EXECUTION_ID = Some(executionId(spark))
+        plan
+      case plan if EXPLAIN_COMMAND_EXECUTION_ID.contains(executionId(spark)) => plan
       case plan if isAuthChecked(plan) => plan // do nothing if checked privileges already.
       case p =>
         checkPrivileges(spark, p)
@@ -41,6 +48,7 @@ abstract class Authorization(spark: SparkSession) extends Rule[LogicalPlan] {
 object Authorization {
 
   val KYUUBI_AUTHZ_TAG = TreeNodeTag[Unit]("__KYUUBI_AUTHZ_TAG")
+  var EXPLAIN_COMMAND_EXECUTION_ID: Option[String] = None
 
   private def markAllNodesAuthChecked(plan: LogicalPlan): LogicalPlan = {
     plan.transformDown { case p =>
@@ -64,5 +72,9 @@ object Authorization {
       case subquery: Subquery => isAuthChecked(subquery.child)
       case p => p.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty
     }
+  }
+
+  private def executionId(sparkSession: SparkSession): String = {
+    sparkSession.sparkContext.getLocalProperty(EXECUTION_ID_KEY)
   }
 }
