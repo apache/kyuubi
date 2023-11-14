@@ -86,11 +86,12 @@ server:
       nodePort: ~
       annotations: {}
       #candidates are ClientIP or None, ClientIP is required to set if session affinity is enabled
-      sessionAffinity: ~
-      #default is 10800s
-      sessionAffinityConfig:
-        clientIP:
-          timeoutSeconds: ~
+      #default timeout is 10800s
+      sessionAffinity: {}
+        #sessionAffinity: ClientIP
+        #sessionAffinityConfig:
+        #  clientIP:
+        #    timeoutSeconds: 10800s
 
   # Thrift HTTP protocol (HiveServer2 compatible)
   thriftHttp:
@@ -102,11 +103,12 @@ server:
       nodePort: ~
       annotations: {}
       #candidates are ClientIP or None, ClientIP is required to set if session affinity is enabled
-      sessionAffinity: ~
-      #default is 10800s
-      sessionAffinityConfig:
-        clientIP:
-          timeoutSeconds: ~
+      #default timeout is 10800s
+      sessionAffinity: {}
+        #sessionAffinity: ClientIP
+        #sessionAffinityConfig:
+        #  clientIP:
+        #    timeoutSeconds: 10800s
 
   # REST API protocol (experimental)
   rest:
@@ -118,11 +120,12 @@ server:
       nodePort: ~
       annotations: {}
       #candidates are ClientIP or None, ClientIP is required to set if session affinity is enabled
-      sessionAffinity: ~
-      #default is 10800s
-      sessionAffinityConfig:
-        clientIP:
-          timeoutSeconds: 10800s
+      #default timeout is 10800s
+      sessionAffinity: {}
+        #sessionAffinity: ClientIP
+        #sessionAffinityConfig:
+        #  clientIP:
+        #    timeoutSeconds: 10800s
 
   # MySQL compatible text protocol (experimental)
   mysql:
@@ -134,11 +137,12 @@ server:
       nodePort: ~
       annotations: {}
       #candidates are ClientIP or None, ClientIP is required to set if session affinity is enabled
-      sessionAffinity: ~
-      #default is 10800s
-      sessionAffinityConfig:
-        clientIP:
-          timeoutSeconds: ~
+      #default timeout is 10800s
+      sessionAffinity: {}
+        #sessionAffinity: ClientIP
+        #sessionAffinityConfig:
+        #  clientIP:
+        #    timeoutSeconds: 10800s
 
 monitoring:
   # Exposes metrics in Prometheus format
