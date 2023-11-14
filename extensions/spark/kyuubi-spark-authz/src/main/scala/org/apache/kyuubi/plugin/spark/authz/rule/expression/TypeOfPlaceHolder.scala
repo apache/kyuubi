@@ -27,6 +27,9 @@ case class TypeOfPlaceHolder(expr: Expression) extends UnaryExpression
   with WithInternalExpressionChild {
   override def dataType: DataType = StringType
 
+  // Avoid fold constant expression by Spark Optimizer
+  override def foldable: Boolean = false
+
   override def child: Expression = expr
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
