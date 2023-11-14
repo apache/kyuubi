@@ -21,7 +21,7 @@ import org.apache.spark.sql.catalyst.expressions.TypeOf
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 
-import org.apache.kyuubi.plugin.spark.authz.rule.typeof.TypeOfPlaceHolder
+import org.apache.kyuubi.plugin.spark.authz.rule.expression.TypeOfPlaceHolder
 
 class RuleEliminateTypeOf extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
