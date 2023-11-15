@@ -136,19 +136,19 @@ private[kyuubi] class EngineRef(
   }
 
   /**
- * Generate app key, enrich `spark.app.name` content
- * Example: connection_spark-sql_root_myappname
- */
-@VisibleForTesting
-private[kyuubi] def generateAppKey(appKey: String): String = {
-  var commonNamePrefix: String = ""
-  if (appKey != null){
-    commonNamePrefix = s"${shareLevel}_${engineType}_${appUser}_${appKey}"
-  }else {
-    commonNamePrefix = s"${shareLevel}_${engineType}_${appUser}"
+   * Generate app key, enrich `spark.app.name` content
+   * Example: connection_spark-sql_root_myappname
+   */
+  @VisibleForTesting
+  private[kyuubi] def generateAppKey(appKey: String): String = {
+    val commonNamePrefix: String =
+      if (appKey != null) {
+        s"${shareLevel}_${engineType}_${appUser}_${appKey}"
+      } else {
+        s"${shareLevel}_${engineType}_${appUser}"
+      }/*  */
+    commonNamePrefix
   }
-  commonNamePrefix
-}
 
   /**
    * The EngineSpace used to expose itself to the KyuubiServers in `serverSpace`
