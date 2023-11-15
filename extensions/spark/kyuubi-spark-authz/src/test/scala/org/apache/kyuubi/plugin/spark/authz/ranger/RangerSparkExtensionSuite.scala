@@ -1341,7 +1341,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #5692][Bug] Authz not skip explain command ") {
+  test("[KYUUBI #5692][Bug] Authz not skip explain command") {
     val db1 = defaultDb
     val table1 = "table1"
     withSingleCallEnabled {

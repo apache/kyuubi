@@ -32,9 +32,9 @@ abstract class Authorization(spark: SparkSession) extends Rule[LogicalPlan] {
     plan match {
       // ExplainCommand run will execute the plan, should avoid check privilege for the plan.
       case ExplainCommand(_, _) =>
-        EXPLAIN_COMMAND_EXECUTION_ID = Some(executionId(spark))
+        EXPLAIN_COMMAND_EXECUTION_ID.set(Option(executionId(spark)))
         plan
-      case plan if EXPLAIN_COMMAND_EXECUTION_ID.contains(executionId(spark)) => plan
+      case plan if EXPLAIN_COMMAND_EXECUTION_ID.get().contains(executionId(spark)) => plan
       case plan if isAuthChecked(plan) => plan // do nothing if checked privileges already.
       case p =>
         checkPrivileges(spark, p)
@@ -48,7 +48,11 @@ abstract class Authorization(spark: SparkSession) extends Rule[LogicalPlan] {
 object Authorization {
 
   val KYUUBI_AUTHZ_TAG = TreeNodeTag[Unit]("__KYUUBI_AUTHZ_TAG")
-  var EXPLAIN_COMMAND_EXECUTION_ID: Option[String] = None
+  var EXPLAIN_COMMAND_EXECUTION_ID: InheritableThreadLocal[Option[String]] = {
+    new InheritableThreadLocal[Option[String]] {
+      override def initialValue(): Option[String] = None
+    }
+  }
 
   private def markAllNodesAuthChecked(plan: LogicalPlan): LogicalPlan = {
     plan.transformDown { case p =>
