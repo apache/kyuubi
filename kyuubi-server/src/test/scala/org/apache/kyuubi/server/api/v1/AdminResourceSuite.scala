@@ -387,6 +387,76 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     }
   }
 
+  test("delete engine - user share level & proxyUser") {
+    // we use superUser to impersonate commonUser
+    val superUser = "superUser"
+    val commonUser = "commonUser"
+
+    val id = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
+    // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
+    // the user is the proxyUser, and in our test it is commonUser
+    val engine = new EngineRef(conf.clone, user = commonUser, PluginLoader.loadGroupProvider(conf),
+      id, null)
+
+    // so as the firstChild in engineSpace we use commonUser
+    val engineSpace = DiscoveryPaths.makePath(
+      s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
+      commonUser,
+      "default")
+
+    withDiscoveryClient(conf) { client =>
+      engine.getOrCreate(client)
+
+      assert(client.pathExists(engineSpace))
+      assert(client.getChildren(engineSpace).size == 1)
+
+      // use proxyUser
+      val response = webTarget.path("api/v1/admin/engine")
+        .queryParam("sharelevel", "USER")
+        .queryParam("type", "spark_sql")
+        .queryParam("proxyUser", commonUser)
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
+        .delete()
+
+      assert(response.getStatus === 405)
+      val errorMessage = s"Failed to validate proxy privilege of $superUser for $commonUser"
+      assert(response.readEntity(classOf[String]).contains(errorMessage))
+
+      // it should be the same behavior as hive.server2.proxy.user
+      val response2 = webTarget.path("api/v1/admin/engine")
+        .queryParam("sharelevel", "USER")
+        .queryParam("type", "spark_sql")
+        .queryParam("hive.server2.proxy.user", commonUser)
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
+        .delete()
+
+      assert(response2.getStatus === 405)
+      assert(response2.readEntity(classOf[String]).contains(errorMessage))
+
+      // when both set, proxyUser takes precedence
+      val response3 = webTarget.path("api/v1/admin/engine")
+        .queryParam("sharelevel", "USER")
+        .queryParam("type", "spark_sql")
+        .queryParam("proxyUser", commonUser)
+        // here, we also set hive.server2.proxy.user, but the different value from proxyUser
+        .queryParam("hive.server2.proxy.user", s"${commonUser}HiveServer2")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
+        .delete()
+
+      assert(response3.getStatus === 405)
+      assert(response3.readEntity(classOf[String]).contains(errorMessage))
+    }
+  }
+
   test("list engine - user share level") {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
@@ -542,6 +612,73 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id2)
           .exists(_.state == ApplicationState.NOT_FOUND))
       }
+    }
+  }
+
+  test("list engine - user share level & proxyUser") {
+    // we use superUser to impersonate commonUser
+    val superUser = "superUser"
+    val commonUser = "commonUser"
+
+    val id = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
+    // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
+    // the user is the proxyUser, and in our test it is commonUser
+    val engine = new EngineRef(conf.clone, user = commonUser, PluginLoader.loadGroupProvider(conf),
+      id, null)
+
+    // so as the firstChild in engineSpace we use commonUser
+    val engineSpace = DiscoveryPaths.makePath(
+      s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
+      commonUser,
+      "")
+
+    withDiscoveryClient(conf) { client =>
+      engine.getOrCreate(client)
+
+      assert(client.pathExists(engineSpace))
+      assert(client.getChildren(engineSpace).size == 1)
+
+      // use proxyUser
+      val response = webTarget.path("api/v1/admin/engine")
+        .queryParam("type", "spark_sql")
+        .queryParam("proxyUser", commonUser)
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
+        .get
+
+      assert(response.getStatus === 405)
+      val errorMessage = s"Failed to validate proxy privilege of $superUser for $commonUser"
+      assert(response.readEntity(classOf[String]).contains(errorMessage))
+
+      // it should be the same behavior as hive.server2.proxy.user
+      val response2 = webTarget.path("api/v1/admin/engine")
+        .queryParam("type", "spark_sql")
+        .queryParam("hive.server2.proxy.user", commonUser)
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
+        .get
+
+      assert(response2.getStatus === 405)
+      assert(response2.readEntity(classOf[String]).contains(errorMessage))
+
+      // when both set, proxyUser takes precedence
+      val response3 = webTarget.path("api/v1/admin/engine")
+        .queryParam("type", "spark_sql")
+        .queryParam("proxyUser", commonUser)
+        // here, we also set hive.server2.proxy.user, but the different value from proxyUser
+        .queryParam("hive.server2.proxy.user", s"${commonUser}HiveServer2")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
+        .get
+
+      assert(response3.getStatus === 405)
+      assert(response3.readEntity(classOf[String]).contains(errorMessage))
     }
   }
 

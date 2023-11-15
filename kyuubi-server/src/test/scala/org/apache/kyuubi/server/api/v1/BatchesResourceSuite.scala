@@ -852,4 +852,103 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     val getBatchListResponse = response.readEntity(classOf[GetBatchesResponse])
     assert(getBatchListResponse.getTotal == 1)
   }
+
+  test("open batch session with proxyUser") {
+    // we use superUser to impersonate commonUser
+    val superUser = "superUser"
+    val commonUser = "commonUser"
+
+    // use kyuubi.session.proxy.user
+    val proxyUserRequest = newSparkBatchRequest(
+      Map("spark.master" -> "local", PROXY_USER.key -> commonUser))
+
+    val proxyUserResponse = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(superUser))
+      .post(Entity.entity(proxyUserRequest, MediaType.APPLICATION_JSON_TYPE))
+
+    assert(proxyUserResponse.getStatus === 405)
+    val errorMessage = s"Failed to validate proxy privilege of $superUser for $commonUser"
+    assert(proxyUserResponse.readEntity(classOf[String]).contains(errorMessage))
+
+    // it should be the same behavior as hive.server2.proxy.user
+    val proxyUserRequest2 = newSparkBatchRequest(
+      Map("spark.master" -> "local", KyuubiAuthenticationFactory.HS2_PROXY_USER -> commonUser))
+
+    val proxyUserResponse2 = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(superUser))
+      .post(Entity.entity(proxyUserRequest2, MediaType.APPLICATION_JSON_TYPE))
+
+    assert(proxyUserResponse2.getStatus === 405)
+    assert(proxyUserResponse2.readEntity(classOf[String]).contains(errorMessage))
+
+    // when both set, kyuubi.session.proxy.user takes precedence
+    val proxyUserRequest3 = newSparkBatchRequest(
+      Map("spark.master" -> "local", PROXY_USER.key -> commonUser,
+        // here, we also set hive.server2.proxy.user,
+        // but the different value from kyuubi.session.proxy.user
+        KyuubiAuthenticationFactory.HS2_PROXY_USER -> s"${commonUser}HiveServer2"))
+
+    val proxyUserResponse3 = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(superUser))
+      .post(Entity.entity(proxyUserRequest3, MediaType.APPLICATION_JSON_TYPE))
+    assert(proxyUserResponse3.getStatus === 405)
+    assert(proxyUserResponse3.readEntity(classOf[String]).contains(errorMessage))
+  }
+
+  test("delete batch with proxyUser") {
+    // we use superUser to impersonate commonUser
+    val superUser = "superUser"
+    val commonUser = "commonUser"
+
+    // Thought it doesn't have kerberos environment in these unit tests,
+    // that means we don't need to add the metadata as it will not execute,
+    // we still add these code to make the test more integrity and standard.
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val metadata = Metadata(
+      identifier = UUID.randomUUID().toString,
+      sessionType = SessionType.BATCH,
+      realUser = superUser,
+      username = commonUser,
+      ipAddress = "localhost",
+      kyuubiInstance = fe.connectionUrl,
+      state = "PENDING",
+      resource = "resource",
+      className = "className",
+      requestName = "LOCAL_LOG_NOT_FOUND",
+      engineType = "SPARK")
+    sessionManager.insertMetadata(metadata)
+
+    // use proxyUser
+    val deleteBatchResponse = webTarget.path(s"api/v1/batches/${metadata.identifier}")
+      .queryParam("proxyUser", commonUser)
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(superUser))
+      .delete()
+    assert(deleteBatchResponse.getStatus === 405)
+    val errorMessage = s"Failed to validate proxy privilege of $superUser for $commonUser"
+    assert(deleteBatchResponse.readEntity(classOf[String]).contains(errorMessage))
+
+    // it should be the same behavior as hive.server2.proxy.user
+    val deleteBatchResponse2 = webTarget.path(s"api/v1/batches/${metadata.identifier}")
+      .queryParam("proxyUser", commonUser)
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(superUser))
+      .delete()
+    assert(deleteBatchResponse2.getStatus === 405)
+    assert(deleteBatchResponse2.readEntity(classOf[String]).contains(errorMessage))
+
+    // when both set, proxyUser takes precedence
+    val deleteBatchResponse3 = webTarget.path(s"api/v1/batches/${metadata.identifier}")
+      .queryParam("proxyUser", commonUser)
+      // here, we also set hive.server2.proxy.user, but the different value from proxyUser
+      .queryParam("hive.server2.proxy.user", s"${commonUser}HiveServer2")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(superUser))
+      .delete()
+    assert(deleteBatchResponse3.getStatus === 405)
+    assert(deleteBatchResponse3.readEntity(classOf[String]).contains(errorMessage))
+  }
 }
