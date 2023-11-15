@@ -33,7 +33,8 @@ class ExecuteStatement(
     override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
-    incrementalCollect: Boolean)
+    incrementalCollect: Boolean,
+    fetchSize: Int)
   extends JdbcOperation(session) with Logging {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
@@ -61,7 +62,7 @@ class ExecuteStatement(
     setState(OperationState.RUNNING)
     try {
       val connection: Connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
-      jdbcStatement = dialect.createStatement(connection)
+      jdbcStatement = dialect.createStatement(connection, fetchSize)
       val hasResult = jdbcStatement.execute(statement)
       if (hasResult) {
         val resultSetWrapper = new ResultSetWrapper(jdbcStatement)
