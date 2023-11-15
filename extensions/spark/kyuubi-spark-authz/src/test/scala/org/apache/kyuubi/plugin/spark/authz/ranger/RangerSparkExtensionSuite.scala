@@ -23,7 +23,7 @@ import java.nio.file.Path
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.sql.SparkSessionExtensions
+import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
@@ -1293,6 +1293,50 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                 s"[write] privilege on [[file://$path, file://$path/]]"
             })
         }
+      }
+    }
+  }
+
+  test("[KYUUBI #5677][AUTHZ] Typeof expression miss column information") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $db1.$table1(
+               |id int,
+               |scope int,
+               |day string)
+               |""".stripMargin))
+        doAs(admin, sql(s"INSERT INTO $db1.$table1 SELECT 1, 2, 'TONY'"))
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT typeof(id), typeof(typeof(day)) FROM $db1.$table1").collect()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/day]")
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(
+              s"""
+                 |SELECT
+                 |typeof(cast(id as string)),
+                 |typeof(substring(day, 1, 3))
+                 |FROM $db1.$table1""".stripMargin).collect()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/day]")
+        checkAnswer(
+          admin,
+          s"""
+             |SELECT
+             |typeof(id),
+             |typeof(typeof(day)),
+             |typeof(cast(id as string)),
+             |typeof(substring(day, 1, 3))
+             |FROM $db1.$table1""".stripMargin,
+          Seq(Row("int", "string", "string", "string")))
       }
     }
   }

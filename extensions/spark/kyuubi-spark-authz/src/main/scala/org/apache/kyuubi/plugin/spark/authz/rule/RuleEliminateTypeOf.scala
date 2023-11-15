@@ -15,19 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.util
+package org.apache.kyuubi.plugin.spark.authz.rule
 
-import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.TypeOf
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.rules.Rule
 
-trait WithInternalChildren {
-  def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan
-}
+import org.apache.kyuubi.plugin.spark.authz.rule.expression.TypeOfPlaceHolder
 
-trait WithInternalChild {
-  def withNewChildInternal(newChild: LogicalPlan): LogicalPlan
-}
-
-trait WithInternalExpressionChild {
-  def withNewChildInternal(newChild: Expression): Expression
+class RuleEliminateTypeOf extends Rule[LogicalPlan] {
+  override def apply(plan: LogicalPlan): LogicalPlan = {
+    plan.transformUp { case p =>
+      p.transformExpressionsUp {
+        case toph: TypeOfPlaceHolder => TypeOf(toph.expr)
+      }
+    }
+  }
 }

@@ -107,7 +107,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
             s" Check your configuration to see if security is disabled or not." +
             s" If security is enabled, some configurations of ${provider.serviceName} " +
             s" might be missing, please check the configurations in " +
-            s" https://kyuubi.readthedocs.io/en/latest/security" +
+            s" https://kyuubi.readthedocs.io/en/master/security" +
             s"/hadoop_credentials_manager.html#required-security-configs")
           provider.close()
         }
