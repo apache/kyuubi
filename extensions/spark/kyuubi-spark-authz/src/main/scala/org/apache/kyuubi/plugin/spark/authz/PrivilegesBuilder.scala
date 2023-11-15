@@ -299,7 +299,6 @@ object PrivilegesBuilder {
   def build(
       plan: LogicalPlan,
       spark: SparkSession): PrivilegesAndOpType = {
-    println(plan)
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
     val opType = plan match {
