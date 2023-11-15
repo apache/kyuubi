@@ -24,7 +24,7 @@ object HudiUtils {
   private val PARTITION_PATH_METADATA_FIELD = "_hoodie_partition_path"
   private val FILENAME_METADATA_FIELD = "_hoodie_file_name"
 
-  private val metaFields = Seq(
+  private val metaFields = Set(
     COMMIT_TIME_METADATA_FIELD,
     COMMIT_SEQNO_METADATA_FIELD,
     RECORD_KEY_METADATA_FIELD,
