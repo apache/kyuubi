@@ -616,4 +616,31 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(dropIndex))
     }
   }
+
+  test("[KYUUBI #5698][Authz] Hudi privilege table should ignore meta column") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+               |USING HUDI
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin))
+
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT * FROM $namespace1.$table1").collect()))(
+          s"does not have [select] privilege on " +
+            s"[$namespace1/$table1/id,$namespace1/$table1/name,$namespace1/$table1/city")
+        doAs(admin, sql(s"SELECT * FROM $namespace1.$table1").collect())
+      }
+    }
+  }
 }

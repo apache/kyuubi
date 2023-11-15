@@ -18,11 +18,12 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import java.net.URI
-import javax.annotation.Nonnull
 
+import javax.annotation.Nonnull
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.serde.{Database, Function, Table, Uri}
+import org.apache.kyuubi.plugin.spark.authz.util.HudiUtils
 
 /**
  * Build a Spark logical plan to different `PrivilegeObject`s
@@ -71,7 +72,7 @@ object PrivilegeObject {
       actionType,
       table.database.orNull,
       table.table,
-      columns,
+      columns.filter(!HudiUtils.isHudiMetaField(_)),
       table.owner,
       table.catalog)
   }
