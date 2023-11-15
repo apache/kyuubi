@@ -120,10 +120,11 @@ class SubqueryAliasURIExtractor extends URIExtractor {
 class DataSourceV2RelationURIExtractor extends URIExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
     val plan = v1.asInstanceOf[LogicalPlan]
-    plan.find(_.getClass.getSimpleName == "DataSourceV2Relation") match {
-      case Some(DataSourceV2Relation(_, _, _, Some(identifier), _))
-          if isPathIdentifier(identifier.name, spark) =>
-        Seq(identifier.name).map(Uri)
+    plan.find(_.getClass.getSimpleName == "DataSourceV2Relation").get match {
+      case v2Relation: DataSourceV2Relation
+          if v2Relation.identifier != None &&
+            isPathIdentifier(v2Relation.identifier.get.name, spark) =>
+        Seq(v2Relation.identifier.get.name).map(Uri)
       case _ => Nil
     }
   }

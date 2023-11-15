@@ -187,12 +187,13 @@ class ExpressionSeqTableExtractor extends TableExtractor {
 class DataSourceV2RelationTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val plan = v1.asInstanceOf[LogicalPlan]
-    plan.find(_.getClass.getSimpleName == "DataSourceV2Relation") match {
-      case Some(v2Relation @ DataSourceV2Relation(table, _, catalog, identifier, _))
-          if identifier == None || !isPathIdentifier(identifier.get.name(), spark) =>
-        val maybeCatalog = catalog.flatMap(catalogPlugin =>
+    plan.find(_.getClass.getSimpleName == "DataSourceV2Relation").get match {
+      case v2Relation: DataSourceV2Relation
+          if v2Relation.identifier == None ||
+            !isPathIdentifier(v2Relation.identifier.get.name(), spark) =>
+        val maybeCatalog = v2Relation.catalog.flatMap(catalogPlugin =>
           lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
-        lookupExtractor[TableTableExtractor].apply(spark, table)
+        lookupExtractor[TableTableExtractor].apply(spark, v2Relation.table)
           .map { table =>
             val maybeOwner = TableExtractor.getOwner(v2Relation)
             table.copy(catalog = maybeCatalog, owner = maybeOwner)
