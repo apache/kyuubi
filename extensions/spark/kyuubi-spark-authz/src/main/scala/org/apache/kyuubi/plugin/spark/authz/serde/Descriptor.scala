@@ -54,6 +54,8 @@ sealed trait Descriptor {
    */
   def extract(v: AnyRef): AnyRef
 
+  def comment(): Option[String]
+
   final def error(v: AnyRef, e: Throwable): String = {
     val resourceName = getClass.getSimpleName.stripSuffix("Desc")
     val objectClass = v.getClass.getName
@@ -70,7 +72,8 @@ sealed trait Descriptor {
  */
 case class ColumnDesc(
     fieldName: String,
-    fieldExtractor: String) extends Descriptor {
+    fieldExtractor: String,
+    comment: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): Seq[String] = {
     val columnsVal = invokeAs[AnyRef](v, fieldName)
     val columnExtractor = lookupExtractor[ColumnExtractor](fieldExtractor)
@@ -89,7 +92,8 @@ case class DatabaseDesc(
     fieldName: String,
     fieldExtractor: String,
     catalogDesc: Option[CatalogDesc] = None,
-    isInput: Boolean = false) extends Descriptor {
+    isInput: Boolean = false,
+    comment: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): Database = {
     val databaseVal = invokeAs[AnyRef](v, fieldName)
     val databaseExtractor = lookupExtractor[DatabaseExtractor](fieldExtractor)
@@ -113,7 +117,8 @@ case class DatabaseDesc(
 case class FunctionTypeDesc(
     fieldName: String,
     fieldExtractor: String,
-    skipTypes: Seq[String]) extends Descriptor {
+    skipTypes: Seq[String],
+    comment: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): FunctionType = {
     extract(v, SparkSession.active)
   }
@@ -143,7 +148,8 @@ case class FunctionDesc(
     fieldExtractor: String,
     databaseDesc: Option[DatabaseDesc] = None,
     functionTypeDesc: Option[FunctionTypeDesc] = None,
-    isInput: Boolean = false) extends Descriptor {
+    isInput: Boolean = false,
+    comment: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): Function = {
     val functionVal = invokeAs[AnyRef](v, fieldName)
     val functionExtractor = lookupExtractor[FunctionExtractor](fieldExtractor)
@@ -168,7 +174,8 @@ case class FunctionDesc(
  */
 case class QueryDesc(
     fieldName: String,
-    fieldExtractor: String = "LogicalPlanQueryExtractor") extends Descriptor {
+    fieldExtractor: String = "LogicalPlanQueryExtractor",
+    comment: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): Option[LogicalPlan] = {
     val queryVal = invokeAs[AnyRef](v, fieldName)
     val queryExtractor = lookupExtractor[QueryExtractor](fieldExtractor)
@@ -186,7 +193,8 @@ case class QueryDesc(
 case class TableTypeDesc(
     fieldName: String,
     fieldExtractor: String,
-    skipTypes: Seq[String]) extends Descriptor {
+    skipTypes: Seq[String],
+    comment: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): TableType = {
     extract(v, SparkSession.active)
   }
@@ -224,7 +232,8 @@ case class TableDesc(
     tableTypeDesc: Option[TableTypeDesc] = None,
     catalogDesc: Option[CatalogDesc] = None,
     isInput: Boolean = false,
-    setCurrentDatabaseIfMissing: Boolean = false) extends Descriptor {
+    setCurrentDatabaseIfMissing: Boolean = false,
+    comment: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): Option[Table] = {
     extract(v, SparkSession.active)
   }
@@ -254,7 +263,8 @@ case class TableDesc(
 case class ActionTypeDesc(
     fieldName: String = null,
     fieldExtractor: String = null,
-    actionType: Option[String] = None) extends Descriptor {
+    actionType: Option[String] = None,
+    comment: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): PrivilegeObjectActionType = {
     actionType.map(PrivilegeObjectActionType.withName).getOrElse {
       val actionTypeVal = invokeAs[AnyRef](v, fieldName)
@@ -272,7 +282,8 @@ case class ActionTypeDesc(
  */
 case class CatalogDesc(
     fieldName: String = "catalog",
-    fieldExtractor: String = "CatalogPluginCatalogExtractor") extends Descriptor {
+    fieldExtractor: String = "CatalogPluginCatalogExtractor",
+    comment: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): Option[String] = {
     val catalogVal = invokeAs[AnyRef](v, fieldName)
     val catalogExtractor = lookupExtractor[CatalogExtractor](fieldExtractor)
@@ -283,7 +294,8 @@ case class CatalogDesc(
 case class ScanDesc(
     fieldName: String,
     fieldExtractor: String,
-    catalogDesc: Option[CatalogDesc] = None) extends Descriptor {
+    catalogDesc: Option[CatalogDesc] = None,
+    comment: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): Option[Table] = {
     extract(v, SparkSession.active)
   }
@@ -317,7 +329,8 @@ case class ScanDesc(
 case class UriDesc(
     fieldName: String,
     fieldExtractor: String,
-    isInput: Boolean = false) extends Descriptor {
+    isInput: Boolean = false,
+    comment: Option[String] = None) extends Descriptor {
   override def extract(v: AnyRef): Seq[Uri] = {
     extract(v, SparkSession.active)
   }
