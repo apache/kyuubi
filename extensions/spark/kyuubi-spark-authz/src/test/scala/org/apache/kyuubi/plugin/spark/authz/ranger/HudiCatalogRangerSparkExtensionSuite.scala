@@ -617,7 +617,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #5698][Authz] Hudi privilege table should ignore meta column") {
+  test("[KYUUBI #5698][Authz] Ignore meta columns for Hudi table") {
     withSingleCallEnabled {
       withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
         doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
