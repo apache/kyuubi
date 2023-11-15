@@ -1301,21 +1301,19 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val db1 = defaultDb
     val table1 = "table1"
     withSingleCallEnabled {
-      withTempDir { path =>
-        withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
-          doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
-          val explainSql =
-            s"""
-               |EXPLAIN
-               |SELECT id FROM $db1.$table1
-               |""".stripMargin
-          doAs(admin, sql(explainSql))
-          doAs(someone, sql(explainSql))
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        val explainSql =
+          s"""
+             |EXPLAIN
+             |SELECT id FROM $db1.$table1
+             |""".stripMargin
+        doAs(admin, sql(explainSql))
+        doAs(someone, sql(explainSql))
 
-          interceptContains[AccessControlException](
-            doAs(someone, sql(s"SELECT id FROM $db1.$table1").collect()))(
-            s"does not have [select] privilege on [$db1/$table1/id]")
-        }
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"SELECT id FROM $db1.$table1").collect()))(
+          s"does not have [select] privilege on [$db1/$table1/id]")
       }
     }
   }
