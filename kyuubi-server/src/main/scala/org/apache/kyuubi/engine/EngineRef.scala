@@ -146,7 +146,7 @@ private[kyuubi] class EngineRef(
         s"${shareLevel}_${engineType}_${appUser}_${appKey}"
       } else {
         s"${shareLevel}_${engineType}_${appUser}"
-      }/*  */
+      }
     commonNamePrefix
   }
 
