@@ -204,34 +204,6 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     }
   }
 
-  test("DropTableCommand") {
-    Seq("TABLE", "VIEW").foreach { obj =>
-      withTable("DropTableCommand") { table =>
-        sql(s"CREATE $obj IF NOT EXISTS $table AS SELECT 1")
-        val plan = sql(s"DROP $obj $table").queryExecution.analyzed
-        val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
-        assertResult(plan.getClass.getName)(
-          "org.apache.spark.sql.execution.command.DropTableCommand")
-        if (obj.equalsIgnoreCase("TABLE")) {
-          assert(operationType === DROPTABLE)
-        } else {
-          assert(operationType === DROPVIEW)
-        }
-        assert(in.isEmpty)
-        assert(out.size === 1)
-        val po = out.head
-        assert(po.actionType === PrivilegeObjectActionType.OTHER)
-        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-        assert(po.catalog.isEmpty)
-        assertEqualsIgnoreCase(defaultDb)(po.dbname)
-        assertEqualsIgnoreCase(table)(po.objectName)
-        assert(po.columns.isEmpty)
-        val accessType = ranger.AccessType(po, operationType, isInput = false)
-        assert(accessType === AccessType.DROP)
-      }
-    }
-  }
-
   test("AlterTableAddPartitionCommand") {
     val plan = sql(s"ALTER TABLE $reusedPartTable ADD IF NOT EXISTS PARTITION (pid=1)")
       .queryExecution.analyzed
@@ -1808,6 +1780,34 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val pi4 = in4.head
     assert(pi4.columns.size === 2)
     assert(pi4.columns === Seq("key", "pid"))
+  }
+
+  test("DropTableCommand") {
+    Seq("TABLE", "VIEW").foreach { obj =>
+      withTable("DropTableCommand") { table =>
+        sql(s"CREATE $obj IF NOT EXISTS $table AS SELECT 1")
+        val plan = sql(s"DROP $obj $table").queryExecution.analyzed
+        val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+        assertResult(plan.getClass.getName)(
+          "org.apache.spark.sql.execution.command.DropTableCommand")
+        if (obj.equalsIgnoreCase("TABLE")) {
+          assert(operationType === DROPTABLE)
+        } else {
+          assert(operationType === DROPVIEW)
+        }
+        assert(in.isEmpty)
+        assert(out.size === 1)
+        val po = out.head
+        assert(po.actionType === PrivilegeObjectActionType.OTHER)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.catalog.isEmpty)
+        assertEqualsIgnoreCase(defaultDb)(po.dbname)
+        assertEqualsIgnoreCase(table)(po.objectName)
+        assert(po.columns.isEmpty)
+        val accessType = ranger.AccessType(po, operationType, isInput = false)
+        assert(accessType === AccessType.DROP)
+      }
+    }
   }
 }
 
