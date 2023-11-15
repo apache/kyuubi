@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.slf4j.LoggerFactory
@@ -227,7 +228,18 @@ object PrivilegesBuilder {
           }
         }
         spec.queries(plan).foreach(buildQuery(_, inputObjs, spark = spark))
-        spec.operationType
+        classname match {
+          case "org.apache.spark.sql.execution.command.DropTableCommand" =>
+            val tableName = invokeAs[TableIdentifier](plan, "tableName")
+            if (spark.sessionState.catalog.isTempView(tableName.unquotedString.split('.'))) {
+              spec.operationType
+            } else if (invokeAs[Boolean](plan, "isView")) {
+              OperationType.DROPVIEW
+            } else {
+              OperationType.DROPTABLE
+            }
+          case _ => spec.operationType
+        }
 
       case classname if FUNCTION_COMMAND_SPECS.contains(classname) =>
         val spec = FUNCTION_COMMAND_SPECS(classname)
