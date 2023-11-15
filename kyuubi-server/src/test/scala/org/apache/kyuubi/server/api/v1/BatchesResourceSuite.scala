@@ -885,7 +885,9 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     // when both set, kyuubi.session.proxy.user takes precedence
     val proxyUserRequest3 = newSparkBatchRequest(
-      Map("spark.master" -> "local", PROXY_USER.key -> commonUser,
+      Map(
+        "spark.master" -> "local",
+        PROXY_USER.key -> commonUser,
         // here, we also set hive.server2.proxy.user,
         // but the different value from kyuubi.session.proxy.user
         KyuubiAuthenticationFactory.HS2_PROXY_USER -> s"${commonUser}HiveServer2"))

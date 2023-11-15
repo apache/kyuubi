@@ -401,8 +401,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
     // the user is the proxyUser, and in our test it is commonUser
-    val engine = new EngineRef(conf.clone, user = commonUser, PluginLoader.loadGroupProvider(conf),
-      id, null)
+    val engine =
+      new EngineRef(conf.clone, user = commonUser, PluginLoader.loadGroupProvider(conf), id, null)
 
     // so as the firstChild in engineSpace we use commonUser
     val engineSpace = DiscoveryPaths.makePath(
@@ -629,8 +629,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
     // the user is the proxyUser, and in our test it is commonUser
-    val engine = new EngineRef(conf.clone, user = commonUser, PluginLoader.loadGroupProvider(conf),
-      id, null)
+    val engine =
+      new EngineRef(conf.clone, user = commonUser, PluginLoader.loadGroupProvider(conf), id, null)
 
     // so as the firstChild in engineSpace we use commonUser
     val engineSpace = DiscoveryPaths.makePath(
