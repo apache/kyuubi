@@ -1353,8 +1353,9 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |SELECT id FROM $db1.$table1
              |""".stripMargin
         doAs(admin, sql(explainSql))
-        doAs(someone, sql(explainSql))
-
+        val result = doAs(someone, sql(explainSql).collect()).head.getString(0)
+        assert(!result.contains("Error occurred during query planning"))
+        assert(!result.contains(s"does not have [select] privilege on [$db1/$table1/id]"))
         interceptContains[AccessControlException](
           doAs(someone, sql(s"SELECT id FROM $db1.$table1").collect()))(
           s"does not have [select] privilege on [$db1/$table1/id]")
