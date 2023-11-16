@@ -1231,6 +1231,14 @@ object KyuubiConf {
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofMinutes(5).toMillis)
 
+  val KUBERNETES_TERMINATED_APPLICATION_POD_CLEANUP_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.terminatedApplicationPodCleanupEnabled")
+      .doc("If set to true then Kyuubi server will clean up the application pod " +
+        "after the application terminates.")
+      .version("1.8.1")
+      .booleanConf
+      .createWithDefault(false)
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
