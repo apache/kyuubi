@@ -261,6 +261,7 @@ class SubqueryAliasTableExtractor extends TableExtractor {
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
       case SubqueryAlias(identifier, _) if !isPathIdentifier(identifier.name, spark) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case _ => None
     }
   }
 }
@@ -284,6 +285,7 @@ class HudiDataSourceV2RelationTableExtractor extends TableExtractor {
       // Match multipartIdentifier without tableAlias
       case SubqueryAlias(identifier, _) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case _ => None
     }
   }
 }
@@ -297,6 +299,7 @@ class HudiMergeIntoTargetTableExtractor extends TableExtractor {
       // Match multipartIdentifier without tableAlias
       case SubqueryAlias(identifier, _) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case _ => None
     }
   }
 }
