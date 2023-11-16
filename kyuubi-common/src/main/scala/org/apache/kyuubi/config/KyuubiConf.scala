@@ -1239,6 +1239,21 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val KUBERNETES_APPLICATION_STATE_FROM_CONTAINER: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.application.state.fromContainer")
+      .doc("If set to true then the application state will be retrieved from the container " +
+        "instead of the pod.")
+      .version("1.8.1")
+      .booleanConf
+      .createWithDefault(false)
+
+  val KUBERNETES_APPLICATION_STATE_CONTAINER: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.application.state.container")
+      .doc("The container names to retrieve the application state from.")
+      .version("1.8.1")
+      .stringConf
+      .createWithDefault("spark-kubernetes-driver")
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   // ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -24,17 +24,17 @@ import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
-import io.fabric8.kubernetes.api.model.Pod
+import io.fabric8.kubernetes.api.model.{ContainerState, Pod}
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndexInformer}
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationState, toLabel, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
 import org.apache.kyuubi.util.KubernetesUtils
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
+  import KubernetesApplicationOperation._
 
   private val kubernetesClients: ConcurrentHashMap[KubernetesInfo, KubernetesClient] =
     new ConcurrentHashMap[KubernetesInfo, KubernetesClient]
@@ -48,6 +48,10 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kyuubiConf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
   private def allowedNamespaces: Set[String] =
     kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
+  private def appStateFromContainer: Boolean =
+    kyuubiConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_FROM_CONTAINER)
+  private def appStateContainer: String =
+    kyuubiConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_CONTAINER)
 
   // key is kyuubi_unique_key
   private val appInfoStore: ConcurrentHashMap[String, (KubernetesInfo, ApplicationInfo)] =
@@ -238,18 +242,26 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     override def onAdd(pod: Pod): Unit = {
       if (isSparkEnginePod(pod)) {
         updateApplicationState(kubernetesInfo, pod)
-        KubernetesApplicationAuditLogger.audit(kubernetesInfo, pod)
+        KubernetesApplicationAuditLogger.audit(
+          kubernetesInfo,
+          pod,
+          appStateFromContainer,
+          appStateContainer)
       }
     }
 
     override def onUpdate(oldPod: Pod, newPod: Pod): Unit = {
       if (isSparkEnginePod(newPod)) {
         updateApplicationState(kubernetesInfo, newPod)
-        val appState = toApplicationState(newPod.getStatus.getPhase)
+        val appState = toApplicationState(newPod, appStateFromContainer, appStateContainer)
         if (isTerminated(appState)) {
           markApplicationTerminated(newPod)
         }
-        KubernetesApplicationAuditLogger.audit(kubernetesInfo, newPod)
+        KubernetesApplicationAuditLogger.audit(
+          kubernetesInfo,
+          newPod,
+          appStateFromContainer,
+          appStateContainer)
       }
     }
 
@@ -257,7 +269,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       if (isSparkEnginePod(pod)) {
         updateApplicationState(kubernetesInfo, pod)
         markApplicationTerminated(pod)
-        KubernetesApplicationAuditLogger.audit(kubernetesInfo, pod)
+        KubernetesApplicationAuditLogger.audit(
+          kubernetesInfo,
+          pod,
+          appStateFromContainer,
+          appStateContainer)
       }
     }
   }
@@ -268,7 +284,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   private def updateApplicationState(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
-    val appState = toApplicationState(pod.getStatus.getPhase)
+    val (appState, appError) =
+      toApplicationStateAndError(pod, appStateFromContainer, appStateContainer)
     debug(s"Driver Informer changes pod: ${pod.getMetadata.getName} to state: $appState")
     appInfoStore.put(
       pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
@@ -276,13 +293,15 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
         name = pod.getMetadata.getName,
         state = appState,
-        error = Option(pod.getStatus.getReason)))
+        error = appError))
   }
 
   private def markApplicationTerminated(pod: Pod): Unit = synchronized {
     val key = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
     if (cleanupTerminatedAppInfoTrigger.getIfPresent(key) == null) {
-      cleanupTerminatedAppInfoTrigger.put(key, toApplicationState(pod.getStatus.getPhase))
+      cleanupTerminatedAppInfoTrigger.put(
+        key,
+        toApplicationState(pod, appStateFromContainer, appStateContainer))
     }
   }
 }
@@ -295,16 +314,64 @@ object KubernetesApplicationOperation extends Logging {
 
   def toLabel(tag: String): String = s"label: $LABEL_KYUUBI_UNIQUE_KEY=$tag"
 
-  def toApplicationState(state: String): ApplicationState = state match {
-    // https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/types.go#L2396
-    // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+  def toApplicationState(
+      pod: Pod,
+      appStateFromContainer: Boolean,
+      appStateContainer: String): ApplicationState = {
+    toApplicationStateAndError(pod, appStateFromContainer, appStateContainer)._1
+  }
+
+  def toApplicationStateAndError(
+      pod: Pod,
+      appStateFromContainer: Boolean,
+      appStateContainer: String): (ApplicationState, Option[String]) = {
+    val containerToBuildAppState = if (appStateFromContainer) {
+      pod.getStatus.getContainerStatuses.asScala.find(_.getState == appStateContainer).map(
+        _.getState)
+    } else {
+      None
+    }
+    val applicationState = containerToBuildAppState.map(containerStateToApplicationState)
+      .getOrElse(podStateToApplicationState(pod.getStatus.getPhase))
+    val applicationError = containerToBuildAppState.map(containerStateToApplicationError)
+      .getOrElse(Option(pod.getStatus.getReason))
+    applicationState -> applicationError
+  }
+
+  def containerStateToApplicationState(containerState: ContainerState): ApplicationState = {
+    // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-states
+    if (containerState.getWaiting != null) {
+      PENDING
+    } else if (containerState.getRunning != null) {
+      RUNNING
+    } else {
+      Option(containerState.getTerminated) match {
+        case Some(terminated) =>
+          if (terminated.getExitCode == 0) {
+            FINISHED
+          } else {
+            FAILED
+          }
+        case None => UNKNOWN
+      }
+    }
+  }
+
+  def containerStateToApplicationError(containerState: ContainerState): Option[String] = {
+    // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-states
+    Option(containerState.getWaiting).map(_.getReason)
+      .orElse(Option(containerState.getTerminated).map(_.getReason))
+  }
+
+  def podStateToApplicationState(podState: String): ApplicationState = podState match {
+    // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase
     case "Pending" => PENDING
     case "Running" => RUNNING
     case "Succeeded" => FINISHED
     case "Failed" | "Error" => FAILED
     case "Unknown" => UNKNOWN
     case _ =>
-      warn(s"The kubernetes driver pod state: $state is not supported, " +
+      warn(s"The kubernetes driver pod state: $podState is not supported, " +
         "mark the application state as UNKNOWN.")
       UNKNOWN
   }
