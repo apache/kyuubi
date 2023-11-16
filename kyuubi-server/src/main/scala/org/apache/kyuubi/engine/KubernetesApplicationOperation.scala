@@ -21,6 +21,7 @@ import java.util.Locale
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
 import io.fabric8.kubernetes.api.model.Pod
@@ -103,6 +104,19 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       .expireAfterWrite(retainPeriod, TimeUnit.MILLISECONDS)
       .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
         Option(appInfoStore.remove(notification.getKey)).foreach { case (kubernetesInfo, removed) =>
+          if (cleanupPod) {
+            try {
+              val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
+              val deletedPod = kubernetesClient.pods().withName(removed.name).delete().isEmpty
+              info(s"[$kubernetesInfo] Operation of delete pod ${removed.name} with" +
+                s" ${toLabel(notification.getKey)} is completed ? $deletedPod")
+            } catch {
+              case NonFatal(e) => error(
+                  s"[$kubernetesInfo]Failed to delete pod ${removed.name} with" +
+                    s" ${toLabel(notification.getKey)}",
+                  e)
+            }
+          }
           info(s"Remove terminated application ${removed.id} with " +
             s"[${toLabel(notification.getKey)}, state: ${removed.state}]")
         }
