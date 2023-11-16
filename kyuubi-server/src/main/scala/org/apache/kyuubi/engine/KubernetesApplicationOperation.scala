@@ -325,15 +325,15 @@ object KubernetesApplicationOperation extends Logging {
       pod: Pod,
       appStateFromContainer: Boolean,
       appStateContainer: String): (ApplicationState, Option[String]) = {
-    val containerToBuildAppState = if (appStateFromContainer) {
+    val containerStateToBuildAppState = if (appStateFromContainer) {
       pod.getStatus.getContainerStatuses.asScala.find(_.getState == appStateContainer).map(
         _.getState)
     } else {
       None
     }
-    val applicationState = containerToBuildAppState.map(containerStateToApplicationState)
+    val applicationState = containerStateToBuildAppState.map(containerStateToApplicationState)
       .getOrElse(podStateToApplicationState(pod.getStatus.getPhase))
-    val applicationError = containerToBuildAppState.map(containerStateToApplicationError)
+    val applicationError = containerStateToBuildAppState.map(containerStateToApplicationError)
       .getOrElse(Option(pod.getStatus.getReason))
     applicationState -> applicationError
   }
