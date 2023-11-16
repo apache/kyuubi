@@ -22,7 +22,6 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
-import org.apache.spark.sql.execution.command.ExplainCommand
 
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization._
 import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
@@ -30,11 +29,6 @@ import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMark
 abstract class Authorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan match {
-      // ExplainCommand run will execute the plan, should avoid check privilege for the plan.
-      case ExplainCommand(_, _) =>
-        EXPLAIN_COMMAND_EXECUTION_ID.set(Option(executionId(spark)))
-        plan
-      case plan if EXPLAIN_COMMAND_EXECUTION_ID.get().contains(executionId(spark)) => plan
       case plan if isAuthChecked(plan) => plan // do nothing if checked privileges already.
       case p =>
         checkPrivileges(spark, p)
@@ -48,11 +42,7 @@ abstract class Authorization(spark: SparkSession) extends Rule[LogicalPlan] {
 object Authorization {
 
   val KYUUBI_AUTHZ_TAG = TreeNodeTag[Unit]("__KYUUBI_AUTHZ_TAG")
-  var EXPLAIN_COMMAND_EXECUTION_ID: InheritableThreadLocal[Option[String]] = {
-    new InheritableThreadLocal[Option[String]] {
-      override def initialValue(): Option[String] = None
-    }
-  }
+  var KYUUBI_EXPLAIN_COMMAND_EXECUTION_ID = "KYUUBI_EXPLAIN_COMMAND_EXECUTION_ID"
 
   private def markAllNodesAuthChecked(plan: LogicalPlan): LogicalPlan = {
     plan.transformDown { case p =>
@@ -76,6 +66,17 @@ object Authorization {
       case subquery: Subquery => isAuthChecked(subquery.child)
       case p => p.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty
     }
+  }
+
+  def setExplainCommandExecutionId(sparkSession: SparkSession): Unit = {
+    sparkSession.sparkContext.setLocalProperty(
+      KYUUBI_EXPLAIN_COMMAND_EXECUTION_ID,
+      executionId(sparkSession))
+  }
+
+  def isExplainCommandChild(sparkSession: SparkSession): Boolean = {
+    executionId(sparkSession).equals(
+      sparkSession.sparkContext.getLocalProperty(KYUUBI_EXPLAIN_COMMAND_EXECUTION_ID))
   }
 
   private def executionId(sparkSession: SparkSession): String = {
