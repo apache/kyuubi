@@ -19,9 +19,10 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable}
-import org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.HadoopFsRelation
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
 import org.apache.kyuubi.plugin.spark.authz.util.PathIdentifier._
 import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
@@ -113,5 +114,18 @@ class SubqueryAliasURIExtractor extends URIExtractor {
       Seq(identifier.name).map(Uri)
     case SubqueryAlias(identifier, _) if isPathIdentifier(identifier.name, spark) =>
       Seq(identifier.name).map(Uri)
+  }
+}
+
+class DataSourceV2RelationURIExtractor extends URIExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
+    val plan = v1.asInstanceOf[LogicalPlan]
+    plan.find(_.getClass.getSimpleName == "DataSourceV2Relation").get match {
+      case v2Relation: DataSourceV2Relation
+          if v2Relation.identifier != None &&
+            isPathIdentifier(v2Relation.identifier.get.name, spark) =>
+        Seq(v2Relation.identifier.get.name).map(Uri)
+      case _ => Nil
+    }
   }
 }
