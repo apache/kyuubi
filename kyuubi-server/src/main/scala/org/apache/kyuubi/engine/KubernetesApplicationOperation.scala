@@ -99,20 +99,25 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
     // Defer cleaning terminated application information
     val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
-    val cleanupPod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_POD_CLEANUP_ENABLED)
+    val deleteSparkDriverPodOnTermination =
+      conf.get(KyuubiConf.KUBERNETES_SPARK_DELETE_DRIVER_POD_ON_TERMINATION_ENABLED)
     cleanupTerminatedAppInfoTrigger = CacheBuilder.newBuilder()
       .expireAfterWrite(retainPeriod, TimeUnit.MILLISECONDS)
       .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
         Option(appInfoStore.remove(notification.getKey)).foreach { case (kubernetesInfo, removed) =>
-          if (cleanupPod) {
+          if (deleteSparkDriverPodOnTermination) {
             try {
               val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
-              val deletedPod = kubernetesClient.pods().withName(removed.name).delete().isEmpty
-              info(s"[$kubernetesInfo] Operation of delete pod ${removed.name} with" +
-                s" ${toLabel(notification.getKey)} is completed ? $deletedPod")
+              if (!kubernetesClient.pods().withName(removed.name).delete().isEmpty) {
+                info(s"[$kubernetesInfo] Operation of delete pod ${removed.name} with" +
+                  s" ${toLabel(notification.getKey)} is completed.")
+              } else {
+                warn(s"[$kubernetesInfo] Failed to delete pod ${removed.name} with" +
+                  s" ${toLabel(notification.getKey)}.")
+              }
             } catch {
               case NonFatal(e) => error(
-                  s"[$kubernetesInfo]Failed to delete pod ${removed.name} with" +
+                  s"[$kubernetesInfo] Failed to delete pod ${removed.name} with" +
                     s" ${toLabel(notification.getKey)}",
                   e)
             }
