@@ -19,6 +19,7 @@ package org.apache.kyuubi.jdbc.hive;
 
 import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -28,6 +29,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hive.service.rpc.thrift.TStatus;
 import org.apache.hive.service.rpc.thrift.TStatusCode;
 import org.slf4j.Logger;
@@ -569,5 +571,46 @@ public class Utils {
       }
     }
     return KYUUBI_CLIENT_VERSION;
+  }
+
+  /**
+   * Method to get the password from the credential provider
+   *
+   * @param providerPath provider path
+   * @param key alias name
+   * @return password
+   */
+  private static String getPasswordFromCredentialProvider(String providerPath, String key) {
+    try {
+      if (providerPath != null) {
+        Configuration conf = new Configuration();
+        conf.set("hadoop.security.credential.provider.path", providerPath);
+        char[] password = conf.getPassword(key);
+        if (password != null) {
+          return new String(password);
+        }
+      }
+    } catch (IOException exception) {
+      LOG.warn("Could not retrieve password for " + key, exception);
+    }
+    return null;
+  }
+
+  /**
+   * Method to get the password from the configuration map if available. Otherwise, get it from the
+   * credential provider
+   *
+   * @param confMap configuration map
+   * @param key param
+   * @return password
+   */
+  public static String getPassword(Map<String, String> confMap, String key) {
+    String password = confMap.get(key);
+    if (password == null) {
+      password =
+          getPasswordFromCredentialProvider(
+              confMap.get(JdbcConnectionParams.SSL_STORE_PASSWORD_PATH), key);
+    }
+    return password;
   }
 }

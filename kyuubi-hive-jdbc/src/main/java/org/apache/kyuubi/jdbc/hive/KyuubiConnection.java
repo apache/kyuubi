@@ -539,7 +539,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     if (useSsl) {
       String useTwoWaySSL = sessConfMap.get(USE_TWO_WAY_SSL);
       String sslTrustStorePath = sessConfMap.get(SSL_TRUST_STORE);
-      String sslTrustStorePassword = sessConfMap.get(SSL_TRUST_STORE_PASSWORD);
+      String sslTrustStorePassword =
+          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
       KeyStore sslTrustStore;
       SSLConnectionSocketFactory socketFactory;
       SSLContext sslContext;
@@ -590,7 +591,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     if (isSslConnection()) {
       // get SSL socket
       String sslTrustStore = sessConfMap.get(SSL_TRUST_STORE);
-      String sslTrustStorePassword = sessConfMap.get(SSL_TRUST_STORE_PASSWORD);
+      String sslTrustStorePassword =
+          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
 
       if (sslTrustStore == null || sslTrustStore.isEmpty()) {
         transport = ThriftUtils.getSSLSocket(host, port, connectTimeout, socketTimeout);
@@ -661,7 +663,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       KeyManagerFactory keyManagerFactory =
           KeyManagerFactory.getInstance(SUNX509_ALGORITHM_STRING, SUNJSSE_ALGORITHM_STRING);
       String keyStorePath = sessConfMap.get(SSL_KEY_STORE);
-      String keyStorePassword = sessConfMap.get(SSL_KEY_STORE_PASSWORD);
+      String keyStorePassword =
+          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_KEY_STORE_PASSWORD);
       KeyStore sslKeyStore = KeyStore.getInstance(SSL_KEY_STORE_TYPE);
 
       if (keyStorePath == null || keyStorePath.isEmpty()) {
@@ -677,7 +680,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       TrustManagerFactory trustManagerFactory =
           TrustManagerFactory.getInstance(SUNX509_ALGORITHM_STRING);
       String trustStorePath = sessConfMap.get(SSL_TRUST_STORE);
-      String trustStorePassword = sessConfMap.get(SSL_TRUST_STORE_PASSWORD);
+      String trustStorePassword =
+          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
       KeyStore sslTrustStore = KeyStore.getInstance(SSL_TRUST_STORE_TYPE);
 
       if (trustStorePath == null || trustStorePath.isEmpty()) {
