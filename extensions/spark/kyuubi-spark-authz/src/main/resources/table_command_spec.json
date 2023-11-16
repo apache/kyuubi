@@ -2198,7 +2198,11 @@
     "fieldName" : "source",
     "fieldExtractor" : "LogicalPlanQueryExtractor"
   } ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.OptimizeTableCommand",
   "tableDescs" : [ {
