@@ -21,6 +21,7 @@ import java.util.Locale
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
 import io.fabric8.kubernetes.api.model.Pod
@@ -49,8 +50,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
 
   // key is kyuubi_unique_key
-  private val appInfoStore: ConcurrentHashMap[String, ApplicationInfo] =
-    new ConcurrentHashMap[String, ApplicationInfo]
+  private val appInfoStore: ConcurrentHashMap[String, (KubernetesInfo, ApplicationInfo)] =
+    new ConcurrentHashMap[String, (KubernetesInfo, ApplicationInfo)]
   // key is kyuubi_unique_key
   private var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
 
@@ -98,10 +99,29 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
     // Defer cleaning terminated application information
     val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
+    val deleteSparkDriverPodOnTermination =
+      conf.get(KyuubiConf.KUBERNETES_SPARK_DELETE_DRIVER_POD_ON_TERMINATION_ENABLED)
     cleanupTerminatedAppInfoTrigger = CacheBuilder.newBuilder()
       .expireAfterWrite(retainPeriod, TimeUnit.MILLISECONDS)
       .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
-        Option(appInfoStore.remove(notification.getKey)).foreach { removed =>
+        Option(appInfoStore.remove(notification.getKey)).foreach { case (kubernetesInfo, removed) =>
+          if (deleteSparkDriverPodOnTermination) {
+            try {
+              val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
+              if (!kubernetesClient.pods().withName(removed.name).delete().isEmpty) {
+                info(s"[$kubernetesInfo] Operation of delete pod ${removed.name} with" +
+                  s" ${toLabel(notification.getKey)} is completed.")
+              } else {
+                warn(s"[$kubernetesInfo] Failed to delete pod ${removed.name} with" +
+                  s" ${toLabel(notification.getKey)}.")
+              }
+            } catch {
+              case NonFatal(e) => error(
+                  s"[$kubernetesInfo] Failed to delete pod ${removed.name} with" +
+                    s" ${toLabel(notification.getKey)}",
+                  e)
+            }
+          }
           info(s"Remove terminated application ${removed.id} with " +
             s"[${toLabel(notification.getKey)}, state: ${removed.state}]")
         }
@@ -127,7 +147,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     debug(s"[$kubernetesInfo] Deleting application[${toLabel(tag)}]'s info from Kubernetes cluster")
     try {
       Option(appInfoStore.get(tag)) match {
-        case Some(info) =>
+        case Some((_, info)) =>
           debug(s"Application[${toLabel(tag)}] is in ${info.state} state")
           info.state match {
             case NOT_FOUND | FAILED | UNKNOWN =>
@@ -167,7 +187,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     try {
       // need to initialize the kubernetes client if not exists
       getOrCreateKubernetesClient(appMgrInfo.kubernetesInfo)
-      val appInfo = appInfoStore.getOrDefault(tag, ApplicationInfo.NOT_FOUND)
+      val (_, appInfo) =
+        appInfoStore.getOrDefault(tag, appMgrInfo.kubernetesInfo -> ApplicationInfo.NOT_FOUND)
       (appInfo.state, submitTime) match {
         // Kyuubi should wait second if pod is not be created
         case (NOT_FOUND, Some(_submitTime)) =>
@@ -216,14 +237,14 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
     override def onAdd(pod: Pod): Unit = {
       if (isSparkEnginePod(pod)) {
-        updateApplicationState(pod)
+        updateApplicationState(kubernetesInfo, pod)
         KubernetesApplicationAuditLogger.audit(kubernetesInfo, pod)
       }
     }
 
     override def onUpdate(oldPod: Pod, newPod: Pod): Unit = {
       if (isSparkEnginePod(newPod)) {
-        updateApplicationState(newPod)
+        updateApplicationState(kubernetesInfo, newPod)
         val appState = toApplicationState(newPod.getStatus.getPhase)
         if (isTerminated(appState)) {
           markApplicationTerminated(newPod)
@@ -234,7 +255,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
     override def onDelete(pod: Pod, deletedFinalStateUnknown: Boolean): Unit = {
       if (isSparkEnginePod(pod)) {
-        updateApplicationState(pod)
+        updateApplicationState(kubernetesInfo, pod)
         markApplicationTerminated(pod)
         KubernetesApplicationAuditLogger.audit(kubernetesInfo, pod)
       }
@@ -246,12 +267,12 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     labels.containsKey(LABEL_KYUUBI_UNIQUE_KEY) && labels.containsKey(SPARK_APP_ID_LABEL)
   }
 
-  private def updateApplicationState(pod: Pod): Unit = {
+  private def updateApplicationState(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
     val appState = toApplicationState(pod.getStatus.getPhase)
     debug(s"Driver Informer changes pod: ${pod.getMetadata.getName} to state: $appState")
     appInfoStore.put(
       pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
-      ApplicationInfo(
+      kubernetesInfo -> ApplicationInfo(
         id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
         name = pod.getMetadata.getName,
         state = appState,
