@@ -1231,6 +1231,14 @@ object KyuubiConf {
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofMinutes(5).toMillis)
 
+  val KUBERNETES_SPARK_DELETE_DRIVER_POD_ON_TERMINATION_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.spark.deleteDriverPodOnTermination.enabled")
+      .doc("If set to true then Kyuubi server will delete the spark driver pod after " +
+        s"the application terminates for ${KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD.key}.")
+      .version("1.8.1")
+      .booleanConf
+      .createWithDefault(false)
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
