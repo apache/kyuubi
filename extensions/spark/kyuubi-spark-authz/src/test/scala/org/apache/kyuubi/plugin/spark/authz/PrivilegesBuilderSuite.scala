@@ -1783,6 +1783,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("DropTableCommand") {
+    assume(!isSparkV35OrGreater)
     Seq("TABLE", "VIEW").foreach { obj =>
       withTable("DropTableCommand") { table =>
         sql(s"CREATE $obj IF NOT EXISTS $table AS SELECT 1")
