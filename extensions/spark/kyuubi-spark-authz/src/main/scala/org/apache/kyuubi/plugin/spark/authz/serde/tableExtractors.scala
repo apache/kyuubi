@@ -263,7 +263,7 @@ class SubqueryAliasTableExtractor extends TableExtractor {
         } else {
           lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
         }
-      case SubqueryAlias(identifier, _) if isPathIdentifier(identifier.name, spark) =>
+      case SubqueryAlias(identifier, _) if !isPathIdentifier(identifier.name, spark) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
       case _ => None
     }
