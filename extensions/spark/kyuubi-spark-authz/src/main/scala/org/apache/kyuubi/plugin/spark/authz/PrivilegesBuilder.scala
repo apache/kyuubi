@@ -307,7 +307,7 @@ object PrivilegesBuilder {
       case ExplainCommand(_, _) =>
         setExplainCommandExecutionId(spark)
         OperationType.QUERY
-      case plan if isExplainCommandChild(spark) =>
+      case _ if isExplainCommandChild(spark) =>
         OperationType.QUERY
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)

@@ -75,8 +75,12 @@ object Authorization {
   }
 
   def isExplainCommandChild(sparkSession: SparkSession): Boolean = {
-    executionId(sparkSession).equals(
-      sparkSession.sparkContext.getLocalProperty(KYUUBI_EXPLAIN_COMMAND_EXECUTION_ID))
+    if (null == executionId(sparkSession)) {
+      false
+    } else {
+      executionId(sparkSession).equals(
+        sparkSession.sparkContext.getLocalProperty(KYUUBI_EXPLAIN_COMMAND_EXECUTION_ID))
+    }
   }
 
   private def executionId(sparkSession: SparkSession): String = {
