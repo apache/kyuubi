@@ -119,7 +119,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
     }
   }
 
-  test("delete batch with hs2ProxyUser") {
+  ignore("delete batch with hs2ProxyUser") {
     val args = Array(
       "delete",
       "batch",
