@@ -21,7 +21,7 @@ select
         when p_type like 'PROMO%'
             then l_extendedprice * (1 - l_discount)
         else 0
-    end) / sum(l_extendedprice * (1 - l_discount)),2) as promo_revenue
+    end) / sum(l_extendedprice * (1 - l_discount)), 2) as promo_revenue
 from
     lineitem,
     part
