@@ -105,25 +105,31 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       .expireAfterWrite(retainPeriod, TimeUnit.MILLISECONDS)
       .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
         Option(appInfoStore.remove(notification.getKey)).foreach { case (kubernetesInfo, removed) =>
+          val appLabel = notification.getKey
           if (deleteSparkDriverPodOnTermination) {
+            val podName = removed.name
             try {
               val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
-              if (!kubernetesClient.pods().withName(removed.name).delete().isEmpty) {
-                info(s"[$kubernetesInfo] Operation of delete pod ${removed.name} with" +
-                  s" ${toLabel(notification.getKey)} is completed.")
+              val deleted = if (podName == null) {
+                !kubernetesClient.pods()
+                  .withLabel(LABEL_KYUUBI_UNIQUE_KEY, appLabel)
+                  .delete().isEmpty
               } else {
-                warn(s"[$kubernetesInfo] Failed to delete pod ${removed.name} with" +
-                  s" ${toLabel(notification.getKey)}.")
+                !kubernetesClient.pods().withName(podName).delete().isEmpty
+              }
+              if (deleted) {
+                info(s"[$kubernetesInfo] Operation of delete pod $podName with" +
+                  s" ${toLabel(appLabel)} is completed.")
+              } else {
+                warn(s"[$kubernetesInfo] Failed to delete pod $podName with ${toLabel(appLabel)}.")
               }
             } catch {
               case NonFatal(e) => error(
-                  s"[$kubernetesInfo] Failed to delete pod ${removed.name} with" +
-                    s" ${toLabel(notification.getKey)}",
+                  s"[$kubernetesInfo] Failed to delete pod $podName with ${toLabel(appLabel)}",
                   e)
             }
           }
-          info(s"Remove terminated application ${removed.id} with " +
-            s"[${toLabel(notification.getKey)}, state: ${removed.state}]")
+          info(s"Remove terminated application $removed with ${toLabel(appLabel)}")
         }
       })
       .build()
