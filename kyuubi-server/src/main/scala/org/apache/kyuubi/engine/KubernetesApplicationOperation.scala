@@ -105,7 +105,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       .expireAfterWrite(retainPeriod, TimeUnit.MILLISECONDS)
       .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
         Option(appInfoStore.remove(notification.getKey)).foreach { case (kubernetesInfo, removed) =>
-          if (deleteSparkDriverPodOnTermination) {
+          if (deleteSparkDriverPodOnTermination && removed.name != null) {
             try {
               val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
               if (!kubernetesClient.pods().withName(removed.name).delete().isEmpty) {
