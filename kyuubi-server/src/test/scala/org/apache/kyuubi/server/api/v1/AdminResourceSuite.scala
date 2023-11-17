@@ -416,44 +416,37 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
-      // use proxyUser
-      val response = webTarget.path("api/v1/admin/engine")
-        .queryParam("sharelevel", "USER")
-        .queryParam("type", "spark_sql")
-        .queryParam("proxyUser", commonUser)
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
-        .delete()
+      val deleteEngineExecutor = (kyuubiProxyUser: String, hs2ProxyUser: String) => {
+        var internalWebTarget = webTarget.path("api/v1/admin/engine")
+          .queryParam("sharelevel", "USER")
+          .queryParam("type", "spark_sql")
+        if (kyuubiProxyUser != null) {
+          internalWebTarget = internalWebTarget.queryParam("proxyUser", kyuubiProxyUser)
+        }
+        if (hs2ProxyUser != null) {
+          internalWebTarget = internalWebTarget.queryParam("hive.server2.proxy.user", hs2ProxyUser)
+        }
 
-      assert(response.getStatus === 405)
+        internalWebTarget.request(MediaType.APPLICATION_JSON_TYPE)
+          .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
+          .delete()
+      }
+
+      // use proxyUser
+      val deleteEngineResponse1 = deleteEngineExecutor(commonUser, null)
+      assert(deleteEngineResponse1.getStatus === 405)
       val errorMessage = s"Failed to validate proxy privilege of $superUser for $commonUser"
-      assert(response.readEntity(classOf[String]).contains(errorMessage))
+      assert(deleteEngineResponse1.readEntity(classOf[String]).contains(errorMessage))
 
       // it should be the same behavior as hive.server2.proxy.user
-      val response2 = webTarget.path("api/v1/admin/engine")
-        .queryParam("sharelevel", "USER")
-        .queryParam("type", "spark_sql")
-        .queryParam("hive.server2.proxy.user", commonUser)
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
-        .delete()
-
-      assert(response2.getStatus === 405)
-      assert(response2.readEntity(classOf[String]).contains(errorMessage))
+      val deleteEngineResponse2 = deleteEngineExecutor(null, commonUser)
+      assert(deleteEngineResponse2.getStatus === 405)
+      assert(deleteEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
-      val response3 = webTarget.path("api/v1/admin/engine")
-        .queryParam("sharelevel", "USER")
-        .queryParam("type", "spark_sql")
-        .queryParam("proxyUser", commonUser)
-        // here, we also set hive.server2.proxy.user, but the different value from proxyUser
-        .queryParam("hive.server2.proxy.user", s"${commonUser}HiveServer2")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
-        .delete()
-
-      assert(response3.getStatus === 405)
-      assert(response3.readEntity(classOf[String]).contains(errorMessage))
+      val deleteEngineResponse3 = deleteEngineExecutor(commonUser, s"${commonUser}HiveServer2")
+      assert(deleteEngineResponse3.getStatus === 405)
+      assert(deleteEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
   }
 
@@ -644,41 +637,37 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
-      // use proxyUser
-      val response = webTarget.path("api/v1/admin/engine")
-        .queryParam("type", "spark_sql")
-        .queryParam("proxyUser", commonUser)
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
-        .get
+      val listEngineExecutor = (kyuubiProxyUser: String, hs2ProxyUser: String) => {
+        var internalWebTarget = webTarget.path("api/v1/admin/engine")
+          .queryParam("sharelevel", "USER")
+          .queryParam("type", "spark_sql")
+        if (kyuubiProxyUser != null) {
+          internalWebTarget = internalWebTarget.queryParam("proxyUser", kyuubiProxyUser)
+        }
+        if (hs2ProxyUser != null) {
+          internalWebTarget = internalWebTarget.queryParam("hive.server2.proxy.user", hs2ProxyUser)
+        }
 
-      assert(response.getStatus === 405)
+        internalWebTarget.request(MediaType.APPLICATION_JSON_TYPE)
+          .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
+          .get
+      }
+
+      // use proxyUser
+      val listEngineResponse1 = listEngineExecutor(commonUser, null)
+      assert(listEngineResponse1.getStatus === 405)
       val errorMessage = s"Failed to validate proxy privilege of $superUser for $commonUser"
-      assert(response.readEntity(classOf[String]).contains(errorMessage))
+      assert(listEngineResponse1.readEntity(classOf[String]).contains(errorMessage))
 
       // it should be the same behavior as hive.server2.proxy.user
-      val response2 = webTarget.path("api/v1/admin/engine")
-        .queryParam("type", "spark_sql")
-        .queryParam("hive.server2.proxy.user", commonUser)
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
-        .get
-
-      assert(response2.getStatus === 405)
-      assert(response2.readEntity(classOf[String]).contains(errorMessage))
+      val listEngineResponse2 = listEngineExecutor(null, commonUser)
+      assert(listEngineResponse2.getStatus === 405)
+      assert(listEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
-      val response3 = webTarget.path("api/v1/admin/engine")
-        .queryParam("type", "spark_sql")
-        .queryParam("proxyUser", commonUser)
-        // here, we also set hive.server2.proxy.user, but the different value from proxyUser
-        .queryParam("hive.server2.proxy.user", s"${commonUser}HiveServer2")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
-        .get
-
-      assert(response3.getStatus === 405)
-      assert(response3.readEntity(classOf[String]).contains(errorMessage))
+      val listEngineResponse3 = listEngineExecutor(commonUser, s"${commonUser}HiveServer2")
+      assert(listEngineResponse3.getStatus === 405)
+      assert(listEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
   }
 
