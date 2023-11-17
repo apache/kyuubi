@@ -410,12 +410,6 @@ The [Batch](#batch).
 
 Kill the batch if it is still running.
 
-#### Request Parameters
-
-| Name                    | Description                   | Type             |
-|:------------------------|:------------------------------|:-----------------|
-| hive.server2.proxy.user | the proxy user to impersonate | String(optional) |
-
 #### Response Body
 
 | Name    | Description                           | Type    |
