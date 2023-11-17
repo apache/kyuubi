@@ -30,6 +30,8 @@ import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndex
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource
+import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
 import org.apache.kyuubi.util.KubernetesUtils
 
@@ -48,8 +50,10 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kyuubiConf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
   private def allowedNamespaces: Set[String] =
     kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
-  private def appStateFromContainer: Boolean =
-    kyuubiConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_FROM_CONTAINER)
+
+  private def appStateSource: KubernetesApplicationStateSource =
+    KubernetesApplicationStateSource.withName(
+      kyuubiConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_SOURCE))
   private def appStateContainer: String =
     kyuubiConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_CONTAINER)
 
@@ -245,7 +249,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         KubernetesApplicationAuditLogger.audit(
           kubernetesInfo,
           pod,
-          appStateFromContainer,
+          appStateSource,
           appStateContainer)
       }
     }
@@ -253,14 +257,14 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     override def onUpdate(oldPod: Pod, newPod: Pod): Unit = {
       if (isSparkEnginePod(newPod)) {
         updateApplicationState(kubernetesInfo, newPod)
-        val appState = toApplicationState(newPod, appStateFromContainer, appStateContainer)
+        val appState = toApplicationState(newPod, appStateSource, appStateContainer)
         if (isTerminated(appState)) {
           markApplicationTerminated(newPod)
         }
         KubernetesApplicationAuditLogger.audit(
           kubernetesInfo,
           newPod,
-          appStateFromContainer,
+          appStateSource,
           appStateContainer)
       }
     }
@@ -272,7 +276,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         KubernetesApplicationAuditLogger.audit(
           kubernetesInfo,
           pod,
-          appStateFromContainer,
+          appStateSource,
           appStateContainer)
       }
     }
@@ -285,7 +289,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private def updateApplicationState(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
     val (appState, appError) =
-      toApplicationStateAndError(pod, appStateFromContainer, appStateContainer)
+      toApplicationStateAndError(pod, appStateSource, appStateContainer)
     debug(s"Driver Informer changes pod: ${pod.getMetadata.getName} to state: $appState")
     appInfoStore.put(
       pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
@@ -301,7 +305,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     if (cleanupTerminatedAppInfoTrigger.getIfPresent(key) == null) {
       cleanupTerminatedAppInfoTrigger.put(
         key,
-        toApplicationState(pod, appStateFromContainer, appStateContainer))
+        toApplicationState(pod, appStateSource, appStateContainer))
     }
   }
 }
@@ -316,20 +320,20 @@ object KubernetesApplicationOperation extends Logging {
 
   def toApplicationState(
       pod: Pod,
-      appStateFromContainer: Boolean,
+      appStateFrom: KubernetesApplicationStateSource,
       appStateContainer: String): ApplicationState = {
-    toApplicationStateAndError(pod, appStateFromContainer, appStateContainer)._1
+    toApplicationStateAndError(pod, appStateFrom, appStateContainer)._1
   }
 
   def toApplicationStateAndError(
       pod: Pod,
-      appStateFromContainer: Boolean,
+      appStateFrom: KubernetesApplicationStateSource,
       appStateContainer: String): (ApplicationState, Option[String]) = {
-    val containerStateToBuildAppState = if (appStateFromContainer) {
-      pod.getStatus.getContainerStatuses.asScala.find(_.getState == appStateContainer).map(
-        _.getState)
-    } else {
-      None
+    val containerStateToBuildAppState = appStateFrom match {
+      case KubernetesApplicationStateSource.CONTAINER =>
+        pod.getStatus.getContainerStatuses.asScala
+          .find(_.getState == appStateContainer).map(_.getState)
+      case KubernetesApplicationStateSource.POD => None
     }
     val applicationState = containerStateToBuildAppState.map(containerStateToApplicationState)
       .getOrElse(podStateToApplicationState(pod.getStatus.getPhase))

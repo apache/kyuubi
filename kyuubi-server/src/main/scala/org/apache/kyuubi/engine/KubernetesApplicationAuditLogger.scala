@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine
 import io.fabric8.kubernetes.api.model.Pod
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationStateAndError, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
 
 object KubernetesApplicationAuditLogger extends Logging {
@@ -30,7 +31,7 @@ object KubernetesApplicationAuditLogger extends Logging {
   def audit(
       kubernetesInfo: KubernetesInfo,
       pod: Pod,
-      appStateFromContainer: Boolean,
+      appStateFrom: KubernetesApplicationStateSource,
       appStateContainer: String): Unit = {
     val sb = AUDIT_BUFFER.get()
     sb.setLength(0)
@@ -40,7 +41,7 @@ object KubernetesApplicationAuditLogger extends Logging {
     sb.append(s"pod=${pod.getMetadata.getName}").append("\t")
     sb.append(s"appId=${pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL)}").append("\t")
     val (appState, appError) =
-      toApplicationStateAndError(pod, appStateFromContainer, appStateContainer)
+      toApplicationStateAndError(pod, appStateFrom, appStateContainer)
     sb.append(s"appState=$appState").append("\t")
     sb.append(s"appError='${appError.getOrElse("")}'")
     info(sb.toString())
