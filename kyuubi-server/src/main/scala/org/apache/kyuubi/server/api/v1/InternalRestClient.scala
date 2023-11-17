@@ -60,7 +60,7 @@ class InternalRestClient(
 
   def deleteBatch(user: String, batchId: String): CloseBatchResponse = {
     withAuthUser(user) {
-      internalBatchRestApi.deleteBatch(batchId, null)
+      internalBatchRestApi.deleteBatch(batchId)
     }
   }
 
