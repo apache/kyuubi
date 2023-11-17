@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.fs.Path
 import org.apache.spark.{ui, SparkConf}
@@ -56,7 +57,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
   private val shutdown = new AtomicBoolean(false)
   private val gracefulStopDeregistered = new AtomicBoolean(false)
-
+  private val objectMapper = new ObjectMapper
   @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
   @volatile private var stopEngineExec: Option[ThreadPoolExecutor] = None
   private lazy val engineSavePath =
@@ -188,18 +189,17 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
           .flatMap { stage =>
             statusTracker.getStageInfo(stage).map(_.numActiveTasks)
           }.sum
-        val engineMetrics = Map(
-          "openSessionCount" -> openSessionCount,
-          "activeTask" -> activeTask,
-          "poolId" -> engineSpace.split("-").last)
-        info(s"Spark engine has $openSessionCount open sessions and $activeTask active tasks.")
+        val engineMetrics = objectMapper.createObjectNode()
+          .put("openSessionCount", openSessionCount)
+          .put("activeTask", activeTask)
+          .put("poolID", engineSpace.split("-").last.toInt).toString
         DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
           if (client.pathNonExists(metricsSpace)) {
             client.create(metricsSpace, "PERSISTENT")
           }
           client.setData(
             s"/metrics$engineSpace",
-            engineMetrics.map { case (k, v) => s"$k=$v" }.mkString(";").getBytes)
+            engineMetrics.getBytes)
         }
       }
     }
