@@ -159,10 +159,8 @@ class ExecuteStatement(
         override def iterator: Iterator[Any] = incrementalCollectResult(resultDF)
       })
     } else {
-      val sparkSave = spark.conf.getOption(OPERATION_RESULT_SAVE_TO_FILE.key).map(_.toBoolean)
-        .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE))
-      lazy val threshold =
-        session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_THRESHOLD)
+      val sparkSave = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE, spark)
+      lazy val threshold = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE_THRESHOLD, spark)
       if (hasResultSet && sparkSave && shouldSaveResultToHdfs(resultMaxRows, threshold, result)) {
         val sessionId = session.handle.identifier.toString
         val savePath = session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_PATH)

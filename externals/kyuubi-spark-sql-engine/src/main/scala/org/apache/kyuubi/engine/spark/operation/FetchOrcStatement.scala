@@ -35,6 +35,7 @@ import org.apache.spark.sql.execution.datasources.RecordReaderIterator
 import org.apache.spark.sql.execution.datasources.orc.OrcDeserializer
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.operation.{FetchIterator, IterableFetchIterator}
 
 class FetchOrcStatement(spark: SparkSession) {
@@ -76,7 +77,7 @@ class FetchOrcStatement(spark: SparkSession) {
       }
     } catch {
       case e: Throwable =>
-        throw new Exception("Failed to create OrcDeserializer", e)
+        throw new KyuubiException("Failed to create OrcDeserializer", e)
     }
   }
 }
