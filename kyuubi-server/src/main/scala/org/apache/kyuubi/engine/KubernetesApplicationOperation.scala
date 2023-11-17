@@ -121,7 +121,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
                 info(s"[$kubernetesInfo] Operation of delete pod $podName with" +
                   s" ${toLabel(appLabel)} is completed.")
               } else {
-                warn(s"[$kubernetesInfo] Failed to delete pod $podName with  ${toLabel(appLabel)}.")
+                warn(s"[$kubernetesInfo] Failed to delete pod $podName with ${toLabel(appLabel)}.")
               }
             } catch {
               case NonFatal(e) => error(
