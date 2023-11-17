@@ -348,16 +348,12 @@ object KubernetesApplicationOperation extends Logging {
       PENDING
     } else if (containerState.getRunning != null) {
       RUNNING
+    } else if (containerState.getTerminated == null) {
+      UNKNOWN
+    } else if (containerState.getTerminated.getExitCode == 0) {
+      FINISHED
     } else {
-      Option(containerState.getTerminated) match {
-        case Some(terminated) =>
-          if (terminated.getExitCode == 0) {
-            FINISHED
-          } else {
-            FAILED
-          }
-        case None => UNKNOWN
-      }
+      FAILED
     }
   }
 
