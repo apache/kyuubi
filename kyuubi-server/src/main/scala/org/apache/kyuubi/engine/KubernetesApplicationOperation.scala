@@ -320,16 +320,16 @@ object KubernetesApplicationOperation extends Logging {
 
   def toApplicationState(
       pod: Pod,
-      appStateFrom: KubernetesApplicationStateSource,
+      appStateSource: KubernetesApplicationStateSource,
       appStateContainer: String): ApplicationState = {
-    toApplicationStateAndError(pod, appStateFrom, appStateContainer)._1
+    toApplicationStateAndError(pod, appStateSource, appStateContainer)._1
   }
 
   def toApplicationStateAndError(
       pod: Pod,
-      appStateFrom: KubernetesApplicationStateSource,
+      appStateSource: KubernetesApplicationStateSource,
       appStateContainer: String): (ApplicationState, Option[String]) = {
-    val containerStateToBuildAppState = appStateFrom match {
+    val containerStateToBuildAppState = appStateSource match {
       case KubernetesApplicationStateSource.CONTAINER =>
         pod.getStatus.getContainerStatuses.asScala
           .find(_.getState == appStateContainer).map(_.getState)

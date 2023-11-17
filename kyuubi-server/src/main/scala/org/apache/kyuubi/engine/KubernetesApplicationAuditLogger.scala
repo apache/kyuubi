@@ -31,7 +31,7 @@ object KubernetesApplicationAuditLogger extends Logging {
   def audit(
       kubernetesInfo: KubernetesInfo,
       pod: Pod,
-      appStateFrom: KubernetesApplicationStateSource,
+      appStateSource: KubernetesApplicationStateSource,
       appStateContainer: String): Unit = {
     val sb = AUDIT_BUFFER.get()
     sb.setLength(0)
@@ -41,7 +41,7 @@ object KubernetesApplicationAuditLogger extends Logging {
     sb.append(s"pod=${pod.getMetadata.getName}").append("\t")
     sb.append(s"appId=${pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL)}").append("\t")
     val (appState, appError) =
-      toApplicationStateAndError(pod, appStateFrom, appStateContainer)
+      toApplicationStateAndError(pod, appStateSource, appStateContainer)
     sb.append(s"appState=$appState").append("\t")
     sb.append(s"appError='${appError.getOrElse("")}'")
     info(sb.toString())

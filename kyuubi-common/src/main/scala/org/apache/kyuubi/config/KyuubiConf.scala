@@ -1239,21 +1239,24 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val KUBERNETES_APPLICATION_STATE_CONTAINER: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.application.state.container")
+      .doc("The container name to retrieve the application state from.")
+      .version("1.8.1")
+      .stringConf
+      .createWithDefault("spark-kubernetes-driver")
+
   val KUBERNETES_APPLICATION_STATE_SOURCE: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.application.state.source")
-      .doc("If set to true then the application state will be retrieved from the container " +
-        "instead of the pod.")
+      .doc("The source to retrieve the application state from. The valid values are " +
+        "pod and container. If the source is container and there is container inside the pod " +
+        s"with the name of ${KUBERNETES_APPLICATION_STATE_CONTAINER.key}, the application state " +
+        s"will be from the matched container state. " +
+        s"Otherwise, the application state will be from the pod state.")
       .version("1.8.1")
       .stringConf
       .checkValues(KubernetesApplicationStateSource)
       .createWithDefault(KubernetesApplicationStateSource.POD.toString)
-
-  val KUBERNETES_APPLICATION_STATE_CONTAINER: ConfigEntry[String] =
-    buildConf("kyuubi.kubernetes.application.state.container")
-      .doc("The container names to retrieve the application state from.")
-      .version("1.8.1")
-      .stringConf
-      .createWithDefault("spark-kubernetes-driver")
 
   object KubernetesApplicationStateSource extends Enumeration {
     type KubernetesApplicationStateSource = Value
