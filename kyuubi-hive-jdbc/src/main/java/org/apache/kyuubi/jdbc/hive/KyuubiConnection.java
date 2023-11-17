@@ -559,7 +559,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           // Pick trust store config from the given path
           sslTrustStore = KeyStore.getInstance(SSL_TRUST_STORE_TYPE);
           try (FileInputStream fis = new FileInputStream(sslTrustStorePath)) {
-            sslTrustStore.load(fis, sslTrustStorePassword.toCharArray());
+            sslTrustStore.load(
+                fis, sslTrustStorePassword != null ? sslTrustStorePassword.toCharArray() : null);
           }
           sslContext = SSLContexts.custom().loadTrustMaterial(sslTrustStore, null).build();
           socketFactory =
@@ -685,7 +686,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
             SSL_TRUST_STORE + " Not configured for 2 way SSL connection");
       }
       try (FileInputStream fis = new FileInputStream(trustStorePath)) {
-        sslTrustStore.load(fis, trustStorePassword.toCharArray());
+        sslTrustStore.load(
+            fis, trustStorePassword != null ? trustStorePassword.toCharArray() : null);
       }
       trustManagerFactory.init(sslTrustStore);
       SSLContext context = SSLContext.getInstance("TLS");
