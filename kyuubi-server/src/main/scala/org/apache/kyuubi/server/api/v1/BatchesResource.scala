@@ -472,17 +472,20 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       (killed, message)
     }
 
-    val activeProxyUser = Option(kyuubiProxyUser).getOrElse(hs2ProxyUser)
-    val userName = fe.getSessionUser(activeProxyUser)
-
     val sessionHandle = formatSessionHandle(batchId)
     sessionManager.getBatchSession(sessionHandle).map { batchSession =>
+      val activeProxyUser =
+        Option(kyuubiProxyUser).orElse(Option(hs2ProxyUser)).getOrElse(batchSession.user)
+      val userName = fe.getSessionUser(activeProxyUser)
       checkPermission(userName, batchSession.user)
       sessionManager.closeSession(batchSession.handle)
       val (killed, msg) = batchSession.batchJobSubmissionOp.getKillMessage
       new CloseBatchResponse(killed, msg)
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
+        val activeProxyUser =
+          Option(kyuubiProxyUser).orElse(Option(hs2ProxyUser)).getOrElse(metadata.username)
+        val userName = fe.getSessionUser(activeProxyUser)
         checkPermission(userName, metadata.username)
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
