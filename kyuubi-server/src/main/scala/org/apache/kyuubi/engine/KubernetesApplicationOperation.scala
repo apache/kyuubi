@@ -129,7 +129,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
                   e)
             }
           }
-          info(s"Remove terminated application $removed with [${toLabel(appLabel)}")
+          info(s"Remove terminated application $removed with ${toLabel(appLabel)}")
         }
       })
       .build()
