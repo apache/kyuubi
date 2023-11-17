@@ -122,7 +122,7 @@ class DataSourceV2RelationURIExtractor extends URIExtractor {
     val plan = v1.asInstanceOf[LogicalPlan]
     plan.find(_.getClass.getSimpleName == "DataSourceV2Relation").get match {
       case v2Relation: DataSourceV2Relation
-          if v2Relation.identifier != None &&
+          if v2Relation.identifier.isDefined &&
             isPathIdentifier(v2Relation.identifier.get.name, spark) =>
         Seq(v2Relation.identifier.get.name).map(Uri)
       case _ => Nil

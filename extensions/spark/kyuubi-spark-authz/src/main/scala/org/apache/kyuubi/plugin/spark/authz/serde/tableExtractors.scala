@@ -189,7 +189,7 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
     val plan = v1.asInstanceOf[LogicalPlan]
     plan.find(_.getClass.getSimpleName == "DataSourceV2Relation").get match {
       case v2Relation: DataSourceV2Relation
-          if v2Relation.identifier == None ||
+          if v2Relation.identifier.isEmpty ||
             !isPathIdentifier(v2Relation.identifier.get.name(), spark) =>
         val maybeCatalog = v2Relation.catalog.flatMap(catalogPlugin =>
           lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
