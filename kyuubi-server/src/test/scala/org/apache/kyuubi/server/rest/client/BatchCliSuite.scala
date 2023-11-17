@@ -83,7 +83,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
                                    |  resource: ${sparkBatchTestResource.get}
                                    |  className: org.apache.spark.examples.DriverSubmissionTest
                                    |  args:
-                                   |   - 10
+                                   |   - 60
                                    |  configs:
                                    |    spark.master: local
                                    |    wait.completion: true
