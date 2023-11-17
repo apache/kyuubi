@@ -23,6 +23,8 @@ import scala.collection.JavaConverters._
 import scala.util.Random
 
 import com.codahale.metrics.MetricRegistry
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
@@ -65,6 +67,8 @@ private[kyuubi] class EngineRef(
   private val serverSpace: String = conf.get(HA_NAMESPACE)
 
   private val timeout: Long = conf.get(ENGINE_INIT_TIMEOUT)
+
+  private val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
   // Share level of the engine
   private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
@@ -378,10 +382,10 @@ private[kyuubi] class EngineRef(
     }
   }
 
-  def getAdaptivePoolId(poolSize: Int): Int = {
+  private def getAdaptivePoolId(poolSize: Int): Int = {
     val sessionThreshold = conf.get(ENGINE_POOL_ADAPTIVE_SESSION_THRESHOLD)
     val metricsSpace =
-      s"/metrics/${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}/$user"
+      s"/metrics/${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType/$sessionUser"
     DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
       tryWithLock(client) {
         if (client.pathNonExists(metricsSpace)) {
@@ -394,25 +398,23 @@ private[kyuubi] class EngineRef(
       } else {
         engineType match {
           case SPARK_SQL =>
-            val engineMetricsMap = metrics.map(p =>
-              new String(client.getData(s"$metricsSpace/$p"))
-                .split(";")
-                .map(_.split("=", 2))
-                .filter(_.length == 2)
-                .map(kv => (kv.head, kv.last.toInt))
-                .toMap)
+            val engineMetricsMap = metrics.map { p =>
+              objectMapper.readValue(
+                new String(client.getData(s"$metricsSpace/$p")),
+                classOf[Map[String, Int]])
+            }
             if (engineMetricsMap.isEmpty) {
               return Random.nextInt(poolSize)
             } else {
-              val sortedEngineMetrics = engineMetricsMap.sortBy { map =>
-                (
-                  map.getOrElse("openSessionCount", sessionThreshold),
-                  map.getOrElse("activeTask", 0))
-              }
-              val candidate = sortedEngineMetrics.head
-              if (candidate.contains("poolId") && (candidate(
-                  "openSessionCount") < sessionThreshold || metrics.size == poolSize)) {
-                candidate("poolId")
+              val candidate = engineMetricsMap.filter(_.contains("poolID"))
+                .minBy { map =>
+                  (
+                    map.getOrElse("openSessionCount", sessionThreshold),
+                    map.getOrElse("activeTask", 0))
+                }
+              if ((candidate.nonEmpty && candidate("openSessionCount") < sessionThreshold) ||
+                metrics.size == poolSize) {
+                candidate("poolID")
               } else {
                 Random.nextInt(poolSize)
               }

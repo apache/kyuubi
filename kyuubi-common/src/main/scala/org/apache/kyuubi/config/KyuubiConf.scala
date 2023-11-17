@@ -2271,7 +2271,7 @@ object KyuubiConf {
   val ENGINE_POOL_ADAPTIVE_SESSION_THRESHOLD: ConfigEntry[Int] =
     buildConf("kyuubi.engine.pool.adaptive.session.threshold")
       .doc("The threshold of a engine open session count for adaptive engine pool select policy.")
-      .version("1.9.0")
+      .version("1.10.0")
       .intConf
       .checkValue(_ >= 1, "must be positive number")
       .createWithDefault(10)
@@ -2279,7 +2279,7 @@ object KyuubiConf {
   val ENGINE_REPORT_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.engine.report.interval")
       .doc("The check interval for engine report to the server")
-      .version("1.9.0")
+      .version("1.10.0")
       .timeConf
       .checkValue(_ >= Duration.ofSeconds(1).toMillis, "Minimum 1 seconds")
       .createWithDefault(Duration.ofMinutes(1).toMillis)
