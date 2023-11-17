@@ -42,7 +42,7 @@ import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSessi
 @Slow
 class TPCHQuerySuite extends KyuubiFunSuite {
 
-  val queries: Set[String] = (1 to 22).map(i => s"q$i").toSet
+  val queries: List[String] = (1 to 22).map(i => s"q$i").toList
 
   test("run query on tiny") {
     val viewSuffix = "view"
