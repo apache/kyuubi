@@ -32,6 +32,8 @@
   relative to `$KYUUBI_HOME` instead of `$PWD`.
 * Since Kyuubi 1.8, PROMETHEUS is changed as the default metrics reporter. To restore previous behavior,
   set `kyuubi.metrics.reporters=JSON`.
+* Since Kyuubi 1.8.1, for `DELETE /batches/${batchId}`, `proxyUser` and `hive.server2.proxy.user`
+  are not needed in the request parameters.
 
 ## Upgrading from Kyuubi 1.7.1 to 1.7.2
 
