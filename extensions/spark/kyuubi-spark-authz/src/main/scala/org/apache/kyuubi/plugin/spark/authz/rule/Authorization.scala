@@ -42,7 +42,7 @@ abstract class Authorization(spark: SparkSession) extends Rule[LogicalPlan] {
 object Authorization {
 
   val KYUUBI_AUTHZ_TAG = TreeNodeTag[Unit]("__KYUUBI_AUTHZ_TAG")
-  var KYUUBI_EXPLAIN_COMMAND_EXECUTION_ID = "KYUUBI_EXPLAIN_COMMAND_EXECUTION_ID"
+  var KYUUBI_EXPLAIN_COMMAND_EXECUTION_ID = "org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys"
 
   private def markAllNodesAuthChecked(plan: LogicalPlan): LogicalPlan = {
     plan.transformDown { case p =>

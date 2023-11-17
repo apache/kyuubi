@@ -304,11 +304,11 @@ object PrivilegesBuilder {
     val outputObjs = new ArrayBuffer[PrivilegeObject]
     val opType = plan match {
       // ExplainCommand run will execute the plan, should avoid check privilege for the plan.
-      case ExplainCommand(_, _) =>
+      case _: ExplainCommand =>
         setExplainCommandExecutionId(spark)
-        OperationType.QUERY
+        OperationType.EXPLAIN
       case _ if isExplainCommandChild(spark) =>
-        OperationType.QUERY
+        OperationType.EXPLAIN
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries
