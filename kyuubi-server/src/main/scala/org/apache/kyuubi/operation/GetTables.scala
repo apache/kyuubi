@@ -27,7 +27,7 @@ class GetTables(
     tableTypes: java.util.List[String])
   extends KyuubiOperation(session) {
 
-  override protected def runInternal(): Unit = {
+  override protected def runKyuubiOperationInternal(): Unit = {
     try {
       _remoteOpHandle = client.getTables(catalogName, schemaName, tableName, tableTypes)
     } catch onError()

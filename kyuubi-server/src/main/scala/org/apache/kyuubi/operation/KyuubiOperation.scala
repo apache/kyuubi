@@ -32,7 +32,7 @@ import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPE
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.OperationState
-import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, Session}
+import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionImpl, KyuubiSessionManager, Session}
 import org.apache.kyuubi.util.ThriftUtils
 
 abstract class KyuubiOperation(session: Session) extends AbstractOperation(session) {
@@ -99,6 +99,13 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
         }
       }
   }
+
+  final override protected def runInternal(): Unit =
+    session.asInstanceOf[KyuubiSession].handleSessionException {
+      runKyuubiOperationInternal()
+    }
+
+  protected def runKyuubiOperationInternal(): Unit
 
   override protected def beforeRun(): Unit = {
     setHasResultSet(true)

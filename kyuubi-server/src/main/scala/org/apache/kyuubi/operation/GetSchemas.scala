@@ -25,7 +25,7 @@ class GetSchemas(
     schemaName: String)
   extends KyuubiOperation(session) {
 
-  override protected def runInternal(): Unit = {
+  override protected def runKyuubiOperationInternal(): Unit = {
     try {
       _remoteOpHandle = client.getSchemas(catalogName, schemaName)
     } catch onError()

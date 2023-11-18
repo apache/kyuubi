@@ -164,7 +164,7 @@ class ExecuteStatement(
     }
   }
 
-  override protected def runInternal(): Unit = {
+  override protected def runKyuubiOperationInternal(): Unit = {
     if (isTimeoutMonitorEnabled) {
       addTimeoutMonitor(queryTimeout)
     }
