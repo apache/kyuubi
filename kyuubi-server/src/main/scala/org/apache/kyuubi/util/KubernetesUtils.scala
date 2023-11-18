@@ -137,6 +137,8 @@ object KubernetesUtils extends Logging {
     lazy val resolvedResourceName = s"kyuubi-${getResourceNamePrefix(appName, engineRefId)}-driver"
     if (forciblyRewrite || resolvedResourceName.length > DRIVER_POD_NAME_MAX_LENGTH) {
       s"kyuubi-$engineRefId-driver"
+    } else if (appName.contains(engineRefId)){
+      s"$appName-driver"
     } else {
       resolvedResourceName
     }
@@ -149,6 +151,8 @@ object KubernetesUtils extends Logging {
     val resolvedResourceName = s"kyuubi-${getResourceNamePrefix(appName, engineRefId)}"
     if (forciblyRewrite || resolvedResourceName.length > EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
       s"kyuubi-$engineRefId"
+    } else if (appName.contains(engineRefId)){
+      appName
     } else {
       resolvedResourceName
     }
