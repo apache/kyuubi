@@ -138,7 +138,7 @@ object KubernetesUtils extends Logging {
     if (forciblyRewrite || resolvedResourceName.length > DRIVER_POD_NAME_MAX_LENGTH) {
       s"kyuubi-$engineRefId-driver"
     } else if (appName.contains(engineRefId)){
-      s"$appName-driver"
+      getResourceNamePrefix(appName, "driver")
     } else {
       resolvedResourceName
     }
@@ -152,7 +152,7 @@ object KubernetesUtils extends Logging {
     if (forciblyRewrite || resolvedResourceName.length > EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
       s"kyuubi-$engineRefId"
     } else if (appName.contains(engineRefId)){
-      appName
+      getResourceNamePrefix(appName, "").init
     } else {
       resolvedResourceName
     }
