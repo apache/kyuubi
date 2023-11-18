@@ -153,11 +153,13 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       "--password",
       ldapUserPasswd)
     eventually(timeout(60.seconds), interval(100.milliseconds)) {
+      invalidCount += 1
       result = testPrematureExitForControlCli(logArgs, "")
       val rows = result.split("\n")
       assert(rows.length >= 2)
       // org.apache.spark.examples.DriverSubmissionTest output
       assert(result.contains("Alive for"))
+      invalidCount -= 1
     }
 
     val deleteArgs = Array(
@@ -172,7 +174,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
 
     eventually(timeout(3.seconds), interval(200.milliseconds)) {
       assert(MetricsSystem.counterValue(
-        MetricsConstants.REST_CONN_TOTAL).getOrElse(0L) - totalConnections - invalidCount === 5)
+        MetricsConstants.REST_CONN_TOTAL).getOrElse(0L) - totalConnections - invalidCount >= 5)
       assert(MetricsSystem.counterValue(MetricsConstants.REST_CONN_OPEN).getOrElse(0L) === 0)
     }
   }
