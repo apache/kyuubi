@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.session.{KyuubiSession, Session}
 
 class GetFunctions(
     session: Session,
@@ -26,9 +26,10 @@ class GetFunctions(
     functionName: String)
   extends KyuubiOperation(session) {
 
-  override protected def runKyuubiOperationInternal(): Unit = {
-    try {
-      _remoteOpHandle = client.getFunctions(catalogName, schemaName, functionName)
-    } catch onError()
-  }
+  override protected def runInternal(): Unit =
+    session.asInstanceOf[KyuubiSession].handleSessionException {
+      try {
+        _remoteOpHandle = client.getFunctions(catalogName, schemaName, functionName)
+      } catch onError()
+    }
 }

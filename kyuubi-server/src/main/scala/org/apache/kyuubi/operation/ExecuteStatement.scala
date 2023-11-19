@@ -29,7 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT_MONITOR_ENABL
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.session.{KyuubiSession, Session}
 
 class ExecuteStatement(
     session: Session,
@@ -164,20 +164,21 @@ class ExecuteStatement(
     }
   }
 
-  override protected def runKyuubiOperationInternal(): Unit = {
-    if (isTimeoutMonitorEnabled) {
-      addTimeoutMonitor(queryTimeout)
-    }
-    executeStatement()
-    val sessionManager = session.sessionManager
-    val asyncOperation: Runnable = () => waitStatementComplete()
-    try {
-      val opHandle = sessionManager.submitBackgroundOperation(asyncOperation)
-      setBackgroundHandle(opHandle)
-    } catch onError("submitting query in background, query rejected")
+  override protected def runInternal(): Unit =
+    session.asInstanceOf[KyuubiSession].handleSessionException {
+      if (isTimeoutMonitorEnabled) {
+        addTimeoutMonitor(queryTimeout)
+      }
+      executeStatement()
+      val sessionManager = session.sessionManager
+      val asyncOperation: Runnable = () => waitStatementComplete()
+      try {
+        val opHandle = sessionManager.submitBackgroundOperation(asyncOperation)
+        setBackgroundHandle(opHandle)
+      } catch onError("submitting query in background, query rejected")
 
-    if (!shouldRunAsync) getBackgroundHandle.get()
-  }
+      if (!shouldRunAsync) getBackgroundHandle.get()
+    }
 
   override protected def eventEnabled: Boolean = true
 }

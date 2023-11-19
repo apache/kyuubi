@@ -49,7 +49,7 @@ class ExecutedCommandExec(
     OperationLog.removeCurrentOperationLog()
   }
 
-  override protected def runKyuubiOperationInternal(): Unit = {
+  override protected def runInternal(): Unit = session.handleSessionException {
     val asyncOperation: Runnable = () => {
       setState(OperationState.RUNNING)
       try {

@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.session.{KyuubiSession, Session}
 
 class GetCrossReference(
     session: Session,
@@ -29,15 +29,16 @@ class GetCrossReference(
     foreignTable: String)
   extends KyuubiOperation(session) {
 
-  override protected def runKyuubiOperationInternal(): Unit = {
-    try {
-      _remoteOpHandle = client.getCrossReference(
-        primaryCatalog,
-        primarySchema,
-        primaryTable,
-        foreignCatalog,
-        foreignSchema,
-        foreignTable)
-    } catch onError()
-  }
+  override protected def runInternal(): Unit =
+    session.asInstanceOf[KyuubiSession].handleSessionException {
+      try {
+        _remoteOpHandle = client.getCrossReference(
+          primaryCatalog,
+          primarySchema,
+          primaryTable,
+          foreignCatalog,
+          foreignSchema,
+          foreignTable)
+      } catch onError()
+    }
 }

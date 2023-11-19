@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.session.{KyuubiSession, Session}
 
 class GetCatalogs(session: Session) extends KyuubiOperation(session) {
 
-  override protected def runKyuubiOperationInternal(): Unit = {
-    try {
-      _remoteOpHandle = client.getCatalogs
-    } catch onError()
-  }
+  override protected def runInternal(): Unit =
+    session.asInstanceOf[KyuubiSession].handleSessionException {
+      try {
+        _remoteOpHandle = client.getCatalogs
+      } catch onError()
+    }
 }

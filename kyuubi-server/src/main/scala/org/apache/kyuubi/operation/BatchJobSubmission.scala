@@ -182,7 +182,7 @@ class BatchJobSubmission(
     OperationLog.removeCurrentOperationLog()
   }
 
-  override protected def runKyuubiOperationInternal(): Unit = {
+  override protected def runInternal(): Unit = session.handleSessionException {
     val asyncOperation: Runnable = () => {
       try {
         metadata match {
