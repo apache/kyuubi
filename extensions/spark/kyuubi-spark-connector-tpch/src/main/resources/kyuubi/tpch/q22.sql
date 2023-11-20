@@ -19,7 +19,7 @@
 select
     cntrycode,
     count(*) as numcust,
-    sum(c_acctbal) as totacctbal
+    round(sum(c_acctbal), 2) as totacctbal
 from
     (
         select
