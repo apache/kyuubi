@@ -148,8 +148,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       task,
       interval,
       interval,
-      TimeUnit.MILLISECONDS,
-      "batch-checker")
+      TimeUnit.MILLISECONDS)
   }
 
   @VisibleForTesting

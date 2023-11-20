@@ -119,14 +119,14 @@ object ThreadUtils extends Logging {
       runnable: Runnable,
       initialDelay: Long,
       delay: Long,
-      timeUnit: TimeUnit,
-      errorMessageHint: String): Unit = {
+      timeUnit: TimeUnit): Unit = {
     scheduler.scheduleWithFixedDelay(
       () =>
         try {
           runnable.run()
         } catch {
-          case e: Exception => error(s"Error in $errorMessageHint", e)
+          case t: Throwable =>
+            error(s"Uncaught exception in thread ${Thread.currentThread().getName}", t)
         },
       initialDelay,
       delay,

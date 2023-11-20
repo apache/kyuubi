@@ -330,8 +330,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       checkTask,
       interval,
       interval,
-      TimeUnit.MILLISECONDS,
-      "session-timeout-checker")
+      TimeUnit.MILLISECONDS)
   }
 
   private[kyuubi] def startTerminatingChecker(stop: () => Unit): Unit = if (!isServer) {
@@ -354,8 +353,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
         checkTask,
         interval,
         interval,
-        TimeUnit.MILLISECONDS,
-        "session-manager-terminating-checker")
+        TimeUnit.MILLISECONDS)
     }
   }
 }

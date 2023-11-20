@@ -85,8 +85,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
           },
           userIsolatedIdleInterval,
           userIsolatedIdleInterval,
-          TimeUnit.MILLISECONDS,
-          "user-isolated-spark-session-cache-checker")
+          TimeUnit.MILLISECONDS)
       }
     }
   }

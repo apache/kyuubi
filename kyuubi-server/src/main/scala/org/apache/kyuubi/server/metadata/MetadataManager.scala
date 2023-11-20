@@ -215,8 +215,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
       cleanerTask,
       interval,
       interval,
-      TimeUnit.MILLISECONDS,
-      "metadata-cleaner")
+      TimeUnit.MILLISECONDS)
   }
 
   def addMetadataRetryRequest(request: MetadataRequest): Unit = {
@@ -307,8 +306,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
       triggerTask,
       requestsRetryInterval,
       requestsRetryInterval,
-      TimeUnit.MILLISECONDS,
-      "metadata-request-async-retry-trigger")
+      TimeUnit.MILLISECONDS)
   }
 }
 

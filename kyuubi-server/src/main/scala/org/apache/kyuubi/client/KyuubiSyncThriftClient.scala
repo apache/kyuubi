@@ -131,8 +131,7 @@ class KyuubiSyncThriftClient private (
       task,
       engineAliveProbeInterval,
       engineAliveProbeInterval,
-      TimeUnit.MILLISECONDS,
-      "engine-alive-probe-checker")
+      TimeUnit.MILLISECONDS)
   }
 
   /**

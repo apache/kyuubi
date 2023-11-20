@@ -173,8 +173,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         checkTask,
         interval,
         interval,
-        TimeUnit.MILLISECONDS,
-        "spark-engine-lifetime-terminating-checker")
+        TimeUnit.MILLISECONDS)
     }
   }
 }

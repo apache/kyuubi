@@ -415,8 +415,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       checkTask,
       interval,
       interval,
-      TimeUnit.MILLISECONDS,
-      "engine-connection-alive-checker")
+      TimeUnit.MILLISECONDS)
   }
 
   private def initEngineStartupProcessSemaphore(conf: KyuubiConf): Unit = {

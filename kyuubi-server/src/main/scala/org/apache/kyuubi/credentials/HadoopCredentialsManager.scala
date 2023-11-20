@@ -305,8 +305,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
         checkTask,
         credentialsCheckInterval,
         credentialsCheckInterval,
-        TimeUnit.MILLISECONDS,
-        "hadoop-credentials-timeout-checker")
+        TimeUnit.MILLISECONDS)
     }
   }
 

@@ -46,7 +46,6 @@ class PeriodicGCService(name: String) extends AbstractService(name) {
       () => System.gc(),
       interval,
       interval,
-      TimeUnit.MILLISECONDS,
-      "periodic-gc-trigger")
+      TimeUnit.MILLISECONDS)
   }
 }
