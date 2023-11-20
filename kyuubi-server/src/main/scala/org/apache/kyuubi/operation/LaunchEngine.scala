@@ -53,7 +53,7 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     OperationLog.removeCurrentOperationLog()
   }
 
-  override protected def runKyuubiOperationInternal(): Unit = {
+  override protected def runInternal(): Unit = session.handleSessionException {
     val asyncOperation: Runnable = () => {
       setState(OperationState.RUNNING)
       try {

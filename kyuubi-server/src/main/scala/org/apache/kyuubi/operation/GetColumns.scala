@@ -27,7 +27,7 @@ class GetColumns(
     columnName: String)
   extends KyuubiOperation(session) {
 
-  override protected def runKyuubiOperationInternal(): Unit = {
+  override protected def runInternal(): Unit = {
     try {
       _remoteOpHandle = client.getColumns(catalogName, schemaName, tableName, columnName)
     } catch onError()

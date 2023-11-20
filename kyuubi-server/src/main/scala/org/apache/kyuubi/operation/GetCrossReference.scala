@@ -29,7 +29,7 @@ class GetCrossReference(
     foreignTable: String)
   extends KyuubiOperation(session) {
 
-  override protected def runKyuubiOperationInternal(): Unit = {
+  override protected def runInternal(): Unit = {
     try {
       _remoteOpHandle = client.getCrossReference(
         primaryCatalog,

@@ -26,7 +26,7 @@ class GetFunctions(
     functionName: String)
   extends KyuubiOperation(session) {
 
-  override protected def runKyuubiOperationInternal(): Unit = {
+  override protected def runInternal(): Unit = {
     try {
       _remoteOpHandle = client.getFunctions(catalogName, schemaName, functionName)
     } catch onError()
