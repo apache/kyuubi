@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.session.{KyuubiSession, Session}
+import org.apache.kyuubi.session.Session
 
 class GetPrimaryKeys(
     session: Session,
@@ -26,10 +26,9 @@ class GetPrimaryKeys(
     tableName: String)
   extends KyuubiOperation(session) {
 
-  override protected def runInternal(): Unit =
-    session.asInstanceOf[KyuubiSession].handleSessionException {
-      try {
-        _remoteOpHandle = client.getPrimaryKeys(catalogName, schemaName, tableName)
-      } catch onError()
-    }
+  override protected def runKyuubiOperationInternal(): Unit = {
+    try {
+      _remoteOpHandle = client.getPrimaryKeys(catalogName, schemaName, tableName)
+    } catch onError()
+  }
 }

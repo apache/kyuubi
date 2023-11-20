@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState}
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionImpl}
+import org.apache.kyuubi.session.KyuubiSessionImpl
 
 class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean)
   extends KyuubiApplicationOperation(session) {
@@ -53,22 +53,21 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     OperationLog.removeCurrentOperationLog()
   }
 
-  override protected def runInternal(): Unit =
-    session.asInstanceOf[KyuubiSession].handleSessionException {
-      val asyncOperation: Runnable = () => {
-        setState(OperationState.RUNNING)
-        try {
-          session.openEngineSession(getOperationLog)
-          setState(OperationState.FINISHED)
-        } catch onError()
-      }
+  override protected def runKyuubiOperationInternal(): Unit = {
+    val asyncOperation: Runnable = () => {
+      setState(OperationState.RUNNING)
       try {
-        val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
-        setBackgroundHandle(opHandle)
-      } catch onError("submitting open engine operation in background, request rejected")
-
-      if (!shouldRunAsync) getBackgroundHandle.get()
+        session.openEngineSession(getOperationLog)
+        setState(OperationState.FINISHED)
+      } catch onError()
     }
+    try {
+      val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
+      setBackgroundHandle(opHandle)
+    } catch onError("submitting open engine operation in background, request rejected")
+
+    if (!shouldRunAsync) getBackgroundHandle.get()
+  }
 
   override protected def applicationInfoMap: Option[Map[String, String]] = {
     super.applicationInfoMap.map { _ + ("refId" -> session.engine.getEngineRefId()) }

@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.session.{KyuubiSession, Session}
+import org.apache.kyuubi.session.Session
 
 class GetTables(
     session: Session,
@@ -27,10 +27,9 @@ class GetTables(
     tableTypes: java.util.List[String])
   extends KyuubiOperation(session) {
 
-  override protected def runInternal(): Unit =
-    session.asInstanceOf[KyuubiSession].handleSessionException {
-      try {
-        _remoteOpHandle = client.getTables(catalogName, schemaName, tableName, tableTypes)
-      } catch onError()
-    }
+  override protected def runKyuubiOperationInternal(): Unit = {
+    try {
+      _remoteOpHandle = client.getTables(catalogName, schemaName, tableName, tableTypes)
+    } catch onError()
+  }
 }
