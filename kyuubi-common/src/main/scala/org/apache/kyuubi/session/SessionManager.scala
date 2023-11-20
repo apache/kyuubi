@@ -33,6 +33,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 /**
  * The [[SessionManager]] holds the all the connected [[Session]]s, provides us the APIs to
@@ -324,7 +325,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       }
     }
 
-    timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
+    scheduleTolerableRunnableWithFixedDelay(
+      timeoutChecker,
+      checkTask,
+      interval,
+      interval,
+      TimeUnit.MILLISECONDS)
   }
 
   private[kyuubi] def startTerminatingChecker(stop: () => Unit): Unit = if (!isServer) {
@@ -342,7 +348,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
           }
         }
       }
-      timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
+      scheduleTolerableRunnableWithFixedDelay(
+        timeoutChecker,
+        checkTask,
+        interval,
+        interval,
+        TimeUnit.MILLISECONDS)
     }
   }
 }
