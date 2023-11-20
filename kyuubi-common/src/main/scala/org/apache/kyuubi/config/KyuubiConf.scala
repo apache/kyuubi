@@ -2785,12 +2785,19 @@ object KyuubiConf {
         " The configuration value should be a subclass of " +
         "`org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider`. " +
         "Kyuubi provides the following built-in implementations: " +
-        "<li>DorisConnectionProvider: For establishing Doris connections.</li> " +
-        "<li>MySQLConnectionProvider: For establishing MySQL connections.</li> " +
-        "<li>PhoenixConnectionProvider: For establishing Phoenix connections.</li> " +
-        "<li>PostgreSQLConnectionProvider: For establishing PostgreSQL connections.</li>")
+        "<li>doris: For establishing Doris connections.</li> " +
+        "<li>mysql: For establishing MySQL connections.</li> " +
+        "<li>phoenix: For establishing Phoenix connections.</li> " +
+        "<li>postgresql: For establishing PostgreSQL connections.</li>")
       .version("1.6.0")
       .stringConf
+      .transform {
+        case "Doris" | "doris" => "DorisConnectionProvider"
+        case "MySQL" | "mysql" => "MySQLConnectionProvider"
+        case "Phoenix" | "phoenix" => "PhoenixConnectionProvider"
+        case "PostgreSQL" | "postgresql" => "PostgreSQLConnectionProvider"
+        case other => other
+      }
       .createOptional
 
   val ENGINE_JDBC_SHORT_NAME: OptionalConfigEntry[String] =

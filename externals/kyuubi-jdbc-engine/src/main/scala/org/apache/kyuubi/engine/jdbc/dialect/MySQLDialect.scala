@@ -85,10 +85,6 @@ class MySQLDialect extends JdbcDialect {
     query.toString()
   }
 
-  override def getTableTypesOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
   override def getColumnsQuery(
       session: Session,
       catalogName: String,
@@ -126,18 +122,6 @@ class MySQLDialect extends JdbcDialect {
     }
 
     query.toString()
-  }
-
-  override def getFunctionsOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
-  override def getPrimaryKeysOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
-  override def getCrossReferenceOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
   }
 
   override def getRowSetHelper(): RowSetHelper = {
