@@ -149,7 +149,7 @@
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
         <hadoop.version>3.3.6</hadoop.version>
         <hikaricp.version>4.0.3</hikaricp.version>
-        <derby.version>10.14.2.0</derby.version>
+        <derby.version>10.17.1.0</derby.version>
         <fliptables.verion>1.0.2</fliptables.verion>
         <hive.engine.hive.version>3.1.3</hive.engine.hive.version>
         <hive.version>3.1.3</hive.version>
