@@ -130,15 +130,22 @@ object KubernetesUtils extends Logging {
       .replaceAll("^[0-9]", "x")
   }
 
-  def generateDriverPodName(
+    def generateDriverPodName(
       appName: String,
       engineRefId: String,
       forciblyRewrite: Boolean): String = {
-    lazy val resolvedResourceName = s"kyuubi-${getResourceNamePrefix(appName, engineRefId)}-driver"
+    val resourceNamePrefix = if (appName.contains(engineRefId)) {
+      getResourceNamePrefix(appName, "")
+    } else {
+      getResourceNamePrefix(appName, engineRefId)
+    }
+    val resolvedResourceName = if (resourceNamePrefix.startsWith("kyuubi-")) {
+      s"$resourceNamePrefix-driver"
+    } else {
+      s"kyuubi-$resourceNamePrefix-driver"
+    }
     if (forciblyRewrite || resolvedResourceName.length > DRIVER_POD_NAME_MAX_LENGTH) {
       s"kyuubi-$engineRefId-driver"
-    } else if (appName.contains(engineRefId)){
-      getResourceNamePrefix(appName, "driver")
     } else {
       resolvedResourceName
     }
@@ -148,11 +155,18 @@ object KubernetesUtils extends Logging {
       appName: String,
       engineRefId: String,
       forciblyRewrite: Boolean): String = {
-    val resolvedResourceName = s"kyuubi-${getResourceNamePrefix(appName, engineRefId)}"
-    if (forciblyRewrite || resolvedResourceName.length > EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
+    val resourceNamePrefix = if (appName.contains(engineRefId)) {
+      getResourceNamePrefix(appName, "")
+    } else {
+      getResourceNamePrefix(appName, engineRefId)
+    }
+    val resolvedResourceName = if (resourceNamePrefix.startsWith("kyuubi-")) {
+      s"$resourceNamePrefix"
+    } else {
+      s"kyuubi-$resourceNamePrefix"
+    }
+    if (forciblyRewrite || resolvedResourceName.length > DRIVER_POD_NAME_MAX_LENGTH) {
       s"kyuubi-$engineRefId"
-    } else if (appName.contains(engineRefId)){
-      getResourceNamePrefix(appName, "").init
     } else {
       resolvedResourceName
     }
