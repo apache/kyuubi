@@ -30,8 +30,9 @@ import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndex
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource
+import org.apache.kyuubi.config.KyuubiConf.{KubernetesApplicationStateSource, KubernetesCleanupDriverPodStrategy}
 import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
+import org.apache.kyuubi.config.KyuubiConf.KubernetesCleanupDriverPodStrategy.{ALL, COMPLETED, NONE}
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
 import org.apache.kyuubi.util.KubernetesUtils
 
@@ -107,14 +108,19 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
     // Defer cleaning terminated application information
     val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
-    val deleteSparkDriverPodOnTermination =
-      conf.get(KyuubiConf.KUBERNETES_SPARK_DELETE_DRIVER_POD_ON_TERMINATION_ENABLED)
+    val cleanupDriverPodStrategy = KubernetesCleanupDriverPodStrategy.withName(
+      conf.get(KyuubiConf.KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD))
     cleanupTerminatedAppInfoTrigger = CacheBuilder.newBuilder()
       .expireAfterWrite(retainPeriod, TimeUnit.MILLISECONDS)
       .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
         Option(appInfoStore.remove(notification.getKey)).foreach { case (kubernetesInfo, removed) =>
           val appLabel = notification.getKey
-          if (deleteSparkDriverPodOnTermination) {
+          val shouldDelete = cleanupDriverPodStrategy match {
+            case NONE => false
+            case ALL => true
+            case COMPLETED => !ApplicationState.isFailed(notification.getValue)
+          }
+          if (shouldDelete) {
             val podName = removed.name
             try {
               val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
