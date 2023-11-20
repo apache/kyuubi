@@ -130,7 +130,7 @@ object KubernetesUtils extends Logging {
       .replaceAll("^[0-9]", "x")
   }
 
-    def generateDriverPodName(
+  def generateDriverPodName(
       appName: String,
       engineRefId: String,
       forciblyRewrite: Boolean): String = {
