@@ -126,8 +126,7 @@ object ThreadUtils extends Logging {
         try {
           runnable.run()
         } catch {
-          case e: Exception =>
-            error(s"Error in $errorMessageHint", e)
+          case e: Exception => error(s"Error in $errorMessageHint", e)
         },
       initialDelay,
       delay,
