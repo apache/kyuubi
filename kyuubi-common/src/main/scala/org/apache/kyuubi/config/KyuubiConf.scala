@@ -1231,18 +1231,18 @@ object KyuubiConf {
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofMinutes(5).toMillis)
 
-  val KUBERNETES_SPARK_DELETE_DRIVER_POD_ON_TERMINATION: ConfigEntry[String] =
-    buildConf("kyuubi.kubernetes.spark.deleteDriverPodOnTermination")
+  val KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.spark.cleanupTerminatedDriverPod")
       .doc("Kyuubi server will delete the spark driver pod after " +
         s"the application terminates for ${KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD.key}. " +
         "Available options are NONE, ALL, COMPLETED and " +
         "default value is None which means none of the pod will be deleted")
       .version("1.8.1")
       .stringConf
-      .createWithDefault(KubernetesDeleteDriverPodStrategy.NONE.toString)
+      .createWithDefault(KubernetesCleanupDriverPodStrategy.NONE.toString)
 
-  object KubernetesDeleteDriverPodStrategy extends Enumeration {
-    type KubernetesDeleteDriverPodStrategy = Value
+  object KubernetesCleanupDriverPodStrategy extends Enumeration {
+    type KubernetesCleanupDriverPodStrategy = Value
     val NONE, ALL, COMPLETED = Value
   }
 
