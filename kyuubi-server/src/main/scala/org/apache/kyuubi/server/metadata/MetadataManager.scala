@@ -32,6 +32,7 @@ import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.{ClassUtils, JdbcUtils, ThreadUtils}
+import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 class MetadataManager extends AbstractService("MetadataManager") {
   import MetadataManager._
@@ -209,11 +210,13 @@ class MetadataManager extends AbstractService("MetadataManager") {
       }
     }
 
-    metadataCleaner.scheduleWithFixedDelay(
+    scheduleTolerableRunnableWithFixedDelay(
+      metadataCleaner,
       cleanerTask,
       interval,
       interval,
-      TimeUnit.MILLISECONDS)
+      TimeUnit.MILLISECONDS,
+      "metadata-cleaner")
   }
 
   def addMetadataRetryRequest(request: MetadataRequest): Unit = {
@@ -298,11 +301,14 @@ class MetadataManager extends AbstractService("MetadataManager") {
         }
       }
     }
-    requestsAsyncRetryTrigger.scheduleWithFixedDelay(
+
+    scheduleTolerableRunnableWithFixedDelay(
+      requestsAsyncRetryTrigger,
       triggerTask,
       requestsRetryInterval,
       requestsRetryInterval,
-      TimeUnit.MILLISECONDS)
+      TimeUnit.MILLISECONDS,
+      "metadata-request-async-retry-trigger")
   }
 }
 

@@ -39,6 +39,7 @@ import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
+import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 class KyuubiSyncThriftClient private (
     protocol: TProtocol,
@@ -125,11 +126,13 @@ class KyuubiSyncThriftClient private (
       }
     }
     engineLastAlive = System.currentTimeMillis()
-    engineAliveThreadPool.scheduleWithFixedDelay(
+    scheduleTolerableRunnableWithFixedDelay(
+      engineAliveThreadPool,
       task,
       engineAliveProbeInterval,
       engineAliveProbeInterval,
-      TimeUnit.MILLISECONDS)
+      TimeUnit.MILLISECONDS,
+      "engine-alive-probe-checker")
   }
 
   /**
