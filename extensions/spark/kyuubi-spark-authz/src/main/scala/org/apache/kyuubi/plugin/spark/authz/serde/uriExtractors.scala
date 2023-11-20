@@ -109,11 +109,15 @@ class IdentifierURIExtractor extends URIExtractor {
 
 class SubqueryAliasURIExtractor extends URIExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = v1 match {
-    case SubqueryAlias(_, SubqueryAlias(identifier, _))
-        if isPathIdentifier(identifier.name, spark) =>
-      Seq(identifier.name).map(Uri)
+    case SubqueryAlias(_, SubqueryAlias(identifier, _)) =>
+      if (isPathIdentifier(identifier.name, spark)) {
+        Seq(identifier.name).map(Uri)
+      } else {
+        Nil
+      }
     case SubqueryAlias(identifier, _) if isPathIdentifier(identifier.name, spark) =>
       Seq(identifier.name).map(Uri)
+    case _ => Nil
   }
 }
 

@@ -257,9 +257,12 @@ class ResolvedIdentifierTableExtractor extends TableExtractor {
 class SubqueryAliasTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     v1.asInstanceOf[SubqueryAlias] match {
-      case SubqueryAlias(_, SubqueryAlias(identifier, _))
-          if !isPathIdentifier(identifier.name, spark) =>
-        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case SubqueryAlias(_, SubqueryAlias(identifier, _)) =>
+        if (isPathIdentifier(identifier.name, spark)) {
+          None
+        } else {
+          lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+        }
       case SubqueryAlias(identifier, _) if !isPathIdentifier(identifier.name, spark) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
       case _ => None

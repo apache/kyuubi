@@ -387,6 +387,51 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("merge into path-based table") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq(
+        (s"$namespace1.$table2", "table"),
+        (s"$namespace1", "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+        doAs(admin, sql(createTableSql(namespace1, table2)))
+        withTempDir(path => {
+          doAs(admin, sql(createPathBasedTableSql(path)))
+          val mergeIntoSql =
+            s"""
+               |MERGE INTO delta.`$path` AS target
+               |USING $namespace1.$table2 AS source
+               |ON target.id = source.id
+               |WHEN MATCHED THEN
+               |  UPDATE SET
+               |    id = source.id,
+               |    name = source.name,
+               |    gender = source.gender,
+               |    birthDate = source.birthDate
+               |WHEN NOT MATCHED
+               |  THEN INSERT (
+               |    id,
+               |    name,
+               |    gender,
+               |    birthDate
+               |  )
+               |  VALUES (
+               |    source.id,
+               |    source.name,
+               |    source.gender,
+               |    source.birthDate
+               |  )
+               |""".stripMargin
+          interceptContains[AccessControlException](
+            doAs(someone, sql(mergeIntoSql)))(
+            s"does not have [select] privilege on [$namespace1/$table2/id," +
+              s"$namespace1/$table2/name,$namespace1/$table2/gender," +
+              s"$namespace1/$table2/birthDate], [write] privilege on [[$path, $path/]]")
+          doAs(admin, sql(mergeIntoSql))
+        })
+      }
+    }
+  }
 }
 
 object DeltaCatalogRangerSparkExtensionSuite {
