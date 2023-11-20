@@ -33,6 +33,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
+import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 /**
@@ -299,7 +300,8 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
     }
 
     credentialsTimeoutChecker.foreach { executor =>
-      executor.scheduleWithFixedDelay(
+      scheduleTolerableRunnableWithFixedDelay(
+        executor,
         checkTask,
         credentialsCheckInterval,
         credentialsCheckInterval,
