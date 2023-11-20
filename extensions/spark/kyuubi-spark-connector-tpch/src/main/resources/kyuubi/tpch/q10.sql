@@ -19,7 +19,7 @@
 select
     c_custkey,
     c_name,
-    sum(l_extendedprice * (1 - l_discount)) as revenue,
+    round(sum(l_extendedprice * (1 - l_discount)), 1) as revenue,
     c_acctbal,
     n_name,
     c_address,
