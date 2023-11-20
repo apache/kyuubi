@@ -432,6 +432,25 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("optimize path-based table") {
+    assume(isSparkV32OrGreater)
+
+    withTempDir(path => {
+      doAs(admin, sql(createPathBasedTableSql(path)))
+      val optimizeTableSql1 = s"OPTIMIZE delta.`$path`"
+      interceptContains[AccessControlException](
+        doAs(someone, sql(optimizeTableSql1)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(optimizeTableSql1))
+
+      val optimizeTableSql2 = s"OPTIMIZE '$path'"
+      interceptContains[AccessControlException](
+        doAs(someone, sql(optimizeTableSql2)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(optimizeTableSql2))
+    })
+  }
 }
 
 object DeltaCatalogRangerSparkExtensionSuite {
