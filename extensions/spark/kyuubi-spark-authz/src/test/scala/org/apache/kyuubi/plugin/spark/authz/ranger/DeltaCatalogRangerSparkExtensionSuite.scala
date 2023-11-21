@@ -283,7 +283,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("optimize table") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV32OrGreater, "optimize table is available in Delta Lake 1.2.0 and above")
 
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
@@ -434,7 +434,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("optimize path-based table") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV32OrGreater, "optimize table is available in Delta Lake 1.2.0 and above")
 
     withTempDir(path => {
       doAs(admin, sql(createPathBasedTableSql(path)))
