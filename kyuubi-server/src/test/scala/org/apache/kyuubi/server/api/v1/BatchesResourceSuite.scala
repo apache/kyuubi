@@ -864,7 +864,8 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       val conf = mutable.Map("spark.master" -> "local")
 
       kyuubiProxyUser.map(username => conf += (PROXY_USER.key -> username))
-      hs2ProxyUser.map(username => conf += (KyuubiAuthenticationFactory.HS2_PROXY_USER -> username))
+      hs2ProxyUser.map(username =>
+        conf += (KyuubiAuthenticationFactory.HS2_PROXY_USER -> username))
       val proxyUserRequest = newSparkBatchRequest(conf.toMap)
 
       webTarget.path("api/v1/batches")

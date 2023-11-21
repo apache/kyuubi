@@ -21,6 +21,7 @@ import java.time.Duration
 import java.util.UUID
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{GenericType, MediaType, Response}
+
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
@@ -441,7 +442,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(deleteEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
-      val deleteEngineResponse3 = runDeleteEngine(Option(normalUser), Option(s"${normalUser}HiveServer2"))
+      val deleteEngineResponse3 = runDeleteEngine(Option(normalUser),
+        Option(s"${normalUser}HiveServer2"))
       assert(deleteEngineResponse3.getStatus === 405)
       assert(deleteEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
@@ -659,7 +661,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(listEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
-      val listEngineResponse3 = runListEngine(Option(normalUser), Option(s"${normalUser}HiveServer2"))
+      val listEngineResponse3 = runListEngine(Option(normalUser),
+        Option(s"${normalUser}HiveServer2"))
       assert(listEngineResponse3.getStatus === 405)
       assert(listEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
