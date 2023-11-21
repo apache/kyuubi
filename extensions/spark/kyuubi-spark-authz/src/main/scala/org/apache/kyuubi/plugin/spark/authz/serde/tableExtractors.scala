@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.{Map => JMap}
-import java.util.LinkedHashMap
+import java.util.{LinkedHashMap, Map => JMap}
 
 import scala.collection.JavaConverters._
 
@@ -81,14 +80,18 @@ object TableExtractor {
 class TableIdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val identifier = v1.asInstanceOf[TableIdentifier]
-    val owner =
-      try {
-        val catalogTable = spark.sessionState.catalog.getTableMetadata(identifier)
-        Option(catalogTable.owner).filter(_.nonEmpty)
-      } catch {
-        case _: Exception => None
-      }
-    Some(Table(None, identifier.database, identifier.table, owner))
+    if (isPathIdentifier(identifier.table, spark)) {
+      None
+    } else {
+      val owner =
+        try {
+          val catalogTable = spark.sessionState.catalog.getTableMetadata(identifier)
+          Option(catalogTable.owner).filter(_.nonEmpty)
+        } catch {
+          case _: Exception => None
+        }
+      Some(Table(None, identifier.database, identifier.table, owner))
+    }
   }
 }
 

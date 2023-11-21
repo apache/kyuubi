@@ -283,7 +283,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("optimize table") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV32OrGreater, "optimize table is available in Delta Lake 1.2.0 and above")
 
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
@@ -431,6 +431,25 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         })
       }
     }
+  }
+
+  test("optimize path-based table") {
+    assume(isSparkV32OrGreater, "optimize table is available in Delta Lake 1.2.0 and above")
+
+    withTempDir(path => {
+      doAs(admin, sql(createPathBasedTableSql(path)))
+      val optimizeTableSql1 = s"OPTIMIZE delta.`$path`"
+      interceptContains[AccessControlException](
+        doAs(someone, sql(optimizeTableSql1)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(optimizeTableSql1))
+
+      val optimizeTableSql2 = s"OPTIMIZE '$path'"
+      interceptContains[AccessControlException](
+        doAs(someone, sql(optimizeTableSql2)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(optimizeTableSql2))
+    })
   }
 }
 

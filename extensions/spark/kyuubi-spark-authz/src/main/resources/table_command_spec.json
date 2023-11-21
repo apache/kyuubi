@@ -2226,7 +2226,19 @@
   } ],
   "opType" : "ALTERTABLE_COMPACT",
   "queryDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false
+  }, {
+    "fieldName" : "tableId",
+    "fieldExtractor" : "TableIdentifierOptionURIExtractor",
+    "isInput" : false
+  }, {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.UpdateCommand",
   "tableDescs" : [ {

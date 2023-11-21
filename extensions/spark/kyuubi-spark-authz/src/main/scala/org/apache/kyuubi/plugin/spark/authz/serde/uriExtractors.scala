@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.serde
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.connector.catalog.Identifier
@@ -131,5 +132,28 @@ class DataSourceV2RelationURIExtractor extends URIExtractor {
         Seq(v2Relation.identifier.get.name).map(Uri)
       case _ => Nil
     }
+  }
+}
+
+class ResolvedTableURIExtractor extends URIExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
+    val identifier = invokeAs[AnyRef](v1, "identifier")
+    lookupExtractor[IdentifierURIExtractor].apply(spark, identifier)
+  }
+}
+
+class TableIdentifierURIExtractor extends URIExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = v1 match {
+    case tableIdentifier: TableIdentifier if isPathIdentifier(tableIdentifier.table, spark) =>
+      Seq(tableIdentifier.table).map(Uri)
+    case _ => Nil
+  }
+}
+
+class TableIdentifierOptionURIExtractor extends URIExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = v1 match {
+    case Some(tableIdentifier: TableIdentifier) =>
+      lookupExtractor[TableIdentifierURIExtractor].apply(spark, tableIdentifier)
+    case _ => Nil
   }
 }
