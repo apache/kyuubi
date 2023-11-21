@@ -857,8 +857,9 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
   test("open batch session with proxyUser") {
     val normalUser = "kyuubi"
 
-    def runOpenBatchExecutor(kyuubiProxyUser: Option[String],
-                             hs2ProxyUser: Option[String]): Response = {
+    def runOpenBatchExecutor(
+        kyuubiProxyUser: Option[String],
+        hs2ProxyUser: Option[String]): Response = {
       val conf = mutable.Map("spark.master" -> "local")
 
       kyuubiProxyUser.map { username =>
@@ -887,8 +888,8 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     assert(proxyUserResponse2.readEntity(classOf[String]).contains(errorMessage))
 
     // when both set, kyuubi.session.proxy.user takes precedence
-    val proxyUserResponse3 = runOpenBatchExecutor(Option(normalUser),
-      Option(s"${normalUser}HiveServer2"))
+    val proxyUserResponse3 =
+      runOpenBatchExecutor(Option(normalUser), Option(s"${normalUser}HiveServer2"))
     assert(proxyUserResponse3.getStatus === 405)
     assert(proxyUserResponse3.readEntity(classOf[String]).contains(errorMessage))
   }

@@ -400,7 +400,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
     // the user is the proxyUser, and in our test it is normalUser
     val engine =
-    new EngineRef(conf.clone, user = normalUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(conf.clone, user = normalUser, PluginLoader.loadGroupProvider(conf), id, null)
 
     // so as the firstChild in engineSpace we use normalUser
     val engineSpace = DiscoveryPaths.makePath(
@@ -414,8 +414,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
-      def runDeleteEngine(kyuubiProxyUser: Option[String],
-                          hs2ProxyUser: Option[String]): Response = {
+      def runDeleteEngine(
+          kyuubiProxyUser: Option[String],
+          hs2ProxyUser: Option[String]): Response = {
         var internalWebTarget = webTarget.path("api/v1/admin/engine")
           .queryParam("sharelevel", "USER")
           .queryParam("type", "SPARK_SQL")
@@ -442,8 +443,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(deleteEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
-      val deleteEngineResponse3 = runDeleteEngine(Option(normalUser),
-        Option(s"${normalUser}HiveServer2"))
+      val deleteEngineResponse3 =
+        runDeleteEngine(Option(normalUser), Option(s"${normalUser}HiveServer2"))
       assert(deleteEngineResponse3.getStatus === 405)
       assert(deleteEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
@@ -620,7 +621,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
     // the user is the proxyUser, and in our test it is normalUser
     val engine =
-    new EngineRef(conf.clone, user = normalUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(conf.clone, user = normalUser, PluginLoader.loadGroupProvider(conf), id, null)
 
     // so as the firstChild in engineSpace we use normalUser
     val engineSpace = DiscoveryPaths.makePath(
@@ -663,8 +664,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(listEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
-      val listEngineResponse3 = runListEngine(Option(normalUser),
-        Option(s"${normalUser}HiveServer2"))
+      val listEngineResponse3 =
+        runListEngine(Option(normalUser), Option(s"${normalUser}HiveServer2"))
       assert(listEngineResponse3.getStatus === 405)
       assert(listEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
