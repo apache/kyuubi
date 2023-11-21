@@ -639,10 +639,12 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
           .queryParam("sharelevel", "USER")
           .queryParam("type", "SPARK_SQL")
 
-        kyuubiProxyUser.map(username =>
-          internalWebTarget = internalWebTarget.queryParam("proxyUser", username))
-        hs2ProxyUser.map(username =>
-          internalWebTarget = internalWebTarget.queryParam("hive.server2.proxy.user", username))
+        kyuubiProxyUser.map { username =>
+          internalWebTarget = internalWebTarget.queryParam("proxyUser", username)
+        }
+        hs2ProxyUser.map { username =>
+          internalWebTarget = internalWebTarget.queryParam("hive.server2.proxy.user", username)
+        }
 
         internalWebTarget.request(MediaType.APPLICATION_JSON_TYPE)
           .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader("anonymous"))
