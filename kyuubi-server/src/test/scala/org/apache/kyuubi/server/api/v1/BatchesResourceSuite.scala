@@ -69,9 +69,7 @@ class BatchesV2ResourceSuite extends BatchesResourceSuiteBase {
       .foreach { batch => batchService.cancelUnscheduledBatch(batch.getId) }
     super.afterEach()
     sessionManager.allSessions().foreach { session =>
-      Utils.tryLogNonFatalError {
-        sessionManager.closeSession(session.handle)
-      }
+      Utils.tryLogNonFatalError { sessionManager.closeSession(session.handle) }
     }
   }
 }
