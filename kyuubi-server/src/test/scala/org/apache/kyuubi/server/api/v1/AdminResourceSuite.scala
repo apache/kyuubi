@@ -637,7 +637,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       def runListEngine(kyuubiProxyUser: Option[String], hs2ProxyUser: Option[String]): Response = {
         var internalWebTarget = webTarget.path("api/v1/admin/engine")
           .queryParam("sharelevel", "USER")
-          .queryParam("type", "spark_sql")
+          .queryParam("type", "SPARK_SQL")
 
         kyuubiProxyUser.map(username =>
           internalWebTarget = internalWebTarget.queryParam("proxyUser", username))
