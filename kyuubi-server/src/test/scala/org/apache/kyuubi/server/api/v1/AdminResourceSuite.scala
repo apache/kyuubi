@@ -20,8 +20,7 @@ package org.apache.kyuubi.server.api.v1
 import java.time.Duration
 import java.util.UUID
 import javax.ws.rs.client.Entity
-import javax.ws.rs.core.{GenericType, MediaType}
-
+import javax.ws.rs.core.{GenericType, MediaType, Response}
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
@@ -388,9 +387,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("delete engine - user share level & proxyUser") {
-    // we use superUser to impersonate commonUser
-    val superUser = "superUser"
-    val commonUser = "commonUser"
+    val normalUser = "kyuubi"
 
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
@@ -400,14 +397,14 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
-    // the user is the proxyUser, and in our test it is commonUser
+    // the user is the proxyUser, and in our test it is normalUser
     val engine =
-      new EngineRef(conf.clone, user = commonUser, PluginLoader.loadGroupProvider(conf), id, null)
+    new EngineRef(conf.clone, user = normalUser, PluginLoader.loadGroupProvider(conf), id, null)
 
-    // so as the firstChild in engineSpace we use commonUser
+    // so as the firstChild in engineSpace we use normalUser
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
-      commonUser,
+      normalUser,
       "default")
 
     withDiscoveryClient(conf) { client =>
@@ -416,35 +413,35 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
-      val deleteEngineExecutor = (kyuubiProxyUser: String, hs2ProxyUser: String) => {
+      def runDeleteEngine(kyuubiProxyUser: Option[String],
+                          hs2ProxyUser: Option[String]): Response = {
         var internalWebTarget = webTarget.path("api/v1/admin/engine")
           .queryParam("sharelevel", "USER")
           .queryParam("type", "spark_sql")
-        if (kyuubiProxyUser != null) {
-          internalWebTarget = internalWebTarget.queryParam("proxyUser", kyuubiProxyUser)
-        }
-        if (hs2ProxyUser != null) {
-          internalWebTarget = internalWebTarget.queryParam("hive.server2.proxy.user", hs2ProxyUser)
-        }
+
+        kyuubiProxyUser.map(username =>
+          internalWebTarget = internalWebTarget.queryParam("proxyUser", username))
+        hs2ProxyUser.map(username =>
+          internalWebTarget = internalWebTarget.queryParam("hive.server2.proxy.user", username))
 
         internalWebTarget.request(MediaType.APPLICATION_JSON_TYPE)
-          .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
+          .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader("anonymous"))
           .delete()
       }
 
       // use proxyUser
-      val deleteEngineResponse1 = deleteEngineExecutor(commonUser, null)
+      val deleteEngineResponse1 = runDeleteEngine(Option(normalUser), None)
       assert(deleteEngineResponse1.getStatus === 405)
-      val errorMessage = s"Failed to validate proxy privilege of $superUser for $commonUser"
+      val errorMessage = s"Failed to validate proxy privilege of anonymous for $normalUser"
       assert(deleteEngineResponse1.readEntity(classOf[String]).contains(errorMessage))
 
       // it should be the same behavior as hive.server2.proxy.user
-      val deleteEngineResponse2 = deleteEngineExecutor(null, commonUser)
+      val deleteEngineResponse2 = runDeleteEngine(None, Option(normalUser))
       assert(deleteEngineResponse2.getStatus === 405)
       assert(deleteEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
-      val deleteEngineResponse3 = deleteEngineExecutor(commonUser, s"${commonUser}HiveServer2")
+      val deleteEngineResponse3 = runDeleteEngine(Option(normalUser), Option(s"${normalUser}HiveServer2"))
       assert(deleteEngineResponse3.getStatus === 405)
       assert(deleteEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
@@ -609,9 +606,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("list engine - user share level & proxyUser") {
-    // we use superUser to impersonate commonUser
-    val superUser = "superUser"
-    val commonUser = "commonUser"
+    val normalUser = "kyuubi"
 
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
@@ -621,14 +616,14 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
-    // the user is the proxyUser, and in our test it is commonUser
+    // the user is the proxyUser, and in our test it is normalUser
     val engine =
-      new EngineRef(conf.clone, user = commonUser, PluginLoader.loadGroupProvider(conf), id, null)
+    new EngineRef(conf.clone, user = normalUser, PluginLoader.loadGroupProvider(conf), id, null)
 
-    // so as the firstChild in engineSpace we use commonUser
+    // so as the firstChild in engineSpace we use normalUser
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
-      commonUser,
+      normalUser,
       "")
 
     withDiscoveryClient(conf) { client =>
@@ -637,35 +632,34 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
-      val listEngineExecutor = (kyuubiProxyUser: String, hs2ProxyUser: String) => {
+      def runListEngine(kyuubiProxyUser: Option[String], hs2ProxyUser: Option[String]): Response = {
         var internalWebTarget = webTarget.path("api/v1/admin/engine")
           .queryParam("sharelevel", "USER")
           .queryParam("type", "spark_sql")
-        if (kyuubiProxyUser != null) {
-          internalWebTarget = internalWebTarget.queryParam("proxyUser", kyuubiProxyUser)
-        }
-        if (hs2ProxyUser != null) {
-          internalWebTarget = internalWebTarget.queryParam("hive.server2.proxy.user", hs2ProxyUser)
-        }
+
+        kyuubiProxyUser.map(username =>
+          internalWebTarget = internalWebTarget.queryParam("proxyUser", username))
+        hs2ProxyUser.map(username =>
+          internalWebTarget = internalWebTarget.queryParam("hive.server2.proxy.user", username))
 
         internalWebTarget.request(MediaType.APPLICATION_JSON_TYPE)
-          .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(superUser))
+          .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader("anonymous"))
           .get
       }
 
       // use proxyUser
-      val listEngineResponse1 = listEngineExecutor(commonUser, null)
+      val listEngineResponse1 = runListEngine(Option(normalUser), None)
       assert(listEngineResponse1.getStatus === 405)
-      val errorMessage = s"Failed to validate proxy privilege of $superUser for $commonUser"
+      val errorMessage = s"Failed to validate proxy privilege of anonymous for $normalUser"
       assert(listEngineResponse1.readEntity(classOf[String]).contains(errorMessage))
 
       // it should be the same behavior as hive.server2.proxy.user
-      val listEngineResponse2 = listEngineExecutor(null, commonUser)
+      val listEngineResponse2 = runListEngine(None, Option(normalUser))
       assert(listEngineResponse2.getStatus === 405)
       assert(listEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
-      val listEngineResponse3 = listEngineExecutor(commonUser, s"${commonUser}HiveServer2")
+      val listEngineResponse3 = runListEngine(Option(normalUser), Option(s"${normalUser}HiveServer2"))
       assert(listEngineResponse3.getStatus === 405)
       assert(listEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
