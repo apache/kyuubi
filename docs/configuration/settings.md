@@ -535,7 +535,7 @@ The below options in `kyuubi-defaults.conf` will set `parallelism.default: 2` an
 
 ### Via JDBC Connection URL
 
-Setting them in the JDBC Connection URL supplies session-specific for each SQL engine. For example: ```jdbc:hive2://localhost:10009/default;#parallelism.default=2;taskmanager.memory.process.size=5g```
+Setting them in the JDBC Connection URL supplies session-specific for each SQL engine. For example: ```jdbc:hive2://localhost:10009/default;#flink.parallelism.default=2;flink.taskmanager.memory.process.size=5g```
 
 ### Via SET Statements
 
