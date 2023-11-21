@@ -2792,10 +2792,14 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .transform {
-        case "Doris" | "doris" => "DorisConnectionProvider"
-        case "MySQL" | "mysql" => "MySQLConnectionProvider"
-        case "Phoenix" | "phoenix" => "PhoenixConnectionProvider"
-        case "PostgreSQL" | "postgresql" => "PostgreSQLConnectionProvider"
+        case "Doris" | "doris" | "DorisConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.doris.DorisConnectionProvider"
+        case "MySQL" | "mysql" | "MySQLConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.mysql.MySQLConnectionProvider"
+        case "Phoenix" | "phoenix" | "PhoenixConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.phoenix.PhoenixConnectionProvider"
+        case "PostgreSQL" | "postgresql" | "PostgreSQLConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.postgresql.PostgreSQLConnectionProvider"
         case other => other
       }
       .createOptional
