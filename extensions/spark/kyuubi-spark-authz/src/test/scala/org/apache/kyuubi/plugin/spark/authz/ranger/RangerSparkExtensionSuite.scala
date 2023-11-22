@@ -1254,8 +1254,13 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
               s"""
                  |CREATE TABLE IF NOT EXISTS $db1.$table1(id int, scope int)
                  |LOCATION '$path'""".stripMargin)))(
-            s"does not have [create] privilege on [$db1/$table1], " +
-              s"[write] privilege on [[$path, $path/]]")
+            if (!isSparkV35OrGreater) {
+              s"does not have [create] privilege on [$db1/$table1], " +
+                s"[write] privilege on [[$path, $path/]]"
+            } else {
+              s"does not have [create] privilege on [$db1/$table1], " +
+                s"[write] privilege on [[file://$path, file://$path/]]"
+            })
           doAs(
             admin,
             sql(
