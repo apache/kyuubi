@@ -111,7 +111,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s" on [$namespace1/$table1/id]"))
 
     withSingleCallEnabled {
-      interceptContains[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
+      interceptEndsWith[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
         if (isSparkV35OrGreater) {
           s"does not have [select] privilege on [$namespace1/table1/id" +
             s",$namespace1/$table1/name,$namespace1/$table1/city]"
@@ -121,7 +121,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
             s" [update] privilege on [$bobNamespace/$bobSelectTable]"
         })
 
-      interceptContains[AccessControlException] {
+      interceptEndsWith[AccessControlException] {
         doAs(bob, sql(mergeIntoSql))
       }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
     }
@@ -131,7 +131,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("[KYUUBI #3515] UPDATE TABLE") {
     // UpdateTable
-    interceptContains[AccessControlException] {
+    interceptEndsWith[AccessControlException] {
       doAs(someone, sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou'  WHERE id=1"))
     }(if (isSparkV35OrGreater) {
       s"does not have [select] privilege on [$namespace1/$table1/id]"
@@ -147,7 +147,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("[KYUUBI #3515] DELETE FROM TABLE") {
     // DeleteFromTable
-    interceptContains[AccessControlException] {
+    interceptEndsWith[AccessControlException] {
       doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
     }(if (isSparkV34OrGreater) {
       s"does not have [select] privilege on [$namespace1/$table1/id]"
@@ -155,7 +155,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s"does not have [update] privilege on [$namespace1/$table1]"
     })
 
-    interceptContains[AccessControlException] {
+    interceptEndsWith[AccessControlException] {
       doAs(bob, sql(s"DELETE FROM $catalogV2.$bobNamespace.$bobSelectTable WHERE id=2"))
     }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
 
@@ -264,9 +264,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
             .foreach(i => sql(s"INSERT INTO $table VALUES ($i, 'user_$i')"))
         })
 
-      interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles1)))(
+      interceptEndsWith[AccessControlException](doAs(someone, sql(rewriteDataFiles1)))(
         s"does not have [alter] privilege on [$namespace1/$tableName]")
-      interceptContains[AccessControlException](doAs(someone, sql(rewriteDataFiles2)))(
+      interceptEndsWith[AccessControlException](doAs(someone, sql(rewriteDataFiles2)))(
         s"does not have [alter] privilege on [$namespace1/$tableName]")
 
       /**
@@ -326,7 +326,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       val callRollbackToSnapshot =
         s"CALL $catalogV2.system.rollback_to_snapshot (table => '$table', snapshot_id => $targetSnapshotId)"
 
-      interceptContains[AccessControlException](doAs(someone, sql(callRollbackToSnapshot)))(
+      interceptEndsWith[AccessControlException](doAs(someone, sql(callRollbackToSnapshot)))(
         s"does not have [alter] privilege on [$namespace1/$tableName]")
       doAs(admin, sql(callRollbackToSnapshot))
     }
@@ -344,7 +344,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         s"CALL $catalogV2.system.rollback_to_timestamp (table => '$table', timestamp => TIMESTAMP '$targetTimestamp')"
       }
 
-      interceptContains[AccessControlException](doAs(someone, sql(callRollbackToTimestamp)))(
+      interceptEndsWith[AccessControlException](doAs(someone, sql(callRollbackToTimestamp)))(
         s"does not have [alter] privilege on [$namespace1/$tableName]")
       doAs(admin, sql(callRollbackToTimestamp))
     }
@@ -359,7 +359,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       val callSetCurrentSnapshot =
         s"CALL $catalogV2.system.set_current_snapshot (table => '$table', snapshot_id => $targetSnapshotId)"
 
-      interceptContains[AccessControlException](doAs(someone, sql(callSetCurrentSnapshot)))(
+      interceptEndsWith[AccessControlException](doAs(someone, sql(callSetCurrentSnapshot)))(
         s"does not have [alter] privilege on [$namespace1/$tableName]")
       doAs(admin, sql(callSetCurrentSnapshot))
     }
