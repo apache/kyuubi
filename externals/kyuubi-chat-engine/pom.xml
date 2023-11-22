@@ -30,6 +30,10 @@
     <name>Kyuubi Project Engine Chat</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-chat-engine</sbt.project.name>
+    </properties>
+
     <dependencies>
         <!-- kyuubi dependency -->
         <dependency>

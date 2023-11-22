@@ -29,6 +29,10 @@
     <name>Kyuubi Project Hive JDBC Shaded Client</name>
     <url>https://kyuubi.apache.org/</url>
 
+
+    <properties>
+        <sbt.project.name>kyuubi-hive-jdbc-shaded</sbt.project.name>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>

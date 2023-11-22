@@ -30,6 +30,10 @@
     <name>Kyuubi Project Engine JDBC</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-jdbc-sql-engine</sbt.project.name>
+    </properties>
+
     <dependencies>
         <!-- kyuubi dependency -->
         <dependency>

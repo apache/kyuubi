@@ -30,7 +30,9 @@
     <packaging>jar</packaging>
     <name>Kyuubi Spark JDBC Dialect plugin</name>
     <url>https://kyuubi.apache.org/</url>
-
+    <properties>
+        <sbt.project.name>kyuubi-extension-spark-jdbc-dialect</sbt.project.name>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.spark</groupId>

@@ -30,6 +30,9 @@
     <name>Kyuubi Spark TPC-DS Connector</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-spark-connector-tpcds</sbt.project.name>
+    </properties>
     <dependencies>
 
         <dependency>

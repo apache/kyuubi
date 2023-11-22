@@ -30,6 +30,9 @@
     <name>Kyuubi Project Download Externals</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-download</sbt.project.name>
+    </properties>
     <build>
         <plugins>
             <plugin>

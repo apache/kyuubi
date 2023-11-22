@@ -29,13 +29,43 @@
     <name>Kyuubi Project Util</name>
     <url>https://kyuubi.apache.org/</url>
 
-    <properties></properties>
+
+    <properties>
+        <sbt.project.name>kyuubi-util</sbt.project.name>
+    </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.scala-sbt/sbt -->
+        <dependency>
+            <groupId>org.scala-sbt</groupId>
+            <artifactId>sbt</artifactId>
+            <version>1.9.7</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.scala-sbt/compiler-interface -->
+        <dependency>
+            <groupId>org.scala-sbt</groupId>
+            <artifactId>compiler-interface</artifactId>
+            <version>1.9.5</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.github.sbt/sbt-pom-reader_2.12_1.0 -->
+        <dependency>
+            <groupId>com.github.sbt</groupId>
+            <artifactId>sbt-pom-reader_2.12_1.0</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.typesafe.sbt/sbt-interface -->
+        <dependency>
+            <groupId>com.typesafe.sbt</groupId>
+            <artifactId>sbt-interface</artifactId>
+            <version>0.13.15</version>
+        </dependency>
+
+
     </dependencies>
 
     <build>

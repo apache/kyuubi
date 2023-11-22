@@ -30,6 +30,10 @@
     <name>Kyuubi Project Engine Hive SQL</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-hive-sql-engine</sbt.project.name>
+    </properties>
+
     <dependencies>
 
         <dependency>

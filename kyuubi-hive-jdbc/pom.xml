@@ -32,6 +32,7 @@
     <properties>
         <!-- only used in kyuubi-hive-jdbc module -->
         <mockito-all.version>1.9.5</mockito-all.version>
+        <sbt.project.name>kyuubi-hive-jdbc</sbt.project.name>
     </properties>
 
     <dependencies>

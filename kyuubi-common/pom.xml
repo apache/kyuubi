@@ -30,6 +30,10 @@
     <name>Kyuubi Project Common</name>
     <url>https://kyuubi.apache.org/</url>
 
+
+    <properties>
+        <sbt.project.name>kyuubi-common</sbt.project.name>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>

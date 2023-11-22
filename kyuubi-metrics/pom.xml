@@ -29,6 +29,11 @@
     <name>Kyuubi Project Metrics</name>
     <url>https://kyuubi.apache.org/</url>
 
+
+    <properties>
+        <sbt.project.name>kyuubi-metrics</sbt.project.name>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>

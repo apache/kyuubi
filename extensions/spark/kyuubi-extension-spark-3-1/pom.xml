@@ -30,6 +30,9 @@
     <name>Kyuubi Dev Spark Extensions (for Spark 3.1)</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-extension-spark-3-1</sbt.project.name>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>

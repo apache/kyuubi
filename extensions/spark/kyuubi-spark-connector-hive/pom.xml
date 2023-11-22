@@ -31,6 +31,10 @@
     <description>A Kyuubi hive connector based on Spark V2 DataSource</description>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-spark-connector-hive</sbt.project.name>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>

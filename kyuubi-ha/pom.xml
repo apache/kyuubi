@@ -30,6 +30,9 @@
     <name>Kyuubi Project High Availability</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-ha</sbt.project.name>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>

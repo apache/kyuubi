@@ -30,6 +30,9 @@
     <name>Kyuubi Project Server Plugin</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-server-plugin</sbt.project.name>
+    </properties>
     <build>
         <plugins>
             <plugin>

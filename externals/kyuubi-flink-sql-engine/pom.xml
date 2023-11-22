@@ -30,6 +30,10 @@
     <name>Kyuubi Project Engine Flink SQL</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-flink-sql-engine</sbt.project.name>
+    </properties>
+
     <dependencies>
         <!-- kyuubi -->
         <dependency>

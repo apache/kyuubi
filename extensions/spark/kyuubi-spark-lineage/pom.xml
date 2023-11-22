@@ -30,6 +30,10 @@
     <name>Kyuubi Dev Spark Lineage Extension</name>
     <url>https://kyuubi.apache.org/</url>
 
+
+    <properties>
+        <sbt.project.name>kyuubi-spark-lineage</sbt.project.name>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>

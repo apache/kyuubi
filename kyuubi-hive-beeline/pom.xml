@@ -31,6 +31,7 @@
 
     <properties>
         <jars.target.dir>${project.build.directory}</jars.target.dir>
+        <sbt.project.name>kyuubi-hive-beeline</sbt.project.name>
     </properties>
 
     <dependencies>

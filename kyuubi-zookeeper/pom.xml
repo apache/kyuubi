@@ -29,6 +29,11 @@
     <name>Kyuubi Project Embedded Zookeeper</name>
     <url>https://kyuubi.apache.org/</url>
 
+
+    <properties>
+        <sbt.project.name>kyuubi-zookeeper</sbt.project.name>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>

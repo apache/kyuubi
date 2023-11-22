@@ -29,7 +29,9 @@
     <packaging>jar</packaging>
     <name>Kyuubi Dev Spark Extensions (for Spark 3.4)</name>
     <url>https://kyuubi.apache.org/</url>
-
+    <properties>
+        <sbt.project.name>kyuubi-extension-spark-3-4</sbt.project.name>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.scala-lang</groupId>

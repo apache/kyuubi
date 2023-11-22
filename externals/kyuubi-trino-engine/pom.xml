@@ -30,6 +30,10 @@
     <name>Kyuubi Project Engine Trino</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-trino-sql-engine</sbt.project.name>
+    </properties>
+
     <dependencies>
         <!-- kyuubi dependency -->
         <dependency>
