@@ -142,7 +142,12 @@ object SchemaHelper {
           .contains(dt.getClass.getSimpleName) => Some(dt.defaultSize)
     case dt @ (BooleanType | _: NumericType | DateType | TimestampType |
         CalendarIntervalType | NullType) =>
-      Some(dt.defaultSize)
+      // decimal type
+      if (dt.isInstanceOf[DecimalType]) {
+        Some(dt.asInstanceOf[DecimalType].precision)
+      } else {
+        Some(dt.defaultSize)
+      }
     case StructType(fields) =>
       val sizeArr = fields.map(f => getColumnSize(f.dataType))
       if (sizeArr.contains(None)) {
