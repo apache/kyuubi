@@ -54,19 +54,17 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
 
   val OptimizeTableCommand = {
     val cmd = "org.apache.spark.sql.delta.commands.OptimizeTableCommand"
-    val childDesc = TableDesc("child", classOf[ResolvedTableTableExtractor],
-      comment = "Delta")
-    val tableDesc = TableDesc("tableId", classOf[TableIdentifierOptionTableExtractor],
-      comment = "Delta")
+    val childDesc = TableDesc("child", classOf[ResolvedTableTableExtractor], comment = "Delta")
+    val tableDesc =
+      TableDesc("tableId", classOf[TableIdentifierOptionTableExtractor], comment = "Delta")
     TableCommandSpec(cmd, Seq(childDesc, tableDesc), ALTERTABLE_COMPACT)
   }
 
   val VacuumTableCommand = {
     val cmd = "io.delta.tables.execution.VacuumTableCommand"
-    val childDesc = TableDesc("child", classOf[ResolvedTableTableExtractor],
-      comment = "Delta")
-    val tableDesc = TableDesc("table", classOf[TableIdentifierOptionTableExtractor],
-      comment = "Delta")
+    val childDesc = TableDesc("child", classOf[ResolvedTableTableExtractor], comment = "Delta")
+    val tableDesc =
+      TableDesc("table", classOf[TableIdentifierOptionTableExtractor], comment = "Delta")
     TableCommandSpec(cmd, Seq(childDesc, tableDesc), MSCK)
   }
 

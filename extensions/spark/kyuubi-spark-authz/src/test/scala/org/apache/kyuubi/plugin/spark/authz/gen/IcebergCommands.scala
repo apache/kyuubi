@@ -54,8 +54,7 @@ object IcebergCommands extends CommandSpecs[TableCommandSpec] {
 
   val CallProcedure = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.Call"
-    val td = TableDesc("args", classOf[ExpressionSeqTableExtractor],
-      comment = "Iceberg")
+    val td = TableDesc("args", classOf[ExpressionSeqTableExtractor], comment = "Iceberg")
     TableCommandSpec(cmd, Seq(td), opType = OperationType.ALTERTABLE_PROPERTIES)
   }
 
