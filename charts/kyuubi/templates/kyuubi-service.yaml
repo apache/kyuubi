@@ -37,6 +37,12 @@ spec:
       {{- end }}
   selector:
     {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
+  {{- if ($frontend.service.sessionAffinity) }}
+  sessionAffinity: {{ $frontend.service.sessionAffinity }}
+  {{- end }}
+  {{- with $frontend.service.sessionAffinityConfig }}
+  sessionAffinityConfig: {{- toYaml . | nindent 4 }}
+  {{- end }}
 ---
 {{- end }}
 {{- end }}
