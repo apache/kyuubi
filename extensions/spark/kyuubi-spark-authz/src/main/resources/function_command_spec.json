@@ -8,10 +8,10 @@
       "fieldName" : "isTemp",
       "fieldExtractor" : "TempMarkerFunctionTypeExtractor",
       "skipTypes" : [ "TEMP" ],
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   }, {
     "fieldName" : "functionName",
     "fieldExtractor" : "StringFunctionExtractor",
@@ -20,16 +20,16 @@
       "fieldExtractor" : "StringOptionDatabaseExtractor",
       "catalogDesc" : null,
       "isInput" : false,
-      "comment" : null
+      "comment" : ""
     },
     "functionTypeDesc" : {
       "fieldName" : "isTemp",
       "fieldExtractor" : "TempMarkerFunctionTypeExtractor",
       "skipTypes" : [ "TEMP" ],
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "CREATEFUNCTION"
 }, {
@@ -42,10 +42,10 @@
       "fieldName" : "info",
       "fieldExtractor" : "ExpressionInfoFunctionTypeExtractor",
       "skipTypes" : [ "TEMP", "SYSTEM" ],
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   }, {
     "fieldName" : "functionName",
     "fieldExtractor" : "FunctionIdentifierFunctionExtractor",
@@ -54,10 +54,10 @@
       "fieldName" : "functionName",
       "fieldExtractor" : "FunctionIdentifierFunctionTypeExtractor",
       "skipTypes" : [ "TEMP", "SYSTEM" ],
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "DESCFUNCTION"
 }, {
@@ -70,10 +70,10 @@
       "fieldName" : "isTemp",
       "fieldExtractor" : "TempMarkerFunctionTypeExtractor",
       "skipTypes" : [ "TEMP" ],
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   }, {
     "fieldName" : "functionName",
     "fieldExtractor" : "StringFunctionExtractor",
@@ -82,16 +82,16 @@
       "fieldExtractor" : "StringOptionDatabaseExtractor",
       "catalogDesc" : null,
       "isInput" : false,
-      "comment" : null
+      "comment" : ""
     },
     "functionTypeDesc" : {
       "fieldName" : "isTemp",
       "fieldExtractor" : "TempMarkerFunctionTypeExtractor",
       "skipTypes" : [ "TEMP" ],
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "DROPFUNCTION"
 }, {
@@ -104,11 +104,11 @@
       "fieldExtractor" : "StringOptionDatabaseExtractor",
       "catalogDesc" : null,
       "isInput" : false,
-      "comment" : null
+      "comment" : ""
     },
     "functionTypeDesc" : null,
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "RELOADFUNCTION"
 } ]

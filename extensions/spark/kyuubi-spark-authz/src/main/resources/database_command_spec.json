@@ -5,7 +5,7 @@
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "ALTERDATABASE",
   "uriDescs" : [ ]
@@ -16,30 +16,30 @@
     "fieldExtractor" : "ResolvedDBObjectNameDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   }, {
     "fieldName" : "namespace",
     "fieldExtractor" : "StringSeqDatabaseExtractor",
     "catalogDesc" : {
       "fieldName" : "catalog",
       "fieldExtractor" : "CatalogPluginCatalogExtractor",
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   }, {
     "fieldName" : "name",
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "CREATEDATABASE",
   "uriDescs" : [ {
     "fieldName" : "properties",
     "fieldExtractor" : "PropertiesLocationUriExtractor",
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace",
@@ -48,7 +48,7 @@
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "DESCDATABASE",
   "uriDescs" : [ ]
@@ -59,7 +59,7 @@
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "DROPDATABASE",
   "uriDescs" : [ ]
@@ -70,23 +70,23 @@
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   }, {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedDBObjectNameDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   }, {
     "fieldName" : "namespace",
     "fieldExtractor" : "StringSeqOptionDatabaseExtractor",
     "catalogDesc" : {
       "fieldName" : "catalogName",
       "fieldExtractor" : "StringOptionCatalogExtractor",
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "SWITCHDATABASE",
   "uriDescs" : [ ]
@@ -97,14 +97,14 @@
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "ALTERDATABASE_LOCATION",
   "uriDescs" : [ {
     "fieldName" : "location",
     "fieldExtractor" : "StringURIExtractor",
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties",
@@ -113,7 +113,7 @@
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "ALTERDATABASE",
   "uriDescs" : [ ]
@@ -124,7 +124,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "ALTERDATABASE",
   "uriDescs" : [ ]
@@ -135,14 +135,14 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "ALTERDATABASE_LOCATION",
   "uriDescs" : [ {
     "fieldName" : "location",
     "fieldExtractor" : "StringURIExtractor",
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
@@ -151,7 +151,7 @@
     "fieldExtractor" : "StringOptionDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "ANALYZE_TABLE",
   "uriDescs" : [ ]
@@ -162,14 +162,14 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "CREATEDATABASE",
   "uriDescs" : [ {
     "fieldName" : "path",
     "fieldExtractor" : "StringURIExtractor",
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeDatabaseCommand",
@@ -178,7 +178,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "DESCDATABASE",
   "uriDescs" : [ ]
@@ -189,7 +189,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "DROPDATABASE",
   "uriDescs" : [ ]
@@ -200,7 +200,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "SWITCHDATABASE",
   "uriDescs" : [ ]
@@ -211,7 +211,7 @@
     "fieldExtractor" : "StringSeqDatabaseExtractor",
     "catalogDesc" : null,
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   } ],
   "opType" : "SWITCHDATABASE",
   "uriDescs" : [ ]

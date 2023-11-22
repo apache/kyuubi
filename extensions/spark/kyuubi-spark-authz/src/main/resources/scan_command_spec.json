@@ -4,7 +4,7 @@
     "fieldName" : "catalogTable",
     "fieldExtractor" : "CatalogTableTableExtractor",
     "catalogDesc" : null,
-    "comment" : null
+    "comment" : ""
   } ],
   "functionDescs" : [ ],
   "uriDescs" : [ ]
@@ -14,7 +14,7 @@
     "fieldName" : "tableMeta",
     "fieldExtractor" : "CatalogTableTableExtractor",
     "catalogDesc" : null,
-    "comment" : null
+    "comment" : ""
   } ],
   "functionDescs" : [ ],
   "uriDescs" : [ ]
@@ -24,14 +24,14 @@
     "fieldName" : "catalogTable",
     "fieldExtractor" : "CatalogTableOptionTableExtractor",
     "catalogDesc" : null,
-    "comment" : null
+    "comment" : ""
   } ],
   "functionDescs" : [ ],
   "uriDescs" : [ {
     "fieldName" : "relation",
     "fieldExtractor" : "BaseRelationFileIndexURIExtractor",
     "isInput" : false,
-    "comment" : null
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation",
@@ -39,7 +39,7 @@
     "fieldName" : null,
     "fieldExtractor" : "DataSourceV2RelationTableExtractor",
     "catalogDesc" : null,
-    "comment" : null
+    "comment" : ""
   } ],
   "functionDescs" : [ ],
   "uriDescs" : [ ]
@@ -54,10 +54,10 @@
       "fieldName" : "name",
       "fieldExtractor" : "FunctionNameFunctionTypeExtractor",
       "skipTypes" : [ "TEMP", "SYSTEM" ],
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   } ],
   "uriDescs" : [ ]
 }, {
@@ -71,10 +71,10 @@
       "fieldName" : "name",
       "fieldExtractor" : "FunctionNameFunctionTypeExtractor",
       "skipTypes" : [ "TEMP", "SYSTEM" ],
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   } ],
   "uriDescs" : [ ]
 }, {
@@ -88,10 +88,10 @@
       "fieldName" : "name",
       "fieldExtractor" : "FunctionNameFunctionTypeExtractor",
       "skipTypes" : [ "TEMP", "SYSTEM" ],
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   } ],
   "uriDescs" : [ ]
 }, {
@@ -105,10 +105,10 @@
       "fieldName" : "name",
       "fieldExtractor" : "FunctionNameFunctionTypeExtractor",
       "skipTypes" : [ "TEMP", "SYSTEM" ],
-      "comment" : null
+      "comment" : ""
     },
     "isInput" : true,
-    "comment" : null
+    "comment" : ""
   } ],
   "uriDescs" : [ ]
 } ]
