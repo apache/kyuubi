@@ -154,6 +154,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
           val colSize = rowSet.getInt(COLUMN_SIZE)
           schema(pos).dataType match {
             case StringType | BinaryType | _: ArrayType | _: MapType => assert(colSize === 0)
+            case d: DecimalType => assert(colSize === d.precision)
             case StructType(fields) if fields.length == 1 => assert(colSize === 0)
             case o => assert(colSize === o.defaultSize)
           }
