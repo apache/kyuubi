@@ -98,13 +98,13 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
            |  birthDate TIMESTAMP
            |) USING DELTA
            |""".stripMargin
-      interceptContains[AccessControlException] {
+      interceptEndsWith[AccessControlException] {
         doAs(someone, sql(createNonPartitionTableSql))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
       doAs(admin, sql(createNonPartitionTableSql))
 
       val createPartitionTableSql = createTableSql(namespace1, table2)
-      interceptContains[AccessControlException] {
+      interceptEndsWith[AccessControlException] {
         doAs(someone, sql(createPartitionTableSql))
       }(s"does not have [create] privilege on [$namespace1/$table2]")
       doAs(admin, sql(createPartitionTableSql))
@@ -123,7 +123,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
            |  birthDate TIMESTAMP
            |) USING DELTA
            |""".stripMargin
-      interceptContains[AccessControlException] {
+      interceptEndsWith[AccessControlException] {
         doAs(someone, sql(createOrReplaceTableSql))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
       doAs(admin, sql(createOrReplaceTableSql))
@@ -136,12 +136,12 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(createTableSql(namespace1, table1)))
 
       // add columns
-      interceptContains[AccessControlException](
+      interceptEndsWith[AccessControlException](
         doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 ADD COLUMNS (age int)")))(
         s"does not have [alter] privilege on [$namespace1/$table1]")
 
       // change column
-      interceptContains[AccessControlException](
+      interceptEndsWith[AccessControlException](
         doAs(
           someone,
           sql(s"ALTER TABLE $namespace1.$table1" +
@@ -149,7 +149,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s"does not have [alter] privilege on [$namespace1/$table1]")
 
       // replace columns
-      interceptContains[AccessControlException](
+      interceptEndsWith[AccessControlException](
         doAs(
           someone,
           sql(s"ALTER TABLE $namespace1.$table1" +
@@ -157,7 +157,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s"does not have [alter] privilege on [$namespace1/$table1]")
 
       // rename column
-      interceptContains[AccessControlException](
+      interceptEndsWith[AccessControlException](
         doAs(
           someone,
           sql(s"ALTER TABLE $namespace1.$table1" +
@@ -165,12 +165,12 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s"does not have [alter] privilege on [$namespace1/$table1]")
 
       // drop column
-      interceptContains[AccessControlException](
+      interceptEndsWith[AccessControlException](
         doAs(someone, sql(s"ALTER TABLE $namespace1.$table1 DROP COLUMN birthDate")))(
         s"does not have [alter] privilege on [$namespace1/$table1]")
 
       // set properties
-      interceptContains[AccessControlException](
+      interceptEndsWith[AccessControlException](
         doAs(
           someone,
           sql(s"ALTER TABLE $namespace1.$table1" +
@@ -184,7 +184,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(admin, sql(createTableSql(namespace1, table1)))
       val deleteFromTableSql = s"DELETE FROM $namespace1.$table1 WHERE birthDate < '1955-01-01'"
-      interceptContains[AccessControlException](
+      interceptEndsWith[AccessControlException](
         doAs(someone, sql(deleteFromTableSql)))(
         s"does not have [update] privilege on [$namespace1/$table1]")
       doAs(admin, sql(deleteFromTableSql))
@@ -204,7 +204,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         // insert into
         val insertIntoSql = s"INSERT INTO $namespace1.$table1" +
           s" SELECT * FROM $namespace1.$table2"
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(insertIntoSql)))(
           s"does not have [select] privilege on [$namespace1/$table2/id,$namespace1/$table2/name," +
             s"$namespace1/$table2/gender,$namespace1/$table2/birthDate]," +
@@ -214,7 +214,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         // insert overwrite
         val insertOverwriteSql = s"INSERT OVERWRITE $namespace1.$table1" +
           s" SELECT * FROM $namespace1.$table2"
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(insertOverwriteSql)))(
           s"does not have [select] privilege on [$namespace1/$table2/id,$namespace1/$table2/name," +
             s"$namespace1/$table2/gender,$namespace1/$table2/birthDate]," +
@@ -230,7 +230,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(createTableSql(namespace1, table1)))
       val updateTableSql = s"UPDATE $namespace1.$table1" +
         s" SET gender = 'Female' WHERE gender = 'F'"
-      interceptContains[AccessControlException](
+      interceptEndsWith[AccessControlException](
         doAs(someone, sql(updateTableSql)))(
         s"does not have [update] privilege on [$namespace1/$table1]")
       doAs(admin, sql(updateTableSql))
@@ -272,7 +272,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |    source.birthDate
              |  )
              |""".stripMargin
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(mergeIntoSql)))(
           s"does not have [select] privilege on [$namespace1/$table2/id,$namespace1/$table2/name," +
             s"$namespace1/$table2/gender,$namespace1/$table2/birthDate]," +
@@ -283,13 +283,13 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("optimize table") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV32OrGreater, "optimize table is available in Delta Lake 1.2.0 and above")
 
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(admin, sql(createTableSql(namespace1, table1)))
       val optimizeTableSql = s"OPTIMIZE $namespace1.$table1"
-      interceptContains[AccessControlException](
+      interceptEndsWith[AccessControlException](
         doAs(someone, sql(optimizeTableSql)))(
         s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(optimizeTableSql))
@@ -301,7 +301,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(admin, sql(createTableSql(namespace1, table1)))
       val vacuumTableSql = s"VACUUM $namespace1.$table1"
-      interceptContains[AccessControlException](
+      interceptEndsWith[AccessControlException](
         doAs(someone, sql(vacuumTableSql)))(
         s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(vacuumTableSql))
@@ -311,7 +311,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   test("create path-based table") {
     withTempDir(path => {
       val createTableSql = createPathBasedTableSql(path)
-      interceptContains[AccessControlException] {
+      interceptEndsWith[AccessControlException] {
         doAs(someone, sql(createTableSql))
       }(s"does not have [write] privilege on [[$path, $path/]]")
       doAs(admin, sql(createTableSql))
@@ -329,7 +329,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
            |  birthDate TIMESTAMP
            |) USING DELTA
            |""".stripMargin
-      interceptContains[AccessControlException] {
+      interceptEndsWith[AccessControlException] {
         doAs(someone, sql(createOrReplaceTableSql))
       }(s"does not have [write] privilege on [[$path, $path/]]")
       doAs(admin, sql(createOrReplaceTableSql))
@@ -340,7 +340,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     withTempDir(path => {
       doAs(admin, sql(createPathBasedTableSql(path)))
       val deleteFromTableSql = s"DELETE FROM delta.`$path` WHERE birthDate < '1955-01-01'"
-      interceptContains[AccessControlException] {
+      interceptEndsWith[AccessControlException] {
         doAs(someone, sql(deleteFromTableSql))
       }(s"does not have [write] privilege on [[$path, $path/]]")
       doAs(admin, sql(deleteFromTableSql))
@@ -351,10 +351,104 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     withTempDir(path => {
       doAs(admin, sql(createPathBasedTableSql(path)))
       val updateTableSql = s"UPDATE delta.`$path` SET gender = 'Female' WHERE gender = 'F'"
-      interceptContains[AccessControlException] {
+      interceptEndsWith[AccessControlException] {
         doAs(someone, sql(updateTableSql))
       }(s"does not have [write] privilege on [[$path, $path/]]")
       doAs(admin, sql(updateTableSql))
+    })
+  }
+
+  test("insert path-based table") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$namespace1.$table2", "table"), (s"$namespace1", "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+        doAs(admin, sql(createTableSql(namespace1, table2)))
+        withTempDir(path => {
+          doAs(admin, sql(createPathBasedTableSql(path)))
+          // insert into
+          val insertIntoSql = s"INSERT INTO delta.`$path` SELECT * FROM $namespace1.$table2"
+          interceptEndsWith[AccessControlException](
+            doAs(someone, sql(insertIntoSql)))(
+            s"does not have [select] privilege on [$namespace1/$table2/id," +
+              s"$namespace1/$table2/name,$namespace1/$table2/gender," +
+              s"$namespace1/$table2/birthDate], [write] privilege on [[$path, $path/]]")
+          doAs(admin, sql(insertIntoSql))
+
+          // insert overwrite
+          val insertOverwriteSql =
+            s"INSERT OVERWRITE delta.`$path` SELECT * FROM $namespace1.$table2"
+          interceptEndsWith[AccessControlException](
+            doAs(someone, sql(insertOverwriteSql)))(
+            s"does not have [select] privilege on [$namespace1/$table2/id," +
+              s"$namespace1/$table2/name,$namespace1/$table2/gender," +
+              s"$namespace1/$table2/birthDate], [write] privilege on [[$path, $path/]]")
+          doAs(admin, sql(insertOverwriteSql))
+        })
+      }
+    }
+  }
+
+  test("merge into path-based table") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq(
+        (s"$namespace1.$table2", "table"),
+        (s"$namespace1", "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+        doAs(admin, sql(createTableSql(namespace1, table2)))
+        withTempDir(path => {
+          doAs(admin, sql(createPathBasedTableSql(path)))
+          val mergeIntoSql =
+            s"""
+               |MERGE INTO delta.`$path` AS target
+               |USING $namespace1.$table2 AS source
+               |ON target.id = source.id
+               |WHEN MATCHED THEN
+               |  UPDATE SET
+               |    id = source.id,
+               |    name = source.name,
+               |    gender = source.gender,
+               |    birthDate = source.birthDate
+               |WHEN NOT MATCHED
+               |  THEN INSERT (
+               |    id,
+               |    name,
+               |    gender,
+               |    birthDate
+               |  )
+               |  VALUES (
+               |    source.id,
+               |    source.name,
+               |    source.gender,
+               |    source.birthDate
+               |  )
+               |""".stripMargin
+          interceptEndsWith[AccessControlException](
+            doAs(someone, sql(mergeIntoSql)))(
+            s"does not have [select] privilege on [$namespace1/$table2/id," +
+              s"$namespace1/$table2/name,$namespace1/$table2/gender," +
+              s"$namespace1/$table2/birthDate], [write] privilege on [[$path, $path/]]")
+          doAs(admin, sql(mergeIntoSql))
+        })
+      }
+    }
+  }
+
+  test("optimize path-based table") {
+    assume(isSparkV32OrGreater, "optimize table is available in Delta Lake 1.2.0 and above")
+
+    withTempDir(path => {
+      doAs(admin, sql(createPathBasedTableSql(path)))
+      val optimizeTableSql1 = s"OPTIMIZE delta.`$path`"
+      interceptEndsWith[AccessControlException](
+        doAs(someone, sql(optimizeTableSql1)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(optimizeTableSql1))
+
+      val optimizeTableSql2 = s"OPTIMIZE '$path'"
+      interceptEndsWith[AccessControlException](
+        doAs(someone, sql(optimizeTableSql2)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(optimizeTableSql2))
     })
   }
 }

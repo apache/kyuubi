@@ -34,7 +34,7 @@ select
     s_name,
     s_address,
     s_phone,
-    total_revenue
+    round(total_revenue, 2) as total_revenue
 from
     supplier,
     revenue0

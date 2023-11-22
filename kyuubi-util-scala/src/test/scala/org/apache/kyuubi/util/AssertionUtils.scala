@@ -172,7 +172,7 @@ object AssertionUtils {
 
   /**
    * Asserts that the given function throws an exception of the given type
-   * and with the exception message equals to expected string
+   * and with the exception message contains expected string
    */
   def interceptContains[T <: Exception](f: => Any)(contained: String)(implicit
       classTag: ClassTag[T],
@@ -180,5 +180,17 @@ object AssertionUtils {
     assert(contained != null)
     val exception = intercept[T](f)(classTag, pos)
     assert(exception.getMessage.contains(contained))
+  }
+
+  /**
+   * Asserts that the given function throws an exception of the given type
+   * and with the exception message ends with expected string
+   */
+  def interceptEndsWith[T <: Exception](f: => Any)(end: String)(implicit
+      classTag: ClassTag[T],
+      pos: Position): Unit = {
+    assert(end != null)
+    val exception = intercept[T](f)(classTag, pos)
+    assert(exception.getMessage.endsWith(end))
   }
 }

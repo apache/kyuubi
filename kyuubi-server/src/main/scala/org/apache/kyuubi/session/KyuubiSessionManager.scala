@@ -41,6 +41,7 @@ import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetry
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.util.{SignUtils, ThreadUtils}
+import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
@@ -409,7 +410,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         }
       }
     }
-    engineConnectionAliveChecker.scheduleWithFixedDelay(
+    scheduleTolerableRunnableWithFixedDelay(
+      engineConnectionAliveChecker,
       checkTask,
       interval,
       interval,
