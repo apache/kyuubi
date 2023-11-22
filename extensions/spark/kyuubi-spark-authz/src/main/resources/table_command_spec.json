@@ -89,7 +89,8 @@
   "uriDescs" : [ {
     "fieldName" : "table",
     "fieldExtractor" : "DataSourceV2RelationURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CacheTable",
@@ -413,7 +414,8 @@
   "uriDescs" : [ {
     "fieldName" : "table",
     "fieldExtractor" : "DataSourceV2RelationURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.OverwritePartitionsDynamic",
@@ -442,7 +444,8 @@
   "uriDescs" : [ {
     "fieldName" : "table",
     "fieldExtractor" : "DataSourceV2RelationURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RefreshTable",
@@ -2437,11 +2440,7 @@
     "fieldExtractor" : "LogicalPlanQueryExtractor",
     "comment" : ""
   } ],
-  "uriDescs" : [ {
-    "fieldName" : "target",
-    "fieldExtractor" : "SubqueryAliasURIExtractor",
-    "isInput" : false
-  } ]
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.OptimizeTableCommand",
   "tableDescs" : [ {
@@ -2467,19 +2466,7 @@
   } ],
   "opType" : "ALTERTABLE_COMPACT",
   "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "child",
-    "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false
-  }, {
-    "fieldName" : "tableId",
-    "fieldExtractor" : "TableIdentifierOptionURIExtractor",
-    "isInput" : false
-  }, {
-    "fieldName" : "path",
-    "fieldExtractor" : "StringURIExtractor",
-    "isInput" : false
-  } ]
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.UpdateCommand",
   "tableDescs" : [ {
