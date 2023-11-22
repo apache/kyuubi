@@ -83,7 +83,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
                                    |  resource: ${sparkBatchTestResource.get}
                                    |  className: org.apache.spark.examples.DriverSubmissionTest
                                    |  args:
-                                   |   - 10
+                                   |   - 120
                                    |  configs:
                                    |    spark.master: local
                                    |    wait.completion: true
@@ -147,14 +147,20 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       "batch",
       batchId,
       "--size",
-      "2",
+      "100",
       "--username",
       ldapUser,
       "--password",
       ldapUserPasswd)
-    result = testPrematureExitForControlCli(logArgs, "")
-    val rows = result.split("\n")
-    assert(rows.length == 2)
+    eventually(timeout(60.seconds), interval(100.milliseconds)) {
+      invalidCount += 1
+      result = testPrematureExitForControlCli(logArgs, "")
+      val rows = result.split("\n")
+      assert(rows.length >= 2)
+      // org.apache.spark.examples.DriverSubmissionTest output
+      assert(result.contains("Alive for"))
+      invalidCount -= 1
+    }
 
     val deleteArgs = Array(
       "delete",
@@ -168,7 +174,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
 
     eventually(timeout(3.seconds), interval(200.milliseconds)) {
       assert(MetricsSystem.counterValue(
-        MetricsConstants.REST_CONN_TOTAL).getOrElse(0L) - totalConnections - invalidCount === 5)
+        MetricsConstants.REST_CONN_TOTAL).getOrElse(0L) - totalConnections - invalidCount >= 5)
       assert(MetricsSystem.counterValue(MetricsConstants.REST_CONN_OPEN).getOrElse(0L) === 0)
     }
   }
@@ -206,12 +212,16 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       "batch",
       batchId,
       "--size",
-      "2",
+      "100",
       "--authSchema",
       "spnego")
-    result = testPrematureExitForControlCli(logArgs, "")
-    val rows = result.split("\n")
-    assert(rows.length == 2)
+    eventually(timeout(60.seconds), interval(100.milliseconds)) {
+      result = testPrematureExitForControlCli(logArgs, "")
+      val rows = result.split("\n")
+      assert(rows.length >= 2)
+      // org.apache.spark.examples.DriverSubmissionTest output
+      assert(result.contains("Alive for"))
+    }
 
     val deleteArgs = Array(
       "delete",

@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.{Map => JMap}
-import java.util.LinkedHashMap
+import java.util.{LinkedHashMap, Map => JMap}
 
 import scala.collection.JavaConverters._
 
@@ -28,6 +27,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.connector.catalog.Identifier
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -80,14 +80,18 @@ object TableExtractor {
 class TableIdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val identifier = v1.asInstanceOf[TableIdentifier]
-    val owner =
-      try {
-        val catalogTable = spark.sessionState.catalog.getTableMetadata(identifier)
-        Option(catalogTable.owner).filter(_.nonEmpty)
-      } catch {
-        case _: Exception => None
-      }
-    Some(Table(None, identifier.database, identifier.table, owner))
+    if (isPathIdentifier(identifier.table, spark)) {
+      None
+    } else {
+      val owner =
+        try {
+          val catalogTable = spark.sessionState.catalog.getTableMetadata(identifier)
+          Option(catalogTable.owner).filter(_.nonEmpty)
+        } catch {
+          case _: Exception => None
+        }
+      Some(Table(None, identifier.database, identifier.table, owner))
+    }
   }
 }
 
@@ -186,18 +190,18 @@ class ExpressionSeqTableExtractor extends TableExtractor {
 class DataSourceV2RelationTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val plan = v1.asInstanceOf[LogicalPlan]
-    val maybeV2Relation = plan.find(_.getClass.getSimpleName == "DataSourceV2Relation")
-    maybeV2Relation match {
-      case None => None
-      case Some(v2Relation) =>
-        val maybeCatalogPlugin = invokeAs[Option[AnyRef]](v2Relation, "catalog")
-        val maybeCatalog = maybeCatalogPlugin.flatMap(catalogPlugin =>
+    plan.find(_.getClass.getSimpleName == "DataSourceV2Relation").get match {
+      case v2Relation: DataSourceV2Relation
+          if v2Relation.identifier.isEmpty ||
+            !isPathIdentifier(v2Relation.identifier.get.name(), spark) =>
+        val maybeCatalog = v2Relation.catalog.flatMap(catalogPlugin =>
           lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
-        lookupExtractor[TableTableExtractor].apply(spark, invokeAs[AnyRef](v2Relation, "table"))
+        lookupExtractor[TableTableExtractor].apply(spark, v2Relation.table)
           .map { table =>
             val maybeOwner = TableExtractor.getOwner(v2Relation)
             table.copy(catalog = maybeCatalog, owner = maybeOwner)
           }
+      case _ => None
     }
   }
 }
@@ -256,11 +260,15 @@ class ResolvedIdentifierTableExtractor extends TableExtractor {
 class SubqueryAliasTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     v1.asInstanceOf[SubqueryAlias] match {
-      case SubqueryAlias(_, SubqueryAlias(identifier, _))
-          if !isPathIdentifier(identifier.name, spark) =>
-        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case SubqueryAlias(_, SubqueryAlias(identifier, _)) =>
+        if (isPathIdentifier(identifier.name, spark)) {
+          None
+        } else {
+          lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+        }
       case SubqueryAlias(identifier, _) if !isPathIdentifier(identifier.name, spark) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case _ => None
     }
   }
 }
@@ -284,6 +292,7 @@ class HudiDataSourceV2RelationTableExtractor extends TableExtractor {
       // Match multipartIdentifier without tableAlias
       case SubqueryAlias(identifier, _) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case _ => None
     }
   }
 }
@@ -297,6 +306,7 @@ class HudiMergeIntoTargetTableExtractor extends TableExtractor {
       // Match multipartIdentifier without tableAlias
       case SubqueryAlias(identifier, _) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case _ => None
     }
   }
 }

@@ -19,7 +19,7 @@
 select
     nation,
     o_year,
-    sum(amount) as sum_profit
+    round(sum(amount), 2) as sum_profit
 from
     (
         select

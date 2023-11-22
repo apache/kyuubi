@@ -211,7 +211,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(batch.getId))
       .delete()
     assert(deleteBatchResponse.getStatus === 405)
-    errorMessage = s"${batch.getId} is not allowed to close the session belong to anonymous"
+    errorMessage = s"Failed to validate proxy privilege of ${batch.getId} for anonymous"
     assert(deleteBatchResponse.readEntity(classOf[String]).contains(errorMessage))
 
     // invalid batchId
@@ -227,16 +227,6 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .delete()
     assert(deleteBatchResponse.getStatus === 404)
-
-    // invalid proxy user
-    deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId}")
-      .queryParam("hive.server2.proxy.user", "invalidProxy")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
-      .delete()
-    assert(deleteBatchResponse.getStatus === 405)
-    errorMessage = "Failed to validate proxy privilege of anonymous for invalidProxy"
-    assert(deleteBatchResponse.readEntity(classOf[String]).contains(errorMessage))
 
     // check close batch session
     deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId}")

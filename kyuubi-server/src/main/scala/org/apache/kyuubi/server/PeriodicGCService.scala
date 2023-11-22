@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 class PeriodicGCService(name: String) extends AbstractService(name) {
   def this() = this(classOf[PeriodicGCService].getSimpleName)
@@ -40,6 +41,11 @@ class PeriodicGCService(name: String) extends AbstractService(name) {
 
   private def startGcTrigger(): Unit = {
     val interval = conf.get(KyuubiConf.SERVER_PERIODIC_GC_INTERVAL)
-    gcTrigger.scheduleWithFixedDelay(() => System.gc(), interval, interval, TimeUnit.MILLISECONDS)
+    scheduleTolerableRunnableWithFixedDelay(
+      gcTrigger,
+      () => System.gc(),
+      interval,
+      interval,
+      TimeUnit.MILLISECONDS)
   }
 }

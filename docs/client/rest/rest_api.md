@@ -410,16 +410,6 @@ The [Batch](#batch).
 
 Kill the batch if it is still running.
 
-#### Request Parameters
-
-| Name                    | Description                   | Type             |
-|:------------------------|:------------------------------|:-----------------|
-| proxyUser               | the proxy user to impersonate | String(optional) |
-| hive.server2.proxy.user | the proxy user to impersonate | String(optional) |
-
-`proxyUser` is an alternative to `hive.server2.proxy.user`, and the current behavior is consistent with
-`hive.server2.proxy.user`. When both parameters are set, `proxyUser` takes precedence.
-
 #### Response Body
 
 | Name    | Description                           | Type    |

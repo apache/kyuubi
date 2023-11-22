@@ -270,7 +270,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
         "table",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
+    val uriDescs = Seq(UriDesc("table", classOf[DataSourceV2RelationURIExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc), uriDescs = uriDescs)
   }
 
   val ReplaceData = {
@@ -308,7 +309,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
         "table",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
+    val uriDescs = Seq(UriDesc("table", classOf[DataSourceV2RelationURIExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc), uriDescs = uriDescs)
   }
 
   val OverwritePartitionsDynamic = {
