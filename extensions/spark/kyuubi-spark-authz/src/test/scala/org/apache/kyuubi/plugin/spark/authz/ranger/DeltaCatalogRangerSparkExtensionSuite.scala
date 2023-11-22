@@ -451,6 +451,23 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(optimizeTableSql2))
     })
   }
+
+  test("vacuum path-based table") {
+    withTempDir(path => {
+      doAs(admin, sql(createPathBasedTableSql(path)))
+      val vacuumTableSql1 = s"VACUUM delta.`$path`"
+      interceptEndsWith[AccessControlException](
+        doAs(someone, sql(vacuumTableSql1)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(vacuumTableSql1))
+
+      val vacuumTableSql2 = s"VACUUM '$path'"
+      interceptEndsWith[AccessControlException](
+        doAs(someone, sql(vacuumTableSql2)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(vacuumTableSql2))
+    })
+  }
 }
 
 object DeltaCatalogRangerSparkExtensionSuite {
