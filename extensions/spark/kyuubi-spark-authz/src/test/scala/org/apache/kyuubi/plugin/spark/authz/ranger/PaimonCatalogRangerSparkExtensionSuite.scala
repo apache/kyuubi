@@ -76,7 +76,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
            |)
            |""".stripMargin
 
-      interceptContains[AccessControlException] {
+      interceptEndsWith[AccessControlException] {
         doAs(someone, sql(createTable))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
       doAs(admin, createTable)

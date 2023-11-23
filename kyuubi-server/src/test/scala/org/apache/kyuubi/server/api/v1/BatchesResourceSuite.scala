@@ -24,6 +24,7 @@ import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.DurationInt
 
@@ -841,5 +842,45 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     assert(response.getStatus == 200)
     val getBatchListResponse = response.readEntity(classOf[GetBatchesResponse])
     assert(getBatchListResponse.getTotal == 1)
+  }
+
+  test("open batch session with proxyUser") {
+    val normalUser = "kyuubi"
+
+    def runOpenBatchExecutor(
+        kyuubiProxyUser: Option[String],
+        hs2ProxyUser: Option[String]): Response = {
+      val conf = mutable.Map("spark.master" -> "local")
+
+      kyuubiProxyUser.map { username =>
+        conf += (PROXY_USER.key -> username)
+      }
+      hs2ProxyUser.map { username =>
+        conf += (KyuubiAuthenticationFactory.HS2_PROXY_USER -> username)
+      }
+      val proxyUserRequest = newSparkBatchRequest(conf.toMap)
+
+      webTarget.path("api/v1/batches")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+        .post(Entity.entity(proxyUserRequest, MediaType.APPLICATION_JSON_TYPE))
+    }
+
+    // use kyuubi.session.proxy.user
+    val proxyUserResponse1 = runOpenBatchExecutor(Option(normalUser), None)
+    assert(proxyUserResponse1.getStatus === 405)
+    val errorMessage = s"Failed to validate proxy privilege of anonymous for $normalUser"
+    assert(proxyUserResponse1.readEntity(classOf[String]).contains(errorMessage))
+
+    // it should be the same behavior as hive.server2.proxy.user
+    val proxyUserResponse2 = runOpenBatchExecutor(None, Option(normalUser))
+    assert(proxyUserResponse2.getStatus === 405)
+    assert(proxyUserResponse2.readEntity(classOf[String]).contains(errorMessage))
+
+    // when both set, kyuubi.session.proxy.user takes precedence
+    val proxyUserResponse3 =
+      runOpenBatchExecutor(Option(normalUser), Option(s"${normalUser}HiveServer2"))
+    assert(proxyUserResponse3.getStatus === 405)
+    assert(proxyUserResponse3.readEntity(classOf[String]).contains(errorMessage))
   }
 }
