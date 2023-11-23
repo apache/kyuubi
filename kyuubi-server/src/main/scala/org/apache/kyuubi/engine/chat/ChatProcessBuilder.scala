@@ -103,12 +103,14 @@ class ChatProcessBuilder(
 
   override def toString: String = {
     if (commands == null) {
-      super.toString()
+      super.toString
     } else {
       Utils.redactCommandLineArgs(conf, commands).map {
-        case arg if arg.startsWith("-") || arg == mainClass => s"\\\n\t$arg"
         case arg if arg.contains(ENGINE_CHAT_GPT_API_KEY.key) =>
           s"${ENGINE_CHAT_GPT_API_KEY.key}=$REDACTION_REPLACEMENT_TEXT"
+        case arg => arg
+      }.map {
+        case arg if arg.startsWith("-") || arg == mainClass => s"\\\n\t$arg"
         case arg => arg
       }.mkString(" ")
     }

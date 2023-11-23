@@ -116,8 +116,6 @@ class HiveProcessBuilder(
     buffer.toArray
   }
 
-  override def toString: String = Utils.redactCommandLineArgs(conf, commands).mkString("\n")
-
   override def shortName: String = "hive"
 }
 

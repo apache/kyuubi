@@ -81,8 +81,11 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     val actualCommands = builder.toString
     val classpathStr = constructClasspathStr(builder)
     val expectedCommands =
-      s"$javaPath -Xmx512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 " +
-        s"-cp $classpathStr $mainClassStr \\\\\\n\\t--conf kyuubi.session.user=vinoyang $confStr"
+      s"""$javaPath \\\\
+         |\\t-Xmx512m \\\\
+         |\\t-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 \\\\
+         |\\t-cp $classpathStr $mainClassStr \\\\
+         |\\t--conf kyuubi.session.user=vinoyang $confStr""".stripMargin
     val regex = new Regex(expectedCommands)
     val matcher = regex.pattern.matcher(actualCommands)
     assert(matcher.matches())
@@ -90,19 +93,20 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
 
   private def matchActualAndExpectedApplicationMode(builder: FlinkProcessBuilder): Unit = {
     val actualCommands = builder.toString
+    // scalastyle:off line.size.limit
     val expectedCommands =
-      escapePaths(s"${builder.flinkExecutable} run-application ") +
-        s"-t yarn-application " +
-        s"-Dyarn.ship-files=.*\\/flink-sql-client.*jar;.*\\/flink-sql-gateway.*jar;$tempUdfJar" +
-        s";.*\\/hive-site\\.xml " +
-        s"-Dyarn\\.application\\.name=kyuubi_.* " +
-        s"-Dyarn\\.tags=KYUUBI " +
-        s"-Dcontainerized\\.master\\.env\\.FLINK_CONF_DIR=\\. " +
-        s"-Dcontainerized\\.master\\.env\\.HIVE_CONF_DIR=\\. " +
-        s"-Dexecution.target=yarn-application " +
-        s"-c org\\.apache\\.kyuubi\\.engine\\.flink\\.FlinkSQLEngine " +
-        s".*kyuubi-flink-sql-engine_.*jar" +
-        s"(?: \\\\\\n\\t--conf \\S+=\\S+)+"
+      escapePaths(
+        s"""${builder.flinkExecutable} run-application \\\\
+           |\\t-t yarn-application \\\\
+           |\\t-Dyarn.ship-files=.*flink-sql-client.*jar;.*flink-sql-gateway.*jar;$tempUdfJar;.*hive-site.xml \\\\
+           |\\t-Dyarn.application.name=kyuubi_.* \\\\
+           |\\t-Dyarn.tags=KYUUBI \\\\
+           |\\t-Dcontainerized.master.env.FLINK_CONF_DIR=. \\\\
+           |\\t-Dcontainerized.master.env.HIVE_CONF_DIR=. \\\\
+           |\\t-Dexecution.target=yarn-application \\\\
+           |\\t-c org.apache.kyuubi.engine.flink.FlinkSQLEngine .*kyuubi-flink-sql-engine_.*jar""".stripMargin +
+          "(?: \\\\\\n\\t--conf \\S+=\\S+)+")
+    // scalastyle:on line.size.limit
     val regex = new Regex(expectedCommands)
     val matcher = regex.pattern.matcher(actualCommands)
     assert(matcher.matches())

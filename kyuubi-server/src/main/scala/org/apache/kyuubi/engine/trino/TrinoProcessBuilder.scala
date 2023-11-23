@@ -111,7 +111,7 @@ class TrinoProcessBuilder(
 
   override def toString: String = {
     if (commands == null) {
-      super.toString()
+      super.toString
     } else {
       Utils.redactCommandLineArgs(conf, commands).map {
         case arg if arg.contains(ENGINE_TRINO_CONNECTION_PASSWORD.key) =>
@@ -121,7 +121,10 @@ class TrinoProcessBuilder(
         case arg if arg.contains(ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD.key) =>
           s"${ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD.key}=$REDACTION_REPLACEMENT_TEXT"
         case arg => arg
-      }.mkString("\n")
+      }.map {
+        case arg if arg.startsWith("-") => s"\\\n\t$arg"
+        case arg => arg
+      }.mkString(" ")
     }
   }
 }
