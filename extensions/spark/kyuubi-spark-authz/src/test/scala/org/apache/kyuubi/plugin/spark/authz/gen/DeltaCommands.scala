@@ -60,7 +60,11 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
     val cmd = "io.delta.tables.execution.VacuumTableCommand"
     val childDesc = TableDesc("child", classOf[ResolvedTableTableExtractor])
     val tableDesc = TableDesc("table", classOf[TableIdentifierOptionTableExtractor])
-    TableCommandSpec(cmd, Seq(childDesc, tableDesc), MSCK)
+    val uriDescs = Seq(
+      UriDesc("child", classOf[ResolvedTableURIExtractor]),
+      UriDesc("table", classOf[TableIdentifierOptionURIExtractor]),
+      UriDesc("path", classOf[StringURIExtractor]))
+    TableCommandSpec(cmd, Seq(childDesc, tableDesc), MSCK, uriDescs = uriDescs)
   }
 
   override def specs: Seq[TableCommandSpec] = Seq(

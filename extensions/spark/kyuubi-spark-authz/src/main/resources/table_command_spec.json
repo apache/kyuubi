@@ -2153,7 +2153,19 @@
   } ],
   "opType" : "MSCK",
   "queryDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false
+  }, {
+    "fieldName" : "table",
+    "fieldExtractor" : "TableIdentifierOptionURIExtractor",
+    "isInput" : false
+  }, {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.DeleteCommand",
   "tableDescs" : [ {
