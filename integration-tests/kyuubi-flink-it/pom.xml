@@ -29,6 +29,10 @@
     <name>Kyuubi Test Flink SQL IT</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-flink-it</sbt.project.name>
+    </properties>
+
     <dependencies>
 
         <dependency>

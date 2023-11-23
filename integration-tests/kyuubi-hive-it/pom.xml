@@ -29,6 +29,10 @@
     <name>Kyuubi Test Hive IT</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-hive-it</sbt.project.name>
+    </properties>
+
     <dependencies>
 
         <dependency>

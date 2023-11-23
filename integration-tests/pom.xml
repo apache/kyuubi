@@ -29,6 +29,10 @@
     <name>Kyuubi Test Integration Tests</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>integration-tests</sbt.project.name>
+    </properties>
+
     <modules>
         <module>kyuubi-flink-it</module>
         <module>kyuubi-hive-it</module>

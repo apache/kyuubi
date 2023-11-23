@@ -39,7 +39,6 @@ object BuildCommons {
   ).map(ProjectRef(buildLocation, _))
 
   val extensionsSpark @ Seq(
-  kyuubiExtenstionSparkCommon,
   kyuubiExtensionSparkJdbcDialect,
   kyuubiSparkAuthz,
   kyuubiSparkAuthzShaded,
@@ -49,7 +48,6 @@ object BuildCommons {
   kyuubiSparkConnectorTpch,
   kyuubiSparkLineage
   ) = Seq(
-    "kyuubi-extension-spark-common",
     "kyuubi-extension-spark-jdbc-dialect",
     "kyuubi-spark-authz",
     "kyuubi-spark-authz-shaded",
@@ -76,6 +74,22 @@ object BuildCommons {
     "kyuubi-spark-sql-engine",
     "kyuubi-trino-engine").map(ProjectRef(buildLocation, _))
 
+  val integrationTests @ Seq(
+    kyuubiFlinkIt,
+    kyuubiHiveIt,
+    kyuubiJdbcIt,
+    kyuubiKubernetesIt,
+    kyuubiTrinoIt,
+    kyuubiZookeeperIt
+  ) = Seq(
+    "kyuubi-flink-it",
+    "kyuubi-hive-it",
+    "kyuubi-jdbc-it",
+    "kyuubi-kubernetes-it",
+    "kyuubi-trino-it",
+    "kyuubi-zookeeper-it"
+  ).map(ProjectRef(buildLocation, _))
+
   val allProjects @ Seq(
   kyuubi,
   kyuubiAssembly,
@@ -92,6 +106,7 @@ object BuildCommons {
   kyuubiUtil,
   kyuubiUtilScala,
   kyuubiZookeeper,
+  kyuubiExtensionSparkCommon,
   _*) = Seq(
     "kyuubi",
     "kyuubi-assembly",
@@ -107,8 +122,9 @@ object BuildCommons {
     "kyuubi-server",
     "kyuubi-util",
     "kyuubi-util-scala",
-    "kyuubi-zookeeper")
-    .map(ProjectRef(buildLocation, _)) ++ extensionsSpark ++ extensionsServer ++ externals
+    "kyuubi-zookeeper",
+    "kyuubi-extension-spark-common")
+    .map(ProjectRef(buildLocation, _)) ++ extensionsSpark ++ extensionsServer ++ externals ++ integrationTests
 }
 
 object KyuubiBuild extends PomBuild {
@@ -205,8 +221,6 @@ object KyuubiBuild extends PomBuild {
   def enableScalaStyle: Seq[sbt.Def.Setting[_]] = Seq(
     scalaStyleOnCompile := cachedScalaStyle(Compile).value,
     scalaStyleOnTest := cachedScalaStyle(Test).value,
-    (scalaStyleOnCompile / logLevel) := Level.Warn,
-    (scalaStyleOnTest / logLevel) := Level.Warn,
     (Compile / compile) := {
       scalaStyleOnCompile.value
       (Compile / compile).value
@@ -256,6 +270,7 @@ object KyuubiBuild extends PomBuild {
   }
 
   (allProjects).foreach(enable(sharedSettings))
+  enable(KyuubiExtensionSparkCommon.settings)(kyuubiExtensionSparkCommon)
 
   // TODO: move this to its upstream project.
   override def projectDefinitions(baseDirectory: File): Seq[Project] = {
@@ -264,4 +279,17 @@ object KyuubiBuild extends PomBuild {
       else x.settings(Seq[Setting[_]](): _*)
     }
   }
+}
+
+object KyuubiExtensionSparkCommon {
+  import com.simplytyped.Antlr4Plugin
+  import com.simplytyped.Antlr4Plugin.autoImport._
+
+  lazy val settings = Antlr4Plugin.projectSettings ++ Seq(
+    (Antlr4 / antlr4Version) := SbtPomKeys.effectivePom.value.getProperties.get("antlr4.version").asInstanceOf[String],
+    (Antlr4 / antlr4PackageName) := Some("org.apache.kyuubi.sql"),
+    (Antlr4 / antlr4GenListener) := true,
+    (Antlr4 / antlr4GenVisitor) := true,
+    (Antlr4 / antlr4TreatWarningsAsErrors) := true
+  )
 }

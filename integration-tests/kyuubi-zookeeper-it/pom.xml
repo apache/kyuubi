@@ -29,6 +29,10 @@
     <name>Kyuubi Test Zookeeper IT</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-zookeeper-it</sbt.project.name>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>

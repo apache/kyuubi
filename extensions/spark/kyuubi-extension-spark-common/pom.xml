@@ -33,6 +33,7 @@
     <properties>
         <sbt.project.name>kyuubi-extension-spark-common</sbt.project.name>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.scala-lang</groupId>

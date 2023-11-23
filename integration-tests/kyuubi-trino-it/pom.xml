@@ -29,6 +29,10 @@
     <name>Kyuubi Test Trino IT</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <sbt.project.name>kyuubi-trino-it</sbt.project.name>
+    </properties>
+
     <dependencies>
 
         <dependency>
