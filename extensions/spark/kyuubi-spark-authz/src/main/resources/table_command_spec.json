@@ -2392,15 +2392,18 @@
   "uriDescs" : [ {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   }, {
     "fieldName" : "table",
     "fieldExtractor" : "TableIdentifierOptionURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   }, {
     "fieldName" : "path",
     "fieldExtractor" : "StringURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.DeleteCommand",
