@@ -140,14 +140,11 @@ object SchemaHelper {
     case dt
         if Array(TIMESTAMP_NTZ, DAY_TIME_INTERVAL, YEAR_MONTH_INTERVAL)
           .contains(dt.getClass.getSimpleName) => Some(dt.defaultSize)
+    case dt @ (_: DecimalType) =>
+      Some(dt.precision)
     case dt @ (BooleanType | _: NumericType | DateType | TimestampType |
         CalendarIntervalType | NullType) =>
-      // decimal type
-      if (dt.isInstanceOf[DecimalType]) {
-        Some(dt.asInstanceOf[DecimalType].precision)
-      } else {
-        Some(dt.defaultSize)
-      }
+      Some(dt.defaultSize)
     case StructType(fields) =>
       val sizeArr = fields.map(f => getColumnSize(f.dataType))
       if (sizeArr.contains(None)) {
