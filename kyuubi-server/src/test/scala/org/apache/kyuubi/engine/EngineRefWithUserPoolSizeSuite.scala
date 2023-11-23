@@ -38,7 +38,7 @@ class EngineRefWithUserPoolSizeSuite extends WithKyuubiServer {
     val kyuubiConf = KyuubiConf()
       .set(ENGINE_POOL_SELECT_POLICY, poolSelectPolicy)
       .set(ENGINE_POOL_SIZE, defaultEnginePoolSize)
-      .set(s"___${user}___${ENGINE_POOL_SIZE.key}", userEnginePoolSize.toString)
+      .set(s"___${user}___.${ENGINE_POOL_SIZE.key}", userEnginePoolSize.toString)
       .set(ENGINE_TYPE, SPARK_SQL.toString)
     kyuubiConf
   }

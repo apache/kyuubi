@@ -77,7 +77,7 @@ private[kyuubi] class EngineRef(
   private val clientPoolSize: Int = shareLevel match {
     case ShareLevel.USER =>
       val serverConf = Option(KyuubiServer.kyuubiServer).map(_.getConf).getOrElse(KyuubiConf())
-      val userPoolSize = serverConf.getAllUserDefaults.get(s"___${user}___${ENGINE_POOL_SIZE.key}")
+      val userPoolSize = serverConf.getAllUserDefaults.get(s"___${user}___.${ENGINE_POOL_SIZE.key}")
       userPoolSize match {
         case Some(threshold) => threshold.toInt
         case _ => conf.get(ENGINE_POOL_SIZE)
