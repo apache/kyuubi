@@ -22,11 +22,12 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{AttributeSet, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.execution.command.ExplainCommand
 import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
-import org.apache.kyuubi.plugin.spark.authz.rule.Authorization.KYUUBI_AUTHZ_TAG
+import org.apache.kyuubi.plugin.spark.authz.rule.Authorization._
 import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -121,7 +122,14 @@ object PrivilegesBuilder {
         buildQuery(a.child, privilegeObjects, output, cols, spark)
 
       case scan if isKnownScan(scan) && scan.resolved =>
-        getScanSpec(scan).tables(scan, spark).foreach(mergeProjection(_, scan))
+        val tables = getScanSpec(scan).tables(scan, spark)
+        // If the the scan is table-based, we check privileges on the table we found
+        // otherwise, we check privileges on the uri we found
+        if (tables.nonEmpty) {
+          tables.foreach(mergeProjection(_, scan))
+        } else {
+          getScanSpec(scan).uris(scan).foreach(privilegeObjects += PrivilegeObject(_))
+        }
 
       case u if u.nodeName == "UnresolvedRelation" =>
         val parts = invokeAs[String](u, "tableName").split("\\.")
@@ -206,6 +214,19 @@ object PrivilegesBuilder {
               LOG.debug(databaseDesc.error(plan, e))
           }
         }
+        desc.uriDescs.foreach { ud =>
+          try {
+            val uris = ud.extract(plan, spark)
+            if (ud.isInput) {
+              inputObjs ++= uris.map(PrivilegeObject(_))
+            } else {
+              outputObjs ++= uris.map(PrivilegeObject(_))
+            }
+          } catch {
+            case e: Exception =>
+              LOG.debug(ud.error(plan, e))
+          }
+        }
         desc.operationType
 
       case classname if TABLE_COMMAND_SPECS.contains(classname) =>
@@ -219,12 +240,11 @@ object PrivilegesBuilder {
         }
         spec.uriDescs.foreach { ud =>
           try {
-            val uris = ud.extract(plan)
-            val actionType = ud.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
+            val uris = ud.extract(plan, spark)
             if (ud.isInput) {
-              inputObjs ++= uris.map(PrivilegeObject(_, actionType))
+              inputObjs ++= uris.map(PrivilegeObject(_))
             } else {
-              outputObjs ++= uris.map(PrivilegeObject(_, actionType))
+              outputObjs ++= uris.map(PrivilegeObject(_))
             }
           } catch {
             case e: Exception =>
@@ -307,6 +327,12 @@ object PrivilegesBuilder {
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
     val opType = plan match {
+      // ExplainCommand run will execute the plan, should avoid check privilege for the plan.
+      case _: ExplainCommand =>
+        setExplainCommandExecutionId(spark)
+        OperationType.EXPLAIN
+      case _ if isExplainCommandChild(spark) =>
+        OperationType.EXPLAIN
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries

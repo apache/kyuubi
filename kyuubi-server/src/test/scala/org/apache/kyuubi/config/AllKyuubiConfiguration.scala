@@ -171,7 +171,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       "### Via JDBC Connection URL" +=
       """Setting them in the JDBC Connection URL supplies session-specific
         | for each SQL engine. For example: ```jdbc:hive2://localhost:10009/default;
-        |#parallelism.default=2;taskmanager.memory.process.size=5g```
+        |#flink.parallelism.default=2;flink.taskmanager.memory.process.size=5g```
         |""" +=
       "### Via SET Statements" +=
       """Please refer to the Flink official online documentation for [SET Statements]

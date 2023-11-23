@@ -20,7 +20,7 @@ import overviewRoutes from './overview'
 import managementRoutes from './management'
 import detailRoutes from './detail'
 import swaggerRoutes from './swagger'
-import labRoutes from './lab'
+import editorRoutes from './editor'
 
 const routes = [
   {
@@ -40,7 +40,7 @@ const routes = [
       ...managementRoutes,
       ...detailRoutes,
       ...swaggerRoutes,
-      ...labRoutes
+      ...editorRoutes
     ]
   }
 ]

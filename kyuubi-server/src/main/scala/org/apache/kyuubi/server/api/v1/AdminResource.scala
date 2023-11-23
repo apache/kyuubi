@@ -245,11 +245,13 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("type") engineType: String,
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
+      @QueryParam("proxyUser") kyuubiProxyUser: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
+    val activeProxyUser = Option(kyuubiProxyUser).getOrElse(hs2ProxyUser)
     val userName = if (fe.isAdministrator(fe.getRealUser())) {
-      Option(hs2ProxyUser).getOrElse(fe.getRealUser())
+      Option(activeProxyUser).getOrElse(fe.getRealUser())
     } else {
-      fe.getSessionUser(hs2ProxyUser)
+      fe.getSessionUser(activeProxyUser)
     }
     val engine = normalizeEngineInfo(userName, engineType, shareLevel, subdomain, "default")
     val engineSpace = calculateEngineSpace(engine)
@@ -283,11 +285,13 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("type") engineType: String,
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
+      @QueryParam("proxyUser") kyuubiProxyUser: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
+    val activeProxyUser = Option(kyuubiProxyUser).getOrElse(hs2ProxyUser)
     val userName = if (fe.isAdministrator(fe.getRealUser())) {
-      Option(hs2ProxyUser).getOrElse(fe.getRealUser())
+      Option(activeProxyUser).getOrElse(fe.getRealUser())
     } else {
-      fe.getSessionUser(hs2ProxyUser)
+      fe.getSessionUser(activeProxyUser)
     }
     val engine = normalizeEngineInfo(userName, engineType, shareLevel, subdomain, "")
     val engineSpace = calculateEngineSpace(engine)

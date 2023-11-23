@@ -85,6 +85,13 @@ server:
       port: "{{ .Values.server.thriftBinary.port }}"
       nodePort: ~
       annotations: {}
+      # candidates are ClientIP or None
+      # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+      sessionAffinity: ~
+      sessionAffinityConfig: {}
+      #  sessionAffinityConfig:
+      #    clientIP:
+      #      timeoutSeconds: 10800
 
   # Thrift HTTP protocol (HiveServer2 compatible)
   thriftHttp:
@@ -95,6 +102,13 @@ server:
       port: "{{ .Values.server.thriftHttp.port }}"
       nodePort: ~
       annotations: {}
+      # candidates are ClientIP or None
+      # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+      sessionAffinity: ~
+      sessionAffinityConfig: {}
+      #  sessionAffinityConfig:
+      #    clientIP:
+      #      timeoutSeconds: 10800
 
   # REST API protocol (experimental)
   rest:
@@ -105,6 +119,13 @@ server:
       port: "{{ .Values.server.rest.port }}"
       nodePort: ~
       annotations: {}
+      # candidates are ClientIP or None
+      # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+      sessionAffinity: ~
+      sessionAffinityConfig: {}
+      #  sessionAffinityConfig:
+      #    clientIP:
+      #      timeoutSeconds: 10800
 
   # MySQL compatible text protocol (experimental)
   mysql:
@@ -115,6 +136,13 @@ server:
       port: "{{ .Values.server.mysql.port }}"
       nodePort: ~
       annotations: {}
+      # candidates are ClientIP or None
+      # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+      sessionAffinity: ~
+      sessionAffinityConfig: {}
+      #  sessionAffinityConfig:
+      #    clientIP:
+      #      timeoutSeconds: 10800
 
 monitoring:
   # Exposes metrics in Prometheus format

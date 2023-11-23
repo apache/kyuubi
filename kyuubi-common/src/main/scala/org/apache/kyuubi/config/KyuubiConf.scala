@@ -1231,6 +1231,45 @@ object KyuubiConf {
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofMinutes(5).toMillis)
 
+  val KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.spark.cleanupTerminatedDriverPod")
+      .doc("Kyuubi server will delete the spark driver pod after " +
+        s"the application terminates for ${KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD.key}. " +
+        "Available options are NONE, ALL, COMPLETED and " +
+        "default value is None which means none of the pod will be deleted")
+      .version("1.8.1")
+      .stringConf
+      .createWithDefault(KubernetesCleanupDriverPodStrategy.NONE.toString)
+
+  object KubernetesCleanupDriverPodStrategy extends Enumeration {
+    type KubernetesCleanupDriverPodStrategy = Value
+    val NONE, ALL, COMPLETED = Value
+  }
+
+  val KUBERNETES_APPLICATION_STATE_CONTAINER: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.application.state.container")
+      .doc("The container name to retrieve the application state from.")
+      .version("1.8.1")
+      .stringConf
+      .createWithDefault("spark-kubernetes-driver")
+
+  val KUBERNETES_APPLICATION_STATE_SOURCE: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.application.state.source")
+      .doc("The source to retrieve the application state from. The valid values are " +
+        "pod and container. If the source is container and there is container inside the pod " +
+        s"with the name of ${KUBERNETES_APPLICATION_STATE_CONTAINER.key}, the application state " +
+        s"will be from the matched container state. " +
+        s"Otherwise, the application state will be from the pod state.")
+      .version("1.8.1")
+      .stringConf
+      .checkValues(KubernetesApplicationStateSource)
+      .createWithDefault(KubernetesApplicationStateSource.POD.toString)
+
+  object KubernetesApplicationStateSource extends Enumeration {
+    type KubernetesApplicationStateSource = Value
+    val POD, CONTAINER = Value
+  }
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -1931,6 +1970,16 @@ object KyuubiConf {
       .serverOnly
       .stringConf
       .createWithDefault("server_operation_logs")
+
+  val PROXY_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.session.proxy.user")
+      .doc("An alternative to hive.server2.proxy.user. " +
+        "The current behavior is consistent with hive.server2.proxy.user " +
+        "and now only takes effect in RESTFul API. " +
+        "When both parameters are set, kyuubi.session.proxy.user takes precedence.")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
 
   @deprecated("using kyuubi.engine.share.level instead", "1.2.0")
   val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] =
@@ -2810,6 +2859,13 @@ object KyuubiConf {
       .toSequence(";")
       .createWithDefault(Nil)
 
+  val ENGINE_JDBC_FETCH_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.engine.jdbc.fetch.size")
+      .doc("The fetch size of JDBC engine")
+      .version("1.9.0")
+      .intConf
+      .createWithDefault(1000)
+
   val ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.operation.convert.catalog.database.enabled")
       .doc("When set to true, The engine converts the JDBC methods of set/get Catalog " +
@@ -3153,4 +3209,24 @@ object KyuubiConf {
       .serverOnly
       .intConf
       .createOptional
+
+  val KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.spark.forciblyRewriteDriverPodName.enabled")
+      .doc("Whether to forcibly rewrite Spark driver pod name with 'kyuubi-<uuid>-driver'. " +
+        "If disabled, Kyuubi will try to preserve the application name while satisfying K8s' " +
+        "pod name policy, but some vendors may have stricter pod name policies, thus the " +
+        "generated name may become illegal.")
+      .version("1.8.1")
+      .booleanConf
+      .createWithDefault(false)
+
+  val KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.spark.forciblyRewriteExecutorPodNamePrefix.enabled")
+      .doc("Whether to forcibly rewrite Spark executor pod name prefix with 'kyuubi-<uuid>'. " +
+        "If disabled, Kyuubi will try to preserve the application name while satisfying K8s' " +
+        "pod name policy, but some vendors may have stricter Pod name policies, thus the " +
+        "generated name may become illegal.")
+      .version("1.8.1")
+      .booleanConf
+      .createWithDefault(false)
 }

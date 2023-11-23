@@ -33,6 +33,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 /**
  * The [[SessionManager]] holds the all the connected [[Session]]s, provides us the APIs to
@@ -90,7 +91,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       conf: Map[String, String]): Session
 
   protected def logSessionCountInfo(session: Session, action: String): Unit = {
-    info(s"${session.user}'s session with" +
+    info(s"${session.user}'s ${session.getClass.getSimpleName} with" +
       s" ${session.handle}${session.name.map("/" + _).getOrElse("")} is $action," +
       s" current opening sessions $getOpenSessionCount")
   }
@@ -303,27 +304,33 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
     val checkTask = new Runnable {
       override def run(): Unit = {
+        info(s"Checking sessions timeout, current count: $getOpenSessionCount")
         val current = System.currentTimeMillis
         if (!shutdown) {
           for (session <- handleToSession.values().asScala) {
-            if (session.lastAccessTime + session.sessionIdleTimeoutThreshold <= current &&
-              session.getNoOperationTime > session.sessionIdleTimeoutThreshold) {
-              info(s"Closing session ${session.handle.identifier} that has been idle for more" +
-                s" than ${session.sessionIdleTimeoutThreshold} ms")
-              try {
+            try {
+              if (session.lastAccessTime + session.sessionIdleTimeoutThreshold <= current &&
+                session.getNoOperationTime > session.sessionIdleTimeoutThreshold) {
+                info(s"Closing session ${session.handle.identifier} that has been idle for more" +
+                  s" than ${session.sessionIdleTimeoutThreshold} ms")
                 closeSession(session.handle)
-              } catch {
-                case NonFatal(e) => warn(s"Error closing idle session ${session.handle}", e)
+              } else {
+                session.closeExpiredOperations()
               }
-            } else {
-              session.closeExpiredOperations()
+            } catch {
+              case NonFatal(e) => warn(s"Error checking session ${session.handle} timeout", e)
             }
           }
         }
       }
     }
 
-    timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
+    scheduleTolerableRunnableWithFixedDelay(
+      timeoutChecker,
+      checkTask,
+      interval,
+      interval,
+      TimeUnit.MILLISECONDS)
   }
 
   private[kyuubi] def startTerminatingChecker(stop: () => Unit): Unit = if (!isServer) {
@@ -341,7 +348,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
           }
         }
       }
-      timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
+      scheduleTolerableRunnableWithFixedDelay(
+        timeoutChecker,
+        checkTask,
+        interval,
+        interval,
+        TimeUnit.MILLISECONDS)
     }
   }
 }

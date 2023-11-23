@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
+import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
@@ -26,15 +27,11 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
     val cmd = "org.apache.spark.sql.delta.commands.DeleteCommand"
     val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
     val tableDesc = TableDesc(
-      "catalogTable",
-      classOf[CatalogTableOptionTableExtractor],
-      actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc))
-    val targetDesc = TableDesc(
       "target",
       classOf[SubqueryAliasTableExtractor],
       actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc, targetDesc))
+    val uriDescs = Seq(UriDesc("target", classOf[SubqueryAliasURIExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), uriDescs = uriDescs)
   }
 
   val UpdateCommand = {
@@ -42,7 +39,38 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
     DeleteCommand.copy(classname = cmd)
   }
 
+  val MergeIntoCommand = {
+    val cmd = "org.apache.spark.sql.delta.commands.MergeIntoCommand"
+    val queryDesc = QueryDesc("source")
+    DeleteCommand.copy(classname = cmd, queryDescs = Seq(queryDesc))
+  }
+
+  val OptimizeTableCommand = {
+    val cmd = "org.apache.spark.sql.delta.commands.OptimizeTableCommand"
+    val childDesc = TableDesc("child", classOf[ResolvedTableTableExtractor])
+    val tableDesc = TableDesc("tableId", classOf[TableIdentifierOptionTableExtractor])
+    val uriDescs = Seq(
+      UriDesc("child", classOf[ResolvedTableURIExtractor]),
+      UriDesc("tableId", classOf[TableIdentifierOptionURIExtractor]),
+      UriDesc("path", classOf[StringURIExtractor]))
+    TableCommandSpec(cmd, Seq(childDesc, tableDesc), ALTERTABLE_COMPACT, uriDescs = uriDescs)
+  }
+
+  val VacuumTableCommand = {
+    val cmd = "io.delta.tables.execution.VacuumTableCommand"
+    val childDesc = TableDesc("child", classOf[ResolvedTableTableExtractor])
+    val tableDesc = TableDesc("table", classOf[TableIdentifierOptionTableExtractor])
+    val uriDescs = Seq(
+      UriDesc("child", classOf[ResolvedTableURIExtractor]),
+      UriDesc("table", classOf[TableIdentifierOptionURIExtractor]),
+      UriDesc("path", classOf[StringURIExtractor]))
+    TableCommandSpec(cmd, Seq(childDesc, tableDesc), MSCK, uriDescs = uriDescs)
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     DeleteCommand,
-    UpdateCommand)
+    MergeIntoCommand,
+    OptimizeTableCommand,
+    UpdateCommand,
+    VacuumTableCommand)
 }

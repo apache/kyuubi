@@ -295,10 +295,8 @@ object ExecutePython extends Logging {
   }
 
   def getSparkPythonExecFromArchive(spark: SparkSession, session: Session): Option[String] = {
-    val pythonEnvArchive = spark.conf.getOption(ENGINE_SPARK_PYTHON_ENV_ARCHIVE.key)
-      .orElse(session.sessionManager.getConf.get(ENGINE_SPARK_PYTHON_ENV_ARCHIVE))
-    val pythonEnvExecPath = spark.conf.getOption(ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH.key)
-      .getOrElse(session.sessionManager.getConf.get(ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH))
+    val pythonEnvArchive = getSessionConf(ENGINE_SPARK_PYTHON_ENV_ARCHIVE, spark)
+    val pythonEnvExecPath = getSessionConf(ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, spark)
     pythonEnvArchive.map {
       archive =>
         var uri = new URI(archive)
@@ -311,8 +309,7 @@ object ExecutePython extends Logging {
   }
 
   def getSparkPythonHomeFromArchive(spark: SparkSession, session: Session): Option[String] = {
-    val pythonHomeArchive = spark.conf.getOption(ENGINE_SPARK_PYTHON_HOME_ARCHIVE.key)
-      .orElse(session.sessionManager.getConf.get(ENGINE_SPARK_PYTHON_HOME_ARCHIVE))
+    val pythonHomeArchive = getSessionConf(ENGINE_SPARK_PYTHON_HOME_ARCHIVE, spark)
     pythonHomeArchive.map {
       archive =>
         var uri = new URI(archive)

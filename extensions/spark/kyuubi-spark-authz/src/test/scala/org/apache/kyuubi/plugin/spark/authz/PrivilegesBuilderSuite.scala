@@ -306,17 +306,26 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
 
     assert(in.isEmpty)
-    assert(out.size === 1)
-    val po = out.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.catalog.isEmpty)
-    assertEqualsIgnoreCase(reusedDb)(po.dbname)
-    assertEqualsIgnoreCase(reusedPartTableShort)(po.objectName)
-    assert(po.columns.head === "pid")
-    checkTableOwner(po)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    assert(out.size === 2)
+    val po0 = out.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.catalog.isEmpty)
+    assertEqualsIgnoreCase(reusedDb)(po0.dbname)
+    assertEqualsIgnoreCase(reusedPartTableShort)(po0.objectName)
+    assert(po0.columns.head === "pid")
+    checkTableOwner(po0)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
+    assert(accessType0 === AccessType.ALTER)
+
+    val po1 = out.last
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.catalog.isEmpty)
+    assert(po1.dbname === newLoc)
+    assert(po1.columns === Seq.empty)
+    checkTableOwner(po1)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+    assert(accessType1 === AccessType.WRITE)
   }
 
   test("AlterTable(Un)SetPropertiesCommand") {
@@ -1292,16 +1301,25 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand")
     assert(operationType === ALTERDATABASE_LOCATION)
     assert(in.isEmpty)
-    assert(out.size === 1)
-    val po = out.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    assert(po.catalog.isEmpty)
-    assertEqualsIgnoreCase(defaultDb)(po.dbname)
-    assertEqualsIgnoreCase(defaultDb)(po.objectName)
-    assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    assert(out.size === 2)
+    val po0 = out.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.DATABASE)
+    assert(po0.catalog.isEmpty)
+    assertEqualsIgnoreCase(defaultDb)(po0.dbname)
+    assertEqualsIgnoreCase(defaultDb)(po0.objectName)
+    assert(po0.columns.isEmpty)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
+    assert(accessType0 === AccessType.ALTER)
+
+    val po1 = out.last
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.catalog.isEmpty)
+    assertEqualsIgnoreCase(defaultDb)(po0.dbname)
+    assertEqualsIgnoreCase(defaultDb)(po0.objectName)
+    assert(po1.columns.isEmpty)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+    assert(accessType1 === AccessType.WRITE)
   }
 
   test("CreateDataSourceTableAsSelectCommand") {
@@ -1430,18 +1448,27 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         .queryExecution.analyzed
       val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
       assert(operationType === LOAD)
-      assert(in.isEmpty)
-
-      assert(out.size === 1)
-      val po0 = out.head
-      assert(po0.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
-      assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-      assertEqualsIgnoreCase(reusedDb)(po0.dbname)
-      assert(po0.objectName equalsIgnoreCase tableName.split("\\.").last)
+      assert(in.size === 1)
+      val po0 = in.head
+      assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po0.privilegeObjectType === PrivilegeObjectType.DFS_URI)
+      assert(po0.dbname === dataPath)
+      assert(po0.objectName === null)
       assert(po0.columns.isEmpty)
       checkTableOwner(po0)
-      val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
-      assert(accessType0 === AccessType.UPDATE)
+      val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
+      assert(accessType0 === AccessType.READ)
+
+      assert(out.size === 1)
+      val po1 = out.head
+      assert(po1.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
+      assert(po1.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assertEqualsIgnoreCase(reusedDb)(po1.dbname)
+      assert(po1.objectName equalsIgnoreCase tableName.split("\\.").last)
+      assert(po1.columns.isEmpty)
+      checkTableOwner(po1)
+      val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+      assert(accessType1 === AccessType.UPDATE)
     }
   }
 
@@ -1469,13 +1496,13 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
     assert(out.size == 1)
     val po1 = out.head
-    assert(po1.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
-    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URL)
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URI)
     assert(po1.dbname === directory.path)
     assert(po1.objectName === null)
     assert(po1.columns === Seq.empty)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
-    assert(accessType1 == AccessType.UPDATE)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+    assert(accessType1 == AccessType.WRITE)
   }
 
   test("InsertIntoDataSourceCommand") {
@@ -1531,7 +1558,6 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         checkTableOwner(po)
         val accessType = ranger.AccessType(po, operationType, isInput = false)
         assert(accessType === AccessType.UPDATE)
-
       }
     }
   }
@@ -1601,13 +1627,13 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
     assert(out.size == 1)
     val po1 = out.head
-    assert(po1.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
-    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URL)
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URI)
     assert(po1.dbname === directory.path)
     assert(po1.objectName === null)
     assert(po1.columns === Seq.empty)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
-    assert(accessType1 == AccessType.UPDATE)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+    assert(accessType1 == AccessType.WRITE)
   }
 
   test("InsertIntoHiveDirCommand") {
@@ -1634,13 +1660,13 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
     assert(out.size == 1)
     val po1 = out.head
-    assert(po1.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
-    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URL)
+    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po1.privilegeObjectType === PrivilegeObjectType.DFS_URI)
     assert(po1.dbname === directory.path)
     assert(po1.objectName === null)
     assert(po1.columns === Seq.empty)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
-    assert(accessType1 == AccessType.UPDATE)
+    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
+    assert(accessType1 == AccessType.WRITE)
   }
 
   test("InsertIntoHiveTableCommand") {

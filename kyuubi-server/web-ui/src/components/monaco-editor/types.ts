@@ -53,10 +53,7 @@ export const editorProps = {
     default: 'sql'
   },
   theme: {
-    type: String as PropType<Theme>,
-    validator(value: string): boolean {
-      return ['vs', 'vs-dark'].includes(value)
-    },
+    type: String as PropType<any>,
     default: 'vs'
   },
   options: {
@@ -72,7 +69,7 @@ export const editorProps = {
         },
         readOnly: false,
         contextmenu: true,
-        fontSize: 16,
+        fontSize: 14,
         scrollBeyondLastLine: true,
         overviewRulerBorder: false
       }

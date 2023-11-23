@@ -206,7 +206,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       }
       val elapsedTime = System.currentTimeMillis() - startTime
       assert(elapsedTime < 60 * 1000)
-      assert(exception.getMessage contains "The engine application has been terminated.")
+      assert(exception.getMessage contains "Could not open client transport with JDBC Uri")
     }
   }
 }

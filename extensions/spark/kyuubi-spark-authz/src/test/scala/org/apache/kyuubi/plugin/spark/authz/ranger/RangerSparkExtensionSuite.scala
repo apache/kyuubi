@@ -17,12 +17,13 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import java.lang.reflect.UndeclaredThrowableException
 import java.nio.file.Path
 
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.sql.{DataFrame, SparkSessionExtensions}
+import org.apache.spark.sql.{DataFrame, Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.expressions.PythonUDF
@@ -903,7 +904,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         val df = doAs(
           admin,
           sql(s"SELECT * FROM VALUES(1, 100),(2, 200),(3, 300) AS t(id, scope)")).persist()
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, df.write.mode("overwrite").saveAsTable(table1)))(
           s"does not have [create] privilege on [$defaultDb/$table1]")
       }
@@ -928,39 +929,39 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                |AS
                |SELECT count(*) as cnt, sum(id) as sum_id FROM $db1.$table1
               """.stripMargin))
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(*) FROM $db1.$table1").show()))(
           s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
 
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(*) FROM $db1.$view1").show()))(
           s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
 
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2").show()))(
           s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
 
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(id) FROM $db1.$table1 WHERE id > 10").show()))(
           s"does not have [select] privilege on [$db1/$table1/id]")
 
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(id) FROM $db1.$view1 WHERE id > 10").show()))(
           s"does not have [select] privilege on [$db1/$view1/id]")
 
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(sum_id) FROM $db1.$view2 WHERE sum_id > 10").show()))(
           s"does not have [select] privilege on [$db1/$view2/sum_id]")
 
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(scope) FROM $db1.$table1 WHERE id > 10").show()))(
           s"does not have [select] privilege on [$db1/$table1/scope,$db1/$table1/id]")
 
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(scope) FROM $db1.$view1 WHERE id > 10").show()))(
           s"does not have [select] privilege on [$db1/$view1/scope,$db1/$view1/id]")
 
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(cnt) FROM $db1.$view2 WHERE sum_id > 10").show()))(
           s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
       }
@@ -982,7 +983,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
         doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table2 (id int, scope int)"))
         doAs(admin, sql(s"CREATE VIEW $db1.$perm_view AS SELECT * FROM $db1.$table2"))
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(
             someone,
             sql(
@@ -997,7 +998,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |""".stripMargin).show()))(
           s"does not have [select] privilege on " +
             s"[$db1/$perm_view/id,$db1/$perm_view/scope]")
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(
             permViewOnlyUser,
             sql(
@@ -1013,7 +1014,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s"does not have [select] privilege on " +
             s"[$db1/$table1/id]")
 
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(
             someone,
             sql(
@@ -1028,7 +1029,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |""".stripMargin).show()))(
           s"does not have [select] privilege on " +
             s"[$db1/$table2/id,$db1/$table2/scope]")
-        interceptContains[AccessControlException](
+        interceptEndsWith[AccessControlException](
           doAs(
             table2OnlyUser,
             sql(
@@ -1054,7 +1055,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       withSingleCallEnabled {
         withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
           doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
-          interceptContains[AccessControlException](doAs(
+          interceptEndsWith[AccessControlException](doAs(
             someone,
             sql(
               s"""
@@ -1062,7 +1063,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
                  |SELECT * FROM $db1.$table1""".stripMargin)))(
             s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
-              s"[update] privilege on [[$path, $path/]]")
+              s"[write] privilege on [[$path, $path/]]")
         }
       }
     }
@@ -1075,7 +1076,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       withSingleCallEnabled {
         withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
           doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
-          interceptContains[AccessControlException](doAs(
+          interceptEndsWith[AccessControlException](doAs(
             someone,
             sql(
               s"""
@@ -1083,7 +1084,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |USING parquet
                  |SELECT * FROM $db1.$table1""".stripMargin)))(
             s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
-              s"[update] privilege on [[$path, $path/]]")
+              s"[write] privilege on [[$path, $path/]]")
         }
       }
     }
@@ -1093,10 +1094,280 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     withTempDir { path =>
       withSingleCallEnabled {
         val df = sql("SELECT 1 as id, 'Tony' as name")
-        interceptContains[AccessControlException](doAs(
+        interceptEndsWith[AccessControlException](doAs(
           someone,
           df.write.format("console").mode("append").save(path.toString)))(
-          s"does not have [update] privilege on [[$path, $path/]]")
+          s"does not have [write] privilege on [[$path, $path/]]")
+      }
+    }
+  }
+
+  test("HadoopFsRelation") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    withTempDir { path =>
+      withSingleCallEnabled {
+        withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+          doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+          doAs(
+            admin,
+            sql(
+              s"""
+                 |INSERT OVERWRITE DIRECTORY '$path'
+                 |USING parquet
+                 |SELECT * FROM $db1.$table1""".stripMargin))
+
+          interceptEndsWith[AccessControlException](
+            doAs(
+              someone,
+              sql(
+                s"""
+                   |INSERT OVERWRITE DIRECTORY '$path'
+                   |USING parquet
+                   |SELECT * FROM $db1.$table1""".stripMargin)))(
+            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
+              s"[write] privilege on [[$path, $path/]]")
+
+          doAs(admin, sql(s"SELECT * FROM parquet.`$path`".stripMargin).explain(true))
+          interceptEndsWith[AccessControlException](
+            doAs(someone, sql(s"SELECT * FROM parquet.`$path`".stripMargin).explain(true)))(
+            s"does not have [read] privilege on " +
+              s"[[file:$path, file:$path/]]")
+        }
+      }
+    }
+  }
+
+  test("LoadDataCommand") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withTempDir { path =>
+        withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+          doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+          val loadDataSql =
+            s"""
+               |LOAD DATA LOCAL INPATH '$path'
+               |OVERWRITE INTO TABLE $db1.$table1
+               |""".stripMargin
+          doAs(admin, sql(loadDataSql).explain(true))
+          interceptEndsWith[AccessControlException](
+            doAs(someone, sql(loadDataSql).explain(true)))(
+            s"does not have [read] privilege on [[$path, $path/]], " +
+              s"[update] privilege on [$db1/$table1]")
+        }
+      }
+    }
+  }
+
+  test("Add resource command") {
+    withTempDir { path =>
+      withSingleCallEnabled {
+        val supportedCommand = if (isSparkV32OrGreater) {
+          Seq("JAR", "FILE", "ARCHIVE")
+        } else {
+          Seq("JAR", "FILE")
+        }
+        supportedCommand.foreach { cmd =>
+          interceptEndsWith[AccessControlException](
+            doAs(someone, sql(s"ADD $cmd $path")))(
+            s"does not have [read] privilege on [[$path, $path/]]")
+        }
+      }
+    }
+  }
+
+  test("CreateDatabaseCommand/AlterDatabaseSetLocationCommand") {
+    val db1 = "db1"
+    withSingleCallEnabled {
+      withTempDir { path1 =>
+        withTempDir { path2 =>
+          withCleanTmpResources(Seq((s"$db1", "database"))) {
+            interceptEndsWith[AccessControlException](
+              doAs(someone, sql(s"CREATE DATABASE $db1 LOCATION '$path1'")))(
+              s"does not have [create] privilege on [$db1], " +
+                s"[write] privilege on [[$path1, $path1/]]")
+            doAs(admin, sql(s"CREATE DATABASE $db1 LOCATION '$path1'"))
+            interceptEndsWith[AccessControlException](
+              doAs(someone, sql(s"ALTER DATABASE $db1 SET LOCATION '$path2'")))(
+              s"does not have [alter] privilege on [$db1], " +
+                s"[write] privilege on [[$path2, $path2/]]")
+            val e = intercept[UndeclaredThrowableException](
+              doAs(admin, sql(s"ALTER DATABASE $db1 SET LOCATION '$path2'")))
+            assert(e.getCause.getMessage.contains("does not support altering database location"))
+          }
+        }
+      }
+    }
+  }
+
+  test("AlterTableSetLocationCommand/AlterTableAddPartitionCommand") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val table2 = "table2"
+    withSingleCallEnabled {
+      withTempDir { path1 =>
+        withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$table2", "table"))) {
+          doAs(
+            admin,
+            sql(
+              s"""
+                 |CREATE TABLE IF NOT EXISTS $db1.$table1(
+                 |id int,
+                 |scope int,
+                 |day string)
+                 |PARTITIONED BY (day)
+                 |""".stripMargin))
+          interceptEndsWith[AccessControlException](
+            doAs(someone, sql(s"ALTER TABLE $db1.$table1 SET LOCATION '$path1'")))(
+            s"does not have [alter] privilege on [$db1/$table1], " +
+              s"[write] privilege on [[$path1, $path1/]]")
+
+          withTempDir { path2 =>
+            withTempDir { path3 =>
+              interceptEndsWith[AccessControlException](
+                doAs(
+                  someone,
+                  sql(
+                    s"""
+                       |ALTER TABLE $db1.$table1
+                       |ADD
+                       |PARTITION (day='2023-01-01') LOCATION '$path2'
+                       |PARTITION (day='2023-01-02') LOCATION '$path3'
+                       |""".stripMargin)))(
+                s"does not have [alter] privilege on [$db1/$table1/day], " +
+                  s"[write] privilege on [[$path2, $path2/],[$path3, $path3/]]")
+            }
+          }
+        }
+      }
+    }
+  }
+
+  test("Table Command location privilege") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val table2 = "table2"
+    withSingleCallEnabled {
+      withTempDir { path =>
+        withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$table2", "table"))) {
+          interceptEndsWith[AccessControlException](doAs(
+            someone,
+            sql(
+              s"""
+                 |CREATE TABLE IF NOT EXISTS $db1.$table1(id int, scope int)
+                 |LOCATION '$path'""".stripMargin)))(
+            if (!isSparkV35OrGreater) {
+              s"does not have [create] privilege on [$db1/$table1], " +
+                s"[write] privilege on [[$path, $path/]]"
+            } else {
+              s"does not have [create] privilege on [$db1/$table1], " +
+                s"[write] privilege on [[file://$path, file://$path/]]"
+            })
+          doAs(
+            admin,
+            sql(
+              s"""
+                 |CREATE TABLE IF NOT EXISTS $db1.$table1(id int, scope int)
+                 |LOCATION '$path'""".stripMargin))
+          interceptEndsWith[AccessControlException](
+            doAs(
+              someone,
+              sql(
+                s"""
+                   |CREATE TABLE $db1.$table2
+                   |LIKE $db1.$table1
+                   |LOCATION '$path'
+                   |""".stripMargin)))(
+            s"does not have [select] privilege on [$db1/$table1], " +
+              s"[create] privilege on [$db1/$table2], " +
+              s"[write] privilege on [[$path, $path/]]")
+          interceptEndsWith[AccessControlException](
+            doAs(
+              someone,
+              sql(
+                s"""
+                   |CREATE TABLE $db1.$table2
+                   |LOCATION '$path'
+                   |AS
+                   |SELECT * FROM $db1.$table1
+                   |""".stripMargin)))(
+            if (!isSparkV35OrGreater) {
+              s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
+                s"[create] privilege on [$db1/$table2/id,$db1/$table2/scope], " +
+                s"[write] privilege on [[$path, $path/]]"
+            } else {
+              s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
+                s"[create] privilege on [$db1/$table2/id,$db1/$table2/scope], " +
+                s"[write] privilege on [[file://$path, file://$path/]]"
+            })
+        }
+      }
+    }
+  }
+
+  test("[KYUUBI #5677][AUTHZ] Typeof expression miss column information") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $db1.$table1(
+               |id int,
+               |scope int,
+               |day string)
+               |""".stripMargin))
+        doAs(admin, sql(s"INSERT INTO $db1.$table1 SELECT 1, 2, 'TONY'"))
+        interceptEndsWith[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT typeof(id), typeof(typeof(day)) FROM $db1.$table1").collect()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/day]")
+        interceptEndsWith[AccessControlException](
+          doAs(
+            someone,
+            sql(
+              s"""
+                 |SELECT
+                 |typeof(cast(id as string)),
+                 |typeof(substring(day, 1, 3))
+                 |FROM $db1.$table1""".stripMargin).collect()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/day]")
+        checkAnswer(
+          admin,
+          s"""
+             |SELECT
+             |typeof(id),
+             |typeof(typeof(day)),
+             |typeof(cast(id as string)),
+             |typeof(substring(day, 1, 3))
+             |FROM $db1.$table1""".stripMargin,
+          Seq(Row("int", "string", "string", "string")))
+      }
+    }
+  }
+
+  test("[KYUUBI #5692][Bug] Authz not skip explain command") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        val explainSql =
+          s"""
+             |EXPLAIN
+             |SELECT id FROM $db1.$table1
+             |""".stripMargin
+        doAs(admin, sql(explainSql))
+        val result = doAs(someone, sql(explainSql).collect()).head.getString(0)
+        assert(!result.contains("Error occurred during query planning"))
+        assert(!result.contains(s"does not have [select] privilege on [$db1/$table1/id]"))
+        interceptEndsWith[AccessControlException](
+          doAs(someone, sql(s"SELECT id FROM $db1.$table1").collect()))(
+          s"does not have [select] privilege on [$db1/$table1/id]")
       }
     }
   }

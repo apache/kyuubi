@@ -32,7 +32,7 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils.FLINK_RUNTIME_VERSION
 import org.apache.kyuubi.engine.flink.WithFlinkTestResources
-import org.apache.kyuubi.engine.flink.result.Constants
+import org.apache.kyuubi.engine.flink.result.{CommandStrings, Constants}
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 import org.apache.kyuubi.jdbc.hive.{KyuubiSQLException, KyuubiStatement}
 import org.apache.kyuubi.jdbc.hive.common.TimestampTZ
@@ -1264,5 +1264,15 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
         }
       })
     assert(exception.getMessage === "Futures timed out after [60000 milliseconds]")
+  }
+
+  test("execute statement - help") {
+    withJdbcStatement() { stmt =>
+      val resultSet = stmt.executeQuery("help")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) === "result")
+      assert(resultSet.next())
+      assert(resultSet.getString(1).equals(CommandStrings.MESSAGE_HELP.toString))
+    }
   }
 }

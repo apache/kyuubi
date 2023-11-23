@@ -26,7 +26,7 @@ class OperationWithPhoenixEngineSuite extends PhoenixOperationSuite with HiveJDB
 
   override protected def jdbcUrl: String = jdbcConnectionUrl
 
-  test("Test for Jdbc engine getInfo") {
+  test("phoenix - test for Jdbc engine getInfo") {
     val metaData = ConnectionProvider.create(kyuubiConf).getMetaData
 
     withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {

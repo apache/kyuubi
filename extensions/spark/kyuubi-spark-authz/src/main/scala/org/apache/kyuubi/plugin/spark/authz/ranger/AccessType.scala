@@ -25,23 +25,28 @@ object AccessType extends Enumeration {
 
   type AccessType = Value
 
-  val NONE, CREATE, ALTER, DROP, SELECT, UPDATE, USE, READ, WRITE, ALL, ADMIN, INDEX = Value
+  val NONE, CREATE, ALTER, DROP, SELECT, UPDATE, USE, READ, WRITE, ALL, ADMIN, INDEX, TEMPUDFADMIN =
+    Value
 
   def apply(obj: PrivilegeObject, opType: OperationType, isInput: Boolean): AccessType = {
+    if (obj.privilegeObjectType == DFS_URI || obj.privilegeObjectType == LOCAL_URI) {
+      // This is equivalent to ObjectType.URI
+      return if (isInput) READ else WRITE
+    }
+
     obj.actionType match {
       case PrivilegeObjectActionType.OTHER => opType match {
+          case ADD => TEMPUDFADMIN
           case CREATEDATABASE if obj.privilegeObjectType == DATABASE => CREATE
           case CREATEFUNCTION if obj.privilegeObjectType == FUNCTION => CREATE
           case CREATETABLE | CREATEVIEW | CREATETABLE_AS_SELECT
               if obj.privilegeObjectType == TABLE_OR_VIEW =>
             if (isInput) SELECT else CREATE
-          case CREATETABLE
-              if obj.privilegeObjectType == DFS_URL || obj.privilegeObjectType == LOCAL_URI =>
-            if (isInput) SELECT else CREATE
           case ALTERDATABASE |
               ALTERDATABASE_LOCATION |
               ALTERTABLE_ADDCOLS |
               ALTERTABLE_ADDPARTS |
+              ALTERTABLE_COMPACT |
               ALTERTABLE_DROPPARTS |
               ALTERTABLE_LOCATION |
               ALTERTABLE_RENAME |

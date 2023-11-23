@@ -35,5 +35,11 @@ Java Coding Style Guide
 
 Kyuubi adopts the `Google Java style`_ for java codes.
 
+Documentation Style Guide
+-------------------------
+
+Kyuubi adopts the `Documentation Style Guide`_ for documentation.
+
 .. _Databricks Scala Coding Style Guide: https://github.com/databricks/scala-style-guide
 .. _Google Java style: https://google.github.io/styleguide/javaguide.html
+.. _Documentation Style Guide: ../doc/style.html

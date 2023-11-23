@@ -32,6 +32,7 @@ import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
 import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 /**
  * A [[SessionManager]] constructed with [[SparkSession]] which give it the ability to talk with
@@ -66,8 +67,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     if (!userIsolatedSparkSession) {
       userIsolatedSparkSessionThread =
         Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("user-isolated-cache-checker"))
-      userIsolatedSparkSessionThread.foreach {
-        _.scheduleWithFixedDelay(
+      userIsolatedSparkSessionThread.foreach { thread =>
+        scheduleTolerableRunnableWithFixedDelay(
+          thread,
           () => {
             userIsolatedCacheLock.synchronized {
               val iter = userIsolatedCacheCount.entrySet().iterator()

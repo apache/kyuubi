@@ -18,7 +18,7 @@
 
 select
     n_name,
-    sum(l_extendedprice * (1 - l_discount)) as revenue
+    round(sum(l_extendedprice * (1 - l_discount)), 2) as revenue
 from
     customer,
     orders,

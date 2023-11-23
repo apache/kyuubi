@@ -308,20 +308,23 @@ case class ScanDesc(
 }
 
 /**
- * Function Descriptor
+ * URI Descriptor
  *
- * @param fieldName the field name or method name of this function field
- * @param fieldExtractor the key of a [[FunctionExtractor]] instance
+ * @param fieldName the field name or method name of this uri field
+ * @param fieldExtractor the key of a [[URIExtractor]] instance
  * @param isInput read or write
  */
 case class UriDesc(
     fieldName: String,
     fieldExtractor: String,
-    actionTypeDesc: Option[ActionTypeDesc] = None,
     isInput: Boolean = false) extends Descriptor {
   override def extract(v: AnyRef): Seq[Uri] = {
+    extract(v, SparkSession.active)
+  }
+
+  def extract(v: AnyRef, spark: SparkSession): Seq[Uri] = {
     val uriVal = invokeAs[AnyRef](v, fieldName)
     val uriExtractor = lookupExtractor[URIExtractor](fieldExtractor)
-    uriExtractor(uriVal)
+    uriExtractor(spark, uriVal)
   }
 }
