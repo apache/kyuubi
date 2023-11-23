@@ -51,12 +51,14 @@ class EngineRefWithUserPoolSizeSuite extends WithKyuubiServer {
     (0 until userEnginePoolSize * 2).foreach { i =>
       val poolEngineSeq = i % userEnginePoolSize
       val appName = new EngineRef(conf, user, PluginLoader.loadGroupProvider(conf), id, null)
-      assertResult(appName.engineSpace)(DiscoveryPaths.makePath(
-        s"kyuubi_${KYUUBI_VERSION}_${USER}_$SPARK_SQL",
-        user,
-        s"engine-pool-$poolEngineSeq"))
-      assertResult(appName.defaultEngineName)(
-        s"kyuubi_${USER}_${SPARK_SQL}_${user}_engine-pool-${poolEngineSeq}_$id")
+      withClue(s"index $i, expected poolEngineSeqde $poolEngineSeq") {
+        assertResult(DiscoveryPaths.makePath(
+          s"kyuubi_${KYUUBI_VERSION}_${USER}_$SPARK_SQL",
+          user,
+          s"engine-pool-$poolEngineSeq"))(appName.engineSpace)
+        assertResult(s"kyuubi_${USER}_${SPARK_SQL}_${user}_engine-pool-${poolEngineSeq}_$id")(
+          appName.defaultEngineName)
+      }
     }
 
     // other users' pool size falling back to default
@@ -64,12 +66,12 @@ class EngineRefWithUserPoolSizeSuite extends WithKyuubiServer {
     (0 until userEnginePoolSize * 2).foreach { i =>
       val poolEngineSeq = i % defaultEnginePoolSize
       val appName = new EngineRef(conf, otherUser, PluginLoader.loadGroupProvider(conf), id, null)
-      assertResult(appName.engineSpace)(DiscoveryPaths.makePath(
+      assertResult(DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${USER}_$SPARK_SQL",
         otherUser,
-        s"engine-pool-$poolEngineSeq"))
-      assertResult(appName.defaultEngineName)(
-        s"kyuubi_${USER}_${SPARK_SQL}_${otherUser}_engine-pool-${poolEngineSeq}_$id")
+        s"engine-pool-$poolEngineSeq"))(appName.engineSpace)
+      assertResult(s"kyuubi_${USER}_${SPARK_SQL}_${otherUser}_engine-pool-${poolEngineSeq}_$id")(
+        appName.defaultEngineName)
     }
   }
 
@@ -80,12 +82,12 @@ class EngineRefWithUserPoolSizeSuite extends WithKyuubiServer {
     (0 until userEnginePoolSize * 2).foreach { i =>
       val poolEngineSeq = i % defaultEnginePoolSize
       val appName = new EngineRef(conf, user, PluginLoader.loadGroupProvider(conf), id, null)
-      assertResult(appName.engineSpace)(DiscoveryPaths.makePath(
+      assertResult(DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER}_$SPARK_SQL",
         user,
-        s"engine-pool-$poolEngineSeq"))
-      assertResult(appName.defaultEngineName)(
-        s"kyuubi_${SERVER}_${SPARK_SQL}_${user}_engine-pool-${poolEngineSeq}_$id")
+        s"engine-pool-$poolEngineSeq"))(appName.engineSpace)
+      assertResult(s"kyuubi_${SERVER}_${SPARK_SQL}_${user}_engine-pool-${poolEngineSeq}_$id")(
+        appName.defaultEngineName)
     }
   }
 }
