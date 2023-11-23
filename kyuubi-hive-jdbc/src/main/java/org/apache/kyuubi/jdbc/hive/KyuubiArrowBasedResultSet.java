@@ -443,7 +443,8 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
       try {
         return parseTimestamp(value, cal);
       } catch (IllegalArgumentException e) {
-        throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to timestamp: " + e, e);
+        throw new KyuubiSQLException(
+            "Cannot convert column " + columnIndex + " to timestamp: " + e, e);
       }
     }
   }

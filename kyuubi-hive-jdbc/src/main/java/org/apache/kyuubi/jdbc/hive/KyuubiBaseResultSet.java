@@ -439,6 +439,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
   public Timestamp getTimestamp(String columnName) throws SQLException {
     return getTimestamp(findColumn(columnName));
   }
+
   @Override
   public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
     Timestamp value = getTimestamp(columnIndex);
@@ -448,7 +449,8 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       try {
         return parseTimestamp(value, cal);
       } catch (IllegalArgumentException e) {
-        throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to timestamp: " + e, e);
+        throw new KyuubiSQLException(
+            "Cannot convert column " + columnIndex + " to timestamp: " + e, e);
       }
     }
   }
