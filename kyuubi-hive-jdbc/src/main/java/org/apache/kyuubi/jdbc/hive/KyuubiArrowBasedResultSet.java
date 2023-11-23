@@ -198,7 +198,8 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
   public Date getDate(String columnName) throws SQLException {
     return getDate(findColumn(columnName));
   }
-
+  
+  @Override
   public Date getDate(int columnIndex, Calendar cal) throws SQLException {
     Date value = getDate(columnIndex);
     if (value == null) {

@@ -435,12 +435,6 @@ public interface SQLResultSet extends ResultSet {
   default Array getArray(String columnLabel) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
-
-  @Override
-  default Date getDate(int columnIndex, Calendar cal) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
   @Override
   default Date getDate(String columnLabel, Calendar cal) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
