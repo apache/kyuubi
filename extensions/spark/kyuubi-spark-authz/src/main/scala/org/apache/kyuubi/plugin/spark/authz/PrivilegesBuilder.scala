@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{AttributeSet, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command.ExplainCommand
 import org.slf4j.LoggerFactory
@@ -74,10 +74,17 @@ object PrivilegesBuilder {
             privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
         }
       } else {
-        val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
-          .filter(plan.outputSet.contains).map(_.name).distinct
+        val cols = columnPrune(projectionList ++ conditionList, plan.outputSet)
         privilegeObjects += PrivilegeObject(table, cols)
       }
+    }
+
+    def columnPrune(projectionList: Seq[NamedExpression], output: AttributeSet): Seq[String] = {
+      (projectionList ++ conditionList)
+        .flatMap(collectLeaves)
+        .filter(output.contains)
+        .map(_.name)
+        .distinct
     }
 
     plan match {
@@ -135,12 +142,17 @@ object PrivilegesBuilder {
                 if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
               buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
             case _ =>
-              buildQuery(
-                child,
-                privilegeObjects,
-                p.inputSet.map(_.toAttribute).toSeq ++ projectionList,
-                conditionList,
-                spark)
+              val childCols = columnPrune(projectionList ++ conditionList, child.outputSet)
+              if (childCols.isEmpty) {
+                buildQuery(
+                  child,
+                  privilegeObjects,
+                  p.inputSet.map(_.toAttribute).toSeq,
+                  conditionList,
+                  spark)
+              } else {
+                buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
+              }
           }
         }
     }

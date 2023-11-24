@@ -1050,7 +1050,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       assertEqualsIgnoreCase(reusedDb)(po.dbname)
       assertStartsWithIgnoreCase(reusedTableShort)(po.objectName)
       assert(
-        po.columns === Seq("value", "pid", "key"),
+        po.columns === Seq("value", "key", "pid"),
         s"$reusedPartTable both 'key', 'value' and 'pid' should be authenticated")
       checkTableOwner(po)
       val accessType = ranger.AccessType(po, operationType, isInput = true)
