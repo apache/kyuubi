@@ -2207,6 +2207,16 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val ENGINE_USER_PROXY_SPARK_SESSION: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.user.proxy.spark.session")
+      .doc("When set to ture, if the engine is running in a group or server share level, " +
+        "all session users will be set as proxy users to execute the job. " +
+        "Otherwise, the proxy user is always the system user who submits the Spark application. " +
+        "Note that, it does not affect if the share level is connection or user.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.engine.user.isolated.spark.session.idle.timeout")
       .doc(s"If ${ENGINE_USER_ISOLATED_SPARK_SESSION.key} is false, we will release the " +
