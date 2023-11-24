@@ -2069,7 +2069,12 @@ object KyuubiConf {
       "</ul>")
     .version("1.4.0")
     .stringConf
-    .transformToUpperCase
+    .transform {
+      case v if v.toUpperCase == "SPARK" => "SPARK_SQL"
+      case v if v.toUpperCase == "FLINK" => "FLINK_SQL"
+      case v if v.toUpperCase == "HIVE" => "HIVE_SQL"
+      case other => other.toUpperCase
+    }
     .checkValues(EngineType)
     .createWithDefault(EngineType.SPARK_SQL.toString)
 
