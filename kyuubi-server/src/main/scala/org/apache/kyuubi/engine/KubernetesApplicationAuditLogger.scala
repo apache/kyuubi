@@ -44,7 +44,7 @@ object KubernetesApplicationAuditLogger extends Logging {
     sb.append(s"podState=${pod.getStatus.getPhase}").append("\t")
     val containerStatuses = pod.getStatus.getContainerStatuses.asScala.map { containerState =>
       s"${containerState.getName}->${containerState.getState}"
-    }.mkString("[", ",", "]").foreach(sb.append(_).append("\t"))
+    }.mkString("[", ",", "]")
     sb.append(s"containers=$containerStatuses").append("\t")
     sb.append(s"appId=${pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL)}").append("\t")
     val (appState, appError) =
