@@ -106,7 +106,7 @@ object PrivilegesBuilder {
         val orderCols = w.orderSpec.flatMap(orderSpec => collectLeaves(orderSpec))
         val partitionCols = w.partitionSpec.flatMap(partitionSpec => collectLeaves(partitionSpec))
         val cols = conditionList ++ orderCols ++ partitionCols
-        buildQuery(w.child, privilegeObjects, projectionList ++ w.inputSet, cols, spark)
+        buildQuery(w.child, privilegeObjects, projectionList, cols, spark)
 
       case s: Sort =>
         val sortCols = s.order.flatMap(sortOrder => collectLeaves(sortOrder))
@@ -117,7 +117,7 @@ object PrivilegesBuilder {
         val aggCols =
           (a.aggregateExpressions ++ a.groupingExpressions).flatMap(e => collectLeaves(e))
         val cols = conditionList ++ aggCols
-        buildQuery(a.child, privilegeObjects, projectionList ++ a.inputSet, cols, spark)
+        buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
 
       case scan if isKnownScan(scan) && scan.resolved =>
         val tables = getScanSpec(scan).tables(scan, spark)
