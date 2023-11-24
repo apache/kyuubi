@@ -309,7 +309,7 @@ object SparkDatasetHelper extends Logging {
       result.queryExecution.optimizedPlan.stats.sizeInBytes
     }
     lazy val isSort = result.queryExecution.sparkPlan match {
-      case SortExec(_, global, _, _) if global => true
+      case s: SortExec => s.global
       case _ => false
     }
     lazy val colSize =
