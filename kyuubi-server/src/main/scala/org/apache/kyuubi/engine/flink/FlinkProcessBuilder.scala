@@ -142,7 +142,6 @@ class FlinkProcessBuilder(
             buffer += s"$k=$v"
           }
         }
-
         buffer
 
       case _ =>
