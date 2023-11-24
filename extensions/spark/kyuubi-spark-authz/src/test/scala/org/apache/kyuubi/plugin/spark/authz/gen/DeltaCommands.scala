@@ -25,7 +25,7 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
 
   val DeleteCommand = {
     val cmd = "org.apache.spark.sql.delta.commands.DeleteCommand"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE), comment = "Delta")
     val tableDesc = TableDesc(
       "target",
       classOf[SubqueryAliasTableExtractor],
@@ -42,14 +42,8 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
 
   val MergeIntoCommand = {
     val cmd = "org.apache.spark.sql.delta.commands.MergeIntoCommand"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
-    val tableDesc = TableDesc(
-      "target",
-      classOf[SubqueryAliasTableExtractor],
-      actionTypeDesc = Some(actionTypeDesc),
-      comment = "Delta")
-    val queryDesc = QueryDesc("source")
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
+    val queryDesc = QueryDesc("source", comment = "Delta")
+    DeleteCommand.copy(classname = cmd, queryDescs = Seq(queryDesc))
   }
 
   val OptimizeTableCommand = {
@@ -57,7 +51,11 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
     val childDesc = TableDesc("child", classOf[ResolvedTableTableExtractor], comment = "Delta")
     val tableDesc =
       TableDesc("tableId", classOf[TableIdentifierOptionTableExtractor], comment = "Delta")
-    TableCommandSpec(cmd, Seq(childDesc, tableDesc), ALTERTABLE_COMPACT)
+    val uriDescs = Seq(
+      UriDesc("child", classOf[ResolvedTableURIExtractor], comment = "Delta"),
+      UriDesc("tableId", classOf[TableIdentifierOptionURIExtractor], comment = "Delta"),
+      UriDesc("path", classOf[StringURIExtractor], comment = "Delta"))
+    TableCommandSpec(cmd, Seq(childDesc, tableDesc), ALTERTABLE_COMPACT, uriDescs = uriDescs)
   }
 
   val VacuumTableCommand = {
@@ -66,9 +64,9 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
     val tableDesc =
       TableDesc("table", classOf[TableIdentifierOptionTableExtractor], comment = "Delta")
     val uriDescs = Seq(
-      UriDesc("child", classOf[ResolvedTableURIExtractor]),
-      UriDesc("table", classOf[TableIdentifierOptionURIExtractor]),
-      UriDesc("path", classOf[StringURIExtractor]))
+      UriDesc("child", classOf[ResolvedTableURIExtractor], comment = "Delta"),
+      UriDesc("table", classOf[TableIdentifierOptionURIExtractor], comment = "Delta"),
+      UriDesc("path", classOf[StringURIExtractor], comment = "Delta"))
     TableCommandSpec(cmd, Seq(childDesc, tableDesc), MSCK, uriDescs = uriDescs)
   }
 
