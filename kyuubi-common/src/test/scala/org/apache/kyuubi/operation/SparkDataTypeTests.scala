@@ -168,6 +168,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
       assert(resultSet.getDate(
         "col",
         Calendar.getInstance()) === Date.valueOf("2018-11-17"))
+      assert(resultSet.getDate(
+        1,
+        Calendar.getInstance()) === Date.valueOf("2018-11-17"))
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.DATE)
       assert(metaData.getPrecision(1) === 10)
@@ -235,6 +238,10 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
       assert(resultSet.next())
       assert(resultSet.getTimestamp(
         "col",
+        Calendar.getInstance(TimeZone.getTimeZone("UTC"))) === Timestamp.valueOf(
+        "2018-11-17 13:33:33"))
+      assert(resultSet.getTimestamp(
+        1,
         Calendar.getInstance(TimeZone.getTimeZone("UTC"))) === Timestamp.valueOf(
         "2018-11-17 13:33:33"))
       val metaData = resultSet.getMetaData
