@@ -2829,9 +2829,28 @@ object KyuubiConf {
 
   val ENGINE_JDBC_CONNECTION_PROVIDER: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.connection.provider")
-      .doc("The connection provider is used for getting a connection from the server")
+      .doc("A JDBC connection provider plugin for the Kyuubi Server " +
+        "to establish a connection to the JDBC URL." +
+        " The configuration value should be a subclass of " +
+        "`org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider`. " +
+        "Kyuubi provides the following built-in implementations: " +
+        "<li>doris: For establishing Doris connections.</li> " +
+        "<li>mysql: For establishing MySQL connections.</li> " +
+        "<li>phoenix: For establishing Phoenix connections.</li> " +
+        "<li>postgresql: For establishing PostgreSQL connections.</li>")
       .version("1.6.0")
       .stringConf
+      .transform {
+        case "Doris" | "doris" | "DorisConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.doris.DorisConnectionProvider"
+        case "MySQL" | "mysql" | "MySQLConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.mysql.MySQLConnectionProvider"
+        case "Phoenix" | "phoenix" | "PhoenixConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.phoenix.PhoenixConnectionProvider"
+        case "PostgreSQL" | "postgresql" | "PostgreSQLConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.postgresql.PostgreSQLConnectionProvider"
+        case other => other
+      }
       .createOptional
 
   val ENGINE_JDBC_SHORT_NAME: OptionalConfigEntry[String] =
