@@ -241,15 +241,15 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
     enginePodInformers.clear()
 
-    kubernetesClients.asScala.foreach { case (_, client) =>
-      Utils.tryLogNonFatalError(client.close())
-    }
-    kubernetesClients.clear()
-
     if (cleanupTerminatedAppInfoTrigger != null) {
       cleanupTerminatedAppInfoTrigger.cleanUp()
       cleanupTerminatedAppInfoTrigger = null
     }
+
+    kubernetesClients.asScala.foreach { case (_, client) =>
+      Utils.tryLogNonFatalError(client.close())
+    }
+    kubernetesClients.clear()
   }
 
   private class SparkEnginePodEventHandler(kubernetesInfo: KubernetesInfo)
