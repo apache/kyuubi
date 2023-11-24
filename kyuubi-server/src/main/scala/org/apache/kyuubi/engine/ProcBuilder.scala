@@ -287,10 +287,10 @@ trait ProcBuilder {
 
   override def toString: String = {
     if (commands == null) {
-      super.toString()
+      super.toString
     } else {
       Utils.redactCommandLineArgs(conf, commands).map {
-        case arg if arg.startsWith("--") => s"\\\n\t$arg"
+        case arg if arg.startsWith("-") => s"\\\n\t$arg"
         case arg => arg
       }.mkString(" ")
     }
