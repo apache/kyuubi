@@ -1432,17 +1432,17 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         interceptContains[AccessControlException](
           doAs(
             someone,
-            sql(s"SELECT count(*) FROM $db1.$table1 WHERE id > 1").show()))(
+            sql(s"SELECT count(*) FROM $db1.$table1 WHERE id > 1").collect()))(
           s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
         interceptContains[AccessControlException](
           doAs(
             someone,
-            sql(s"SELECT count(*) FROM $db1.$view1 WHERE id > 1").explain(true)))(
+            sql(s"SELECT count(*) FROM $db1.$view1 WHERE id > 1").collect()))(
           s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
         interceptContains[AccessControlException](
           doAs(
             someone,
-            sql(s"SELECT count(id) FROM $db1.$view1 WHERE id > 1").explain(true)))(
+            sql(s"SELECT count(id) FROM $db1.$view1 WHERE id > 1").collect()))(
           s"does not have [select] privilege on [$db1/$view1/id]")
       }
     }
