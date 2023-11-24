@@ -307,7 +307,7 @@ object PrivilegesBuilder {
       case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowTables" =>
         OperationType.SHOWTABLES
       case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowNamespaces" =>
-        OperationType.SHOWTABLES
+        OperationType.SHOWDATABASES
       case _: FilteredShowTablesCommand => OperationType.SHOWTABLES
       case _: FilteredShowFunctionsCommand => OperationType.SHOWFUNCTIONS
       case _: FilteredShowColumnsCommand => OperationType.SHOWCOLUMNS
