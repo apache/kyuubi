@@ -344,7 +344,7 @@ object KubernetesApplicationOperation extends Logging {
     val containerStateToBuildAppState = appStateSource match {
       case KubernetesApplicationStateSource.CONTAINER =>
         pod.getStatus.getContainerStatuses.asScala
-          .find(_.getName == appStateContainer).map(_.getState)
+          .find(cs => appStateContainer.equalsIgnoreCase(cs.getName)).map(_.getState)
       case KubernetesApplicationStateSource.POD => None
     }
     val applicationState = containerStateToBuildAppState.map(containerStateToApplicationState)

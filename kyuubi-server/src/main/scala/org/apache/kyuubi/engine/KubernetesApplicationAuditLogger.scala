@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine
 
+import scala.collection.JavaConverters._
+
 import io.fabric8.kubernetes.api.model.Pod
 
 import org.apache.kyuubi.Logging
@@ -39,6 +41,11 @@ object KubernetesApplicationAuditLogger extends Logging {
     sb.append(s"context=${kubernetesInfo.context.orNull}").append("\t")
     sb.append(s"namespace=${kubernetesInfo.namespace.orNull}").append("\t")
     sb.append(s"pod=${pod.getMetadata.getName}").append("\t")
+    sb.append(s"podState=${pod.getStatus.getPhase}").append("\t")
+    val containerStatuses = pod.getStatus.getContainerStatuses.asScala.map { containerState =>
+      s"${containerState.getName}->${containerState.getState}"
+    }.mkString("[", ",", "]").foreach(sb.append(_).append("\t"))
+    sb.append(s"containers=$containerStatuses").append("\t")
     sb.append(s"appId=${pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL)}").append("\t")
     val (appState, appError) =
       toApplicationStateAndError(pod, appStateSource, appStateContainer)
