@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-realpath () {
+realpath() {
 (
   TARGET_FILE="$1"
 
@@ -25,12 +25,11 @@ realpath () {
   TARGET_FILE="$(basename "$TARGET_FILE")"
 
   COUNT=0
-  while [ -L "$TARGET_FILE" -a $COUNT -lt 100 ]
-  do
-      TARGET_FILE="$(readlink "$TARGET_FILE")"
-      cd $(dirname "$TARGET_FILE")
-      TARGET_FILE="$(basename $TARGET_FILE)"
-      COUNT=$(($COUNT + 1))
+  while [ -L "$TARGET_FILE" -a $COUNT -lt 100 ]; do
+    TARGET_FILE="$(readlink "$TARGET_FILE")"
+    cd $(dirname "$TARGET_FILE")
+    TARGET_FILE="$(basename $TARGET_FILE)"
+    COUNT=$(($COUNT + 1))
   done
 
   echo "$(pwd -P)/"$TARGET_FILE""
