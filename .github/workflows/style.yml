@@ -37,7 +37,7 @@ jobs:
           - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.5,spark-3.4,spark-3.3,spark-3.2,tpcds,kubernetes-it'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Setup JDK 8
@@ -114,7 +114,7 @@ jobs:
     name: Super Linter and Shellcheck
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Super Linter Checks
         uses: github/super-linter/slim@v5
         env:
