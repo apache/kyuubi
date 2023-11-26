@@ -31,7 +31,7 @@ object DeltaCommands extends CommandSpecs[TableCommandSpec] {
       classOf[SubqueryAliasTableExtractor],
       actionTypeDesc = Some(actionTypeDesc),
       comment = "Delta")
-    val uriDescs = Seq(UriDesc("target", classOf[SubqueryAliasURIExtractor]))
+    val uriDescs = Seq(UriDesc("target", classOf[SubqueryAliasURIExtractor], comment = "Delta"))
     TableCommandSpec(cmd, Seq(tableDesc), uriDescs = uriDescs)
   }
 

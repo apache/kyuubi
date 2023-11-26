@@ -2393,17 +2393,17 @@
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedTableURIExtractor",
     "isInput" : false,
-    "comment" : ""
+    "comment" : "Delta"
   }, {
     "fieldName" : "table",
     "fieldExtractor" : "TableIdentifierOptionURIExtractor",
     "isInput" : false,
-    "comment" : ""
+    "comment" : "Delta"
   }, {
     "fieldName" : "path",
     "fieldExtractor" : "StringURIExtractor",
     "isInput" : false,
-    "comment" : ""
+    "comment" : "Delta"
   } ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.DeleteCommand",
@@ -2415,7 +2415,7 @@
       "fieldName" : null,
       "fieldExtractor" : null,
       "actionType" : "UPDATE",
-      "comment" : ""
+      "comment" : "Delta"
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
@@ -2429,7 +2429,7 @@
     "fieldName" : "target",
     "fieldExtractor" : "SubqueryAliasURIExtractor",
     "isInput" : false,
-    "comment" : ""
+    "comment" : "Delta"
   } ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.MergeIntoCommand",
@@ -2441,7 +2441,7 @@
       "fieldName" : null,
       "fieldExtractor" : null,
       "actionType" : "UPDATE",
-      "comment" : ""
+      "comment" : "Delta"
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
@@ -2453,9 +2453,14 @@
   "queryDescs" : [ {
     "fieldName" : "source",
     "fieldExtractor" : "LogicalPlanQueryExtractor",
-    "comment" : ""
+    "comment" : "Delta"
   } ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.OptimizeTableCommand",
   "tableDescs" : [ {
@@ -2481,7 +2486,22 @@
   } ],
   "opType" : "ALTERTABLE_COMPACT",
   "queryDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  }, {
+    "fieldName" : "tableId",
+    "fieldExtractor" : "TableIdentifierOptionURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  }, {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.UpdateCommand",
   "tableDescs" : [ {
@@ -2492,7 +2512,7 @@
       "fieldName" : null,
       "fieldExtractor" : null,
       "actionType" : "UPDATE",
-      "comment" : ""
+      "comment" : "Delta"
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
@@ -2506,6 +2526,6 @@
     "fieldName" : "target",
     "fieldExtractor" : "SubqueryAliasURIExtractor",
     "isInput" : false,
-    "comment" : ""
+    "comment" : "Delta"
   } ]
 } ]
