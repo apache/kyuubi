@@ -27,8 +27,8 @@ import org.apache.kyuubi.jdbc.hive.cli.RowSet;
 import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.*;
-import org.apache.kyuubi.shaded.org.apache.thrift.TException;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.*;
+import org.apache.kyuubi.shaded.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

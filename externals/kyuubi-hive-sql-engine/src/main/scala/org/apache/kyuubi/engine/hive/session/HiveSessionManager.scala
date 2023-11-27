@@ -41,7 +41,7 @@ import org.apache.kyuubi.engine.hive.operation.HiveOperationManager
 import org.apache.kyuubi.engine.hive.util.HiveRpcUtils
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.util.reflect.DynConstructors
 
 class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSessionManager") {

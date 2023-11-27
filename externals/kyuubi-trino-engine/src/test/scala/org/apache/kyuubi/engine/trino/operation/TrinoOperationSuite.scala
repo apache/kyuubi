@@ -28,7 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.trino.{TrinoQueryTests, TrinoStatement, WithTrinoEngine}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
   override def withKyuubiConf: Map[String, String] = Map(

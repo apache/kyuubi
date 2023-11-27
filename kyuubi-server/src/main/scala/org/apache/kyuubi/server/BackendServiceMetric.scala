@@ -22,7 +22,7 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationS
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 trait BackendServiceMetric extends BackendService {
 

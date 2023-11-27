@@ -35,9 +35,9 @@ import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils, SessionManager}
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.shaded.org.apache.thrift.TProcessor
-import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TProtocolFactory
-import org.apache.kyuubi.shaded.org.apache.thrift.server.TServlet
+import org.apache.kyuubi.shaded.thrift.TProcessor
+import org.apache.kyuubi.shaded.thrift.protocol.TProtocolFactory
+import org.apache.kyuubi.shaded.thrift.server.TServlet
 
 class ThriftHttpServlet(
     processor: TProcessor,

@@ -28,8 +28,8 @@ import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TOperationState, TProtocolVersion}
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TOperationState._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetOperationStatusResp, TOperationState, TProtocolVersion}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState._
 
 class ExecuteStatement(
     session: Session,

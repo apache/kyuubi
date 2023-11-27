@@ -27,7 +27,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.session.NoopSessionManager
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TProtocolVersion, TRowSet}
 import org.apache.kyuubi.util.ThriftUtils
 
 class OperationLogSuite extends KyuubiFunSuite {

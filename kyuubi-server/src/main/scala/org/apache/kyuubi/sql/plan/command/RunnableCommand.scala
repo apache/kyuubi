@@ -20,7 +20,7 @@ package org.apache.kyuubi.sql.plan.command
 import org.apache.kyuubi.operation.FetchIterator
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.session.KyuubiSession
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TProtocolVersion, TRowSet}
 import org.apache.kyuubi.sql.plan.KyuubiTreeNode
 import org.apache.kyuubi.sql.schema.{Row, RowSetHelper, Schema}
 

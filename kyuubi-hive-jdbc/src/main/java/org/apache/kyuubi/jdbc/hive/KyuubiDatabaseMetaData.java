@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-import static org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTypeId.*;
+import static org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId.*;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -30,8 +30,8 @@ import java.util.List;
 import java.util.jar.Attributes;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLDatabaseMetaData;
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.*;
-import org.apache.kyuubi.shaded.org.apache.thrift.TException;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.*;
+import org.apache.kyuubi.shaded.thrift.TException;
 
 /** KyuubiDatabaseMetaData. */
 public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {

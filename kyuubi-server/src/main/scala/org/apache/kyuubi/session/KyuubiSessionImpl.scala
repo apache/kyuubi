@@ -33,8 +33,8 @@ import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.org.apache.thrift.transport.TTransportException
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException
 import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.sql.plan.command.RunnableCommand
 import org.apache.kyuubi.util.SignUtils

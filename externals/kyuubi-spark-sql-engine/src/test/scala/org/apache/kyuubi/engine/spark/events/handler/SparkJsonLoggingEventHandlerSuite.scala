@@ -31,7 +31,7 @@ import org.apache.kyuubi.engine.spark.events.{EngineEvent, SessionEvent}
 import org.apache.kyuubi.events.EventLoggerType._
 import org.apache.kyuubi.events.JsonProtocol
 import org.apache.kyuubi.operation.{HiveJDBCTestHelper, OperationHandle}
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TExecuteStatementReq
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TExecuteStatementReq
 
 class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 

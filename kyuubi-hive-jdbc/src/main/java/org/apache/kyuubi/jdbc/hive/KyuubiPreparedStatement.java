@@ -29,8 +29,8 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Scanner;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLPreparedStatement;
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TCLIService;
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TSessionHandle;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TSessionHandle;
 
 /** KyuubiPreparedStatement. */
 public class KyuubiPreparedStatement extends KyuubiStatement implements SQLPreparedStatement {

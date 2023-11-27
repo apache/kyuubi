@@ -30,9 +30,9 @@ import org.apache.hadoop.security.SaslRpcServer.AuthMethod
 import org.apache.hadoop.security.token.SecretManager.InvalidToken
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.shaded.org.apache.thrift.{TException, TProcessor}
-import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TProtocol
-import org.apache.kyuubi.shaded.org.apache.thrift.transport._
+import org.apache.kyuubi.shaded.thrift.{TException, TProcessor}
+import org.apache.kyuubi.shaded.thrift.protocol.TProtocol
+import org.apache.kyuubi.shaded.thrift.transport._
 
 class HadoopThriftAuthBridgeServer(secretMgr: KyuubiDelegationTokenManager) {
   import HadoopThriftAuthBridgeServer._

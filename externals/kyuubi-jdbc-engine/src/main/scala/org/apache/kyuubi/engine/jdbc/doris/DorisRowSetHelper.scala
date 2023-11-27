@@ -17,7 +17,7 @@
 package org.apache.kyuubi.engine.jdbc.doris
 
 import org.apache.kyuubi.engine.jdbc.schema.RowSetHelper
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 class DorisRowSetHelper extends RowSetHelper {
 

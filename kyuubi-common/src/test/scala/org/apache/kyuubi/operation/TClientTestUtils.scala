@@ -26,10 +26,10 @@ import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.service.FrontendService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TCLIService.Iface
-import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.kyuubi.shaded.org.apache.thrift.transport.TSocket
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface
+import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol
+import org.apache.kyuubi.shaded.thrift.transport.TSocket
 
 object TClientTestUtils extends Logging {
 

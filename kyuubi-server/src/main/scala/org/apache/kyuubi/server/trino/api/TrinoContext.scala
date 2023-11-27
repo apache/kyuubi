@@ -32,7 +32,7 @@ import io.trino.client.ProtocolHeaders.TRINO_HEADERS
 import org.apache.kyuubi.operation.OperationState.FINISHED
 import org.apache.kyuubi.operation.OperationStatus
 import org.apache.kyuubi.server.trino.api.Query.KYUUBI_SESSION_ID
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TCLIServiceConstants, TGetResultSetMetadataResp, TRowSet, TTypeEntry, TTypeId}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCLIServiceConstants, TGetResultSetMetadataResp, TRowSet, TTypeEntry, TTypeId}
 
 // TODO: Support replace `preparedStatement` for Trino-jdbc
 /**

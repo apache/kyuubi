@@ -29,7 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.{OperationHandle, TClientTestUtils}
 import org.apache.kyuubi.service.TFrontendService.FeServiceServerContext
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 class TFrontendServiceSuite extends KyuubiFunSuite {
 

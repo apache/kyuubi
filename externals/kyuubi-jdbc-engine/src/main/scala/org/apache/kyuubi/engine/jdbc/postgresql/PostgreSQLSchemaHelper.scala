@@ -17,7 +17,7 @@
 package org.apache.kyuubi.engine.jdbc.postgresql
 
 import org.apache.kyuubi.engine.jdbc.schema.SchemaHelper
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 class PostgreSQLSchemaHelper extends SchemaHelper {
 

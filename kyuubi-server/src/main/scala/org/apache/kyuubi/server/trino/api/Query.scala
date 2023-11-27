@@ -37,7 +37,7 @@ import org.apache.kyuubi.server.trino.api.Query.KYUUBI_SESSION_ID
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.service.TFrontendService.OK_STATUS
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TBoolValue, TColumnDesc, TColumnValue, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TProtocolVersion, TRow, TRowSet, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TBoolValue, TColumnDesc, TColumnValue, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TProtocolVersion, TRow, TRowSet, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
 
 case class Query(
     queryId: QueryId,

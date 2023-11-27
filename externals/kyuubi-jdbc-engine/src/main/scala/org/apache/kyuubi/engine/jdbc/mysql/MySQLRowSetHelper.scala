@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.jdbc.mysql
 import java.sql.Types
 
 import org.apache.kyuubi.engine.jdbc.schema.RowSetHelper
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TColumn, TColumnValue}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnValue}
 
 class MySQLRowSetHelper extends RowSetHelper {
 

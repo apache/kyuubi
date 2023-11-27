@@ -25,10 +25,10 @@ import javax.net.ssl.{KeyManagerFactory, SSLServerSocket}
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.kyuubi.shaded.org.apache.thrift.server.{TServer, TThreadPoolServer}
-import org.apache.kyuubi.shaded.org.apache.thrift.transport.{TServerSocket, TSSLTransportFactory}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol
+import org.apache.kyuubi.shaded.thrift.server.{TServer, TThreadPoolServer}
+import org.apache.kyuubi.shaded.thrift.transport.{TServerSocket, TSSLTransportFactory}
 import org.apache.kyuubi.util.NamedThreadFactory
 
 /**

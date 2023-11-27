@@ -25,8 +25,8 @@ import io.trino.client.Column
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.trino.schema.SchemaHelper._
 import org.apache.kyuubi.engine.trino.util.TestUtils._
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TCLIServiceConstants
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTypeId
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIServiceConstants
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId
 
 class SchemaHelperSuite extends KyuubiFunSuite {
 

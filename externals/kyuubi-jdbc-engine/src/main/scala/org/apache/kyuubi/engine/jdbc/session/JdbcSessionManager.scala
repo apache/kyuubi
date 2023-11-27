@@ -24,7 +24,7 @@ import org.apache.kyuubi.engine.jdbc.JdbcSQLEngine
 import org.apache.kyuubi.engine.jdbc.operation.JdbcOperationManager
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class JdbcSessionManager(name: String)
   extends SessionManager(name) {

@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import java.util.UUID
 
 import org.apache.kyuubi.cli.Handle
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TOperationHandle
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationHandle
 
 case class OperationHandle(identifier: UUID) {
 

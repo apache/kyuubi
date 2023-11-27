@@ -31,9 +31,9 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, FeServiceServerContext, OK_STATUS}
 import org.apache.kyuubi.session.KyuubiSessionImpl
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TProtocol
-import org.apache.kyuubi.shaded.org.apache.thrift.server.ServerContext
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.thrift.protocol.TProtocol
+import org.apache.kyuubi.shaded.thrift.server.ServerContext
 
 final class KyuubiTBinaryFrontendService(
     override val serverable: Serverable)

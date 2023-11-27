@@ -25,7 +25,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.TClientTestUtils
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TSessionHandle}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TOpenSessionReq, TSessionHandle}
 
 class KyuubiTBinaryFrontendServiceSuite extends WithKyuubiServer with KyuubiFunSuite {
 

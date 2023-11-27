@@ -36,7 +36,7 @@ import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.engine.flink.result.ResultSet
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {

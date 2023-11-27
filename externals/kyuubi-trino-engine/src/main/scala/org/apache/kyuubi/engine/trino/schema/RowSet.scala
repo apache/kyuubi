@@ -28,26 +28,26 @@ import io.trino.client.ClientTypeSignature
 import io.trino.client.Column
 import io.trino.client.Row
 
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TBinaryColumn
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TBoolColumn
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TBoolValue
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TByteColumn
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TByteValue
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TColumn
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TColumnValue
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TDoubleColumn
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TDoubleValue
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TI16Column
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TI16Value
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TI32Column
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TI32Value
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TI64Column
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TI64Value
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TProtocolVersion
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TRow
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TRowSet
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TStringColumn
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TStringValue
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TBinaryColumn
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TBoolColumn
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TBoolValue
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TByteColumn
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TByteValue
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TColumn
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TColumnValue
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TDoubleColumn
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TDoubleValue
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TI16Column
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TI16Value
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TI32Column
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TI32Value
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TI64Column
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TI64Value
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TRow
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TRowSet
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TStringColumn
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TStringValue
 import org.apache.kyuubi.util.RowSetUtils.bitSetToBuffer
 
 object RowSet {

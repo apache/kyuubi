@@ -34,7 +34,7 @@ import org.apache.kyuubi.server.mysql.MySQLCommandHandler._
 import org.apache.kyuubi.server.mysql.constant.MySQLCtxAttrKey._
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 object MySQLCommandHandler {
   val connIdCounter = new AtomicInteger

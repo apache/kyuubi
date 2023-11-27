@@ -42,8 +42,8 @@ import org.apache.kyuubi.server.http.ThriftHttpServlet
 import org.apache.kyuubi.server.http.util.SessionManager
 import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TFrontendService}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq}
-import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TBinaryProtocol
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq}
+import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol
 import org.apache.kyuubi.util.NamedThreadFactory
 
 /**

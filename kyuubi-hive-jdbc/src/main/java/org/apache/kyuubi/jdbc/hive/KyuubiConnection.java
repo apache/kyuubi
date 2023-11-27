@@ -65,12 +65,12 @@ import org.apache.kyuubi.jdbc.hive.cli.FetchType;
 import org.apache.kyuubi.jdbc.hive.cli.RowSet;
 import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.*;
-import org.apache.kyuubi.shaded.org.apache.thrift.TException;
-import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.kyuubi.shaded.org.apache.thrift.transport.THttpClient;
-import org.apache.kyuubi.shaded.org.apache.thrift.transport.TTransport;
-import org.apache.kyuubi.shaded.org.apache.thrift.transport.TTransportException;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.*;
+import org.apache.kyuubi.shaded.thrift.TException;
+import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol;
+import org.apache.kyuubi.shaded.thrift.transport.THttpClient;
+import org.apache.kyuubi.shaded.thrift.transport.TTransport;
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

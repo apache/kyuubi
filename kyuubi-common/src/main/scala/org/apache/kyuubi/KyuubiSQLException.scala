@@ -24,7 +24,7 @@ import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.Utils.stringifyException
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TStatus, TStatusCode}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TStatus, TStatusCode}
 import org.apache.kyuubi.util.reflect.DynConstructors
 
 /**

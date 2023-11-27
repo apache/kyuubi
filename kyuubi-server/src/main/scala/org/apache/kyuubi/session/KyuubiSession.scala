@@ -23,7 +23,7 @@ import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.session.SessionType.SessionType
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 abstract class KyuubiSession(
     protocol: TProtocolVersion,

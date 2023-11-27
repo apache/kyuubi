@@ -27,7 +27,7 @@ import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 /**
  * The [[OperationManager]] manages all the operations during their lifecycle.

@@ -22,9 +22,9 @@ import java.sql.ResultSet
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TCLIService.Iface
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TOperationState._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState._
 
 trait HiveJDBCTestHelper extends JDBCTestHelper {
 

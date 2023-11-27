@@ -21,7 +21,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.List;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSetMetaData;
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTypeId;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId;
 
 /** KyuubiResultSetMetaData. */
 public class KyuubiResultSetMetaData implements SQLResultSetMetaData {

@@ -22,9 +22,9 @@ import org.apache.thrift.protocol.{TCompactProtocol => HiveTCompactProtocol}
 import org.apache.thrift.transport.{TMemoryBuffer => HiveTMemoryBuffer}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TCompactProtocol
-import org.apache.kyuubi.shaded.org.apache.thrift.transport.TMemoryInputTransport
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.thrift.protocol.TCompactProtocol
+import org.apache.kyuubi.shaded.thrift.transport.TMemoryInputTransport
 
 object HiveRpcUtils extends Logging {
 

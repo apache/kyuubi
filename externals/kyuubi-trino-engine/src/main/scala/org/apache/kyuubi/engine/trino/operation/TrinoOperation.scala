@@ -34,7 +34,7 @@ import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FE
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp}
 
 abstract class TrinoOperation(session: Session) extends AbstractOperation(session) {
 

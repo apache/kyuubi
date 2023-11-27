@@ -24,7 +24,7 @@ import org.apache.arrow.vector.util.DateUtility;
 import org.apache.kyuubi.jdbc.hive.common.DateUtils;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalDayTime;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalYearMonth;
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTypeId;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId;
 
 public class ArrowColumnarBatchRow {
   public int rowId;

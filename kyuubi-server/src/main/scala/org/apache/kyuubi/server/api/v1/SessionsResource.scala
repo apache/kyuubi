@@ -36,7 +36,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))

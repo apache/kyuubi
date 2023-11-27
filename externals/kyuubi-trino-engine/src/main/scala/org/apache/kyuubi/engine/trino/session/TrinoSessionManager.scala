@@ -23,7 +23,7 @@ import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.trino.TrinoSqlEngine
 import org.apache.kyuubi.engine.trino.operation.TrinoOperationManager
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class TrinoSessionManager
   extends SessionManager("TrinoSessionManager") {

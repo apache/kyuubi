@@ -35,9 +35,9 @@ import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
-import org.apache.kyuubi.shaded.org.apache.thrift.transport.TSocket
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.thrift.protocol.{TBinaryProtocol, TProtocol}
+import org.apache.kyuubi.shaded.thrift.transport.TSocket
 import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 

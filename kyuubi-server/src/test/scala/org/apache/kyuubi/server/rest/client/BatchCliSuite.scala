@@ -35,7 +35,7 @@ import org.apache.kyuubi.engine.ApplicationManagerInfo
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.server.metadata.api.MetadataFilter
 import org.apache.kyuubi.session.KyuubiSessionManager
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with BatchTestHelper {
 

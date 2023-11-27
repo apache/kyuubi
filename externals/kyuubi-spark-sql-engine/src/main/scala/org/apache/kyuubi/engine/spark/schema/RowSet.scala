@@ -25,7 +25,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {

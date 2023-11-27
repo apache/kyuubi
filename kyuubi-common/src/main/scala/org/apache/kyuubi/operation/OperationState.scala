@@ -20,8 +20,8 @@ package org.apache.kyuubi.operation
 import scala.language.implicitConversions
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TOperationState
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TOperationState._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState._
 
 object OperationState extends Enumeration {
 

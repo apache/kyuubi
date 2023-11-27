@@ -32,7 +32,7 @@ import io.trino.client.Row
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.trino.schema.RowSet.toHiveString
 import org.apache.kyuubi.engine.trino.util.TestUtils._
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class RowSetSuite extends KyuubiFunSuite {
 

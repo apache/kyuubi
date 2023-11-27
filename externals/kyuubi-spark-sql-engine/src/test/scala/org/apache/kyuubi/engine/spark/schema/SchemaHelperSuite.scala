@@ -25,7 +25,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.spark.schema.SchemaHelper._
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TCLIServiceConstants, TTypeId}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCLIServiceConstants, TTypeId}
 
 class SchemaHelperSuite extends KyuubiFunSuite {
 

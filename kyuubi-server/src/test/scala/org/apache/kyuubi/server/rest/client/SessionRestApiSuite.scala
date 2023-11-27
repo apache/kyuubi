@@ -31,7 +31,7 @@ import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.session.SessionType
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TGetInfoType
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TGetInfoType
 
 class SessionRestApiSuite extends RestClientTestHelper {
   test("get/close/list/count session") {

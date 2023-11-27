@@ -25,7 +25,7 @@ import org.apache.kyuubi.engine.chat.operation.ChatOperationManager
 import org.apache.kyuubi.engine.chat.provider.ChatProvider
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class ChatSessionManager(name: String)
   extends SessionManager(name) {

@@ -26,7 +26,7 @@ import java.sql.Timestamp;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalDayTime;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalYearMonth;
 import org.apache.kyuubi.jdbc.hive.common.TimestampTZ;
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTypeId;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId;
 
 /** Column metadata. */
 public class JdbcColumn {

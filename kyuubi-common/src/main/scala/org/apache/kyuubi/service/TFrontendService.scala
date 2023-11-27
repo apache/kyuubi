@@ -32,10 +32,10 @@ import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TProtocol
-import org.apache.kyuubi.shaded.org.apache.thrift.server.{ServerContext, TServerEventHandler}
-import org.apache.kyuubi.shaded.org.apache.thrift.transport.TTransport
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.thrift.protocol.TProtocol
+import org.apache.kyuubi.shaded.thrift.server.{ServerContext, TServerEventHandler}
+import org.apache.kyuubi.shaded.thrift.transport.TTransport
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, NamedThreadFactory}
 
 /**

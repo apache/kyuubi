@@ -22,7 +22,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.it.flink.WithKyuubiServerAndFlinkMiniCluster
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
 
 class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
   with HiveJDBCTestHelper {

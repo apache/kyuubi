@@ -27,7 +27,7 @@ import org.apache.kyuubi.client.{KyuubiRestClient, OperationRestApi}
 import org.apache.kyuubi.client.api.v1.dto.OpActionRequest
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 
 class OperationRestApiSuite extends RestClientTestHelper {
 

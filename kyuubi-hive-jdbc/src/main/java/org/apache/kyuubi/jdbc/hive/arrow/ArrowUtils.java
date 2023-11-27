@@ -31,7 +31,7 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.kyuubi.jdbc.hive.JdbcColumnAttributes;
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTypeId;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId;
 
 public class ArrowUtils {
 

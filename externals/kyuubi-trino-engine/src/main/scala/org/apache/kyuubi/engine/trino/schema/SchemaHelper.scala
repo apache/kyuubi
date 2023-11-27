@@ -25,15 +25,15 @@ import io.trino.client.ClientStandardTypes._
 import io.trino.client.ClientTypeSignature
 import io.trino.client.Column
 
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TCLIServiceConstants
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TColumnDesc
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TPrimitiveTypeEntry
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTableSchema
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTypeDesc
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTypeEntry
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTypeId
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTypeQualifiers
-import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TTypeQualifierValue
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIServiceConstants
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TColumnDesc
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TPrimitiveTypeEntry
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTableSchema
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeDesc
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeEntry
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeQualifiers
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeQualifierValue
 
 object SchemaHelper {
 
