@@ -35,8 +35,6 @@ import org.apache.hadoop.hive.metastore.security.{DelegationTokenIdentifier, Had
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.authorize.ProxyUsers
-import org.apache.thrift.TProcessor
-import org.apache.thrift.protocol.TProtocol
 import org.scalatest.Assertions._
 import org.scalatest.concurrent.Eventually._
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
@@ -44,6 +42,8 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{KerberizedTestHelper, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.credentials.LocalMetaServer.defaultHiveConf
+import org.apache.kyuubi.shaded.org.apache.thrift.TProcessor
+import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TProtocol
 
 class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
 

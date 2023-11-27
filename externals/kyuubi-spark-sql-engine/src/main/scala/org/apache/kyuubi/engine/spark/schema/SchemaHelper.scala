@@ -21,8 +21,9 @@ import java.util.Collections
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.types._
+
+import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
 
 object SchemaHelper {
 

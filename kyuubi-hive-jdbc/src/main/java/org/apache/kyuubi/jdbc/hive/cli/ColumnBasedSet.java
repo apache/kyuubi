@@ -21,12 +21,12 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.hive.service.rpc.thrift.TColumn;
-import org.apache.hive.service.rpc.thrift.TRowSet;
-import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TIOStreamTransport;
+import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TColumn;
+import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TRowSet;
+import org.apache.kyuubi.shaded.org.apache.thrift.TException;
+import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TCompactProtocol;
+import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TProtocol;
+import org.apache.kyuubi.shaded.org.apache.thrift.transport.TIOStreamTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

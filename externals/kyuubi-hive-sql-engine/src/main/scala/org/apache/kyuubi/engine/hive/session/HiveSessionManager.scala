@@ -27,16 +27,20 @@ import scala.language.reflectiveCalls
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hive.service.cli.{SessionHandle => ImportedSessionHandle}
-import org.apache.hive.service.cli.session.{HiveSessionImpl => ImportedHiveSessionImpl, HiveSessionImplwithUGI => ImportedHiveSessionImplwithUGI, HiveSessionProxy, SessionManager => ImportedHiveSessionManager}
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.cli.session.{HiveSessionImpl => ImportedHiveSessionImpl}
+import org.apache.hive.service.cli.session.{HiveSessionImplwithUGI => ImportedHiveSessionImplwithUGI}
+import org.apache.hive.service.cli.session.{SessionManager => ImportedHiveSessionManager}
+import org.apache.hive.service.cli.session.HiveSessionProxy
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.engine.hive.operation.HiveOperationManager
+import org.apache.kyuubi.engine.hive.util.HiveRpcUtils
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
+import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.util.reflect.DynConstructors
 
 class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSessionManager") {
@@ -82,8 +86,10 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       conf: Map[String, String]): Session = {
     conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
       getSessionOption).getOrElse {
+      val hiveProtocol = HiveRpcUtils.asHive(protocol)
       val sessionHandle =
         conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+      val hiveTSessionHandle = HiveRpcUtils.asHive(sessionHandle.toTSessionHandle)
       val hive = if (internalSessionManager.doAsEnabled) {
         val sessionWithUGI = DynConstructors.builder()
           .impl( // for Hive 3.1
@@ -107,7 +113,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
             classOf[String])
           .build[ImportedHiveSessionImplwithUGI]()
           .newInstance(
-            new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
+            new ImportedSessionHandle(hiveTSessionHandle, hiveProtocol),
             protocol,
             user,
             password,
@@ -139,7 +145,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
             classOf[String])
           .build[ImportedHiveSessionImpl]()
           .newInstance(
-            new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
+            new ImportedSessionHandle(hiveTSessionHandle, hiveProtocol),
             protocol,
             user,
             password,
@@ -160,7 +166,6 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
         sessionHandle,
         hive)
     }
-
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
