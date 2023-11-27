@@ -18,7 +18,7 @@
 package org.apache.kyuubi.operation
 
 import java.sql.{Date, Timestamp}
-import java.util.{Calendar, TimeZone}
+import java.util.Calendar
 
 import org.apache.kyuubi.util.SparkVersionUtil
 
@@ -238,11 +238,11 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
       assert(resultSet.next())
       assert(resultSet.getTimestamp(
         "col",
-        Calendar.getInstance(TimeZone.getTimeZone("UTC"))) === Timestamp.valueOf(
+        Calendar.getInstance()) === Timestamp.valueOf(
         "2018-11-17 13:33:33"))
       assert(resultSet.getTimestamp(
         1,
-        Calendar.getInstance(TimeZone.getTimeZone("UTC"))) === Timestamp.valueOf(
+        Calendar.getInstance()) === Timestamp.valueOf(
         "2018-11-17 13:33:33"))
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)

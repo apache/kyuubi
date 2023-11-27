@@ -465,8 +465,8 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       cal = Calendar.getInstance();
     }
     long v = timestamp.getTime();
-    v -= cal.getTimeZone().getOffset(v);
-    timestamp = new Timestamp(v);
+    cal.setTimeInMillis(v);
+    timestamp = new Timestamp(cal.getTime().getTime());
     return timestamp;
   }
 
@@ -514,8 +514,8 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       cal = Calendar.getInstance();
     }
     long v = date.getTime();
-    v -= cal.getTimeZone().getOffset(v);
-    date = new Time(v);
+    cal.setTimeInMillis(v);
+    date = new Time(cal.getTime().getTime());
     return date;
   }
 
