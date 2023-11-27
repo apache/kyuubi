@@ -24,6 +24,10 @@ trait WithInternalChildren {
   def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan
 }
 
+trait WithInternalChild {
+  def withNewChildInternal(newChild: LogicalPlan): LogicalPlan
+}
+
 trait WithInternalExpressionChild {
   def withNewChildInternal(newChild: Expression): Expression
 }
