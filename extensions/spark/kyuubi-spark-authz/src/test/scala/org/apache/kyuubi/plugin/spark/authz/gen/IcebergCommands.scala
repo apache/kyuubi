@@ -30,7 +30,8 @@ object IcebergCommands extends CommandSpecs[TableCommandSpec] {
       TableDesc(
         "table",
         classOf[DataSourceV2RelationTableExtractor],
-        actionTypeDesc = Some(actionTypeDesc))
+        actionTypeDesc = Some(actionTypeDesc),
+        comment = "Iceberg")
     TableCommandSpec(cmd, Seq(tableDesc))
   }
 
@@ -45,14 +46,15 @@ object IcebergCommands extends CommandSpecs[TableCommandSpec] {
     val tableDesc = TableDesc(
       "targetTable",
       classOf[DataSourceV2RelationTableExtractor],
-      actionTypeDesc = Some(actionTypeDesc))
+      actionTypeDesc = Some(actionTypeDesc),
+      comment = "Iceberg")
     val queryDesc = QueryDesc("sourceTable")
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
   }
 
   val CallProcedure = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.Call"
-    val td = TableDesc("args", classOf[ExpressionSeqTableExtractor])
+    val td = TableDesc("args", classOf[ExpressionSeqTableExtractor], comment = "Iceberg")
     TableCommandSpec(cmd, Seq(td), opType = OperationType.ALTERTABLE_PROPERTIES)
   }
 
