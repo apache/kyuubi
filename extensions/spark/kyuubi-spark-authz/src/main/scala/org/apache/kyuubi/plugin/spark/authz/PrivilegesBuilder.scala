@@ -29,6 +29,7 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization._
 import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
+import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
@@ -303,6 +304,14 @@ object PrivilegesBuilder {
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
     val opType = plan match {
+      case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowTables" =>
+        OperationType.SHOWTABLES
+      case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowNamespaces" =>
+        OperationType.SHOWDATABASES
+      case _: FilteredShowTablesCommand => OperationType.SHOWTABLES
+      case _: FilteredShowFunctionsCommand => OperationType.SHOWFUNCTIONS
+      case _: FilteredShowColumnsCommand => OperationType.SHOWCOLUMNS
+
       // ExplainCommand run will execute the plan, should avoid check privilege for the plan.
       case _: ExplainCommand =>
         setExplainCommandExecutionId(spark)
