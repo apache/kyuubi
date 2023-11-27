@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
+
 import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
-import org.apache.spark.sql.SparkSession
 
 /**
  * Transforming up [[PermanentViewMarker]]
