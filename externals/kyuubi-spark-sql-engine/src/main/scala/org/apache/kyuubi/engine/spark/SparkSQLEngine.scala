@@ -348,7 +348,8 @@ object SparkSQLEngine extends Logging {
     }
     val initTimeout = kyuubiConf.get(ENGINE_INIT_TIMEOUT)
     val totalInitTime = startedTime - submitTime
-    if (totalInitTime > initTimeout) {
+    val maybeAttempt = KyuubiSparkUtil.maybeAttempt(_sparkConf)
+    if (!maybeAttempt && totalInitTime > initTimeout) {
       throw new KyuubiException(s"The total engine initialization time ($totalInitTime ms)" +
         s" exceeds ${ENGINE_INIT_TIMEOUT.key} ($initTimeout ms)," +
         s" and submitted at $submitTime.")

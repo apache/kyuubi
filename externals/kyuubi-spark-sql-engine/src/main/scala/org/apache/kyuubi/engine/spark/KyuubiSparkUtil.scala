@@ -21,7 +21,7 @@ import java.time.{Instant, LocalDateTime, ZoneId}
 
 import scala.annotation.meta.getter
 
-import org.apache.spark.{SPARK_VERSION, SparkContext}
+import org.apache.spark.{SPARK_VERSION, SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.kvstore.KVIndex
 
@@ -111,6 +111,37 @@ object KyuubiSparkUtil extends Logging {
   def getSessionConf[T](configEntry: ConfigEntry[T], spark: SparkSession): T = {
     spark.conf.getOption(configEntry.key).map(configEntry.valueConverter).getOrElse {
       SparkSQLEngine.kyuubiConf.get(configEntry)
+    }
+  }
+
+  private lazy val yarnAppAttemptIdFromEnv: Option[Int] =
+    try {
+      val containerId = System.getenv("CONTAINER_ID")
+      if (containerId != null) {
+        // like: container_e34_1698816066031_5638072_01_000001
+        val items = containerId.split("_")
+        if (items.length == 6) {
+          Some(items(4).toInt)
+        } else {
+          None
+        }
+      } else {
+        None
+      }
+    } catch {
+      case t: Throwable =>
+        warn("Failed to get yarn app attempt id from environment", t)
+        None
+    }
+
+  def maybeAttempt(conf: SparkConf): Boolean = {
+    val master = conf.get("spark.master")
+    val deployMode = conf.get("spark.submit.deployMode")
+    (master, deployMode) match {
+      case ("yarn", "cluster") =>
+        yarnAppAttemptIdFromEnv.exists(_ > 0)
+      case _ =>
+        false
     }
   }
 }
