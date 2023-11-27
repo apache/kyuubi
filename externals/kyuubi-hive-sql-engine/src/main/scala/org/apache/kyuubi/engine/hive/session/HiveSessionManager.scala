@@ -22,10 +22,12 @@ import java.util.{List => JList}
 import java.util.concurrent.Future
 
 import scala.collection.JavaConverters._
+import scala.language.reflectiveCalls
 
 import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hive.service.cli.{SessionHandle => ImportedSessionHandle}
-import org.apache.hive.service.cli.session.{HiveSessionImplwithUGI => ImportedHiveSessionImpl, HiveSessionProxy, SessionManager => ImportedHiveSessionManager}
+import org.apache.hive.service.cli.session.{HiveSessionImpl => ImportedHiveSessionImpl, HiveSessionImplwithUGI => ImportedHiveSessionImplwithUGI, HiveSessionProxy, SessionManager => ImportedHiveSessionManager}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
@@ -44,11 +46,14 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
 
   private val internalSessionManager = new ImportedHiveSessionManager(null) {
 
+    var doAsEnabled: Boolean = _
+
     /**
      * Avoid unnecessary hive initialization
      */
     override def init(hiveConf: HiveConf): Unit = {
       // this.hiveConf = hiveConf
+      this.doAsEnabled = hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_ENABLE_DOAS)
     }
 
     /**
@@ -79,11 +84,10 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       getSessionOption).getOrElse {
       val sessionHandle =
         conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
-      val hive = {
-
+      val hive = if (internalSessionManager.doAsEnabled) {
         val sessionWithUGI = DynConstructors.builder()
           .impl( // for Hive 3.1
-            classOf[ImportedHiveSessionImpl],
+            classOf[ImportedHiveSessionImplwithUGI],
             classOf[ImportedSessionHandle],
             classOf[TProtocolVersion],
             classOf[String],
@@ -93,7 +97,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
             classOf[String],
             classOf[JList[String]])
           .impl( // for Hive 2.3
-            classOf[ImportedHiveSessionImpl],
+            classOf[ImportedHiveSessionImplwithUGI],
             classOf[ImportedSessionHandle],
             classOf[TProtocolVersion],
             classOf[String],
@@ -101,7 +105,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
             classOf[HiveConf],
             classOf[String],
             classOf[String])
-          .build[ImportedHiveSessionImpl]()
+          .build[ImportedHiveSessionImplwithUGI]()
           .newInstance(
             new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
             protocol,
@@ -114,6 +118,34 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
         val proxy = HiveSessionProxy.getProxy(sessionWithUGI, sessionWithUGI.getSessionUgi)
         sessionWithUGI.setProxySession(proxy)
         proxy
+      } else {
+        DynConstructors.builder()
+          .impl( // for Hive 3.1
+            classOf[ImportedHiveSessionImpl],
+            classOf[ImportedSessionHandle],
+            classOf[TProtocolVersion],
+            classOf[String],
+            classOf[String],
+            classOf[HiveConf],
+            classOf[String],
+            classOf[JList[String]])
+          .impl( // for Hive 2.3
+            classOf[ImportedHiveSessionImpl],
+            classOf[ImportedSessionHandle],
+            classOf[TProtocolVersion],
+            classOf[String],
+            classOf[String],
+            classOf[HiveConf],
+            classOf[String])
+          .build[ImportedHiveSessionImpl]()
+          .newInstance(
+            new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
+            protocol,
+            user,
+            password,
+            HiveSQLEngine.hiveConf,
+            ipAddress,
+            Seq(ipAddress).asJava)
       }
       hive.setSessionManager(internalSessionManager)
       hive.setOperationManager(internalSessionManager.getOperationManager)
