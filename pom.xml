@@ -564,6 +564,12 @@
 
             <dependency>
                 <groupId>com.dimafeng</groupId>
+                <artifactId>testcontainers-scala-mysql_${scala.binary.version}</artifactId>
+                <version>${testcontainers-scala.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.dimafeng</groupId>
                 <artifactId>testcontainers-scala-trino_${scala.binary.version}</artifactId>
                 <version>${testcontainers-scala.version}</version>
             </dependency>

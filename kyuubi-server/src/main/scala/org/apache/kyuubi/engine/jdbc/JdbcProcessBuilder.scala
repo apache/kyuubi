@@ -106,13 +106,16 @@ class JdbcProcessBuilder(
 
   override def toString: String = {
     if (commands == null) {
-      super.toString()
+      super.toString
     } else {
       Utils.redactCommandLineArgs(conf, commands).map {
         case arg if arg.contains(ENGINE_JDBC_CONNECTION_PASSWORD.key) =>
           s"${ENGINE_JDBC_CONNECTION_PASSWORD.key}=$REDACTION_REPLACEMENT_TEXT"
         case arg => arg
-      }.mkString("\n")
+      }.map {
+        case arg if arg.startsWith("-") => s"\\\n\t$arg"
+        case arg => arg
+      }.mkString(" ")
     }
   }
 }

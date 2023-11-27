@@ -27,7 +27,7 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
 abstract class AbstractConnectionProvider extends Logging {
   protected val providers = loadProviders()
 
-  def getProviderClass(kyuubiConf: KyuubiConf): String = {
+  def getDriverClass(kyuubiConf: KyuubiConf): String = {
     val driverClass: Class[_ <: Driver] = Option(
       DynClasses.builder().impl(kyuubiConf.get(ENGINE_JDBC_DRIVER_CLASS).get)
         .orNull().build[Driver]()).getOrElse {
@@ -38,7 +38,7 @@ abstract class AbstractConnectionProvider extends Logging {
   }
 
   def create(kyuubiConf: KyuubiConf): Connection = {
-    val filteredProviders = providers.filter(_.canHandle(getProviderClass(kyuubiConf)))
+    val filteredProviders = providers.filter(_.canHandle(getDriverClass(kyuubiConf)))
     if (filteredProviders.isEmpty) {
       throw new IllegalArgumentException(
         "Empty list of JDBC connection providers for the specified driver and options")
@@ -57,10 +57,9 @@ abstract class AbstractConnectionProvider extends Logging {
       case None =>
         // TODO
         if (filteredProviders.size != 1) {
-          throw new IllegalArgumentException(
-            "JDBC connection initiated but more than one connection provider was found. Use " +
-              s"${ENGINE_JDBC_CONNECTION_PROVIDER.key} option to select a specific provider. " +
-              s"Found active providers ${filteredProviders.mkString("[", ", ", "]")}")
+          warn("JDBC connection initiated but more than one connection provider was found. Use " +
+            s"${ENGINE_JDBC_CONNECTION_PROVIDER.key} option to select a specific provider. " +
+            s"Found active providers ${filteredProviders.mkString("[", ", ", "]")}")
         }
         filteredProviders.head
     }

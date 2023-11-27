@@ -241,15 +241,15 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
     enginePodInformers.clear()
 
-    kubernetesClients.asScala.foreach { case (_, client) =>
-      Utils.tryLogNonFatalError(client.close())
-    }
-    kubernetesClients.clear()
-
     if (cleanupTerminatedAppInfoTrigger != null) {
       cleanupTerminatedAppInfoTrigger.cleanUp()
       cleanupTerminatedAppInfoTrigger = null
     }
+
+    kubernetesClients.asScala.foreach { case (_, client) =>
+      Utils.tryLogNonFatalError(client.close())
+    }
+    kubernetesClients.clear()
   }
 
   private class SparkEnginePodEventHandler(kubernetesInfo: KubernetesInfo)
@@ -341,16 +341,18 @@ object KubernetesApplicationOperation extends Logging {
       pod: Pod,
       appStateSource: KubernetesApplicationStateSource,
       appStateContainer: String): (ApplicationState, Option[String]) = {
+    val podName = pod.getMetadata.getName
     val containerStateToBuildAppState = appStateSource match {
       case KubernetesApplicationStateSource.CONTAINER =>
         pod.getStatus.getContainerStatuses.asScala
-          .find(_.getState == appStateContainer).map(_.getState)
+          .find(cs => appStateContainer.equalsIgnoreCase(cs.getName)).map(_.getState)
       case KubernetesApplicationStateSource.POD => None
     }
     val applicationState = containerStateToBuildAppState.map(containerStateToApplicationState)
       .getOrElse(podStateToApplicationState(pod.getStatus.getPhase))
-    val applicationError = containerStateToBuildAppState.map(containerStateToApplicationError)
-      .getOrElse(Option(pod.getStatus.getReason))
+    val applicationError = containerStateToBuildAppState
+      .map(cs => containerStateToApplicationError(cs).map(r => s"$podName/$appStateContainer[$r]"))
+      .getOrElse(Option(pod.getStatus.getReason).map(r => s"$podName[$r]"))
     applicationState -> applicationError
   }
 
