@@ -66,8 +66,8 @@ object HiveTBinaryFrontendService {
     // HiveMetastoreClient authentication.
     if (currentUser.getAuthenticationMethod == UserGroupInformation.AuthenticationMethod.PROXY) {
       val newCreds = KyuubiHadoopUtils.decodeCredentials(tokenStr)
-      KyuubiHadoopUtils.getTokenMap(newCreds).values.find(_.getKind == new Text(
-          "HIVE_DELEGATION_TOKEN"))
+      KyuubiHadoopUtils.getTokenMap(newCreds).values
+        .find(_.getKind == new Text("HIVE_DELEGATION_TOKEN"))
         .foreach { token =>
           UserGroupInformation.getCurrentUser.addToken(token)
         }
