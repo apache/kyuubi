@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization._
-import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
@@ -67,12 +66,7 @@ object PrivilegesBuilder {
 
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
-        plan match {
-          case pvm: PermanentViewMarker =>
-            privilegeObjects += PrivilegeObject(table, pvm.outputColNames)
-          case _ =>
-            privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
-        }
+        privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
       } else {
         val cols = columnPrune(projectionList ++ conditionList, plan.outputSet)
         privilegeObjects += PrivilegeObject(table, cols)
@@ -137,22 +131,16 @@ object PrivilegesBuilder {
 
       case p =>
         for (child <- p.children) {
-          child match {
-            case pvm: PermanentViewMarker
-                if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
-              buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
-            case _ =>
-              val childCols = columnPrune(projectionList ++ conditionList, child.outputSet)
-              if (childCols.isEmpty) {
-                buildQuery(
-                  child,
-                  privilegeObjects,
-                  p.inputSet.map(_.toAttribute).toSeq,
-                  conditionList,
-                  spark)
-              } else {
-                buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
-              }
+          val childCols = columnPrune(projectionList ++ conditionList, child.outputSet)
+          if (childCols.isEmpty) {
+            buildQuery(
+              child,
+              privilegeObjects,
+              p.inputSet.map(_.toAttribute).toSeq,
+              conditionList,
+              spark)
+          } else {
+            buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
           }
         }
     }

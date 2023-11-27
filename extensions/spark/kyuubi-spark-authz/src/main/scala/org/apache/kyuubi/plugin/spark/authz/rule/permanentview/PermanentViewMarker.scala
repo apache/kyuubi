@@ -23,11 +23,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
 
 import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
 
-case class PermanentViewMarker(
-    child: LogicalPlan,
-    catalogTable: CatalogTable,
-    outputColNames: Seq[String],
-    isSubqueryExpressionPlaceHolder: Boolean = false) extends LeafNode
+case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable) extends LeafNode
   with WithInternalChild {
 
   override def output: Seq[Attribute] = child.output

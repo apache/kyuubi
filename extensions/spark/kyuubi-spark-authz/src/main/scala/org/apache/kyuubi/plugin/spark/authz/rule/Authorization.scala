@@ -51,7 +51,7 @@ object Authorization {
     }
   }
 
-  protected def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
+  def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
     plan.setTagValue(KYUUBI_AUTHZ_TAG, ())
     plan transformDown {
       case pvm: PermanentViewMarker =>
