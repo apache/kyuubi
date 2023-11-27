@@ -24,7 +24,7 @@ import org.apache.thrift.transport.{TMemoryBuffer => HiveTMemoryBuffer}
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
 import org.apache.kyuubi.shaded.org.apache.thrift.protocol.TCompactProtocol
-import org.apache.kyuubi.shaded.org.apache.thrift.transport.TMemoryBuffer
+import org.apache.kyuubi.shaded.org.apache.thrift.transport.TMemoryInputTransport
 
 object HiveRpcUtils extends Logging {
 
@@ -54,8 +54,7 @@ object HiveRpcUtils extends Logging {
     val hiveBuffer = new HiveTMemoryBuffer(128)
     hiveTTableSchema.write(new HiveTCompactProtocol(hiveBuffer))
     val bytes = hiveBuffer.getArray
-    val kyuubiBuffer = new TMemoryBuffer(bytes.length)
-    kyuubiBuffer.readAll(bytes, 0, bytes.length)
+    val kyuubiBuffer = new TMemoryInputTransport(bytes)
     val kyuubiTTableSchema = new TTableSchema
     kyuubiTTableSchema.read(new TCompactProtocol(kyuubiBuffer))
     kyuubiTTableSchema
@@ -65,8 +64,7 @@ object HiveRpcUtils extends Logging {
     val hiveBuffer = new HiveTMemoryBuffer(128)
     hiveTRowSet.write(new HiveTCompactProtocol(hiveBuffer))
     val bytes = hiveBuffer.getArray
-    val kyuubiBuffer = new TMemoryBuffer(bytes.length)
-    kyuubiBuffer.readAll(bytes, 0, bytes.length)
+    val kyuubiBuffer = new TMemoryInputTransport(bytes)
     val kyuubiTRowSet = new TRowSet
     kyuubiTRowSet.read(new TCompactProtocol(kyuubiBuffer))
     kyuubiTRowSet
