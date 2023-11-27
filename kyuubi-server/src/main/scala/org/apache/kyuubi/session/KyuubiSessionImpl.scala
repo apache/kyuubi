@@ -34,6 +34,7 @@ import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
 import org.apache.kyuubi.shaded.org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.org.apache.thrift.transport.TTransportException
 import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.sql.plan.command.RunnableCommand
 import org.apache.kyuubi.util.SignUtils
@@ -158,7 +159,7 @@ class KyuubiSessionImpl(
               s" with ${_engineSessionHandle}]")
             shouldRetry = false
           } catch {
-            case e: org.apache.thrift.transport.TTransportException
+            case e: TTransportException
                 if attempt < maxAttempts && e.getCause.isInstanceOf[java.net.ConnectException] &&
                   e.getCause.getMessage.contains("Connection refused") =>
               warn(
