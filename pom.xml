@@ -137,6 +137,7 @@
         <delta.artifact>delta-core</delta.artifact>
         <delta.version>2.4.0</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
+        <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
         <flink.version>1.17.1</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_2.12.tgz</flink.archive.name>
@@ -152,6 +153,7 @@
         <fliptables.verion>1.0.2</fliptables.verion>
         <hive.engine.hive.version>3.1.3</hive.engine.hive.version>
         <hive.version>3.1.3</hive.version>
+        <hive.service.rpc.version>3.1.3</hive.service.rpc.version>
         <hive.storage-api.version>2.7.0</hive.storage-api.version>
         <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
@@ -208,6 +210,7 @@
         <testcontainers-scala.version>0.41.0</testcontainers-scala.version>
         <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
         <threeten.version>1.7.0</threeten.version>
+        <thrift.version>0.9.3</thrift.version>
         <trino.client.version>363</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <trino.tpch.version>1.1</trino.tpch.version>
@@ -596,6 +599,47 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-httpclient-okhttp</artifactId>
                 <version>${kubernetes-client.version}</version>
+            </dependency>
+
+            <!--
+              because of THRIFT-4805, we don't upgrade to libthrift:0.12.0,
+              because of THRIFT-5274, we don't upgrade to libthrift:0.13.0,
+              so just keep libthrift:0.9.3
+            -->
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libfb303</artifactId>
+                <version>${fb303.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.thrift</groupId>
+                        <artifactId>libthrift</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libthrift</artifactId>
+                <version>${thrift.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hive</groupId>
+                <artifactId>hive-service-rpc</artifactId>
+                <version>${hive.service.rpc.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
