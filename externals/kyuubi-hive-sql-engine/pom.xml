@@ -167,6 +167,7 @@
                             <include>com.fasterxml.jackson.core:jackson-core</include>
                             <include>com.fasterxml.jackson.core:jackson-databind</include>
                             <include>com.fasterxml.jackson.module:jackson-module-scala_${scala.binary.version}</include>
+                            <include>org.apache.hive:hive-service-rpc</include>
                             <include>org.apache.kyuubi:*</include>
                         </includes>
                     </artifactSet>
