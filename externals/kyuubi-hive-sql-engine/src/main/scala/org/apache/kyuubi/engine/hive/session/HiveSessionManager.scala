@@ -31,6 +31,7 @@ import org.apache.hive.service.cli.session.{HiveSessionImpl => ImportedHiveSessi
 import org.apache.hive.service.cli.session.{HiveSessionImplwithUGI => ImportedHiveSessionImplwithUGI}
 import org.apache.hive.service.cli.session.{SessionManager => ImportedHiveSessionManager}
 import org.apache.hive.service.cli.session.HiveSessionProxy
+import org.apache.hive.service.rpc.thrift.{TProtocolVersion => HiveTProtocolVersion}
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
@@ -95,7 +96,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
           .impl( // for Hive 3.1
             classOf[ImportedHiveSessionImplwithUGI],
             classOf[ImportedSessionHandle],
-            classOf[TProtocolVersion],
+            classOf[HiveTProtocolVersion],
             classOf[String],
             classOf[String],
             classOf[HiveConf],
@@ -105,7 +106,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
           .impl( // for Hive 2.3
             classOf[ImportedHiveSessionImplwithUGI],
             classOf[ImportedSessionHandle],
-            classOf[TProtocolVersion],
+            classOf[HiveTProtocolVersion],
             classOf[String],
             classOf[String],
             classOf[HiveConf],
@@ -114,7 +115,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
           .build[ImportedHiveSessionImplwithUGI]()
           .newInstance(
             new ImportedSessionHandle(hiveTSessionHandle, hiveProtocol),
-            protocol,
+            hiveProtocol,
             user,
             password,
             HiveSQLEngine.hiveConf,
@@ -129,7 +130,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
           .impl( // for Hive 3.1
             classOf[ImportedHiveSessionImpl],
             classOf[ImportedSessionHandle],
-            classOf[TProtocolVersion],
+            classOf[HiveTProtocolVersion],
             classOf[String],
             classOf[String],
             classOf[HiveConf],
@@ -138,7 +139,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
           .impl( // for Hive 2.3
             classOf[ImportedHiveSessionImpl],
             classOf[ImportedSessionHandle],
-            classOf[TProtocolVersion],
+            classOf[HiveTProtocolVersion],
             classOf[String],
             classOf[String],
             classOf[HiveConf],
@@ -146,7 +147,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
           .build[ImportedHiveSessionImpl]()
           .newInstance(
             new ImportedSessionHandle(hiveTSessionHandle, hiveProtocol),
-            protocol,
+            hiveProtocol,
             user,
             password,
             HiveSQLEngine.hiveConf,
