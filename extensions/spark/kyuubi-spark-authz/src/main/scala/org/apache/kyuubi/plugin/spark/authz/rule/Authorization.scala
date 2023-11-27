@@ -24,7 +24,6 @@ import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization._
-import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
 import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
 
 abstract class Authorization(spark: SparkSession) extends Rule[LogicalPlan] {
@@ -51,11 +50,9 @@ object Authorization {
     }
   }
 
-  protected def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
+  def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
     plan.setTagValue(KYUUBI_AUTHZ_TAG, ())
     plan transformDown {
-      case pvm: PermanentViewMarker =>
-        markAllNodesAuthChecked(pvm)
       case subquery: Subquery =>
         markAllNodesAuthChecked(subquery)
     }
