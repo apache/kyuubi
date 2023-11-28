@@ -130,7 +130,15 @@ object HiveSQLEngine extends Logging {
       } else {
         val effectiveUser = UserGroupInformation.createProxyUser(sessionUser.get, realUser)
         effectiveUser.doAs(new PrivilegedExceptionAction[Unit] {
-          override def run(): Unit = startEngine()
+          override def run(): Unit = {
+            val engineCredentials =
+              kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
+            kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
+            engineCredentials.filter(_.nonEmpty).foreach { credentials =>
+              HiveTBinaryFrontendService.renewDelegationToken(credentials)
+            }
+            startEngine()
+          }
         })
       }
 
