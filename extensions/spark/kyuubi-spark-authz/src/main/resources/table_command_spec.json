@@ -16,7 +16,8 @@
   "uriDescs" : [ {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AddPartitions",
@@ -52,7 +53,8 @@
   "uriDescs" : [ {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterTable",
@@ -72,7 +74,8 @@
   "uriDescs" : [ {
     "fieldName" : "ident",
     "fieldExtractor" : "IdentifierURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AppendData",
@@ -334,7 +337,8 @@
   "uriDescs" : [ {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropPartitions",
@@ -497,7 +501,8 @@
   "uriDescs" : [ {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RenamePartitions",
@@ -549,7 +554,8 @@
   "uriDescs" : [ {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceData",
@@ -703,7 +709,8 @@
   "uriDescs" : [ {
     "fieldName" : "table",
     "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowCreateTable",
