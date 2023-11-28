@@ -39,7 +39,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
   val AlterTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.AlterTable"
     val tableDesc = TableDesc("ident", classOf[IdentifierTableExtractor])
-    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
+    val uriDescs = Seq(UriDesc("ident", classOf[IdentifierURIExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES, uriDescs = uriDescs)
   }
 
   val AlterTableAddColumns = {
@@ -51,7 +52,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
 
   val AddColumns = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.AddColumns"
-    TableCommandSpec(cmd, Seq(resolvedTableDesc), ALTERTABLE_ADDCOLS)
+    val uriDescs = Seq(UriDesc("child", classOf[ResolvedTableURIExtractor]))
+    TableCommandSpec(cmd, Seq(resolvedTableDesc), ALTERTABLE_ADDCOLS, uriDescs = uriDescs)
   }
 
   val AlterColumn = {
@@ -66,12 +68,12 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
 
   val ReplaceColumns = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.ReplaceColumns"
-    TableCommandSpec(cmd, Seq(resolvedTableDesc), ALTERTABLE_REPLACECOLS)
+    AddColumns.copy(classname = cmd, opType = ALTERTABLE_REPLACECOLS)
   }
 
   val RenameColumn = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.RenameColumn"
-    TableCommandSpec(cmd, Seq(resolvedTableDesc), ALTERTABLE_RENAMECOL)
+    AddColumns.copy(classname = cmd, opType = ALTERTABLE_RENAMECOL)
   }
 
   val AlterTableAddPartition = {
@@ -638,7 +640,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
   val SetTableProperties = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.SetTableProperties"
     val tableDesc = TableDesc("table", classOf[ResolvedTableTableExtractor])
-    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
+    val uriDescs = Seq(UriDesc("table", classOf[ResolvedTableURIExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES, uriDescs = uriDescs)
   }
 
   val AddArchivesCommand = {
