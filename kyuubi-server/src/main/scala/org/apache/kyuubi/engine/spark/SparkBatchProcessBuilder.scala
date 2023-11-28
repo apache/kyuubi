@@ -36,7 +36,7 @@ class SparkBatchProcessBuilder(
   extends SparkProcessBuilder(proxyUser, conf, batchId, extraEngineLog) {
   import SparkProcessBuilder._
 
-  override protected lazy val commands: Array[String] = {
+  override protected lazy val commands: Iterable[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
     Option(mainClass).foreach { cla =>
@@ -66,7 +66,7 @@ class SparkBatchProcessBuilder(
 
     batchArgs.foreach { arg => buffer += arg }
 
-    buffer.toArray
+    buffer
   }
 
   private def sparkAppNameConf(): Map[String, String] = {

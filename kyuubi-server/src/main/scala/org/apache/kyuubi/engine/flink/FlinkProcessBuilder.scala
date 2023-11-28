@@ -77,7 +77,7 @@ class FlinkProcessBuilder(
     ApplicationManagerInfo(clusterManager())
   }
 
-  override protected val commands: Array[String] = {
+  override protected val commands: Iterable[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     // unset engine credentials because Flink doesn't support them at the moment
     conf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
@@ -142,8 +142,7 @@ class FlinkProcessBuilder(
             buffer += s"$k=$v"
           }
         }
-
-        buffer.toArray
+        buffer
 
       case _ =>
         val buffer = new ArrayBuffer[String]()
@@ -211,7 +210,7 @@ class FlinkProcessBuilder(
           buffer += "--conf"
           buffer += s"$k=$v"
         }
-        buffer.toArray
+        buffer
     }
   }
 

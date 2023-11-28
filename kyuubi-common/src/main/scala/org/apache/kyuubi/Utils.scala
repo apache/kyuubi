@@ -340,7 +340,7 @@ object Utils extends Logging {
 
   private val PATTERN_FOR_KEY_VALUE_ARG = "(.+?)=(.+)".r
 
-  def redactCommandLineArgs(conf: KyuubiConf, commands: Array[String]): Array[String] = {
+  def redactCommandLineArgs(conf: KyuubiConf, commands: Iterable[String]): Iterable[String] = {
     val redactionPattern = conf.get(SERVER_SECRET_REDACTION_PATTERN)
     var nextKV = false
     commands.map {

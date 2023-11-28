@@ -98,6 +98,8 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
         req.setSessionHandle(handle)
         req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
         assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Flink")
+        req.setInfoType(TGetInfoType.CLI_ODBC_KEYWORDS)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Unimplemented")
       }
     }
   }
