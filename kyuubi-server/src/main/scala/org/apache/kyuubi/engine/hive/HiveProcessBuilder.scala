@@ -19,10 +19,8 @@ package org.apache.kyuubi.engine.hive
 
 import java.io.File
 import java.nio.file.{Files, Paths}
-import java.util
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
 
@@ -33,6 +31,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SES
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder._
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class HiveProcessBuilder(
     override val proxyUser: String,
@@ -54,7 +53,7 @@ class HiveProcessBuilder(
 
   override protected val commands: Iterable[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
-    val buffer = new ArrayBuffer[String]()
+    val buffer = new mutable.ListBuffer[String]()
     buffer += executable
 
     val memory = conf.get(ENGINE_HIVE_MEMORY)
@@ -65,8 +64,7 @@ class HiveProcessBuilder(
     }
     // -Xmx5g
     // java options
-    buffer += "-cp"
-    val classpathEntries = new util.LinkedHashSet[String]
+    val classpathEntries = new mutable.LinkedHashSet[String]
     // hive engine runtime jar
     mainResource.foreach(classpathEntries.add)
     // classpath contains hive configurations, default to hive.home/conf
@@ -101,18 +99,14 @@ class HiveProcessBuilder(
         classpathEntries.add(s"$devHadoopJars${File.separator}*")
       }
     }
-    buffer += classpathEntries.asScala.mkString(File.pathSeparator)
+    buffer ++= genClasspathOption(classpathEntries)
     buffer += mainClass
 
-    buffer += "--conf"
-    buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
-    buffer += "--conf"
-    buffer += s"$KYUUBI_ENGINE_ID=$engineRefId"
+    buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
+    buffer ++= confKeyValue(KYUUBI_ENGINE_ID, engineRefId)
 
-    for ((k, v) <- conf.getAll) {
-      buffer += "--conf"
-      buffer += s"$k=$v"
-    }
+    buffer ++= confKeyValues(conf.getAll)
+
     buffer
   }
 

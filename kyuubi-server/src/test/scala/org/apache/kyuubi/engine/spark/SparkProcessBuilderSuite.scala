@@ -35,6 +35,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.service.ServiceUtils
 import org.apache.kyuubi.util.AssertionUtils._
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   private def conf = KyuubiConf().set("kyuubi.on", "off")

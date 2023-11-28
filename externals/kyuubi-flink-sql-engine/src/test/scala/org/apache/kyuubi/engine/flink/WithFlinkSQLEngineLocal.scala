@@ -23,7 +23,7 @@ import java.net.URI
 import java.nio.file.{Files, Paths}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 import org.apache.flink.configuration.{Configuration, RestOptions}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
@@ -32,6 +32,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, KyuubiFunSuite, SCALA
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ADDRESSES
+import org.apache.kyuubi.util.command.CommandLineUtils._
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 import org.apache.kyuubi.zookeeper.ZookeeperConf.{ZK_CLIENT_PORT, ZK_CLIENT_PORT_ADDRESS}
 
@@ -111,7 +112,7 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
     processBuilder.environment().putAll(envs.asJava)
 
     conf.set(ENGINE_FLINK_EXTRA_CLASSPATH, udfJar.getAbsolutePath)
-    val command = new ArrayBuffer[String]()
+    val command = new mutable.ListBuffer[String]()
 
     command += envs("JAVA_EXEC")
 
@@ -122,8 +123,7 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
       command += javaOptions.get
     }
 
-    command += "-cp"
-    val classpathEntries = new java.util.LinkedHashSet[String]
+    val classpathEntries = new mutable.LinkedHashSet[String]
     // flink engine runtime jar
     mainResource(envs).foreach(classpathEntries.add)
     // flink sql jars
@@ -163,13 +163,11 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
         classpathEntries.add(s"$devHadoopJars${File.separator}*")
       }
     }
-    command += classpathEntries.asScala.mkString(File.pathSeparator)
+    command ++= genClasspathOption(classpathEntries)
+
     command += "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
-    conf.getAll.foreach { case (k, v) =>
-      command += "--conf"
-      command += s"$k=$v"
-    }
+    command ++= confKeyValues(conf.getAll)
 
     processBuilder.command(command.toList.asJava)
     processBuilder.redirectOutput(Redirect.INHERIT)
