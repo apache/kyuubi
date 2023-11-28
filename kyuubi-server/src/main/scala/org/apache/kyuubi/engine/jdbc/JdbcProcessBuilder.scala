@@ -59,7 +59,7 @@ class JdbcProcessBuilder(
    */
   override protected def mainClass: String = "org.apache.kyuubi.engine.jdbc.JdbcSQLEngine"
 
-  override protected val commands: Array[String] = {
+  override protected val commands: Iterable[String] = {
     require(
       conf.get(ENGINE_JDBC_CONNECTION_URL).nonEmpty,
       s"Jdbc server url can not be null! Please set ${ENGINE_JDBC_CONNECTION_URL.key}")
@@ -101,7 +101,7 @@ class JdbcProcessBuilder(
       buffer += "--conf"
       buffer += s"$k=$v"
     }
-    buffer.toArray
+    buffer
   }
 
   override def toString: String = {

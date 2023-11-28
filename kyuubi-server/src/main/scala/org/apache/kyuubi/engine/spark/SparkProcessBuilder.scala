@@ -122,7 +122,7 @@ class SparkProcessBuilder(
     file.isDirectory && r.findFirstMatchIn(file.getName).isDefined
   }
 
-  override protected lazy val commands: Array[String] = {
+  override protected lazy val commands: Iterable[String] = {
     // complete `spark.master` if absent on kubernetes
     completeMasterUrl(conf)
 
@@ -149,7 +149,7 @@ class SparkProcessBuilder(
 
     mainResource.foreach { r => buffer += r }
 
-    buffer.toArray
+    buffer
   }
 
   override protected def module: String = "kyuubi-spark-sql-engine"

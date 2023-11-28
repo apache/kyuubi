@@ -59,7 +59,7 @@ class ChatProcessBuilder(
    */
   override protected def mainClass: String = "org.apache.kyuubi.engine.chat.ChatEngine"
 
-  override protected val commands: Array[String] = {
+  override protected val commands: Iterable[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
 
@@ -98,7 +98,7 @@ class ChatProcessBuilder(
       buffer += "--conf"
       buffer += s"$k=$v"
     }
-    buffer.toArray
+    buffer
   }
 
   override def toString: String = {

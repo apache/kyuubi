@@ -52,7 +52,7 @@ class HiveProcessBuilder(
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.hive.HiveSQLEngine"
 
-  override protected val commands: Array[String] = {
+  override protected val commands: Iterable[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     val buffer = new ArrayBuffer[String]()
     buffer += executable
@@ -113,7 +113,7 @@ class HiveProcessBuilder(
       buffer += "--conf"
       buffer += s"$k=$v"
     }
-    buffer.toArray
+    buffer
   }
 
   override def shortName: String = "hive"
