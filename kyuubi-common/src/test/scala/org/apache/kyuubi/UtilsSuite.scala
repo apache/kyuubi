@@ -167,7 +167,7 @@ class UtilsSuite extends KyuubiFunSuite {
     buffer += "--conf"
     buffer += "kyuubi.regular.property2=regular_value"
 
-    val commands = buffer.toArray
+    val commands = buffer
 
     // Redact sensitive information
     val redactedCmdArgs = Utils.redactCommandLineArgs(conf, commands)
@@ -183,7 +183,7 @@ class UtilsSuite extends KyuubiFunSuite {
     expectBuffer += "--conf"
     expectBuffer += "kyuubi.regular.property2=regular_value"
 
-    assert(expectBuffer.toArray === redactedCmdArgs)
+    assert(expectBuffer === redactedCmdArgs)
   }
 
   test("redact sensitive information") {
