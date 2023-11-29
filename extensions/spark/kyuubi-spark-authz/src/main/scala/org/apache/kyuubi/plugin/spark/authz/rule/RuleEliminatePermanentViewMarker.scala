@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -26,12 +27,21 @@ import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMark
 /**
  * Transforming up [[PermanentViewMarker]]
  */
-class RuleEliminatePermanentViewMarker extends Rule[LogicalPlan] {
+class RuleEliminatePermanentViewMarker(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUp {
-      case pvm: PermanentViewMarker => pvm.child.transformAllExpressions {
+    var matched = false
+    val eliminatedPVM = plan.transformUp {
+      case pvm: PermanentViewMarker =>
+        matched = true
+        pvm.child.transformAllExpressions {
           case s: SubqueryExpression => s.withNewPlan(apply(s.plan))
         }
+    }
+    if (matched) {
+      Authorization.markAuthChecked(eliminatedPVM)
+      sparkSession.sessionState.optimizer.execute(eliminatedPVM)
+    } else {
+      eliminatedPVM
     }
   }
 }

@@ -19,20 +19,9 @@ package org.apache.kyuubi.plugin.spark.authz.rule.permanentview
 
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
+import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
 
-import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
-
-case class PermanentViewMarker(
-    child: LogicalPlan,
-    catalogTable: CatalogTable,
-    outputColNames: Seq[String],
-    isSubqueryExpressionPlaceHolder: Boolean = false) extends UnaryNode
-  with WithInternalChild {
+case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable) extends LeafNode {
 
   override def output: Seq[Attribute] = child.output
-
-  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
-    copy(child = newChild)
-
 }

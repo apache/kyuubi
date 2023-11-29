@@ -53,7 +53,7 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
     v1.injectResolutionRule(RuleApplyDataMaskingStage1)
     v1.injectOptimizerRule(_ => new RuleEliminateMarker())
     v1.injectOptimizerRule(new RuleAuthorization(_))
-    v1.injectOptimizerRule(_ => new RuleEliminatePermanentViewMarker())
+    v1.injectOptimizerRule(new RuleEliminatePermanentViewMarker(_))
     v1.injectOptimizerRule(_ => new RuleEliminateTypeOf())
     v1.injectPlannerStrategy(new FilterDataSourceV2Strategy(_))
   }
