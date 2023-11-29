@@ -13,12 +13,7 @@
   } ],
   "opType" : "ALTERTABLE_ADDCOLS",
   "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "child",
-    "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false,
-    "comment" : ""
-  } ]
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AddPartitions",
   "tableDescs" : [ {
@@ -50,12 +45,7 @@
   } ],
   "opType" : "ALTERTABLE_ADDCOLS",
   "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "child",
-    "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false,
-    "comment" : ""
-  } ]
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterTable",
   "tableDescs" : [ {
@@ -71,12 +61,7 @@
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "ident",
-    "fieldExtractor" : "IdentifierURIExtractor",
-    "isInput" : false,
-    "comment" : ""
-  } ]
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AppendData",
   "tableDescs" : [ {
@@ -334,12 +319,7 @@
   } ],
   "opType" : "ALTERTABLE_ADDCOLS",
   "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "child",
-    "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false,
-    "comment" : ""
-  } ]
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropPartitions",
   "tableDescs" : [ {
@@ -498,12 +478,7 @@
   } ],
   "opType" : "ALTERTABLE_RENAMECOL",
   "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "child",
-    "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false,
-    "comment" : ""
-  } ]
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RenamePartitions",
   "tableDescs" : [ {
@@ -551,12 +526,7 @@
   } ],
   "opType" : "ALTERTABLE_REPLACECOLS",
   "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "child",
-    "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false,
-    "comment" : ""
-  } ]
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceData",
   "tableDescs" : [ {
@@ -706,12 +676,7 @@
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "ResolvedTableURIExtractor",
-    "isInput" : false,
-    "comment" : ""
-  } ]
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowCreateTable",
   "tableDescs" : [ {
