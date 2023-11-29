@@ -140,6 +140,8 @@ object SchemaHelper {
     case dt
         if Array(TIMESTAMP_NTZ, DAY_TIME_INTERVAL, YEAR_MONTH_INTERVAL)
           .contains(dt.getClass.getSimpleName) => Some(dt.defaultSize)
+    case dt: DecimalType =>
+      Some(dt.precision)
     case dt @ (BooleanType | _: NumericType | DateType | TimestampType |
         CalendarIntervalType | NullType) =>
       Some(dt.defaultSize)

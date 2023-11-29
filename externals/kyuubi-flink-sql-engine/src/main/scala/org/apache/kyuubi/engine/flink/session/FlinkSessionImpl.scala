@@ -109,6 +109,7 @@ class FlinkSessionImpl(
       case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
         TGetInfoValue.stringValue("Apache Flink")
       case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(EnvironmentInformation.getVersion)
+      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
       case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
     }
   }
