@@ -101,6 +101,12 @@ object PrivilegesBuilder {
 
       case p =>
         for (child <- p.children) {
+          // If current plan's references don't have relation to it's input, have two case
+          //   1. Such as `MapInPandas`, `ScriptTransformation`
+          //   2. Project output only have constant value
+          // For case 1, we should pass it's input as projection list
+          // since it's children's columns was pruned.
+          // For case too, we just skip.
           if (columnPrune(p.references.toSeq, p.inputSet).isEmpty) {
             // If plan is project and output don't have relation to input, can ignore.
             if (!p.isInstanceOf[Project]) {
