@@ -101,9 +101,9 @@ object PrivilegesBuilder {
 
       case p =>
         for (child <- p.children) {
-          // If current plan's references don't have relation to it's input, have two case
-          //   1. Such as `MapInPandas`, `ScriptTransformation`
-          //   2. Project output only have constant value
+          // If current plan's references don't have relation to it's input, have two cases
+          //   1. `MapInPandas`, `ScriptTransformation`
+          //   2. `Project` output only have constant value
           if (columnPrune(p.references.toSeq ++ p.output, p.inputSet).isEmpty) {
             buildQuery(
               child,
@@ -115,6 +115,13 @@ object PrivilegesBuilder {
             buildQuery(
               child,
               privilegeObjects,
+              // Here we use `projectList ++ p.reference` do column prune since:
+              // For `Project`, project's output is contained by plan's referenced
+              // For `Aggregate`, aggregation's output also in it's reference.
+              // For `Filter`, `Sort` etc... it rely on upper `Project` node,
+              //    so we wrap a `Project` before call `buildQuery()`.
+              // So here we use upper node's projectionList and current's references
+              // to do column pruning can get the correct column.
               columnPrune(projectionList ++ p.references.toSeq, p.inputSet).distinct,
               conditionList ++ p.references,
               spark)
