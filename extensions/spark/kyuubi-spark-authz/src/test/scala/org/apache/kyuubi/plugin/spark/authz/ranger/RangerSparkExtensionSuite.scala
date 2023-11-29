@@ -641,14 +641,12 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s" FROM $db1.$srcTable1 as tb1" +
         s" JOIN $db1.$srcTable2 as tb2" +
         s" on tb1.id = tb2.id"
-      val e1 = intercept[AccessControlException](doAs(someone, sql(insertSql1)))
-      assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
 
       withSingleCallEnabled {
-        val e2 = intercept[AccessControlException](doAs(someone, sql(insertSql1)))
-        assert(e2.getMessage.contains(s"does not have" +
+        val e = intercept[AccessControlException](doAs(someone, sql(insertSql1)))
+        assert(e.getMessage.contains(s"does not have" +
           s" [select] privilege on" +
-          s" [$db1/$srcTable1/id,$db1/$srcTable1/name,$db1/$srcTable1/city," +
+          s" [$db1/$srcTable1/city,$db1/$srcTable1/id,$db1/$srcTable1/name," +
           s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
           s" [update] privilege on [$db1/$sinkTable1/id,$db1/$sinkTable1/age," +
           s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]"))
@@ -678,11 +676,14 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           sql(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable1" +
             s" (id int, name string, city string)"))
 
-        val e1 = intercept[AccessControlException](
-          doAs(someone, sql(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1")))
-        assert(
-          e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
+        withSingleCallEnabled {
+          val e1 = intercept[AccessControlException](
+            doAs(someone, sql(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1")))
+          assert(
+            e1.getMessage.contains(s"does not have [select] privilege on " +
+              s"[$db1/$srcTable1/city,$db1/$srcTable1/id,$db1/$srcTable1/name]"))
 
+        }
         doAs(admin, sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
         doAs(someone, sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
       }
@@ -1325,7 +1326,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           doAs(
             someone,
             sql(s"SELECT typeof(id), typeof(typeof(day)) FROM $db1.$table1").collect()))(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/day]")
+          s"does not have [select] privilege on [$db1/$table1/day,$db1/$table1/id]")
         interceptEndsWith[AccessControlException](
           doAs(
             someone,
@@ -1335,7 +1336,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |typeof(cast(id as string)),
                  |typeof(substring(day, 1, 3))
                  |FROM $db1.$table1""".stripMargin).collect()))(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/day]")
+          s"does not have [select] privilege on [$db1/$table1/day,$db1/$table1/id]")
         checkAnswer(
           admin,
           s"""

@@ -107,16 +107,16 @@ object PrivilegesBuilder {
           // For case 1, we should pass it's input as projection list
           // since it's children's columns was pruned.
           // For case too, we just skip.
-          if (columnPrune(p.references.toSeq, p.inputSet).isEmpty) {
+          if (columnPrune(p.references.toSeq ++ p.output, p.inputSet).isEmpty) {
             // If plan is project and output don't have relation to input, can ignore.
-            if (!p.isInstanceOf[Project]) {
+//            if (!p.isInstanceOf[Project]) {
               buildQuery(
                 child,
                 privilegeObjects,
                 p.inputSet.map(_.toAttribute).toSeq,
                 Nil,
                 spark)
-            }
+//            }
           } else {
             buildQuery(
               child,
@@ -314,6 +314,7 @@ object PrivilegesBuilder {
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries
       case _ =>
+        println(Project(plan.output, plan))
         buildQuery(Project(plan.output, plan), inputObjs, spark = spark)
         OperationType.QUERY
     }
