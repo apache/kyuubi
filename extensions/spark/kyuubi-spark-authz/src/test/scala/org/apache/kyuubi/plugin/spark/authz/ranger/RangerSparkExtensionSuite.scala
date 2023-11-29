@@ -682,7 +682,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           assert(
             e1.getMessage.contains(s"does not have [select] privilege on " +
               s"[$db1/$srcTable1/city,$db1/$srcTable1/id,$db1/$srcTable1/name]"))
-
         }
         doAs(admin, sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
         doAs(someone, sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
