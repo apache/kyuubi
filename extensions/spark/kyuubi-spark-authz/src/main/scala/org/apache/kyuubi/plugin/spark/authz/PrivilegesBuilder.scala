@@ -61,8 +61,8 @@ object PrivilegesBuilder {
   def buildQuery(
       plan: LogicalPlan,
       privilegeObjects: ArrayBuffer[PrivilegeObject],
-      projectionList: Seq[Expression] = Nil,
-      conditionList: Seq[Expression] = Nil,
+      projectionList: Seq[NamedExpression] = Nil,
+      conditionList: Seq[NamedExpression] = Nil,
       spark: SparkSession): Unit = {
 
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
@@ -121,8 +121,8 @@ object PrivilegesBuilder {
             buildQuery(
               child,
               privilegeObjects,
-              columnPrune(p.expressions ++ projectionList, p.inputSet).distinct,
-              conditionList ++ p.expressions,
+              columnPrune(projectionList ++ p.references.toSeq, p.inputSet).distinct,
+              conditionList ++ p.references,
               spark)
           }
         }
