@@ -115,11 +115,10 @@ object PrivilegesBuilder {
             buildQuery(
               child,
               privilegeObjects,
-              // Here we use `projectList ++ p.reference` do column prune since:
-              // For `Project`, project's output is contained by plan's referenced
-              // For `Aggregate`, aggregation's output also in it's reference.
+              // Here we use `projectList ++ p.reference` do column prune.
+              // For `Project`, `Aggregate`, plan's output is contained by plan's referenced
               // For `Filter`, `Sort` etc... it rely on upper `Project` node,
-              //    so we wrap a `Project` before call `buildQuery()`.
+              //    since we wrap a `Project` before call `buildQuery()`.
               // So here we use upper node's projectionList and current's references
               // to do column pruning can get the correct column.
               columnPrune(projectionList ++ p.references.toSeq, p.inputSet).distinct,
