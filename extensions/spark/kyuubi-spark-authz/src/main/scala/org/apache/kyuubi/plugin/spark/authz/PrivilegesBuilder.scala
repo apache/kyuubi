@@ -61,8 +61,8 @@ object PrivilegesBuilder {
   def buildQuery(
       plan: LogicalPlan,
       privilegeObjects: ArrayBuffer[PrivilegeObject],
-      projectionList: Seq[NamedExpression] = Nil,
-      conditionList: Seq[NamedExpression] = Nil,
+      projectionList: Seq[Expression] = Nil,
+      conditionList: Seq[Expression] = Nil,
       spark: SparkSession): Unit = {
 
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
@@ -70,49 +70,18 @@ object PrivilegesBuilder {
         privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
       } else {
         val cols = columnPrune(projectionList ++ conditionList, plan.outputSet)
-        privilegeObjects += PrivilegeObject(table, cols)
+        privilegeObjects += PrivilegeObject(table, cols.map(_.name).distinct)
       }
     }
 
-    def columnPrune(projectionList: Seq[NamedExpression], output: AttributeSet): Seq[String] = {
+    def columnPrune(projectionList: Seq[Expression], output: AttributeSet): Seq[NamedExpression] = {
       (projectionList ++ conditionList)
         .flatMap(collectLeaves)
         .filter(output.contains)
-        .map(_.name)
-        .distinct
     }
 
     plan match {
       case p if p.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty =>
-
-      case p: Project => buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
-
-      case j: Join =>
-        val cols =
-          conditionList ++ j.condition.map(expr => collectLeaves(expr)).getOrElse(Nil)
-        buildQuery(j.left, privilegeObjects, projectionList, cols, spark)
-        buildQuery(j.right, privilegeObjects, projectionList, cols, spark)
-
-      case f: Filter =>
-        val cols = conditionList ++ collectLeaves(f.condition)
-        buildQuery(f.child, privilegeObjects, projectionList, cols, spark)
-
-      case w: Window =>
-        val orderCols = w.orderSpec.flatMap(orderSpec => collectLeaves(orderSpec))
-        val partitionCols = w.partitionSpec.flatMap(partitionSpec => collectLeaves(partitionSpec))
-        val cols = conditionList ++ orderCols ++ partitionCols
-        buildQuery(w.child, privilegeObjects, projectionList, cols, spark)
-
-      case s: Sort =>
-        val sortCols = s.order.flatMap(sortOrder => collectLeaves(sortOrder))
-        val cols = conditionList ++ sortCols
-        buildQuery(s.child, privilegeObjects, projectionList, cols, spark)
-
-      case a: Aggregate =>
-        val aggCols =
-          (a.aggregateExpressions ++ a.groupingExpressions).flatMap(e => collectLeaves(e))
-        val cols = conditionList ++ aggCols
-        buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
 
       case scan if isKnownScan(scan) && scan.resolved =>
         val tables = getScanSpec(scan).tables(scan, spark)
@@ -132,16 +101,23 @@ object PrivilegesBuilder {
 
       case p =>
         for (child <- p.children) {
-          val childCols = columnPrune(projectionList ++ conditionList, child.outputSet)
-          if (childCols.isEmpty) {
+          if (columnPrune(p.references.toSeq, p.inputSet).isEmpty) {
+            // If plan is project and output don't have relation to input, can ignore.
+            if (!p.isInstanceOf[Project]) {
+              buildQuery(
+                child,
+                privilegeObjects,
+                p.inputSet.map(_.toAttribute).toSeq,
+                Nil,
+                spark)
+            }
+          } else {
             buildQuery(
               child,
               privilegeObjects,
-              p.inputSet.map(_.toAttribute).toSeq,
-              conditionList,
+              columnPrune(p.expressions ++ projectionList, p.inputSet).distinct,
+              conditionList ++ p.expressions,
               spark)
-          } else {
-            buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
           }
         }
     }
@@ -332,7 +308,7 @@ object PrivilegesBuilder {
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries
       case _ =>
-        buildQuery(plan, inputObjs, spark = spark)
+        buildQuery(Project(plan.output, plan), inputObjs, spark = spark)
         OperationType.QUERY
     }
     (inputObjs, outputObjs, opType)

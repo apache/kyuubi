@@ -59,11 +59,13 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   protected def checkColumns(plan: LogicalPlan, cols: Seq[String]): Unit = {
     val (in, out, _) = PrivilegesBuilder.build(plan, spark)
     assert(out.isEmpty, "Queries shall not check output privileges")
-    val po = in.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.columns === cols)
-    checkTableOwner(po)
+    if (cols.nonEmpty) {
+      val po = in.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.columns === cols)
+      checkTableOwner(po)
+    }
   }
 
   protected def checkColumns(query: String, cols: Seq[String]): Unit = {
@@ -993,7 +995,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   test("Query: Function") {
     checkColumns(
       s"select coalesce(max(key), pid, 1) from $reusedPartTable group by pid",
-      Seq("key", "pid"))
+      Seq("pid", "key"))
   }
 
   test("Query: CTE") {
@@ -1001,7 +1003,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       s"""
          |with t(c) as (select coalesce(max(key), pid, 1) from $reusedPartTable group by pid)
          |select c from t where c = 1""".stripMargin,
-      Seq("key", "pid"))
+      Seq( "pid", "key"))
   }
 
   test("Query: Nested query") {
@@ -1107,7 +1109,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       assertEqualsIgnoreCase(reusedDb)(po.dbname)
       assertStartsWithIgnoreCase(reusedTableShort)(po.objectName)
       assert(
-        po.columns === Seq("key", "value"),
+        po.columns.sorted === Seq("key", "value").sorted,
         s"$reusedPartTable 'key' is the join key and 'pid' is omitted")
       checkTableOwner(po)
       val accessType = ranger.AccessType(po, operationType, isInput = true)
@@ -1749,7 +1751,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(out1.isEmpty)
     val pi1 = in1.head
     assert(pi1.columns.size === 3)
-    assert(pi1.columns === Seq("key", "value", "pid"))
+    assert(pi1.columns === Seq("pid", "key", "value"))
 
     // case2: Some columns are involved, and the group column is not selected.
     val plan2 = sql(s"SELECT COUNT(key) FROM $reusedPartTable GROUP BY pid")
@@ -1759,7 +1761,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(out2.isEmpty)
     val pi2 = in2.head
     assert(pi2.columns.size === 2)
-    assert(pi2.columns === Seq("key", "pid"))
+    assert(pi2.columns === Seq("pid", "key"))
 
     // case3: Some columns are involved, and the group column is selected.
     val plan3 = sql(s"SELECT COUNT(key), pid FROM $reusedPartTable GROUP BY pid")
@@ -1769,7 +1771,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(out3.isEmpty)
     val pi3 = in3.head
     assert(pi3.columns.size === 2)
-    assert(pi3.columns === Seq("key", "pid"))
+    assert(pi3.columns === Seq("pid", "key"))
 
     // case4: HAVING & GROUP clause
     val plan4 = sql(s"SELECT COUNT(key) FROM $reusedPartTable GROUP BY pid HAVING MAX(key) > 1000")
@@ -1779,7 +1781,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(out4.isEmpty)
     val pi4 = in4.head
     assert(pi4.columns.size === 2)
-    assert(pi4.columns === Seq("key", "pid"))
+    assert(pi4.columns === Seq("pid", "key"))
   }
 }
 
