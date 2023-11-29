@@ -59,13 +59,11 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   protected def checkColumns(plan: LogicalPlan, cols: Seq[String]): Unit = {
     val (in, out, _) = PrivilegesBuilder.build(plan, spark)
     assert(out.isEmpty, "Queries shall not check output privileges")
-    if (cols.nonEmpty) {
-      val po = in.head
-      assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-      assert(po.columns === cols)
-      checkTableOwner(po)
-    }
+    val po = in.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.columns === cols)
+    checkTableOwner(po)
   }
 
   protected def checkColumns(query: String, cols: Seq[String]): Unit = {
@@ -989,7 +987,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("Query: Literal") {
-    checkColumns(s"select 1 from $reusedTable", Nil)
+    checkColumns(s"select 1 from $reusedTable", Seq("key", "value"))
   }
 
   test("Query: Function") {
