@@ -36,7 +36,7 @@ class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
     plan mapChildren {
       case p: PermanentViewMarker => p
       case permanentView: View if hasResolvedPermanentView(permanentView) =>
-        val resolved = permanentView.child.transformAllExpressions {
+        val resolved = permanentView.transformAllExpressions {
           case subquery: SubqueryExpression =>
             subquery.withNewPlan(plan = PermanentViewMarker(subquery.plan, permanentView.desc))
         }
