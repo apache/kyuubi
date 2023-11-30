@@ -24,4 +24,31 @@ import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
 case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable) extends LeafNode {
 
   override def output: Seq[Attribute] = child.output
+
+  override def generateTreeString(
+    depth: Int,
+    lastChildren: Seq[Boolean],
+    append: String => Unit,
+    verbose: Boolean,
+    prefix: String,
+    addSuffix: Boolean,
+    maxFields: Int,
+    printNodeId: Boolean,
+    indent: Int): Unit = {
+    append("   " * indent)
+    if (depth > 0) {
+      lastChildren.init.foreach { isLast =>
+        append(if (isLast) "   " else ":  ")
+      }
+      append(if (lastChildren.last) "+- " else ":- ")
+    }
+
+    append(prefix)
+    append(s"$nodeName")
+    append("\n")
+
+    child.generateTreeString(
+      depth + 1, lastChildren :+ true, append, verbose, prefix,
+      addSuffix, maxFields, printNodeId = printNodeId, indent = indent)
+  }
 }
