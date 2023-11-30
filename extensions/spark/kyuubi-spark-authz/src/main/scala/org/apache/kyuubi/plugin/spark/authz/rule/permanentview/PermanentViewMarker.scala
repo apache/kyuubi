@@ -25,30 +25,43 @@ case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable) e
 
   override def output: Seq[Attribute] = child.output
 
-  override def generateTreeString(
-    depth: Int,
-    lastChildren: Seq[Boolean],
-    append: String => Unit,
-    verbose: Boolean,
-    prefix: String,
-    addSuffix: Boolean,
-    maxFields: Int,
-    printNodeId: Boolean,
-    indent: Int): Unit = {
-    append("   " * indent)
-    if (depth > 0) {
-      lastChildren.init.foreach { isLast =>
-        append(if (isLast) "   " else ":  ")
-      }
-      append(if (lastChildren.last) "+- " else ":- ")
+  override def argString(maxFields: Int): String = {
+    catalogTable.storage.serde match {
+      case Some(serde) => (catalogTable.identifier :: serde :: Nil).mkString(", ")
+      case _ => (catalogTable.identifier :: Nil).mkString(", ")
     }
+  }
 
-    append(prefix)
-    append(s"$nodeName")
-    append("\n")
+  override def generateTreeString(
+      depth: Int,
+      lastChildren: Seq[Boolean],
+      append: String => Unit,
+      verbose: Boolean,
+      prefix: String,
+      addSuffix: Boolean,
+      maxFields: Int,
+      printNodeId: Boolean,
+      indent: Int): Unit = {
+    super.generateTreeString(
+      depth,
+      lastChildren,
+      append,
+      verbose,
+      prefix,
+      addSuffix,
+      maxFields,
+      printNodeId,
+      indent)
 
     child.generateTreeString(
-      depth + 1, lastChildren :+ true, append, verbose, prefix,
-      addSuffix, maxFields, printNodeId = printNodeId, indent = indent)
+      depth + 1,
+      lastChildren :+ true,
+      append,
+      verbose,
+      prefix,
+      addSuffix,
+      maxFields,
+      printNodeId = printNodeId,
+      indent = indent)
   }
 }
