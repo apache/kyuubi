@@ -507,7 +507,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         interceptEndsWith[AccessControlException] {
           doAs(someone, sql(mergeIntoSQL))
         }(s"does not have [select] privilege on " +
-          s"[$namespace1/$table2/id,$namespace1/$table2/name,$namespace1/$table2/city], " +
+          s"[$namespace1/$table2/city,$namespace1/$table2/id,$namespace1/$table2/name], " +
           s"[update] privilege on [$namespace1/$table1]")
         doAs(admin, sql(mergeIntoSQL))
       }
