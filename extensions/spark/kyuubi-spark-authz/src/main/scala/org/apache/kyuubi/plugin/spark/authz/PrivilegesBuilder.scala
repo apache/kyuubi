@@ -220,7 +220,7 @@ object PrivilegesBuilder {
               LOG.debug(ud.error(plan, e))
           }
         }
-        spec.queries(plan).foreach(buildQuery(_, inputObjs, spark = spark))
+        spec.queries(plan).foreach(p => buildQuery(Project(p.output, p), inputObjs, spark = spark))
         spec.operationType
 
       case classname if FUNCTION_COMMAND_SPECS.contains(classname) =>
