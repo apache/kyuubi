@@ -135,8 +135,8 @@ object KyuubiSparkUtil extends Logging {
     }
 
   def maybeAttempt(conf: SparkConf): Boolean = {
-    val master = conf.getOption("spark.master").getOrElse("")
-    val deployMode = conf.getOption("spark.submit.deployMode").getOrElse("")
+    val master = conf.get("spark.master", "")
+    val deployMode = conf.get("spark.submit.deployMode", "")
     (master, deployMode) match {
       case ("yarn", "cluster") =>
         yarnAppAttemptIdFromEnv.exists(_ > 0)
