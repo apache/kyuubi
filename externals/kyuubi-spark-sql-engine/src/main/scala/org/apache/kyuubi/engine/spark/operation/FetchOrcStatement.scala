@@ -36,9 +36,13 @@ import org.apache.spark.sql.execution.datasources.orc.OrcDeserializer
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiException
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 import org.apache.kyuubi.operation.{FetchIterator, IterableFetchIterator}
+import org.apache.kyuubi.util.reflect.DynConstructors
 
 class FetchOrcStatement(spark: SparkSession) {
+
+  var orcIter: OrcFileIterator = _
   def getIterator(path: String, orcSchema: StructType): FetchIterator[Row] = {
     val conf = spark.sparkContext.hadoopConfiguration
     val savePath = new Path(path)
@@ -59,21 +63,42 @@ class FetchOrcStatement(spark: SparkSession) {
       AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
     val unsafeProjection = GenerateUnsafeProjection.generate(fullSchema, fullSchema)
     val deserializer = getOrcDeserializer(orcSchema, colId)
-    val iter = new OrcFileIterator(list)
-    val iterRow = iter.map(value =>
+    orcIter = new OrcFileIterator(list)
+    val iterRow = orcIter.map(value =>
       unsafeProjection(deserializer.deserialize(value)))
       .map(value => toRowConverter(value))
     new IterableFetchIterator[Row](iterRow.toIterable)
   }
 
+  def close(): Unit = {
+    orcIter.close()
+  }
+
   private def getOrcDeserializer(orcSchema: StructType, colId: Array[Int]): OrcDeserializer = {
     try {
-      val cls = Class.forName("org.apache.spark.sql.execution.datasources.orc.OrcDeserializer")
-      val constructor = cls.getDeclaredConstructors.apply(0)
-      if (constructor.getParameterCount == 3) {
-        constructor.newInstance(new StructType, orcSchema, colId).asInstanceOf[OrcDeserializer]
+      if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") {
+        // https://issues.apache.org/jira/browse/SPARK-34535
+        DynConstructors.builder()
+          .impl(
+            classOf[OrcDeserializer],
+            classOf[StructType],
+            classOf[Array[Int]])
+          .build[OrcDeserializer]()
+          .newInstance(
+            orcSchema,
+            colId)
       } else {
-        constructor.newInstance(orcSchema, colId).asInstanceOf[OrcDeserializer]
+        DynConstructors.builder()
+          .impl(
+            classOf[OrcDeserializer],
+            classOf[StructType],
+            classOf[StructType],
+            classOf[Array[Int]])
+          .build[OrcDeserializer]()
+          .newInstance(
+            new StructType,
+            orcSchema,
+            colId)
       }
     } catch {
       case e: Throwable =>
@@ -84,7 +109,7 @@ class FetchOrcStatement(spark: SparkSession) {
 
 class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[OrcStruct] {
 
-  val iters = fileList.map(x => getOrcFileIterator(x))
+  private val iters = fileList.map(x => getOrcFileIterator(x))
 
   var idx = 0
 
@@ -104,6 +129,10 @@ class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[
       idx = idx + 1
       iters(idx).next()
     }
+  }
+
+  def close(): Unit = {
+    iters.foreach(_.close())
   }
 
   private def getOrcFileIterator(file: LocatedFileStatus): RecordReaderIterator[OrcStruct] = {

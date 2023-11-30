@@ -22,6 +22,7 @@ import java.util.concurrent.RejectedExecutionException
 import scala.Array._
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
@@ -47,6 +48,8 @@ class ExecuteStatement(
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   override protected def supportProgress: Boolean = true
 
+  private var fetchOrcStatement: Option[FetchOrcStatement] = None
+  private var saveFileName: Option[String] = None
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
       new StructType().add("Result", "string")
@@ -63,6 +66,15 @@ class ExecuteStatement(
 
   override protected def afterRun(): Unit = {
     OperationLog.removeCurrentOperationLog()
+  }
+
+  override def close(): Unit = {
+    super.close()
+    fetchOrcStatement.foreach(_.close())
+    saveFileName.foreach { p =>
+      val path = new Path(p)
+      path.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(path, true)
+    }
   }
 
   protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
@@ -164,17 +176,18 @@ class ExecuteStatement(
       if (hasResultSet && sparkSave && shouldSaveResultToHdfs(resultMaxRows, threshold, result)) {
         val sessionId = session.handle.identifier.toString
         val savePath = session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_PATH)
-        val fileName = s"$savePath/$engineId/$sessionId/$statementId"
+        saveFileName = Some(s"$savePath/$engineId/$sessionId/$statementId")
         val colName = range(0, result.schema.size).map(x => "col" + x)
         if (resultMaxRows > 0) {
           result.toDF(colName: _*).limit(resultMaxRows).write
-            .option("compression", "zstd").format("orc").save(fileName)
+            .option("compression", "zstd").format("orc").save(saveFileName.get)
         } else {
           result.toDF(colName: _*).write
-            .option("compression", "zstd").format("orc").save(fileName)
+            .option("compression", "zstd").format("orc").save(saveFileName.get)
         }
-        info(s"Save result to $fileName")
-        return new FetchOrcStatement(spark).getIterator(fileName, resultSchema)
+        info(s"Save result to $saveFileName")
+        fetchOrcStatement = Some(new FetchOrcStatement(spark))
+        return fetchOrcStatement.get.getIterator(saveFileName.get, resultSchema)
       }
       val internalArray = if (resultMaxRows <= 0) {
         info("Execute in full collect mode")

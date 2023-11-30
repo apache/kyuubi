@@ -26,6 +26,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
+import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SortExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.HiveResult
@@ -297,8 +298,10 @@ object SparkDatasetHelper extends Logging {
   }
 
   def shouldSaveResultToHdfs(resultMaxRows: Int, threshold: Int, result: DataFrame): Boolean = {
+    if (isCommandExec(result.queryExecution.executedPlan.nodeName)) {
+      return false
+    }
     lazy val limit = result.queryExecution.executedPlan match {
-      case plan if isCommandExec(plan.nodeName) => 0
       case collectLimit: CollectLimitExec => collectLimit.limit
       case _ => resultMaxRows
     }
@@ -308,17 +311,13 @@ object SparkDatasetHelper extends Logging {
     } else {
       result.queryExecution.optimizedPlan.stats.sizeInBytes
     }
-    lazy val isSort = result.queryExecution.sparkPlan match {
-      case s: SortExec => s.global
-      case _ => false
-    }
     lazy val colSize =
       if (result == null || result.schema.isEmpty) {
         0
       } else {
         result.schema.size
       }
-    threshold > 0 && colSize > 0 && !isSort && stats >= threshold
+    threshold > 0 && colSize > 0 && stats >= threshold
   }
 
   private def isCommandExec(nodeName: String): Boolean = {

@@ -1960,6 +1960,7 @@ object KyuubiConf {
       .doc("The threshold of Spark result save to hdfs file, default value is 200 MB")
       .version("1.9.0")
       .intConf
+      .checkValue(_ > 0, "must be positive value")
       .createWithDefault(209715200)
 
   val OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
