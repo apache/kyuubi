@@ -314,7 +314,6 @@ object PrivilegesBuilder {
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries
       case _ =>
-        println(Project(plan.output, plan))
         buildQuery(Project(plan.output, plan), inputObjs, spark = spark)
         OperationType.QUERY
     }
