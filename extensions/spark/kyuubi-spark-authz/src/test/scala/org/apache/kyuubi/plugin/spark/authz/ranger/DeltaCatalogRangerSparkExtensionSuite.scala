@@ -25,7 +25,7 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.DeltaCatalogRangerSparkExtensionSuite._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isSparkV32OrGreater
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{isSparkV32OrGreater, isSparkV35OrGreater}
 import org.apache.kyuubi.tags.DeltaTest
 import org.apache.kyuubi.util.AssertionUtils._
 
@@ -41,6 +41,14 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val table1 = "table1_delta"
   val table2 = "table2_delta"
 
+  def propString(props: Map[String, String]): String =
+    if (props.isEmpty) ""
+    else {
+      props
+        .map { case (key, value) => s"'$key' = '$value'" }
+        .mkString("TBLPROPERTIES (", ",", ")")
+    }
+
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $namespace.$table (
@@ -53,7 +61,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
        |PARTITIONED BY (gender)
        |""".stripMargin
 
-  def createPathBasedTableSql(path: Path): String =
+  def createPathBasedTableSql(path: Path, props: Map[String, String] = Map.empty): String =
     s"""
        |CREATE TABLE IF NOT EXISTS delta.`$path` (
        |  id INT,
@@ -63,6 +71,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
        |)
        |USING DELTA
        |PARTITIONED BY (gender)
+       |${propString(props)}
        |""".stripMargin
 
   override def withFixture(test: NoArgTest): Outcome = {
@@ -466,6 +475,95 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(someone, sql(vacuumTableSql2)))(
         s"does not have [write] privilege on [[$path, $path/]]")
       doAs(admin, sql(vacuumTableSql2))
+    })
+  }
+
+  test("alter path-based table set properties") {
+    withTempDir(path => {
+      doAs(admin, sql(createPathBasedTableSql(path)))
+      val setPropertiesSql = s"ALTER TABLE delta.`$path`" +
+        s" SET TBLPROPERTIES ('delta.appendOnly' = 'true')"
+      interceptEndsWith[AccessControlException](
+        doAs(someone, sql(setPropertiesSql)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(setPropertiesSql))
+    })
+  }
+
+  test("alter path-based table add columns") {
+    withTempDir(path => {
+      doAs(admin, sql(createPathBasedTableSql(path)))
+      val addColumnsSql = s"ALTER TABLE delta.`$path` ADD COLUMNS (age int)"
+      interceptEndsWith[AccessControlException](
+        doAs(someone, sql(addColumnsSql)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(addColumnsSql))
+    })
+  }
+
+  test("alter path-based table change column") {
+    withTempDir(path => {
+      doAs(admin, sql(createPathBasedTableSql(path)))
+      val changeColumnSql = s"ALTER TABLE delta.`$path`" +
+        s" CHANGE COLUMN gender gender STRING AFTER birthDate"
+      interceptEndsWith[AccessControlException](
+        doAs(someone, sql(changeColumnSql)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(changeColumnSql))
+    })
+  }
+
+  test("alter path-based table drop column") {
+    assume(
+      isSparkV32OrGreater,
+      "alter table drop column is available in Delta Lake 1.2.0 and above")
+
+    withTempDir(path => {
+      doAs(admin, sql(createPathBasedTableSql(path, Map("delta.columnMapping.mode" -> "name"))))
+      val dropColumnSql = s"ALTER TABLE delta.`$path` DROP COLUMN birthDate"
+      interceptEndsWith[AccessControlException](
+        doAs(someone, sql(dropColumnSql)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(dropColumnSql))
+    })
+  }
+
+  test("alter path-based table rename column") {
+    assume(
+      isSparkV32OrGreater,
+      "alter table rename column is available in Delta Lake 1.2.0 and above")
+
+    withTempDir(path => {
+      doAs(admin, sql(createPathBasedTableSql(path, Map("delta.columnMapping.mode" -> "name"))))
+      val renameColumnSql = s"ALTER TABLE delta.`$path`" +
+        s" RENAME COLUMN birthDate TO dateOfBirth"
+      interceptEndsWith[AccessControlException](
+        doAs(someone, sql(renameColumnSql)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+      doAs(admin, sql(renameColumnSql))
+    })
+  }
+
+  test("alter path-based table replace columns") {
+    withTempDir(path => {
+      assume(
+        isSparkV32OrGreater,
+        "alter table replace columns is not available in Delta Lake 1.0.1")
+
+      doAs(admin, sql(createPathBasedTableSql(path, Map("delta.columnMapping.mode" -> "name"))))
+      val replaceColumnsSql = s"ALTER TABLE delta.`$path`" +
+        s" REPLACE COLUMNS (id INT, name STRING, gender STRING)"
+      interceptEndsWith[AccessControlException](
+        doAs(someone, sql(replaceColumnsSql)))(
+        s"does not have [write] privilege on [[$path, $path/]]")
+
+      // There was a bug before Delta Lake 3.0, it will throw AnalysisException message
+      // "Cannot drop column from a struct type with a single field:
+      // StructType(StructField(birthDate,TimestampType,true))".
+      // For details, see https://github.com/delta-io/delta/pull/1822
+      if (isSparkV35OrGreater) {
+        doAs(admin, sql(replaceColumnsSql))
+      }
     })
   }
 }
