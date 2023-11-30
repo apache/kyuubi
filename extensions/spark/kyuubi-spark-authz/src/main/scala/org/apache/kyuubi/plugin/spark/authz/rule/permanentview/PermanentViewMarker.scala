@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.rule.permanentview
 
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
 
 case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable) extends LeafNode {
@@ -32,36 +33,5 @@ case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable) e
     }
   }
 
-  override def generateTreeString(
-      depth: Int,
-      lastChildren: Seq[Boolean],
-      append: String => Unit,
-      verbose: Boolean,
-      prefix: String,
-      addSuffix: Boolean,
-      maxFields: Int,
-      printNodeId: Boolean,
-      indent: Int): Unit = {
-    super.generateTreeString(
-      depth,
-      lastChildren,
-      append,
-      verbose,
-      prefix,
-      addSuffix,
-      maxFields,
-      printNodeId,
-      indent)
-
-    child.generateTreeString(
-      depth + 1,
-      lastChildren :+ true,
-      append,
-      verbose,
-      prefix,
-      addSuffix,
-      maxFields,
-      printNodeId = printNodeId,
-      indent = indent)
-  }
+  override def innerChildren: Seq[QueryPlan[_]] = child :: Nil
 }
