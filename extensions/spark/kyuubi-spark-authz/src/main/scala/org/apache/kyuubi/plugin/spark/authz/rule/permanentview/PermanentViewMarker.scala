@@ -26,12 +26,7 @@ case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable) e
 
   override def output: Seq[Attribute] = child.output
 
-  override def argString(maxFields: Int): String = {
-    catalogTable.storage.serde match {
-      case Some(serde) => (catalogTable.identifier :: serde :: Nil).mkString(", ")
-      case _ => (catalogTable.identifier :: Nil).mkString(", ")
-    }
-  }
+  override def argString(maxFields: Int): String = ""
 
   override def innerChildren: Seq[QueryPlan[_]] = child :: Nil
 }
