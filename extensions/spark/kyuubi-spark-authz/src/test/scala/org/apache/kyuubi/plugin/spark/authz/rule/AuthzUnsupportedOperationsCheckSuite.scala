@@ -34,6 +34,7 @@ class AuthzUnsupportedOperationsCheckSuite extends AnyFunSuite with SparkSession
   }
 
   test("disable script transformation") {
+    spark.conf.set("spark.sql.authz.scriptTransformation.enabled", false)
     val extension = new AuthzUnsupportedOperationsCheck
     val p1 = sql("SELECT TRANSFORM('') USING 'ls /'").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p1))
