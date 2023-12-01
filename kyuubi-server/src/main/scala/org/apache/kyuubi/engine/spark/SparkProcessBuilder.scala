@@ -140,7 +140,7 @@ class SparkProcessBuilder(
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
     // pass spark engine log path to spark conf
-    (allConf ++ engineLogPathConf ++ appendPodNameConf(allConf)).foreach { case (k, v) =>
+    (allConf ++ engineLogPathConf ++ extraYarnConf ++ appendPodNameConf(allConf)).foreach { case (k, v) =>
       buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 
@@ -258,6 +258,15 @@ class SparkProcessBuilder(
     map.result().toMap
   }
 
+  def extraYarnConf: Map[String, String] = {
+    if (clusterManager().exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))) {
+      // set `spark.yarn.maxAppAttempts` to 1 to avoid invalid attempts.
+      Map(YARN_MAX_APP_ATTEMPTS_KEY -> "1")
+    } else {
+      Map.empty[String, String]
+    }
+  }
+
   override def clusterManager(): Option[String] = {
     conf.getOption(MASTER_KEY).orElse(defaultsConf.get(MASTER_KEY))
   }
@@ -308,6 +317,7 @@ object SparkProcessBuilder {
   final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
   final val KUBERNETES_DRIVER_POD_NAME = "spark.kubernetes.driver.pod.name"
   final val KUBERNETES_EXECUTOR_POD_NAME_PREFIX = "spark.kubernetes.executor.podNamePrefix"
+  final val YARN_MAX_APP_ATTEMPTS_KEY = "spark.yarn.maxAppAttempts"
   final val INTERNAL_RESOURCE = "spark-internal"
 
   /**
