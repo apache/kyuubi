@@ -61,7 +61,7 @@ mvn clean install -pl '!dev/kyuubi-codecov,!kyuubi-assembly' -DskipTests
 
 Since v1.1.0, Kyuubi support building with different Spark profiles,
 
-| Profile     | Default | Since |
+|   Profile   | Default | Since |
 |-------------|---------|-------|
 | -Pspark-3.1 |         | 1.1.0 |
 | -Pspark-3.2 |         | 1.4.0 |
