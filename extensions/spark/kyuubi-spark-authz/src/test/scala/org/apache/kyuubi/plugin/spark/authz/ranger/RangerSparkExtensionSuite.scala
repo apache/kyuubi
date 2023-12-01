@@ -890,9 +890,15 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           doAs(
             someone,
             sql(s"SELECT id as new_id, name, max_scope FROM $db1.$view1".stripMargin).show()))
-        assert(e2.getMessage.contains(
-          s"does not have [select] privilege on " +
-            s"[$db1/$view1/name,$db1/$view1/id,$db1/$view1/max_scope]"))
+        if (isSparkV35OrGreater) {
+          assert(e2.getMessage.contains(
+            s"does not have [select] privilege on " +
+              s"[$db1/$view1/id,$db1/$view1/max_scope,$db1/$view1/name]"))
+        } else {
+          assert(e2.getMessage.contains(
+            s"does not have [select] privilege on " +
+              s"[$db1/$view1/name,$db1/$view1/id,$db1/$view1/max_scope]"))
+        }
       }
     }
   }

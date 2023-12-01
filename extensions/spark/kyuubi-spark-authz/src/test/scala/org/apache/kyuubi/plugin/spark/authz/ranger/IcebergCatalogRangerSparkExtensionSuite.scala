@@ -114,8 +114,8 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       withSingleCallEnabled {
         interceptEndsWith[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
           if (isSparkV35OrGreater) {
-            s"does not have [select] privilege on [$namespace1/table1/id" +
-              s",$namespace1/$table1/name,$namespace1/$table1/city]"
+            s"does not have [select] privilege on [$namespace1/table1/city" +
+              s",$namespace1/$table1/id,$namespace1/$table1/name]"
           } else {
             "does not have " +
               s"[select] privilege on [$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name]," +
@@ -132,19 +132,26 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   test("[KYUUBI #3515] UPDATE TABLE") {
-    // UpdateTable
-    interceptEndsWith[AccessControlException] {
-      doAs(someone, sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou'  WHERE id=1"))
-    }(if (isSparkV35OrGreater) {
-      s"does not have [select] privilege on [$namespace1/$table1/id]"
-    } else {
-      s"does not have [update] privilege on [$namespace1/$table1]"
-    })
+    withSingleCallEnabled {
+      // UpdateTable
+      interceptEndsWith[AccessControlException] {
+        doAs(
+          someone,
+          sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou'  WHERE id=1"))
+      }(if (isSparkV35OrGreater) {
+        s"does not have [select] privilege on " +
+          s"[$namespace1/$table1/_file,$namespace1/$table1/_pos," +
+          s"$namespace1/$table1/id,$namespace1/$table1/name,$namespace1/$table1/city], " +
+          s"[update] privilege on [$namespace1/$table1]"
+      } else {
+        s"does not have [update] privilege on [$namespace1/$table1]"
+      })
 
-    doAs(
-      admin,
-      sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
-        " WHERE id=1"))
+      doAs(
+        admin,
+        sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
+          " WHERE id=1"))
+    }
   }
 
   test("[KYUUBI #3515] DELETE FROM TABLE") {
