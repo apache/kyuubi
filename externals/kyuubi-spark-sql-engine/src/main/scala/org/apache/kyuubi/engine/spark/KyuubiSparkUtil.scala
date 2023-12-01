@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.{Instant, LocalDateTime, ZoneId}
+import java.util.Locale
 
 import scala.annotation.meta.getter
 
@@ -135,10 +136,10 @@ object KyuubiSparkUtil extends Logging {
     }
 
   def maybeAttempt(conf: SparkConf): Boolean = {
-    val master = conf.get("spark.master", "")
-    val deployMode = conf.get("spark.submit.deployMode", "")
+    val master = conf.get("spark.master", "").toLowerCase(Locale.ROOT)
+    val deployMode = conf.get("spark.submit.deployMode", "").toLowerCase(Locale.ROOT)
     (master, deployMode) match {
-      case ("yarn", "cluster") =>
+      case (_, "cluster") if master.startsWith("yarn") =>
         yarnAppAttemptIdFromEnv.exists(_ > 0)
       case _ =>
         false
