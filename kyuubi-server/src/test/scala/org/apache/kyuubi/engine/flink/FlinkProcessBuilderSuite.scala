@@ -29,7 +29,6 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_APPLICATION_JARS, ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS, ENGINE_FLINK_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
-import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def sessionModeConf = KyuubiConf()
@@ -74,7 +73,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def confStr: String = {
     sessionModeConf.clone.getAll
       .filter(!_._1.equals(KYUUBI_ENGINE_CREDENTIALS_KEY))
-      .map { case (k, v) => s"\\\\\\n\\t${confKeyValueStr(k, v)}" }
+      .map { case (k, v) => s"\\\\\\n\\t--conf $k=$v" }
       .mkString(" ")
   }
 
