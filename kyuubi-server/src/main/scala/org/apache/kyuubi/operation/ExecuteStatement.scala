@@ -26,10 +26,11 @@ import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_CREDENTIALS_KEY
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.session.{KyuubiSessionManager, Session}
 
 class ExecuteStatement(
     session: Session,
@@ -63,13 +64,20 @@ class ExecuteStatement(
     OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED.key,
     OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED.defaultValStr).toBoolean
 
+  private lazy val sessionUserCredentialsConf = Map(
+    KYUUBI_SESSION_USER_CREDENTIALS_KEY ->
+    session.sessionManager.asInstanceOf[KyuubiSessionManager].
+      credentialsManager.renewCredentials(session.user)
+  )
+
   private def executeStatement(): Unit = {
     try {
       // We need to avoid executing query in sync mode, because there is no heartbeat mechanism
       // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
       // engine crash without response before socket read timeout.
       _remoteOpHandle =
-        client.executeStatement(statement, confOverlay ++ operationHandleConf, true, queryTimeout)
+        client.executeStatement(statement, confOverlay ++ operationHandleConf ++
+          sessionUserCredentialsConf, true, queryTimeout)
       setHasResultSet(_remoteOpHandle.isHasResultSet)
     } catch onError()
   }
