@@ -105,11 +105,10 @@ class JdbcProcessBuilder(
     } else {
       redactConfValues(
         Utils.redactCommandLineArgs(conf, commands),
-        Set(ENGINE_JDBC_CONNECTION_PASSWORD).map(_.key))
-        .map {
-          case arg if arg.startsWith("-") => s"\\\n\t$arg"
-          case arg => arg
-        }.mkString(" ")
+        Set(ENGINE_JDBC_CONNECTION_PASSWORD.key)).map {
+        case arg if arg.startsWith("-") => s"\\\n\t$arg"
+        case arg => arg
+      }.mkString(" ")
     }
   }
 }

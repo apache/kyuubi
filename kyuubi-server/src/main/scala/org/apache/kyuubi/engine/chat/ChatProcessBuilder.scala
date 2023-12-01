@@ -102,11 +102,10 @@ class ChatProcessBuilder(
     } else {
       redactConfValues(
         Utils.redactCommandLineArgs(conf, commands),
-        Set(ENGINE_CHAT_GPT_API_KEY).map(_.key))
-        .map {
-          case arg if arg.startsWith("-") || arg == mainClass => s"\\\n\t$arg"
-          case arg => arg
-        }.mkString(" ")
+        Set(ENGINE_CHAT_GPT_API_KEY.key)).map {
+        case arg if arg.startsWith("-") || arg == mainClass => s"\\\n\t$arg"
+        case arg => arg
+      }.mkString(" ")
     }
   }
 }

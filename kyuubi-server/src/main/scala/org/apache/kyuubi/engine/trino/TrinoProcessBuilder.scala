@@ -111,13 +111,12 @@ class TrinoProcessBuilder(
       redactConfValues(
         Utils.redactCommandLineArgs(conf, commands),
         Set(
-          ENGINE_TRINO_CONNECTION_PASSWORD,
-          ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD,
-          ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD).map(_.key))
-        .map {
-          case arg if arg.startsWith("-") => s"\\\n\t$arg"
-          case arg => arg
-        }.mkString(" ")
+          ENGINE_TRINO_CONNECTION_PASSWORD.key,
+          ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD.key,
+          ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD.key)).map {
+        case arg if arg.startsWith("-") => s"\\\n\t$arg"
+        case arg => arg
+      }.mkString(" ")
     }
   }
 }
