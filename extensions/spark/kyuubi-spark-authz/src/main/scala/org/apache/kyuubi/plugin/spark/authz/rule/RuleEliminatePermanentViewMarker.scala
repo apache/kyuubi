@@ -28,13 +28,27 @@ import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMark
  * Transforming up [[PermanentViewMarker]]
  */
 class RuleEliminatePermanentViewMarker(sparkSession: SparkSession) extends Rule[LogicalPlan] {
+
+  def eliminatePVM(plan: LogicalPlan): LogicalPlan = {
+    plan.transformUp {
+      case pvm: PermanentViewMarker =>
+        val ret = pvm.child.transformAllExpressions {
+          case s: SubqueryExpression => s.withNewPlan(eliminatePVM(s.plan))
+        }
+        // For each SubqueryExpression's PVM, we should mark as resolved to
+        // avoid check privilege of PVM's internal Subquery.
+        Authorization.markAuthChecked(ret)
+        ret
+    }
+  }
+
   override def apply(plan: LogicalPlan): LogicalPlan = {
     var matched = false
     val eliminatedPVM = plan.transformUp {
       case pvm: PermanentViewMarker =>
         matched = true
         pvm.child.transformAllExpressions {
-          case s: SubqueryExpression => s.withNewPlan(apply(s.plan))
+          case s: SubqueryExpression => s.withNewPlan(eliminatePVM(s.plan))
         }
     }
     if (matched) {
