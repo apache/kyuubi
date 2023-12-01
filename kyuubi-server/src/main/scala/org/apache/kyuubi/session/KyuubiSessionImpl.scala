@@ -27,7 +27,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_HANDLE_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_HANDLE_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_CREDENTIALS_KEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
@@ -71,6 +71,8 @@ class KyuubiSessionImpl(
   }
 
   private lazy val engineCredentials = renewEngineCredentials()
+
+  private lazy val sessionUserCredentials = renewSessionUserCredentials()
 
   lazy val engine: EngineRef = new EngineRef(
     sessionConf,
@@ -127,6 +129,13 @@ class KyuubiSessionImpl(
           sessionConf.set(KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
           openEngineSessionConf =
             openEngineSessionConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
+        }
+
+        if (sessionUserCredentials.nonEmpty) {
+          sessionConf.set(KYUUBI_SESSION_USER_CREDENTIALS_KEY, sessionUserCredentials)
+          openEngineSessionConf =
+            openEngineSessionConf ++ Map(KYUUBI_SESSION_USER_CREDENTIALS_KEY ->
+              sessionUserCredentials)
         }
 
         if (sessionConf.get(SESSION_USER_SIGN_ENABLED)) {
@@ -238,6 +247,16 @@ class KyuubiSessionImpl(
   private def renewEngineCredentials(): String = {
     try {
       sessionManager.credentialsManager.renewCredentials(engine.appUser)
+    } catch {
+      case e: Exception =>
+        error(s"Failed to renew engine credentials for $handle", e)
+        ""
+    }
+  }
+
+  private def renewSessionUserCredentials(): String = {
+    try {
+      sessionManager.credentialsManager.renewCredentials(user)
     } catch {
       case e: Exception =>
         error(s"Failed to renew engine credentials for $handle", e)
