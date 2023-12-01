@@ -220,7 +220,25 @@ object PrivilegesBuilder {
               LOG.debug(ud.error(plan, e))
           }
         }
-        spec.queries(plan).foreach(p => buildQuery(Project(p.output, p), inputObjs, spark = spark))
+        spec.queries(plan).foreach { p =>
+          if (p.resolved) {
+            buildQuery(Project(p.output, p), inputObjs, spark = spark)
+          } else {
+            try {
+              // For spark 3.1, Some command such as CreateTableASSelect, its query was unresolved,
+              // Before this pr, we just ignore it, now we support this.
+              val analyzed = spark.sessionState.analyzer.execute(p)
+              buildQuery(Project(analyzed.output, analyzed), inputObjs, spark = spark)
+            } catch {
+              case e: Exception =>
+                LOG.debug(
+                  s"""
+                     |Failed to analyze unresolved
+                     |$p
+                     |due to ${e.getMessage}""".stripMargin, e)
+            }
+          }
+        }
         spec.operationType
 
       case classname if FUNCTION_COMMAND_SPECS.contains(classname) =>
