@@ -52,11 +52,10 @@ class SparkBatchProcessBuilder(
     // tag batch application
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
-    val allConfigs = Seq(
-      batchKyuubiConf.getAll,
-      sparkAppNameConf(),
-      engineLogPathConf(),
-      appendPodNameConf(batchConf)).flatten
+    val allConfigs = batchKyuubiConf.getAll ++
+      sparkAppNameConf() ++
+      engineLogPathConf() ++
+      appendPodNameConf(batchConf)
     buffer ++= confKeyValues(allConfigs)
 
     setupKerberos(buffer)
