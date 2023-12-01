@@ -23,6 +23,7 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class HiveCatalogDatabaseOperationSuite extends HiveJDBCTestHelper {
 
@@ -30,9 +31,9 @@ class HiveCatalogDatabaseOperationSuite extends HiveJDBCTestHelper {
     val metastore = Utils.createTempDir(prefix = getClass.getSimpleName)
     metastore.toFile.delete()
     val args = Array(
-      "--conf",
+      CONF,
       s"javax.jdo.option.ConnectionURL=jdbc:derby:;databaseName=$metastore;create=true",
-      "--conf",
+      CONF,
       s"${ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key}=true")
     HiveSQLEngine.main(args)
     super.beforeAll()

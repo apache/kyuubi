@@ -19,20 +19,18 @@ package org.apache.kyuubi.engine.trino
 
 import java.io.File
 import java.nio.file.Paths
-import java.util
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
-import org.apache.kyuubi.Utils.REDACTION_REPLACEMENT_TEXT
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class TrinoProcessBuilder(
     override val proxyUser: String,
@@ -58,7 +56,7 @@ class TrinoProcessBuilder(
     require(
       conf.get(ENGINE_TRINO_CONNECTION_CATALOG).nonEmpty,
       s"Trino default catalog can not be null! Please set ${ENGINE_TRINO_CONNECTION_CATALOG.key}")
-    val buffer = new ArrayBuffer[String]()
+    val buffer = new mutable.ListBuffer[String]()
     buffer += executable
 
     val memory = conf.get(ENGINE_TRINO_MEMORY)
@@ -68,8 +66,7 @@ class TrinoProcessBuilder(
       buffer += javaOptions.get
     }
 
-    buffer += "-cp"
-    val classpathEntries = new util.LinkedHashSet[String]
+    val classpathEntries = new mutable.LinkedHashSet[String]
     // trino engine runtime jar
     mainResource.foreach(classpathEntries.add)
 
@@ -90,20 +87,18 @@ class TrinoProcessBuilder(
     val extraCp = conf.get(ENGINE_TRINO_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
 
-    buffer += classpathEntries.asScala.mkString(File.pathSeparator)
+    buffer ++= genClasspathOption(classpathEntries)
+
     buffer += mainClass
 
     // TODO: How shall we deal with proxyUser,
     // user.name
     // kyuubi.session.user
     // or just leave it, because we can handle it at operation layer
-    buffer += "--conf"
-    buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
+    buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
 
-    for ((k, v) <- conf.getAll) {
-      buffer += "--conf"
-      buffer += s"$k=$v"
-    }
+    buffer ++= confKeyValues(conf.getAll)
+
     buffer
   }
 
@@ -113,15 +108,12 @@ class TrinoProcessBuilder(
     if (commands == null) {
       super.toString
     } else {
-      Utils.redactCommandLineArgs(conf, commands).map {
-        case arg if arg.contains(ENGINE_TRINO_CONNECTION_PASSWORD.key) =>
-          s"${ENGINE_TRINO_CONNECTION_PASSWORD.key}=$REDACTION_REPLACEMENT_TEXT"
-        case arg if arg.contains(ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD.key) =>
-          s"${ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD.key}=$REDACTION_REPLACEMENT_TEXT"
-        case arg if arg.contains(ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD.key) =>
-          s"${ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD.key}=$REDACTION_REPLACEMENT_TEXT"
-        case arg => arg
-      }.map {
+      redactConfValues(
+        Utils.redactCommandLineArgs(conf, commands),
+        Set(
+          ENGINE_TRINO_CONNECTION_PASSWORD.key,
+          ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD.key,
+          ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD.key)).map {
         case arg if arg.startsWith("-") => s"\\\n\t$arg"
         case arg => arg
       }.mkString(" ")

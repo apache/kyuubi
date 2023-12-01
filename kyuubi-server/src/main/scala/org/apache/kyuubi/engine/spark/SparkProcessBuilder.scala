@@ -22,7 +22,6 @@ import java.nio.file.Paths
 import java.util.Locale
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.commons.lang3.StringUtils
@@ -38,6 +37,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.{KubernetesUtils, Validator}
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilder(
     override val proxyUser: String,
@@ -127,7 +127,7 @@ class SparkProcessBuilder(
     completeMasterUrl(conf)
 
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
-    val buffer = new ArrayBuffer[String]()
+    val buffer = new mutable.ListBuffer[String]()
     buffer += executable
     buffer += CLASS
     buffer += mainClass
@@ -141,8 +141,7 @@ class SparkProcessBuilder(
     }
     // pass spark engine log path to spark conf
     (allConf ++ engineLogPathConf ++ appendPodNameConf(allConf)).foreach { case (k, v) =>
-      buffer += CONF
-      buffer += s"${convertConfigKey(k)}=$v"
+      buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 
     setupKerberos(buffer)
@@ -154,7 +153,7 @@ class SparkProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-sql-engine"
 
-  protected def setupKerberos(buffer: ArrayBuffer[String]): Unit = {
+  protected def setupKerberos(buffer: mutable.Buffer[String]): Unit = {
     // if the keytab is specified, PROXY_USER is not supported
     tryKeytab() match {
       case None =>
@@ -286,13 +285,11 @@ class SparkProcessBuilder(
   override def validateConf: Unit = Validator.validateConf(conf)
 
   // For spark on kubernetes, spark pod using env SPARK_USER_NAME as current user
-  def setSparkUserName(userName: String, buffer: ArrayBuffer[String]): Unit = {
+  def setSparkUserName(userName: String, buffer: mutable.Buffer[String]): Unit = {
     clusterManager().foreach { cm =>
       if (cm.toUpperCase.startsWith("K8S")) {
-        buffer += CONF
-        buffer += s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$userName"
-        buffer += CONF
-        buffer += s"spark.executorEnv.SPARK_USER_NAME=$userName"
+        buffer ++= confKeyValue("spark.kubernetes.driverEnv.SPARK_USER_NAME", userName)
+        buffer ++= confKeyValue("spark.executorEnv.SPARK_USER_NAME", userName)
       }
     }
   }
@@ -335,7 +332,6 @@ object SparkProcessBuilder {
     "spark.kubernetes.kerberos.krb5.path",
     "spark.kubernetes.file.upload.path")
 
-  final private[spark] val CONF = "--conf"
   final private[spark] val CLASS = "--class"
   final private[spark] val PROXY_USER = "--proxy-user"
   final private[spark] val SPARK_FILES = "spark.files"

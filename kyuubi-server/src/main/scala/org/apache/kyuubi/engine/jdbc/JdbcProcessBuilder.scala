@@ -19,20 +19,18 @@ package org.apache.kyuubi.engine.jdbc
 
 import java.io.File
 import java.nio.file.Paths
-import java.util
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
-import org.apache.kyuubi.Utils.REDACTION_REPLACEMENT_TEXT
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class JdbcProcessBuilder(
     override val proxyUser: String,
@@ -63,7 +61,7 @@ class JdbcProcessBuilder(
     require(
       conf.get(ENGINE_JDBC_CONNECTION_URL).nonEmpty,
       s"Jdbc server url can not be null! Please set ${ENGINE_JDBC_CONNECTION_URL.key}")
-    val buffer = new ArrayBuffer[String]()
+    val buffer = new mutable.ListBuffer[String]()
     buffer += executable
 
     val memory = conf.get(ENGINE_JDBC_MEMORY)
@@ -72,8 +70,7 @@ class JdbcProcessBuilder(
     val javaOptions = conf.get(ENGINE_JDBC_JAVA_OPTIONS)
     javaOptions.foreach(buffer += _)
 
-    buffer += "-cp"
-    val classpathEntries = new util.LinkedHashSet[String]
+    val classpathEntries = new mutable.LinkedHashSet[String]
     mainResource.foreach(classpathEntries.add)
     mainResource.foreach { path =>
       val parent = Paths.get(path).getParent
@@ -91,16 +88,14 @@ class JdbcProcessBuilder(
 
     val extraCp = conf.get(ENGINE_JDBC_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
-    buffer += classpathEntries.asScala.mkString(File.pathSeparator)
+    buffer ++= genClasspathOption(classpathEntries)
+
     buffer += mainClass
 
-    buffer += "--conf"
-    buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
+    buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
 
-    for ((k, v) <- conf.getAll) {
-      buffer += "--conf"
-      buffer += s"$k=$v"
-    }
+    buffer ++= confKeyValues(conf.getAll)
+
     buffer
   }
 
@@ -108,11 +103,9 @@ class JdbcProcessBuilder(
     if (commands == null) {
       super.toString
     } else {
-      Utils.redactCommandLineArgs(conf, commands).map {
-        case arg if arg.contains(ENGINE_JDBC_CONNECTION_PASSWORD.key) =>
-          s"${ENGINE_JDBC_CONNECTION_PASSWORD.key}=$REDACTION_REPLACEMENT_TEXT"
-        case arg => arg
-      }.map {
+      redactConfValues(
+        Utils.redactCommandLineArgs(conf, commands),
+        Set(ENGINE_JDBC_CONNECTION_PASSWORD.key)).map {
         case arg if arg.startsWith("-") => s"\\\n\t$arg"
         case arg => arg
       }.mkString(" ")

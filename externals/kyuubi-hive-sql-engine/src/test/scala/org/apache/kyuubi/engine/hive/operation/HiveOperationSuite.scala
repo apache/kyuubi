@@ -22,6 +22,7 @@ import org.apache.commons.lang3.{JavaVersion, SystemUtils}
 import org.apache.kyuubi.{HiveEngineTests, KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class HiveOperationSuite extends HiveEngineTests {
 
@@ -29,7 +30,7 @@ class HiveOperationSuite extends HiveEngineTests {
     val metastore = Utils.createTempDir(prefix = getClass.getSimpleName)
     metastore.toFile.delete()
     val args = Array(
-      "--conf",
+      CONF,
       s"javax.jdo.option.ConnectionURL=jdbc:derby:;databaseName=$metastore;create=true")
     HiveSQLEngine.main(args)
     super.beforeAll()
