@@ -1255,7 +1255,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
 
   test("test result fetch timeout") {
     val exception = intercept[KyuubiSQLException](
-      withSessionConf()(Map(ENGINE_FLINK_FETCH_TIMEOUT.key -> "60000"))() {
+      withSessionConf()(Map(ENGINE_FLINK_FETCH_TIMEOUT.key -> "PT60S"))() {
         withJdbcStatement("tbl_a") { stmt =>
           stmt.executeQuery("create table tbl_a (a int) " +
             "with ('connector' = 'datagen', 'rows-per-second'='0')")

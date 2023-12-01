@@ -73,7 +73,10 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
         resultMaxRowsDefault.toString).toInt
 
     val resultFetchTimeout =
-      flinkSession.normalizedConf.get(ENGINE_FLINK_FETCH_TIMEOUT.key).map(_.toLong milliseconds)
+      flinkSession.normalizedConf
+        .get(ENGINE_FLINK_FETCH_TIMEOUT.key)
+        .map(ENGINE_FLINK_FETCH_TIMEOUT.valueConverter)
+        .map(_.get milliseconds)
         .getOrElse(resultFetchTimeoutDefault)
 
     val op = mode match {
