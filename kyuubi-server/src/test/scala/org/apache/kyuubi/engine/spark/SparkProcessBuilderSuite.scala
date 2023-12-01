@@ -430,7 +430,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     conf1.set("spark.master", "k8s://test:12345")
     val builder1 = new SparkProcessBuilder("", conf1)
     val commands1 = builder1.toString.split(' ')
-    assert(!commands1.contains("spark.yarn.maxAppAttempts=1"))
+    assert(!commands1.contains("spark.yarn.maxAppAttempts"))
 
     val conf2 = KyuubiConf(false)
     conf2.set("spark.master", "yarn")
