@@ -2165,6 +2165,27 @@
             </properties>
         </profile>
 
+        <!-- For development only-->
+        <profile>
+            <id>libs-for-java11</id>
+            <activation>
+                <!-- Activated with Java 11 and above-->
+                <jdk>[11,18)</jdk>
+            </activation>
+            <properties>
+                <!--Maven Plugins-->
+                <maven.plugin.spotless.version>2.41.0</maven.plugin.spotless.version>
+                <spotless.java.googlejavaformat.version>1.18.1</spotless.java.googlejavaformat.version>
+
+                <!-- Runtime Dependencies-->
+                <derby.version>10.15.2.0</derby.version>
+                <hikaricp.version>4.0.3</hikaricp.version>
+                <jetty.version>11.0.18</jetty.version>
+
+                <!--Test Dependencies-->
+            </properties>
+        </profile>
+
         <!-- For development only, not generally applicable for all modules -->
         <profile>
             <id>scala-2.13</id>
