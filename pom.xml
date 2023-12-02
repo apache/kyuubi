@@ -2180,7 +2180,7 @@
                 <!-- Runtime Dependencies-->
                 <derby.version>10.15.2.0</derby.version>
                 <hikaricp.version>4.0.3</hikaricp.version>
-                <jetty.version>11.0.18</jetty.version>
+                <!-- <jetty.version>11.0.18</jetty.version>-->
 
                 <!--Test Dependencies-->
             </properties>
