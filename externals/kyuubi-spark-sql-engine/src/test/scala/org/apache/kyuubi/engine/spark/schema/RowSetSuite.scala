@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.spark.schema
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.{Date, Timestamp}
-import java.time.{Instant, LocalDate}
 
 import scala.collection.JavaConverters._
 
@@ -31,70 +30,7 @@ import org.apache.spark.unsafe.types.CalendarInterval
 
 import org.apache.kyuubi.KyuubiFunSuite
 
-class RowSetSuite extends KyuubiFunSuite {
-
-  def genRow(value: Int): Row = {
-    val boolVal = value % 3 match {
-      case 0 => true
-      case 1 => false
-      case _ => null
-    }
-    val byteVal = value.toByte
-    val shortVal = value.toShort
-    val longVal = value.toLong
-    val floatVal = java.lang.Float.valueOf(s"$value.$value")
-    val doubleVal = java.lang.Double.valueOf(s"$value.$value")
-    val stringVal = value.toString * value
-    val decimalVal = new java.math.BigDecimal(s"$value.$value")
-    val day = java.lang.String.format("%02d", java.lang.Integer.valueOf(value + 1))
-    val dateVal = Date.valueOf(s"2018-11-$day")
-    val timestampVal = Timestamp.valueOf(s"2018-11-17 13:33:33.$value")
-    val binaryVal = Array.fill[Byte](value)(value.toByte)
-    val arrVal = Array.fill(value)(doubleVal).toSeq
-    val mapVal = Map(value -> doubleVal)
-    val interval = new CalendarInterval(value, value, value)
-    val localDate = LocalDate.of(2018, 11, 17)
-    val instant = Instant.now()
-
-    Row(
-      boolVal,
-      byteVal,
-      shortVal,
-      value,
-      longVal,
-      floatVal,
-      doubleVal,
-      stringVal,
-      decimalVal,
-      dateVal,
-      timestampVal,
-      binaryVal,
-      arrVal,
-      mapVal,
-      interval,
-      localDate,
-      instant)
-  }
-
-  val schema: StructType = new StructType()
-    .add("a", "boolean")
-    .add("b", "tinyint")
-    .add("c", "smallint")
-    .add("d", "int")
-    .add("e", "bigint")
-    .add("f", "float")
-    .add("g", "double")
-    .add("h", "string")
-    .add("i", "decimal")
-    .add("j", "date")
-    .add("k", "timestamp")
-    .add("l", "binary")
-    .add("m", "array<double>")
-    .add("n", "map<int, double>")
-    .add("o", "interval")
-    .add("p", "date")
-    .add("q", "timestamp")
-
+class RowSetSuite extends KyuubiFunSuite with RowSetHelper {
   private val rows: Seq[Row] = (0 to 10).map(genRow) ++ Seq(Row.fromSeq(Seq.fill(17)(null)))
 
   test("column based set") {
@@ -259,4 +195,5 @@ class RowSetSuite extends KyuubiFunSuite {
       }
     }
   }
+
 }
