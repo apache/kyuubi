@@ -63,9 +63,11 @@ Since v1.1.0, Kyuubi support building with different Spark profiles,
 
 |   Profile   | Default | Since |
 |-------------|---------|-------|
-| -Pspark-3.1 | No      | 1.1.0 |
-| -Pspark-3.2 | No      | 1.4.0 |
-| -Pspark-3.3 | Yes     | 1.6.0 |
+| -Pspark-3.1 |         | 1.1.0 |
+| -Pspark-3.2 |         | 1.4.0 |
+| -Pspark-3.3 |         | 1.6.0 |
+| -Pspark-3.4 | ✓       | 1.8.0 |
+| -Pspark-3.5 |         | 1.8.0 |
 
 ## Building With Apache dlcdn Site
 
