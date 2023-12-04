@@ -60,8 +60,9 @@ class IncrementalResultFetchIterator(
 
   val FETCH_INTERVAL_MS: Long = 1000
 
+  // for Flink 1.16 and below, isQueryResult is not supported
   val isQueryResult: Boolean =
-    FlinkEngineUtils.FLINK_RUNTIME_VERSION >= "1.17" &&
+    FlinkEngineUtils.FLINK_RUNTIME_VERSION < "1.17" &&
       DynFields.builder
         .hiddenImpl(classOf[FlinkResultSet], "isQueryResult")
         .build[Boolean](resultFetcher).get()
