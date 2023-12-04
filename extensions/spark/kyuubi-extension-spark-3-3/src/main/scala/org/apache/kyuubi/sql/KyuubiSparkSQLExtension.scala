@@ -40,6 +40,8 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectOptimizerRule(ForcedMaxOutputRowsRule)
     extensions.injectPlannerStrategy(MaxScanStrategy)
 
+    extensions.injectColumnar(GlutenPlanManager)
+
     extensions.injectQueryStagePrepRule(FinalStageResourceManager(_))
     extensions.injectQueryStagePrepRule(InjectCustomResourceProfile)
   }

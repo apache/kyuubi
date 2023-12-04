@@ -273,4 +273,27 @@ object KyuubiSQLConf {
       .version("1.8.0")
       .stringConf
       .createOptional
+
+  val GLUTEN_FALLBACK_OPERATOR_THRESHOLD =
+    buildConf("spark.sql.gluten.fallbackOperatorThreshold")
+      .doc("The threshold of fallback operator. If the number of fallback operator is " +
+        "bigger than this threshold, we will fallback to original plan." +
+        "Note: Gluten-Related extension is experimental and under rapid development," +
+        "this configuration is added to allow user to control extension, not " +
+        "intended exposing to end users, it may be removed in anytime.")
+      .version("1.8.0")
+      .intConf
+      .createWithDefault(Int.MaxValue)
+
+  val GLUTEN_FALLBACK_OPERATORS =
+    buildConf("spark.sql.gluten.fallbackOperators")
+      .doc("The list of non-support operator. If the plan contains these operators, " +
+        "we will fallback to original plan." +
+        "Note: Gluten-Related extension is experimental and under rapid development," +
+        "this configuration is added to allow user to control extension, not " +
+        "intended exposing to end users, it may be removed in anytime.")
+      .version("1.8.0")
+      .stringConf
+      .toSequence
+      .createOptional
 }
