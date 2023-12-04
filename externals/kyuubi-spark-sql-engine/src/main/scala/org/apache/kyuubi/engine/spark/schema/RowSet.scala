@@ -169,12 +169,13 @@ object RowSet {
     var idx = 0
     while (idx < size) {
       val row = rows(idx)
-      val isNull = row.isNullAt(ordinal)
+      val value = row.get(ordinal)
+      val isNull = value == null
       if (isNull) {
         nulls.set(idx, true)
         ret.add(idx, defaultVal)
       } else {
-        ret.add(idx, row.getAs[T](ordinal))
+        ret.add(idx, value.asInstanceOf[T])
       }
       idx += 1
     }
