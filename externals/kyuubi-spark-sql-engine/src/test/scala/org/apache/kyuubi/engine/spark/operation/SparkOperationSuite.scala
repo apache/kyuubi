@@ -737,6 +737,14 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
     }
   }
 
+  test("KYUUBI #5813: cast binary type value as string when building result set") {
+    withJdbcStatement() { stmt =>
+      val resultSet = stmt.executeQuery("SELECT CAST('abc' AS BINARY)")
+      assert(resultSet.next())
+      assert(resultSet.getString(1) == "abc")
+    }
+  }
+
   private def whenMetaStoreURIsSetTo(uris: String)(func: String => Unit): Unit = {
     val conf = spark.sparkContext.hadoopConfiguration
     val origin = conf.get("hive.metastore.uris", "")
