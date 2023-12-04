@@ -36,7 +36,7 @@ import org.apache.flink.types.Row
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.flink.shim.FlinkResultSet
 import org.apache.kyuubi.operation.FetchIterator
-import org.apache.kyuubi.util.reflect.ReflectUtils.getField
+import org.apache.kyuubi.util.reflect.DynFields
 
 class IncrementalResultFetchIterator(
     resultFetcher: ResultFetcher,
@@ -59,7 +59,10 @@ class IncrementalResultFetchIterator(
 
   val FETCH_INTERVAL_MS: Long = 1000
 
-  val isQueryResult: Boolean = getField(resultFetcher, "isQueryResult")
+  val isQueryResult: Boolean =
+    DynFields.builder
+      .hiddenImpl(classOf[ResultFetcher], "isQueryResult")
+      .build[Boolean](resultFetcher).get()
 
   val effectiveMaxRows: Int = if (isQueryResult) maxRows else Int.MaxValue
 
