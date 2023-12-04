@@ -68,9 +68,10 @@ class TRowSetBenchmark extends KyuubiFunSuite with RowSetHelper with KyuubiBench
 
     val benchmark =
       new Benchmark(
-        s"TRowSet toHiveString benchmark",
+        s"$rowSetType TRowSet benchmark",
         rowCount,
         minTime = 30.seconds,
+        warmupTime = 3.seconds,
         output = output)
 
     schemaStructFields.zipWithIndex.foreach {
@@ -79,47 +80,27 @@ class TRowSetBenchmark extends KyuubiFunSuite with RowSetHelper with KyuubiBench
         val schemaOfSingleType = StructType(Seq(field))
 
         val commentOrName = field.getComment().getOrElse(field.dataType.typeName)
-        benchmark.addCase(s"$rowSetType $commentOrName benchmark", 10) {
+        benchmark.addCase(s"$commentOrName", 10) {
           _ =>
             benchmarkToTRowSet(
-              commentOrName,
               rowsOfSingleType,
               schemaOfSingleType,
               protocolVersion)
         }
     }
-    benchmark.run()
 
-//    val totalMs = schemaStructFields.zipWithIndex.map { case (field, idx) =>
-//      // run benchmark with rows of single column with one data type
-//      val rowsOfSingleType = allRows.map(row => Row(row.get(idx)))
-//      val schemaOfSingleType = StructType(Seq(field))
-//      benchmarkToTRowSet(
-//        field.getComment().getOrElse(field.dataType.typeName),
-//        rowsOfSingleType,
-//        schemaOfSingleType,
-//        protocolVersion)
-//
-//      benchmark.addCase("toHiveString benchmark", 3) { _ =>
-//        rowsOfSingleType.map(row => RowSet.toHiveString((row.get(0), field.dataType)))
-//      }
-//    }.sum
-//    val totalRowsPerMs: BigDecimal = (BigDecimal(rowCount) / totalMs)
-//      .setScale(3, RoundingMode.HALF_UP)
-//    // scalastyle:off
-//    println()
-//    printf("%20s %20s %20s\n", "sum(all types)", s"$totalMs ms", s"$totalRowsPerMs rows/ms")
-//
-//    // run benchmark with rows of columns with all data types
-//    benchmarkToTRowSet("with all types", allRows, schema, protocolVersion)
-//
-//    println()
-//    println()
-//    // scalastyle:on
+    benchmark.addCase(s"with all types", 10) {
+      _ =>
+        benchmarkToTRowSet(
+          allRows,
+          schema,
+          protocolVersion)
+    }
+
+    benchmark.run()
   }
 
   private def benchmarkToTRowSet(
-      clue: String,
       rows: Seq[Row],
       schema: StructType,
       protocolVersion: TProtocolVersion): Unit = {

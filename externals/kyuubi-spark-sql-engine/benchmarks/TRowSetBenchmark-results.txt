@@ -1,22 +1,23 @@
 OpenJDK 64-Bit Server VM 1.8.0_392-b08 on Mac OS X 14.1.2
 Intel(R) Core(TM) i5-8257U CPU @ 1.40GHz
-TRowSet toHiveString benchmark:           Best Time(ms)   Avg Time(ms)   Stdev(ms)    Rate(M/s)   Per Row(ns)   Relative
+column-based TRowSet benchmark:           Best Time(ms)   Avg Time(ms)   Stdev(ms)    Rate(M/s)   Per Row(ns)   Relative
 ------------------------------------------------------------------------------------------------------------------------
-column-based boolVal benchmark                        0              0           0         43.7          22.9       1.0X
-column-based byteVal benchmark                        0              0           0         72.6          13.8       1.7X
-column-based shortVal benchmark                       0              0           0         71.7          14.0       1.6X
-column-based value benchmark                          0              0           0         72.1          13.9       1.6X
-column-based longVal benchmark                        0              0           0         54.5          18.3       1.2X
-column-based floatVal benchmark                       1              1           0          3.3         301.5       0.1X
-column-based doubleVal benchmark                      0              0           0         54.1          18.5       1.2X
-column-based stringVal benchmark                      0              0           0         55.3          18.1       1.3X
-column-based decimalVal benchmark                     0              0           0          9.5         105.7       0.2X
-column-based dateVal benchmark                        1              1           0          3.1         318.6       0.1X
-column-based timestampVal benchmark                   1              1           0          4.3         233.4       0.1X
-column-based binaryVal benchmark                      0              0           0         12.5          79.9       0.3X
-column-based arrVal benchmark                        10             11           0          0.3        3458.3       0.0X
-column-based mapVal benchmark                         2              2           0          1.7         571.4       0.0X
-column-based interval benchmark                       1              1           1          3.4         293.7       0.1X
-column-based localDate benchmark                      1              1           0          4.9         202.7       0.1X
-column-based instant benchmark                        2              2           0          1.6         633.1       0.0X
+boolVal                                               0              0           0         59.8          16.7       1.0X
+byteVal                                               0              0           0         63.2          15.8       1.1X
+shortVal                                              0              0           0         63.0          15.9       1.1X
+value                                                 0              0           0         62.8          15.9       1.0X
+longVal                                               0              0           0         62.6          16.0       1.0X
+floatVal                                              1              1           0          4.8         207.4       0.1X
+doubleVal                                             0              0           0         63.3          15.8       1.1X
+stringVal                                             0              0           0         63.1          15.9       1.1X
+decimalVal                                            0              0           0          9.4         106.7       0.2X
+dateVal                                               1              1           0          3.3         299.8       0.1X
+timestampVal                                          1              1           0          4.7         214.2       0.1X
+binaryVal                                             0              0           0         28.3          35.3       0.5X
+arrVal                                                7              7           0          0.4        2350.9       0.0X
+mapVal                                                2              2           0          2.0         501.3       0.0X
+interval                                              1              1           0          3.8         265.4       0.1X
+localDate                                             1              1           0          5.1         194.9       0.1X
+instant                                               2              2           0          1.6         629.8       0.0X
+with all types                                       16             17           0          0.2        5348.1       0.0X
 
