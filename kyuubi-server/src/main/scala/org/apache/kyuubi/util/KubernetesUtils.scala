@@ -165,7 +165,7 @@ object KubernetesUtils extends Logging {
     } else {
       s"kyuubi-$resourceNamePrefix"
     }
-    if (forciblyRewrite || resolvedResourceName.length > DRIVER_POD_NAME_MAX_LENGTH) {
+    if (forciblyRewrite || resolvedResourceName.length > EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
       s"kyuubi-$engineRefId"
     } else {
       resolvedResourceName
