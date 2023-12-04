@@ -134,7 +134,7 @@ object RowSet {
         val values = getOrSetAsNull[java.lang.Double](rows, ordinal, nulls, 0.toDouble)
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
 
-      case _: DecimalType =>
+      case DecimalType() =>
         val values = getOrSetAsNull[java.math.BigDecimal](rows, ordinal, nulls, null)
           .asScala.map(o => if (o == null) "NULL" else o.toPlainString).asJava
         TColumn.stringVal(new TStringColumn(values, nulls))
