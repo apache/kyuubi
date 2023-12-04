@@ -36,8 +36,9 @@ import org.apache.flink.types.Row
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.flink.shim.FlinkResultSet
 import org.apache.kyuubi.operation.FetchIterator
+import org.apache.kyuubi.util.reflect.ReflectUtils.getField
 
-class QueryResultFetchIterator(
+class IncrementalResultFetchIterator(
     resultFetcher: ResultFetcher,
     maxRows: Int = 1000000,
     resultFetchTimeout: Duration = Duration.Inf) extends FetchIterator[Row] with Logging {
@@ -57,6 +58,10 @@ class QueryResultFetchIterator(
   var hasNext: Boolean = true
 
   val FETCH_INTERVAL_MS: Long = 1000
+
+  val isQueryResult: Boolean = getField(resultFetcher, "isQueryResult")
+
+  val effectiveMaxRows: Int = if (isQueryResult) maxRows else Int.MaxValue
 
   private val executor = Executors.newSingleThreadScheduledExecutor(
     new ThreadFactoryBuilder().setNameFormat("flink-query-iterator-%d").setDaemon(true).build)
@@ -78,7 +83,7 @@ class QueryResultFetchIterator(
       // if no timeout is set, this would block until some rows are fetched
       debug(s"Fetching from result store with timeout $resultFetchTimeout ms")
       while (!fetched && !Thread.interrupted()) {
-        val rs = resultFetcher.fetchResults(token, maxRows - bufferedRows.length)
+        val rs = resultFetcher.fetchResults(token, effectiveMaxRows - bufferedRows.length)
         val flinkRs = new FlinkResultSet(rs)
         // TODO: replace string-based match when Flink 1.16 support is dropped
         flinkRs.getResultType.name() match {
@@ -144,7 +149,7 @@ class QueryResultFetchIterator(
       debug(s"Fetching from buffered rows at pos $pos.")
       val row = bufferedRows(pos.toInt)
       pos += 1
-      if (pos >= maxRows) {
+      if (pos >= effectiveMaxRows) {
         hasNext = false
       }
       row
@@ -154,7 +159,7 @@ class QueryResultFetchIterator(
       if (hasNext) {
         val row = bufferedRows(pos.toInt)
         pos += 1
-        if (pos >= maxRows) {
+        if (pos >= effectiveMaxRows) {
           hasNext = false
         }
         row
