@@ -138,13 +138,6 @@ object RowSet {
         val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
         TColumn.stringVal(new TStringColumn(values, nulls))
 
-      case BinaryType =>
-        val values = getOrSetAsNull[Array[Byte]](rows, ordinal, nulls, Array())
-          .asScala
-          .map(ByteBuffer.wrap)
-          .asJava
-        TColumn.binaryVal(new TBinaryColumn(values, nulls))
-
       case _ =>
         var i = 0
         val rowSize = rows.length
