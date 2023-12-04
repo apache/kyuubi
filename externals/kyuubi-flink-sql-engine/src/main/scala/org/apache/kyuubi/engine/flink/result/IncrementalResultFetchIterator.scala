@@ -62,9 +62,9 @@ class IncrementalResultFetchIterator(
 
   // for Flink 1.16 and below, isQueryResult is not supported
   val isQueryResult: Boolean =
-    FlinkEngineUtils.FLINK_RUNTIME_VERSION < "1.17" &&
+    FlinkEngineUtils.FLINK_RUNTIME_VERSION < "1.17" ||
       DynFields.builder
-        .hiddenImpl(classOf[FlinkResultSet], "isQueryResult")
+        .hiddenImpl(classOf[ResultFetcher], "isQueryResult")
         .build[Boolean](resultFetcher).get()
 
   val effectiveMaxRows: Int = if (isQueryResult) maxRows else Int.MaxValue
