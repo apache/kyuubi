@@ -19,12 +19,12 @@ package org.apache.kyuubi.engine.hive
 
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hive.service.rpc.thrift.{TRenewDelegationTokenReq, TRenewDelegationTokenResp}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService.OK_STATUS
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TRenewDelegationTokenReq, TRenewDelegationTokenResp}
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class HiveTBinaryFrontendService(override val serverable: Serverable)

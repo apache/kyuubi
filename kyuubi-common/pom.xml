@@ -100,7 +100,7 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-shaded-hive-service-rpc</artifactId>
+            <artifactId>kyuubi-relocated-hive-service-rpc</artifactId>
         </dependency>
 
         <dependency>
