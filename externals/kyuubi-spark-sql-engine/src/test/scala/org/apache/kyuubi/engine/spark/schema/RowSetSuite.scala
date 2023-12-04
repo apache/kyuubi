@@ -127,7 +127,7 @@ class RowSetSuite extends KyuubiFunSuite with RowSetHelper {
     arrCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b === RowSet.toHiveString(
-          Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq -> ArrayType(DoubleType),
+          Array.fill(10)(java.lang.Double.valueOf(s"$i.$i")).toSeq -> ArrayType(DoubleType),
           timeFormatters = timeFormatters))
     }
 
@@ -184,7 +184,7 @@ class RowSetSuite extends KyuubiFunSuite with RowSetHelper {
       StandardCharsets.UTF_8))
 
     val r8 = iter.next().getColVals
-    assert(r8.get(12).getStringVal.getValue === Array.fill(7)(7.7d).mkString("[", ",", "]"))
+    assert(r8.get(12).getStringVal.getValue === Array.fill(10)(7.7d).mkString("[", ",", "]"))
     assert(r8.get(13).getStringVal.getValue ===
       RowSet.toHiveString(
         Map(7 -> 7.7d) -> MapType(IntegerType, DoubleType),
