@@ -173,7 +173,7 @@
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.5.1</kafka.version>
         <kubernetes-client.version>6.8.1</kubernetes-client.version>
-        <kyuubi-relocated.version>0.2.0-SNAPSHOT</kyuubi-relocated.version>
+        <kyuubi-relocated.version>0.2.0</kyuubi-relocated.version>
         <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.20.0</log4j.version>
@@ -1518,6 +1518,19 @@
             <id>central</id>
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+
+        <!-- TODO: remove this staging repo after RC released -->
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>staging</id>
+            <name>Kyuubi Shaded 0.2.0 RC0</name>
+            <url>https://repository.apache.org/content/repositories/orgapachekyuubi-1041/</url>
         </repository>
     </repositories>
 
