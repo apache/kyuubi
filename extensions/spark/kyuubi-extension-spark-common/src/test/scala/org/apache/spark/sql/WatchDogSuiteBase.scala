@@ -25,7 +25,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
-import org.apache.kyuubi.sql.watchdog.{KyuubiUnsupportedOperationsCheck, MaxFileSizeExceedException, MaxPartitionExceedException}
+import org.apache.kyuubi.sql.watchdog.{MaxFileSizeExceedException, MaxPartitionExceedException}
 
 trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
   override protected def beforeAll(): Unit = {
@@ -600,9 +600,11 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
   }
 
   test("disable script transformation") {
-    spark.conf.set("spark.sql.execution.scriptTransformation.enabled", false)
-    val extension = new KyuubiUnsupportedOperationsCheck
-    val p1 = sql("SELECT TRANSFORM('') USING 'ls /'").queryExecution.analyzed
-    intercept[KyuubiSQLExtensionException](extension.apply(p1))
+    withSQLConf(KyuubiSQLConf.SCRIPT_TRANSFORMATION_ENABLED.key -> "false") {
+      val e = intercept[KyuubiSQLExtensionException] {
+        sql("SELECT TRANSFORM('') USING 'ls /'")
+      }
+      assert(e.getMessage == "Script transformation is not allowed")
+    }
   }
 }
