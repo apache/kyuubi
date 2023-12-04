@@ -25,6 +25,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.CalendarInterval
 
@@ -34,7 +35,8 @@ class RowSetSuite extends KyuubiFunSuite with RowSetHelper {
   private val rows: Seq[Row] = (0 to 10).map(genRow) ++ Seq(Row.fromSeq(Seq.fill(17)(null)))
 
   test("column based set") {
-    val tRowSet = RowSet.toColumnBasedSet(rows, schema)
+    val timeFormatters = HiveResult.getTimeFormatters
+    val tRowSet = RowSet.toColumnBasedSet(rows, schema, timeFormatters)
     assert(tRowSet.getColumns.size() === schema.size)
     assert(tRowSet.getRowsSize === 0)
 
@@ -101,14 +103,18 @@ class RowSetSuite extends KyuubiFunSuite with RowSetHelper {
     dateCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
       case (b, i) =>
-        assert(b === RowSet.toHiveString(Date.valueOf(s"2018-11-${i + 1}") -> DateType))
+        assert(b === RowSet.toHiveString(
+          Date.valueOf(s"2018-11-${i + 1}") -> DateType,
+          timeFormatters = timeFormatters))
     }
 
     val tsCol = cols.next().getStringVal
     tsCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b ===
-          RowSet.toHiveString(Timestamp.valueOf(s"2018-11-17 13:33:33.$i") -> TimestampType))
+          RowSet.toHiveString(
+            Timestamp.valueOf(s"2018-11-17 13:33:33.$i") -> TimestampType,
+            timeFormatters = timeFormatters))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -121,14 +127,16 @@ class RowSetSuite extends KyuubiFunSuite with RowSetHelper {
     arrCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b === RowSet.toHiveString(
-          Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq -> ArrayType(DoubleType)))
+          Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq -> ArrayType(DoubleType),
+          timeFormatters = timeFormatters))
     }
 
     val mapCol = cols.next().getStringVal
     mapCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b === RowSet.toHiveString(
-          Map(i -> java.lang.Double.valueOf(s"$i.$i")) -> MapType(IntegerType, DoubleType)))
+          Map(i -> java.lang.Double.valueOf(s"$i.$i")) -> MapType(IntegerType, DoubleType),
+          timeFormatters = timeFormatters))
     }
 
     val intervalCol = cols.next().getStringVal
@@ -139,7 +147,8 @@ class RowSetSuite extends KyuubiFunSuite with RowSetHelper {
   }
 
   test("row based set") {
-    val tRowSet = RowSet.toRowBasedSet(rows, schema)
+    val timeFormatters = HiveResult.getTimeFormatters
+    val tRowSet = RowSet.toRowBasedSet(rows, schema, timeFormatters)
     assert(tRowSet.getColumnCount === 0)
     assert(tRowSet.getRowsSize === rows.size)
     val iter = tRowSet.getRowsIterator
@@ -177,15 +186,18 @@ class RowSetSuite extends KyuubiFunSuite with RowSetHelper {
     val r8 = iter.next().getColVals
     assert(r8.get(12).getStringVal.getValue === Array.fill(7)(7.7d).mkString("[", ",", "]"))
     assert(r8.get(13).getStringVal.getValue ===
-      RowSet.toHiveString(Map(7 -> 7.7d) -> MapType(IntegerType, DoubleType)))
+      RowSet.toHiveString(
+        Map(7 -> 7.7d) -> MapType(IntegerType, DoubleType),
+        timeFormatters = timeFormatters))
 
     val r9 = iter.next().getColVals
     assert(r9.get(14).getStringVal.getValue === new CalendarInterval(8, 8, 8).toString)
   }
 
   test("to row set") {
+    val timeFormatters = HiveResult.getTimeFormatters
     TProtocolVersion.values().foreach { proto =>
-      val set = RowSet.toTRowSet(rows, schema, proto)
+      val set = RowSet.toTRowSet(rows, schema, proto, timeFormatters)
       if (proto.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
         assert(!set.isSetColumns, proto.toString)
         assert(set.isSetRows, proto.toString)

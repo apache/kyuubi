@@ -43,7 +43,7 @@ trait RowSetHelper {
     val dateVal = Date.valueOf(s"2018-11-$day")
     val timestampVal = Timestamp.valueOf(s"2018-11-17 13:33:33.$value")
     val binaryVal = Array.fill[Byte](value)(value.toByte)
-    val arrVal = Array.fill(value)(doubleVal).toSeq
+    val arrVal = Array.fill(10)(doubleVal).toSeq
     val mapVal = Map(value -> doubleVal)
     val interval = new CalendarInterval(value, value, value)
     val localDate = LocalDate.of(2018, 11, 17)

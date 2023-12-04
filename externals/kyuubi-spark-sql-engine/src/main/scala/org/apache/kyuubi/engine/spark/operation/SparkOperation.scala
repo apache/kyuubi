@@ -24,7 +24,7 @@ import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetad
 import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.sql.execution.SQLExecution
+import org.apache.spark.sql.execution.{HiveResult, SQLExecution}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
@@ -252,7 +252,8 @@ abstract class SparkOperation(session: Session)
             RowSet.toTRowSet(
               taken.toSeq.asInstanceOf[Seq[Row]],
               resultSchema,
-              getProtocolVersion)
+              getProtocolVersion,
+              HiveResult.getTimeFormatters)
           }
         resultRowSet.setStartRowOffset(iter.getPosition)
       }

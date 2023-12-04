@@ -25,7 +25,7 @@ import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
+import org.apache.spark.sql.execution.{CollectLimitExec, HiveResult, LocalTableScanExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.metric.{SQLMetric, SQLMetrics}
@@ -106,16 +106,17 @@ object SparkDatasetHelper extends Logging {
 
     // an udf to call `RowSet.toHiveString` on complex types(struct/array/map) and timestamp type.
     val toHiveStringUDF = udf[String, Row, String]((row, schemaDDL) => {
+      val timeFormatters = HiveResult.getTimeFormatters
       val dt = DataType.fromDDL(schemaDDL)
       dt match {
         case StructType(Array(StructField(_, st: StructType, _, _))) =>
-          RowSet.toHiveString((row, st), nested = true)
+          RowSet.toHiveString((row, st), nested = true, timeFormatters = timeFormatters)
         case StructType(Array(StructField(_, at: ArrayType, _, _))) =>
-          RowSet.toHiveString((row.toSeq.head, at), nested = true)
+          RowSet.toHiveString((row.toSeq.head, at), nested = true, timeFormatters = timeFormatters)
         case StructType(Array(StructField(_, mt: MapType, _, _))) =>
-          RowSet.toHiveString((row.toSeq.head, mt), nested = true)
+          RowSet.toHiveString((row.toSeq.head, mt), nested = true, timeFormatters = timeFormatters)
         case StructType(Array(StructField(_, tt: TimestampType, _, _))) =>
-          RowSet.toHiveString((row.toSeq.head, tt), nested = true)
+          RowSet.toHiveString((row.toSeq.head, tt), nested = true, timeFormatters = timeFormatters)
         case _ =>
           throw new UnsupportedOperationException
       }

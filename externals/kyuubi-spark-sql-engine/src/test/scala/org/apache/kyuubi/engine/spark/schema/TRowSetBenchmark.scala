@@ -23,6 +23,7 @@ import org.apache.commons.lang3.time.StopWatch
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.hive.service.rpc.thrift.TProtocolVersion._
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -37,7 +38,7 @@ import org.apache.kyuubi.KyuubiFunSuite
  * }}}
  */
 class TRowSetBenchmark extends KyuubiFunSuite with RowSetHelper {
-  private val runBenchmark = sys.env.contains("RUN_BENCHMARK")
+  private val runBenchmark = sys.env.contains("RUN_BENCHMARK") || true
 
   private val rowCount = 3000
   private lazy val allRows = (0 until rowCount).map(genRow)
@@ -94,7 +95,8 @@ class TRowSetBenchmark extends KyuubiFunSuite with RowSetHelper {
       schema: StructType,
       protocolVersion: TProtocolVersion): BigDecimal = {
     val sw = StopWatch.createStarted()
-    RowSet.toTRowSet(rows, schema, protocolVersion)
+    val timeFormatters = HiveResult.getTimeFormatters
+    RowSet.toTRowSet(rows, schema, protocolVersion, timeFormatters)
     sw.stop()
     val msTimeCost: BigDecimal = (BigDecimal(sw.getNanoTime) / BigDecimal(1000000))
       .setScale(3, RoundingMode.HALF_UP)
