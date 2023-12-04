@@ -19,7 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.plugin.spark.authz.rule.{AuthzUnsupportedOperationsCheck, RuleEliminateMarker, RuleEliminatePermanentViewMarker, RuleEliminateTypeOf}
+import org.apache.kyuubi.plugin.spark.authz.rule.{RuleEliminateMarker, RuleEliminatePermanentViewMarker, RuleEliminateTypeOf}
 import org.apache.kyuubi.plugin.spark.authz.rule.config.AuthzConfigurationChecker
 import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{RuleApplyDataMaskingStage0, RuleApplyDataMaskingStage1}
 import org.apache.kyuubi.plugin.spark.authz.rule.expression.RuleApplyTypeOfMarker
@@ -45,7 +45,6 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
 
   override def apply(v1: SparkSessionExtensions): Unit = {
     v1.injectCheckRule(AuthzConfigurationChecker)
-    v1.injectCheckRule(_ => new AuthzUnsupportedOperationsCheck)
     v1.injectResolutionRule(_ => new RuleReplaceShowObjectCommands())
     v1.injectResolutionRule(_ => new RuleApplyPermanentViewMarker())
     v1.injectResolutionRule(_ => new RuleApplyTypeOfMarker())

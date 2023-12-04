@@ -24,8 +24,8 @@ import scala.collection.JavaConverters._
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
 
-import org.apache.kyuubi.sql.KyuubiSQLConf
-import org.apache.kyuubi.sql.watchdog.{MaxFileSizeExceedException, MaxPartitionExceedException}
+import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
+import org.apache.kyuubi.sql.watchdog.{KyuubiUnsupportedOperationsCheck, MaxFileSizeExceedException, MaxPartitionExceedException}
 
 trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
   override protected def beforeAll(): Unit = {
@@ -597,5 +597,12 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
         checkMaxFileSize(tableSize, nonPartTableSize)
       }
     }
+  }
+
+  test("disable script transformation") {
+    spark.conf.set("spark.sql.execution.scriptTransformation.enabled", false)
+    val extension = new KyuubiUnsupportedOperationsCheck
+    val p1 = sql("SELECT TRANSFORM('') USING 'ls /'").queryExecution.analyzed
+    intercept[KyuubiSQLExtensionException](extension.apply(p1))
   }
 }

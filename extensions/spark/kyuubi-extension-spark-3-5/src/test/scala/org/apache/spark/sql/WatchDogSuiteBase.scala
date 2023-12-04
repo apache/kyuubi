@@ -19,8 +19,6 @@ package org.apache.spark.sql
 
 import java.io.File
 
-import scala.collection.JavaConverters._
-
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
 
@@ -597,5 +595,12 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
         checkMaxFileSize(tableSize, nonPartTableSize)
       }
     }
+  }
+
+  test("disable script transformation") {
+    spark.conf.set("spark.sql.execution.scriptTransformation.enabled", false)
+    val extension = new KyuubiUnsupportedOperationsCheck
+    val p1 = sql("SELECT TRANSFORM('') USING 'ls /'").queryExecution.analyzed
+    intercept[KyuubiSQLExtensionException](extension.apply(p1))
   }
 }

@@ -15,20 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.rule
+package org.apache.kyuubi.sql.watchdog
 
 import org.apache.spark.sql.catalyst.SQLConfHelper
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ScriptTransformation}
 
-import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 
-class AuthzUnsupportedOperationsCheck extends (LogicalPlan => Unit) with SQLConfHelper {
-  override def apply(plan: LogicalPlan): Unit = plan foreach {
-    case _: ScriptTransformation
-        if !conf.getConfString(
-          "spark.sql.authz.scriptTransformation.enabled",
-          "false").toBoolean =>
-      throw new AccessControlException("Script transformation is not allowed")
-    case _ =>
-  }
+class KyuubiUnsupportedOperationsCheck extends (LogicalPlan => Unit) with SQLConfHelper {
+  override def apply(plan: LogicalPlan): Unit =
+    conf.getConf(KyuubiSQLConf.SCRIPT_TRANSFORMATION_ENABLED) match {
+      case false => plan foreach {
+          case _: ScriptTransformation =>
+            throw new KyuubiSQLExtensionException("Script transformation is not allowed")
+          case _ =>
+        }
+      case true =>
+    }
 }

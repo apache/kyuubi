@@ -290,11 +290,10 @@ object KyuubiSQLConf {
       .intConf
       .createWithDefault(2000)
 
-  val AUTHZ_SCRIPT_TRANSFORMATION_ENABLED =
-    buildConf("spark.sql.authz.scriptTransformation.enabled")
-      .doc(
-        "When false, script transformation is not allowed in authz.")
+  val SCRIPT_TRANSFORMATION_ENABLED =
+    buildConf("spark.sql.execution.scriptTransformation.enabled")
+      .doc("When false, script transformation is not allowed.")
       .version("1.9.0")
       .booleanConf
-      .createWithDefault(false)
+      .createWithDefault(true)
 }
