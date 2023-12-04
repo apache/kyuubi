@@ -67,7 +67,7 @@ class IncrementalResultFetchIterator(
   val effectiveMaxRows: Int = if (isQueryResult) maxRows else Int.MaxValue
 
   private val executor = Executors.newSingleThreadScheduledExecutor(
-    new ThreadFactoryBuilder().setNameFormat("flink-query-iterator-%d").setDaemon(true).build)
+    new ThreadFactoryBuilder().setNameFormat("flink-result-iterator-%d").setDaemon(true).build)
 
   implicit private val executionContext: ExecutionContextExecutor =
     ExecutionContext.fromExecutor(executor)
