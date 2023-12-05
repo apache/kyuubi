@@ -445,13 +445,12 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     Timestamp value = getTimestamp(columnIndex);
     if (value == null) {
       return null;
-    } else {
-      try {
-        return parseTimestamp(value, cal);
-      } catch (IllegalArgumentException e) {
-        throw new KyuubiSQLException(
-            "Cannot convert column " + columnIndex + " to timestamp: " + e, e);
-      }
+    }
+    try {
+      return parseTimestamp(value, cal);
+    } catch (IllegalArgumentException e) {
+      throw new KyuubiSQLException(
+          "Cannot convert column " + columnIndex + " to timestamp: " + e, e);
     }
   }
 
