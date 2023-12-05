@@ -261,7 +261,8 @@ class SparkProcessBuilder(
 
   def extraYarnConf: Map[String, String] = {
     if (clusterManager().exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))) {
-      // set `spark.yarn.maxAppAttempts` to 1 to avoid invalid attempts.
+      // Set `spark.yarn.maxAppAttempts` to 1 to avoid invalid attempts.
+      // As mentioned in YARN-5617, it is improved after hadoop `2.8.2/2.9.0/3.0.0`.
       Map(YARN_MAX_APP_ATTEMPTS_KEY -> "1")
     } else {
       Map.empty[String, String]
