@@ -188,12 +188,11 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     Date value = getDate(columnIndex);
     if (value == null) {
       return null;
-    } else {
-      try {
-        return parseDate(value, cal);
-      } catch (IllegalArgumentException e) {
-        throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to date: " + e, e);
-      }
+    }
+    try {
+      return parseDate(value, cal);
+    } catch (IllegalArgumentException e) {
+      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to date: " + e, e);
     }
   }
 
