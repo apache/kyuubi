@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ScriptTransform
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 
-class KyuubiUnsupportedOperationsCheck extends (LogicalPlan => Unit) with SQLConfHelper {
+object KyuubiUnsupportedOperationsCheck extends (LogicalPlan => Unit) with SQLConfHelper {
   override def apply(plan: LogicalPlan): Unit =
     conf.getConf(KyuubiSQLConf.SCRIPT_TRANSFORMATION_ENABLED) match {
       case false => plan foreach {

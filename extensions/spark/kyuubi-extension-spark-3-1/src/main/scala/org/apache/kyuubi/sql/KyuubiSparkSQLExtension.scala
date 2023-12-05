@@ -39,7 +39,7 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectPostHocResolutionRule(DropIgnoreNonexistent)
 
     // watchdog extension
-    extensions.injectCheckRule(_ => new KyuubiUnsupportedOperationsCheck)
+    extensions.injectCheckRule(_ => KyuubiUnsupportedOperationsCheck)
     extensions.injectOptimizerRule(ForcedMaxOutputRowsRule)
     extensions.injectPlannerStrategy(MaxScanStrategy)
   }
