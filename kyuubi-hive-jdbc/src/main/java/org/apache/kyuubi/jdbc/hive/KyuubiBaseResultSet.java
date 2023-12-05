@@ -495,12 +495,11 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     Time value = getTime(columnIndex);
     if (value == null) {
       return null;
-    } else {
-      try {
-        return parseTime(value, cal);
-      } catch (IllegalArgumentException e) {
-        throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to time: " + e, e);
-      }
+    }
+    try {
+      return parseTime(value, cal);
+    } catch (IllegalArgumentException e) {
+      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to time: " + e, e);
     }
   }
 
