@@ -140,8 +140,9 @@ class SparkProcessBuilder(
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
     // pass spark engine log path to spark conf
-    (allConf ++ engineLogPathConf ++ extraYarnConf ++ appendPodNameConf(allConf)).foreach { case (k, v) =>
-      buffer ++= confKeyValue(convertConfigKey(k), v)
+    (allConf ++ engineLogPathConf ++ extraYarnConf ++ appendPodNameConf(allConf)).foreach {
+      case (k, v) =>
+        buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 
     setupKerberos(buffer)
