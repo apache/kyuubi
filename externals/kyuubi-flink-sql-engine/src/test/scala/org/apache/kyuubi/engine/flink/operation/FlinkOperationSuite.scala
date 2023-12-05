@@ -1148,6 +1148,22 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
         assert(rows === 200)
       }
     }
+    if (FLINK_RUNTIME_VERSION >= "1.17") {
+      withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "10"))(Map.empty) {
+        withJdbcStatement() { statement =>
+          for (i <- 0 to 10) {
+            statement.execute(s"create table tbl_src$i (a bigint) " +
+              s"with ('connector' = 'blackhole')")
+          }
+          val resultSet = statement.executeQuery("show tables")
+          var rows = 0
+          while (resultSet.next()) {
+            rows += 1
+          }
+          assert(rows === 11)
+        }
+      }
+    }
   }
 
   test("execute statement - add/show jar") {
