@@ -156,7 +156,7 @@ jobs:
         uses: ./.github/actions/cache-engine-archives
       - name: Build on Scala ${{ matrix.scala }}
         run: |
-          TEST_MODULES="!externals/kyuubi-flink-sql-engine,!integration-tests/kyuubi-flink-it"
+          TEST_MODULES="!externals/kyuubi-flink-sql-engine,!integration-tests/kyuubi-flink-it,!integration-tests/kyuubi-gluten-it"
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pscala-${{ matrix.scala }} -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }}
       - name: Upload test logs
