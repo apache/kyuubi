@@ -76,7 +76,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        spark: [ '3.4', '3.3' , '3.2' ]
+        spark: [ '3.4', '3.3' ]
     steps:
       - uses: actions/checkout@v4
       - name: Tune Runner VM
