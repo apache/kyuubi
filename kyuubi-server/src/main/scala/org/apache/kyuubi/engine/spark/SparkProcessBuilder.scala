@@ -140,7 +140,7 @@ class SparkProcessBuilder(
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
     // pass spark engine log path to spark conf
-    (allConf ++ engineLogPathConf ++ extraYarnConf ++ appendPodNameConf(allConf)).foreach {
+    (extraYarnConf ++ allConf ++ engineLogPathConf ++ appendPodNameConf(allConf)).foreach {
       case (k, v) =>
         buffer ++= confKeyValue(convertConfigKey(k), v)
     }
