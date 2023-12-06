@@ -140,7 +140,7 @@ class SparkProcessBuilder(
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
     // pass spark engine log path to spark conf
-    (extraYarnConf ++ allConf ++ engineLogPathConf ++ appendPodNameConf(allConf)).foreach {
+    (allConf ++ engineLogPathConf ++ extraYarnConf(allConf) ++ appendPodNameConf(allConf)).foreach {
       case (k, v) =>
         buffer ++= confKeyValue(convertConfigKey(k), v)
     }
@@ -259,14 +259,16 @@ class SparkProcessBuilder(
     map.result().toMap
   }
 
-  def extraYarnConf: Map[String, String] = {
+  def extraYarnConf(conf: Map[String, String]): Map[String, String] = {
+    val map = mutable.Map.newBuilder[String, String]
     if (clusterManager().exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))) {
-      // Set `spark.yarn.maxAppAttempts` to 1 to avoid invalid attempts.
-      // As mentioned in YARN-5617, it is improved after hadoop `2.8.2/2.9.0/3.0.0`.
-      Map(YARN_MAX_APP_ATTEMPTS_KEY -> "1")
-    } else {
-      Map.empty[String, String]
+      if (!conf.contains(YARN_MAX_APP_ATTEMPTS_KEY)) {
+        // Set `spark.yarn.maxAppAttempts` to 1 to avoid invalid attempts.
+        // As mentioned in YARN-5617, it is improved after hadoop `2.8.2/2.9.0/3.0.0`.
+        map += (YARN_MAX_APP_ATTEMPTS_KEY -> "1")
+      }
     }
+    map.result().toMap
   }
 
   override def clusterManager(): Option[String] = {
