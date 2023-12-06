@@ -130,7 +130,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   private def newSparkSession(rootSparkSession: SparkSession): SparkSession = {
     val newSparkSession = rootSparkSession.newSession()
-    KyuubiSparkUtil.initializeSparkSession(newSparkSession, conf.get(ENGINE_SESSION_INITIALIZE_SQL))
+    KyuubiSparkUtil.initializeSparkSession(
+      newSparkSession,
+      conf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL))
     newSparkSession
   }
 

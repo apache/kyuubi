@@ -2140,6 +2140,13 @@ object KyuubiConf {
       .toSequence(";")
       .createWithDefault(Nil)
 
+  val ENGINE_SESSION_FLINK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.session.engine.flink.initialize.sql")
+      .doc("The initialize sql for Flink session. " +
+        "It fallback to `kyuubi.engine.session.initialize.sql`")
+      .version("1.8.1")
+      .fallbackConf(ENGINE_SESSION_INITIALIZE_SQL)
+
   val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Set[String]] =
     buildConf("kyuubi.engine.deregister.exception.classes")
       .doc("A comma-separated list of exception classes. If there is any exception thrown," +
@@ -2583,6 +2590,13 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("yyyy-MM-dd HH:mm:ss.SSS")
 
+  val ENGINE_SESSION_SPARK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.session.engine.spark.initialize.sql")
+      .doc("The initialize sql for Spark session. " +
+        "It fallback to `kyuubi.engine.session.initialize.sql`")
+      .version("1.8.1")
+      .fallbackConf(ENGINE_SESSION_INITIALIZE_SQL)
+
   val ENGINE_TRINO_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.trino.memory")
       .doc("The heap memory for the Trino query engine")
@@ -2656,6 +2670,12 @@ object KyuubiConf {
       .version("1.8.0")
       .stringConf
       .createOptional
+
+  val ENGINE_FLINK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.flink.initialize.sql")
+      .doc("The initialize sql for Flink engine. It fallback to `kyuubi.engine.initialize.sql`.")
+      .version("1.8.1")
+      .fallbackConf(ENGINE_INITIALIZE_SQL)
 
   val SERVER_LIMIT_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.connections.per.user")
@@ -3153,6 +3173,12 @@ object KyuubiConf {
       .stringConf
       .toSequence()
       .createWithDefault(Seq("spark.driver.memory", "spark.executor.memory"))
+
+  val ENGINE_SPARK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.spark.initialize.sql")
+      .doc("The initialize sql for Spark engine. It fallback to `kyuubi.engine.initialize.sql`.")
+      .version("1.8.1")
+      .fallbackConf(ENGINE_INITIALIZE_SQL)
 
   val ENGINE_HIVE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.hive.event.loggers")
