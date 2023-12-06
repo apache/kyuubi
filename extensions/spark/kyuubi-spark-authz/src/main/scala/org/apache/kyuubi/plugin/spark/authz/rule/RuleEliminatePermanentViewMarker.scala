@@ -27,7 +27,7 @@ import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMark
 /**
  * Transforming up [[PermanentViewMarker]]
  */
-class RuleEliminatePermanentViewMarker(sparkSession: SparkSession) extends Rule[LogicalPlan] {
+case class RuleEliminatePermanentViewMarker(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   def eliminatePVM(plan: LogicalPlan): LogicalPlan = {
     plan.transformUp {
