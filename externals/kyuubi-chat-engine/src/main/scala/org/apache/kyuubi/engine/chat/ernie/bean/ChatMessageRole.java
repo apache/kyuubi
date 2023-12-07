@@ -32,4 +32,11 @@ public enum  ChatMessageRole {
     public String value() {
         return this.value;
     }
+
+    @Override
+    public String toString() {
+        return "ChatMessageRole{" +
+                "value='" + value + '\'' +
+                '}';
+    }
 }

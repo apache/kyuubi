@@ -19,13 +19,10 @@
 package org.apache.kyuubi.engine.chat.ernie.api;
 
 public class ApiHttpException extends RuntimeException{
-    public final int statusCode;
     public final int code;
 
-
-    public ApiHttpException(ApiError error, Exception parent, int statusCode) {
-        super(error.errorMsg, parent);
-        this.statusCode = statusCode;
-        this.code = error.errorCode;
+    public ApiHttpException(String errorMsg, int code, Exception parent) {
+        super(errorMsg, parent);
+        this.code = code;
     }
 }

@@ -29,23 +29,47 @@ public class ChatCompletionResult {
     @JsonProperty("sentence_id")
     long sentenceId;
     @JsonProperty("is_end")
-    Boolean isEnd;
+    boolean isEnd;
     @JsonProperty("is_truncated")
-    Boolean isTruncated;
+    boolean isTruncated;
     @JsonProperty("finish_reason")
     String finishReason;
     @JsonProperty("search_info")
     SearchInfo searchInfo;
     String result;
     @JsonProperty("need_clear_history")
-    Boolean needClearHistory;
+    boolean needClearHistory;
     @JsonProperty("ban_round")
     long banRound;
     Usage usage;
     @JsonProperty("function_call")
     FunctionCall functionCall;
 
+    @JsonProperty("error_msg")
+    String errorMsg;
+
+    @JsonProperty("error_code")
+    int errorCode;
+
     public ChatCompletionResult() {
+    }
+
+    public ChatCompletionResult(String id, String object, long created, long sentenceId, boolean isEnd, boolean isTruncated, String finishReason, SearchInfo searchInfo, String result, boolean needClearHistory, long banRound, Usage usage, FunctionCall functionCall, String errorMsg, int errorCode) {
+        this.id = id;
+        this.object = object;
+        this.created = created;
+        this.sentenceId = sentenceId;
+        this.isEnd = isEnd;
+        this.isTruncated = isTruncated;
+        this.finishReason = finishReason;
+        this.searchInfo = searchInfo;
+        this.result = result;
+        this.needClearHistory = needClearHistory;
+        this.banRound = banRound;
+        this.usage = usage;
+        this.functionCall = functionCall;
+        this.errorMsg = errorMsg;
+        this.errorCode = errorCode;
     }
 
     public String getId() {
@@ -75,31 +99,31 @@ public class ChatCompletionResult {
     public long getSentenceId() {
         return sentenceId;
     }
-
+    @JsonProperty("sentence_id")
     public void setSentenceId(long sentenceId) {
         this.sentenceId = sentenceId;
     }
 
-    public Boolean getEnd() {
+    public boolean getEnd() {
         return isEnd;
     }
-
-    public void setEnd(Boolean end) {
+    @JsonProperty("is_end")
+    public void setEnd(boolean end) {
         isEnd = end;
     }
 
-    public Boolean getTruncated() {
+    public boolean getTruncated() {
         return isTruncated;
     }
-
-    public void setTruncated(Boolean truncated) {
+    @JsonProperty("is_truncated")
+    public void setTruncated(boolean truncated) {
         isTruncated = truncated;
     }
 
     public String getFinishReason() {
         return finishReason;
     }
-
+    @JsonProperty("finish_reason")
     public void setFinishReason(String finishReason) {
         this.finishReason = finishReason;
     }
@@ -107,7 +131,7 @@ public class ChatCompletionResult {
     public SearchInfo getSearchInfo() {
         return searchInfo;
     }
-
+    @JsonProperty("search_info")
     public void setSearchInfo(SearchInfo searchInfo) {
         this.searchInfo = searchInfo;
     }
@@ -120,18 +144,18 @@ public class ChatCompletionResult {
         this.result = result;
     }
 
-    public Boolean getNeedClearHistory() {
+    public boolean getNeedClearHistory() {
         return needClearHistory;
     }
-
-    public void setNeedClearHistory(Boolean needClearHistory) {
+    @JsonProperty("need_clear_history")
+    public void setNeedClearHistory(boolean needClearHistory) {
         this.needClearHistory = needClearHistory;
     }
 
     public long getBanRound() {
         return banRound;
     }
-
+    @JsonProperty("ban_round")
     public void setBanRound(long banRound) {
         this.banRound = banRound;
     }
@@ -147,21 +171,45 @@ public class ChatCompletionResult {
     public FunctionCall getFunctionCall() {
         return functionCall;
     }
-
+    @JsonProperty("function_call")
     public void setFunctionCall(FunctionCall functionCall) {
         this.functionCall = functionCall;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ChatCompletionResult that = (ChatCompletionResult) o;
-        return created == that.created && sentenceId == that.sentenceId && banRound == that.banRound && Objects.equals(id, that.id) && Objects.equals(object, that.object) && Objects.equals(isEnd, that.isEnd) && Objects.equals(isTruncated, that.isTruncated) && Objects.equals(finishReason, that.finishReason) && Objects.equals(searchInfo, that.searchInfo) && Objects.equals(result, that.result) && Objects.equals(needClearHistory, that.needClearHistory) && Objects.equals(usage, that.usage) && Objects.equals(functionCall, that.functionCall);
+    public String getErrorMsg() {
+        return errorMsg;
+    }
+    @JsonProperty("error_msg")
+    public void setErrorMsg(String errorMsg) {
+        this.errorMsg = errorMsg;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
+    }
+    @JsonProperty("error_code")
+    public void setErrorCode(int errorCode) {
+        this.errorCode = errorCode;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id, object, created, sentenceId, isEnd, isTruncated, finishReason, searchInfo, result, needClearHistory, banRound, usage, functionCall);
+    public String toString() {
+        return "ChatCompletionResult{" +
+                "id='" + id + '\'' +
+                ", object='" + object + '\'' +
+                ", created=" + created +
+                ", sentenceId=" + sentenceId +
+                ", isEnd=" + isEnd +
+                ", isTruncated=" + isTruncated +
+                ", finishReason='" + finishReason + '\'' +
+                ", searchInfo=" + searchInfo +
+                ", result='" + result + '\'' +
+                ", needClearHistory=" + needClearHistory +
+                ", banRound=" + banRound +
+                ", usage=" + usage +
+                ", functionCall=" + functionCall +
+                ", errorMsg='" + errorMsg + '\'' +
+                ", errorCode=" + errorCode +
+                '}';
     }
 }

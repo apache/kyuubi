@@ -75,4 +75,14 @@ public class Usage {
     public int hashCode() {
         return Objects.hash(promptTokens, completionTokens, totalTokens, plugins);
     }
+
+    @Override
+    public String toString() {
+        return "Usage{" +
+                "promptTokens=" + promptTokens +
+                ", completionTokens=" + completionTokens +
+                ", totalTokens=" + totalTokens +
+                ", plugins=" + plugins +
+                '}';
+    }
 }

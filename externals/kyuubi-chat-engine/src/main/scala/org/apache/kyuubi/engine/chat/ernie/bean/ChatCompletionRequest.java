@@ -33,18 +33,17 @@ public class ChatCompletionRequest {
 
     @JsonProperty("penalty_score")
     Double presenceScore;
-
-    Boolean stream;
+    boolean stream;
 
     String system;
 
     List<String> stop;
 
     @JsonProperty("disable_search")
-    Boolean disableSearch;
+    boolean disableSearch;
 
     @JsonProperty("enable_citation")
-    Boolean enableCitation;
+    boolean enableCitation;
 
     @JsonProperty("user_id")
     String userId;
@@ -54,7 +53,7 @@ public class ChatCompletionRequest {
     }
 
 
-    public ChatCompletionRequest(List<ChatMessage> messages, List<Function> functions, Double temperature, Double topP, Double presenceScore, Boolean stream, String system, List<String> stop, Boolean disableSearch, Boolean enableCitation, String userId) {
+    public ChatCompletionRequest(List<ChatMessage> messages, List<Function> functions, Double temperature, Double topP, Double presenceScore, boolean stream, String system, List<String> stop, boolean disableSearch, boolean enableCitation, String userId) {
         this.messages = messages;
         this.functions = functions;
         this.temperature = temperature;
@@ -71,6 +70,111 @@ public class ChatCompletionRequest {
     public ChatCompletionRequest() {
     }
 
+    public List<ChatMessage> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(List<ChatMessage> messages) {
+        this.messages = messages;
+    }
+
+    public List<Function> getFunctions() {
+        return functions;
+    }
+
+    public void setFunctions(List<Function> functions) {
+        this.functions = functions;
+    }
+
+    public Double getTemperature() {
+        return temperature;
+    }
+
+    public void setTemperature(Double temperature) {
+        this.temperature = temperature;
+    }
+
+    public Double getTopP() {
+        return topP;
+    }
+    @JsonProperty("top_p")
+    public void setTopP(Double topP) {
+        this.topP = topP;
+    }
+
+    public Double getPresenceScore() {
+        return presenceScore;
+    }
+    @JsonProperty("penalty_score")
+    public void setPresenceScore(Double presenceScore) {
+        this.presenceScore = presenceScore;
+    }
+
+    public boolean isStream() {
+        return stream;
+    }
+
+    public void setStream(boolean stream) {
+        this.stream = stream;
+    }
+
+    public String getSystem() {
+        return system;
+    }
+
+    public void setSystem(String system) {
+        this.system = system;
+    }
+
+    public List<String> getStop() {
+        return stop;
+    }
+
+    public void setStop(List<String> stop) {
+        this.stop = stop;
+    }
+
+    public boolean isDisableSearch() {
+        return disableSearch;
+    }
+    @JsonProperty("disable_search")
+    public void setDisableSearch(boolean disableSearch) {
+        this.disableSearch = disableSearch;
+    }
+
+    public boolean isEnableCitation() {
+        return enableCitation;
+    }
+    @JsonProperty("enable_citation")
+    public void setEnableCitation(boolean enableCitation) {
+        this.enableCitation = enableCitation;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+    @JsonProperty("user_id")
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    @Override
+    public String toString() {
+        return "ChatCompletionRequest{" +
+                "messages=" + messages +
+                ", functions=" + functions +
+                ", temperature=" + temperature +
+                ", topP=" + topP +
+                ", presenceScore=" + presenceScore +
+                ", stream=" + stream +
+                ", system='" + system + '\'' +
+                ", stop=" + stop +
+                ", disableSearch=" + disableSearch +
+                ", enableCitation=" + enableCitation +
+                ", userId='" + userId + '\'' +
+                '}';
+    }
+
     public static class ChatCompletionRequestBuilder {
 
         private List<ChatMessage> messages;
@@ -83,15 +187,15 @@ public class ChatCompletionRequest {
 
         private Double presenceScore;
 
-        private Boolean stream;
+        private boolean stream;
 
         private String system;
 
         private List<String> stop;
 
-        private Boolean disableSearch;
+        private boolean disableSearch;
 
-        private  Boolean enableCitation;
+        private  boolean enableCitation;
 
         private String userId;
 
@@ -118,7 +222,7 @@ public class ChatCompletionRequest {
             this.topP = topP;
             return this;
         }
-        public ChatCompletionRequestBuilder stream(Boolean stream) {
+        public ChatCompletionRequestBuilder stream(boolean stream) {
             this.stream = stream;
             return this;
         }
@@ -141,13 +245,13 @@ public class ChatCompletionRequest {
         }
 
         @JsonProperty("disable_search")
-        public ChatCompletionRequestBuilder disableSearch(Boolean disableSearch) {
+        public ChatCompletionRequestBuilder disableSearch(boolean disableSearch) {
             this.disableSearch = disableSearch;
             return this;
         }
 
         @JsonProperty("enable_citation")
-        public ChatCompletionRequestBuilder enableCitation(Boolean enableCitation) {
+        public ChatCompletionRequestBuilder enableCitation(boolean enableCitation) {
             this.enableCitation = enableCitation;
             return this;
         }
@@ -161,7 +265,22 @@ public class ChatCompletionRequest {
             return new ChatCompletionRequest(messages, functions, temperature, topP, presenceScore, stream, system, stop, disableSearch, enableCitation, userId);
         }
 
-
+        @Override
+        public String toString() {
+            return "ChatCompletionRequestBuilder{" +
+                    "messages=" + messages +
+                    ", functions=" + functions +
+                    ", temperature=" + temperature +
+                    ", topP=" + topP +
+                    ", presenceScore=" + presenceScore +
+                    ", stream=" + stream +
+                    ", system='" + system + '\'' +
+                    ", stop=" + stop +
+                    ", disableSearch=" + disableSearch +
+                    ", enableCitation=" + enableCitation +
+                    ", userId='" + userId + '\'' +
+                    '}';
+        }
     }
 }
 

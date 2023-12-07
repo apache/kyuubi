@@ -64,4 +64,13 @@ public class FunctionCall {
     public int hashCode() {
         return Objects.hash(name, thoughts, arguments);
     }
+
+    @Override
+    public String toString() {
+        return "FunctionCall{" +
+                "name='" + name + '\'' +
+                ", thoughts='" + thoughts + '\'' +
+                ", arguments='" + arguments + '\'' +
+                '}';
+    }
 }

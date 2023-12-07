@@ -3030,12 +3030,15 @@ object KyuubiConf {
       .doc("The provider for the Chat engine. Candidates: <ul>" +
         " <li>ECHO: simply replies a welcome message.</li>" +
         " <li>GPT: a.k.a ChatGPT, powered by OpenAI.</li>" +
+        " <li>ERNIE: ErnieBot, powered by Baidu.</li>" +
         "</ul>")
       .version("1.8.0")
       .stringConf
       .transform {
         case "ECHO" | "echo" => "org.apache.kyuubi.engine.chat.provider.EchoProvider"
         case "GPT" | "gpt" | "ChatGPT" => "org.apache.kyuubi.engine.chat.provider.ChatGPTProvider"
+        case "ERNIE" | "ernie" | "ErnieBot" =>
+          "org.apache.kyuubi.engine.chat.provider.ErnieBotProvider"
         case other => other
       }
       .createWithDefault("ECHO")
@@ -3067,7 +3070,7 @@ object KyuubiConf {
   val ERNIE_BOT_MODEL: ConfigEntry[String] =
     buildConf("kyuubi.engine.chat.ernie.model")
       .doc("ID of the model used in ernie bot. " +
-        "Available models are completions_pro,ernie_bot_8k,completions and eb-instant" +
+        "Available models are completions_pro, ernie_bot_8k, completions and eb-instant" +
         "[Model overview](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/6lp69is2a).")
       .version("1.8.0")
       .stringConf

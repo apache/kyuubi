@@ -34,15 +34,16 @@ import org.apache.kyuubi.engine.chat.ernie.service.ErnieBotService.{defaultClien
 
 class ErnieBotProvider(conf: KyuubiConf) extends ChatProvider {
 
-  private val ernieBotToken = conf.get(KyuubiConf.ERNIE_BOT_ACCESS_TOKEN).getOrElse {
+  private val accessToken = conf.get(KyuubiConf.ERNIE_BOT_ACCESS_TOKEN).getOrElse {
     throw new IllegalArgumentException(
       s"'${KyuubiConf.ERNIE_BOT_ACCESS_TOKEN.key}' must be configured, " +
         s"which could be got at https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Ilkkrb0i5")
   }
 
+  private val model = conf.get(KyuubiConf.ERNIE_BOT_MODEL)
+
   private val ernieBotService: ErnieBotService = {
     val builder = defaultClient(
-      ernieBotToken,
       Duration.ofMillis(conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_SOCKET_TIMEOUT)))
       .newBuilder
       .connectTimeout(Duration.ofMillis(conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_CONNECT_TIMEOUT)))
@@ -83,9 +84,12 @@ class ErnieBotProvider(conf: KyuubiConf) extends ChatProvider {
         .messages(messages.asScala.toList.asJava)
         .user(sessionUser.orNull)
         .build()
-      val responseText = ernieBotService
-        .createChatCompletion(completionRequest, conf.get(KyuubiConf.ERNIE_BOT_MODEL))
-        .getResult
+      val chatCompletionResult = ernieBotService
+        .createChatCompletion(completionRequest, model, accessToken)
+      if (chatCompletionResult.getErrorMsg != null) {
+        throw new RuntimeException(chatCompletionResult.getErrorMsg)
+      }
+      val responseText = chatCompletionResult.getResult
       responseText
     } catch {
       case e: Throwable =>

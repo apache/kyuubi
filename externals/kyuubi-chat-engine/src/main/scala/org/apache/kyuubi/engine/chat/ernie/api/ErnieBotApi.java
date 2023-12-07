@@ -24,19 +24,19 @@ import org.apache.kyuubi.engine.chat.ernie.bean.ChatCompletionRequest;
 import org.apache.kyuubi.engine.chat.ernie.bean.ChatCompletionResult;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
+import retrofit2.http.Query;
 
 public interface ErnieBotApi {
 
     @POST("/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions_pro")
-
-    Single<ChatCompletionResult> createChatCompletionPro(@Body ChatCompletionRequest var1);
+    Single<ChatCompletionResult> createChatCompletionPro(@Query("access_token") String accessToken, @Body ChatCompletionRequest var1);
 
     @POST("/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/ernie_bot_8k")
-    Single<ChatCompletionResult> createChatCompletion8k(@Body ChatCompletionRequest var1);
+    Single<ChatCompletionResult> createChatCompletion8k(@Query("access_token") String accessToken, @Body ChatCompletionRequest var1);
     @POST("/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions")
-    Single<ChatCompletionResult> createChatCompletion(@Body ChatCompletionRequest var1);
+    Single<ChatCompletionResult> createChatCompletion(@Query("access_token") String accessToken, @Body ChatCompletionRequest var1);
 
     @POST("/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/eb-instant")
-    Single<ChatCompletionResult> createChatCompletionTurbo(@Body ChatCompletionRequest var1);
+    Single<ChatCompletionResult> createChatCompletionTurbo(@Query("access_token") String accessToken, @Body ChatCompletionRequest var1);
 
 }

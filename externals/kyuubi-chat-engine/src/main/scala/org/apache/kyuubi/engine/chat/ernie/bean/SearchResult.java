@@ -59,7 +59,7 @@ public class SearchResult {
     public String getDatasourceId() {
         return datasourceId;
     }
-
+    @JsonProperty("datasource_id")
     public void setDatasourceId(String datasourceId) {
         this.datasourceId = datasourceId;
     }
@@ -75,5 +75,15 @@ public class SearchResult {
     @Override
     public int hashCode() {
         return Objects.hash(index, url, title, datasourceId);
+    }
+
+    @Override
+    public String toString() {
+        return "SearchResult{" +
+                "index=" + index +
+                ", url='" + url + '\'' +
+                ", title='" + title + '\'' +
+                ", datasourceId='" + datasourceId + '\'' +
+                '}';
     }
 }

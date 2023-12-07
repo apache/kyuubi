@@ -59,7 +59,7 @@ public class Example {
     public FunctionCall getFunctionCall() {
         return functionCall;
     }
-
+    @JsonProperty("function_call")
     public void setFunctionCall(FunctionCall functionCall) {
         this.functionCall = functionCall;
     }
@@ -75,5 +75,15 @@ public class Example {
     @Override
     public int hashCode() {
         return Objects.hash(role, content, name, functionCall);
+    }
+
+    @Override
+    public String toString() {
+        return "Example{" +
+                "role='" + role + '\'' +
+                ", content='" + content + '\'' +
+                ", name='" + name + '\'' +
+                ", functionCall=" + functionCall +
+                '}';
     }
 }

@@ -22,7 +22,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.theokanning.openai.OpenAiHttpException;
 import io.reactivex.Single;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
@@ -33,29 +32,15 @@ import org.apache.kyuubi.engine.chat.ernie.constants.Model;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class ErnieBotService {
-    private static final String BASE_URL = "https://api.baidu.com/";
-    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10L);
-    private static final ObjectMapper mapper = defaultObjectMapper();
+    private static final String BASE_URL = "https://aip.baidubce.com/";
     private final ErnieBotApi api;
-
-    public ErnieBotService(String token) {
-        this(token, DEFAULT_TIMEOUT);
-    }
-    public ErnieBotService(String token, Duration timeout) {
-        Objects.requireNonNull(token, "Token required");
-        ObjectMapper mapper = defaultObjectMapper();
-        OkHttpClient client = defaultClient(token, timeout);
-        Retrofit retrofit = defaultRetrofit(client, mapper);
-
-        this.api = retrofit.create(ErnieBotApi.class);
-    }
 
     public ErnieBotService(ErnieBotApi api) {
         this.api = api;
@@ -71,8 +56,8 @@ public class ErnieBotService {
             try {
                 if (e.response() != null && e.response().errorBody() != null) {
                     String errorBody = e.response().errorBody().string();
-                    ApiError error = mapper.readValue(errorBody, ApiError.class);
-                    throw new ApiHttpException(error, e, e.code());
+                    int code = e.response().code();
+                    throw new ApiHttpException(errorBody, code, e);
                 } else {
                     throw e;
                 }
@@ -90,9 +75,8 @@ public class ErnieBotService {
         return mapper;
     }
 
-    public static OkHttpClient defaultClient(String token, Duration timeout) {
+    public static OkHttpClient defaultClient(Duration timeout) {
         return new OkHttpClient.Builder()
-                .addInterceptor(new AuthenticationInterceptor(token))
                 .connectionPool(new ConnectionPool(5, 1, TimeUnit.SECONDS))
                 .readTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                 .build();
@@ -107,20 +91,20 @@ public class ErnieBotService {
                 .build();
     }
 
-    public ChatCompletionResult createChatCompletion(ChatCompletionRequest request, String model) {
-        if (model.equals(Model.ERNIE_BOT_8k.value())) {
-            return execute(this.api.createChatCompletion8k(request));
+    public ChatCompletionResult createChatCompletion(ChatCompletionRequest request, String model, String accessToken) {
+        if (model.equalsIgnoreCase(Model.ERNIE_BOT_8k.value())) {
+            return execute(this.api.createChatCompletion8k(accessToken, request));
         }
 
-        if (model.equals(Model.ERNIE_BOT_4.value())) {
-            return execute(this.api.createChatCompletionPro(request));
+        if (model.equalsIgnoreCase(Model.ERNIE_BOT_4.value())) {
+            return execute(this.api.createChatCompletionPro(accessToken, request));
         }
 
-        if (model.equals(Model.ERNIE_BOT_TURBO.value())){
-            return execute(this.api.createChatCompletionTurbo(request));
+        if (model.equalsIgnoreCase(Model.ERNIE_BOT_TURBO.value())){
+            return execute(this.api.createChatCompletionTurbo(accessToken, request));
         }
 
-        return execute(this.api.createChatCompletion(request));
+        return execute(this.api.createChatCompletion(accessToken, request));
     }
 
 }

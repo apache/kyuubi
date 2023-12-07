@@ -83,4 +83,15 @@ public class Function {
     public int hashCode() {
         return Objects.hash(name, description, parameters, responses, examples);
     }
+
+    @Override
+    public String toString() {
+        return "Function{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", parameters=" + parameters +
+                ", responses=" + responses +
+                ", examples=" + examples +
+                '}';
+    }
 }

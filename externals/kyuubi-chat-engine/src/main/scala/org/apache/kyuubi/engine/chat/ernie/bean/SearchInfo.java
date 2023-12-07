@@ -37,7 +37,7 @@ public class SearchInfo {
     public long getIsBeset() {
         return isBeset;
     }
-
+    @JsonProperty("is_beset")
     public void setIsBeset(long isBeset) {
         this.isBeset = isBeset;
     }
@@ -45,7 +45,7 @@ public class SearchInfo {
     public String getRewriteQuery() {
         return rewriteQuery;
     }
-
+    @JsonProperty("rewrite_query")
     public void setRewriteQuery(String rewriteQuery) {
         this.rewriteQuery = rewriteQuery;
     }
@@ -53,7 +53,7 @@ public class SearchInfo {
     public List<SearchResult> getSearchResults() {
         return searchResults;
     }
-
+    @JsonProperty("search_results")
     public void setSearchResults(List<SearchResult> searchResults) {
         this.searchResults = searchResults;
     }
@@ -69,5 +69,14 @@ public class SearchInfo {
     @Override
     public int hashCode() {
         return Objects.hash(isBeset, rewriteQuery, searchResults);
+    }
+
+    @Override
+    public String toString() {
+        return "SearchInfo{" +
+                "isBeset=" + isBeset +
+                ", rewriteQuery='" + rewriteQuery + '\'' +
+                ", searchResults=" + searchResults +
+                '}';
     }
 }

@@ -47,7 +47,7 @@ public class PluginUsage {
     public long getParseTokens() {
         return parseTokens;
     }
-
+    @JsonProperty("parse_tokens")
     public void setParseTokens(long parseTokens) {
         this.parseTokens = parseTokens;
     }
@@ -55,7 +55,7 @@ public class PluginUsage {
     public long getAbstractTokens() {
         return abstractTokens;
     }
-
+    @JsonProperty("abstract_tokens")
     public void setAbstractTokens(long abstractTokens) {
         this.abstractTokens = abstractTokens;
     }
@@ -63,7 +63,7 @@ public class PluginUsage {
     public long getSearchTokens() {
         return searchTokens;
     }
-
+    @JsonProperty("search_tokens")
     public void setSearchTokens(long searchTokens) {
         this.searchTokens = searchTokens;
     }
@@ -71,7 +71,7 @@ public class PluginUsage {
     public long getTotalTokens() {
         return totalTokens;
     }
-
+    @JsonProperty("total_tokens")
     public void setTotalTokens(long totalTokens) {
         this.totalTokens = totalTokens;
     }
@@ -87,5 +87,16 @@ public class PluginUsage {
     @Override
     public int hashCode() {
         return Objects.hash(name, parseTokens, abstractTokens, searchTokens, totalTokens);
+    }
+
+    @Override
+    public String toString() {
+        return "PluginUsage{" +
+                "name='" + name + '\'' +
+                ", parseTokens=" + parseTokens +
+                ", abstractTokens=" + abstractTokens +
+                ", searchTokens=" + searchTokens +
+                ", totalTokens=" + totalTokens +
+                '}';
     }
 }
