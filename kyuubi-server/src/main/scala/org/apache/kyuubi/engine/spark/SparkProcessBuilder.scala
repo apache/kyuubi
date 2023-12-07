@@ -140,8 +140,9 @@ class SparkProcessBuilder(
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
     // pass spark engine log path to spark conf
-    (allConf ++ engineLogPathConf ++ appendPodNameConf(allConf)).foreach { case (k, v) =>
-      buffer ++= confKeyValue(convertConfigKey(k), v)
+    (allConf ++ engineLogPathConf ++ extraYarnConf(allConf) ++ appendPodNameConf(allConf)).foreach {
+      case (k, v) =>
+        buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 
     setupKerberos(buffer)
@@ -258,6 +259,18 @@ class SparkProcessBuilder(
     map.result().toMap
   }
 
+  def extraYarnConf(conf: Map[String, String]): Map[String, String] = {
+    val map = mutable.Map.newBuilder[String, String]
+    if (clusterManager().exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))) {
+      if (!conf.contains(YARN_MAX_APP_ATTEMPTS_KEY)) {
+        // Set `spark.yarn.maxAppAttempts` to 1 to avoid invalid attempts.
+        // As mentioned in YARN-5617, it is improved after hadoop `2.8.2/2.9.0/3.0.0`.
+        map += (YARN_MAX_APP_ATTEMPTS_KEY -> "1")
+      }
+    }
+    map.result().toMap
+  }
+
   override def clusterManager(): Option[String] = {
     conf.getOption(MASTER_KEY).orElse(defaultsConf.get(MASTER_KEY))
   }
@@ -308,6 +321,7 @@ object SparkProcessBuilder {
   final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
   final val KUBERNETES_DRIVER_POD_NAME = "spark.kubernetes.driver.pod.name"
   final val KUBERNETES_EXECUTOR_POD_NAME_PREFIX = "spark.kubernetes.executor.podNamePrefix"
+  final val YARN_MAX_APP_ATTEMPTS_KEY = "spark.yarn.maxAppAttempts"
   final val INTERNAL_RESOURCE = "spark-internal"
 
   /**
