@@ -1519,19 +1519,6 @@
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
-
-        <!-- TODO: remove this staging repo after RC released -->
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>staging</id>
-            <name>Kyuubi Shaded 0.2.0 RC0</name>
-            <url>https://repository.apache.org/content/repositories/orgapachekyuubi-1041/</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
