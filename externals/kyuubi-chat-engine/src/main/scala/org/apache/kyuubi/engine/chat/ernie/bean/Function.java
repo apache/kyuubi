@@ -22,10 +22,15 @@ import java.util.List;
 import java.util.Objects;
 
 public class Function {
+
     String name;
+
     String description;
+
     Object parameters;
+
     Object responses;
+
     List<Example> examples;
 
     public Function() {

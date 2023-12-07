@@ -23,9 +23,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 public class SearchResult {
+
     long index;
+
     String url;
+
     String title;
+
     @JsonProperty("datasource_id")
     String datasourceId;
 

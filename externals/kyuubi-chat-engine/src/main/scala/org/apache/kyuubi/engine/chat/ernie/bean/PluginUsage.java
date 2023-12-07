@@ -23,13 +23,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 public class PluginUsage {
+
     String name;
+
     @JsonProperty("parse_tokens")
     long parseTokens;
+
     @JsonProperty("abstract_tokens")
     long abstractTokens;
+
     @JsonProperty("search_tokens")
     long searchTokens;
+
     @JsonProperty("total_tokens")
     long totalTokens;
 

@@ -23,14 +23,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 public class ChatMessage {
+
     String role;
+
     String content;
 
     String name;
 
     @JsonProperty("function_call")
     FunctionCall functionCall;
-
 
     public ChatMessage() {
     }

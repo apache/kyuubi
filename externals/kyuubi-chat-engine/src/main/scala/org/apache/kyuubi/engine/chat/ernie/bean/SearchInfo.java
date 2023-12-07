@@ -24,10 +24,13 @@ import java.util.List;
 import java.util.Objects;
 
 public class SearchInfo {
+
     @JsonProperty("is_beset")
     long isBeset;
+
     @JsonProperty("rewrite_query")
     String rewriteQuery;
+
     @JsonProperty("search_results")
     List<SearchResult>  searchResults;
 

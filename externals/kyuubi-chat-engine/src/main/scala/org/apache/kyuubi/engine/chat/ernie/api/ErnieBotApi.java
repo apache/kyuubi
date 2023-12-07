@@ -33,6 +33,7 @@ public interface ErnieBotApi {
 
     @POST("/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/ernie_bot_8k")
     Single<ChatCompletionResult> createChatCompletion8k(@Query("access_token") String accessToken, @Body ChatCompletionRequest var1);
+
     @POST("/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions")
     Single<ChatCompletionResult> createChatCompletion(@Query("access_token") String accessToken, @Body ChatCompletionRequest var1);
 

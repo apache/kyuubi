@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class ChatCompletionRequest {
+
     List<ChatMessage> messages;
 
     List<Function> functions;

@@ -23,9 +23,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 public class Example {
+
     String role;
+
     String content;
+
     String name;
+
     @JsonProperty("function_call")
     FunctionCall functionCall;
 

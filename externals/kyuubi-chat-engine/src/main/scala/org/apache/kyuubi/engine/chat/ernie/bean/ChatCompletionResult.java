@@ -23,25 +23,38 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 public class ChatCompletionResult {
+
     String id;
+
     String object;
+
     long created;
+
     @JsonProperty("sentence_id")
     long sentenceId;
+
     @JsonProperty("is_end")
     boolean isEnd;
+
     @JsonProperty("is_truncated")
     boolean isTruncated;
+
     @JsonProperty("finish_reason")
     String finishReason;
+
     @JsonProperty("search_info")
     SearchInfo searchInfo;
+
     String result;
+
     @JsonProperty("need_clear_history")
     boolean needClearHistory;
+
     @JsonProperty("ban_round")
     long banRound;
+
     Usage usage;
+
     @JsonProperty("function_call")
     FunctionCall functionCall;
 

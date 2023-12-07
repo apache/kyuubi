@@ -24,10 +24,13 @@ import java.util.List;
 import java.util.Objects;
 
 public class Usage {
+
     @JsonProperty("prompt_tokens")
     long promptTokens;
+
     @JsonProperty("completion_tokens")
     long completionTokens;
+
     @JsonProperty("total_tokens")
     long totalTokens;
 

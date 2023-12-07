@@ -21,8 +21,11 @@ package org.apache.kyuubi.engine.chat.ernie.bean;
 import java.util.Objects;
 
 public class FunctionCall {
+
     String name;
+
     String thoughts;
+
     String arguments;
 
     public FunctionCall() {

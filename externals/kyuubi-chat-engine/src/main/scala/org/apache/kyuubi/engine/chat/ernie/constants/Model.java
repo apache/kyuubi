@@ -20,8 +20,11 @@ package org.apache.kyuubi.engine.chat.ernie.constants;
 
 public enum  Model {
     ERNIE_BOT_4("completions_pro"),
+
     ERNIE_BOT_8k("ernie_bot_8k"),
+
     ERNIE_BOT("completions"),
+
     ERNIE_BOT_TURBO("eb-instant");
 
     private final String value;

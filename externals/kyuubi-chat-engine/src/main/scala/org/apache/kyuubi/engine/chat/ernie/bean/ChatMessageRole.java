@@ -19,8 +19,11 @@
 package org.apache.kyuubi.engine.chat.ernie.bean;
 
 public enum  ChatMessageRole {
+
     FUNCTION("function"),
+
     USER("user"),
+
     ASSISTANT("assistant");
 
     private final String value;
