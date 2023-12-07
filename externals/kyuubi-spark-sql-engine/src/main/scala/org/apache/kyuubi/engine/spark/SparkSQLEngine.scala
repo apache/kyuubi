@@ -290,7 +290,8 @@ object SparkSQLEngine extends Logging {
 
     KyuubiSparkUtil.initializeSparkSession(
       session,
-      kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
+      kyuubiConf.get(ENGINE_SPARK_INITIALIZE_SQL) ++ kyuubiConf.get(
+        ENGINE_SESSION_SPARK_INITIALIZE_SQL))
     session.sparkContext.setLocalProperty(KYUUBI_ENGINE_URL, KyuubiSparkUtil.engineUrl)
     session
   }

@@ -32,7 +32,7 @@ import org.apache.flink.table.gateway.service.context.DefaultContext
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, currentUser, FLINK_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_INITIALIZE_SQL
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_FLINK_INITIALIZE_SQL
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_NAME, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.service.Serverable
@@ -139,7 +139,7 @@ object FlinkSQLEngine extends Logging {
       tableEnv.executeSql("select 'kyuubi'").await()
     }
 
-    kyuubiConf.get(ENGINE_INITIALIZE_SQL).foreach { stmt =>
+    kyuubiConf.get(ENGINE_FLINK_INITIALIZE_SQL).foreach { stmt =>
       tableEnv.executeSql(stmt).await()
     }
 
