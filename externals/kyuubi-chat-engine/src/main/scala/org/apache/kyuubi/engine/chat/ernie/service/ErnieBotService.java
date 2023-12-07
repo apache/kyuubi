@@ -58,8 +58,8 @@ public class ErnieBotService {
             try {
                 if (e.response() != null && e.response().errorBody() != null) {
                     String errorBody = e.response().errorBody().string();
-                    int code = e.response().code();
-                    throw new ApiHttpException(errorBody, code, e);
+                    int statusCode = e.response().code();
+                    throw new ApiHttpException(errorBody, statusCode, e);
                 } else {
                     throw e;
                 }

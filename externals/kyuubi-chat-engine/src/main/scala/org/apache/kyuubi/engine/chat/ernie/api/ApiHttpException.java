@@ -20,10 +20,10 @@ package org.apache.kyuubi.engine.chat.ernie.api;
 
 public class ApiHttpException extends RuntimeException{
 
-    public final int code;
+    public final int statusCode;
 
-    public ApiHttpException(String errorMsg, int code, Exception parent) {
+    public ApiHttpException(String errorMsg, int statusCode, Exception parent) {
         super(errorMsg, parent);
-        this.code = code;
+        this.statusCode = statusCode;
     }
 }

@@ -26,8 +26,9 @@ import scala.collection.JavaConverters._
 
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.chat.ernie.api.ErnieBotApi
+import org.apache.kyuubi.engine.chat.ernie.api.{ApiHttpException, ErnieBotApi}
 import org.apache.kyuubi.engine.chat.ernie.bean.{ChatCompletionRequest, ChatMessage, ChatMessageRole}
 import org.apache.kyuubi.engine.chat.ernie.service.ErnieBotService
 import org.apache.kyuubi.engine.chat.ernie.service.ErnieBotService.{defaultClient, defaultObjectMapper, defaultRetrofit}
