@@ -59,7 +59,8 @@ public class RestClientTestUtils {
         "RUNNING",
         BATCH_CREATE_TIME,
         0,
-        Collections.emptyMap());
+        Collections.emptyMap(),
+        Collections.emptyList());
   }
 
   public static BatchRequest generateTestBatchRequest() {

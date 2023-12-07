@@ -109,7 +109,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       batchOpStatus.state.toString,
       session.createTime,
       batchOpStatus.completed,
-      Map.empty[String, String].asJava)
+      Map.empty[String, String].asJava,
+      session.getBatchArgs.asJava)
   }
 
   private def buildBatch(
@@ -147,7 +148,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         currentBatchState,
         metadata.createTime,
         metadata.endTime,
-        Map.empty[String, String].asJava)
+        Map.empty[String, String].asJava,
+        metadata.requestArgs.asJava)
     }.getOrElse(MetadataManager.buildBatch(metadata))
   }
 
