@@ -22,8 +22,7 @@ import java.time.LocalDateTime
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift._
-
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.util.RowSetUtils.{bitSetToBuffer, formatDate, formatLocalDateTime}
 
 abstract class RowSetHelper {

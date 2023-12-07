@@ -30,7 +30,6 @@ import scala.collection.mutable
 import Slug.Context.{EXECUTING_QUERY, QUEUED_QUERY}
 import com.google.common.hash.Hashing
 import io.trino.client.QueryResults
-import org.apache.hive.service.rpc.thrift.{TBoolValue, TColumnDesc, TColumnValue, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TProtocolVersion, TRow, TRowSet, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
 
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle, OperationState, OperationStatus}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, INITIALIZED, OperationState, PENDING}
@@ -38,6 +37,7 @@ import org.apache.kyuubi.server.trino.api.Query.KYUUBI_SESSION_ID
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.service.TFrontendService.OK_STATUS
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TBoolValue, TColumnDesc, TColumnValue, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TProtocolVersion, TRow, TRowSet, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
 
 case class Query(
     queryId: QueryId,

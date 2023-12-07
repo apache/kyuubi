@@ -21,9 +21,6 @@ import java.io.IOException
 
 import com.codahale.metrics.MetricRegistry
 import org.apache.commons.lang3.StringUtils
-import org.apache.hive.service.rpc.thrift._
-import org.apache.thrift.TException
-import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_OPERATION_HANDLE_KEY
@@ -33,6 +30,9 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionImpl, KyuubiSessionManager, Session}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.thrift.TException
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException
 import org.apache.kyuubi.util.ThriftUtils
 
 abstract class KyuubiOperation(session: Session) extends AbstractOperation(session) {

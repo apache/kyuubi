@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
-import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -37,6 +36,7 @@ import org.apache.kyuubi.operation.OperationState.{isTerminal, CANCELED, Operati
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.KyuubiBatchSession
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 /**
  * The state of batch operation is special. In general, the lifecycle of state is:

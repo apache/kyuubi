@@ -173,8 +173,8 @@
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.5.1</kafka.version>
         <kubernetes-client.version>6.8.1</kubernetes-client.version>
-        <kyuubi-shaded-zookeeper.artifacts>kyuubi-shaded-zookeeper-34</kyuubi-shaded-zookeeper.artifacts>
-        <kyuubi-shaded-zookeeper.version>0.1.0</kyuubi-shaded-zookeeper.version>
+        <kyuubi-relocated.version>0.2.0</kyuubi-relocated.version>
+        <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.20.0</log4j.version>
         <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
@@ -279,8 +279,13 @@
         <dependencies>
             <dependency>
                 <groupId>org.apache.kyuubi</groupId>
-                <artifactId>${kyuubi-shaded-zookeeper.artifacts}</artifactId>
-                <version>${kyuubi-shaded-zookeeper.version}</version>
+                <artifactId>kyuubi-relocated-hive-service-rpc</artifactId>
+                <version>${kyuubi-relocated.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>${kyuubi-relocated-zookeeper.artifacts}</artifactId>
+                <version>${kyuubi-relocated.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -2344,7 +2349,7 @@
         <profile>
             <id>zookeeper-3.6</id>
             <properties>
-                <kyuubi-shaded-zookeeper.artifacts>kyuubi-shaded-zookeeper-36</kyuubi-shaded-zookeeper.artifacts>
+                <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-36</kyuubi-relocated-zookeeper.artifacts>
             </properties>
         </profile>
 

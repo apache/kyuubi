@@ -20,11 +20,10 @@ package org.apache.kyuubi.service.authentication
 import java.security.Security
 import javax.security.auth.login.LoginException
 
-import org.apache.thrift.transport.TSaslServerTransport
-
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
+import org.apache.kyuubi.shaded.thrift.transport.TSaslServerTransport
 import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 

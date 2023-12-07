@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.engine.hive.session
 
-import java.util.HashMap
+import java.util
 
 import scala.collection.JavaConverters._
 
 import org.apache.hive.common.util.HiveVersionInfo
 import org.apache.hive.service.cli.session.HiveSession
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.hive.events.HiveSessionEvent
@@ -31,6 +30,7 @@ import org.apache.kyuubi.engine.hive.udf.KDFRegistry
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 class HiveSessionImpl(
     protocol: TProtocolVersion,
@@ -46,7 +46,7 @@ class HiveSessionImpl(
   private val sessionEvent = HiveSessionEvent(this)
 
   override def open(): Unit = {
-    val confClone = new HashMap[String, String]()
+    val confClone = new util.HashMap[String, String]()
     confClone.putAll(conf.asJava) // pass conf.asScala not support `put` method
     hive.open(confClone)
     KDFRegistry.registerAll()

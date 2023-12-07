@@ -31,12 +31,12 @@ import org.apache.arrow.vector.VectorLoader;
 import org.apache.arrow.vector.ipc.ReadChannel;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
-import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnVector;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatch;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatchRow;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowUtils;
 import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

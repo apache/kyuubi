@@ -28,11 +28,11 @@ import java.util.List;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.pojo.Schema;
-import org.apache.hive.service.rpc.thrift.TTableSchema;
-import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSet;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatchRow;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowUtils;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTableSchema;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId;
 
 /** Data independent base class which implements the common part of all Kyuubi result sets. */
 @SuppressWarnings("deprecation")

@@ -20,7 +20,7 @@ package org.apache.kyuubi.cli
 import java.nio.ByteBuffer
 import java.util.UUID
 
-import org.apache.hive.service.rpc.thrift.THandleIdentifier
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.THandleIdentifier
 
 private[kyuubi] object Handle {
   final private val SECRET_ID = UUID.fromString("c2ee5b97-3ea0-41fc-ac16-9bd708ed8f38")

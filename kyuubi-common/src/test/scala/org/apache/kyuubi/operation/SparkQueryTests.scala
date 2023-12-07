@@ -24,10 +24,10 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetResultSetMetadataReq, TOpenSessionReq, TStatusCode}
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetResultSetMetadataReq, TOpenSessionReq, TStatusCode}
 
 trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
 

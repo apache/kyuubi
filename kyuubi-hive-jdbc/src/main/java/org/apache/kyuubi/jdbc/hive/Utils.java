@@ -28,8 +28,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hive.service.rpc.thrift.TStatus;
-import org.apache.hive.service.rpc.thrift.TStatusCode;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TStatus;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TStatusCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

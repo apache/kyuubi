@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.service.authentication
 
-import org.apache.hive.service.rpc.thrift.TCLIService.{Iface, Processor}
-import org.apache.thrift.{TProcessor, TProcessorFactory}
-import org.apache.thrift.transport.TTransport
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.{Iface, Processor}
+import org.apache.kyuubi.shaded.thrift.{TProcessor, TProcessorFactory}
+import org.apache.kyuubi.shaded.thrift.transport.TTransport
 
 private[authentication] case class FEServiceProcessorFactory(
     saslServer: HadoopThriftAuthBridgeServer,

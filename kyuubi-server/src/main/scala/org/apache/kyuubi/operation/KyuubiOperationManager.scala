@@ -19,8 +19,6 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.TimeUnit
 
-import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TStatus, TStatusCode}
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
@@ -29,6 +27,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionImpl, Session}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TStatus, TStatusCode}
 import org.apache.kyuubi.sql.plan.command.RunnableCommand
 import org.apache.kyuubi.util.ThriftUtils
 

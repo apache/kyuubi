@@ -16,11 +16,10 @@
  */
 package org.apache.kyuubi.engine.chat.session
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
-
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 class ChatSessionImpl(
     protocol: TProtocolVersion,

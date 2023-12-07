@@ -21,7 +21,7 @@ import java.util.Collections
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 abstract class SchemaHelper {
 
