@@ -20,9 +20,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.kyuubi</groupId>
-        <artifactId>kyuubi-parent</artifactId>
+        <artifactId>integration-tests</artifactId>
         <version>1.9.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>kyuubi-gluten-it_${scala.binary.version}</artifactId>
@@ -30,6 +30,7 @@
     <url>https://kyuubi.apache.org/</url>
 
     <properties>
+        <gluten.version>1.1.0-SNAPSHOT</gluten.version>
         <spark.version>3.4.1</spark.version>
         <spark.binary.version>3.4</spark.binary.version>
     </properties>
@@ -99,9 +100,9 @@
                 <dependency>
                     <groupId>io.glutenproject</groupId>
                     <artifactId>gluten-velox-bundle-spark3.4_2.12-ubuntu_22.04</artifactId>
-                    <version>1.1.0-SNAPSHOT</version>
+                    <version>${gluten.version}</version>
                     <scope>system</scope>
-                    <systemPath>${project.basedir}/../../gluten/package/target/gluten-velox-bundle-spark3.4_2.12-ubuntu_22.04-1.1.0-SNAPSHOT.jar</systemPath>
+                    <systemPath>${project.basedir}/../../gluten/package/target/gluten-velox-bundle-spark3.4_2.12-ubuntu_22.04-${gluten.version}.jar</systemPath>
                 </dependency>
             </dependencies>
         </profile>
@@ -116,9 +117,9 @@
                 <dependency>
                     <groupId>io.glutenproject</groupId>
                     <artifactId>gluten-velox-bundle-spark3.3_2.12-ubuntu_22.04</artifactId>
-                    <version>1.1.0-SNAPSHOT</version>
+                    <version>${gluten.version}</version>
                     <scope>system</scope>
-                    <systemPath>${project.basedir}/../../gluten/package/target/gluten-velox-bundle-spark3.3_2.12-ubuntu_22.04-1.1.0-SNAPSHOT.jar</systemPath>
+                    <systemPath>${project.basedir}/../../gluten/package/target/gluten-velox-bundle-spark3.3_2.12-ubuntu_22.04-${gluten.version}.jar</systemPath>
                 </dependency>
             </dependencies>
         </profile>
