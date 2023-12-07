@@ -424,6 +424,20 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
           }
     }
   }
+
+  test("default spark.yarn.maxAppAttempts conf in yarn mode") {
+    val conf1 = KyuubiConf(false)
+    conf1.set("spark.master", "k8s://test:12345")
+    val builder1 = new SparkProcessBuilder("", conf1)
+    val commands1 = builder1.toString.split(' ')
+    assert(!commands1.contains("spark.yarn.maxAppAttempts"))
+
+    val conf2 = KyuubiConf(false)
+    conf2.set("spark.master", "yarn")
+    val builder2 = new SparkProcessBuilder("", conf2)
+    val commands2 = builder2.toString.split(' ')
+    assert(commands2.contains("spark.yarn.maxAppAttempts=1"))
+  }
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)
