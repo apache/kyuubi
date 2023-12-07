@@ -27,8 +27,6 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
 import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
-import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SortExec, SparkPlan, SQLExecution}
-import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
@@ -297,7 +295,7 @@ object SparkDatasetHelper extends Logging {
     SQLMetrics.postDriverMetricUpdates(sc, executionId, metrics.values.toSeq)
   }
 
-  def shouldSaveResultToHdfs(resultMaxRows: Int, threshold: Int, result: DataFrame): Boolean = {
+  def shouldSaveResultToFs(resultMaxRows: Int, minSize: Long, result: DataFrame): Boolean = {
     if (isCommandExec(result.queryExecution.executedPlan.nodeName)) {
       return false
     }
@@ -317,7 +315,7 @@ object SparkDatasetHelper extends Logging {
       } else {
         result.schema.size
       }
-    threshold > 0 && colSize > 0 && stats >= threshold
+    minSize > 0 && colSize > 0 && stats >= minSize
   }
 
   private def isCommandExec(nodeName: String): Boolean = {

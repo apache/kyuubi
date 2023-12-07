@@ -77,12 +77,9 @@ class FetchOrcStatement(spark: SparkSession) {
   private def getOrcDeserializer(orcSchema: StructType, colId: Array[Int]): OrcDeserializer = {
     try {
       if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") {
-        // https://issues.apache.org/jira/browse/SPARK-34535
+        // SPARK-34535 changed the constructor signature of OrcDeserializer
         DynConstructors.builder()
-          .impl(
-            classOf[OrcDeserializer],
-            classOf[StructType],
-            classOf[Array[Int]])
+          .impl(classOf[OrcDeserializer], classOf[StructType], classOf[Array[Int]])
           .build[OrcDeserializer]()
           .newInstance(
             orcSchema,

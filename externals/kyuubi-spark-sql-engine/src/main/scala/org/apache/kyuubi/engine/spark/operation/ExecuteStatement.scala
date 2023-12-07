@@ -28,7 +28,7 @@ import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_PATH, OPERATION_RESULT_SAVE_TO_FILE_THRESHOLD}
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_DIR, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
@@ -171,13 +171,18 @@ class ExecuteStatement(
         override def iterator: Iterator[Any] = incrementalCollectResult(resultDF)
       })
     } else {
-      val sparkSave = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE, spark)
-      lazy val threshold = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE_THRESHOLD, spark)
-      if (hasResultSet && sparkSave && shouldSaveResultToHdfs(resultMaxRows, threshold, result)) {
+      val resultSaveEnabled = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE, spark)
+      lazy val resultSaveThreshold = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE_MINSIZE, spark)
+      if (hasResultSet && resultSaveEnabled && shouldSaveResultToFs(
+          resultMaxRows,
+          resultSaveThreshold,
+          result)) {
         val sessionId = session.handle.identifier.toString
-        val savePath = session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_PATH)
+        val savePath = session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)
         saveFileName = Some(s"$savePath/$engineId/$sessionId/$statementId")
+        // Rename all col name to avoid duplicate columns
         val colName = range(0, result.schema.size).map(x => "col" + x)
+        // df.write will introduce an extra shuffle for the outermost limit, and hurt performance
         if (resultMaxRows > 0) {
           result.toDF(colName: _*).limit(resultMaxRows).write
             .option("compression", "zstd").format("orc").save(saveFileName.get)

@@ -92,7 +92,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     }
 
     if (backendService.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE)) {
-      val savePath = backendService.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_PATH)
+      val savePath = backendService.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)
       engineSavePath = Some(s"$savePath/$engineId")
       val path = new Path(engineSavePath.get)
       val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)

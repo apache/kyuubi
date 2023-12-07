@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.spark.session
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 
 import org.apache.hadoop.fs.Path
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.api.python.KyuubiPythonGatewayServer
 import org.apache.spark.sql.SparkSession
 
@@ -188,7 +187,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       stopSession()
     }
     if (conf.get(OPERATION_RESULT_SAVE_TO_FILE)) {
-      val path = new Path(s"${conf.get(OPERATION_RESULT_SAVE_TO_FILE_PATH)}/" +
+      val path = new Path(s"${conf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)}/" +
         s"$engineId/${sessionHandle.identifier}")
       path.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(path, true)
       info(s"Delete session result file $path")

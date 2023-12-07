@@ -1942,26 +1942,31 @@ object KyuubiConf {
       .createWithDefault(0)
 
   val OPERATION_RESULT_SAVE_TO_FILE: ConfigEntry[Boolean] =
-    buildConf("kyuubi.operation.result.save.to.file")
-      .doc("The switch for Spark query result save to hdfs file")
+    buildConf("kyuubi.operation.result.saveToFile.enabled")
+      .doc("The switch for Spark query result save to file.")
       .version("1.9.0")
       .booleanConf
       .createWithDefault(false)
 
-  val OPERATION_RESULT_SAVE_TO_FILE_PATH: ConfigEntry[String] =
-    buildConf("kyuubi.operation.result.save.to.file.path")
-      .doc("The hdfs path of Spark query result save")
+  val OPERATION_RESULT_SAVE_TO_FILE_DIR: ConfigEntry[String] =
+    buildConf("kyuubi.operation.result.saveToFile.dir")
+      .doc("The Spark query result save dir, it should be a public accessible to every engine." +
+        " Results are saved in ORC format, and the directory structure is" +
+        s" `/${OPERATION_RESULT_SAVE_TO_FILE_DIR}/engineId/sessionId/statementId`." +
+        " Each query result will delete when query finished.")
       .version("1.9.0")
       .stringConf
       .createWithDefault("/tmp/kyuubi/tmp_kyuubi_result")
 
-  val OPERATION_RESULT_SAVE_TO_FILE_THRESHOLD: ConfigEntry[Int] =
-    buildConf("kyuubi.operation.result.save.to.file.threshold")
-      .doc("The threshold of Spark result save to hdfs file, default value is 200 MB")
+  val OPERATION_RESULT_SAVE_TO_FILE_MINSIZE: ConfigEntry[Long] =
+    buildConf("kyuubi.operation.result.saveToFile.minSize")
+      .doc("The minSize of Spark result save to file, default value is 200 MB." +
+        "we use spark's `EstimationUtils#getSizePerRowestimate` to estimate" +
+        " the output size of the execution plan.")
       .version("1.9.0")
-      .intConf
+      .longConf
       .checkValue(_ > 0, "must be positive value")
-      .createWithDefault(209715200)
+      .createWithDefault(200 * 1024 * 1024)
 
   val OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.incremental.collect")
