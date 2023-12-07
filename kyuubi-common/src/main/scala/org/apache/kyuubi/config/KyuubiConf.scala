@@ -1231,8 +1231,17 @@ object KyuubiConf {
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofMinutes(5).toMillis)
 
-  val KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD: ConfigEntry[String] =
-    buildConf("kyuubi.kubernetes.spark.cleanupTerminatedDriverPod")
+  val KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD_KIND_CHECK_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.kubernetes.spark.cleanupTerminatedDriverPod.checkInterval")
+      .doc("Kyuubi server use guava cache as the cleanup trigger with time-based eviction, " +
+        "but the eviction would not happened until any get/put operation happened. " +
+        "This option schedule a daemon thread evict cache periodically.")
+      .version("1.8.1")
+      .timeConf
+      .createWithDefaultString("PT1M")
+
+  val KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD_KIND: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.spark.cleanupTerminatedDriverPod.kind")
       .doc("Kyuubi server will delete the spark driver pod after " +
         s"the application terminates for ${KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD.key}. " +
         "Available options are NONE, ALL, COMPLETED and " +

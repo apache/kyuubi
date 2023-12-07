@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine
 
 import java.util.Locale
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, ScheduledExecutorService, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
@@ -34,7 +34,7 @@ import org.apache.kyuubi.config.KyuubiConf.{KubernetesApplicationStateSource, Ku
 import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
 import org.apache.kyuubi.config.KyuubiConf.KubernetesCleanupDriverPodStrategy.{ALL, COMPLETED, NONE}
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
-import org.apache.kyuubi.util.KubernetesUtils
+import org.apache.kyuubi.util.{KubernetesUtils, ThreadUtils}
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   import KubernetesApplicationOperation._
@@ -63,6 +63,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     new ConcurrentHashMap[String, (KubernetesInfo, ApplicationInfo)]
   // key is kyuubi_unique_key
   private var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
+
+  private var expireCleanUpTriggerCacheExecutor: ScheduledExecutorService = _
 
   private def getOrCreateKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
     checkKubernetesInfo(kubernetesInfo)
@@ -109,7 +111,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     // Defer cleaning terminated application information
     val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
     val cleanupDriverPodStrategy = KubernetesCleanupDriverPodStrategy.withName(
-      conf.get(KyuubiConf.KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD))
+      conf.get(KyuubiConf.KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD_KIND))
+    val cleanupDriverPodCheckInterval = conf.get(
+      KyuubiConf.KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD_KIND_CHECK_INTERVAL)
     cleanupTerminatedAppInfoTrigger = CacheBuilder.newBuilder()
       .expireAfterWrite(retainPeriod, TimeUnit.MILLISECONDS)
       .removalListener((notification: RemovalNotification[String, ApplicationState]) => {
@@ -147,6 +151,23 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         }
       })
       .build()
+    expireCleanUpTriggerCacheExecutor = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
+      "pod-cleanup-trigger-thread")
+    expireCleanUpTriggerCacheExecutor.scheduleWithFixedDelay(
+      () => {
+        try {
+          cleanupTerminatedAppInfoTrigger.asMap().asScala.foreach {
+            case (key, _) =>
+              // do get to trigger cache eviction
+              cleanupTerminatedAppInfoTrigger.getIfPresent(key)
+          }
+        } catch {
+          case NonFatal(e) => error("Failed to evict clean up terminated app cache", e)
+        }
+      },
+      5,
+      cleanupDriverPodCheckInterval,
+      TimeUnit.MINUTES)
   }
 
   override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
