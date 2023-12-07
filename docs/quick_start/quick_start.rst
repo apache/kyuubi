@@ -49,7 +49,7 @@ pre-installed and the ``JAVA_HOME`` is correctly set to each component.
   **Doris**        Engine       N/A                A Doris cluster
   **Hive**         Engine       - 2.1-cdh6/2.3/3.1 - A Hive distribution
                    Metastore    - N/A              - An optional and external metadata store,
-                                                   whose version is decided by engines
+                                                     whose version is decided by engines
   **Zookeeper**    HA           >=3.4.x
   **Disk**         Storage      N/A             N/A
  ================ ============ =============== ===========================================
