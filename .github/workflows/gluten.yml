@@ -1,0 +1,128 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+name: Gluten CI
+
+on:
+  schedule:
+    - cron: 0 4 * * *
+
+env:
+  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
+
+jobs:
+  gluten-build:
+    name: Build Gluten
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tune Runner VM
+        uses: ./.github/actions/tune-runner-vm
+      - name: Update and Upgrade
+        run: sudo apt-get update && sudo apt-get upgrade -y
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y software-properties-common
+          sudo apt-get install -y libunwind-dev build-essential cmake libssl-dev libre2-dev libcurl4-openssl-dev clang lldb lld libz-dev git ninja-build uuid-dev
+      - name: Setup JDK 8
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 8
+          cache: 'maven'
+          check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
+      - name: Get gluten cache date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+      - name: Check gluten cache
+        id: gluten-cache
+        uses: actions/cache@v3
+        with:
+          path: gluten/package/target/
+          key: gluten_package_${{ steps.date.outputs.date }}
+      - name: Build gluten project
+        run: |
+          if [[ "${{ steps.gluten-cache.outputs.cache-hit }}" != 'true' ]]; then
+            git clone https://github.com/oap-project/gluten.git
+            cd gluten
+            ./dev/buildbundle-veloxbe.sh
+          fi
+      - uses: actions/cache@v3
+        if: steps.gluten-cache.outputs.cache-hit != 'true'
+        with:
+          path: gluten/package/target/
+          key: gluten_package_${{ steps.date.outputs.date }}
+
+  gluten-it:
+    name: Gluten Integration TPC-H/DS Test
+    needs: gluten-build
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        spark: [ '3.4', '3.3' ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tune Runner VM
+        uses: ./.github/actions/tune-runner-vm
+      - name: Update and Upgrade
+        run: sudo apt-get update && sudo apt-get upgrade -y
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y software-properties-common
+          sudo apt-get install -y libunwind-dev build-essential cmake libssl-dev libre2-dev libcurl4-openssl-dev clang lldb lld libz-dev git ninja-build uuid-dev
+          sudo apt-get install -y libsnappy-dev libthrift-dev libboost-all-dev libgflags-dev libgoogle-glog-dev
+      - name: Cache Engine Archives
+        uses: ./.github/actions/cache-engine-archives
+      - name: Get gluten cache date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+      - name: Check gluten cache
+        id: gluten-cache
+        uses: actions/cache@v3
+        with:
+          path: gluten/package/target/
+          key: gluten_package_${{ steps.date.outputs.date }}
+      - name: Cache Gluten Package
+        uses: actions/cache@v3
+        with:
+          path: gluten/package/target/
+          key: gluten_package
+      - name: Setup JDK 8
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 8
+          cache: 'maven'
+          check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
+      - name: Run Gluten Integration TPC-H/DS Test
+        run: |
+          TEST_MODULES="integration-tests/kyuubi-gluten-it"
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests -Pgluten-spark-${{ matrix.spark }}
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test -Pgluten-spark-${{ matrix.spark }} \
+          -Dmaven.plugin.scalatest.exclude.tags='' -Dtest=none -Dmaven.plugin.scalatest.include.tags='org.apache.kyuubi.tags.GlutenTest'
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-tests-log-spark-${{ matrix.spark }}-gluten
+          path: |
+            **/target/unit-tests.log
