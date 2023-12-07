@@ -39,7 +39,9 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 public class ErnieBotService {
+
     private static final String BASE_URL = "https://aip.baidubce.com/";
+    
     private final ErnieBotApi api;
 
     public ErnieBotService(ErnieBotApi api) {

@@ -29,11 +29,13 @@ public class ChatCompletionRequest {
     List<Function> functions;
 
     Double temperature;
+
     @JsonProperty("top_p")
     Double topP;
 
     @JsonProperty("penalty_score")
     Double presenceScore;
+
     boolean stream;
 
     String system;
