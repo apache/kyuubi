@@ -50,7 +50,7 @@ class FetchOrcStatement(spark: SparkSession) {
     val list = new ListBuffer[LocatedFileStatus]
     while (fsIterator.hasNext) {
       val file = fsIterator.next()
-      if (file.getPath.getName.endsWith(".orc")) {
+      if (file.getPath.getName.endsWith(".orc") && file.getLen > 0) {
         list += file
       }
     }
@@ -111,21 +111,25 @@ class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[
   var idx = 0
 
   override def hasNext: Boolean = {
-    if (iters(idx).hasNext) {
-      true
-    } else {
+    val hasNext = iters(idx).hasNext
+    if (!hasNext) {
       iters(idx).close()
-      idx < iters.size - 1
+      idx += 1
+      // skip empty file
+      while (idx < iters.size) {
+        if (iters(idx).hasNext) {
+          return true
+        } else {
+          iters(idx).close()
+          idx = idx + 1
+        }
+      }
     }
+    hasNext
   }
 
   override def next(): OrcStruct = {
-    if (iters(idx).hasNext) {
-      iters(idx).next()
-    } else {
-      idx = idx + 1
-      iters(idx).next()
-    }
+    iters(idx).next()
   }
 
   def close(): Unit = {
