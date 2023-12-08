@@ -17,19 +17,20 @@
 
 package org.apache.kyuubi.engine.chat.ernie.bean
 
-import scala.beans.BeanProperty
+import java.lang.{Double => JDouble}
+import java.util.{List => JList}
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
 case class ChatCompletionRequest(
-    @BeanProperty @JsonProperty("messages") messages: java.util.List[ChatMessage],
-    @BeanProperty @JsonProperty("functions") functions: java.util.List[Function] = null,
-    @BeanProperty @JsonProperty("temperature") temperature: java.lang.Double = null,
-    @BeanProperty @JsonProperty("top_p") topP: java.lang.Double = null,
-    @BeanProperty @JsonProperty("penalty_score") presenceScore: java.lang.Double = null,
-    @BeanProperty @JsonProperty("stream") stream: Boolean = false,
-    @BeanProperty @JsonProperty("system") system: String = null,
-    @BeanProperty @JsonProperty("stop") stop: java.util.List[String] = null,
-    @BeanProperty @JsonProperty("disable_search") disableSearch: Boolean = false,
-    @BeanProperty @JsonProperty("enable_citation") enableCitation: Boolean = false,
-    @BeanProperty @JsonProperty("user_id") userId: String = null)
+    @JsonProperty("messages") messages: JList[ChatMessage],
+    @JsonProperty("functions") functions: JList[Function] = null,
+    @JsonProperty("temperature") temperature: JDouble = null,
+    @JsonProperty("top_p") topP: JDouble = null,
+    @JsonProperty("penalty_score") presenceScore: JDouble = null,
+    @JsonProperty("stream") stream: Boolean = false,
+    @JsonProperty("system") system: String = null,
+    @JsonProperty("stop") stop: JList[String] = null,
+    @JsonProperty("disable_search") disableSearch: Boolean = false,
+    @JsonProperty("enable_citation") enableCitation: Boolean = false,
+    @JsonProperty("user_id") userId: String = null)

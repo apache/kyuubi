@@ -17,11 +17,9 @@
 
 package org.apache.kyuubi.engine.chat.ernie.bean
 
-import scala.beans.BeanProperty
-
 import com.fasterxml.jackson.annotation.JsonProperty
 
 case class FunctionCall(
-    @BeanProperty @JsonProperty("name") name: String,
-    @BeanProperty @JsonProperty("thoughts") thoughts: String,
-    @BeanProperty @JsonProperty("arguments") arguments: String = null)
+    @JsonProperty("name") name: String,
+    @JsonProperty("thoughts") thoughts: String,
+    @JsonProperty("arguments") arguments: String = null)

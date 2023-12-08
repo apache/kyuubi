@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.engine.chat.ernie.bean
 
-import scala.beans.BeanProperty
+import java.lang.{Long => JLong}
+import java.util.{List => JList}
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
 case class SearchInfo(
-    @BeanProperty @JsonProperty("is_beset") isBeset: java.lang.Long,
-    @BeanProperty @JsonProperty("rewrite_query") rewriteQuery: String,
-    @BeanProperty @JsonProperty("search_results") searchResults: java.util.List[SearchResult])
+    @JsonProperty("is_beset") isBeset: JLong,
+    @JsonProperty("rewrite_query") rewriteQuery: String,
+    @JsonProperty("search_results") searchResults: JList[SearchResult])

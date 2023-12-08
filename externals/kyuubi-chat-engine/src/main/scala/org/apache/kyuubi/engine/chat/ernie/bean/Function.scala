@@ -17,13 +17,13 @@
 
 package org.apache.kyuubi.engine.chat.ernie.bean
 
-import scala.beans.BeanProperty
+import java.util.{List => JList}
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
 case class Function(
-    @BeanProperty @JsonProperty("name") name: String,
-    @BeanProperty @JsonProperty("description") description: String,
-    @BeanProperty @JsonProperty("parameters") parameters: Object,
-    @BeanProperty @JsonProperty("responses") responses: Object = null,
-    @BeanProperty @JsonProperty("examples") examples: java.util.List[Example] = null)
+    @JsonProperty("name") name: String,
+    @JsonProperty("description") description: String,
+    @JsonProperty("parameters") parameters: Object,
+    @JsonProperty("responses") responses: Object = null,
+    @JsonProperty("examples") examples: JList[Example] = null)

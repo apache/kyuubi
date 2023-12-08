@@ -17,12 +17,10 @@
 
 package org.apache.kyuubi.engine.chat.ernie.bean
 
-import scala.beans.BeanProperty
-
 import com.fasterxml.jackson.annotation.JsonProperty
 
 case class SearchResult(
-    @BeanProperty @JsonProperty("index") index: java.lang.Long,
-    @BeanProperty @JsonProperty("url") url: String,
-    @BeanProperty @JsonProperty("title") title: String,
-    @BeanProperty @JsonProperty("datasource_id") datasourceId: String)
+    @JsonProperty("index") index: java.lang.Long,
+    @JsonProperty("url") url: String,
+    @JsonProperty("title") title: String,
+    @JsonProperty("datasource_id") datasourceId: String)

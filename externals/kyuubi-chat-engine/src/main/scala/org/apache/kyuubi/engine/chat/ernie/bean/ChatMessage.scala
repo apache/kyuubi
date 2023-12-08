@@ -17,12 +17,10 @@
 
 package org.apache.kyuubi.engine.chat.ernie.bean
 
-import scala.beans.BeanProperty
-
 import com.fasterxml.jackson.annotation.JsonProperty
 
 case class ChatMessage(
-    @BeanProperty @JsonProperty("role") role: String,
-    @BeanProperty @JsonProperty("content") content: String,
-    @BeanProperty @JsonProperty("name") name: String,
-    @BeanProperty @JsonProperty("function_call") functionCall: FunctionCall = null)
+    @JsonProperty("role") role: String,
+    @JsonProperty("content") content: String,
+    @JsonProperty("name") name: String,
+    @JsonProperty("function_call") functionCall: FunctionCall = null)

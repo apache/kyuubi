@@ -17,12 +17,13 @@
 
 package org.apache.kyuubi.engine.chat.ernie.bean
 
-import scala.beans.BeanProperty
+import java.lang.{Long => JLong}
+import java.util.{List => JList}
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
 case class Usage(
-    @BeanProperty @JsonProperty("prompt_tokens") promptTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("completion_tokens") completionTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("total_tokens") totalTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("plugins") plugins: java.util.List[PluginUsage])
+    @JsonProperty("prompt_tokens") promptTokens: JLong,
+    @JsonProperty("completion_tokens") completionTokens: JLong,
+    @JsonProperty("total_tokens") totalTokens: JLong,
+    @JsonProperty("plugins") plugins: JList[PluginUsage])

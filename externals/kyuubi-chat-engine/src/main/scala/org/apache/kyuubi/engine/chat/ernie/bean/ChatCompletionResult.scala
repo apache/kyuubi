@@ -17,23 +17,23 @@
 
 package org.apache.kyuubi.engine.chat.ernie.bean
 
-import scala.beans.BeanProperty
+import java.lang.{Long => JLong}
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
 case class ChatCompletionResult(
-    @BeanProperty @JsonProperty("id") id: String,
-    @BeanProperty @JsonProperty("object") `object`: String,
-    @BeanProperty @JsonProperty("created") created: java.lang.Long,
-    @BeanProperty @JsonProperty("sentence_id") sentenceId: java.lang.Long,
-    @BeanProperty @JsonProperty("is_end") isEnd: Boolean,
-    @BeanProperty @JsonProperty("is_truncated") isTruncated: Boolean,
-    @BeanProperty @JsonProperty("finish_reason") finishReason: String,
-    @BeanProperty @JsonProperty("search_info") searchInfo: SearchInfo,
-    @BeanProperty @JsonProperty("result") result: String,
-    @BeanProperty @JsonProperty("need_clear_history") needClearHistory: Boolean,
-    @BeanProperty @JsonProperty("ban_round") banRound: java.lang.Long,
-    @BeanProperty @JsonProperty("usage") usage: Usage,
-    @BeanProperty @JsonProperty("function_call") functionCall: FunctionCall,
-    @BeanProperty @JsonProperty("error_msg") errorMsg: String,
-    @BeanProperty @JsonProperty("error_code") errorCode: java.lang.Long)
+    @JsonProperty("id") id: String,
+    @JsonProperty("object") obj: String,
+    @JsonProperty("created") created: JLong,
+    @JsonProperty("sentence_id") sentenceId: JLong,
+    @JsonProperty("is_end") isEnd: Boolean,
+    @JsonProperty("is_truncated") isTruncated: Boolean,
+    @JsonProperty("finish_reason") finishReason: String,
+    @JsonProperty("search_info") searchInfo: SearchInfo,
+    @JsonProperty("result") result: String,
+    @JsonProperty("need_clear_history") needClearHistory: Boolean,
+    @JsonProperty("ban_round") banRound: JLong,
+    @JsonProperty("usage") usage: Usage,
+    @JsonProperty("function_call") functionCall: FunctionCall,
+    @JsonProperty("error_msg") errorMsg: String,
+    @JsonProperty("error_code") errorCode: JLong)
