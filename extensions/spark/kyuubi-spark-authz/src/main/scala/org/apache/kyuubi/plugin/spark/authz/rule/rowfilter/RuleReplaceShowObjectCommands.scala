@@ -29,7 +29,7 @@ import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessRequest, AccessResourc
 import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, WithInternalChildren}
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
-class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
+object RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
     case r: RunnableCommand if r.nodeName == "ShowTablesCommand" => FilteredShowTablesCommand(r)
     case n: LogicalPlan if n.nodeName == "ShowTables" =>

@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.server
 
-import org.apache.hive.service.rpc.thrift._
-
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 trait BackendServiceMetric extends BackendService {
 

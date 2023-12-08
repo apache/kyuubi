@@ -472,32 +472,36 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     val tableDirectory = getClass.getResource("/").getPath + "table_directory"
     val directory = File(tableDirectory).createDirectory()
     val ret0 = extractLineage(s"""
-                                 |INSERT OVERWRITE DIRECTORY '$directory.path'
+                                 |INSERT OVERWRITE DIRECTORY '${directory.path}'
                                  |USING parquet
                                  |SELECT * FROM test_db0.test_table_part0""".stripMargin)
     assert(ret0 == Lineage(
       List(s"$DEFAULT_CATALOG.test_db0.test_table_part0"),
-      List(s"""`$directory.path`"""),
+      List(s"""`${directory.path}`"""),
       List(
-        (s"""`$directory.path`.key""", Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.key")),
-        (s"""`$directory.path`.value""", Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.value")),
-        (s"""`$directory.path`.pid""", Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.pid")))))
+        (s"""`${directory.path}`.key""", Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.key")),
+        (
+          s"""`${directory.path}`.value""",
+          Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.value")),
+        (s"""`${directory.path}`.pid""", Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.pid")))))
   }
 
   test("columns lineage extract - InsertIntoHiveDirCommand") {
     val tableDirectory = getClass.getResource("/").getPath + "table_directory"
     val directory = File(tableDirectory).createDirectory()
     val ret0 = extractLineage(s"""
-                                 |INSERT OVERWRITE DIRECTORY '$directory.path'
+                                 |INSERT OVERWRITE DIRECTORY '${directory.path}'
                                  |USING parquet
                                  |SELECT * FROM test_db0.test_table_part0""".stripMargin)
     assert(ret0 == Lineage(
       List(s"$DEFAULT_CATALOG.test_db0.test_table_part0"),
-      List(s"""`$directory.path`"""),
+      List(s"""`${directory.path}`"""),
       List(
-        (s"""`$directory.path`.key""", Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.key")),
-        (s"""`$directory.path`.value""", Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.value")),
-        (s"""`$directory.path`.pid""", Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.pid")))))
+        (s"""`${directory.path}`.key""", Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.key")),
+        (
+          s"""`${directory.path}`.value""",
+          Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.value")),
+        (s"""`${directory.path}`.pid""", Set(s"$DEFAULT_CATALOG.test_db0.test_table_part0.pid")))))
   }
 
   test("columns lineage extract - InsertIntoHiveTable") {

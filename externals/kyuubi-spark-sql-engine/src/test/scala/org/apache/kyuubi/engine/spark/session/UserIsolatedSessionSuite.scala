@@ -17,11 +17,10 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq}
-
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq}
 
 class UserIsolatedSessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 

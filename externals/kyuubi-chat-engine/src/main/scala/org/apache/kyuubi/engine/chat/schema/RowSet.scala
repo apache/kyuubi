@@ -19,8 +19,7 @@ package org.apache.kyuubi.engine.chat.schema
 
 import java.util
 
-import org.apache.hive.service.rpc.thrift._
-
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {

@@ -238,9 +238,7 @@
                             <include>io.perfmark:perfmark-api</include>
                             <include>io.vertx:*</include>
                             <include>net.jodah:failsafe</include>
-                            <include>org.apache.hive:hive-service-rpc</include>
                             <include>org.apache.kyuubi:*</include>
-                            <include>org.apache.thrift:*</include>
                             <include>org.checkerframework:checker-qual</include>
                             <include>org.codehaus.mojo:animal-sniffer-annotations</include>
                         </includes>
@@ -265,27 +263,6 @@
                         </filter>
                     </filters>
                     <relocations>
-                        <relocation>
-                            <pattern>org.apache.hive.service.rpc.thrift</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift</shadedPattern>
-                            <includes>
-                                <include>org.apache.hive.service.rpc.thrift.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>com.facebook.fb303</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.com.facebook.fb303</shadedPattern>
-                            <includes>
-                                <include>com.facebook.fb303.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.thrift</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.thrift</shadedPattern>
-                            <includes>
-                                <include>org.apache.thrift.**</include>
-                            </includes>
-                        </relocation>
                         <relocation>
                             <pattern>io.etcd</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.io.etcd</shadedPattern>

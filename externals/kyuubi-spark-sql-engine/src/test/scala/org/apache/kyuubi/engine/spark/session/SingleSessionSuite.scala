@@ -28,7 +28,7 @@ class SingleSessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
       ENGINE_SHARE_LEVEL.key -> "SERVER",
       ENGINE_SINGLE_SPARK_SESSION.key -> "true",
       (
-        ENGINE_SESSION_INITIALIZE_SQL.key,
+        ENGINE_SESSION_SPARK_INITIALIZE_SQL.key,
         "CREATE DATABASE IF NOT EXISTS INIT_DB_SOLO;" +
           "CREATE TABLE IF NOT EXISTS INIT_DB_SOLO.test(a int) USING CSV;" +
           "INSERT INTO INIT_DB_SOLO.test VALUES (2);"))

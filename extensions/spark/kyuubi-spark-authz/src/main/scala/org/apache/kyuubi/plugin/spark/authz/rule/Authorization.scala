@@ -18,13 +18,12 @@
 package org.apache.kyuubi.plugin.spark.authz.rule
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization._
-import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
 import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
 
 abstract class Authorization(spark: SparkSession) extends Rule[LogicalPlan] {
@@ -51,21 +50,18 @@ object Authorization {
     }
   }
 
-  protected def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
+  def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
     plan.setTagValue(KYUUBI_AUTHZ_TAG, ())
     plan transformDown {
-      case pvm: PermanentViewMarker =>
-        markAllNodesAuthChecked(pvm)
-      case subquery: Subquery =>
-        markAllNodesAuthChecked(subquery)
+      // TODO: Add this line Support for spark3.1, we can remove this
+      //       after spark 3.2 since https://issues.apache.org/jira/browse/SPARK-34269
+      case view: View =>
+        markAllNodesAuthChecked(view.child)
     }
   }
 
   protected def isAuthChecked(plan: LogicalPlan): Boolean = {
-    plan match {
-      case subquery: Subquery => isAuthChecked(subquery.child)
-      case p => p.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty
-    }
+    plan.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty
   }
 
   def setExplainCommandExecutionId(sparkSession: SparkSession): Unit = {

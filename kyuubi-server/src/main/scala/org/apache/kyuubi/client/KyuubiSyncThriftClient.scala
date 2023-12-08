@@ -26,9 +26,6 @@ import scala.concurrent.ExecutionException
 import scala.concurrent.duration.Duration
 
 import com.google.common.annotations.VisibleForTesting
-import org.apache.hive.service.rpc.thrift._
-import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
-import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -38,6 +35,9 @@ import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.thrift.protocol.{TBinaryProtocol, TProtocol}
+import org.apache.kyuubi.shaded.thrift.transport.TSocket
 import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
@@ -99,10 +99,11 @@ class KyuubiSyncThriftClient private (
               remoteEngineBroken = false
             } catch {
               case e: Throwable =>
-                warn(s"The engine[$engineId] alive probe fails", e)
+                val engineIdStr = engineId.getOrElse("")
+                warn(s"The engine[$engineIdStr] alive probe fails", e)
                 val now = System.currentTimeMillis()
                 if (now - engineLastAlive > engineAliveTimeout) {
-                  error(s"Mark the engine[$engineId] not alive with no recent alive probe" +
+                  error(s"Mark the engine[$engineIdStr] not alive with no recent alive probe" +
                     s" success: ${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms")
                   remoteEngineBroken = true
                 }

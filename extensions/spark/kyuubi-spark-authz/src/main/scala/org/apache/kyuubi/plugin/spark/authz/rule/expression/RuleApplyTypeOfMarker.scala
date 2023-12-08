@@ -21,7 +21,7 @@ import org.apache.spark.sql.catalyst.expressions.TypeOf
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 
-class RuleApplyTypeOfMarker extends Rule[LogicalPlan] {
+object RuleApplyTypeOfMarker extends Rule[LogicalPlan] {
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan transformAllExpressions {

@@ -23,13 +23,14 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import java.util.Calendar;
 import java.util.List;
-import org.apache.hive.service.rpc.thrift.TTableSchema;
-import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSet;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalDayTime;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalYearMonth;
 import org.apache.kyuubi.jdbc.hive.common.TimestampTZUtil;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTableSchema;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId;
 
 /** Data independent base class which implements the common part of all Kyuubi result sets. */
 @SuppressWarnings("deprecation")
@@ -180,6 +181,32 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
   @Override
   public Date getDate(String columnName) throws SQLException {
     return getDate(findColumn(columnName));
+  }
+
+  @Override
+  public Date getDate(int columnIndex, Calendar cal) throws SQLException {
+    Date value = getDate(columnIndex);
+    if (value == null) {
+      return null;
+    }
+    try {
+      return parseDate(value, cal);
+    } catch (IllegalArgumentException e) {
+      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to date: " + e, e);
+    }
+  }
+
+  @Override
+  public Date getDate(String columnLabel, Calendar cal) throws SQLException {
+    return this.getDate(findColumn(columnLabel), cal);
+  }
+
+  private Date parseDate(Date value, Calendar cal) {
+    if (cal == null) {
+      cal = Calendar.getInstance();
+    }
+    cal.setTime(value);
+    return new Date(cal.getTimeInMillis());
   }
 
   @Override
@@ -410,6 +437,83 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
   @Override
   public Timestamp getTimestamp(String columnName) throws SQLException {
     return getTimestamp(findColumn(columnName));
+  }
+
+  @Override
+  public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
+    Timestamp value = getTimestamp(columnIndex);
+    if (value == null) {
+      return null;
+    }
+    try {
+      return parseTimestamp(value, cal);
+    } catch (IllegalArgumentException e) {
+      throw new KyuubiSQLException(
+          "Cannot convert column " + columnIndex + " to timestamp: " + e, e);
+    }
+  }
+
+  @Override
+  public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
+    return this.getTimestamp(findColumn(columnLabel), cal);
+  }
+
+  private Timestamp parseTimestamp(Timestamp timestamp, Calendar cal) {
+    if (cal == null) {
+      cal = Calendar.getInstance();
+    }
+    long v = timestamp.getTime();
+    cal.setTimeInMillis(v);
+    timestamp = new Timestamp(cal.getTime().getTime());
+    return timestamp;
+  }
+
+  @Override
+  public Time getTime(int columnIndex) throws SQLException {
+    Object obj = getObject(columnIndex);
+    if (obj == null) {
+      return null;
+    }
+    if (obj instanceof Time) {
+      return (Time) obj;
+    }
+    if (obj instanceof String) {
+      return Time.valueOf((String) obj);
+    }
+    throw new KyuubiSQLException("Illegal conversion");
+  }
+
+  @Override
+  public Time getTime(String columnLabel) throws SQLException {
+    return getTime(findColumn(columnLabel));
+  }
+
+  @Override
+  public Time getTime(int columnIndex, Calendar cal) throws SQLException {
+    Time value = getTime(columnIndex);
+    if (value == null) {
+      return null;
+    }
+    try {
+      return parseTime(value, cal);
+    } catch (IllegalArgumentException e) {
+      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to time: " + e, e);
+    }
+  }
+
+  @Override
+  public Time getTime(String columnLabel, Calendar cal) throws SQLException {
+    return this.getTime(findColumn(columnLabel), cal);
+  }
+
+  private Time parseTime(Time date, Calendar cal) {
+    if (cal == null) {
+      cal = Calendar.getInstance();
+    }
+    long v = date.getTime();
+    cal.setTimeInMillis(v);
+    date = new Time(cal.getTime().getTime());
+    return date;
   }
 
   @Override

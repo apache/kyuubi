@@ -23,6 +23,7 @@ import org.apache.commons.lang3.{JavaVersion, SystemUtils}
 
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+import org.apache.kyuubi.util.JdbcUtils
 
 /**
  * hive tests disabled for JAVA 11
@@ -229,14 +230,12 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
     assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
     withJdbcStatement() { statement =>
       val resultSet = statement.getConnection.getMetaData.getTableTypes
-      val expected = Set("TABLE", "VIEW", "MATERIALIZED_VIEW")
-      var tableTypes = Set[String]()
-      while (resultSet.next()) {
-        assert(expected.contains(resultSet.getString(TABLE_TYPE)))
-        tableTypes += resultSet.getString(TABLE_TYPE)
-      }
-      assert(!resultSet.next())
-      assert(expected.size === tableTypes.size)
+      val hive2_1Expected = Set("TABLE", "VIEW", "INDEX_TABLE")
+      val hive2_3Expected = Set("TABLE", "VIEW", "MATERIALIZED_VIEW", "INDEX_TABLE")
+      val hive3Expected = Set("TABLE", "VIEW", "MATERIALIZED_VIEW")
+      val tableTypes = JdbcUtils.mapResultSet(resultSet) { rs => rs.getString(TABLE_TYPE) }.toSet
+      assert(tableTypes === hive2_1Expected || tableTypes === hive2_3Expected ||
+        tableTypes === hive3Expected)
     }
   }
 
@@ -387,10 +386,12 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
       assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.TIMESTAMP)
 
       typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "TIMESTAMP WITH LOCAL TIME ZONE")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+      // Hive3 supports TIMESTAMP WITH LOCAL TIME ZONE
+      if (typeInfo.getString(TYPE_NAME) == "TIMESTAMP WITH LOCAL TIME ZONE") {
+        assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+        typeInfo.next()
+      }
 
-      typeInfo.next()
       assert(typeInfo.getString(TYPE_NAME) === "INTERVAL_YEAR_MONTH")
       assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
 

@@ -25,7 +25,6 @@ import java.util.UUID
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.shaded.com.nimbusds.jose.util.StandardCharset
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{BatchTestHelper, RestClientTestHelper, Utils}
@@ -36,6 +35,7 @@ import org.apache.kyuubi.engine.ApplicationManagerInfo
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.server.metadata.api.MetadataFilter
 import org.apache.kyuubi.session.KyuubiSessionManager
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with BatchTestHelper {
 

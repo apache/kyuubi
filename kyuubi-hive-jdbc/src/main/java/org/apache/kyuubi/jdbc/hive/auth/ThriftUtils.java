@@ -19,10 +19,10 @@ package org.apache.kyuubi.jdbc.hive.auth;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
-import org.apache.thrift.transport.TSSLTransportFactory;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.kyuubi.shaded.thrift.transport.TSSLTransportFactory;
+import org.apache.kyuubi.shaded.thrift.transport.TSocket;
+import org.apache.kyuubi.shaded.thrift.transport.TTransport;
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
 
 /**
  * This class helps in some aspects of authentication. It creates the proper Thrift classes for the
