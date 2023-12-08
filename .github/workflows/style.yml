@@ -92,7 +92,7 @@ jobs:
           pip install black==$SPOTLESS_BLACK_VERSION
           build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python,spark-3.1
       - name: setup npm
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
       - name: Web UI Style with node
