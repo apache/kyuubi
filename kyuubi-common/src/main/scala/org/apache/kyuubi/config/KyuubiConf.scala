@@ -1231,6 +1231,54 @@ object KyuubiConf {
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofMinutes(5).toMillis)
 
+  val KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD_KIND_CHECK_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.kubernetes.spark.cleanupTerminatedDriverPod.checkInterval")
+      .doc("Kyuubi server use guava cache as the cleanup trigger with time-based eviction, " +
+        "but the eviction would not happened until any get/put operation happened. " +
+        "This option schedule a daemon thread evict cache periodically.")
+      .version("1.8.1")
+      .timeConf
+      .createWithDefaultString("PT1M")
+
+  val KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD_KIND: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.spark.cleanupTerminatedDriverPod.kind")
+      .doc("Kyuubi server will delete the spark driver pod after " +
+        s"the application terminates for ${KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD.key}. " +
+        "Available options are NONE, ALL, COMPLETED and " +
+        "default value is None which means none of the pod will be deleted")
+      .version("1.8.1")
+      .stringConf
+      .createWithDefault(KubernetesCleanupDriverPodStrategy.NONE.toString)
+
+  object KubernetesCleanupDriverPodStrategy extends Enumeration {
+    type KubernetesCleanupDriverPodStrategy = Value
+    val NONE, ALL, COMPLETED = Value
+  }
+
+  val KUBERNETES_APPLICATION_STATE_CONTAINER: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.application.state.container")
+      .doc("The container name to retrieve the application state from.")
+      .version("1.8.1")
+      .stringConf
+      .createWithDefault("spark-kubernetes-driver")
+
+  val KUBERNETES_APPLICATION_STATE_SOURCE: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.application.state.source")
+      .doc("The source to retrieve the application state from. The valid values are " +
+        "pod and container. If the source is container and there is container inside the pod " +
+        s"with the name of ${KUBERNETES_APPLICATION_STATE_CONTAINER.key}, the application state " +
+        s"will be from the matched container state. " +
+        s"Otherwise, the application state will be from the pod state.")
+      .version("1.8.1")
+      .stringConf
+      .checkValues(KubernetesApplicationStateSource)
+      .createWithDefault(KubernetesApplicationStateSource.POD.toString)
+
+  object KubernetesApplicationStateSource extends Enumeration {
+    type KubernetesApplicationStateSource = Value
+    val POD, CONTAINER = Value
+  }
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -2101,6 +2149,13 @@ object KyuubiConf {
       .toSequence(";")
       .createWithDefault(Nil)
 
+  val ENGINE_SESSION_FLINK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.session.engine.flink.initialize.sql")
+      .doc("The initialize sql for Flink session. " +
+        "It fallback to `kyuubi.engine.session.initialize.sql`")
+      .version("1.8.1")
+      .fallbackConf(ENGINE_SESSION_INITIALIZE_SQL)
+
   val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Set[String]] =
     buildConf("kyuubi.engine.deregister.exception.classes")
       .doc("A comma-separated list of exception classes. If there is any exception thrown," +
@@ -2544,6 +2599,13 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("yyyy-MM-dd HH:mm:ss.SSS")
 
+  val ENGINE_SESSION_SPARK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.session.engine.spark.initialize.sql")
+      .doc("The initialize sql for Spark session. " +
+        "It fallback to `kyuubi.engine.session.initialize.sql`")
+      .version("1.8.1")
+      .fallbackConf(ENGINE_SESSION_INITIALIZE_SQL)
+
   val ENGINE_TRINO_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.trino.memory")
       .doc("The heap memory for the Trino query engine")
@@ -2617,6 +2679,12 @@ object KyuubiConf {
       .version("1.8.0")
       .stringConf
       .createOptional
+
+  val ENGINE_FLINK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.flink.initialize.sql")
+      .doc("The initialize sql for Flink engine. It fallback to `kyuubi.engine.initialize.sql`.")
+      .version("1.8.1")
+      .fallbackConf(ENGINE_INITIALIZE_SQL)
 
   val SERVER_LIMIT_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.connections.per.user")
@@ -2790,9 +2858,28 @@ object KyuubiConf {
 
   val ENGINE_JDBC_CONNECTION_PROVIDER: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.connection.provider")
-      .doc("The connection provider is used for getting a connection from the server")
+      .doc("A JDBC connection provider plugin for the Kyuubi Server " +
+        "to establish a connection to the JDBC URL." +
+        " The configuration value should be a subclass of " +
+        "`org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider`. " +
+        "Kyuubi provides the following built-in implementations: " +
+        "<li>doris: For establishing Doris connections.</li> " +
+        "<li>mysql: For establishing MySQL connections.</li> " +
+        "<li>phoenix: For establishing Phoenix connections.</li> " +
+        "<li>postgresql: For establishing PostgreSQL connections.</li>")
       .version("1.6.0")
       .stringConf
+      .transform {
+        case "Doris" | "doris" | "DorisConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.doris.DorisConnectionProvider"
+        case "MySQL" | "mysql" | "MySQLConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.mysql.MySQLConnectionProvider"
+        case "Phoenix" | "phoenix" | "PhoenixConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.phoenix.PhoenixConnectionProvider"
+        case "PostgreSQL" | "postgresql" | "PostgreSQLConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.postgresql.PostgreSQLConnectionProvider"
+        case other => other
+      }
       .createOptional
 
   val ENGINE_JDBC_SHORT_NAME: OptionalConfigEntry[String] =
@@ -3095,6 +3182,12 @@ object KyuubiConf {
       .stringConf
       .toSequence()
       .createWithDefault(Seq("spark.driver.memory", "spark.executor.memory"))
+
+  val ENGINE_SPARK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.spark.initialize.sql")
+      .doc("The initialize sql for Spark engine. It fallback to `kyuubi.engine.initialize.sql`.")
+      .version("1.8.1")
+      .fallbackConf(ENGINE_INITIALIZE_SQL)
 
   val ENGINE_HIVE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.hive.event.loggers")

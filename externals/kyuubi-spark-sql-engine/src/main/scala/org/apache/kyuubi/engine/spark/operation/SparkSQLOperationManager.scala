@@ -86,7 +86,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
               val incrementalCollect = spark.conf.getOption(OPERATION_INCREMENTAL_COLLECT.key)
                 .map(_.toBoolean).getOrElse(operationIncrementalCollectDefault)
               // TODO: respect the config of the operation ExecuteStatement, if it was set.
-              val resultFormat = spark.conf.get("kyuubi.operation.result.format", "thrift")
+              val resultFormat = spark.conf.get(OPERATION_RESULT_FORMAT.key, "thrift")
               resultFormat.toLowerCase match {
                 case "arrow" =>
                   new ArrowBasedExecuteStatement(

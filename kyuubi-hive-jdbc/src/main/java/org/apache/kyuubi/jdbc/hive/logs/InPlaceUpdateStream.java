@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.jdbc.hive.logs;
 
-import org.apache.hive.service.rpc.thrift.TProgressUpdateResp;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProgressUpdateResp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

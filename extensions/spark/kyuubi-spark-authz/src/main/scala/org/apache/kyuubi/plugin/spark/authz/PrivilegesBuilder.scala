@@ -22,12 +22,13 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.execution.command.ExplainCommand
 import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
-import org.apache.kyuubi.plugin.spark.authz.rule.Authorization.KYUUBI_AUTHZ_TAG
-import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker
+import org.apache.kyuubi.plugin.spark.authz.rule.Authorization._
+import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
@@ -66,13 +67,7 @@ object PrivilegesBuilder {
 
     def mergeProjection(table: Table, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
-        plan match {
-          case pvm: PermanentViewMarker
-              if pvm.isSubqueryExpressionPlaceHolder || pvm.output.isEmpty =>
-            privilegeObjects += PrivilegeObject(table, pvm.outputColNames)
-          case _ =>
-            privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
-        }
+        privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
@@ -302,6 +297,20 @@ object PrivilegesBuilder {
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
     val opType = plan match {
+      case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowTables" =>
+        OperationType.SHOWTABLES
+      case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowNamespaces" =>
+        OperationType.SHOWDATABASES
+      case _: FilteredShowTablesCommand => OperationType.SHOWTABLES
+      case _: FilteredShowFunctionsCommand => OperationType.SHOWFUNCTIONS
+      case _: FilteredShowColumnsCommand => OperationType.SHOWCOLUMNS
+
+      // ExplainCommand run will execute the plan, should avoid check privilege for the plan.
+      case _: ExplainCommand =>
+        setExplainCommandExecutionId(spark)
+        OperationType.EXPLAIN
+      case _ if isExplainCommandChild(spark) =>
+        OperationType.EXPLAIN
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries

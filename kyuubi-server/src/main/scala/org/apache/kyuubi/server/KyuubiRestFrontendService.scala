@@ -38,6 +38,7 @@ import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, 
 import org.apache.kyuubi.service.authentication.{AuthMethods, AuthTypes, KyuubiAuthenticationFactory}
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
 import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.
@@ -142,7 +143,12 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       }
     }
 
-    batchChecker.scheduleWithFixedDelay(task, interval, interval, TimeUnit.MILLISECONDS)
+    scheduleTolerableRunnableWithFixedDelay(
+      batchChecker,
+      task,
+      interval,
+      interval,
+      TimeUnit.MILLISECONDS)
   }
 
   @VisibleForTesting

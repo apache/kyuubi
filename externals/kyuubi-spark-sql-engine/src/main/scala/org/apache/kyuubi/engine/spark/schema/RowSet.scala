@@ -21,18 +21,20 @@ import java.nio.ByteBuffer
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.HiveResult
+import org.apache.spark.sql.execution.HiveResult.TimeFormatters
 import org.apache.spark.sql.types._
 
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
 
-  def toHiveString(valueAndType: (Any, DataType), nested: Boolean = false): String = {
-    // compatible w/ Spark 3.1 and above
-    val timeFormatters = HiveResult.getTimeFormatters
+  def toHiveString(
+      valueAndType: (Any, DataType),
+      nested: Boolean = false,
+      timeFormatters: TimeFormatters): String = {
     HiveResult.toHiveString(valueAndType, nested, timeFormatters)
   }
 
@@ -71,18 +73,20 @@ object RowSet {
   def toRowBasedSet(rows: Seq[Row], schema: StructType): TRowSet = {
     val rowSize = rows.length
     val tRows = new java.util.ArrayList[TRow](rowSize)
+    val timeFormatters = HiveResult.getTimeFormatters
     var i = 0
     while (i < rowSize) {
       val row = rows(i)
-      val tRow = new TRow()
       var j = 0
       val columnSize = row.length
+      val tColumnValues = new java.util.ArrayList[TColumnValue](columnSize)
       while (j < columnSize) {
-        val columnValue = toTColumnValue(j, row, schema)
-        tRow.addToColVals(columnValue)
+        val columnValue = toTColumnValue(j, row, schema, timeFormatters)
+        tColumnValues.add(columnValue)
         j += 1
       }
       i += 1
+      val tRow = new TRow(tColumnValues)
       tRows.add(tRow)
     }
     new TRowSet(0, tRows)
@@ -91,18 +95,25 @@ object RowSet {
   def toColumnBasedSet(rows: Seq[Row], schema: StructType): TRowSet = {
     val rowSize = rows.length
     val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](rowSize))
+    val timeFormatters = HiveResult.getTimeFormatters
     var i = 0
     val columnSize = schema.length
+    val tColumns = new java.util.ArrayList[TColumn](columnSize)
     while (i < columnSize) {
       val field = schema(i)
-      val tColumn = toTColumn(rows, i, field.dataType)
-      tRowSet.addToColumns(tColumn)
+      val tColumn = toTColumn(rows, i, field.dataType, timeFormatters)
+      tColumns.add(tColumn)
       i += 1
     }
+    tRowSet.setColumns(tColumns)
     tRowSet
   }
 
-  private def toTColumn(rows: Seq[Row], ordinal: Int, typ: DataType): TColumn = {
+  private def toTColumn(
+      rows: Seq[Row],
+      ordinal: Int,
+      typ: DataType,
+      timeFormatters: TimeFormatters): TColumn = {
     val nulls = new java.util.BitSet()
     typ match {
       case BooleanType =>
@@ -152,7 +163,7 @@ object RowSet {
         while (i < rowSize) {
           val row = rows(i)
           nulls.set(i, row.isNullAt(ordinal))
-          values.add(toHiveString(row.get(ordinal) -> typ))
+          values.add(toHiveString(row.get(ordinal) -> typ, timeFormatters = timeFormatters))
           i += 1
         }
         TColumn.stringVal(new TStringColumn(values, nulls))
@@ -184,7 +195,8 @@ object RowSet {
   private def toTColumnValue(
       ordinal: Int,
       row: Row,
-      types: StructType): TColumnValue = {
+      types: StructType,
+      timeFormatters: TimeFormatters): TColumnValue = {
     types(ordinal).dataType match {
       case BooleanType =>
         val boolValue = new TBoolValue
@@ -232,7 +244,9 @@ object RowSet {
       case _ =>
         val tStrValue = new TStringValue
         if (!row.isNullAt(ordinal)) {
-          tStrValue.setValue(toHiveString(row.get(ordinal) -> types(ordinal).dataType))
+          tStrValue.setValue(toHiveString(
+            row.get(ordinal) -> types(ordinal).dataType,
+            timeFormatters = timeFormatters))
         }
         TColumnValue.stringVal(tStrValue)
     }

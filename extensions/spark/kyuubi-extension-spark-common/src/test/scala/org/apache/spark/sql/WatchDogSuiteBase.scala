@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
 
-import org.apache.kyuubi.sql.KyuubiSQLConf
+import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 import org.apache.kyuubi.sql.watchdog.{MaxFileSizeExceedException, MaxPartitionExceedException}
 
 trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
@@ -596,6 +596,15 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
         // check
         checkMaxFileSize(tableSize, nonPartTableSize)
       }
+    }
+  }
+
+  test("disable script transformation") {
+    withSQLConf(KyuubiSQLConf.SCRIPT_TRANSFORMATION_ENABLED.key -> "false") {
+      val e = intercept[KyuubiSQLExtensionException] {
+        sql("SELECT TRANSFORM('') USING 'ls /'")
+      }
+      assert(e.getMessage == "Script transformation is not allowed")
     }
   }
 }

@@ -23,8 +23,8 @@ import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
-import org.apache.hive.service.rpc.thrift.TColumn;
-import org.apache.hive.service.rpc.thrift.TTypeId;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TColumn;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId;
 
 /** ColumnBuffer */
 public class ColumnBuffer extends AbstractList<Object> {

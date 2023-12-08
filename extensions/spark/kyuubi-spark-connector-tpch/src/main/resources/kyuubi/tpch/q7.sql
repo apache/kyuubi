@@ -20,7 +20,7 @@ select
     supp_nation,
     cust_nation,
     l_year,
-    sum(volume) as revenue
+    round(sum(volume), 2) as revenue
 from
     (
         select

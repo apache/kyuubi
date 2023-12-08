@@ -25,24 +25,38 @@ import org.apache.kyuubi.plugin.spark.authz.serde.TableType._
 object HudiCommands extends CommandSpecs[TableCommandSpec] {
   val AlterHoodieTableAddColumnsCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.AlterHoodieTableAddColumnsCommand"
-    val columnDesc = ColumnDesc("colsToAdd", classOf[StructFieldSeqColumnExtractor])
-    val tableDesc = TableDesc("tableId", classOf[TableIdentifierTableExtractor], Some(columnDesc))
+    val columnDesc =
+      ColumnDesc("colsToAdd", classOf[StructFieldSeqColumnExtractor], comment = "Hudi")
+    val tableDesc = TableDesc(
+      "tableId",
+      classOf[TableIdentifierTableExtractor],
+      Some(columnDesc),
+      comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_ADDCOLS)
   }
 
   val AlterHoodieTableChangeColumnCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.AlterHoodieTableChangeColumnCommand"
-    val columnDesc = ColumnDesc("columnName", classOf[StringColumnExtractor])
+    val columnDesc = ColumnDesc("columnName", classOf[StringColumnExtractor], comment = "Hudi")
     val tableDesc =
-      TableDesc("tableIdentifier", classOf[TableIdentifierTableExtractor], Some(columnDesc))
+      TableDesc(
+        "tableIdentifier",
+        classOf[TableIdentifierTableExtractor],
+        Some(columnDesc),
+        comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_REPLACECOLS)
   }
 
   val AlterHoodieTableDropPartitionCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.AlterHoodieTableDropPartitionCommand"
-    val columnDesc = ColumnDesc("partitionSpecs", classOf[PartitionSeqColumnExtractor])
+    val columnDesc =
+      ColumnDesc("partitionSpecs", classOf[PartitionSeqColumnExtractor], comment = "Hudi")
     val tableDesc =
-      TableDesc("tableIdentifier", classOf[TableIdentifierTableExtractor], Some(columnDesc))
+      TableDesc(
+        "tableIdentifier",
+        classOf[TableIdentifierTableExtractor],
+        Some(columnDesc),
+        comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_DROPPARTS)
   }
 
@@ -52,30 +66,32 @@ object HudiCommands extends CommandSpecs[TableCommandSpec] {
       TableTypeDesc(
         "oldName",
         classOf[TableIdentifierTableTypeExtractor],
-        Seq(TEMP_VIEW))
+        Seq(TEMP_VIEW),
+        comment = "Hudi")
     val oldTableD = TableDesc(
       "oldName",
       classOf[TableIdentifierTableExtractor],
-      tableTypeDesc = Some(oldTableTableTypeDesc))
+      tableTypeDesc = Some(oldTableTableTypeDesc),
+      comment = "Hudi")
 
     TableCommandSpec(cmd, Seq(oldTableD), ALTERTABLE_RENAME)
   }
 
   val AlterTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.AlterTableCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], None)
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], None, comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
   }
 
   val Spark31AlterTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.Spark31AlterTableCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], None)
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], None, comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
   }
 
   val CreateHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.CreateHoodieTableCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
   }
 
@@ -92,12 +108,14 @@ object HudiCommands extends CommandSpecs[TableCommandSpec] {
     val tableDesc1 = TableDesc(
       "targetTable",
       classOf[TableIdentifierTableExtractor],
-      setCurrentDatabaseIfMissing = true)
+      setCurrentDatabaseIfMissing = true,
+      comment = "Hudi")
     val tableDesc2 = TableDesc(
       "sourceTable",
       classOf[TableIdentifierTableExtractor],
       isInput = true,
-      setCurrentDatabaseIfMissing = true)
+      setCurrentDatabaseIfMissing = true,
+      comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc1, tableDesc2), CREATETABLE)
   }
 
@@ -107,7 +125,8 @@ object HudiCommands extends CommandSpecs[TableCommandSpec] {
       TableTypeDesc(
         "tableIdentifier",
         classOf[TableIdentifierTableTypeExtractor],
-        Seq(TEMP_VIEW))
+        Seq(TEMP_VIEW),
+        comment = "Hudi")
     TableCommandSpec(
       cmd,
       Seq(TableDesc(
@@ -124,30 +143,33 @@ object HudiCommands extends CommandSpecs[TableCommandSpec] {
 
   val TruncateHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.TruncateHoodieTableCommand"
-    val columnDesc = ColumnDesc("partitionSpec", classOf[PartitionOptionColumnExtractor])
+    val columnDesc =
+      ColumnDesc("partitionSpec", classOf[PartitionOptionColumnExtractor], comment = "Hudi")
     val tableDesc =
       TableDesc(
         "tableIdentifier",
         classOf[TableIdentifierTableExtractor],
-        columnDesc = Some(columnDesc))
+        columnDesc = Some(columnDesc),
+        comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), TRUNCATETABLE)
   }
 
   val CompactionHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.CompactionHoodieTableCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
   }
 
   val CompactionShowHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.CompactionShowHoodieTableCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], isInput = true)
+    val tableDesc =
+      TableDesc("table", classOf[CatalogTableTableExtractor], isInput = true, comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), SHOW_TBLPROPERTIES)
   }
 
   val CompactionHoodiePathCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.CompactionHoodiePathCommand"
-    val uriDesc = UriDesc("path", classOf[StringURIExtractor])
+    val uriDesc = UriDesc("path", classOf[StringURIExtractor], comment = "Hudi")
     TableCommandSpec(
       cmd,
       Seq.empty,
@@ -157,31 +179,32 @@ object HudiCommands extends CommandSpecs[TableCommandSpec] {
 
   val CompactionShowHoodiePathCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.CompactionShowHoodiePathCommand"
-    val uriDesc = UriDesc("path", classOf[StringURIExtractor], isInput = true)
+    val uriDesc = UriDesc("path", classOf[StringURIExtractor], isInput = true, comment = "Hudi")
     TableCommandSpec(cmd, Seq.empty, SHOW_TBLPROPERTIES, uriDescs = Seq(uriDesc))
   }
 
   val CreateIndexCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.CreateIndexCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), CREATEINDEX)
   }
 
   val DropIndexCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.DropIndexCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), DROPINDEX)
   }
 
   val ShowIndexCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.ShowIndexesCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], isInput = true)
+    val tableDesc =
+      TableDesc("table", classOf[CatalogTableTableExtractor], isInput = true, comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), SHOWINDEXES)
   }
 
   val RefreshIndexCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.RefreshIndexCommand"
-    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor])
+    val tableDesc = TableDesc("table", classOf[CatalogTableTableExtractor], comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), ALTERINDEX_REBUILD)
   }
 
@@ -191,52 +214,62 @@ object HudiCommands extends CommandSpecs[TableCommandSpec] {
       "logicalRelation",
       classOf[LogicalRelationTableExtractor],
       actionTypeDesc =
-        Some(ActionTypeDesc("overwrite", classOf[OverwriteOrInsertActionTypeExtractor])))
+        Some(ActionTypeDesc(
+          "overwrite",
+          classOf[OverwriteOrInsertActionTypeExtractor],
+          comment = "Hudi")),
+      comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(QueryDesc("query")))
   }
 
   val ShowHoodieTablePartitionsCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.ShowHoodieTablePartitionsCommand"
-    val columnDesc = ColumnDesc("specOpt", classOf[PartitionOptionColumnExtractor])
+    val columnDesc =
+      ColumnDesc("specOpt", classOf[PartitionOptionColumnExtractor], comment = "Hudi")
     val tableDesc = TableDesc(
       "tableIdentifier",
       classOf[TableIdentifierTableExtractor],
       isInput = true,
-      columnDesc = Some(columnDesc))
+      columnDesc = Some(columnDesc),
+      comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), SHOWPARTITIONS)
   }
 
   val DeleteHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.DeleteHoodieTableCommand"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE), comment = "Hudi")
     val tableDesc =
       TableDesc(
         "dft",
         classOf[HudiDataSourceV2RelationTableExtractor],
-        actionTypeDesc = Some(actionTypeDesc))
+        actionTypeDesc = Some(actionTypeDesc),
+        comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc))
   }
 
   val UpdateHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.UpdateHoodieTableCommand"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE), comment = "Hudi")
     val tableDesc =
       TableDesc(
         "ut",
         classOf[HudiDataSourceV2RelationTableExtractor],
-        actionTypeDesc = Some(actionTypeDesc))
+        actionTypeDesc = Some(actionTypeDesc),
+        comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc))
   }
 
   val MergeIntoHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.MergeIntoHoodieTableCommand"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE), comment = "Hudi")
     val tableDesc =
       TableDesc(
         "mergeInto",
         classOf[HudiMergeIntoTargetTableExtractor],
-        actionTypeDesc = Some(actionTypeDesc))
-    val queryDescs = QueryDesc("mergeInto", classOf[HudiMergeIntoSourceTableExtractor])
+        actionTypeDesc = Some(actionTypeDesc),
+        comment = "Hudi")
+    val queryDescs =
+      QueryDesc("mergeInto", classOf[HudiMergeIntoSourceTableExtractor], comment = "Hudi")
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDescs))
   }
 

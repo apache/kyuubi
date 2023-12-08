@@ -20,9 +20,9 @@ package org.apache.kyuubi.jdbc.hive.cli;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.hive.service.rpc.thrift.TColumnValue;
-import org.apache.hive.service.rpc.thrift.TRow;
-import org.apache.hive.service.rpc.thrift.TRowSet;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TColumnValue;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TRow;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TRowSet;
 
 /** RowBasedSet */
 public class RowBasedSet implements RowSet {

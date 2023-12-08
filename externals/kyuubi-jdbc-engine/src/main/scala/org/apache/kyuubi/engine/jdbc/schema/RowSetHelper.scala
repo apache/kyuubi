@@ -22,8 +22,7 @@ import java.time.LocalDateTime
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift._
-
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.util.RowSetUtils.{bitSetToBuffer, formatDate, formatLocalDateTime}
 
 abstract class RowSetHelper {
@@ -49,7 +48,7 @@ abstract class RowSetHelper {
       val columnSize = row.size
       var j = 0
       while (j < columnSize) {
-        val columnValue = toTColumnValue(j, row, columns)
+        val columnValue = toTColumnValue(j, row, columns(i).sqlType)
         tRow.addToColVals(columnValue)
         j += 1
       }
@@ -110,8 +109,8 @@ abstract class RowSetHelper {
     }
   }
 
-  protected def toTColumnValue(ordinal: Int, row: List[Any], types: List[Column]): TColumnValue = {
-    types(ordinal).sqlType match {
+  protected def toTColumnValue(ordinal: Int, row: List[Any], sqlType: Int): TColumnValue = {
+    sqlType match {
       case Types.BIT =>
         toBitTColumnValue(row, ordinal)
 
@@ -140,7 +139,7 @@ abstract class RowSetHelper {
         toVarcharTColumnValue(row, ordinal)
 
       case _ =>
-        toDefaultTColumnValue(row, ordinal, types)
+        toDefaultTColumnValue(row, ordinal, sqlType)
     }
   }
 
@@ -299,11 +298,11 @@ abstract class RowSetHelper {
   protected def toDefaultTColumnValue(
       row: List[Any],
       ordinal: Int,
-      types: List[Column]): TColumnValue = {
+      sqlType: Int): TColumnValue = {
     val tStrValue = new TStringValue
     if (row(ordinal) != null) {
       tStrValue.setValue(
-        toHiveString(row(ordinal), types(ordinal).sqlType))
+        toHiveString(row(ordinal), sqlType))
     }
     TColumnValue.stringVal(tStrValue)
   }
@@ -316,6 +315,8 @@ abstract class RowSetHelper {
         formatLocalDateTime(dateTime)
       case (decimal: java.math.BigDecimal, Types.DECIMAL) =>
         decimal.toPlainString
+      case (bigint: java.math.BigInteger, Types.BIGINT) =>
+        bigint.toString()
       case (other, _) =>
         other.toString
     }

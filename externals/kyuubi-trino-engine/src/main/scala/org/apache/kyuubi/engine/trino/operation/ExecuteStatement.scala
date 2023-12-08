@@ -19,8 +19,6 @@ package org.apache.kyuubi.engine.trino.operation
 
 import java.util.concurrent.RejectedExecutionException
 
-import org.apache.hive.service.rpc.thrift.TFetchResultsResp
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.trino.TrinoStatement
 import org.apache.kyuubi.engine.trino.event.TrinoOperationEvent
@@ -30,6 +28,7 @@ import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, Operation
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TFetchResultsResp
 
 class ExecuteStatement(
     session: Session,

@@ -17,12 +17,11 @@
 
 package org.apache.kyuubi.service.authentication
 
-import org.apache.hive.service.rpc.thrift.TCLIService.{Iface, Processor}
-import org.apache.thrift.TException
-import org.apache.thrift.protocol.TProtocol
-import org.apache.thrift.transport.{TSaslClientTransport, TSaslServerTransport, TSocket, TTransport}
-
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.{Iface, Processor}
+import org.apache.kyuubi.shaded.thrift.TException
+import org.apache.kyuubi.shaded.thrift.protocol.TProtocol
+import org.apache.kyuubi.shaded.thrift.transport.{TSaslClientTransport, TSaslServerTransport, TSocket, TTransport}
 
 class TSetIpAddressProcessor[I <: Iface](
     iface: Iface) extends Processor[Iface](iface) with Logging {

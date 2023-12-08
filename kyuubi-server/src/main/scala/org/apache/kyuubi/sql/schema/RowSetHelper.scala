@@ -21,8 +21,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift._
-
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSetHelper {

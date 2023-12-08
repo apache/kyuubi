@@ -23,12 +23,13 @@ import java.nio.file.{Files, Paths}
 import java.security.PrivilegedExceptionAction
 import java.util.Properties
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SERVER_SECRET_REDACTION_PATTERN
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class UtilsSuite extends KyuubiFunSuite {
 
@@ -156,44 +157,40 @@ class UtilsSuite extends KyuubiFunSuite {
     val conf = new KyuubiConf()
     conf.set(SERVER_SECRET_REDACTION_PATTERN, "(?i)secret|password".r)
 
-    val buffer = new ArrayBuffer[String]()
+    val buffer = new mutable.ListBuffer[String]()
     buffer += "main"
-    buffer += "--conf"
-    buffer += "kyuubi.my.password=sensitive_value"
-    buffer += "--conf"
-    buffer += "kyuubi.regular.property1=regular_value"
-    buffer += "--conf"
-    buffer += "kyuubi.my.secret=sensitive_value"
-    buffer += "--conf"
-    buffer += "kyuubi.regular.property2=regular_value"
+    buffer ++= confKeyValue("kyuubi.my.password", "sensitive_value")
+    buffer ++= confKeyValue("kyuubi.regular.property1", "regular_value")
+    buffer ++= confKeyValue("kyuubi.my.secret", "sensitive_value")
+    buffer ++= confKeyValue("kyuubi.regular.property2", "regular_value")
 
-    val commands = buffer.toArray
+    val commands = buffer
 
     // Redact sensitive information
     val redactedCmdArgs = Utils.redactCommandLineArgs(conf, commands)
 
-    val expectBuffer = new ArrayBuffer[String]()
+    val expectBuffer = new mutable.ListBuffer[String]()
     expectBuffer += "main"
     expectBuffer += "--conf"
-    expectBuffer += "kyuubi.my.password=" + Utils.REDACTION_REPLACEMENT_TEXT
+    expectBuffer += "kyuubi.my.password=" + REDACTION_REPLACEMENT_TEXT
     expectBuffer += "--conf"
     expectBuffer += "kyuubi.regular.property1=regular_value"
     expectBuffer += "--conf"
-    expectBuffer += "kyuubi.my.secret=" + Utils.REDACTION_REPLACEMENT_TEXT
+    expectBuffer += "kyuubi.my.secret=" + REDACTION_REPLACEMENT_TEXT
     expectBuffer += "--conf"
     expectBuffer += "kyuubi.regular.property2=regular_value"
 
-    assert(expectBuffer.toArray === redactedCmdArgs)
+    assert(expectBuffer === redactedCmdArgs)
   }
 
   test("redact sensitive information") {
     val secretKeys = Some("my.password".r)
     assert(Utils.redact(secretKeys, Seq(("kyuubi.my.password", "12345"))) ===
-      Seq(("kyuubi.my.password", Utils.REDACTION_REPLACEMENT_TEXT)))
+      Seq(("kyuubi.my.password", REDACTION_REPLACEMENT_TEXT)))
     assert(Utils.redact(secretKeys, Seq(("anything", "kyuubi.my.password=12345"))) ===
-      Seq(("anything", Utils.REDACTION_REPLACEMENT_TEXT)))
+      Seq(("anything", REDACTION_REPLACEMENT_TEXT)))
     assert(Utils.redact(secretKeys, Seq((999, "kyuubi.my.password=12345"))) ===
-      Seq((999, Utils.REDACTION_REPLACEMENT_TEXT)))
+      Seq((999, REDACTION_REPLACEMENT_TEXT)))
     // Do not redact when value type is not string
     assert(Utils.redact(secretKeys, Seq(("my.password", 12345))) ===
       Seq(("my.password", 12345)))

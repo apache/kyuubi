@@ -20,10 +20,9 @@ package org.apache.kyuubi.operation
 import java.nio.ByteBuffer
 import java.util
 
-import org.apache.hive.service.rpc.thrift.{TColumn, TFetchResultsResp, TRow, TRowSet, TStatus, TStatusCode, TStringColumn}
-
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TFetchResultsResp, TRow, TRowSet, TStatus, TStatusCode, TStringColumn}
 
 class NoopOperationManager extends OperationManager("noop") {
   private val invalid = "invalid"

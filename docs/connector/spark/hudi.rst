@@ -60,6 +60,7 @@ Configurations
 To activate functionality of Hudi, we can set the following configurations:
 
 .. code-block:: properties
+
    # Spark 3.2
    spark.serializer=org.apache.spark.serializer.KryoSerializer
    spark.sql.extensions=org.apache.spark.sql.hudi.HoodieSparkSessionExtension

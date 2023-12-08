@@ -18,6 +18,7 @@
 package org.apache.kyuubi.operation
 
 import java.sql.{Date, Timestamp}
+import java.util.Calendar
 
 import org.apache.kyuubi.util.SparkVersionUtil
 
@@ -160,6 +161,23 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
     }
   }
 
+  test("execute statement - select date with calendar") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT DATE '2018-11-17' AS col")
+      assert(resultSet.next())
+      assert(resultSet.getDate(
+        "col",
+        Calendar.getInstance()) === Date.valueOf("2018-11-17"))
+      assert(resultSet.getDate(
+        1,
+        Calendar.getInstance()) === Date.valueOf("2018-11-17"))
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.DATE)
+      assert(metaData.getPrecision(1) === 10)
+      assert(metaData.getScale(1) === 0)
+    }
+  }
+
   test("execute statement - select timestamp - second") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
@@ -206,6 +224,26 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
         "SELECT make_timestamp_ntz(2022, 03, 24, 18, 08, 31.8888) AS col")
       assert(resultSet.next())
       assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2022-03-24 18:08:31.8888"))
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
+      assert(metaData.getPrecision(1) === 29)
+      assert(metaData.getScale(1) === 9)
+    }
+  }
+
+  test("execute statement - select timestamp - second with calendar") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery(
+        "SELECT TIMESTAMP '2018-11-17 13:33:33' AS col")
+      assert(resultSet.next())
+      assert(resultSet.getTimestamp(
+        "col",
+        Calendar.getInstance()) === Timestamp.valueOf(
+        "2018-11-17 13:33:33"))
+      assert(resultSet.getTimestamp(
+        1,
+        Calendar.getInstance()) === Timestamp.valueOf(
+        "2018-11-17 13:33:33"))
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
       assert(metaData.getPrecision(1) === 29)

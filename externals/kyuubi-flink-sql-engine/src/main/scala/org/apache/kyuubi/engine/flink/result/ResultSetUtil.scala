@@ -73,7 +73,7 @@ object ResultSetUtil {
       throw new IllegalArgumentException("maxRows should be positive")
     }
     val schema = resultFetcher.getResultSchema
-    val ite = new QueryResultFetchIterator(resultFetcher, maxRows, resultFetchTimeout)
+    val ite = new IncrementalResultFetchIterator(resultFetcher, maxRows, resultFetchTimeout)
     ResultSet.builder
       .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
       .columns(schema.getColumns)

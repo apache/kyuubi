@@ -37,6 +37,9 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
 
   private lazy val resultMaxRowsDefault = getConf.get(ENGINE_FLINK_MAX_ROWS)
 
+  private lazy val resultFetchTimeoutDefault = getConf.get(ENGINE_FLINK_FETCH_TIMEOUT)
+    .map(_ milliseconds).getOrElse(Duration.Inf)
+
   private lazy val operationConvertCatalogDatabaseDefault =
     getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)
 
@@ -70,8 +73,11 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
         resultMaxRowsDefault.toString).toInt
 
     val resultFetchTimeout =
-      flinkSession.normalizedConf.get(ENGINE_FLINK_FETCH_TIMEOUT.key).map(_.toLong milliseconds)
-        .getOrElse(Duration.Inf)
+      flinkSession.normalizedConf
+        .get(ENGINE_FLINK_FETCH_TIMEOUT.key)
+        .map(ENGINE_FLINK_FETCH_TIMEOUT.valueConverter)
+        .map(_.get milliseconds)
+        .getOrElse(resultFetchTimeoutDefault)
 
     val op = mode match {
       case NoneMode =>

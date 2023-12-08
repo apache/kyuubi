@@ -46,6 +46,7 @@ import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
+import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
 
@@ -167,7 +168,8 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
       }
       lifetimeTerminatingChecker =
         Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("spark-engine-lifetime-checker"))
-      lifetimeTerminatingChecker.get.scheduleWithFixedDelay(
+      scheduleTolerableRunnableWithFixedDelay(
+        lifetimeTerminatingChecker.get,
         checkTask,
         interval,
         interval,
@@ -288,7 +290,8 @@ object SparkSQLEngine extends Logging {
 
     KyuubiSparkUtil.initializeSparkSession(
       session,
-      kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
+      kyuubiConf.get(ENGINE_SPARK_INITIALIZE_SQL) ++ kyuubiConf.get(
+        ENGINE_SESSION_SPARK_INITIALIZE_SQL))
     session.sparkContext.setLocalProperty(KYUUBI_ENGINE_URL, KyuubiSparkUtil.engineUrl)
     session
   }

@@ -23,8 +23,11 @@ import java.util.Map;
 import org.apache.kyuubi.client.api.v1.dto.*;
 import org.apache.kyuubi.client.util.JsonUtils;
 import org.apache.kyuubi.client.util.VersionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BatchRestApi {
+  static final Logger LOG = LoggerFactory.getLogger(BatchRestApi.class);
 
   private KyuubiRestClient client;
 
@@ -101,12 +104,25 @@ public class BatchRestApi {
     return this.getClient().get(path, params, OperationLog.class, client.getAuthHeader());
   }
 
+  /**
+   * hs2ProxyUser for delete batch is deprecated since 1.8.1, please use {@link
+   * #deleteBatch(String)} instead.
+   */
+  @Deprecated
   public CloseBatchResponse deleteBatch(String batchId, String hs2ProxyUser) {
+    LOG.warn(
+        "The method `deleteBatch(batchId, hs2ProxyUser)` is deprecated since 1.8.1, "
+            + "using `deleteBatch(batchId)` instead.");
     Map<String, Object> params = new HashMap<>();
     params.put("hive.server2.proxy.user", hs2ProxyUser);
 
     String path = String.format("%s/%s", API_BASE_PATH, batchId);
     return this.getClient().delete(path, params, CloseBatchResponse.class, client.getAuthHeader());
+  }
+
+  public CloseBatchResponse deleteBatch(String batchId) {
+    String path = String.format("%s/%s", API_BASE_PATH, batchId);
+    return this.getClient().delete(path, null, CloseBatchResponse.class, client.getAuthHeader());
   }
 
   private IRestClient getClient() {
