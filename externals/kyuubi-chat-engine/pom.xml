@@ -68,7 +68,7 @@
         <dependency>
             <groupId>com.squareup.retrofit2</groupId>
             <artifactId>converter-jackson</artifactId>
-            <version>${retrofit2.converter-jackson.version}</version>
+            <version>${retrofit2.version}</version>
         </dependency>
     </dependencies>
 

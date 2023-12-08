@@ -16,20 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.chat.ernie.api;
+package org.apache.kyuubi.engine.chat.ernie.bean
 
+import com.fasterxml.jackson.annotation.JsonProperty
 
-import io.reactivex.Single;
-import org.apache.kyuubi.engine.chat.ernie.bean.ChatCompletionRequest;
-import org.apache.kyuubi.engine.chat.ernie.bean.ChatCompletionResult;
-import retrofit2.http.Body;
-import retrofit2.http.POST;
-import retrofit2.http.Path;
-import retrofit2.http.Query;
-
-public interface ErnieBotApi {
-
-    @POST("/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/{model}")
-    Single<ChatCompletionResult> createChatCompletion(@Path("path")String model, @Query("access_token") String accessToken, @Body ChatCompletionRequest var1);
-
-}
+case class PluginUsage(
+    name: String,
+    @JsonProperty("parse_tokens") parseTokens: java.lang.Long,
+    @JsonProperty("abstract_tokens") abstractTokens: java.lang.Long,
+    @JsonProperty("search_tokens") searchTokens: java.lang.Long,
+    @JsonProperty("total_tokens") totalTokens: java.lang.Long)

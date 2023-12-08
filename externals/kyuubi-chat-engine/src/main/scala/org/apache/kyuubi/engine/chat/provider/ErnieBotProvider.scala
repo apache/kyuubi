@@ -44,9 +44,9 @@ class ErnieBotProvider(conf: KyuubiConf) extends ChatProvider {
 
   private val ernieBotService: ErnieBotService = {
     val builder = defaultClient(
-      Duration.ofMillis(conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_SOCKET_TIMEOUT)))
+      Duration.ofMillis(conf.get(KyuubiConf.ENGINE_ERNIE_HTTP_SOCKET_TIMEOUT)))
       .newBuilder
-      .connectTimeout(Duration.ofMillis(conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_CONNECT_TIMEOUT)))
+      .connectTimeout(Duration.ofMillis(conf.get(KyuubiConf.ENGINE_ERNIE_HTTP_CONNECT_TIMEOUT)))
 
     conf.get(KyuubiConf.ENGINE_CHAT_GPT_HTTP_PROXY) match {
       case Some(httpProxyUrl) =>
@@ -79,17 +79,16 @@ class ErnieBotProvider(conf: KyuubiConf) extends ChatProvider {
   override def ask(sessionId: String, q: String): String = {
     val messages = chatHistory.get(sessionId)
     try {
-      messages.addLast(new ChatMessage(ChatMessageRole.USER.value(), q))
-      val completionRequest = ChatCompletionRequest.builder()
-        .messages(messages.asScala.toList.asJava)
-        .user(sessionUser.orNull)
-        .build()
+      messages.addLast(ChatMessage(ChatMessageRole.USER.value(), q, null))
+      val completionRequest = ChatCompletionRequest(
+        messages = messages.asScala.toList.asJava,
+        userId = sessionUser.orNull)
       val chatCompletionResult = ernieBotService
         .createChatCompletion(completionRequest, model, accessToken)
-      if (chatCompletionResult.getErrorMsg != null) {
-        throw new RuntimeException(chatCompletionResult.getErrorMsg)
+      if (chatCompletionResult.errorMsg != null) {
+        throw new RuntimeException(chatCompletionResult.errorMsg)
       }
-      val responseText = chatCompletionResult.getResult
+      val responseText = chatCompletionResult.result
       responseText
     } catch {
       case e: Throwable =>

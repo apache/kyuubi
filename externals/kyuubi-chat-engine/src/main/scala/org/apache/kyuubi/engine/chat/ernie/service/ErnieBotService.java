@@ -28,7 +28,6 @@ import okhttp3.OkHttpClient;
 import org.apache.kyuubi.engine.chat.ernie.api.*;
 import org.apache.kyuubi.engine.chat.ernie.bean.ChatCompletionRequest;
 import org.apache.kyuubi.engine.chat.ernie.bean.ChatCompletionResult;
-import org.apache.kyuubi.engine.chat.ernie.constants.Model;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -52,19 +51,17 @@ public class ErnieBotService {
     public static <T> T execute(Single<T> apiCall) {
         try {
             return apiCall.blockingGet();
-        } catch (HttpException var5) {
-            HttpException e = var5;
-
+        } catch (HttpException httpException) {
             try {
-                if (e.response() != null && e.response().errorBody() != null) {
-                    String errorBody = e.response().errorBody().string();
-                    int statusCode = e.response().code();
-                    throw new ApiHttpException(errorBody, statusCode, e);
+                if (httpException.response() != null && httpException.response().errorBody() != null) {
+                    String errorBody = httpException.response().errorBody().string();
+                    int statusCode = httpException.response().code();
+                    throw new ApiHttpException(errorBody, statusCode, httpException);
                 } else {
-                    throw e;
+                    throw httpException;
                 }
-            } catch (IOException var4) {
-                throw var5;
+            } catch (IOException ioException) {
+                throw httpException;
             }
         }
     }
@@ -94,19 +91,7 @@ public class ErnieBotService {
     }
 
     public ChatCompletionResult createChatCompletion(ChatCompletionRequest request, String model, String accessToken) {
-        if (model.equalsIgnoreCase(Model.ERNIE_BOT_8k.value())) {
-            return execute(this.api.createChatCompletion8k(accessToken, request));
-        }
-
-        if (model.equalsIgnoreCase(Model.ERNIE_BOT_4.value())) {
-            return execute(this.api.createChatCompletionPro(accessToken, request));
-        }
-
-        if (model.equalsIgnoreCase(Model.ERNIE_BOT_TURBO.value())){
-            return execute(this.api.createChatCompletionTurbo(accessToken, request));
-        }
-
-        return execute(this.api.createChatCompletion(accessToken, request));
+        return execute(this.api.createChatCompletion(model, accessToken, request));
     }
 
 }
