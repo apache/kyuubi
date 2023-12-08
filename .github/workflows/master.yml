@@ -248,6 +248,9 @@ jobs:
           - java: 8
             hive-archive: '-Dhive.archive.mirror=https://archive.apache.org/dist/hive/hive-2.3.9 -Dhive.archive.name=apache-hive-2.3.9-bin.tar.gz'
             comment: 'verify-on-hive-2.3-binary'
+          - java: 8
+            hive-archive: '-Dhive.archive.mirror=https://github.com/pan3793/cdh-hive/releases/download/cdh6.3.2-release -Dhive.archive.name=apache-hive-2.1.1-cdh6.3.2-bin.tar.gz'
+            comment: 'verify-on-hive-2.1-cdh6-binary'
     steps:
       - uses: actions/checkout@v4
       - name: Tune Runner VM
