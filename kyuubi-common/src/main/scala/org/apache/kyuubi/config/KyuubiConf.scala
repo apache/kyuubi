@@ -1952,7 +1952,7 @@ object KyuubiConf {
     buildConf("kyuubi.operation.result.saveToFile.dir")
       .doc("The Spark query result save dir, it should be a public accessible to every engine." +
         " Results are saved in ORC format, and the directory structure is" +
-        s" `/${OPERATION_RESULT_SAVE_TO_FILE_DIR}/engineId/sessionId/statementId`." +
+        " `/OPERATION_RESULT_SAVE_TO_FILE_DIR/engineId/sessionId/statementId`." +
         " Each query result will delete when query finished.")
       .version("1.9.0")
       .stringConf
