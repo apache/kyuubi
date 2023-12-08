@@ -77,15 +77,16 @@ object RowSet {
     var i = 0
     while (i < rowSize) {
       val row = rows(i)
-      val tRow = new TRow()
       var j = 0
       val columnSize = row.length
+      val tColumnValues = new java.util.ArrayList[TColumnValue](columnSize)
       while (j < columnSize) {
         val columnValue = toTColumnValue(j, row, schema, timeFormatters)
-        tRow.addToColVals(columnValue)
+        tColumnValues.add(columnValue)
         j += 1
       }
       i += 1
+      val tRow = new TRow(tColumnValues)
       tRows.add(tRow)
     }
     new TRowSet(0, tRows)
@@ -97,12 +98,14 @@ object RowSet {
     val timeFormatters = HiveResult.getTimeFormatters
     var i = 0
     val columnSize = schema.length
+    val tColumns = new java.util.ArrayList[TColumn](columnSize)
     while (i < columnSize) {
       val field = schema(i)
       val tColumn = toTColumn(rows, i, field.dataType, timeFormatters)
-      tRowSet.addToColumns(tColumn)
+      tColumns.add(tColumn)
       i += 1
     }
+    tRowSet.setColumns(tColumns)
     tRowSet
   }
 
