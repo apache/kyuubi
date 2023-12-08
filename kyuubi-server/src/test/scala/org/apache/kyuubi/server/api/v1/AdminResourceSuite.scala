@@ -695,8 +695,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(restFrontendService.connectionUrl.equals(testServer.getInstance()))
       assert(!testServer.getAttributes.isEmpty)
       val attributes = testServer.getAttributes
-      assert(attributes.containsKey("serviceUri") &&
-        attributes.get("serviceUri").equals(fe.connectionUrl))
+      assert(attributes.containsKey("serverUri") &&
+        attributes.get("serverUri").equals(fe.connectionUrl))
       assert(attributes.containsKey("version"))
       assert(attributes.containsKey("sequence"))
       assert("Running".equals(testServer.getStatus))

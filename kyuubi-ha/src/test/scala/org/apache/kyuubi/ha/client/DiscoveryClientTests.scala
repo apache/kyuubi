@@ -60,7 +60,7 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
         assert(discoveryClient.pathExists(basePath))
         val children = discoveryClient.getChildren(basePath)
         assert(children.head ===
-          s"serviceUri=${service.frontendServices.head.connectionUrl};" +
+          s"serverUri=${service.frontendServices.head.connectionUrl};" +
           s"version=$KYUUBI_VERSION;sequence=0000000000")
 
         children.foreach { child =>
@@ -107,7 +107,7 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
           assert(discoveryClient.pathExists(basePath))
           val children = discoveryClient.getChildren(basePath)
           assert(children.head ===
-            s"serviceUri=${service.frontendServices.head.connectionUrl};" +
+            s"serverUri=${service.frontendServices.head.connectionUrl};" +
             s"version=$KYUUBI_VERSION;sequence=0000000000")
 
           children.foreach { child =>
