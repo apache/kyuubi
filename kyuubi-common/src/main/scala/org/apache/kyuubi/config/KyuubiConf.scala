@@ -3059,7 +3059,7 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("gpt-3.5-turbo")
 
-  val ERNIE_BOT_ACCESS_TOKEN: OptionalConfigEntry[String] =
+  val ENGINE_ERNIE_BOT_ACCESS_TOKEN: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.chat.ernie.token")
       .doc("The token to access ernie bot open API, which could be got at " +
         "https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Ilkkrb0i5")
@@ -3067,7 +3067,7 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val ERNIE_BOT_MODEL: ConfigEntry[String] =
+  val ENGINE_ERNIE_BOT_MODEL: ConfigEntry[String] =
     buildConf("kyuubi.engine.chat.ernie.model")
       .doc("ID of the model used in ernie bot. " +
         "Available models are completions_pro, ernie_bot_8k, completions and eb-instant" +

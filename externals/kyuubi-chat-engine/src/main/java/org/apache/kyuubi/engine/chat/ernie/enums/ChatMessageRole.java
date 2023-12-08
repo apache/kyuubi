@@ -15,14 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.chat.ernie.bean
+package org.apache.kyuubi.engine.chat.ernie.enums;
 
-import scala.beans.BeanProperty
+public enum ChatMessageRole {
+  FUNCTION("function"),
 
-import com.fasterxml.jackson.annotation.JsonProperty
+  USER("user"),
 
-case class Usage(
-    @BeanProperty @JsonProperty("prompt_tokens") promptTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("completion_tokens") completionTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("total_tokens") totalTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("plugins") plugins: java.util.List[PluginUsage])
+  ASSISTANT("assistant");
+
+  private final String value;
+
+  private ChatMessageRole(String value) {
+    this.value = value;
+  }
+
+  public String value() {
+    return this.value;
+  }
+
+  @Override
+  public String toString() {
+    return "ChatMessageRole{" + "value='" + value + '\'' + '}';
+  }
+}

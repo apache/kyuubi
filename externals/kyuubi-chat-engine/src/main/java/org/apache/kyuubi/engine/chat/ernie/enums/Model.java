@@ -15,14 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.chat.ernie.bean
+package org.apache.kyuubi.engine.chat.ernie.enums;
 
-import scala.beans.BeanProperty
+public enum Model {
+  ERNIE_BOT_4("completions_pro"),
 
-import com.fasterxml.jackson.annotation.JsonProperty
+  ERNIE_BOT_8k("ernie_bot_8k"),
 
-case class Usage(
-    @BeanProperty @JsonProperty("prompt_tokens") promptTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("completion_tokens") completionTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("total_tokens") totalTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("plugins") plugins: java.util.List[PluginUsage])
+  ERNIE_BOT("completions"),
+
+  ERNIE_BOT_TURBO("eb-instant");
+
+  private final String value;
+
+  private Model(String value) {
+    this.value = value;
+  }
+
+  public String value() {
+    return this.value;
+  }
+}

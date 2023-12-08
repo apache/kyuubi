@@ -25,22 +25,24 @@ import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
+import com.theokanning.openai.service.OpenAiService.defaultObjectMapper
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.chat.ernie.api.ErnieBotApi
-import org.apache.kyuubi.engine.chat.ernie.bean.{ChatCompletionRequest, ChatMessage, ChatMessageRole}
+import org.apache.kyuubi.engine.chat.api.ErnieBotApi
+import org.apache.kyuubi.engine.chat.ernie.bean.{ChatCompletionRequest, ChatMessage}
+import org.apache.kyuubi.engine.chat.ernie.enums.ChatMessageRole
 import org.apache.kyuubi.engine.chat.ernie.service.ErnieBotService
-import org.apache.kyuubi.engine.chat.ernie.service.ErnieBotService.{defaultClient, defaultObjectMapper, defaultRetrofit}
+import org.apache.kyuubi.engine.chat.ernie.service.ErnieBotService.{defaultClient, defaultRetrofit}
 
 class ErnieBotProvider(conf: KyuubiConf) extends ChatProvider {
 
-  private val accessToken = conf.get(KyuubiConf.ERNIE_BOT_ACCESS_TOKEN).getOrElse {
+  private val accessToken = conf.get(KyuubiConf.ENGINE_ERNIE_BOT_ACCESS_TOKEN).getOrElse {
     throw new IllegalArgumentException(
-      s"'${KyuubiConf.ERNIE_BOT_ACCESS_TOKEN.key}' must be configured, " +
+      s"'${KyuubiConf.ENGINE_ERNIE_BOT_ACCESS_TOKEN.key}' must be configured, " +
         s"which could be got at https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Ilkkrb0i5")
   }
 
-  private val model = conf.get(KyuubiConf.ERNIE_BOT_MODEL)
+  private val model = conf.get(KyuubiConf.ENGINE_ERNIE_BOT_MODEL)
 
   private val ernieBotService: ErnieBotService = {
     val builder = defaultClient(

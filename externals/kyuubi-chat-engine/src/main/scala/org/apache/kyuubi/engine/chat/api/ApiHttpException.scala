@@ -15,14 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.chat.ernie.bean
+package org.apache.kyuubi.engine.chat.api
 
-import scala.beans.BeanProperty
-
-import com.fasterxml.jackson.annotation.JsonProperty
-
-case class Usage(
-    @BeanProperty @JsonProperty("prompt_tokens") promptTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("completion_tokens") completionTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("total_tokens") totalTokens: java.lang.Long,
-    @BeanProperty @JsonProperty("plugins") plugins: java.util.List[PluginUsage])
+class ApiHttpException(statusCode: Int, message: String, exception: Exception)
+  extends Exception(message, exception) {}
