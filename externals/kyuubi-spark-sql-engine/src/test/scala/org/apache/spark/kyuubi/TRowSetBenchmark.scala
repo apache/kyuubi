@@ -19,14 +19,14 @@ package org.apache.spark.kyuubi
 
 import scala.concurrent.duration._
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-import org.apache.hive.service.rpc.thrift.TProtocolVersion._
 import org.apache.spark.kyuubi.benchmark.{Benchmark, KyuubiBenchmarkBase}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.spark.schema.{RowSet, RowSetHelper}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion._
 
 /**
  * Benchmark to measure the performance of generate TRowSet.
