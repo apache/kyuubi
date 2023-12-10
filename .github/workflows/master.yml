@@ -106,6 +106,9 @@ jobs:
           python-version: '3.9'
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
+          if [[ "${{ matrix.java }}" == "8" && "${{ matrix.spark }}" == "3.4" && "${{ matrix.spark-archive }}" == "" ]]; then
+            MVN_OPT="${MVN_OPT} -Pcodecov"
+          fi
           TEST_MODULES="dev/kyuubi-codecov"
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} -Pspark-authz-hudi-test ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
