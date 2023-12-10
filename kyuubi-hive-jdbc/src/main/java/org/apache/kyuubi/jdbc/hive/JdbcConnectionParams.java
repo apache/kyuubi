@@ -116,6 +116,8 @@ public class JdbcConnectionParams {
   // Currently supports JKS keystore format
   static final String SSL_TRUST_STORE_TYPE = "JKS";
 
+  static final String SSL_STORE_PASSWORD_PATH = "storePasswordPath";
+
   static final String HIVE_VAR_PREFIX = "hivevar:";
   static final String HIVE_CONF_PREFIX = "hiveconf:";
   private String host = null;
