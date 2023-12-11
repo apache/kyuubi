@@ -31,7 +31,9 @@
           - "docs/requirements"
           - "kyuubi-assembly/**/*"
           - "scalastyle-config.xml"
-            [ "dev/**/*", "!dev/kyuubi-codecov/**/*", "!dev/kyuubi-tpcds/**/*" ]
+          - "dev/**/*"
+          - "!dev/kyuubi-codecov/**/*"
+          - "!dev/kyuubi-tpcds/**/*"
 
 "kind:deploy":
   - changed-files:
