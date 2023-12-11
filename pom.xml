@@ -181,6 +181,7 @@
         <mockito.version>4.11.0</mockito.version>
         <netty.version>4.1.100.Final</netty.version>
         <openai.java.version>0.12.0</openai.java.version>
+        <retrofit.version>2.9.0</retrofit.version>
         <paimon.version>0.5.0-incubating</paimon.version>
         <paimon.spark.binary.version>${spark.binary.version}</paimon.spark.binary.version>
         <parquet.version>1.10.1</parquet.version>
