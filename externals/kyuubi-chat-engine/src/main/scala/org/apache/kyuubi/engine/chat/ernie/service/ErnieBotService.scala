@@ -56,9 +56,7 @@ class ErnieBotService(api: ErnieBotApi) {
       request: ChatCompletionRequest,
       model: String,
       accessToken: String): ChatCompletionResult = {
-    execute(
-      this.api
-        .createChatCompletion(model, accessToken, request))
+    execute(this.api.createChatCompletion(model, accessToken, request))
   }
 }
 
