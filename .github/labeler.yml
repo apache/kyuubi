@@ -20,7 +20,7 @@
 
 "kind:build":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - ".dockerignore"
         - ".rat-excludes"
         - ".scalafmt"
@@ -37,14 +37,14 @@
 
 "kind:deploy":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "bin/**/*"
         - "!bin/beeline"
         - "!bin/docker-image-tool.sh"
 
 "kind:documentation":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "*.md"
         - "conf/**/*"
         - "docs/**/*"
@@ -52,7 +52,7 @@
 
 "kind:infra":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - ".asf.yaml"
         - ".gitattributes"
         - ".github/**/*"
@@ -67,12 +67,12 @@
 
 "module:common":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "kyuubi-common/**/*"
 
 "module:ctl":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "bin/beeline"
         - "kyuubi-ctl/**/*"
         - "kyuubi-hive-beeline/**/*"
@@ -81,24 +81,24 @@
 
 "module:events":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "kyuubi-events/**/*"
 
 "module:flink":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "externals/kyuubi-flink-sql-engine/**/*"
         - "integration-tests/kyuubi-flink-it/**/*"
 
 "module:ha":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "kyuubi-ha/**/*"
         - "kyuubi-zookeeper/**/*"
 
 "module:hive":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "bin/beeline"
         - "externals/kyuubi-hive-sql-engine/**/*"
         - "kyuubi-hive-beeline/**/*"
@@ -107,12 +107,12 @@
 
 "module:jdbc":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "externals/kyuubi-jdbc-engine/**/*"
 
 "module:kubernetes":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - ".dockerignore"
         - "bin/docker-image-tool.sh"
         - "docker/**/*"
@@ -121,22 +121,22 @@
 
 "module:metrics":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "kyuubi-metrics/**/*"
 
 "module:trino":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
     - "externals/kyuubi-trino-engine/**/*"
 
 "module:tpcds":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "dev/kyuubi-tpcds/**/*"
 
 "module:server":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "bin/kyuubi"
         - "kyuubi-server/src/**/*"
         - "kyuubi-server/pom.xml"
@@ -144,32 +144,32 @@
 
 "module:spark":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "externals/kyuubi-spark-sql-engine/**/*"
         - "extensions/spark/**/*"
         - "tools/spark-block-cleaner/**/*"
 
 "module:extensions":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "extensions/**/*"
 
 "module:rest-client":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "kyuubi-rest-client/**/*"
 
 "module:integration-tests":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "integration-tests/**/*"
 
 "module:authz":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "extensions/spark/kyuubi-spark-authz/**/*"
 
 "module:ui":
 - changed-files:
-    - any-glob-to-any-file:
+    - AnyGlobToAnyFile:
         - "kyuubi-server/web-ui/**/*"
