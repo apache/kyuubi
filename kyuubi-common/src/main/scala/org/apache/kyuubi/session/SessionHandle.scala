@@ -19,9 +19,8 @@ package org.apache.kyuubi.session
 
 import java.util.UUID
 
-import org.apache.hive.service.rpc.thrift.TSessionHandle
-
 import org.apache.kyuubi.cli.Handle
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TSessionHandle
 
 case class SessionHandle(identifier: UUID) {
 

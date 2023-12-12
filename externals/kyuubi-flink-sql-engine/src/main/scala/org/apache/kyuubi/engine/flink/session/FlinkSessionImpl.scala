@@ -25,7 +25,6 @@ import org.apache.flink.table.client.gateway.SqlExecutionException
 import org.apache.flink.table.gateway.api.operation.OperationHandle
 import org.apache.flink.table.gateway.service.context.SessionContext
 import org.apache.flink.table.gateway.service.session.{Session => FSession}
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
@@ -33,6 +32,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils
 import org.apache.kyuubi.engine.flink.udf.KDFRegistry
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_CATALOG, USE_DATABASE}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 class FlinkSessionImpl(
     protocol: TProtocolVersion,
@@ -65,12 +65,12 @@ class FlinkSessionImpl(
   override def open(): Unit = {
     val executor = fSession.createExecutor(Configuration.fromMap(fSession.getSessionConfig))
 
-    sessionManager.getConf.get(ENGINE_SESSION_INITIALIZE_SQL).foreach { sql =>
+    sessionManager.getConf.get(ENGINE_SESSION_FLINK_INITIALIZE_SQL).foreach { sql =>
       try {
         executor.executeStatement(OperationHandle.create, sql)
       } catch {
         case NonFatal(e) =>
-          throw KyuubiSQLException(s"execute ${ENGINE_SESSION_INITIALIZE_SQL.key}  $sql ", e)
+          throw KyuubiSQLException(s"execute ${ENGINE_SESSION_FLINK_INITIALIZE_SQL.key}  $sql ", e)
       }
     }
 
@@ -109,6 +109,7 @@ class FlinkSessionImpl(
       case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
         TGetInfoValue.stringValue("Apache Flink")
       case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(EnvironmentInformation.getVersion)
+      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
       case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
     }
   }

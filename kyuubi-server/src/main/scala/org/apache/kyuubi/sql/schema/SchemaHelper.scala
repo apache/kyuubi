@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.sql.schema
 
-import org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 object SchemaHelper {
 

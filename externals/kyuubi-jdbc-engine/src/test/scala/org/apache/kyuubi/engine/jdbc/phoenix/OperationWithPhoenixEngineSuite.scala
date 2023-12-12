@@ -16,11 +16,10 @@
  */
 package org.apache.kyuubi.engine.jdbc.phoenix
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
 
 class OperationWithPhoenixEngineSuite extends PhoenixOperationSuite with HiveJDBCTestHelper {
 

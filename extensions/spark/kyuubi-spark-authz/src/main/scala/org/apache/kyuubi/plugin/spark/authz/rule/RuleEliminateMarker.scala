@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{DataMaskingStage0Marker, DataMaskingStage1Marker}
 import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.RowFilterMarker
 
-class RuleEliminateMarker extends Rule[LogicalPlan] {
+object RuleEliminateMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan.transformUp { case p =>
       p.transformExpressionsUp {

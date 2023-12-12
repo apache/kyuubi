@@ -28,11 +28,11 @@ import io.trino.client.ClientStandardTypes._
 import io.trino.client.ClientTypeSignature
 import io.trino.client.Column
 import io.trino.client.Row
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.trino.schema.RowSet.toHiveString
 import org.apache.kyuubi.engine.trino.util.TestUtils._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class RowSetSuite extends KyuubiFunSuite {
 

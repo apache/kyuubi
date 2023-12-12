@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
-import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -37,6 +36,7 @@ import org.apache.kyuubi.operation.OperationState.{isTerminal, CANCELED, Operati
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.KyuubiBatchSession
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 /**
  * The state of batch operation is special. In general, the lifecycle of state is:
@@ -182,7 +182,7 @@ class BatchJobSubmission(
     OperationLog.removeCurrentOperationLog()
   }
 
-  override protected def runInternal(): Unit = session.handleSessionException {
+  override protected def runInternal(): Unit = {
     val asyncOperation: Runnable = () => {
       try {
         metadata match {
@@ -338,12 +338,6 @@ class BatchJobSubmission(
 
   override def close(): Unit = withLockRequired {
     if (!isClosedOrCanceled) {
-      try {
-        getOperationLog.foreach(_.close())
-      } catch {
-        case e: IOException => error(e.getMessage, e)
-      }
-
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
 
       // fast fail
@@ -378,6 +372,12 @@ class BatchJobSubmission(
           }
         }
       }
+    }
+
+    try {
+      getOperationLog.foreach(_.close())
+    } catch {
+      case e: IOException => error(e.getMessage, e)
     }
   }
 

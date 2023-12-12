@@ -20,7 +20,7 @@ package org.apache.kyuubi.jdbc.hive;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.hive.service.rpc.thrift.TStatus;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TStatus;
 import org.apache.kyuubi.util.reflect.DynConstructors;
 
 public class KyuubiSQLException extends SQLException {

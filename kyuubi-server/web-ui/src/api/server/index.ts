@@ -17,7 +17,7 @@
 
 import request from '@/utils/request'
 
-export function getAllServer() {
+export function getAllServer(): any {
   return request({
     url: 'api/v1/admin/server',
     method: 'get'

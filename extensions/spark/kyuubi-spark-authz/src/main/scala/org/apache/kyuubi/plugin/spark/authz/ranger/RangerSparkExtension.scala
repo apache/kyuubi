@@ -19,9 +19,10 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.plugin.spark.authz.rule.{RuleEliminateMarker, RuleEliminatePermanentViewMarker}
+import org.apache.kyuubi.plugin.spark.authz.rule.{RuleEliminateMarker, RuleEliminatePermanentViewMarker, RuleEliminateTypeOf}
 import org.apache.kyuubi.plugin.spark.authz.rule.config.AuthzConfigurationChecker
 import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{RuleApplyDataMaskingStage0, RuleApplyDataMaskingStage1}
+import org.apache.kyuubi.plugin.spark.authz.rule.expression.RuleApplyTypeOfMarker
 import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.RuleApplyPermanentViewMarker
 import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.{FilterDataSourceV2Strategy, RuleApplyRowFilter, RuleReplaceShowObjectCommands}
 
@@ -44,14 +45,16 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
 
   override def apply(v1: SparkSessionExtensions): Unit = {
     v1.injectCheckRule(AuthzConfigurationChecker)
-    v1.injectResolutionRule(_ => new RuleReplaceShowObjectCommands())
-    v1.injectResolutionRule(_ => new RuleApplyPermanentViewMarker())
+    v1.injectResolutionRule(_ => RuleReplaceShowObjectCommands)
+    v1.injectResolutionRule(_ => RuleApplyPermanentViewMarker)
+    v1.injectResolutionRule(_ => RuleApplyTypeOfMarker)
     v1.injectResolutionRule(RuleApplyRowFilter)
     v1.injectResolutionRule(RuleApplyDataMaskingStage0)
     v1.injectResolutionRule(RuleApplyDataMaskingStage1)
-    v1.injectOptimizerRule(_ => new RuleEliminateMarker())
-    v1.injectOptimizerRule(new RuleAuthorization(_))
-    v1.injectOptimizerRule(_ => new RuleEliminatePermanentViewMarker())
-    v1.injectPlannerStrategy(new FilterDataSourceV2Strategy(_))
+    v1.injectOptimizerRule(_ => RuleEliminateMarker)
+    v1.injectOptimizerRule(RuleAuthorization)
+    v1.injectOptimizerRule(RuleEliminatePermanentViewMarker)
+    v1.injectOptimizerRule(_ => RuleEliminateTypeOf)
+    v1.injectPlannerStrategy(FilterDataSourceV2Strategy)
   }
 }

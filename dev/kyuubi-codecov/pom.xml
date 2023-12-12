@@ -143,26 +143,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>report-agg</id>
-                        <goals>
-                            <goal>report-aggregate</goal>
-                        </goals>
-                        <phase>verify</phase>
-                        <configuration>
-                            <dataFileIncludes>
-                                <dataFileInclude>**/jacoco*.exec</dataFileInclude>
-                            </dataFileIncludes>
-                            <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate-all</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <configuration>
@@ -240,6 +220,32 @@
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
+        </profile>
+        <profile>
+            <id>codecov</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>report-agg</id>
+                                <goals>
+                                    <goal>report-aggregate</goal>
+                                </goals>
+                                <phase>verify</phase>
+                                <configuration>
+                                    <dataFileIncludes>
+                                        <dataFileInclude>**/jacoco*.exec</dataFileInclude>
+                                    </dataFileIncludes>
+                                    <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate-all</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

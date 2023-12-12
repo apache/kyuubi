@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 trait WithInternalChildren {
@@ -25,4 +26,8 @@ trait WithInternalChildren {
 
 trait WithInternalChild {
   def withNewChildInternal(newChild: LogicalPlan): LogicalPlan
+}
+
+trait WithInternalExpressionChild {
+  def withNewChildInternal(newChild: Expression): Expression
 }

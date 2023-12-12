@@ -22,7 +22,6 @@ import java.nio.file.Paths
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, FSDataInputStream, Path}
-import org.apache.hive.service.rpc.thrift.TExecuteStatementReq
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.Utils
@@ -32,6 +31,7 @@ import org.apache.kyuubi.engine.spark.events.{EngineEvent, SessionEvent}
 import org.apache.kyuubi.events.EventLoggerType._
 import org.apache.kyuubi.events.JsonProtocol
 import org.apache.kyuubi.operation.{HiveJDBCTestHelper, OperationHandle}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TExecuteStatementReq
 
 class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 

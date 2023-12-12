@@ -23,7 +23,6 @@ import javax.ws.rs.core.MediaType
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
@@ -33,6 +32,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{ExecuteStatement, OperationState}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 

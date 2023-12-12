@@ -28,7 +28,6 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.gateway.service.context.SessionContext
 import org.apache.flink.table.gateway.service.operation.OperationExecutor
 import org.apache.flink.types.Row
-import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.engine.flink.result.ResultSet
@@ -38,6 +37,7 @@ import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TTableSchema}
 
 abstract class FlinkOperation(session: Session) extends AbstractOperation(session) {
 

@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.mysql.constant
 
 import java.sql.Types
 
-import org.apache.hive.service.rpc.thrift.TTypeId
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId
 
 sealed abstract class MySQLDataType(val value: Int)
 

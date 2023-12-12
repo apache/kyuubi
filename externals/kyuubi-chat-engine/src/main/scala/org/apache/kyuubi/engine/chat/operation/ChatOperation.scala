@@ -16,14 +16,13 @@
  */
 package org.apache.kyuubi.engine.chat.operation
 
-import org.apache.hive.service.rpc.thrift._
-
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.chat.schema.{RowSet, SchemaHelper}
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 abstract class ChatOperation(session: Session) extends AbstractOperation(session) {
 

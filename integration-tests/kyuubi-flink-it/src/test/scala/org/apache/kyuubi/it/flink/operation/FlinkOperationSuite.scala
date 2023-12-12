@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.it.flink.operation
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.it.flink.WithKyuubiServerAndFlinkMiniCluster
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
 
 class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
   with HiveJDBCTestHelper {
@@ -98,6 +97,8 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
         req.setSessionHandle(handle)
         req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
         assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Flink")
+        req.setInfoType(TGetInfoType.CLI_ODBC_KEYWORDS)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Unimplemented")
       }
     }
   }

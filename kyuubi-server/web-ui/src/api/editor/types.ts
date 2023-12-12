@@ -15,12 +15,28 @@
  * limitations under the License.
  */
 
-const routes = [
-  {
-    path: '/lab',
-    name: 'lab',
-    component: () => import('@/views/lab/index.vue')
-  }
-]
+interface IOpenSessionRequest {
+  'kyuubi.engine.type': string
+}
 
-export default routes
+interface IRunSqlRequest {
+  statement: string
+  runAsync: boolean
+}
+
+interface IGetSqlRowsetRequest {
+  operationHandleStr: string
+  fetchorientation: 'FETCH_NEXT'
+  maxrows: number
+}
+
+interface IGetSqlMetadataRequest {
+  operationHandleStr: string
+}
+
+export {
+  IOpenSessionRequest,
+  IRunSqlRequest,
+  IGetSqlRowsetRequest,
+  IGetSqlMetadataRequest
+}

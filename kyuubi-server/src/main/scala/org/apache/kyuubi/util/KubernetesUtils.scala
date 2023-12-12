@@ -120,8 +120,8 @@ object KubernetesUtils extends Logging {
     opt2.foreach { _ => require(opt1.isEmpty, errMessage) }
   }
 
-  private def getResourceNamePrefix(appName: String, engineRefId: String): String = {
-    s"$appName-$engineRefId"
+  private def getResourceNamePrefix(appName: String, engineRefId: Option[String]): String = {
+    engineRefId.map(refId => s"$appName-$refId").getOrElse(appName)
       .trim
       .toLowerCase(Locale.ROOT)
       .replaceAll("[^a-z0-9\\-]", "-")
@@ -134,7 +134,16 @@ object KubernetesUtils extends Logging {
       appName: String,
       engineRefId: String,
       forciblyRewrite: Boolean): String = {
-    lazy val resolvedResourceName = s"kyuubi-${getResourceNamePrefix(appName, engineRefId)}-driver"
+    val resourceNamePrefix = if (appName.contains(engineRefId)) {
+      getResourceNamePrefix(appName, None)
+    } else {
+      getResourceNamePrefix(appName, Some(engineRefId))
+    }
+    val resolvedResourceName = if (resourceNamePrefix.startsWith("kyuubi-")) {
+      s"$resourceNamePrefix-driver"
+    } else {
+      s"kyuubi-$resourceNamePrefix-driver"
+    }
     if (forciblyRewrite || resolvedResourceName.length > DRIVER_POD_NAME_MAX_LENGTH) {
       s"kyuubi-$engineRefId-driver"
     } else {
@@ -146,7 +155,16 @@ object KubernetesUtils extends Logging {
       appName: String,
       engineRefId: String,
       forciblyRewrite: Boolean): String = {
-    val resolvedResourceName = s"kyuubi-${getResourceNamePrefix(appName, engineRefId)}"
+    val resourceNamePrefix = if (appName.contains(engineRefId)) {
+      getResourceNamePrefix(appName, None)
+    } else {
+      getResourceNamePrefix(appName, Some(engineRefId))
+    }
+    val resolvedResourceName = if (resourceNamePrefix.startsWith("kyuubi-")) {
+      s"$resourceNamePrefix"
+    } else {
+      s"kyuubi-$resourceNamePrefix"
+    }
     if (forciblyRewrite || resolvedResourceName.length > EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
       s"kyuubi-$engineRefId"
     } else {

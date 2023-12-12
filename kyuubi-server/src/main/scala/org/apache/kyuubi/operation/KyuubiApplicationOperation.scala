@@ -22,11 +22,10 @@ import java.util.{ArrayList => JArrayList}
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TFetchResultsResp, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TRow, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
-
 import org.apache.kyuubi.engine.ApplicationInfo
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnDesc, TFetchResultsResp, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TRow, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
 import org.apache.kyuubi.util.ThriftUtils
 
 abstract class KyuubiApplicationOperation(session: Session) extends KyuubiOperation(session) {

@@ -22,4 +22,5 @@ object ReservedKeys {
   final val KYUUBI_SESSION_USER = "kyuubi.session.user"
   final val KYUUBI_SESSION_SIGN_PUBLICKEY = "kyuubi.session.sign.publickey"
   final val KYUUBI_SESSION_USER_SIGN = "kyuubi.session.user.sign"
+  final var KYUUBI_EXPLAIN_COMMAND_EXECUTION_ID = "kyuubi.authz.command.explain.executionid"
 }

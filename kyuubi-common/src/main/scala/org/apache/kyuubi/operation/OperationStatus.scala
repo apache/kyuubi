@@ -17,10 +17,9 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.OperationState.OperationState
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProgressUpdateResp
 
 case class OperationStatus(
     state: OperationState,

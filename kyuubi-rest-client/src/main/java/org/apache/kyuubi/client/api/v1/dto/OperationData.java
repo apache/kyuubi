@@ -25,6 +25,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class OperationData {
   private String identifier;
+  private String remoteId;
   private String statement;
   private String state;
   private Long createTime;
@@ -41,6 +42,7 @@ public class OperationData {
 
   public OperationData(
       String identifier,
+      String remoteId,
       String statement,
       String state,
       Long createTime,
@@ -53,6 +55,7 @@ public class OperationData {
       String kyuubiInstance,
       Map<String, String> metrics) {
     this.identifier = identifier;
+    this.remoteId = remoteId;
     this.statement = statement;
     this.state = state;
     this.createTime = createTime;
@@ -72,6 +75,14 @@ public class OperationData {
 
   public void setIdentifier(String identifier) {
     this.identifier = identifier;
+  }
+
+  public String getRemoteId() {
+    return remoteId;
+  }
+
+  public void setRemoteId(String remoteId) {
+    this.remoteId = remoteId;
   }
 
   public String getStatement() {
