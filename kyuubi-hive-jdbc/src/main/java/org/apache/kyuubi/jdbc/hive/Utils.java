@@ -208,7 +208,7 @@ public class Utils {
       uri = uri.replace(urlPrefix, urlPrefix + authorityFromClientJdbcURL);
     }
     connParams.setSuppliedURLAuthority(authorityFromClientJdbcURL);
-    uri = uri.replace(authorityFromClientJdbcURL, dummyAuthorityString);
+    uri = uri.replaceFirst(authorityFromClientJdbcURL, dummyAuthorityString);
 
     // Now parse the connection uri with dummy authority
     URI jdbcURI = URI.create(uri.substring(URI_JDBC_PREFIX.length()));
