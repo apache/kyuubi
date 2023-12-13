@@ -25,6 +25,7 @@ import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
 import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
@@ -292,5 +293,33 @@ object SparkDatasetHelper extends Logging {
   private def sendDriverMetrics(sc: SparkContext, metrics: Map[String, SQLMetric]): Unit = {
     val executionId = sc.getLocalProperty(SQLExecution.EXECUTION_ID_KEY)
     SQLMetrics.postDriverMetricUpdates(sc, executionId, metrics.values.toSeq)
+  }
+
+  def shouldSaveResultToFs(resultMaxRows: Int, minSize: Long, result: DataFrame): Boolean = {
+    if (isCommandExec(result.queryExecution.executedPlan.nodeName)) {
+      return false
+    }
+    lazy val limit = result.queryExecution.executedPlan match {
+      case collectLimit: CollectLimitExec => collectLimit.limit
+      case _ => resultMaxRows
+    }
+    lazy val stats = if (limit > 0) {
+      limit * EstimationUtils.getSizePerRow(
+        result.queryExecution.executedPlan.output)
+    } else {
+      result.queryExecution.optimizedPlan.stats.sizeInBytes
+    }
+    lazy val colSize =
+      if (result == null || result.schema.isEmpty) {
+        0
+      } else {
+        result.schema.size
+      }
+    minSize > 0 && colSize > 0 && stats >= minSize
+  }
+
+  private def isCommandExec(nodeName: String): Boolean = {
+    nodeName == "org.apache.spark.sql.execution.command.ExecutedCommandExec" ||
+    nodeName == "org.apache.spark.sql.execution.CommandResultExec"
   }
 }
