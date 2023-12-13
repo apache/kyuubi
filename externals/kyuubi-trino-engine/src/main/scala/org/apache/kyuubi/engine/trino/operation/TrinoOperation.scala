@@ -25,8 +25,7 @@ import io.trino.client.StatementClient
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.trino.TrinoContext
-import org.apache.kyuubi.engine.trino.schema.RowSet
-import org.apache.kyuubi.engine.trino.schema.SchemaHelper
+import org.apache.kyuubi.engine.trino.schema.{SchemaHelper, TrinoTRowSetGenerator}
 import org.apache.kyuubi.engine.trino.session.TrinoSessionImpl
 import org.apache.kyuubi.operation.AbstractOperation
 import org.apache.kyuubi.operation.FetchIterator
@@ -66,7 +65,8 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
       case FETCH_FIRST => iter.fetchAbsolute(0)
     }
     val taken = iter.take(rowSetSize)
-    val resultRowSet = RowSet.toTRowSet(taken.toList, schema, getProtocolVersion)
+    val resultRowSet =
+      new TrinoTRowSetGenerator().toTRowSet(taken.toSeq, schema, getProtocolVersion)
     resultRowSet.setStartRowOffset(iter.getPosition)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(resultRowSet)
