@@ -110,6 +110,12 @@
             <artifactId>log4j-slf4j-impl</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</artifactId>
+            <version>${iceberg.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
