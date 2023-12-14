@@ -336,7 +336,7 @@ class BatchJobSubmission(
     }
   }
 
-  override def close(): Unit = withLockRequired {
+  override def close(): Unit = withLockRequired(withClosingOperationLog {
     if (!isClosedOrCanceled) {
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
 
@@ -373,13 +373,7 @@ class BatchJobSubmission(
         }
       }
     }
-
-    try {
-      getOperationLog.foreach(_.close())
-    } catch {
-      case e: IOException => error(e.getMessage, e)
-    }
-  }
+  })
 
   override def cancel(): Unit = {
     throw new IllegalStateException("Use close instead.")

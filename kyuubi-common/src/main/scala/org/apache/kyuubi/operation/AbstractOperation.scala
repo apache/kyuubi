@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.operation
 
+import java.io.IOException
 import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
@@ -246,5 +247,20 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
     val ok = new TStatus(TStatusCode.SUCCESS_STATUS)
     ok.setInfoMessages(hints.asJava)
     ok
+  }
+
+  /**
+   * Close the OperationLog, after running the block
+   */
+  def withClosingOperationLog[T](f: => T): T = {
+    try {
+      f
+    } finally {
+      try {
+        getOperationLog.foreach(_.close())
+      } catch {
+        case e: IOException => error(e.getMessage, e)
+      }
+    }
   }
 }
