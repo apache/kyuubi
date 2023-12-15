@@ -35,6 +35,8 @@ abstract class Serverable(name: String) extends CompositeService(name) {
 
   private val started = new AtomicBoolean(false)
 
+  var selfExist = false
+
   val backendService: AbstractBackendService
 
   val frontendServices: Seq[AbstractFrontendService]

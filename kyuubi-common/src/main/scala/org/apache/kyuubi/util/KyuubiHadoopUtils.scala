@@ -21,6 +21,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, Da
 import java.util.{Base64, Map => JMap}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.HashMap
 import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.conf.Configuration
@@ -29,6 +30,7 @@ import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, SecurityUtil}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
+import org.apache.hadoop.yarn.api.ApplicationConstants
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.kyuubi.Logging
@@ -97,5 +99,19 @@ object KyuubiHadoopUtils extends Logging {
         debug(s"Unsupported TokenIdentifier kind: ${tokenIdent.getKind}")
         None
     }
+  }
+
+  /**
+   * Add a path variable to the given environment map.
+   * If the map already contains this key, append the value to the existing value instead.
+   */
+  def addPathToEnvironment(env: HashMap[String, String], key: String, value: String): Unit = {
+    val newValue =
+      if (env.contains(key)) {
+        env(key) + ApplicationConstants.CLASS_PATH_SEPARATOR + value
+      } else {
+        value
+      }
+    env.put(key, newValue)
   }
 }

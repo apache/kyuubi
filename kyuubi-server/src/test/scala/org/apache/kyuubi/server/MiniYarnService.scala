@@ -33,7 +33,7 @@ import org.apache.kyuubi.service.AbstractService
 
 class MiniYarnService extends AbstractService("TestMiniYarnService") {
 
-  private val hadoopConfDir: File = Utils.createTempDir().toFile
+  private val yarnConfDir: File = Utils.createTempDir().toFile
   private var yarnConf: YarnConfiguration = {
     val yarnConfig = new YarnConfiguration()
     // Disable the disk utilization check to avoid the test hanging when people's disks are
@@ -82,7 +82,7 @@ class MiniYarnService extends AbstractService("TestMiniYarnService") {
 
   override def start(): Unit = {
     yarnCluster.start()
-    saveHadoopConf()
+    saveYarnConf(yarnConfDir)
     super.start()
   }
 
@@ -91,7 +91,7 @@ class MiniYarnService extends AbstractService("TestMiniYarnService") {
     super.stop()
   }
 
-  private def saveHadoopConf(): Unit = {
+  def saveYarnConf(yarnConfDir: File): Unit = {
     val configToWrite = new Configuration(false)
     val hostName = InetAddress.getLocalHost.getHostName
     yarnCluster.getConfig.iterator().asScala.foreach { kv =>
@@ -100,10 +100,12 @@ class MiniYarnService extends AbstractService("TestMiniYarnService") {
       configToWrite.set(key, value)
       getConf.set(key, value)
     }
-    val writer = new FileWriter(new File(hadoopConfDir, "yarn-site.xml"))
+    val writer = new FileWriter(new File(yarnConfDir, "yarn-site.xml"))
     configToWrite.writeXml(writer)
     writer.close()
   }
 
-  def getHadoopConfDir: String = hadoopConfDir.getAbsolutePath
+  def getYarnConfDir: String = yarnConfDir.getAbsolutePath
+
+  def getYarnConf: YarnConfiguration = yarnConf
 }
