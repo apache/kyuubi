@@ -233,8 +233,6 @@ class OperationLog(path: Path) {
   }
 
   def close(): Unit = synchronized {
-    if (!initialized) return
-
     closeExtraReaders()
 
     trySafely {
