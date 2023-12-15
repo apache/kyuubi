@@ -248,7 +248,7 @@ case class MaxScanStrategy(session: SparkSession)
           .builder("isIcebergRelation")
           .impl(Class.forName("org.apache.spark.sql.catalyst.utils.PlanUtils"))
           .buildChecked.invoke[Boolean](relation.relation)
-        if (isIcebergRelation) {
+        if (!isIcebergRelation) {
           return
         }
         val icebergTable = relation.relation.table
