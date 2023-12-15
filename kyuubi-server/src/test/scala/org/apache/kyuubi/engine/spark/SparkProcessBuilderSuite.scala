@@ -388,7 +388,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   test("extract spark core scala version") {
     val builder = new SparkProcessBuilder("kentyao", KyuubiConf(false))
     Seq(
-      "spark-core_2.13-3.4.1.jar",
+      "spark-core_2.13-3.4.2.jar",
       "spark-core_2.13-3.5.0-abc-20230921.jar",
       "spark-core_2.13-3.5.0-xyz-1.2.3.jar",
       "spark-core_2.13-3.5.0.1.jar",
@@ -409,14 +409,14 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       case "2.12" => Seq(
           "spark-3.2.4-bin-hadoop3.2",
           "spark-3.2.4-bin-hadoop2.7",
-          "spark-3.4.1-bin-hadoop3")
+          "spark-3.4.2-bin-hadoop3")
           .foreach { sparkHome =>
             assertMatches(sparkHome, SPARK_HOME_REGEX_SCALA_212)
             assertNotMatches(sparkHome, SPARK_HOME_REGEX_SCALA_213)
           }
       case "2.13" => Seq(
           "spark-3.2.4-bin-hadoop3.2-scala2.13",
-          "spark-3.4.1-bin-hadoop3-scala2.13",
+          "spark-3.4.2-bin-hadoop3-scala2.13",
           "spark-3.5.0-bin-hadoop3-scala2.13")
           .foreach { sparkHome =>
             assertMatches(sparkHome, SPARK_HOME_REGEX_SCALA_213)
