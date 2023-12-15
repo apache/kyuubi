@@ -18,7 +18,7 @@
 package org.apache.kyuubi.sql.watchdog
 
 import org.apache.hadoop.fs.Path
-import org.apache.iceberg.spark.source.IcebergSparkPlanHelper.{numPartitions}
+import org.apache.iceberg.spark.source.IcebergSparkPlanHelper.numPartitions
 import org.apache.spark.sql.{PruneFileSourcePartitionHelper, SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.SQLConfHelper
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
@@ -28,7 +28,7 @@ import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
 import org.apache.spark.sql.types.StructType
 import org.apache.kyuubi.sql.KyuubiSQLConf
-import org.apache.spark.sql.catalyst.utils.PlanUtils.isIcebergRelation
+import org.apache.kyuubi.util.reflect.DynMethods
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
 
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
@@ -243,11 +243,17 @@ case class MaxScanStrategy(session: SparkSession)
           }
         }
       case ScanOperation(_, _, _, relation: DataSourceV2ScanRelation)
-        if isIcebergRelation(relation.relation) =>
-        val icebergTable = relation.relation.
-          table.asInstanceOf[org.apache.iceberg.spark.source.SparkTable]
+        =>
+        val isIcebergRelation = DynMethods
+          .builder("isIcebergRelation")
+          .impl(Class.forName("org.apache.spark.sql.catalyst.utils.PlanUtils"))
+          .buildChecked.invoke[Boolean](relation.relation)
+        if (isIcebergRelation) {
+          return
+        }
+        val icebergTable = relation.relation.table
         if (icebergTable.partitioning().nonEmpty) {
-          val partitionColumnNames = icebergTable.table().spec().fields().map(_.name()).seq
+          val partitionColumnNames = icebergTable.partitioning().map(_.describe())
           val stats = relation.computeStats()
           lazy val scanFileSize = stats.sizeInBytes
           lazy val scanPartitions = numPartitions(relation.scan)

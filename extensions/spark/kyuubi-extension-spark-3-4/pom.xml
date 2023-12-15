@@ -67,8 +67,6 @@
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -109,12 +107,6 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</artifactId>
-            <version>${iceberg.version}</version>
         </dependency>
     </dependencies>
 
