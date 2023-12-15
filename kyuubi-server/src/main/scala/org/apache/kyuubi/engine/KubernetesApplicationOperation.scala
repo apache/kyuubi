@@ -153,7 +153,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       .build()
     expireCleanUpTriggerCacheExecutor = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
       "pod-cleanup-trigger-thread")
-    expireCleanUpTriggerCacheExecutor.scheduleWithFixedDelay(
+    ThreadUtils.scheduleTolerableRunnableWithFixedDelay(
+      expireCleanUpTriggerCacheExecutor,
       () => {
         try {
           cleanupTerminatedAppInfoTrigger.asMap().asScala.foreach {
@@ -165,9 +166,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           case NonFatal(e) => error("Failed to evict clean up terminated app cache", e)
         }
       },
-      5,
       cleanupDriverPodCheckInterval,
-      TimeUnit.MINUTES)
+      cleanupDriverPodCheckInterval,
+      TimeUnit.MILLISECONDS)
   }
 
   override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
