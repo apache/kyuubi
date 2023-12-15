@@ -24,7 +24,7 @@ import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.execution.SQLExecution
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{BinaryType, StructField, StructType}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -33,7 +33,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKE
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, SPARK_SCHEDULER_POOL_KEY}
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
-import org.apache.kyuubi.engine.spark.schema.{RowSet, SchemaHelper}
+import org.apache.kyuubi.engine.spark.schema.{SchemaHelper, SparkArrowTRowSetGenerator, SparkTRowSetGenerator}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState, OperationStatus}
@@ -42,6 +42,7 @@ import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TRowSet}
+import org.apache.kyuubi.util.ThriftUtils
 
 abstract class SparkOperation(session: Session)
   extends AbstractOperation(session) {
@@ -243,13 +244,16 @@ abstract class SparkOperation(session: Session)
           if (isArrowBasedOperation) {
             if (iter.hasNext) {
               val taken = iter.next().asInstanceOf[Array[Byte]]
-              RowSet.toTRowSet(taken, getProtocolVersion)
+              new SparkArrowTRowSetGenerator().toTRowSet(
+                Seq(taken),
+                new StructType().add(StructField(null, BinaryType)),
+                getProtocolVersion)
             } else {
-              RowSet.emptyTRowSet()
+              ThriftUtils.newEmptyRowSet
             }
           } else {
             val taken = iter.take(rowSetSize)
-            RowSet.toTRowSet(
+            new SparkTRowSetGenerator().toTRowSet(
               taken.toSeq.asInstanceOf[Seq[Row]],
               resultSchema,
               getProtocolVersion)

@@ -25,7 +25,7 @@ import org.apache.flink.table.data.StringData
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.engine.flink.schema.RowSet
+import org.apache.kyuubi.engine.flink.schema.FlinkTRowSetGenerator
 
 class ResultSetSuite extends KyuubiFunSuite {
 
@@ -47,9 +47,9 @@ class ResultSetSuite extends KyuubiFunSuite {
       .build
 
     val timeZone = ZoneId.of("America/Los_Angeles")
-    assert(RowSet.toRowBaseSet(rowsNew, resultSetNew, timeZone)
-      === RowSet.toRowBaseSet(rowsOld, resultSetOld, timeZone))
-    assert(RowSet.toColumnBasedSet(rowsNew, resultSetNew, timeZone)
-      === RowSet.toColumnBasedSet(rowsOld, resultSetOld, timeZone))
+    assert(new FlinkTRowSetGenerator(timeZone).toRowBasedSet(rowsNew, resultSetNew)
+      === new FlinkTRowSetGenerator(timeZone).toRowBasedSet(rowsOld, resultSetOld))
+    assert(new FlinkTRowSetGenerator(timeZone).toColumnBasedSet(rowsNew, resultSetNew)
+      === new FlinkTRowSetGenerator(timeZone).toColumnBasedSet(rowsOld, resultSetOld))
   }
 }

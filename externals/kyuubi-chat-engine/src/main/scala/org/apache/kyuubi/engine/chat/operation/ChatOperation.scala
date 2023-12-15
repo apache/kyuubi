@@ -18,7 +18,8 @@ package org.apache.kyuubi.engine.chat.operation
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.chat.schema.{RowSet, SchemaHelper}
+import org.apache.kyuubi.engine.chat.schema.{ChatTRowSetGenerator, SchemaHelper}
+import org.apache.kyuubi.engine.chat.schema.ChatTRowSetGenerator.COL_STRING_TYPE
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.session.Session
@@ -45,8 +46,11 @@ abstract class ChatOperation(session: Session) extends AbstractOperation(session
         iter.fetchAbsolute(0)
     }
 
-    val taken = iter.take(rowSetSize)
-    val resultRowSet = RowSet.toTRowSet(taken.toSeq, 1, getProtocolVersion)
+    val taken = iter.take(rowSetSize).map(_.toSeq)
+    val resultRowSet = new ChatTRowSetGenerator().toTRowSet(
+      taken.toSeq,
+      Seq(COL_STRING_TYPE),
+      getProtocolVersion)
     resultRowSet.setStartRowOffset(iter.getPosition)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(resultRowSet)
