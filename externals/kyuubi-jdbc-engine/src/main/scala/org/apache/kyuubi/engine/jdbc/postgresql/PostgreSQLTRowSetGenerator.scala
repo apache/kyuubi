@@ -14,22 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.doris
+package org.apache.kyuubi.engine.jdbc.postgresql
 
-import org.apache.kyuubi.engine.jdbc.schema.RowSetHelper
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.engine.jdbc.schema.DefaultJdbcTRowSetGenerator
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnValue}
 
-class DorisRowSetHelper extends RowSetHelper {
+class PostgreSQLTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
 
-  override def toTinyIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn =
+  override def toSmallIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
     toIntegerTColumn(rows, ordinal)
 
-  override def toSmallIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn =
-    toIntegerTColumn(rows, ordinal)
-
-  override def toTinyIntTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
-    toIntegerTColumnValue(row, ordinal)
-
-  override def toSmallIntTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
+  override protected def toSmallIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
     toIntegerTColumnValue(row, ordinal)
 }
