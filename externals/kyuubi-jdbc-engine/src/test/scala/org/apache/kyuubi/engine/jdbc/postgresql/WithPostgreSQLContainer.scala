@@ -16,34 +16,18 @@
  */
 package org.apache.kyuubi.engine.jdbc.postgresql
 
-import com.dimafeng.testcontainers.{GenericContainer, SingleContainer}
-import org.testcontainers.containers.wait.strategy.Wait
+import com.dimafeng.testcontainers.PostgreSQLContainer
+import org.testcontainers.utility.DockerImageName
 
 import org.apache.kyuubi.engine.jdbc.WithJdbcServerContainer
 
 trait WithPostgreSQLContainer extends WithJdbcServerContainer {
 
-  private val POSTGRESQL_PORT = 5432
+  private val postgreSQLDockerImage = "postgres:16.1"
 
-  private val postgreSQLDockerImage = "postgres"
-
-  override val container: SingleContainer[_] = GenericContainer(
-    dockerImage = postgreSQLDockerImage,
-    exposedPorts = Seq(POSTGRESQL_PORT),
-    env = Map[String, String](
-      "POSTGRES_PASSWORD" -> "postgres"),
-    waitStrategy = Wait.forListeningPort)
-
-  protected def queryUrl: String = {
-    val queryServerHost: String = container.host
-    val queryServerPort: Int = container.mappedPort(POSTGRESQL_PORT)
-    val url = s"$queryServerHost:$queryServerPort"
-    url
-  }
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    container.close()
-  }
-
+  override val containerDef: PostgreSQLContainer.Def = PostgreSQLContainer.Def(
+    dockerImageName = DockerImageName.parse(postgreSQLDockerImage),
+    databaseName = "postgres",
+    username = "kyuubi",
+    password = "postgres")
 }
