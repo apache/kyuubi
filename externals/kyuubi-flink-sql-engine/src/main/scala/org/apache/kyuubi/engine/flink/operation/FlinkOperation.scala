@@ -31,7 +31,7 @@ import org.apache.flink.types.Row
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.engine.flink.result.ResultSet
-import org.apache.kyuubi.engine.flink.schema.RowSet
+import org.apache.kyuubi.engine.flink.schema.{FlinkTRowSetGenerator, RowSet}
 import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
@@ -133,10 +133,9 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
       case Some(tz) => ZoneId.of(tz)
       case None => ZoneId.systemDefault()
     }
-    val resultRowSet = RowSet.resultSetToTRowSet(
+    val resultRowSet = new FlinkTRowSetGenerator(zoneId).toTRowSet(
       batch.toList,
       resultSet,
-      zoneId,
       getProtocolVersion)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(resultRowSet)

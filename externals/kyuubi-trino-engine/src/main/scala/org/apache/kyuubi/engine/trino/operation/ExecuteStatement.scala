@@ -22,7 +22,7 @@ import java.util.concurrent.RejectedExecutionException
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.trino.TrinoStatement
 import org.apache.kyuubi.engine.trino.event.TrinoOperationEvent
-import org.apache.kyuubi.engine.trino.schema.RowSet
+import org.apache.kyuubi.engine.trino.schema.TrinoTRowSetGenerator
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
@@ -96,7 +96,8 @@ class ExecuteStatement(
         throw KyuubiSQLException(s"Fetch orientation[$order] is not supported in $mode mode")
     }
     val taken = iter.take(rowSetSize)
-    val resultRowSet = RowSet.toTRowSet(taken.toList, schema, getProtocolVersion)
+    val resultRowSet = new TrinoTRowSetGenerator()
+      .toTRowSet(taken.toList, schema, getProtocolVersion)
     resultRowSet.setStartRowOffset(iter.getPosition)
     val fetchResultsResp = new TFetchResultsResp(OK_STATUS)
     fetchResultsResp.setResults(resultRowSet)

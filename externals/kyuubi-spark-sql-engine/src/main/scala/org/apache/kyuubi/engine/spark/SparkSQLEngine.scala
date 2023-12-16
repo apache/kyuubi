@@ -26,6 +26,7 @@ import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.hadoop.fs.Path
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
@@ -37,6 +38,7 @@ import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_SUBMIT_TIME_KEY, KYUUBI_ENGINE_URL}
 import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.engineId
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
@@ -58,6 +60,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
   @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
   @volatile private var stopEngineExec: Option[ThreadPoolExecutor] = None
+  @volatile private var engineSavePath: Option[String] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
@@ -87,6 +90,15 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
       maxInitTimeout > 0) {
       startFastFailChecker(maxInitTimeout)
     }
+
+    if (backendService.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE)) {
+      val savePath = backendService.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)
+      engineSavePath = Some(s"$savePath/$engineId")
+      val path = new Path(engineSavePath.get)
+      val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
+      fs.mkdirs(path)
+      fs.deleteOnExit(path)
+    }
   }
 
   override def stop(): Unit = if (shutdown.compareAndSet(false, true)) {
@@ -102,6 +114,10 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         exec,
         Duration(60, TimeUnit.SECONDS))
     })
+    engineSavePath.foreach { p =>
+      val path = new Path(p)
+      path.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(path, true)
+    }
   }
 
   def gracefulStop(): Unit = if (gracefulStopDeregistered.compareAndSet(false, true)) {

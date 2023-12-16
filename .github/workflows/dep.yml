@@ -26,6 +26,8 @@ on:
       # when pom or dependency workflow changes
       - '**/pom.xml'
       - '.github/workflows/dep.yml'
+      - 'build/dependency.sh'
+      - 'dev/dependencyList'
 
 concurrency:
   group: dep-${{ github.head_ref || github.run_id }}
