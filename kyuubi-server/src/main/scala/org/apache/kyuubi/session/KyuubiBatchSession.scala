@@ -207,7 +207,6 @@ class KyuubiBatchSession(
 
   override def close(): Unit = {
     super.close()
-    batchJobSubmissionOp.close()
     waitMetadataRequestsRetryCompletion()
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)
