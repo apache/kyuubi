@@ -61,6 +61,20 @@ class KyuubiOperationHiveEnginePerUserSuite extends WithKyuubiServer with HiveEn
     }
   }
 
+  test("[KYUUBI #5865] Hive engine CLI_ODBC_KEYWORDS") {
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_ODBC_KEYWORDS)
+        val value = client.GetInfo(req).getInfoValue.getStringValue
+        assert(value.contains("DATABASE") || value === "Unimplemented")
+        // excluded keywords
+        assert(!value.contains("ADD"))
+      }
+    }
+  }
+
   test("kyuubi defined function - system_user, session_user") {
     withJdbcStatement("hive_engine_test") { statement =>
       val rs = statement.executeQuery("SELECT system_user(), session_user()")
