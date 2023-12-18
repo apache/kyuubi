@@ -99,12 +99,12 @@ class KyuubiSessionImpl(
       sessionManager.getConf)
   }
 
-  private var _client: KyuubiSyncThriftClient = _
+  @volatile private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client
 
-  private var _engineSessionHandle: SessionHandle = _
+  @volatile private var _engineSessionHandle: SessionHandle = _
 
-  private var openSessionError: Option[Throwable] = None
+  @volatile private var openSessionError: Option[Throwable] = None
 
   override def open(): Unit = handleSessionException {
     traceMetricsOnOpen()
@@ -290,7 +290,7 @@ class KyuubiSessionImpl(
   private val engineAliveTimeout = sessionConf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
   private val aliveProbeEnabled = sessionConf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
   private val engineAliveMaxFailCount = sessionConf.get(KyuubiConf.ENGINE_ALIVE_MAX_FAILURES)
-  private var engineAliveFailCount = 0
+  @volatile private var engineAliveFailCount = 0
 
   def checkEngineConnectionAlive(): Boolean = {
     try {
