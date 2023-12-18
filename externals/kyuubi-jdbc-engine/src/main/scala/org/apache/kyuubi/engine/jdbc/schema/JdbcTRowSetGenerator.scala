@@ -14,16 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.postgresql
+package org.apache.kyuubi.engine.jdbc.schema
 
-import org.apache.kyuubi.engine.jdbc.schema.RowSetHelper
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.engine.schema.AbstractTRowSetGenerator
 
-class PostgreSQLRowSetHelper extends RowSetHelper {
+trait JdbcTRowSetGenerator extends AbstractTRowSetGenerator[Seq[Column], Seq[_], Int] {
+  override protected def getColumnSizeFromSchemaType(schema: Seq[Column]): Int = schema.length
 
-  override def toSmallIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn =
-    toIntegerTColumn(rows, ordinal)
+  override protected def getColumnType(schema: Seq[Column], ordinal: Int): Int =
+    schema(ordinal).sqlType
 
-  override def toSmallIntTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
-    toIntegerTColumnValue(row, ordinal)
+  override protected def isColumnNullAt(row: Seq[_], ordinal: Int): Boolean = row(ordinal) == null
+
+  override protected def getColumnAs[T](row: Seq[_], ordinal: Int): T = row(ordinal).asInstanceOf[T]
 }

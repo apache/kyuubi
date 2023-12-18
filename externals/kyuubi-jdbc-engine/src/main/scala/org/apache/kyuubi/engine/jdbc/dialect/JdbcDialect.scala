@@ -22,7 +22,7 @@ import java.util
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_SHORT_NAME}
-import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
+import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
 import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.session.Session
@@ -78,7 +78,7 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
     throw KyuubiSQLException.featureNotSupported()
   }
 
-  def getRowSetHelper(): RowSetHelper
+  def getTRowSetGenerator(): JdbcTRowSetGenerator
 
   def getSchemaHelper(): SchemaHelper
 }

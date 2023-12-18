@@ -121,7 +121,7 @@ trait AbstractTRowSetGenerator[SchemaT, RowT, ColumnT] {
         if (!isNull) byteValue.setValue(getColumnAs[java.lang.Byte](row, ordinal))
         TColumnValue.byteVal(byteValue)
 
-      case TINYINT_TYPE =>
+      case SMALLINT_TYPE | TINYINT_TYPE =>
         val tI16Value = new TI16Value
         if (!isNull) tI16Value.setValue(getColumnAs[java.lang.Short](row, ordinal))
         TColumnValue.i16Val(tI16Value)
@@ -167,11 +167,7 @@ trait AbstractTRowSetGenerator[SchemaT, RowT, ColumnT] {
         val values = getOrSetAsNull[java.lang.Byte](rows, ordinal, nulls, 0.toByte)
         TColumn.byteVal(new TByteColumn(values, nulls))
 
-      case SMALLINT_TYPE =>
-        val values = getOrSetAsNull[java.lang.Short](rows, ordinal, nulls, 0.toShort)
-        TColumn.i16Val(new TI16Column(values, nulls))
-
-      case TINYINT_TYPE =>
+      case SMALLINT_TYPE | TINYINT_TYPE =>
         val values = getOrSetAsNull[java.lang.Short](rows, ordinal, nulls, 0.toShort)
         TColumn.i16Val(new TI16Column(values, nulls))
 
@@ -193,6 +189,10 @@ trait AbstractTRowSetGenerator[SchemaT, RowT, ColumnT] {
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
 
       case STRING_TYPE =>
+        val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
+        TColumn.stringVal(new TStringColumn(values, nulls))
+
+      case CHAR_TYPE =>
         val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
         TColumn.stringVal(new TStringColumn(values, nulls))
 

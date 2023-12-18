@@ -18,41 +18,41 @@ package org.apache.kyuubi.engine.jdbc.mysql
 
 import java.sql.Types
 
-import org.apache.kyuubi.engine.jdbc.schema.RowSetHelper
+import org.apache.kyuubi.engine.jdbc.schema.DefaultJdbcTRowSetGenerator
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnValue}
 
-class MySQLRowSetHelper extends RowSetHelper {
+class MySQLTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
 
-  override def toTinyIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn =
+  override def toTinyIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
     toIntegerTColumn(rows, ordinal)
 
-  override def toSmallIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn =
+  override def toSmallIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
     toIntegerTColumn(rows, ordinal)
 
-  override def toTinyIntTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
+  override def toTinyIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
     toIntegerTColumnValue(row, ordinal)
 
-  override def toSmallIntTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
+  override def toSmallIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
     toIntegerTColumnValue(row, ordinal)
 
-  override protected def toIntegerTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn = {
+  override def toIntegerTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn = {
     val colHead = if (rows.isEmpty) None else rows.head(ordinal)
     colHead match {
-      case v: Integer => super.toIntegerTColumn(rows, ordinal)
-      case v: java.lang.Long => super.toBigIntTColumn(rows, ordinal)
+      case _: Integer => super.toIntegerTColumn(rows, ordinal)
+      case _: java.lang.Long => super.toBigIntTColumn(rows, ordinal)
       case _ => super.toDefaultTColumn(rows, ordinal, Types.INTEGER)
     }
   }
 
-  override protected def toIntegerTColumnValue(row: List[Any], ordinal: Int): TColumnValue = {
+  override protected def toIntegerTColumnValue(row: Seq[_], ordinal: Int): TColumnValue = {
     row(ordinal) match {
-      case v: Integer => super.toIntegerTColumnValue(row, ordinal)
-      case v: java.lang.Long => super.toBigIntTColumnValue(row, ordinal)
+      case _: Integer => super.toIntegerTColumnValue(row, ordinal)
+      case _: java.lang.Long => super.toBigIntTColumnValue(row, ordinal)
       case _ => super.toDefaultTColumnValue(row, ordinal, Types.INTEGER)
     }
   }
 
-  override protected def toBigIntTColumn(rows: Seq[Seq[Any]], ordinal: Int): TColumn = {
+  override protected def toBigIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn = {
     val colHead = if (rows.isEmpty) None else rows.head(ordinal)
     colHead match {
       case v: java.lang.Long => super.toBigIntTColumn(rows, ordinal)
@@ -60,7 +60,7 @@ class MySQLRowSetHelper extends RowSetHelper {
     }
   }
 
-  override protected def toBigIntTColumnValue(row: List[Any], ordinal: Int): TColumnValue =
+  override protected def toBigIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
     row(ordinal) match {
       case v: java.lang.Long => super.toBigIntTColumnValue(row, ordinal)
       case _ => super.toDefaultTColumnValue(row, ordinal, Types.BIGINT)
