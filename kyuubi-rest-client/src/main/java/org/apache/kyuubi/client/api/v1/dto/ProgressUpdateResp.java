@@ -22,7 +22,7 @@ import java.util.Objects;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-public class OperationProgressUpdateResp {
+public class ProgressUpdateResp {
   private List<String> headerNames;
   private List<List<String>> rows;
   private double progressedPercentage;
@@ -30,9 +30,9 @@ public class OperationProgressUpdateResp {
   private String footerSummary;
   private long startTime;
 
-  public OperationProgressUpdateResp() {}
+  public ProgressUpdateResp() {}
 
-  public OperationProgressUpdateResp(
+  public ProgressUpdateResp(
       List<String> headerNames,
       List<List<String>> rows,
       double progressedPercentage,
@@ -99,7 +99,7 @@ public class OperationProgressUpdateResp {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    OperationProgressUpdateResp that = (OperationProgressUpdateResp) o;
+    ProgressUpdateResp that = (ProgressUpdateResp) o;
     return Double.compare(getProgressedPercentage(), that.getProgressedPercentage()) == 0
         && getStartTime() == that.getStartTime()
         && Objects.equals(getHeaderNames(), that.getHeaderNames())
