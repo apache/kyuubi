@@ -14,16 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.schema
 
-import org.apache.kyuubi.engine.result.TRowSetGenerator
+package org.apache.kyuubi.engine.result
 
-trait JdbcTRowSetGenerator extends TRowSetGenerator[Seq[Column], Seq[_], Int] {
-  override def getColumnSizeFromSchemaType(schema: Seq[Column]): Int = schema.length
+trait TRowSetColumnGetter[RowT] {
+  protected def isColumnNullAt(row: RowT, ordinal: Int): Boolean
 
-  override def getColumnType(schema: Seq[Column], ordinal: Int): Int = schema(ordinal).sqlType
-
-  override protected def isColumnNullAt(row: Seq[_], ordinal: Int): Boolean = row(ordinal) == null
-
-  override protected def getColumnAs[T](row: Seq[_], ordinal: Int): T = row(ordinal).asInstanceOf[T]
+  protected def getColumnAs[T](row: RowT, ordinal: Int): T
 }

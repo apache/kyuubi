@@ -14,16 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.schema
+package org.apache.kyuubi.engine.jdbc.phoenix
 
-import org.apache.kyuubi.engine.result.TRowSetGenerator
+import org.apache.kyuubi.engine.jdbc.schema.DefaultJdbcTRowSetGenerator
 
-trait JdbcTRowSetGenerator extends TRowSetGenerator[Seq[Column], Seq[_], Int] {
-  override def getColumnSizeFromSchemaType(schema: Seq[Column]): Int = schema.length
-
-  override def getColumnType(schema: Seq[Column], ordinal: Int): Int = schema(ordinal).sqlType
-
-  override protected def isColumnNullAt(row: Seq[_], ordinal: Int): Boolean = row(ordinal) == null
-
-  override protected def getColumnAs[T](row: Seq[_], ordinal: Int): T = row(ordinal).asInstanceOf[T]
-}
+class PhoenixTRowSetGenerator extends DefaultJdbcTRowSetGenerator {}

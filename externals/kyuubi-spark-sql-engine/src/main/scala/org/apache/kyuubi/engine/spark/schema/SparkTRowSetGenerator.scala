@@ -19,16 +19,13 @@ package org.apache.kyuubi.engine.spark.schema
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.HiveResult
-import org.apache.spark.sql.execution.HiveResult.TimeFormatters
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.engine.schema.AbstractTRowSetGenerator
+import org.apache.kyuubi.engine.result.TRowSetGenerator
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId._
-import org.apache.kyuubi.util.RowSetUtils.bitSetToBuffer
 
 class SparkTRowSetGenerator
-  extends AbstractTRowSetGenerator[StructType, Row, DataType] {
+  extends TRowSetGenerator[StructType, Row, DataType] {
 
   // reused time formatters in single RowSet generation, see KYUUBI-5811
   private val tf = HiveResult.getTimeFormatters
@@ -42,51 +39,43 @@ class SparkTRowSetGenerator
   override def getColumnAs[T](row: Row, ordinal: Int): T = row.getAs[T](ordinal)
 
   override def toTColumn(rows: Seq[Row], ordinal: Int, typ: DataType): TColumn = {
-    val timeFormatters: TimeFormatters = tf
-    val nulls = new java.util.BitSet()
     typ match {
-      case BooleanType => toTTypeColumn(BOOLEAN_TYPE, rows, ordinal)
-      case ByteType => toTTypeColumn(BINARY_TYPE, rows, ordinal)
-      case ShortType => toTTypeColumn(TINYINT_TYPE, rows, ordinal)
-      case IntegerType => toTTypeColumn(INT_TYPE, rows, ordinal)
-      case LongType => toTTypeColumn(BIGINT_TYPE, rows, ordinal)
-      case FloatType => toTTypeColumn(FLOAT_TYPE, rows, ordinal)
-      case DoubleType => toTTypeColumn(DOUBLE_TYPE, rows, ordinal)
-      case StringType => toTTypeColumn(STRING_TYPE, rows, ordinal)
-      case BinaryType => toTTypeColumn(ARRAY_TYPE, rows, ordinal)
+      case BooleanType => asBooleanTColumn(rows, ordinal)
+      case ByteType => asByteTColumn(rows, ordinal)
+      case ShortType => asShortTColumn(rows, ordinal)
+      case IntegerType => asIntegerTColumn(rows, ordinal)
+      case LongType => asLongTColumn(rows, ordinal)
+      case FloatType => asFloatTColumn(rows, ordinal)
+      case DoubleType => asDoubleTColumn(rows, ordinal)
+      case StringType => asStringTColumn(rows, ordinal)
+      case BinaryType => asByteArrayTColumn(rows, ordinal)
       case _ =>
-        var i = 0
-        val rowSize = rows.length
-        val values = new java.util.ArrayList[String](rowSize)
-        while (i < rowSize) {
-          val row = rows(i)
-          nulls.set(i, row.isNullAt(ordinal))
-          values.add(RowSet.toHiveString(row.get(ordinal) -> typ, timeFormatters = timeFormatters))
-          i += 1
-        }
-        TColumn.stringVal(new TStringColumn(values, nulls))
+        val timeFormatters = tf
+        asStringTColumn(
+          rows,
+          ordinal,
+          "NULL",
+          (row, ordinal) =>
+            RowSet.toHiveString(
+              getColumnAs[Any](row, ordinal) -> typ,
+              timeFormatters = timeFormatters))
     }
   }
 
-  override def toTColumnValue(ordinal: Int, row: Row, types: StructType): TColumnValue = {
-    val timeFormatters: TimeFormatters = tf
+  override def toTColumnValue(row: Row, ordinal: Int, types: StructType): TColumnValue = {
     getColumnType(types, ordinal) match {
-      case BooleanType => toTTypeColumnVal(BOOLEAN_TYPE, row, ordinal)
-      case ByteType => toTTypeColumnVal(BINARY_TYPE, row, ordinal)
-      case ShortType => toTTypeColumnVal(TINYINT_TYPE, row, ordinal)
-      case IntegerType => toTTypeColumnVal(INT_TYPE, row, ordinal)
-      case LongType => toTTypeColumnVal(BIGINT_TYPE, row, ordinal)
-      case FloatType => toTTypeColumnVal(FLOAT_TYPE, row, ordinal)
-      case DoubleType => toTTypeColumnVal(DOUBLE_TYPE, row, ordinal)
-      case StringType => toTTypeColumnVal(STRING_TYPE, row, ordinal)
-      case _ =>
-        val tStrValue = new TStringValue
-        if (!row.isNullAt(ordinal)) {
-          tStrValue.setValue(RowSet.toHiveString(
-            row.get(ordinal) -> types(ordinal).dataType,
-            timeFormatters = timeFormatters))
-        }
-        TColumnValue.stringVal(tStrValue)
+      case BooleanType => asBooleanTColumnValue(row, ordinal)
+      case ByteType => asByteTColumnValue(row, ordinal)
+      case ShortType => asShortTColumnValue(row, ordinal)
+      case IntegerType => asIntegerTColumnValue(row, ordinal)
+      case LongType => asLongTColumnValue(row, ordinal)
+      case FloatType => asFloatTColumnValue(row, ordinal)
+      case DoubleType => asDoubleTColumnValue(row, ordinal)
+      case StringType => asStringTColumnValue(row, ordinal)
+      case _ => asStringTColumnValue(
+          row,
+          ordinal,
+          rawValue => RowSet.toHiveString(rawValue -> types(ordinal).dataType, timeFormatters = tf))
     }
   }
 

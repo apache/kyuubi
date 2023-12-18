@@ -21,12 +21,11 @@ import java.nio.ByteBuffer
 
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.engine.schema.AbstractTRowSetGenerator
+import org.apache.kyuubi.engine.result.TRowSetGenerator
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
-import org.apache.kyuubi.util.RowSetUtils.bitSetToBuffer
 
 class SparkArrowTRowSetGenerator
-  extends AbstractTRowSetGenerator[StructType, Array[Byte], DataType] {
+  extends TRowSetGenerator[StructType, Array[Byte], DataType] {
   override def toColumnBasedSet(rows: Seq[Array[Byte]], schema: StructType): TRowSet = {
     require(schema.length == 1, "ArrowRowSetGenerator accepts only one single byte array")
     require(schema.head.dataType == BinaryType, "ArrowRowSetGenerator accepts only BinaryType")
@@ -43,8 +42,7 @@ class SparkArrowTRowSetGenerator
       case BinaryType =>
         val values = new java.util.ArrayList[ByteBuffer](1)
         values.add(ByteBuffer.wrap(rows.head))
-        val nulls = new java.util.BitSet()
-        TColumn.binaryVal(new TBinaryColumn(values, nulls))
+        TColumn.binaryVal(new TBinaryColumn(values, ByteBuffer.wrap(Array[Byte]())))
       case _ => throw new IllegalArgumentException(
           s"unsupported datatype $typ, ArrowRowSetGenerator accepts only BinaryType")
     }
@@ -70,7 +68,7 @@ class SparkArrowTRowSetGenerator
     throw new UnsupportedOperationException
   }
 
-  override def toTColumnValue(ordinal: Int, row: Array[Byte], types: StructType): TColumnValue = {
+  override def toTColumnValue(row: Array[Byte], ordinal: Int, types: StructType): TColumnValue = {
     throw new UnsupportedOperationException
   }
 
