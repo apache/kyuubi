@@ -31,7 +31,7 @@
 
     <properties>
         <gluten.version>1.1.0-SNAPSHOT</gluten.version>
-        <spark.version>3.4.1</spark.version>
+        <spark.version>3.4.2</spark.version>
         <spark.binary.version>3.4</spark.binary.version>
     </properties>
 
@@ -93,7 +93,7 @@
             <id>gluten-spark-3.4</id>
             <properties>
                 <maven.plugin.scalatest.include.tags>org.apache.kyuubi.tags.GlutenTest</maven.plugin.scalatest.include.tags>
-                <spark.version>3.4.1</spark.version>
+                <spark.version>3.4.2</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
             </properties>
             <dependencies>

@@ -200,7 +200,7 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.4.1</spark.version>
+        <spark.version>3.4.2</spark.version>
         <spark.binary.version>3.4</spark.binary.version>
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
@@ -2283,7 +2283,7 @@
             <properties>
                 <delta.artifact>delta-core</delta.artifact>
                 <delta.version>2.4.0</delta.version>
-                <spark.version>3.4.1</spark.version>
+                <spark.version>3.4.2</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
