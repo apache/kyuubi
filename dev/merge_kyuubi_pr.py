@@ -299,6 +299,7 @@ def main():
     while input("\n%s (y/n): " % pick_prompt).lower() == "y":
         merged_refs = merged_refs + [cherry_pick(pr_num, merge_hash, latest_branch)]
 
+
 if __name__ == "__main__":
     import doctest
     (failure_count, test_count) = doctest.testmod()
