@@ -205,6 +205,23 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(logRowSet.getRowCount == 1)
   }
 
+  test("support to return operation progress for REST api") {
+    val sessionHandle = fe.be.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "admin",
+      "123456",
+      "localhost",
+      Map(KyuubiConf.SESSION_PROGRESS_ENABLE.key -> "true"))
+    val op = fe.be.executeStatement(sessionHandle, "show tables", Map.empty, runAsync = true, 3000)
+    eventually(Timeout(5.seconds)) {
+      val response = webTarget.path(s"api/v1/operations/${op.identifier}/event")
+        .request(MediaType.APPLICATION_JSON_TYPE).get()
+      assert(response.getStatus === 200)
+      val operationEvent = response.readEntity(classOf[KyuubiOperationEvent])
+      assert(operationEvent.progress != null)
+    }
+  }
+
   def getOpHandleStr(statement: String = "show tables"): String = {
     val sessionHandle = fe.be.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
