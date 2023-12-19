@@ -27,9 +27,9 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
+import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{ExecuteStatement, OperationState}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
@@ -217,8 +217,8 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       val response = webTarget.path(s"api/v1/operations/${op.identifier}/event")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
       assert(response.getStatus === 200)
-      val operationEvent = response.readEntity(classOf[KyuubiOperationEvent])
-      assert(operationEvent.progress != null)
+      val operationEvent = response.readEntity(classOf[dto.KyuubiOperationEvent])
+      assert(operationEvent.getProgress != null)
     }
   }
 
@@ -245,8 +245,8 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       val response = webTarget.path(s"api/v1/operations/$opHandleStr/event")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
       assert(response.getStatus === 200)
-      val operationEvent = response.readEntity(classOf[KyuubiOperationEvent])
-      assert(operationEvent.state === state.name())
+      val operationEvent = response.readEntity(classOf[dto.KyuubiOperationEvent])
+      assert(operationEvent.getState === state.name())
     }
   }
 }
