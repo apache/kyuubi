@@ -60,7 +60,8 @@ object ApiUtils extends Logging {
       opEvent.sessionUser,
       opEvent.sessionType,
       operation.getSession.asInstanceOf[KyuubiSession].connectionUrl,
-      operation.metrics.asJava)
+      operation.metrics.asJava,
+      opEvent.progress)
   }
 
   def serverData(nodeInfo: ServiceNodeInfo): ServerData = {

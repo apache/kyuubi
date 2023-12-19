@@ -18,6 +18,7 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.client.api.v1.dto.OperationProgress
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.session.KyuubiSession
 
@@ -60,7 +61,8 @@ case class KyuubiOperationEvent private (
     sessionUser: String,
     sessionType: String,
     kyuubiInstance: String,
-    metrics: Map[String, String]) extends KyuubiEvent {
+    metrics: Map[String, String],
+    progress: OperationProgress) extends KyuubiEvent {
 
   // operation events are partitioned by the date when the corresponding operations are
   // created.
@@ -76,6 +78,15 @@ object KyuubiOperationEvent {
   def apply(operation: KyuubiOperation): KyuubiOperationEvent = {
     val session = operation.getSession.asInstanceOf[KyuubiSession]
     val status = operation.getStatus
+    val operationProgress = Option(operation.getOperationJobProgress).map { jobProgress =>
+      new OperationProgress(
+        jobProgress.getHeaderNames,
+        jobProgress.getRows,
+        jobProgress.getProgressedPercentage,
+        jobProgress.getStatus.toString,
+        jobProgress.getFooterSummary,
+        jobProgress.getStartTime)
+    }.orNull
     new KyuubiOperationEvent(
       operation.statementId,
       Option(operation.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
@@ -91,6 +102,7 @@ object KyuubiOperationEvent {
       session.user,
       session.sessionType.toString,
       session.connectionUrl,
-      operation.metrics)
+      operation.metrics,
+      operationProgress)
   }
 }

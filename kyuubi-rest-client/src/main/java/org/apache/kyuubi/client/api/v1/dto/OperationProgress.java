@@ -17,12 +17,13 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-public class ProgressUpdateResp {
+public class OperationProgress {
   private List<String> headerNames;
   private List<List<String>> rows;
   private double progressedPercentage;
@@ -30,9 +31,9 @@ public class ProgressUpdateResp {
   private String footerSummary;
   private long startTime;
 
-  public ProgressUpdateResp() {}
+  public OperationProgress() {}
 
-  public ProgressUpdateResp(
+  public OperationProgress(
       List<String> headerNames,
       List<List<String>> rows,
       double progressedPercentage,
@@ -48,6 +49,9 @@ public class ProgressUpdateResp {
   }
 
   public List<String> getHeaderNames() {
+    if (headerNames == null) {
+      return Collections.emptyList();
+    }
     return headerNames;
   }
 
@@ -56,6 +60,9 @@ public class ProgressUpdateResp {
   }
 
   public List<List<String>> getRows() {
+    if (rows == null) {
+      return Collections.emptyList();
+    }
     return rows;
   }
 
@@ -99,7 +106,7 @@ public class ProgressUpdateResp {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    ProgressUpdateResp that = (ProgressUpdateResp) o;
+    OperationProgress that = (OperationProgress) o;
     return Double.compare(getProgressedPercentage(), that.getProgressedPercentage()) == 0
         && getStartTime() == that.getStartTime()
         && Objects.equals(getHeaderNames(), that.getHeaderNames())
