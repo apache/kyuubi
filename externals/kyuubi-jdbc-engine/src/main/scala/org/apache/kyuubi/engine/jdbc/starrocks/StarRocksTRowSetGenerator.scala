@@ -14,22 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.mysql
+package org.apache.kyuubi.engine.jdbc.starrocks
 
-import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
+import org.apache.kyuubi.engine.jdbc.schema.DefaultJdbcTRowSetGenerator
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnValue}
 
-class Mysql8ConnectionProvider extends JdbcConnectionProvider {
+class StarRocksTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
 
-  override val name: String = classOf[Mysql8ConnectionProvider].getSimpleName
+  override def toTinyIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
+    toIntegerTColumn(rows, ordinal)
 
-  override val driverClass: String = Mysql8ConnectionProvider.driverClass
+  override def toSmallIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
+    toIntegerTColumn(rows, ordinal)
 
-  override def canHandle(providerClass: String): Boolean = {
-    driverClass.equalsIgnoreCase(providerClass)
-  }
+  override def toTinyIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
+    toIntegerTColumnValue(row, ordinal)
 
-}
-
-object Mysql8ConnectionProvider {
-  val driverClass: String = "com.mysql.cj.jdbc.Driver"
+  override def toSmallIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
+    toIntegerTColumnValue(row, ordinal)
 }

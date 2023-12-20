@@ -14,22 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.mysql
+package org.apache.kyuubi.engine.jdbc.starrocks
 
-import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
+import org.apache.kyuubi.engine.jdbc.schema.SchemaHelper
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
-class Mysql8ConnectionProvider extends JdbcConnectionProvider {
+class StarRocksSchemaHelper extends SchemaHelper {
 
-  override val name: String = classOf[Mysql8ConnectionProvider].getSimpleName
+  override def tinyIntToTTypeId: TTypeId = TTypeId.INT_TYPE
 
-  override val driverClass: String = Mysql8ConnectionProvider.driverClass
-
-  override def canHandle(providerClass: String): Boolean = {
-    driverClass.equalsIgnoreCase(providerClass)
-  }
-
-}
-
-object Mysql8ConnectionProvider {
-  val driverClass: String = "com.mysql.cj.jdbc.Driver"
+  override def smallIntToTTypeId: TTypeId = TTypeId.INT_TYPE
 }

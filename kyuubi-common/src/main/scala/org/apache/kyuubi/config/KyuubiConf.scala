@@ -2905,6 +2905,8 @@ object KyuubiConf {
           "org.apache.kyuubi.engine.jdbc.phoenix.PhoenixConnectionProvider"
         case "PostgreSQL" | "postgresql" | "PostgreSQLConnectionProvider" =>
           "org.apache.kyuubi.engine.jdbc.postgresql.PostgreSQLConnectionProvider"
+        case "StarRocks" | "starrocks" | "StarRocksConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.starrocks.StarRocksConnectionProvider"
         case other => other
       }
       .createOptional

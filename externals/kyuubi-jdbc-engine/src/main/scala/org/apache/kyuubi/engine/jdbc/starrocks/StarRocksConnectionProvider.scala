@@ -14,22 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.mysql
+package org.apache.kyuubi.engine.jdbc.starrocks
 
-import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
+import org.apache.kyuubi.engine.jdbc.mysql.Mysql8ConnectionProvider
 
-class Mysql8ConnectionProvider extends JdbcConnectionProvider {
+class StarRocksConnectionProvider extends Mysql8ConnectionProvider {
 
-  override val name: String = classOf[Mysql8ConnectionProvider].getSimpleName
-
-  override val driverClass: String = Mysql8ConnectionProvider.driverClass
-
-  override def canHandle(providerClass: String): Boolean = {
-    driverClass.equalsIgnoreCase(providerClass)
-  }
-
-}
-
-object Mysql8ConnectionProvider {
-  val driverClass: String = "com.mysql.cj.jdbc.Driver"
+  override val name: String = classOf[StarRocksConnectionProvider].getSimpleName
 }
