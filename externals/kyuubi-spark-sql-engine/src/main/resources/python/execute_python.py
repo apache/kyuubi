@@ -349,7 +349,7 @@ def magic_table(name):
         value = global_dict[name]
     except KeyError:
         exc_type, exc_value, tb = sys.exc_info()
-        return execute_reply_error(exc_type, exc_value, None)
+        raise ExecutionError(exc_type, exc_value, None)
 
     if not isinstance(value, (list, tuple)):
         value = [value]
@@ -391,7 +391,7 @@ def magic_table(name):
                     else:
                         exc_type = Exception
                         exc_value = "table rows have different types"
-                        return execute_reply_error(exc_type, exc_value, None)
+                        raise ExecutionError(exc_type, exc_value, None)
 
             cols.append(col)
 
@@ -410,7 +410,7 @@ def magic_json(name):
         value = global_dict[name]
     except KeyError:
         exc_type, exc_value, tb = sys.exc_info()
-        return execute_reply_error(exc_type, exc_value, None)
+        raise ExecutionError(exc_type, exc_value, None)
 
     return {
         "application/json": value,
@@ -430,7 +430,7 @@ def magic_matplot(name):
 
     except:
         exc_type, exc_value, tb = sys.exc_info()
-        return execute_reply_error(exc_type, exc_value, None)
+        raise ExecutionError(exc_type, exc_value, None)
 
     return {
         "image/png": encode,
