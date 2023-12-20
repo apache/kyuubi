@@ -17,22 +17,22 @@
 
 package org.apache.kyuubi.sql.watchdog
 
+import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
+
 import org.apache.hadoop.fs.Path
-import org.apache.iceberg.spark.source.IcebergSparkPlanHelper.numPartitions
 import org.apache.spark.sql.{PruneFileSourcePartitionHelper, SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.SQLConfHelper
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.planning.ScanOperation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.connector.read.SupportsReportPartitioning
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
 import org.apache.spark.sql.types.StructType
+
 import org.apache.kyuubi.sql.KyuubiSQLConf
 import org.apache.kyuubi.util.reflect.DynMethods
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
-
-import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
-
 
 /**
  * Add MaxScanStrategy to avoid scan excessive partitions or files
@@ -242,8 +242,7 @@ case class MaxScanStrategy(session: SparkSession)
               logicalRelation.catalogTable)
           }
         }
-      case ScanOperation(_, _, _, relation: DataSourceV2ScanRelation)
-        =>
+      case ScanOperation(_, _, _, relation: DataSourceV2ScanRelation) =>
         val isIcebergRelation = DynMethods
           .builder("isIcebergRelation")
           .impl(Class.forName("org.apache.spark.sql.catalyst.utils.PlanUtils"))
@@ -256,7 +255,9 @@ case class MaxScanStrategy(session: SparkSession)
           val partitionColumnNames = icebergTable.partitioning().map(_.describe())
           val stats = relation.computeStats()
           lazy val scanFileSize = stats.sizeInBytes
-          lazy val scanPartitions = numPartitions(relation.scan)
+          lazy val scanPartitions = relation.scan.asInstanceOf[SupportsReportPartitioning]
+            .outputPartitioning()
+            .numPartitions()
           if (maxFileSizeOpt.exists(_ < scanFileSize)) {
             throw new MaxFileSizeExceedException(
               s"""
