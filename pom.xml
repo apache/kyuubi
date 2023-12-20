@@ -126,7 +126,7 @@
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
         <bouncycastle.version>1.67</bouncycastle.version>
-        <codahale.metrics.version>4.2.8</codahale.metrics.version>
+        <codahale.metrics.version>4.2.23</codahale.metrics.version>
         <commons-cli.version>1.5.0</commons-cli.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
