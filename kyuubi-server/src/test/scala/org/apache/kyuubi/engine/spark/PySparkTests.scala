@@ -132,6 +132,33 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
     })
   }
 
+  test("Support python magic nodes for python notebook") {
+    checkPythonRuntimeAndVersion()
+    withSessionConf()(Map(KyuubiConf.ENGINE_SPARK_PYTHON_MAGIC_ENABLED.key -> "true"))() {
+      withMultipleConnectionJdbcStatement()({ statement =>
+        statement.executeQuery("SET kyuubi.operation.language=PYTHON")
+
+        statement.executeQuery("x = [[1, 'a'], [3, 'b']]")
+
+        val resultSet1 = statement.executeQuery("%json x")
+        assert(resultSet1.next())
+        val output1 = resultSet1.getString("output")
+        assert(output1 == "{\"application/json\":[[1,\"a\"],[3,\"b\"]]}")
+
+        val resultSet2 = statement.executeQuery("%table x")
+        assert(resultSet2.next())
+        val output2 = resultSet2.getString("output")
+        assert(output2 == "{\"application/vnd.livy.table.v1+json\":{" +
+          "\"headers\":[" +
+          "{\"name\":\"0\",\"type\":\"INT_TYPE\"},{\"name\":\"1\",\"type\":\"STRING_TYPE\"}" +
+          "]," +
+          "\"data\":[" +
+          "[1,\"a\"],[3,\"b\"]" +
+          "]}}")
+      })
+    }
+  }
+
   private def runPySparkTest(
       pyCode: String,
       output: String): Unit = {
