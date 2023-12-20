@@ -73,7 +73,8 @@ TOP_FRAME_REGEX = re.compile(r'\s*File "<stdin>".*in <module>')
 
 global_dict = {}
 
-MAGIC_ENABLED = os.environ.get("MAGIC_ENABLED") == 'true'
+MAGIC_ENABLED = os.environ.get("MAGIC_ENABLED") == "true"
+
 
 class NormalNode(object):
     def __init__(self, code):
@@ -104,7 +105,7 @@ class UnknownMagic(Exception):
 
 class MagicNode(object):
     def __init__(self, line):
-        parts = line[1:].split(' ', 1)
+        parts = line[1:].split(" ", 1)
         if len(parts) == 1:
             self.magic, self.rest = parts[0], ()
         else:
@@ -112,7 +113,7 @@ class MagicNode(object):
 
     def execute(self):
         if not self.magic:
-            raise UnknownMagic('magic command not specified')
+            raise UnknownMagic("magic command not specified")
 
         try:
             handler = magic_router[self.magic]
@@ -173,7 +174,7 @@ def parse_code_into_nodes(code):
 
         # Convert the chunks into AST nodes. Let exceptions propagate.
         for chunk in chunks:
-            if MAGIC_ENABLED and chunk.startswith('%'):
+            if MAGIC_ENABLED and chunk.startswith("%"):
                 nodes.append(MagicNode(chunk))
             else:
                 nodes.append(NormalNode(chunk))
@@ -298,11 +299,11 @@ def magic_table_convert_seq(items):
         if last_item_type is None:
             last_item_type = item_type
         elif last_item_type != item_type:
-            raise ValueError('value has inconsistent types')
+            raise ValueError("value has inconsistent types")
 
         converted_items.append(item)
 
-    return 'ARRAY_TYPE', converted_items
+    return "ARRAY_TYPE", converted_items
 
 
 def magic_table_convert_map(m):
@@ -317,27 +318,27 @@ def magic_table_convert_map(m):
         if last_key_type is None:
             last_key_type = key_type
         elif last_value_type != value_type:
-            raise ValueError('value has inconsistent types')
+            raise ValueError("value has inconsistent types")
 
         if last_value_type is None:
             last_value_type = value_type
         elif last_value_type != value_type:
-            raise ValueError('value has inconsistent types')
+            raise ValueError("value has inconsistent types")
 
         converted_items[key] = value
 
-    return 'MAP_TYPE', converted_items
+    return "MAP_TYPE", converted_items
 
 
 magic_table_types = {
-    type(None): lambda x: ('NULL_TYPE', x),
-    bool: lambda x: ('BOOLEAN_TYPE', x),
-    int: lambda x: ('INT_TYPE', x),
-    float: lambda x: ('DOUBLE_TYPE', x),
-    str: lambda x: ('STRING_TYPE', str(x)),
-    datetime.date: lambda x: ('DATE_TYPE', str(x)),
-    datetime.datetime: lambda x: ('TIMESTAMP_TYPE', str(x)),
-    decimal.Decimal: lambda x: ('DECIMAL_TYPE', str(x)),
+    type(None): lambda x: ("NULL_TYPE", x),
+    bool: lambda x: ("BOOLEAN_TYPE", x),
+    int: lambda x: ("INT_TYPE", x),
+    float: lambda x: ("DOUBLE_TYPE", x),
+    str: lambda x: ("STRING_TYPE", str(x)),
+    datetime.date: lambda x: ("DATE_TYPE", str(x)),
+    datetime.datetime: lambda x: ("TIMESTAMP_TYPE", str(x)),
+    decimal.Decimal: lambda x: ("DECIMAL_TYPE", str(x)),
     tuple: magic_table_convert_seq,
     list: magic_table_convert_seq,
     dict: magic_table_convert_map,
@@ -361,7 +362,7 @@ def magic_table(name):
         cols = []
         data.append(cols)
 
-        if 'Row' == row.__class__.__name__:
+        if "Row" == row.__class__.__name__:
             row = row.asDict()
 
         if not isinstance(row, (list, tuple, dict)):
@@ -379,18 +380,18 @@ def magic_table(name):
                 header = headers[name]
             except KeyError:
                 header = {
-                    'name': str(name),
-                    'type': col_type,
+                    "name": str(name),
+                    "type": col_type,
                 }
                 headers[name] = header
             else:
                 # Reject columns that have a different type. (allow none value)
-                if col_type != "NULL_TYPE" and header['type'] != col_type:
-                    if header['type'] == "NULL_TYPE":
-                        header['type'] = col_type
+                if col_type != "NULL_TYPE" and header["type"] != col_type:
+                    if header["type"] == "NULL_TYPE":
+                        header["type"] = col_type
                     else:
                         exc_type = Exception
-                        exc_value = 'table rows have different types'
+                        exc_value = "table rows have different types"
                         return execute_reply_error(exc_type, exc_value, None)
 
             cols.append(col)
@@ -398,9 +399,9 @@ def magic_table(name):
     headers = [v for k, v in sorted(headers.items())]
 
     return {
-        'application/vnd.livy.table.v1+json': {
-            'headers': headers,
-            'data': data,
+        "application/vnd.livy.table.v1+json": {
+            "headers": headers,
+            "data": data,
         }
     }
 
@@ -413,7 +414,7 @@ def magic_json(name):
         return execute_reply_error(exc_type, exc_value, None)
 
     return {
-        'application/json': value,
+        "application/json": value,
     }
 
 
@@ -422,10 +423,10 @@ def magic_matplot(name):
         value = global_dict[name]
         fig = value.gcf()
         imgdata = io.BytesIO()
-        fig.savefig(imgdata, format='png')
+        fig.savefig(imgdata, format="png")
         imgdata.seek(0)
         encode = base64.b64encode(imgdata.getvalue())
-        if sys.version >= '3':
+        if sys.version >= "3":
             encode = encode.decode()
 
     except:
@@ -433,15 +434,15 @@ def magic_matplot(name):
         return execute_reply_error(exc_type, exc_value, None)
 
     return {
-        'image/png': encode,
-        'text/plain': "",
+        "image/png": encode,
+        "text/plain": "",
     }
 
 
 magic_router = {
-    'table': magic_table,
-    'json': magic_json,
-    'matplot': magic_matplot,
+    "table": magic_table,
+    "json": magic_json,
+    "matplot": magic_matplot,
 }
 
 
