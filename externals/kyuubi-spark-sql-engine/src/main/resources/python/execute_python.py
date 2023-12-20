@@ -145,14 +145,13 @@ def parse_code_into_nodes(code):
 
 
 def execute_reply(status, content):
-    msg = {
+    return {
         "msg_type": "execute_reply",
         "content": dict(
             content,
             status=status,
         ),
     }
-    return json.dumps(msg)
 
 
 def execute_reply_ok(data):
@@ -278,6 +277,22 @@ def main():
                 break
 
             result = execute_request(content)
+
+            try:
+                result = json.dumps(result)
+            except ValueError:
+                result = json.dumps(
+                    {
+                        "msg_type": "inspect_reply",
+                        "content": {
+                            "status": "error",
+                            "ename": "ValueError",
+                            "evalue": "cannot json-ify %s" % response,
+                            "traceback": [],
+                        },
+                    }
+                )
+
             print(result, file=sys_stdout)
             sys_stdout.flush()
             clearOutputs()
