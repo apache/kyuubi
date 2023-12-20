@@ -156,19 +156,20 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
           "[1,\"a\"],[3,\"b\"]" +
           "]}}")
 
-        val resultSet3 = statement.executeQuery("%json invalid_value")
-        assert(resultSet3.next())
-        val output3 = resultSet3.getString("output")
-        assert(output3 == "{" +
-          "\"msg_type\":\"execute_reply\"," +
-          "\"content\":{" +
-          "\"ename\":\"KeyError\"," +
-          "\"evalue\":\"'invalid_value'\"," +
-          "\"traceback\":[\"KeyError: 'invalid_value'\\n\"]," +
-          "\"status\":\"error\"" +
-          "}}")
+        Seq("table", "json", "matplot").foreach { magic =>
+          val e = intercept[KyuubiSQLException] {
+            statement.executeQuery(s"%$magic invalid_value")
+          }.getMessage
+          assert(e.contains("KeyError: 'invalid_value'"))
+        }
 
-        val e = intercept[KyuubiSQLException] {
+        statement.executeQuery("y = [[1, 2], [3, 'b']]")
+        var e = intercept[KyuubiSQLException] {
+          statement.executeQuery("%table y")
+        }.getMessage
+        assert(e.contains("table rows have different types"))
+
+        e = intercept[KyuubiSQLException] {
           statement.executeQuery("%magic_unknown")
         }.getMessage
         assert(e.contains("unknown magic command 'magic_unknown'"))
