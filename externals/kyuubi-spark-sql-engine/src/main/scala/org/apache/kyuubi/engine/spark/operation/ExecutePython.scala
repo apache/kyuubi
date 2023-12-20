@@ -417,9 +417,15 @@ case class PythonResponseContent(
     traceback: Seq[String],
     status: String) {
   def getOutput(): String = {
-    Option(data)
-      .map(_.getOrElse("text/plain", ""))
-      .getOrElse("")
+    if (data == null) return ""
+
+    // If data does not contains field other than `test/plain`, keep backward compatibility,
+    // otherwise, return all the data.
+    if (data.filterNot(_._1 == "text/plain").isEmpty) {
+      data.getOrElse("text/plain", "")
+    } else {
+      ExecutePython.toJson(data)
+    }
   }
   def getEname(): String = {
     Option(ename).getOrElse("")

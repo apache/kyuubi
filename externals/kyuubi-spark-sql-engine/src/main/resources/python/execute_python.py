@@ -435,7 +435,6 @@ def magic_matplot(name):
 
     return {
         "image/png": encode,
-        "text/plain": "",
     }
 
 
