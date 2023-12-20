@@ -411,7 +411,7 @@ object PythonResponse {
 }
 
 case class PythonResponseContent(
-    data: Map[String, String],
+    data: Map[String, Object],
     ename: String,
     evalue: String,
     traceback: Seq[String],
@@ -422,7 +422,10 @@ case class PythonResponseContent(
     // If data does not contains field other than `test/plain`, keep backward compatibility,
     // otherwise, return all the data.
     if (data.filterNot(_._1 == "text/plain").isEmpty) {
-      data.getOrElse("text/plain", "")
+      data.get("text/plain").map {
+        case str: String => str
+        case obj => ExecutePython.toJson(obj)
+      }.getOrElse("")
     } else {
       ExecutePython.toJson(data)
     }
