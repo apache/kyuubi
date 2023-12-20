@@ -16,6 +16,8 @@
 #
 
 import ast
+import datetime
+import decimal
 import io
 import json
 
@@ -23,6 +25,7 @@ import os
 import re
 import sys
 import traceback
+import base64
 from glob import glob
 
 if sys.version_info[0] < 3:
@@ -94,6 +97,30 @@ class NormalNode(object):
             raise ExecutionError(sys.exc_info())
 
 
+class UnknownMagic(Exception):
+    pass
+
+
+class MagicNode(object):
+    def __init__(self, line):
+        parts = line[1:].split(' ', 1)
+        if len(parts) == 1:
+            self.magic, self.rest = parts[0], ()
+        else:
+            self.magic, self.rest = parts[0], (parts[1],)
+
+    def execute(self):
+        if not self.magic:
+            raise UnknownMagic('magic command not specified')
+
+        try:
+            handler = magic_router[self.magic]
+        except KeyError:
+            raise UnknownMagic("unknown magic command '%s'" % self.magic)
+
+        return handler(*self.rest)
+
+
 class ExecutionError(Exception):
     def __init__(self, exc_info):
         self.exc_info = exc_info
@@ -118,6 +145,16 @@ def parse_code_into_nodes(code):
     try:
         nodes.append(NormalNode(code))
     except SyntaxError:
+        # It's possible we hit a syntax error because of a magic command. Split the code groups
+        # of 'normal code', and code that starts with a '%'. possibly magic code
+        # lines, and see if any of the lines
+        # Remove lines until we find a node that parses, then check if the next line is a magic
+        # line
+        # .
+
+        # Split the code into chunks of normal code, and possibly magic code, which starts with
+        # a '%'.
+
         normal = []
         chunks = []
         for i, line in enumerate(code.rstrip().split("\n")):
@@ -135,11 +172,10 @@ def parse_code_into_nodes(code):
 
         # Convert the chunks into AST nodes. Let exceptions propagate.
         for chunk in chunks:
-            # TODO: look back here when Jupyter and sparkmagic are supported
-            # if chunk.startswith('%'):
-            #     nodes.append(MagicNode(chunk))
-
-            nodes.append(NormalNode(chunk))
+            if chunk.startswith('%'):
+                nodes.append(MagicNode(chunk))
+            else:
+                nodes.append(NormalNode(chunk))
 
     return nodes
 
@@ -211,6 +247,9 @@ def execute_request(content):
     try:
         for node in nodes:
             result = node.execute()
+    except UnknownMagic:
+        exc_type, exc_value, tb = sys.exc_info()
+        return execute_reply_error(exc_type, exc_value, None)
     except ExecutionError as e:
         return execute_reply_error(*e.exc_info)
 
@@ -237,6 +276,172 @@ def execute_request(content):
         result["text/plain"] = output.rstrip()
 
     return execute_reply_ok(result)
+
+
+def magic_table_convert(value):
+    try:
+        converter = magic_table_types[type(value)]
+    except KeyError:
+        converter = magic_table_types[str]
+
+    return converter(value)
+
+
+def magic_table_convert_seq(items):
+    last_item_type = None
+    converted_items = []
+
+    for item in items:
+        item_type, item = magic_table_convert(item)
+
+        if last_item_type is None:
+            last_item_type = item_type
+        elif last_item_type != item_type:
+            raise ValueError('value has inconsistent types')
+
+        converted_items.append(item)
+
+    return 'ARRAY_TYPE', converted_items
+
+
+def magic_table_convert_map(m):
+    last_key_type = None
+    last_value_type = None
+    converted_items = {}
+
+    for key, value in m:
+        key_type, key = magic_table_convert(key)
+        value_type, value = magic_table_convert(value)
+
+        if last_key_type is None:
+            last_key_type = key_type
+        elif last_value_type != value_type:
+            raise ValueError('value has inconsistent types')
+
+        if last_value_type is None:
+            last_value_type = value_type
+        elif last_value_type != value_type:
+            raise ValueError('value has inconsistent types')
+
+        converted_items[key] = value
+
+    return 'MAP_TYPE', converted_items
+
+
+magic_table_types = {
+    type(None): lambda x: ('NULL_TYPE', x),
+    bool: lambda x: ('BOOLEAN_TYPE', x),
+    int: lambda x: ('INT_TYPE', x),
+    float: lambda x: ('DOUBLE_TYPE', x),
+    str: lambda x: ('STRING_TYPE', str(x)),
+    datetime.date: lambda x: ('DATE_TYPE', str(x)),
+    datetime.datetime: lambda x: ('TIMESTAMP_TYPE', str(x)),
+    decimal.Decimal: lambda x: ('DECIMAL_TYPE', str(x)),
+    tuple: magic_table_convert_seq,
+    list: magic_table_convert_seq,
+    dict: magic_table_convert_map,
+}
+
+
+def magic_table(name):
+    try:
+        value = global_dict[name]
+    except KeyError:
+        exc_type, exc_value, tb = sys.exc_info()
+        return execute_reply_error(exc_type, exc_value, None)
+
+    if not isinstance(value, (list, tuple)):
+        value = [value]
+
+    headers = {}
+    data = []
+
+    for row in value:
+        cols = []
+        data.append(cols)
+
+        if 'Row' == row.__class__.__name__:
+            row = row.asDict()
+
+        if not isinstance(row, (list, tuple, dict)):
+            row = [row]
+
+        if isinstance(row, (list, tuple)):
+            iterator = enumerate(row)
+        else:
+            iterator = sorted(row.items())
+
+        for name, col in iterator:
+            col_type, col = magic_table_convert(col)
+
+            try:
+                header = headers[name]
+            except KeyError:
+                header = {
+                    'name': str(name),
+                    'type': col_type,
+                }
+                headers[name] = header
+            else:
+                # Reject columns that have a different type. (allow none value)
+                if col_type != "NULL_TYPE" and header['type'] != col_type:
+                    if header['type'] == "NULL_TYPE":
+                        header['type'] = col_type
+                    else:
+                        exc_type = Exception
+                        exc_value = 'table rows have different types'
+                        return execute_reply_error(exc_type, exc_value, None)
+
+            cols.append(col)
+
+    headers = [v for k, v in sorted(headers.items())]
+
+    return {
+        'application/vnd.livy.table.v1+json': {
+            'headers': headers,
+            'data': data,
+        }
+    }
+
+
+def magic_json(name):
+    try:
+        value = global_dict[name]
+    except KeyError:
+        exc_type, exc_value, tb = sys.exc_info()
+        return execute_reply_error(exc_type, exc_value, None)
+
+    return {
+        'application/json': value,
+    }
+
+
+def magic_matplot(name):
+    try:
+        value = global_dict[name]
+        fig = value.gcf()
+        imgdata = io.BytesIO()
+        fig.savefig(imgdata, format='png')
+        imgdata.seek(0)
+        encode = base64.b64encode(imgdata.getvalue())
+        if sys.version >= '3':
+            encode = encode.decode()
+
+    except:
+        exc_type, exc_value, tb = sys.exc_info()
+        return execute_reply_error(exc_type, exc_value, None)
+
+    return {
+        'image/png': encode,
+        'text/plain': "",
+    }
+
+
+magic_router = {
+    'table': magic_table,
+    'json': magic_json,
+    'matplot': magic_matplot,
+}
 
 
 # get or create spark session
