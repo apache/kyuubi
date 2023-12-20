@@ -73,6 +73,7 @@ TOP_FRAME_REGEX = re.compile(r'\s*File "<stdin>".*in <module>')
 
 global_dict = {}
 
+MAGIC_ENABLED = os.environ.get("MAGIC_ENABLED") == 'true'
 
 class NormalNode(object):
     def __init__(self, code):
@@ -172,7 +173,7 @@ def parse_code_into_nodes(code):
 
         # Convert the chunks into AST nodes. Let exceptions propagate.
         for chunk in chunks:
-            if chunk.startswith('%'):
+            if MAGIC_ENABLED and chunk.startswith('%'):
                 nodes.append(MagicNode(chunk))
             else:
                 nodes.append(NormalNode(chunk))
