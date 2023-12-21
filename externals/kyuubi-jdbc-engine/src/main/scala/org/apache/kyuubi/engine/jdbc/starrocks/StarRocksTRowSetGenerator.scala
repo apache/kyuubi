@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.mysql
+package org.apache.kyuubi.engine.jdbc.starrocks
 
-class MySQLConnectionProvider extends MySQL8ConnectionProvider {
+import org.apache.kyuubi.engine.jdbc.mysql.MySQLTRowSetGenerator
 
-  override val name: String = classOf[MySQLConnectionProvider].getSimpleName
-}
+class StarRocksTRowSetGenerator extends MySQLTRowSetGenerator {}

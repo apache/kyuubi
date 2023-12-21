@@ -14,9 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.mysql
+package org.apache.kyuubi.engine.jdbc.starrocks
 
-class MySQLConnectionProvider extends MySQL8ConnectionProvider {
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
+import org.apache.kyuubi.engine.jdbc.mysql.MySQL8ConnectionProvider
 
-  override val name: String = classOf[MySQLConnectionProvider].getSimpleName
+trait WithStarRocksEngine extends WithJdbcEngine with WithStarRocksContainer {
+
+  private val user = "root"
+  private val password = ""
+
+  override def withKyuubiConf: Map[String, String] = Map(
+    ENGINE_SHARE_LEVEL.key -> "SERVER",
+    ENGINE_JDBC_CONNECTION_URL.key -> feJdbcUrl,
+    ENGINE_JDBC_CONNECTION_USER.key -> user,
+    ENGINE_JDBC_CONNECTION_PASSWORD.key -> password,
+    ENGINE_TYPE.key -> "jdbc",
+    ENGINE_JDBC_SHORT_NAME.key -> "starrocks",
+    ENGINE_JDBC_DRIVER_CLASS.key -> MySQL8ConnectionProvider.driverClass)
 }

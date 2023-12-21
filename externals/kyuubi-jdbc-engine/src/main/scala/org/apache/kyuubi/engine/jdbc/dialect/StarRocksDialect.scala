@@ -14,9 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.mysql
+package org.apache.kyuubi.engine.jdbc.dialect
 
-class MySQLConnectionProvider extends MySQL8ConnectionProvider {
+import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
+import org.apache.kyuubi.engine.jdbc.starrocks.{StarRocksSchemaHelper, StarRocksTRowSetGenerator}
 
-  override val name: String = classOf[MySQLConnectionProvider].getSimpleName
+class StarRocksDialect extends MySQLDialect {
+  override def name(): String = "starrocks"
+
+  override def getTRowSetGenerator(): JdbcTRowSetGenerator = new StarRocksTRowSetGenerator
+
+  override def getSchemaHelper(): SchemaHelper = new StarRocksSchemaHelper
+
 }

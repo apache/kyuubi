@@ -16,9 +16,9 @@
  */
 package org.apache.kyuubi.engine.jdbc.doris
 
-import org.apache.kyuubi.engine.jdbc.mysql.Mysql8ConnectionProvider
+import org.apache.kyuubi.engine.jdbc.mysql.MySQL8ConnectionProvider
 
-class DorisConnectionProvider extends Mysql8ConnectionProvider {
+class DorisConnectionProvider extends MySQL8ConnectionProvider {
 
   override val name: String = classOf[DorisConnectionProvider].getSimpleName
 }

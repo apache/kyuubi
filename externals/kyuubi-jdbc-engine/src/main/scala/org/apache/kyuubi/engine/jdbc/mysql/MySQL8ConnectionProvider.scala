@@ -16,7 +16,20 @@
  */
 package org.apache.kyuubi.engine.jdbc.mysql
 
-class MySQLConnectionProvider extends MySQL8ConnectionProvider {
+import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
 
-  override val name: String = classOf[MySQLConnectionProvider].getSimpleName
+class MySQL8ConnectionProvider extends JdbcConnectionProvider {
+
+  override val name: String = classOf[MySQL8ConnectionProvider].getSimpleName
+
+  override val driverClass: String = MySQL8ConnectionProvider.driverClass
+
+  override def canHandle(providerClass: String): Boolean = {
+    driverClass.equalsIgnoreCase(providerClass)
+  }
+
+}
+
+object MySQL8ConnectionProvider {
+  val driverClass: String = "com.mysql.cj.jdbc.Driver"
 }

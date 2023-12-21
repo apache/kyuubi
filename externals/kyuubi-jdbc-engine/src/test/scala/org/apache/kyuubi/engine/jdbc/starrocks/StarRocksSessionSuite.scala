@@ -14,9 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.mysql
+package org.apache.kyuubi.engine.jdbc.starrocks
 
-class MySQLConnectionProvider extends MySQL8ConnectionProvider {
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-  override val name: String = classOf[MySQLConnectionProvider].getSimpleName
+class StarRocksSessionSuite extends WithStarRocksEngine with HiveJDBCTestHelper {
+
+  test("starrocks - test session") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery(
+        "select '1' as id")
+      val metadata = resultSet.getMetaData
+      for (i <- 1 to metadata.getColumnCount) {
+        assert(metadata.getColumnName(i) == "id")
+      }
+      while (resultSet.next()) {
+        val id = resultSet.getObject(1)
+        assert(id == "1")
+      }
+    }
+  }
+
+  override protected def jdbcUrl: String = jdbcConnectionUrl
 }
