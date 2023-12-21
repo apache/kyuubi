@@ -123,15 +123,10 @@ case class MaxScanStrategy(session: SparkSession)
         } else {
           lazy val scanFileSize = relation.tableMeta.stats.map(_.sizeInBytes).sum
           if (maxFileSizeOpt.exists(_ < scanFileSize)) {
-            throw new MaxFileSizeExceedException(
-              s"""
-                 |Your SQL job scan a whole huge table without any partition filter,
-                 |You should optimize your SQL logical according partition structure
-                 |or shorten query scope such as p_date, detail as below:
-                 |Table: ${relation.tableMeta.qualifiedName}
-                 |Owner: ${relation.tableMeta.owner}
-                 |Partition Structure: ${relation.partitionCols.map(_.name).mkString(", ")}
-                 |""".stripMargin)
+            throw nonPartTableMaxFileExceedError(
+              scanFileSize,
+              maxFileSizeOpt.get,
+              Some(relation.tableMeta))
           }
         }
       case ScanOperation(
