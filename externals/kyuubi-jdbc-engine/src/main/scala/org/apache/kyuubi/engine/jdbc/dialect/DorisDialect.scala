@@ -15,18 +15,9 @@
  * limitations under the License.
  */
 package org.apache.kyuubi.engine.jdbc.dialect
-import java.sql.{Connection, Statement}
-import java.util
-
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-
-import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.engine.jdbc.doris.{DorisSchemaHelper, DorisTRowSetGenerator}
 import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
-import org.apache.kyuubi.session.Session
 
 class DorisDialect extends MySQLDialect {
 
