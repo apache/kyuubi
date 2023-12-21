@@ -3258,6 +3258,14 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val ENGINE_SPARK_NOTEBOOK_MODE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.spark.notebook.mode")
+      .doc("Enable this to support notebook well." +
+        " For python notebook, the `text/plain` wrapped output will be returned.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_SPARK_REGISTER_ATTRIBUTES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.spark.register.attributes")
       .internal

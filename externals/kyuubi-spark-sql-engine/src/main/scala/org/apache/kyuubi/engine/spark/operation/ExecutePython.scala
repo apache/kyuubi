@@ -86,7 +86,7 @@ class ExecutePython(
         val response = worker.runCode(statement)
         val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
         if (PythonResponse.OK_STATUS.equalsIgnoreCase(status)) {
-          val output = response.map(_.content.getOutput()).getOrElse("")
+          val output = response.map(_.content.getOutput(notebookMode)).getOrElse("")
           val ename = response.map(_.content.getEname()).getOrElse("")
           val evalue = response.map(_.content.getEvalue()).getOrElse("")
           val traceback = response.map(_.content.getTraceback()).getOrElse(Seq.empty)
@@ -403,8 +403,11 @@ case class PythonResponseContent(
     evalue: String,
     traceback: Seq[String],
     status: String) {
-  def getOutput(): String = {
+  def getOutput(notebookMode: Boolean): String = {
     if (data == null) return ""
+
+    // for notebook mode, return all data fields directly
+    if (notebookMode) return ExecutePython.toJson(data)
 
     // If data does not contains field other than `test/plain`, keep backward compatibility,
     // otherwise, return all the data.
