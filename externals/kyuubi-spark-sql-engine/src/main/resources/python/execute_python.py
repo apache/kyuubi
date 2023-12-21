@@ -120,7 +120,13 @@ class MagicNode(object):
         except KeyError:
             raise UnknownMagic("unknown magic command '%s'" % self.magic)
 
-        return handler(*self.rest)
+        try:
+            return handler(*self.rest)
+        except ExecutionError as e:
+            raise e
+        except Exception:
+            exc_type, exc_value, tb = sys.exc_info()
+            raise ExecutionError((exc_type, exc_value, None))
 
 
 class ExecutionError(Exception):
