@@ -17,7 +17,30 @@
 
 package org.apache.kyuubi.engine.spark.repl
 
+import org.json4s.JObject
+import org.json4s.JsonAST.JValue
+import org.json4s.jackson.JsonMethods.{compact, render}
+
+import org.apache.kyuubi.engine.spark.util.JsonUtils
+
 abstract class InterpretResponse
-case class InterpretSuccess(values: Map[String, Object]) extends InterpretResponse
+case class InterpretSuccess(content: JObject) extends InterpretResponse {
+  def getOutput(): String = {
+    if (content == null) return ""
+
+    // If data does not contains field other than `test/plain`, keep backward compatibility,
+    // otherwise, return all the data.
+    if (content.values.filterNot(_._1 == TEXT_PLAIN).isEmpty) {
+      content.values.get(TEXT_PLAIN).map {
+        case jValue: JValue => compact(render(jValue))
+        case str: String => str
+        case obj => JsonUtils.toJson(obj)
+      }.getOrElse("")
+    } else {
+      compact(render(content))
+    }
+  }
+}
 case class InterpretInComplete() extends InterpretResponse
-case class InterpretError(error: String) extends InterpretResponse
+case class InterpretError(ename: String, evalue: String, traceback: Seq[String] = Seq())
+  extends InterpretResponse

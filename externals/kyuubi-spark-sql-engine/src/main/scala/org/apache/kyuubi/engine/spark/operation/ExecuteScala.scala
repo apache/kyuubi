@@ -30,7 +30,7 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
-import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
+import org.apache.kyuubi.engine.spark.repl._
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -107,20 +107,20 @@ class ExecuteScala(
         }
 
         repl.interpretWithRedirectOutError(statement) match {
-          case Success =>
+          case success: InterpretSuccess =>
             iter = {
               result = repl.getResult(statementId)
               if (result != null) {
                 new ArrayFetchIterator[Row](result.collect())
               } else {
-                val output = repl.getOutput
+                val output = success.getOutput
                 debug("scala repl output:\n" + output)
                 new ArrayFetchIterator[Row](Array(Row(output)))
               }
             }
-          case Error =>
-            throw KyuubiSQLException(s"Interpret error:\n$statement\n ${repl.getOutput}")
-          case Incomplete =>
+          case error: InterpretError =>
+            throw KyuubiSQLException(s"Interpret error:\n$statement\n $error")
+          case InterpretInComplete() =>
             throw KyuubiSQLException(s"Incomplete code:\n$statement")
         }
         setState(OperationState.FINISHED)

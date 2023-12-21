@@ -149,11 +149,11 @@ private[spark] case class KyuubiSparkILoop private (
                   val lastRet = s.getOrElse(TEXT_PLAIN, "").asInstanceOf[String]
                   val currRet = e.getOrElse(TEXT_PLAIN, "").asInstanceOf[String]
                   if (lastRet.nonEmpty && currRet.nonEmpty) {
-                    InterpretSuccess(Map(TEXT_PLAIN -> s"$lastRet$currRet"))
+                    InterpretSuccess(TEXT_PLAIN -> s"$lastRet$currRet")
                   } else if (lastRet.nonEmpty) {
-                    InterpretSuccess(Map(TEXT_PLAIN -> lastRet))
+                    InterpretSuccess(TEXT_PLAIN -> lastRet)
                   } else if (currRet.nonEmpty) {
-                    InterpretSuccess(Map(TEXT_PLAIN -> currRet))
+                    InterpretSuccess(TEXT_PLAIN -> currRet)
                   } else {
                     result
                   }
@@ -176,9 +176,9 @@ private[spark] case class KyuubiSparkILoop private (
         executeMagic(magic, rest)
       case _ =>
         interpretWithRedirectOutError(code) match {
-          case Results.Success => InterpretSuccess(Map(TEXT_PLAIN -> getOutput))
+          case Results.Success => InterpretSuccess(TEXT_PLAIN -> getOutput)
           case Results.Incomplete => InterpretInComplete()
-          case Results.Error => InterpretError(getOutput)
+          case Results.Error => InterpretError("Error", getOutput)
         }
     }
   }
