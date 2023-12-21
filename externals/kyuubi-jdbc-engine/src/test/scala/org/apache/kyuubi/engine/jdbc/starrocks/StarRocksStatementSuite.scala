@@ -26,10 +26,12 @@ class StarRocksStatementSuite extends WithStarRocksEngine with HiveJDBCTestHelpe
     withJdbcStatement("test1") { statement =>
       statement.execute("create database if not exists db1")
       statement.execute("use db1")
-      statement.execute("create table db1.test1(id bigint, name varchar(255), age int)" +
-        "ENGINE=OLAP\n" +
-        "DISTRIBUTED BY HASH(`id`) BUCKETS 32\n" +
-        "PROPERTIES (\n\"replication_num\" = \"1\", \"in_memory\" = \"true\")")
+      statement.execute(
+        """CREATE TABLE db1.test1(id bigint, name varchar(255), age int)
+          | ENGINE=OLAP
+          | DISTRIBUTED BY HASH(`id`)
+          | PROPERTIES ('replication_num' = '1', 'in_memory' = 'true')
+          |""".stripMargin)
       statement.execute("insert into db1.test1 values(1, 'a', 11)")
 
       val resultSet1 = statement.executeQuery("select * from db1.test1")
@@ -48,29 +50,36 @@ class StarRocksStatementSuite extends WithStarRocksEngine with HiveJDBCTestHelpe
     withJdbcStatement("test1") { statement =>
       statement.execute("create database if not exists db1")
       statement.execute("use db1")
-      statement.execute("create table db1.type_test(" +
-        "id bigint, " +
-        "tiny_col tinyint, smallint_col smallint, " +
-        "int_col int, bigint_col bigint, largeint_col largeint," +
-        "decimal_col decimal(27, 9)," +
-        "date_col date, datetime_col datetime, " +
-        "char_col char, varchar_col varchar(255), string_col string, " +
-        "boolean_col boolean, " +
-        "double_col double, float_col float) " +
-        "ENGINE=OLAP " +
-        "DISTRIBUTED BY HASH(`id`) BUCKETS 10 " +
-        "PROPERTIES (\"replication_num\" = \"1\", \"in_memory\" = \"true\")")
-      statement.execute("insert into db1.type_test" +
-        "(id, " +
-        "tiny_col, smallint_col, int_col, bigint_col, largeint_col, " +
-        "decimal_col, " +
-        "date_col, datetime_col, " +
-        "char_col, varchar_col, string_col, " +
-        "boolean_col, " +
-        "double_col, float_col) " +
-        "VALUES (1, 2, 3, 4, 5, 6, 7.7, '2022-05-08', '2022-05-08 17:47:45'," +
-        "'a', 'Hello', 'Hello, Kyuubi', true, 8.8, 9.9)")
-
+      statement.execute(
+        """ CREATE TABLE db1.type_test(
+          | id bigint,
+          | tiny_col tinyint,
+          | smallint_col smallint,
+          | int_col int,
+          | bigint_col bigint,
+          | largeint_col largeint,
+          | decimal_col decimal(27, 9),
+          | date_col date,
+          | datetime_col datetime,
+          | char_col char,
+          | varchar_col varchar(255),
+          | string_col string,
+          | boolean_col boolean,
+          | double_col double,
+          | float_col float)
+          | ENGINE=OLAP
+          | DISTRIBUTED BY HASH(`id`)
+          | PROPERTIES ('replication_num' = '1', 'in_memory' = 'true')
+          |""".stripMargin)
+      statement.execute(
+        """ insert into db1.type_test
+          | (id, tiny_col, smallint_col, int_col, bigint_col, largeint_col, decimal_col,
+          | date_col, datetime_col, char_col, varchar_col, string_col, boolean_col,
+          | double_col, float_col)
+          | VALUES (1, 2, 3, 4, 5, 6, 7.7,
+          | '2022-05-08', '2022-05-08 17:47:45', 'a', 'Hello', 'Hello, Kyuubi', true,
+          | 8.8, 9.9)
+          |""".stripMargin)
       val resultSet1 = statement.executeQuery("select * from db1.type_test")
       while (resultSet1.next()) {
         assert(resultSet1.getObject(1) == 1)
