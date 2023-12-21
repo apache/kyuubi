@@ -18,11 +18,11 @@ package org.apache.kyuubi.engine.jdbc.mysql
 
 import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
 
-class Mysql8ConnectionProvider extends JdbcConnectionProvider {
+class MySQL8ConnectionProvider extends JdbcConnectionProvider {
 
-  override val name: String = classOf[Mysql8ConnectionProvider].getSimpleName
+  override val name: String = classOf[MySQL8ConnectionProvider].getSimpleName
 
-  override val driverClass: String = Mysql8ConnectionProvider.driverClass
+  override val driverClass: String = MySQL8ConnectionProvider.driverClass
 
   override def canHandle(providerClass: String): Boolean = {
     driverClass.equalsIgnoreCase(providerClass)
@@ -30,6 +30,6 @@ class Mysql8ConnectionProvider extends JdbcConnectionProvider {
 
 }
 
-object Mysql8ConnectionProvider {
+object MySQL8ConnectionProvider {
   val driverClass: String = "com.mysql.cj.jdbc.Driver"
 }

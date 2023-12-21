@@ -18,7 +18,7 @@ package org.apache.kyuubi.engine.jdbc.starrocks
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
-import org.apache.kyuubi.engine.jdbc.mysql.Mysql8ConnectionProvider
+import org.apache.kyuubi.engine.jdbc.mysql.MySQL8ConnectionProvider
 
 trait WithStarRocksEngine extends WithJdbcEngine with WithStarRocksContainer {
 
@@ -32,5 +32,5 @@ trait WithStarRocksEngine extends WithJdbcEngine with WithStarRocksContainer {
     ENGINE_JDBC_CONNECTION_PASSWORD.key -> password,
     ENGINE_TYPE.key -> "jdbc",
     ENGINE_JDBC_SHORT_NAME.key -> "starrocks",
-    ENGINE_JDBC_DRIVER_CLASS.key -> Mysql8ConnectionProvider.driverClass)
+    ENGINE_JDBC_DRIVER_CLASS.key -> MySQL8ConnectionProvider.driverClass)
 }

@@ -16,9 +16,9 @@
  */
 package org.apache.kyuubi.engine.jdbc.starrocks
 
-import org.apache.kyuubi.engine.jdbc.mysql.Mysql8ConnectionProvider
+import org.apache.kyuubi.engine.jdbc.mysql.MySQL8ConnectionProvider
 
-class StarRocksConnectionProvider extends Mysql8ConnectionProvider {
+class StarRocksConnectionProvider extends MySQL8ConnectionProvider {
 
   override val name: String = classOf[StarRocksConnectionProvider].getSimpleName
 }
