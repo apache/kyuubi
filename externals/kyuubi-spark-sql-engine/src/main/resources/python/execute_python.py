@@ -154,11 +154,9 @@ def parse_code_into_nodes(code):
         nodes.append(NormalNode(code))
     except SyntaxError:
         # It's possible we hit a syntax error because of a magic command. Split the code groups
-        # of 'normal code', and code that starts with a '%'. possibly magic code
-        # lines, and see if any of the lines
-        # Remove lines until we find a node that parses, then check if the next line is a magic
-        # line
-        # .
+        # of 'normal code', and code that starts with a '%'. possibly magic code lines, and see
+        # if any of the lines. Remove lines until we find a node that parses, then check if the
+        # next line is a magic line.
 
         # Split the code into chunks of normal code, and possibly magic code, which starts with
         # a '%'.

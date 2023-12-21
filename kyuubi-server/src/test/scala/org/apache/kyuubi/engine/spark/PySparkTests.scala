@@ -132,7 +132,7 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
     })
   }
 
-  test("Support python magic nodes for python notebook") {
+  test("Support python magic syntax for python notebook") {
     checkPythonRuntimeAndVersion()
     withSessionConf()(Map(KyuubiConf.ENGINE_SPARK_PYTHON_MAGIC_ENABLED.key -> "true"))() {
       withMultipleConnectionJdbcStatement()({ statement =>
