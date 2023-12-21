@@ -14,16 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.postgresql
 
-import org.apache.kyuubi.engine.jdbc.schema.DefaultJdbcTRowSetGenerator
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnValue}
+package org.apache.kyuubi.engine.result
 
-class PostgreSQLTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
+trait TRowSetColumnGetter[RowT] {
+  protected def isColumnNullAt(row: RowT, ordinal: Int): Boolean
 
-  override def toSmallIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
-    toIntegerTColumn(rows, ordinal)
-
-  override def toSmallIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
-    toIntegerTColumnValue(row, ordinal)
+  protected def getColumnAs[T](row: RowT, ordinal: Int): T
 }

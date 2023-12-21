@@ -20,76 +20,56 @@ package org.apache.kyuubi.engine.trino.schema
 import io.trino.client.{ClientTypeSignature, Column}
 import io.trino.client.ClientStandardTypes._
 
-import org.apache.kyuubi.engine.schema.AbstractTRowSetGenerator
+import org.apache.kyuubi.engine.result.TRowSetGenerator
 import org.apache.kyuubi.engine.trino.schema.RowSet.toHiveString
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId._
-import org.apache.kyuubi.util.RowSetUtils._
 
 class TrinoTRowSetGenerator
-  extends AbstractTRowSetGenerator[Seq[Column], Seq[_], ClientTypeSignature] {
+  extends TRowSetGenerator[Seq[Column], Seq[_], ClientTypeSignature] {
 
   override def getColumnSizeFromSchemaType(schema: Seq[Column]): Int = schema.length
 
-  override def getColumnType(schema: Seq[Column], ordinal: Int): ClientTypeSignature = {
+  override def getColumnType(schema: Seq[Column], ordinal: Int): ClientTypeSignature =
     schema(ordinal).getTypeSignature
-  }
 
-  override def isColumnNullAt(row: Seq[_], ordinal: Int): Boolean =
-    row(ordinal) == null
+  override def isColumnNullAt(row: Seq[_], ordinal: Int): Boolean = row(ordinal) == null
 
-  override def getColumnAs[T](row: Seq[_], ordinal: Int): T =
-    row(ordinal).asInstanceOf[T]
+  override def getColumnAs[T](row: Seq[_], ordinal: Int): T = row(ordinal).asInstanceOf[T]
 
   override def toTColumn(rows: Seq[Seq[_]], ordinal: Int, typ: ClientTypeSignature): TColumn = {
-    val nulls = new java.util.BitSet()
     typ.getRawType match {
-      case BOOLEAN => toTTypeColumn(BOOLEAN_TYPE, rows, ordinal)
-      case TINYINT => toTTypeColumn(BINARY_TYPE, rows, ordinal)
-      case SMALLINT => toTTypeColumn(TINYINT_TYPE, rows, ordinal)
-      case INTEGER => toTTypeColumn(INT_TYPE, rows, ordinal)
-      case BIGINT => toTTypeColumn(BIGINT_TYPE, rows, ordinal)
-      case REAL => toTTypeColumn(FLOAT_TYPE, rows, ordinal)
-      case DOUBLE => toTTypeColumn(DOUBLE_TYPE, rows, ordinal)
-      case VARCHAR => toTTypeColumn(STRING_TYPE, rows, ordinal)
-      case VARBINARY => toTTypeColumn(ARRAY_TYPE, rows, ordinal)
+      case BOOLEAN => asBooleanTColumn(rows, ordinal)
+      case TINYINT => asByteTColumn(rows, ordinal)
+      case SMALLINT => asShortTColumn(rows, ordinal)
+      case INTEGER => asIntegerTColumn(rows, ordinal)
+      case BIGINT => asLongTColumn(rows, ordinal)
+      case REAL => asFloatTColumn(rows, ordinal)
+      case DOUBLE => asDoubleTColumn(rows, ordinal)
+      case VARCHAR => asStringTColumn(rows, ordinal)
+      case VARBINARY => asByteArrayTColumn(rows, ordinal)
       case _ =>
-        val rowSize = rows.length
-        val values = new java.util.ArrayList[String](rowSize)
-        var i = 0
-        while (i < rowSize) {
-          val row = rows(i)
-          val isNull = isColumnNullAt(row, ordinal)
-          nulls.set(i, isNull)
-          val value = if (isNull) {
-            ""
-          } else {
-            toHiveString(row(ordinal), typ)
-          }
-          values.add(value)
-          i += 1
-        }
-        TColumn.stringVal(new TStringColumn(values, nulls))
+        asStringTColumn(
+          rows,
+          ordinal,
+          convertFunc = (row, ordinal) => toHiveString(getColumnAs[Any](row, ordinal), typ))
     }
   }
 
-  override def toTColumnValue(ordinal: Int, row: Seq[_], types: Seq[Column]): TColumnValue = {
+  override def toTColumnValue(row: Seq[_], ordinal: Int, types: Seq[Column]): TColumnValue = {
     getColumnType(types, ordinal).getRawType match {
-      case BOOLEAN => toTTypeColumnVal(BOOLEAN_TYPE, row, ordinal)
-      case TINYINT => toTTypeColumnVal(BINARY_TYPE, row, ordinal)
-      case SMALLINT => toTTypeColumnVal(TINYINT_TYPE, row, ordinal)
-      case INTEGER => toTTypeColumnVal(INT_TYPE, row, ordinal)
-      case BIGINT => toTTypeColumnVal(BIGINT_TYPE, row, ordinal)
-      case REAL => toTTypeColumnVal(FLOAT_TYPE, row, ordinal)
-      case DOUBLE => toTTypeColumnVal(DOUBLE_TYPE, row, ordinal)
-      case VARCHAR => toTTypeColumnVal(STRING_TYPE, row, ordinal)
+      case BOOLEAN => asBooleanTColumnValue(row, ordinal)
+      case TINYINT => asByteTColumnValue(row, ordinal)
+      case SMALLINT => asShortTColumnValue(row, ordinal)
+      case INTEGER => asIntegerTColumnValue(row, ordinal)
+      case BIGINT => asLongTColumnValue(row, ordinal)
+      case REAL => asFloatTColumnValue(row, ordinal)
+      case DOUBLE => asDoubleTColumnValue(row, ordinal)
+      case VARCHAR => asStringTColumnValue(row, ordinal)
       case _ =>
-        val tStrValue = new TStringValue
-        if (row(ordinal) != null) {
-          tStrValue.setValue(
-            toHiveString(row(ordinal), types(ordinal).getTypeSignature))
-        }
-        TColumnValue.stringVal(tStrValue)
+        asStringTColumnValue(
+          row,
+          ordinal,
+          rawValue => toHiveString(rawValue, types(ordinal).getTypeSignature))
     }
   }
 

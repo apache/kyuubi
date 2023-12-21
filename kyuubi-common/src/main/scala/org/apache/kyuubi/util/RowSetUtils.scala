@@ -17,14 +17,11 @@
 
 package org.apache.kyuubi.util
 
-import java.nio.ByteBuffer
 import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneId}
 import java.time.chrono.IsoChronology
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import java.util.{Date, Locale}
-
-import scala.language.implicitConversions
 
 import org.apache.commons.lang3.time.FastDateFormat
 
@@ -76,9 +73,5 @@ private[kyuubi] object RowSetUtils {
   def formatInstant(i: Instant, timeZone: Option[ZoneId] = None): String = {
     timeZone.map(timestampFormatter.withZone(_).format(i))
       .getOrElse(timestampFormatter.format(i))
-  }
-
-  implicit def bitSetToBuffer(bitSet: java.util.BitSet): ByteBuffer = {
-    ByteBuffer.wrap(bitSet.toByteArray)
   }
 }

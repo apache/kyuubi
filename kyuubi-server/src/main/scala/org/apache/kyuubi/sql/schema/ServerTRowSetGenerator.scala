@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.sql.schema
 
-import org.apache.kyuubi.engine.schema.AbstractTRowSetGenerator
+import org.apache.kyuubi.engine.result.TRowSetGenerator
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId._
-import org.apache.kyuubi.util.RowSetUtils._
 
 class ServerTRowSetGenerator
-  extends AbstractTRowSetGenerator[Schema, Row, TTypeId] {
+  extends TRowSetGenerator[Schema, Row, TTypeId] {
 
   override def getColumnSizeFromSchemaType(schema: Schema): Int = schema.length
 
@@ -34,44 +33,35 @@ class ServerTRowSetGenerator
   override def getColumnAs[T](row: Row, ordinal: Int): T = row.getAs[T](ordinal)
 
   override def toTColumn(rows: Seq[Row], ordinal: Int, typ: TTypeId): TColumn = {
-    val nulls = new java.util.BitSet()
     typ match {
-      case t @ (BOOLEAN_TYPE | BINARY_TYPE | BINARY_TYPE | TINYINT_TYPE | INT_TYPE |
-          BIGINT_TYPE | FLOAT_TYPE | DOUBLE_TYPE | STRING_TYPE) =>
-        toTTypeColumn(t, rows, ordinal)
-
+      case BOOLEAN_TYPE => asBooleanTColumn(rows, ordinal)
+      case BINARY_TYPE => asShortTColumn(rows, ordinal)
+      case TINYINT_TYPE => asShortTColumn(rows, ordinal)
+      case INT_TYPE => asIntegerTColumn(rows, ordinal)
+      case BIGINT_TYPE => asLongTColumn(rows, ordinal)
+      case FLOAT_TYPE => asFloatTColumn(rows, ordinal)
+      case DOUBLE_TYPE => asDoubleTColumn(rows, ordinal)
+      case STRING_TYPE => asStringTColumn(rows, ordinal)
       case _ =>
-        var i = 0
-        val rowSize = rows.length
-        val values = new java.util.ArrayList[String](rowSize)
-        while (i < rowSize) {
-          val row = rows(i)
-          val isNull = isColumnNullAt(row, ordinal)
-          nulls.set(i, isNull)
-          val value = if (isNull) {
-            ""
-          } else {
-            (row.get(ordinal), typ).toString()
-          }
-          values.add(value)
-          i += 1
-        }
-        TColumn.stringVal(new TStringColumn(values, nulls))
+        asStringTColumn(
+          rows,
+          ordinal,
+          convertFunc = (row, ordinal) => (row.get(ordinal), typ).toString())
     }
   }
 
-  override def toTColumnValue(ordinal: Int, row: Row, types: Schema): TColumnValue = {
+  override def toTColumnValue(row: Row, ordinal: Int, types: Schema): TColumnValue = {
     getColumnType(types, ordinal) match {
-      case t @ (BOOLEAN_TYPE | BINARY_TYPE | BINARY_TYPE | TINYINT_TYPE | INT_TYPE |
-          BIGINT_TYPE | FLOAT_TYPE | DOUBLE_TYPE | STRING_TYPE) =>
-        toTTypeColumnVal(t, row, ordinal)
-
-      case _ =>
-        val tStrValue = new TStringValue
-        if (!isColumnNullAt(row, ordinal)) {
-          tStrValue.setValue((row.get(ordinal), types(ordinal).dataType).toString())
-        }
-        TColumnValue.stringVal(tStrValue)
+      case BOOLEAN_TYPE => asBooleanTColumnValue(row, ordinal)
+      case BINARY_TYPE => asByteTColumnValue(row, ordinal)
+      case TINYINT_TYPE => asShortTColumnValue(row, ordinal)
+      case INT_TYPE => asIntegerTColumnValue(row, ordinal)
+      case BIGINT_TYPE => asLongTColumnValue(row, ordinal)
+      case FLOAT_TYPE => asFloatTColumnValue(row, ordinal)
+      case DOUBLE_TYPE => asDoubleTColumnValue(row, ordinal)
+      case STRING_TYPE => asStringTColumnValue(row, ordinal)
+      case otherType =>
+        asStringTColumnValue(row, ordinal, rawValue => (rawValue, otherType).toString())
     }
   }
 

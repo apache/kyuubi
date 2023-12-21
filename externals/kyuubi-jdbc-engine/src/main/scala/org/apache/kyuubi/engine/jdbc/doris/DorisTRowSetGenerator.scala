@@ -16,20 +16,6 @@
  */
 package org.apache.kyuubi.engine.jdbc.doris
 
-import org.apache.kyuubi.engine.jdbc.schema.DefaultJdbcTRowSetGenerator
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnValue}
+import org.apache.kyuubi.engine.jdbc.mysql.MySQLTRowSetGenerator
 
-class DorisTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
-
-  override def toTinyIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
-    toIntegerTColumn(rows, ordinal)
-
-  override def toSmallIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
-    toIntegerTColumn(rows, ordinal)
-
-  override def toTinyIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
-    toIntegerTColumnValue(row, ordinal)
-
-  override def toSmallIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
-    toIntegerTColumnValue(row, ordinal)
-}
+class DorisTRowSetGenerator extends MySQLTRowSetGenerator {}

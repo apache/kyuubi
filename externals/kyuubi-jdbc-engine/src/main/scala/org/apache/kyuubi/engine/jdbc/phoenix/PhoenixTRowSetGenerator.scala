@@ -14,16 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.postgresql
+package org.apache.kyuubi.engine.jdbc.phoenix
 
 import org.apache.kyuubi.engine.jdbc.schema.DefaultJdbcTRowSetGenerator
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnValue}
 
-class PostgreSQLTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
-
-  override def toSmallIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
-    toIntegerTColumn(rows, ordinal)
-
-  override def toSmallIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
-    toIntegerTColumnValue(row, ordinal)
-}
+class PhoenixTRowSetGenerator extends DefaultJdbcTRowSetGenerator {}

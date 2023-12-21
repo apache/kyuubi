@@ -22,8 +22,8 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.commons.lang3.StringUtils
 
-import org.apache.kyuubi.engine.jdbc.phoenix.PhoenixSchemaHelper
-import org.apache.kyuubi.engine.jdbc.schema.{DefaultJdbcTRowSetGenerator, JdbcTRowSetGenerator, SchemaHelper}
+import org.apache.kyuubi.engine.jdbc.phoenix.{PhoenixSchemaHelper, PhoenixTRowSetGenerator}
+import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
@@ -100,7 +100,7 @@ class PhoenixDialect extends JdbcDialect {
     query.toString()
   }
 
-  override def getTRowSetGenerator(): JdbcTRowSetGenerator = new DefaultJdbcTRowSetGenerator
+  override def getTRowSetGenerator(): JdbcTRowSetGenerator = new PhoenixTRowSetGenerator
 
   override def getSchemaHelper(): SchemaHelper = {
     new PhoenixSchemaHelper
