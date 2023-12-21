@@ -37,7 +37,7 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE, ENGINE_SPARK_PYTHON_MAGIC_ENABLED}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationHandle, OperationState}
@@ -233,6 +233,7 @@ object ExecutePython extends Logging {
   final val PY4J_REGEX = "py4j-[\\S]*.zip$".r
   final val PY4J_PATH = "PY4J_PATH"
   final val IS_PYTHON_APP_KEY = "spark.yarn.isPython"
+  final val MAGIC_ENABLED = "MAGIC_ENABLED"
 
   private val isPythonGatewayStart = new AtomicBoolean(false)
   private val kyuubiPythonPath = Utils.createTempDir()
@@ -280,6 +281,7 @@ object ExecutePython extends Logging {
     }
     env.put("KYUUBI_SPARK_SESSION_UUID", sessionId)
     env.put("PYTHON_GATEWAY_CONNECTION_INFO", KyuubiPythonGatewayServer.CONNECTION_FILE_PATH)
+    env.put(MAGIC_ENABLED, getSessionConf(ENGINE_SPARK_PYTHON_MAGIC_ENABLED, spark).toString)
     logger.info(
       s"""
          |launch python worker command: ${builder.command().asScala.mkString(" ")}
@@ -409,15 +411,24 @@ object PythonResponse {
 }
 
 case class PythonResponseContent(
-    data: Map[String, String],
+    data: Map[String, Object],
     ename: String,
     evalue: String,
     traceback: Seq[String],
     status: String) {
   def getOutput(): String = {
-    Option(data)
-      .map(_.getOrElse("text/plain", ""))
-      .getOrElse("")
+    if (data == null) return ""
+
+    // If data does not contains field other than `test/plain`, keep backward compatibility,
+    // otherwise, return all the data.
+    if (data.filterNot(_._1 == "text/plain").isEmpty) {
+      data.get("text/plain").map {
+        case str: String => str
+        case obj => ExecutePython.toJson(obj)
+      }.getOrElse("")
+    } else {
+      ExecutePython.toJson(data)
+    }
   }
   def getEname(): String = {
     Option(ename).getOrElse("")
