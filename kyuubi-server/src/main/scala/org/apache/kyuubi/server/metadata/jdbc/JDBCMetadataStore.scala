@@ -74,7 +74,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     JDBCMetadataStoreConf.getMetadataStoreJDBCDataSourceProperties(conf)
   private val hikariConfig = new HikariConfig(datasourceProperties)
   hikariConfig.setDriverClassName(driverClass)
-  hikariConfig.setJdbcUrl(conf.get(METADATA_STORE_JDBC_URL))
+  hikariConfig.setJdbcUrl(getMetadataStoreJdbcUrl(conf))
   hikariConfig.setUsername(conf.get(METADATA_STORE_JDBC_USER))
   hikariConfig.setPassword(conf.get(METADATA_STORE_JDBC_PASSWORD))
   hikariConfig.setPoolName("jdbc-metadata-store-pool")
