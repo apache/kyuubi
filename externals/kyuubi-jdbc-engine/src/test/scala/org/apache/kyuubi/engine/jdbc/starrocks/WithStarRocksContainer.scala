@@ -28,21 +28,30 @@ trait WithStarRocksContainer extends WithJdbcServerContainer {
 
   private val starrocksDockerImage = "starrocks/allin1-ubuntu:3.1.6"
 
-  private val STARROCKS_FE_PORT = 9030
+  private val STARROCKS_FE_MYSQL_PORT = 9030
+  private val STARROCKS_FE_HTTP_PORT = 8030
+  private val STARROCKS_BE_THRIFT_PORT = 9060
+  private val STARROCKS_BE_HTTP_PORT = 8040
+  private val STARROCKS_BE_HEARTBEAT_PORT = 9050
+  private val ports = Seq(
+    STARROCKS_FE_MYSQL_PORT,
+    STARROCKS_FE_HTTP_PORT,
+    STARROCKS_BE_THRIFT_PORT,
+    STARROCKS_BE_HTTP_PORT,
+    STARROCKS_BE_HEARTBEAT_PORT)
 
   override val containerDef: GenericContainer.Def[GenericContainer] = GenericContainer.Def(
     dockerImage = starrocksDockerImage,
-    exposedPorts = Seq(STARROCKS_FE_PORT),
+    exposedPorts = ports,
     waitStrategy = new WaitAllStrategy().withStartupTimeout(Duration.ofMinutes(10))
-      .withStrategy(Wait.forListeningPorts(STARROCKS_FE_PORT))
+      .withStrategy(Wait.forListeningPorts(ports: _*))
       .withStrategy(forLogMessage(".*broker service already added into FE service.*", 1))
       .withStrategy(
         forLogMessage(".*Enjoy the journal to StarRocks blazing-fast lake-house engine.*", 1)))
 
-  protected def feUrl: String = withContainers { container =>
+  protected def feJdbcUrl: String = withContainers { container =>
     val queryServerHost: String = container.host
-    val queryServerPort: Int = container.mappedPort(STARROCKS_FE_PORT)
-    val url = s"$queryServerHost:$queryServerPort"
-    url
+    val queryServerPort: Int = container.mappedPort(STARROCKS_FE_MYSQL_PORT)
+    s"jdbc:mysql://$queryServerHost:$queryServerPort"
   }
 }
