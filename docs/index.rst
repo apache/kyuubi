@@ -30,7 +30,8 @@ Apache `Spark <https://spark.apache.org/>`_,
 `Flink <https://flink.apache.org/>`_,
 `Doris <https://doris.apache.org/>`_,
 `Hive <https://hive.apache.org/>`_,
-and `Trino <https://trino.io/>`_, etc, to query massive datasets distributed
+`Trino <https://trino.io/>`_,
+and `StarRocks <https://www.starrocks.io/>`_, etc., to query massive datasets distributed
 over fleets of machines from heterogeneous data sources.
 
 The Kyuubi Server lane of the below swimlane divides our prospective users into
