@@ -28,17 +28,19 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
+import org.json4s.{DefaultFormats, Extraction, Formats}
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.engine.spark.util.JsonUtils
 
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
     output: ByteArrayOutputStream)
   extends SparkILoop(None, new PrintWriter(output)) {
   import KyuubiSparkILoop._
+
+  implicit private def formats: Formats = DefaultFormats
 
   val result = new DataFrameHolder(spark)
 
@@ -202,7 +204,7 @@ private[spark] case class KyuubiSparkILoop private (
         case None => return InterpretError("NameError", s"Value $name does not exist")
       }
 
-      InterpretSuccess(APPLICATION_JSON -> JsonUtils.toJson(value))
+      InterpretSuccess(JObject((APPLICATION_JSON, Extraction.decompose(value))))
     } catch {
       case _: Throwable =>
         InterpretError("ValueError", "Failed to convert value into a JSON value")
@@ -216,7 +218,7 @@ private[spark] case class KyuubiSparkILoop private (
       case None => return InterpretError("NameError", s"Value $name does not exist")
     }
 
-    extractTableFromJValue(JsonUtils.toJson(value))
+    extractTableFromJValue(Extraction.decompose(value))
   }
 
   private class TypesDoNotMatch extends Exception

@@ -94,7 +94,8 @@ class ExecutePython(
             new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, traceback)))
           setState(OperationState.FINISHED)
         } else {
-          throw KyuubiSQLException(s"Interpret error:\n$statement\n $response")
+          throw KyuubiSQLException(s"Interpret error:\n" +
+            s"${JsonUtils.toPrettyJson(Map("code" -> statement, "response" -> response.orNull))}")
         }
       }
     } catch {

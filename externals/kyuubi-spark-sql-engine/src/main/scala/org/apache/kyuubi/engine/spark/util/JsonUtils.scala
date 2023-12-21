@@ -28,6 +28,11 @@ object JsonUtils {
   def toJson[T](obj: T): String = {
     mapper.writeValueAsString(obj)
   }
+
+  def toPrettyJson[T](obj: T): String = {
+    mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj)
+  }
+
   def fromJson[T](json: String, clz: Class[T]): T = {
     mapper.readValue(json, clz)
   }

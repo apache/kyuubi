@@ -30,6 +30,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.repl._
+import org.apache.kyuubi.engine.spark.util.JsonUtils
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -118,7 +119,8 @@ class ExecuteScala(
               }
             }
           case error: InterpretError =>
-            throw KyuubiSQLException(s"Interpret error:\n$statement\n $error")
+            throw KyuubiSQLException(s"Interpret error:\n" +
+              s"${JsonUtils.toPrettyJson(Map("code" -> statement, "response" -> error))}")
           case InterpretInComplete() =>
             throw KyuubiSQLException(s"Incomplete code:\n$statement")
         }
