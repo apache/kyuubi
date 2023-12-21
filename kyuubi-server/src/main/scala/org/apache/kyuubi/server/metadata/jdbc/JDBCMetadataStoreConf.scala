@@ -85,7 +85,7 @@ object JDBCMetadataStoreConf {
   val METADATA_STORE_JDBC_URL: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.url")
       .doc("The JDBC url for server JDBC metadata store. By default, it is a SQLite database " +
-        "url, and the state information is not shared across kyuubi instances. To enable high " +
+        "url, and the state information is not shared across Kyuubi instances. To enable high " +
         "availability for multiple kyuubi instances, please specify a production JDBC url. " +
         "Note: this value support the variables substitution: `<KYUUBI_HOME>`.")
       .version("1.6.0")
