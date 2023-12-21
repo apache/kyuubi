@@ -141,6 +141,7 @@ class KyuubiSessionImpl(
 
         val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)
         val retryWait = sessionManager.getConf.get(ENGINE_OPEN_RETRY_WAIT)
+        val resetOnRetry = sessionManager.getConf.get(ENGINE_OPEN_RETRY_RESET)
         var attempt = 0
         var shouldRetry = true
         while (attempt <= maxAttempts && shouldRetry) {
@@ -168,6 +169,14 @@ class KyuubiSessionImpl(
                 e.getCause)
               Thread.sleep(retryWait)
               shouldRetry = true
+              if (resetOnRetry) {
+                try {
+                  engine.reset(discoveryClient, (host, port))
+                } catch {
+                  case e: Throwable =>
+                    warn(s"Error on resetting engine ref [${engine.engineSpace} $host:$port]", e)
+                }
+              }
             case e: Throwable =>
               error(
                 s"Opening engine [${engine.defaultEngineName} $host:$port]" +

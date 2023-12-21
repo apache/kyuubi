@@ -1516,6 +1516,14 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(10).toMillis)
 
+  val ENGINE_OPEN_RETRY_RESET: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.engine.open.retry.reset")
+      .doc("Whether to reset the engine ref with existing engine host and port before" +
+        " retrying to open the engine after failure.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.engine.initialize.timeout")
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
     .version("1.0.0")
