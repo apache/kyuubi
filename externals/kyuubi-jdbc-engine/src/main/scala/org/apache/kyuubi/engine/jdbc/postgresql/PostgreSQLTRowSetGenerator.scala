@@ -24,6 +24,6 @@ class PostgreSQLTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
   override def toSmallIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
     toIntegerTColumn(rows, ordinal)
 
-  override protected def toSmallIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
+  override def toSmallIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
     toIntegerTColumnValue(row, ordinal)
 }
