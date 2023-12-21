@@ -3248,11 +3248,12 @@ object KyuubiConf {
 
   val ENGINE_SPARK_PYTHON_MAGIC_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.spark.python.magic.enabled")
+      .internal
       .doc("Whether to enable pyspark magic node, which is helpful for notebook." +
         " See details in KYUUBI #5877")
       .version("1.9.0")
       .booleanConf
-      .createWithDefault(false)
+      .createWithDefault(true)
 
   val ENGINE_SPARK_REGISTER_ATTRIBUTES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.spark.register.attributes")
