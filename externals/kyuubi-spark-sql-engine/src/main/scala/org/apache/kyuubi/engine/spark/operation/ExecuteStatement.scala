@@ -183,18 +183,14 @@ class ExecuteStatement(
         // Rename all col name to avoid duplicate columns
         val colName = range(0, result.schema.size).map(x => "col" + x)
 
-        val compress = if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") {
-          "zstd"
-        } else {
-          "zlib"
-        }
+        val codec = if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") "zstd" else "zlib"
         // df.write will introduce an extra shuffle for the outermost limit, and hurt performance
         if (resultMaxRows > 0) {
           result.toDF(colName: _*).limit(resultMaxRows).write
-            .option("compression", compress).format("orc").save(saveFileName.get)
+            .option("compression", codec).format("orc").save(saveFileName.get)
         } else {
           result.toDF(colName: _*).write
-            .option("compression", compress).format("orc").save(saveFileName.get)
+            .option("compression", codec).format("orc").save(saveFileName.get)
         }
         info(s"Save result to $saveFileName")
         fetchOrcStatement = Some(new FetchOrcStatement(spark))
