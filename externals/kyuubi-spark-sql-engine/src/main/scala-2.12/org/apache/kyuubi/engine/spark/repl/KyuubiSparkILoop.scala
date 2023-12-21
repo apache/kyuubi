@@ -109,6 +109,83 @@ private[spark] case class KyuubiSparkILoop private (
     }
   }
 
+  private def interpretLines(
+      lines: List[String],
+      resultFromLastLine: InterpretResponse): InterpretResponse = {
+    lines match {
+      case Nil => resultFromLastLine
+      case head :: tail =>
+        val result = interpretLine(head)
+
+        result match {
+          case InterpretInComplete() =>
+            tail match {
+              case Nil =>
+                // InterpretInComplete could be caused by an actual incomplete statements
+                // (e.g. "sc.") or statements with just comments.
+                // To distinguish them, reissue the same statement wrapped in { }.
+                // If it is an actual incomplete statement, the interpreter will return an error.
+                // If it is some comment, the interpreter will return success.
+                interpretLine(s"{\n$head\n}") match {
+                  case InterpretInComplete() | InterpretError(_) =>
+                    // Return the original error so users won't get confusing error message.
+                    result
+                  case _ => resultFromLastLine
+                }
+
+              case next :: nextTail =>
+                interpretLines(head + "\n" + next :: nextTail, resultFromLastLine)
+            }
+
+          case InterpretError(_) => result
+
+          case InterpretSuccess(e) =>
+            val mergedRet = resultFromLastLine match {
+              case InterpretSuccess(s) =>
+                // Because of SparkMagic related specific logic, so we will only merge text/plain
+                // result. For any magic related output, still follow the old way.
+                if (s.contains(TEXT_PLAIN) && e.contains(TEXT_PLAIN)) {
+                  val lastRet = s.getOrElse(TEXT_PLAIN, "").asInstanceOf[String]
+                  val currRet = e.getOrElse(TEXT_PLAIN, "").asInstanceOf[String]
+                  if (lastRet.nonEmpty && currRet.nonEmpty) {
+                    InterpretSuccess(Map(TEXT_PLAIN -> s"$lastRet$currRet"))
+                  } else if (lastRet.nonEmpty) {
+                    InterpretSuccess(Map(TEXT_PLAIN -> lastRet))
+                  } else if (currRet.nonEmpty) {
+                    InterpretSuccess(Map(TEXT_PLAIN -> currRet))
+                  } else {
+                    result
+                  }
+                } else {
+                  result
+                }
+
+              case _ => result
+            }
+
+            interpretLines(tail, mergedRet)
+        }
+
+    }
+  }
+
+  private def interpretLine(code: String): InterpretResponse = {
+    code match {
+      case MAGIC_REGEX(magic, rest) =>
+        executeMagic(magic, rest)
+      case _ =>
+        interpretWithRedirectOutError(code) match {
+          case Results.Success => InterpretSuccess(Map(TEXT_PLAIN -> getOutput))
+          case Results.Incomplete => InterpretInComplete()
+          case Results.Error => InterpretError(getOutput)
+        }
+    }
+  }
+
+  private def executeMagic(magic: String, rest: String): InterpretResponse = {
+    null
+  }
+
   def getOutput: String = {
     val res = output.toString.trim
     output.reset()

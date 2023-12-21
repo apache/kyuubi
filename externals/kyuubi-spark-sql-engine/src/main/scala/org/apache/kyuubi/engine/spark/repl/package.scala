@@ -18,6 +18,8 @@
 package org.apache.kyuubi.engine.spark
 
 package object repl {
+  val MAGIC_REGEX = "^%(\\w+)\\W*(.*)".r
+
   val APPLICATION_JSON = "application/json"
   val APPLICATION_LIVY_TABLE_JSON = "application/vnd.livy.table.v1+json"
   val TEXT_PLAIN = "text/plain"

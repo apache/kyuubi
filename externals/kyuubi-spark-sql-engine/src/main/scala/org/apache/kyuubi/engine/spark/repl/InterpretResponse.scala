@@ -17,4 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.repl
 
-class PythonInterpreter {}
+abstract class InterpretResponse
+case class InterpretSuccess(values: Map[String, Object]) extends InterpretResponse
+case class InterpretInComplete() extends InterpretResponse
+case class InterpretError(error: String) extends InterpretResponse

@@ -122,8 +122,8 @@ private[spark] case class KyuubiSparkILoop private (
           case InterpretInComplete() =>
             tail match {
               case Nil =>
-                // InterpretInComplete could be caused by an actual incomplete statements (e.g. "sc.")
-                // or statements with just comments.
+                // InterpretInComplete could be caused by an actual incomplete statements
+                // (e.g. "sc.") or statements with just comments.
                 // To distinguish them, reissue the same statement wrapped in { }.
                 // If it is an actual incomplete statement, the interpreter will return an error.
                 // If it is some comment, the interpreter will return success.
@@ -195,8 +195,6 @@ private[spark] case class KyuubiSparkILoop private (
 }
 
 private[spark] object KyuubiSparkILoop {
-  private val MAGIC_REGEX = "^%(\\w+)\\W*(.*)".r
-
   def apply(spark: SparkSession): KyuubiSparkILoop = {
     val os = new ByteArrayOutputStream()
     val iLoop = new KyuubiSparkILoop(spark, os)
@@ -206,9 +204,4 @@ private[spark] object KyuubiSparkILoop {
 
   private val lock = new ReentrantLock()
   private def withLockRequired[T](block: => T): T = Utils.withLockRequired(lock)(block)
-
-  abstract private class InterpretResponse
-  private case class InterpretSuccess(val values: Map[String, Object]) extends InterpretResponse
-  private case class InterpretInComplete() extends InterpretResponse
-  private case class InterpretError(error: String) extends InterpretResponse
 }
