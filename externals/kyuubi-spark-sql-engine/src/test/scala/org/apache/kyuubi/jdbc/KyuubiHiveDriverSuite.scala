@@ -130,7 +130,7 @@ class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
     connection.close()
   }
 
-  test("Support scala spark magic syntax for notebook") {
+  test("Support Spark scala magic syntax for notebook") {
     val driver = new KyuubiHiveDriver()
     val connection = driver.connect(getJdbcUrl, new Properties())
     val statement = connection.createStatement().asInstanceOf[KyuubiStatement]
@@ -139,14 +139,15 @@ class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
       assert(resultSet.next())
       assert(resultSet.getString(1).equals(
         "{\"application/vnd.livy.table.v1+json\":" +
-          "{\"headers\"" +
-          ":[{\"type\":\"STRING_TYPE\",\"name\":\"0\"}]," +
-          "\"data\":[[\"[[1,\\\"a\\\"],[3,\\\"b\\\"]]\"]]}}"))
+          "{\"headers\":[" +
+          "{\"type\":\"BIGINT_TYPE\",\"name\":\"_1\"},{\"type\":\"STRING_TYPE\",\"name\":\"_2\"}" +
+          "]," +
+          "\"data\":[[1,\"a\"],[3,\"b\"]]}}"))
 
       resultSet = statement.executeScala("%json x")
       assert(resultSet.next())
       assert(resultSet.getString(1).equals(
-        "{\"application/json\":\"[[1,\\\"a\\\"],[3,\\\"b\\\"]]\"}"))
+        "{\"application/json\":[{\"_1\":1,\"_2\":\"a\"},{\"_1\":3,\"_2\":\"b\"}]}"))
 
       val e = intercept[Exception](statement.executeScala("%unknown_magic"))
       assert(e.getMessage.contains("Unknown magic command unknown_magic"))

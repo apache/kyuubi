@@ -39,6 +39,7 @@ private[spark] case class KyuubiSparkILoop private (
     output: ByteArrayOutputStream)
   extends SparkILoop(null, new PrintWriter(output)) {
   import KyuubiSparkILoop._
+
   implicit private def formats: Formats = DefaultFormats
 
   val result = new DataFrameHolder(spark)
@@ -175,12 +176,12 @@ private[spark] case class KyuubiSparkILoop private (
     }
   }
 
-  private def interpretLine(code: String): InterpretResponse = {
-    code match {
+  private def interpretLine(line: String): InterpretResponse = {
+    line match {
       case MAGIC_REGEX(magic, rest) =>
         executeMagic(magic, rest)
       case _ =>
-        this.interpret(code) match {
+        this.interpret(line) match {
           case Results.Success => InterpretSuccess(TEXT_PLAIN -> getOutput)
           case Results.Incomplete => InterpretInComplete()
           case Results.Error => InterpretError("Error", getOutput)
