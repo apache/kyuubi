@@ -142,7 +142,25 @@ private[spark] case class KyuubiSparkILoop private (
 
           case InterpretSuccess(e) =>
             val mergedRet = resultFromLastLine match {
-              case InterpretSuccess(s) => result
+              case InterpretSuccess(s) =>
+                // Because of SparkMagic related specific logic, so we will only merge text/plain
+                // result. For any magic related output, still follow the old way.
+                if (s.contains(TEXT_PLAIN) && e.contains(TEXT_PLAIN)) {
+                  val lastRet = s.getOrElse(TEXT_PLAIN, "").asInstanceOf[String]
+                  val currRet = e.getOrElse(TEXT_PLAIN, "").asInstanceOf[String]
+                  if (lastRet.nonEmpty && currRet.nonEmpty) {
+                    InterpretSuccess(Map(TEXT_PLAIN -> s"$lastRet$currRet"))
+                  } else if (lastRet.nonEmpty) {
+                    InterpretSuccess(Map(TEXT_PLAIN -> lastRet))
+                  } else if (currRet.nonEmpty) {
+                    InterpretSuccess(Map(TEXT_PLAIN -> currRet))
+                  } else {
+                    result
+                  }
+                } else {
+                  result
+                }
+
               case _ => result
             }
 
@@ -158,7 +176,7 @@ private[spark] case class KyuubiSparkILoop private (
         executeMagic(magic, rest)
       case _ =>
         interpretWithRedirectOutError(code) match {
-          case Results.Success => InterpretSuccess(getOutput)
+          case Results.Success => InterpretSuccess(Map(TEXT_PLAIN -> getOutput))
           case Results.Incomplete => InterpretInComplete()
           case Results.Error => InterpretError(getOutput)
         }
@@ -190,7 +208,7 @@ private[spark] object KyuubiSparkILoop {
   private def withLockRequired[T](block: => T): T = Utils.withLockRequired(lock)(block)
 
   abstract private class InterpretResponse
-  private case class InterpretSuccess(content: String) extends InterpretResponse
+  private case class InterpretSuccess(val values: Map[String, Object]) extends InterpretResponse
   private case class InterpretInComplete() extends InterpretResponse
   private case class InterpretError(error: String) extends InterpretResponse
 }

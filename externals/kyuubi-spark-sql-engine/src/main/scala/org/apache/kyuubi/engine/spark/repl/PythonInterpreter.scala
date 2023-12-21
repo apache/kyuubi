@@ -17,6 +17,4 @@
 
 package org.apache.kyuubi.engine.spark.repl
 
-class PythonInterpreter {
-
-}
+class PythonInterpreter {}
