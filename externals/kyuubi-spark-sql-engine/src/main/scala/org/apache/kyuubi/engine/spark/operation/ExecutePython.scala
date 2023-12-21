@@ -51,6 +51,7 @@ class ExecutePython(
     queryTimeout: Long,
     worker: SessionPythonWorker,
     override protected val handle: OperationHandle) extends SparkOperation(session) {
+  import ExecutePython._
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
@@ -59,10 +60,6 @@ class ExecutePython(
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
       new StructType().add("output", "string")
-        .add("status", "string")
-        .add("ename", "string")
-        .add("evalue", "string")
-        .add("traceback", "array<string>")
     } else {
       result.schema
     }
@@ -88,14 +85,11 @@ class ExecutePython(
         val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
         if (PythonResponse.OK_STATUS.equalsIgnoreCase(status)) {
           val output = response.map(_.content.getOutput()).getOrElse("")
-          val ename = response.map(_.content.getEname()).getOrElse("")
-          val evalue = response.map(_.content.getEvalue()).getOrElse("")
-          val traceback = response.map(_.content.getTraceback()).getOrElse(Seq.empty)
-          iter =
-            new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, traceback)))
+          iter = new ArrayFetchIterator[Row](Array(Row(output)))
           setState(OperationState.FINISHED)
         } else {
-          throw KyuubiSQLException(s"Interpret error:\n$statement\n $response")
+          throw KyuubiSQLException(s"Interpret error:\n" +
+            s"${toPrettyJson(Map("code" -> statement, "response" -> response.orNull))}")
         }
       }
     } catch {
@@ -392,6 +386,11 @@ object ExecutePython extends Logging {
   def toJson[T](obj: T): String = {
     mapper.writeValueAsString(obj)
   }
+
+  def toPrettyJson[T](obj: T): String = {
+    mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj)
+  }
+
   def fromJson[T](json: String, clz: Class[T]): T = {
     mapper.readValue(json, clz)
   }

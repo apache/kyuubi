@@ -106,7 +106,6 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
            |+-----+------+""".stripMargin
       val resultSet1 = statement.executeQuery(set1)
       assert(resultSet1.next())
-      assert(resultSet1.getString("status") === "ok")
       assert(resultSet1.getString("output") === output1)
 
       val set2 =
@@ -121,7 +120,6 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
            |+-------------------------+-----+""".stripMargin
       val resultSet2 = statement.executeQuery(set2)
       assert(resultSet2.next())
-      assert(resultSet2.getString("status") === "ok")
       assert(resultSet2.getString("output") === output2)
 
       // get hello value in sql
@@ -196,7 +194,6 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
       val resultSet = statement.executeQuery(pyCode)
       assert(resultSet.next())
       assert(resultSet.getString("output") === output)
-      assert(resultSet.getString("status") === "ok")
     })
   }
 
