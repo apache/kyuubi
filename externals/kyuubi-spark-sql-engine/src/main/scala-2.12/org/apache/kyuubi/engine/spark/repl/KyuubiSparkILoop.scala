@@ -20,19 +20,14 @@ package org.apache.kyuubi.engine.spark.repl
 import java.io.{ByteArrayOutputStream, File, PrintWriter}
 import java.util.concurrent.locks.ReentrantLock
 
-import scala.collection.JavaConverters._
 import scala.tools.nsc.Settings
 import scala.tools.nsc.interpreter.Results
 
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
-import com.fasterxml.jackson.databind.node.ArrayNode
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
-import org.json4s.DefaultFormats
-import org.json4s.Extraction
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
@@ -303,6 +298,7 @@ private[spark] case class KyuubiSparkILoop private (
         } else {
           throw new TypesDoNotMatch
         }
+      case _ => "STRING_TYPE" // fallback to STRING_TYPE
     }
   }
 
