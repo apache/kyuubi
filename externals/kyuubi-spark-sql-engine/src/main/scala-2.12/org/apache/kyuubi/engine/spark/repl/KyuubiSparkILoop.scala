@@ -32,7 +32,7 @@ import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.engine.spark.util.JsonUtils._
+import org.apache.kyuubi.engine.spark.util.JsonUtils
 
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
@@ -202,7 +202,7 @@ private[spark] case class KyuubiSparkILoop private (
         case None => return InterpretError("NameError", s"Value $name does not exist")
       }
 
-      InterpretSuccess(APPLICATION_JSON -> toJson(value))
+      InterpretSuccess(APPLICATION_JSON -> JsonUtils.toJson(value))
     } catch {
       case _: Throwable =>
         InterpretError("ValueError", "Failed to convert value into a JSON value")
@@ -216,7 +216,7 @@ private[spark] case class KyuubiSparkILoop private (
       case None => return InterpretError("NameError", s"Value $name does not exist")
     }
 
-    extractTableFromJValue(toJson(value))
+    extractTableFromJValue(JsonUtils.toJson(value))
   }
 
   private class TypesDoNotMatch extends Exception

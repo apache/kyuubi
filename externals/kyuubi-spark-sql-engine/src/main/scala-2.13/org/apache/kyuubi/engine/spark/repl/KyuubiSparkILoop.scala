@@ -24,11 +24,15 @@ import scala.tools.nsc.Settings
 import scala.tools.nsc.interpreter.{IMain, Results}
 
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.engine.spark.util.JsonUtils
 
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
@@ -102,10 +106,10 @@ private[spark] case class KyuubiSparkILoop private (
 
   def clearResult(statementId: String): Unit = result.unset(statementId)
 
-  def interpretWithRedirectOutError(statement: String): Results.Result = withLockRequired {
+  def interpretWithRedirectOutError(statement: String): InterpretResponse = withLockRequired {
     Console.withOut(output) {
       Console.withErr(output) {
-        this.interpret(statement)
+        interpretLines(statement.trim.split("\n").toList, InterpretSuccess(TEXT_PLAIN -> ""))
       }
     }
   }
@@ -128,7 +132,7 @@ private[spark] case class KyuubiSparkILoop private (
                 // If it is an actual incomplete statement, the interpreter will return an error.
                 // If it is some comment, the interpreter will return success.
                 interpretLine(s"{\n$head\n}") match {
-                  case InterpretInComplete() | InterpretError(_) =>
+                  case InterpretInComplete() | InterpretError(_, _, _) =>
                     // Return the original error so users won't get confusing error message.
                     result
                   case _ => resultFromLastLine
@@ -138,16 +142,16 @@ private[spark] case class KyuubiSparkILoop private (
                 interpretLines(head + "\n" + next :: nextTail, resultFromLastLine)
             }
 
-          case InterpretError(_) => result
+          case InterpretError(_, _, _) => result
 
           case InterpretSuccess(e) =>
             val mergedRet = resultFromLastLine match {
               case InterpretSuccess(s) =>
                 // Because of SparkMagic related specific logic, so we will only merge text/plain
                 // result. For any magic related output, still follow the old way.
-                if (s.contains(TEXT_PLAIN) && e.contains(TEXT_PLAIN)) {
-                  val lastRet = s.getOrElse(TEXT_PLAIN, "").asInstanceOf[String]
-                  val currRet = e.getOrElse(TEXT_PLAIN, "").asInstanceOf[String]
+                if (s.values.contains(TEXT_PLAIN) && e.values.contains(TEXT_PLAIN)) {
+                  val lastRet = s.values.getOrElse(TEXT_PLAIN, "").asInstanceOf[String]
+                  val currRet = e.values.getOrElse(TEXT_PLAIN, "").asInstanceOf[String]
                   if (lastRet.nonEmpty && currRet.nonEmpty) {
                     InterpretSuccess(TEXT_PLAIN -> s"$lastRet$currRet")
                   } else if (lastRet.nonEmpty) {
@@ -175,7 +179,7 @@ private[spark] case class KyuubiSparkILoop private (
       case MAGIC_REGEX(magic, rest) =>
         executeMagic(magic, rest)
       case _ =>
-        interpretWithRedirectOutError(code) match {
+        this.interpret(code) match {
           case Results.Success => InterpretSuccess(TEXT_PLAIN -> getOutput)
           case Results.Incomplete => InterpretInComplete()
           case Results.Error => InterpretError("Error", getOutput)
@@ -184,7 +188,124 @@ private[spark] case class KyuubiSparkILoop private (
   }
 
   private def executeMagic(magic: String, rest: String): InterpretResponse = {
-    null
+    magic match {
+      case "json" => executeJsonMagic(rest)
+      case "table" => executeTableMagic(rest)
+      case _ => InterpretError("UnknownMagic", s"Unknown magic command $magic")
+    }
+  }
+
+  private def executeJsonMagic(name: String): InterpretResponse = {
+    try {
+      val value = valueOfTerm(name) match {
+        case Some(obj: RDD[_]) => obj.asInstanceOf[RDD[_]].take(10)
+        case Some(obj) => obj
+        case None => return InterpretError("NameError", s"Value $name does not exist")
+      }
+
+      InterpretSuccess(APPLICATION_JSON -> JsonUtils.toJson(value))
+    } catch {
+      case _: Throwable =>
+        InterpretError("ValueError", "Failed to convert value into a JSON value")
+    }
+  }
+
+  private def executeTableMagic(name: String): InterpretResponse = {
+    val value = valueOfTerm(name) match {
+      case Some(obj: RDD[_]) => obj.asInstanceOf[RDD[_]].take(10)
+      case Some(obj) => obj
+      case None => return InterpretError("NameError", s"Value $name does not exist")
+    }
+
+    extractTableFromJValue(JsonUtils.toJson(value))
+  }
+
+  private class TypesDoNotMatch extends Exception
+
+  private def extractTableFromJValue(value: JValue): InterpretResponse = {
+    // Convert the value into JSON and map it to a table.
+    val rows: List[JValue] = value match {
+      case JArray(arr) => arr
+      case _ => List(value)
+    }
+
+    try {
+      val headers = scala.collection.mutable.Map[String, Map[String, String]]()
+
+      val data = rows.map { case row =>
+        val cols: List[JField] = row match {
+          case JArray(arr: List[JValue]) =>
+            arr.zipWithIndex.map { case (v, index) => JField(index.toString, v) }
+          case JObject(obj) => obj.sortBy(_._1)
+          case value: JValue => List(JField("0", value))
+        }
+
+        cols.map { case (k, v) =>
+          val typeName = convertTableType(v)
+
+          headers.get(k) match {
+            case Some(header) =>
+              if (header.get("type").get != typeName) {
+                throw new TypesDoNotMatch
+              }
+            case None =>
+              headers.put(
+                k,
+                Map(
+                  "type" -> typeName,
+                  "name" -> k))
+          }
+
+          v
+        }
+      }
+
+      InterpretSuccess(
+        APPLICATION_LIVY_TABLE_JSON -> (
+          ("headers" -> headers.toSeq.sortBy(_._1).map(_._2)) ~ ("data" -> data)
+        ))
+    } catch {
+      case _: TypesDoNotMatch =>
+        InterpretError("TypeError", "table rows have different types")
+    }
+  }
+
+  private def allSameType(values: Iterator[JValue]): Boolean = {
+    if (values.hasNext) {
+      val type_name = convertTableType(values.next())
+      values.forall { case value => type_name.equals(convertTableType(value)) }
+    } else {
+      true
+    }
+  }
+
+  private def convertTableType(value: JValue): String = {
+    value match {
+      case (JNothing | JNull) => "NULL_TYPE"
+      case JBool(_) => "BOOLEAN_TYPE"
+      case JString(_) => "STRING_TYPE"
+      case JInt(_) => "BIGINT_TYPE"
+      case JDouble(_) => "DOUBLE_TYPE"
+      case JDecimal(_) => "DECIMAL_TYPE"
+      case JArray(arr) =>
+        if (allSameType(arr.iterator)) {
+          "ARRAY_TYPE"
+        } else {
+          throw new TypesDoNotMatch
+        }
+      case JObject(obj) =>
+        if (allSameType(obj.iterator.map(_._2))) {
+          "MAP_TYPE"
+        } else {
+          throw new TypesDoNotMatch
+        }
+      case _ => "STRING_TYPE" // fallback to STRING_TYPE
+    }
+  }
+
+  private def valueOfTerm(name: String): Option[Any] = {
+    // IMain#valueOfTerm will always return None, so use other way instead.
+    Option(this.lastRequest.lineRep.call("$result"))
   }
 
   def getOutput: String = {
