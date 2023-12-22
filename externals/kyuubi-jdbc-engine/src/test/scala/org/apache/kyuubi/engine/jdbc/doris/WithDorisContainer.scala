@@ -27,12 +27,10 @@ import org.apache.kyuubi.engine.jdbc.WithJdbcServerContainer
 
 trait WithDorisContainer extends WithJdbcServerContainer {
 
-  private val DORIS_FE_PORT = 9030
-
-  private val DORIS_BE_PORT = 8040
+  private val DORIS_FE_MYSQL_PORT = 9030
+  private val DORIS_BE_HTTTP_PORT = 8040
 
   private val DORIS_FE_SERVICE_NAME = "doris-fe"
-
   private val DORIS_BE_SERVICE_NAME = "doris-be"
 
   override val containerDef: DockerComposeContainer.Def =
@@ -43,19 +41,18 @@ trait WithDorisContainer extends WithJdbcServerContainer {
         exposedServices = Seq[ExposedService](
           ExposedService(
             DORIS_FE_SERVICE_NAME,
-            DORIS_FE_PORT,
+            DORIS_FE_MYSQL_PORT,
             waitStrategy =
               new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofMinutes(5))),
           ExposedService(
             DORIS_BE_SERVICE_NAME,
-            DORIS_BE_PORT,
+            DORIS_BE_HTTTP_PORT,
             waitStrategy =
               new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofMinutes(5)))))
 
-  protected def feUrl: String = withContainers { container =>
-    val feHost: String = container.getServiceHost(DORIS_FE_SERVICE_NAME, DORIS_FE_PORT)
-    val fePort: Int = container.getServicePort(DORIS_FE_SERVICE_NAME, DORIS_FE_PORT)
-    val url = s"$feHost:$fePort"
-    url
+  protected def feJdbcUrl: String = withContainers { container =>
+    val feHost: String = container.getServiceHost(DORIS_FE_SERVICE_NAME, DORIS_FE_MYSQL_PORT)
+    val fePort: Int = container.getServicePort(DORIS_FE_SERVICE_NAME, DORIS_FE_MYSQL_PORT)
+    s"jdbc:mysql://$feHost:$fePort"
   }
 }
