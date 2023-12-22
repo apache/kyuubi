@@ -315,8 +315,12 @@ private[kyuubi] class EngineRef(
    */
   def deregister(discoveryClient: DiscoveryClient, hostPort: (String, Int)): Unit =
     tryWithLock(discoveryClient) {
-      if (discoveryClient.getServerHost(engineSpace) == Option(hostPort)) {
-        discoveryClient.delete(engineSpace)
+      // refer the DiscoveryClient::getServerHost implementation
+      discoveryClient.getServiceNodesInfo(engineSpace, Some(1), silent = true) match {
+        case Seq(sn) if (sn.host, sn.port) == hostPort =>
+          val engineNodePath = s"$engineSpace/${sn.nodeName}"
+          discoveryClient.delete(engineNodePath)
+        case _ =>
       }
     }
 
