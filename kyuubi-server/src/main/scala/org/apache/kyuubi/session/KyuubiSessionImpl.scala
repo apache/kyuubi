@@ -25,6 +25,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.EngineOpenOnFailure._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_HANDLE_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
@@ -179,7 +180,7 @@ class KyuubiSessionImpl(
                 e.getCause)
               Thread.sleep(retryWait)
               openOnFailure match {
-                case EngineOpenOnFailure.DEREGISTER_IMMEDIATELY => deregisterEngine()
+                case DEREGISTER_IMMEDIATELY => deregisterEngine()
                 case _ =>
               }
               shouldRetry = true
@@ -190,8 +191,8 @@ class KyuubiSessionImpl(
                 e)
               openSessionError = Some(e)
               openOnFailure match {
-                case EngineOpenOnFailure.DEREGISTER_IMMEDIATELY | EngineOpenOnFailure.DEREGISTER_AFTER_RETRY =>
-                  deregisterEngine()
+                case DEREGISTER_IMMEDIATELY | DEREGISTER_AFTER_RETRY => deregisterEngine()
+                case _ =>
               }
               throw e
           } finally {
