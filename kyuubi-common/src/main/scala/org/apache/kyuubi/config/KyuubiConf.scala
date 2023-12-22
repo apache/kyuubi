@@ -1520,7 +1520,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.engine.open.retry.reset")
       .doc("Whether to reset the engine ref with existing engine host and port before" +
         " retrying to open the engine after failure.")
-      .version("1.9.0")
+      .version("1.8.1")
       .booleanConf
       .createWithDefault(false)
 
