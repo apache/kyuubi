@@ -125,12 +125,10 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
         | override all settings in `$SPARK_HOME/conf/spark-defaults.conf`""" +=
       "### Via JDBC Connection URL" +=
       """ Setting them in the JDBC Connection URL
-        | supplies session-specific for each SQL engine. For example:
-        | ```
-        |jdbc:hive2://localhost:10009/default;#
-        |spark.sql.shuffle.partitions=2;spark.executor.memory=5g
-        |```
-        |""" +=
+        | supplies session-specific for each SQL engine. For example:""" ++=
+      """```
+        |jdbc:hive2://localhost:10009/default;#spark.sql.shuffle.partitions=2;spark.executor.memory=5g
+        |```""" +=
       "" +=
       "- **Runtime SQL Configuration**" +=
       """  - For [Runtime SQL Configurations](
@@ -201,8 +199,8 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       """The below options in `kyuubi-defaults.conf` will set `query_max_stage_count: 500`
         | and `parse_decimal_literals_as_double: true` into trino session properties.""" +=
       "### Via JDBC Connection URL" +=
-      """Setting them in the JDBC Connection URL supplies session-specific
-        | for each SQL engine. For example:""" ++=
+      "Setting them in the JDBC Connection URL supplies session-specific for each SQL engine." +
+        " For example:" ++=
       """ ```
         | jdbc:hive2://localhost:10009/default;#trino.query_max_stage_count=500;trino.parse_decimal_literals_as_double=true
         | ```

@@ -518,7 +518,11 @@ Setting them in `$KYUUBI_HOME/conf/kyuubi-defaults.conf` supplies with default v
 
 ### Via JDBC Connection URL
 
-Setting them in the JDBC Connection URL supplies session-specific for each SQL engine. For example: ```jdbc:hive2://localhost:10009/default;#spark.sql.shuffle.partitions=2;spark.executor.memory=5g```
+Setting them in the JDBC Connection URL supplies session-specific for each SQL engine. For example:
+
+```
+jdbc:hive2://localhost:10009/default;#spark.sql.shuffle.partitions=2;spark.executor.memory=5g
+```
 
 - **Runtime SQL Configuration**
   - For [Runtime SQL Configurations](https://spark.apache.org/docs/latest/configuration.html#runtime-sql-configuration), they will take affect every time
