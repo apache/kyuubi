@@ -126,9 +126,11 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       "### Via JDBC Connection URL" +=
       """ Setting them in the JDBC Connection URL
         | supplies session-specific for each SQL engine. For example:""" ++=
+      // scalastyle:off
       """```
         |jdbc:hive2://localhost:10009/default;#spark.sql.shuffle.partitions=2;spark.executor.memory=5g
         |```""" +=
+      // scalastyle:on
       "" +=
       "- **Runtime SQL Configuration**" +=
       """  - For [Runtime SQL Configurations](
@@ -169,9 +171,11 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       "### Via JDBC Connection URL" ++=
       "Setting them in the JDBC Connection URL supplies session-specific for each SQL engine." +
         " For example:" ++=
+      // scalastyle:off
       """```
         | jdbc:hive2://localhost:10009/default;#flink.parallelism.default=2;flink.taskmanager.memory.process.size=5g
         |```""" +=
+      // scalastyle:on
       "### Via SET Statements" +=
       """Please refer to the Flink official online documentation for [SET Statements]
         |(https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/set/)"""
@@ -200,10 +204,12 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       "### Via JDBC Connection URL" +=
       "Setting them in the JDBC Connection URL supplies session-specific for each SQL engine." +
         " For example:" ++=
+      // scalastyle:off
       """ ```
         | jdbc:hive2://localhost:10009/default;#trino.query_max_stage_count=500;trino.parse_decimal_literals_as_double=true
         | ```
         |""" +=
+      // scalastyle:on
       "### Via SET Statements" +=
       """Please refer to the Trino official online documentation for [SET Statements]
         |(https://trino.io/docs/current/sql/set-session.html)"""
