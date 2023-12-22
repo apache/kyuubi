@@ -1516,8 +1516,8 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(10).toMillis)
 
-  val ENGINE_OPEN_RETRY_RESET: ConfigEntry[Boolean] =
-    buildConf("kyuubi.session.engine.open.retry.reset")
+  val ENGINE_OPEN_RESET_ON_FAILURE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.engine.open.reset.onFailure")
       .doc("Whether to reset the engine ref with existing engine host and port before" +
         " retrying to open the engine after failure.")
       .version("1.8.1")

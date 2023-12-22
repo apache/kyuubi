@@ -141,11 +141,21 @@ class KyuubiSessionImpl(
 
         val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)
         val retryWait = sessionManager.getConf.get(ENGINE_OPEN_RETRY_WAIT)
-        val resetOnRetry = sessionManager.getConf.get(ENGINE_OPEN_RETRY_RESET)
         var attempt = 0
         var shouldRetry = true
         while (attempt <= maxAttempts && shouldRetry) {
           val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
+
+          def resetEngineRefIfNeeded(): Unit =
+            if (sessionManager.getConf.get(ENGINE_OPEN_RESET_ON_FAILURE)) {
+              try {
+                engine.reset(discoveryClient, (host, port))
+              } catch {
+                case e: Throwable =>
+                  warn(s"Error on resetting engine ref [${engine.engineSpace} $host:$port]", e)
+              }
+            }
+
           try {
             val passwd =
               if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
@@ -168,6 +178,7 @@ class KyuubiSessionImpl(
                   s" $attempt/$maxAttempts times, retrying",
                 e.getCause)
               Thread.sleep(retryWait)
+              resetEngineRefIfNeeded()
               shouldRetry = true
             case e: Throwable =>
               error(
@@ -175,26 +186,19 @@ class KyuubiSessionImpl(
                   s" for $user session failed",
                 e)
               openSessionError = Some(e)
+              resetEngineRefIfNeeded()
               throw e
           } finally {
             attempt += 1
-            if (shouldRetry) {
+            if (shouldRetry && _client != null) {
               try {
-                Option(_client).foreach(_.closeSession())
+                _client.closeSession()
               } catch {
                 case e: Throwable =>
                   warn(
                     "Error on closing broken client of engine " +
                       s"[${engine.defaultEngineName} $host:$port]",
                     e)
-              }
-              if (resetOnRetry) {
-                try {
-                  engine.reset(discoveryClient, (host, port))
-                } catch {
-                  case e: Throwable =>
-                    warn(s"Error on resetting engine ref [${engine.engineSpace} $host:$port]", e)
-                }
               }
             }
           }
