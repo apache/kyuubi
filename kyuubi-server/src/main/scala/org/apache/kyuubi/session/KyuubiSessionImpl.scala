@@ -141,19 +141,19 @@ class KyuubiSessionImpl(
 
         val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)
         val retryWait = sessionManager.getConf.get(ENGINE_OPEN_RETRY_WAIT)
+        val openOnFailure =
+          EngineOpenOnFailure.withName(sessionManager.getConf.get(ENGINE_OPEN_ON_FAILURE))
         var attempt = 0
         var shouldRetry = true
         while (attempt <= maxAttempts && shouldRetry) {
           val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
 
-          def resetEngineRefIfNeeded(): Unit =
-            if (sessionManager.getConf.get(ENGINE_OPEN_RESET_ON_FAILURE)) {
-              try {
-                engine.reset(discoveryClient, (host, port))
-              } catch {
-                case e: Throwable =>
-                  warn(s"Error on resetting engine ref [${engine.engineSpace} $host:$port]", e)
-              }
+          def deregisterEngine(): Unit =
+            try {
+              engine.reset(discoveryClient, (host, port))
+            } catch {
+              case e: Throwable =>
+                warn(s"Error on deRegistering engine [${engine.engineSpace} $host:$port]", e)
             }
 
           try {
@@ -178,7 +178,10 @@ class KyuubiSessionImpl(
                   s" $attempt/$maxAttempts times, retrying",
                 e.getCause)
               Thread.sleep(retryWait)
-              resetEngineRefIfNeeded()
+              openOnFailure match {
+                case EngineOpenOnFailure.DEREGISTER_IMMEDIATELY => deregisterEngine()
+                case _ =>
+              }
               shouldRetry = true
             case e: Throwable =>
               error(
@@ -186,7 +189,10 @@ class KyuubiSessionImpl(
                   s" for $user session failed",
                 e)
               openSessionError = Some(e)
-              resetEngineRefIfNeeded()
+              openOnFailure match {
+                case EngineOpenOnFailure.DEREGISTER_IMMEDIATELY | EngineOpenOnFailure.DEREGISTER_AFTER_RETRY =>
+                  deregisterEngine()
+              }
               throw e
           } finally {
             attempt += 1
