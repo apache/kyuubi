@@ -36,6 +36,7 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE, ENGINE_SPARK_PYTHON_MAGIC_ENABLED}
+import org.apache.kyuubi.config.KyuubiConf.EngineSparkOutputMode.{AUTO, EngineSparkOutputMode, NOTEBOOK}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.util.JsonUtils
@@ -86,7 +87,7 @@ class ExecutePython(
         val response = worker.runCode(statement)
         val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
         if (PythonResponse.OK_STATUS.equalsIgnoreCase(status)) {
-          val output = response.map(_.content.getOutput()).getOrElse("")
+          val output = response.map(_.content.getOutput(outputMode)).getOrElse("")
           val ename = response.map(_.content.getEname()).getOrElse("")
           val evalue = response.map(_.content.getEvalue()).getOrElse("")
           val traceback = response.map(_.content.getTraceback()).getOrElse(Seq.empty)
@@ -403,18 +404,22 @@ case class PythonResponseContent(
     evalue: String,
     traceback: Seq[String],
     status: String) {
-  def getOutput(): String = {
+  def getOutput(outputMode: EngineSparkOutputMode): String = {
     if (data == null) return ""
 
-    // If data does not contains field other than `test/plain`, keep backward compatibility,
-    // otherwise, return all the data.
-    if (data.filterNot(_._1 == "text/plain").isEmpty) {
-      data.get("text/plain").map {
-        case str: String => str
-        case obj => JsonUtils.toJson(obj)
-      }.getOrElse("")
-    } else {
-      JsonUtils.toJson(data)
+    outputMode match {
+      case AUTO =>
+        // If data does not contains field other than `test/plain`, keep backward compatibility,
+        // otherwise, return all the data.
+        if (data.filterNot(_._1 == "text/plain").isEmpty) {
+          data.get("text/plain").map {
+            case str: String => str
+            case obj => JsonUtils.toJson(obj)
+          }.getOrElse("")
+        } else {
+          JsonUtils.toJson(data)
+        }
+      case NOTEBOOK => JsonUtils.toJson(data)
     }
   }
   def getEname(): String = {

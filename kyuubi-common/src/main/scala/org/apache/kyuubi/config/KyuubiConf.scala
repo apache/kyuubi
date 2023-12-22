@@ -3258,6 +3258,20 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  object EngineSparkOutputMode extends Enumeration {
+    type EngineSparkOutputMode = Value
+    val AUTO, NOTEBOOK = Value
+  }
+
+  val ENGINE_SPARK_OUTPUT_MODE: ConfigEntry[String] =
+    buildConf("kyuubi.engine.spark.output.mode")
+      .doc("The output mode of Spark engine: <ul>" +
+        " <li>AUTO: For PySpark, the extracted `text/plain` from python response as output.</li>" +
+        " <li>NOTEBOOK: For PySpark, the original python response as output.</li></ul>")
+      .version("1.9.0")
+      .stringConf
+      .createWithDefault(EngineSparkOutputMode.AUTO.toString)
+
   val ENGINE_SPARK_REGISTER_ATTRIBUTES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.spark.register.attributes")
       .internal

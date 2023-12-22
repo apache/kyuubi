@@ -28,7 +28,7 @@ import org.apache.spark.sql.types.{BinaryType, StructField, StructType}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE, SESSION_USER_SIGN_ENABLED}
+import org.apache.kyuubi.config.KyuubiConf.{ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING, ENGINE_SPARK_OUTPUT_MODE, EngineSparkOutputMode, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE, SESSION_USER_SIGN_ENABLED}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, SPARK_SCHEDULER_POOL_KEY}
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
@@ -81,6 +81,9 @@ abstract class SparkOperation(session: Session)
   private val progressEnable: Boolean = getSessionConf(SESSION_PROGRESS_ENABLE, spark)
 
   protected def supportProgress: Boolean = false
+
+  protected def outputMode: EngineSparkOutputMode.EngineSparkOutputMode =
+    EngineSparkOutputMode.withName(getSessionConf(ENGINE_SPARK_OUTPUT_MODE, spark))
 
   override def getStatus: OperationStatus = {
     if (progressEnable && supportProgress) {
