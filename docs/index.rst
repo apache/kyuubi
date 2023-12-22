@@ -139,7 +139,7 @@ by professionals on the Kyuubi server side. It is suitable for the following sce
      in your data lake in cloud storage or an on-prem HDFS cluster.
 
 - Lakehouse formation and analytics
-   - Easily build an ACID table storage layer via Hudi, Iceberg, or/and Delta Lake.
+   - Easily build an ACID table storage layer via Hudi, Iceberg, Delta Lake or/and Paimon.
 
 - Logical data warehouse
    - Provide a relational abstraction on top of disparate data without ETL jobs,
