@@ -124,7 +124,6 @@ class DefaultJdbcTRowSetGenerator extends JdbcTRowSetGenerator {
       case (date: Date, DATE) => formatDate(date)
       case (dateTime: LocalDateTime, TIMESTAMP) => formatLocalDateTime(dateTime)
       case (decimal: java.math.BigDecimal, DECIMAL) => decimal.toPlainString
-      case (bigint: java.math.BigInteger, BIGINT) => bigint.toString()
       case (other, _) => other.toString
     }
 }
