@@ -17,16 +17,25 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule.permanentview
 
+import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
-import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Project}
 
-case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable) extends LeafNode {
+case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
+  extends LeafNode with MultiInstanceRelation {
 
   override def output: Seq[Attribute] = child.output
 
   override def argString(maxFields: Int): String = ""
 
   override def innerChildren: Seq[QueryPlan[_]] = child :: Nil
+
+  override def newInstance(): LogicalPlan = {
+    val projectList = child.output.map { case attr =>
+      Alias(Cast(attr, attr.dataType), attr.name)(explicitMetadata = Some(attr.metadata))
+    }
+    this.copy(child = Project(projectList, child), catalogTable = catalogTable)
+  }
 }
