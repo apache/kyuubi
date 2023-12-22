@@ -24,18 +24,6 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnValue}
 
 class MySQLTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
 
-  override def toTinyIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
-    asIntegerTColumn(rows, ordinal)
-
-  override def toSmallIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
-    asIntegerTColumn(rows, ordinal)
-
-  override def toTinyIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
-    asIntegerTColumnValue(row, ordinal)
-
-  override def toSmallIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
-    asIntegerTColumnValue(row, ordinal)
-
   override def toIntegerTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn = {
     val colHead = if (rows.isEmpty) None else rows.head(ordinal)
     colHead match {
