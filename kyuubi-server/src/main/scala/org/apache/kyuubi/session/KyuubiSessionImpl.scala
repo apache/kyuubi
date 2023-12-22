@@ -169,14 +169,6 @@ class KyuubiSessionImpl(
                 e.getCause)
               Thread.sleep(retryWait)
               shouldRetry = true
-              if (resetOnRetry) {
-                try {
-                  engine.reset(discoveryClient, (host, port))
-                } catch {
-                  case e: Throwable =>
-                    warn(s"Error on resetting engine ref [${engine.engineSpace} $host:$port]", e)
-                }
-              }
             case e: Throwable =>
               error(
                 s"Opening engine [${engine.defaultEngineName} $host:$port]" +
@@ -186,15 +178,23 @@ class KyuubiSessionImpl(
               throw e
           } finally {
             attempt += 1
-            if (shouldRetry && _client != null) {
+            if (shouldRetry) {
               try {
-                _client.closeSession()
+                Option(_client).foreach(_.closeSession())
               } catch {
                 case e: Throwable =>
                   warn(
                     "Error on closing broken client of engine " +
                       s"[${engine.defaultEngineName} $host:$port]",
                     e)
+              }
+              if (resetOnRetry) {
+                try {
+                  engine.reset(discoveryClient, (host, port))
+                } catch {
+                  case e: Throwable =>
+                    warn(s"Error on resetting engine ref [${engine.engineSpace} $host:$port]", e)
+                }
               }
             }
           }
