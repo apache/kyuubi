@@ -25,6 +25,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.EngineOpenOnFailure._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_HANDLE_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
@@ -141,10 +142,21 @@ class KyuubiSessionImpl(
 
         val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)
         val retryWait = sessionManager.getConf.get(ENGINE_OPEN_RETRY_WAIT)
+        val openOnFailure =
+          EngineOpenOnFailure.withName(sessionManager.getConf.get(ENGINE_OPEN_ON_FAILURE))
         var attempt = 0
         var shouldRetry = true
         while (attempt <= maxAttempts && shouldRetry) {
           val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
+
+          def deregisterEngine(): Unit =
+            try {
+              engine.deregister(discoveryClient, (host, port))
+            } catch {
+              case e: Throwable =>
+                warn(s"Error on de-registering engine [${engine.engineSpace} $host:$port]", e)
+            }
+
           try {
             val passwd =
               if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
@@ -167,6 +179,10 @@ class KyuubiSessionImpl(
                   s" $attempt/$maxAttempts times, retrying",
                 e.getCause)
               Thread.sleep(retryWait)
+              openOnFailure match {
+                case DEREGISTER_IMMEDIATELY => deregisterEngine()
+                case _ =>
+              }
               shouldRetry = true
             case e: Throwable =>
               error(
@@ -174,6 +190,10 @@ class KyuubiSessionImpl(
                   s" for $user session failed",
                 e)
               openSessionError = Some(e)
+              openOnFailure match {
+                case DEREGISTER_IMMEDIATELY | DEREGISTER_AFTER_RETRY => deregisterEngine()
+                case _ =>
+              }
               throw e
           } finally {
             attempt += 1
