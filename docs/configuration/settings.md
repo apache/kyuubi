@@ -550,10 +550,7 @@ The below options in `kyuubi-defaults.conf` will set `parallelism.default: 2` an
 
 ### Via JDBC Connection URL
 
-Setting them in the JDBC Connection URL supplies session-specific for each SQL engine. For example: 
-```
-jdbc:hive2://localhost:10009/default;#flink.parallelism.default=2;flink.taskmanager.memory.process.size=5g
-```
+Setting them in the JDBC Connection URL supplies session-specific for each SQL engine. For example: ``` jdbc:hive2://localhost:10009/default;#flink.parallelism.default=2;flink.taskmanager.memory.process.size=5g ```
 
 ### Via SET Statements
 
@@ -580,10 +577,7 @@ The below options in `kyuubi-defaults.conf` will set `query_max_stage_count: 500
 
 ### Via JDBC Connection URL
 
-Setting them in the JDBC Connection URL supplies session-specific for each SQL engine. For example: 
-```
-jdbc:hive2://localhost:10009/default;#trino.query_max_stage_count=500;trino.parse_decimal_literals_as_double=true
-```
+Setting them in the JDBC Connection URL supplies session-specific for each SQL engine. For example: ``` jdbc:hive2://localhost:10009/default;#trino.query_max_stage_count=500;trino.parse_decimal_literals_as_double=true ```
 
 ### Via SET Statements
 
