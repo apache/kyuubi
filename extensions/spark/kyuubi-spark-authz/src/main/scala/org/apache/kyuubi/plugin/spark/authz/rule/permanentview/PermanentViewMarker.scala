@@ -21,7 +21,7 @@ import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
-import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Project, Statistics}
 
 case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
   extends LeafNode with MultiInstanceRelation {
@@ -31,6 +31,8 @@ case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
   override def argString(maxFields: Int): String = ""
 
   override def innerChildren: Seq[QueryPlan[_]] = child :: Nil
+
+  override def computeStats(): Statistics = child.stats
 
   override def newInstance(): LogicalPlan = {
     val projectList = child.output.map { case attr =>
