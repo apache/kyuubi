@@ -317,10 +317,14 @@ private[kyuubi] class EngineRef(
     tryWithLock(discoveryClient) {
       // refer the DiscoveryClient::getServerHost implementation
       discoveryClient.getServiceNodesInfo(engineSpace, Some(1), silent = true) match {
-        case Seq(sn) if (sn.host, sn.port) == hostPort =>
-          val engineNodePath = s"$engineSpace/${sn.nodeName}"
-          discoveryClient.delete(engineNodePath)
-        case _ =>
+        case Seq(sn) =>
+          if ((sn.host, sn.port) == hostPort) {
+            info(s"Deleting engine node:$sn")
+            discoveryClient.delete(s"$engineSpace/${sn.nodeName}")
+          } else {
+            warn(s"Engine node:$sn is not matched with host&port[$hostPort]")
+          }
+        case _ => warn(s"No engine node found in $engineSpace")
       }
     }
 
