@@ -168,12 +168,11 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
         |```""" +=
       """The below options in `kyuubi-defaults.conf` will set `parallelism.default: 2`
         | and `taskmanager.memory.process.size: 5g` into flink configurations.""" +=
-      "### Via JDBC Connection URL" +=
+      "### Via JDBC Connection URL" ++=
       """Setting them in the JDBC Connection URL supplies session-specific
         | for each SQL engine. For example:
         | ```
-        | jdbc:hive2://localhost:10009/default;
-        |#flink.parallelism.default=2;flink.taskmanager.memory.process.size=5g
+        | jdbc:hive2://localhost:10009/default;#flink.parallelism.default=2;flink.taskmanager.memory.process.size=5g
         | ```
         |""" +=
       "### Via SET Statements" +=
@@ -203,10 +202,9 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
         | and `parse_decimal_literals_as_double: true` into trino session properties.""" +=
       "### Via JDBC Connection URL" +=
       """Setting them in the JDBC Connection URL supplies session-specific
-        | for each SQL engine. For example:
-        | ```
-        | jdbc:hive2://localhost:10009/default;
-        |#trino.query_max_stage_count=500;trino.parse_decimal_literals_as_double=true
+        | for each SQL engine. For example:""" ++=
+      """ ```
+        | jdbc:hive2://localhost:10009/default;#trino.query_max_stage_count=500;trino.parse_decimal_literals_as_double=true
         | ```
         |""" +=
       "### Via SET Statements" +=
