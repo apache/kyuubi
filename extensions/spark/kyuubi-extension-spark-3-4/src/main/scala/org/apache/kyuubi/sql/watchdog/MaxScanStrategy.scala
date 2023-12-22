@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.sql.watchdog
 
-import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
-
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{PruneFileSourcePartitionHelper, SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.SQLConfHelper
