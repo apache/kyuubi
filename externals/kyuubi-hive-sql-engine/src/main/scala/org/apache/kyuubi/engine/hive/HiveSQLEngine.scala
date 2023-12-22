@@ -79,6 +79,14 @@ object HiveSQLEngine extends Logging {
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
+    // align with the operational behavior of HiveServer2, it is necessary to
+    // include the `hiveserver2-site.xml` configuration within the HiveConf settings.
+    // for instance, upon the installation of the Hive Ranger plugin, authorization
+    // configurations are appended to the `hiveserver2-site.xml` file. Similarly, to activate
+    // the Ranger plugin for the Hive engine within Kyuubi, it is essential for the Hive engine
+    // to load the `hiveserver2-site.xml` file. This ensures that the Hive engine's
+    // security features are consistent with those managed by HiveServer2. See [KYUUBI #5878].
+    hiveConf.addResource("hiveserver2-site.xml")
     for ((k, v) <- kyuubiConf.getAll) {
       hiveConf.set(k, v)
     }
