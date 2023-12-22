@@ -1415,7 +1415,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #5884][Bug] PVM should inherit MultiInstance and wrap with new exprId") {
+  test("[KYUUBI #5884] PVM should inherit MultiInstance and wrap with new exprId") {
     val db1 = defaultDb
     val table1 = "table1"
     val perm_view = "perm_view"
