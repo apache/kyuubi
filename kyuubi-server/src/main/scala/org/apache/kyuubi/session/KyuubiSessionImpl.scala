@@ -151,10 +151,10 @@ class KyuubiSessionImpl(
 
           def deregisterEngine(): Unit =
             try {
-              engine.reset(discoveryClient, (host, port))
+              engine.deregister(discoveryClient, (host, port))
             } catch {
               case e: Throwable =>
-                warn(s"Error on deRegistering engine [${engine.engineSpace} $host:$port]", e)
+                warn(s"Error on de-registering engine [${engine.engineSpace} $host:$port]", e)
             }
 
           try {
