@@ -307,6 +307,19 @@ private[kyuubi] class EngineRef(
       }
   }
 
+  /**
+   * Deregister the engine from engine space with the given host and port on connection failure.
+   *
+   * @param discoveryClient the zookeeper client to get or create engine instance
+   * @param hostPort the existing engine host and port
+   */
+  def deregister(discoveryClient: DiscoveryClient, hostPort: (String, Int)): Unit =
+    tryWithLock(discoveryClient) {
+      if (discoveryClient.getServerHost(engineSpace) == Option(hostPort)) {
+        discoveryClient.delete(engineSpace)
+      }
+    }
+
   def close(): Unit = {
     if (shareLevel == CONNECTION && builder != null) {
       try {
