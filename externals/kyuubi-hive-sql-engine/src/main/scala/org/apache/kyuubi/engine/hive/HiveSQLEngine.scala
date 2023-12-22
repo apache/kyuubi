@@ -85,7 +85,7 @@ object HiveSQLEngine extends Logging {
     // configurations are appended to the `hiveserver2-site.xml` file. Similarly, to activate
     // the Ranger plugin for the Hive engine within Kyuubi, it is essential for the Hive engine
     // to load the `hiveserver2-site.xml` file. This ensures that the Hive engine's
-    // security features are consistent with those managed by HiveServer2. see KYUUBI-5878.
+    // security features are consistent with those managed by HiveServer2. See [KYUUBI #5878].
     hiveConf.addResource("hiveserver2-site.xml")
     for ((k, v) <- kyuubiConf.getAll) {
       hiveConf.set(k, v)
