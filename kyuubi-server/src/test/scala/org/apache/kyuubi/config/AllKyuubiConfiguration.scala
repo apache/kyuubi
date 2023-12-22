@@ -167,12 +167,11 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       """The below options in `kyuubi-defaults.conf` will set `parallelism.default: 2`
         | and `taskmanager.memory.process.size: 5g` into flink configurations.""" +=
       "### Via JDBC Connection URL" ++=
-      """Setting them in the JDBC Connection URL supplies session-specific
-        | for each SQL engine. For example:
-        | ```
+      "Setting them in the JDBC Connection URL supplies session-specific for each SQL engine." +
+        " For example:" ++=
+      """```
         | jdbc:hive2://localhost:10009/default;#flink.parallelism.default=2;flink.taskmanager.memory.process.size=5g
-        | ```
-        |""" +=
+        |```""" +=
       "### Via SET Statements" +=
       """Please refer to the Flink official online documentation for [SET Statements]
         |(https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/set/)"""
