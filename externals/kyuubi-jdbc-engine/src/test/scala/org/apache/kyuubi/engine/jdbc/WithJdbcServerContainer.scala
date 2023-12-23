@@ -16,8 +16,8 @@
  */
 package org.apache.kyuubi.engine.jdbc
 
-import com.dimafeng.testcontainers.ForAllTestContainer
+import com.dimafeng.testcontainers.scalatest.TestContainerForAll
 
 import org.apache.kyuubi.KyuubiFunSuite
 
-trait WithJdbcServerContainer extends KyuubiFunSuite with ForAllTestContainer {}
+trait WithJdbcServerContainer extends KyuubiFunSuite with TestContainerForAll {}

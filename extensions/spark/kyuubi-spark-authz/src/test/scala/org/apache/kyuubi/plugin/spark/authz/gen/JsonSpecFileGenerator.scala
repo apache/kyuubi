@@ -24,7 +24,9 @@ import java.nio.file.{Files, Paths, StandardOpenOption}
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.serde.{mapper, CommandSpec}
+import org.apache.kyuubi.plugin.spark.authz.serde.CommandSpecs
 import org.apache.kyuubi.util.AssertionUtils._
+import org.apache.kyuubi.util.GoldenFileUtils._
 
 /**
  * Generates the default command specs to src/main/resources dir.
@@ -42,26 +44,29 @@ import org.apache.kyuubi.util.AssertionUtils._
 class JsonSpecFileGenerator extends AnyFunSuite {
   // scalastyle:on
   test("check spec json files") {
-    writeCommandSpecJson("database", DatabaseCommands.data)
-    writeCommandSpecJson("table", TableCommands.data ++ IcebergCommands.data ++ HudiCommands.data)
-    writeCommandSpecJson("function", FunctionCommands.data)
-    writeCommandSpecJson("scan", Scans.data)
+    writeCommandSpecJson("database", Seq(DatabaseCommands))
+    writeCommandSpecJson("table", Seq(TableCommands, IcebergCommands, HudiCommands, DeltaCommands))
+    writeCommandSpecJson("function", Seq(FunctionCommands))
+    writeCommandSpecJson("scan", Seq(Scans))
   }
 
   def writeCommandSpecJson[T <: CommandSpec](
       commandType: String,
-      specArr: Array[T]): Unit = {
-    val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-      .split("target").head
+      specsArr: Seq[CommandSpecs[T]]): Unit = {
     val filename = s"${commandType}_command_spec.json"
-    val filePath = Paths.get(pluginHome, "src", "main", "resources", filename)
+    val filePath = Paths.get(
+      s"${getCurrentModuleHome(this)}/src/main/resources/$filename")
 
-    val generatedStr = mapper.writerWithDefaultPrettyPrinter()
-      .writeValueAsString(specArr.sortBy(_.classname))
+    val allSpecs = specsArr.flatMap(_.specs.sortBy(_.classname))
+    val duplicatedClassnames = allSpecs.groupBy(_.classname).values
+      .filter(_.size > 1).flatMap(specs => specs.map(_.classname)).toSet
+    withClue(s"Unexpected duplicated classnames: $duplicatedClassnames")(
+      assertResult(0)(duplicatedClassnames.size))
+    val generatedStr = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(allSpecs)
 
     if (sys.env.get("KYUUBI_UPDATE").contains("1")) {
       // scalastyle:off println
-      println(s"writing ${specArr.length} specs to $filename")
+      println(s"writing ${allSpecs.length} specs to $filename")
       // scalastyle:on println
       Files.write(
         filePath,

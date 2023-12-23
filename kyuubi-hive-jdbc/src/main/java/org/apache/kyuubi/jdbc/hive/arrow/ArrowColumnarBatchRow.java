@@ -21,10 +21,10 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import org.apache.arrow.vector.util.DateUtility;
-import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.common.DateUtils;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalDayTime;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalYearMonth;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId;
 
 public class ArrowColumnarBatchRow {
   public int rowId;

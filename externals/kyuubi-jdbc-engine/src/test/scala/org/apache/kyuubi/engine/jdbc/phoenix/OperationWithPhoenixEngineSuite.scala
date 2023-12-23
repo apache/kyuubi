@@ -16,17 +16,16 @@
  */
 package org.apache.kyuubi.engine.jdbc.phoenix
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
 
 class OperationWithPhoenixEngineSuite extends PhoenixOperationSuite with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = jdbcConnectionUrl
 
-  test("Test for Jdbc engine getInfo") {
+  test("phoenix - test for Jdbc engine getInfo") {
     val metaData = ConnectionProvider.create(kyuubiConf).getMetaData
 
     withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {

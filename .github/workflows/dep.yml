@@ -26,6 +26,8 @@ on:
       # when pom or dependency workflow changes
       - '**/pom.xml'
       - '.github/workflows/dep.yml'
+      - 'build/dependency.sh'
+      - 'dev/dependencyList'
 
 concurrency:
   group: dep-${{ github.head_ref || github.run_id }}
@@ -36,9 +38,9 @@ jobs:
     name: Dependency check
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: setup java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 8

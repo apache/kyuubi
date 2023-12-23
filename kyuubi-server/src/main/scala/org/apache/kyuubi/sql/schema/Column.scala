@@ -17,6 +17,6 @@
 
 package org.apache.kyuubi.sql.schema
 
-import org.apache.hive.service.rpc.thrift.TTypeId
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId
 
 case class Column(name: String, dataType: TTypeId, comment: Option[String] = None)

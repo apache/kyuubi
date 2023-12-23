@@ -59,6 +59,18 @@
         </dependency>
 
         <dependency>
+            <groupId>com.dimafeng</groupId>
+            <artifactId>testcontainers-scala-mysql_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dimafeng</groupId>
+            <artifactId>testcontainers-scala-postgresql_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>${hive.jdbc.artifact}</artifactId>
             <version>${project.version}</version>
@@ -74,6 +86,12 @@
         <dependency>
             <groupId>org.apache.phoenix</groupId>
             <artifactId>phoenix-queryserver-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

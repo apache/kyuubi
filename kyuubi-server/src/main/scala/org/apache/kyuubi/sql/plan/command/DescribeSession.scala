@@ -19,10 +19,9 @@ package org.apache.kyuubi.sql.plan.command
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.hive.service.rpc.thrift.TTypeId
-
 import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.session.KyuubiSession
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId
 import org.apache.kyuubi.sql.schema.{Column, Row, Schema}
 
 /**

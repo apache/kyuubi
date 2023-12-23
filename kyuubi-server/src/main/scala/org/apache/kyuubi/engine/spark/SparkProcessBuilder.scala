@@ -22,7 +22,6 @@ import java.nio.file.Paths
 import java.util.Locale
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.commons.lang3.StringUtils
@@ -30,6 +29,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
@@ -37,6 +37,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.{KubernetesUtils, Validator}
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilder(
     override val proxyUser: String,
@@ -121,12 +122,12 @@ class SparkProcessBuilder(
     file.isDirectory && r.findFirstMatchIn(file.getName).isDefined
   }
 
-  override protected lazy val commands: Array[String] = {
+  override protected lazy val commands: Iterable[String] = {
     // complete `spark.master` if absent on kubernetes
     completeMasterUrl(conf)
 
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
-    val buffer = new ArrayBuffer[String]()
+    val buffer = new mutable.ListBuffer[String]()
     buffer += executable
     buffer += CLASS
     buffer += mainClass
@@ -139,21 +140,21 @@ class SparkProcessBuilder(
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
     // pass spark engine log path to spark conf
-    (allConf ++ engineLogPathConf ++ appendPodNameConf(allConf)).foreach { case (k, v) =>
-      buffer += CONF
-      buffer += s"${convertConfigKey(k)}=$v"
+    (allConf ++ engineLogPathConf ++ extraYarnConf(allConf) ++ appendPodNameConf(allConf)).foreach {
+      case (k, v) =>
+        buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 
     setupKerberos(buffer)
 
     mainResource.foreach { r => buffer += r }
 
-    buffer.toArray
+    buffer
   }
 
   override protected def module: String = "kyuubi-spark-sql-engine"
 
-  protected def setupKerberos(buffer: ArrayBuffer[String]): Unit = {
+  protected def setupKerberos(buffer: mutable.Buffer[String]): Unit = {
     // if the keytab is specified, PROXY_USER is not supported
     tryKeytab() match {
       case None =>
@@ -229,19 +230,42 @@ class SparkProcessBuilder(
       kubernetesNamespace())
   }
 
+  private val forciblyRewriteDriverPodName: Boolean =
+    conf.get(KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME)
+  private val forciblyRewriteExecPodNamePrefix: Boolean =
+    conf.get(KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX)
+
   def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
     val appName = conf.getOrElse(APP_KEY, "spark")
     val map = mutable.Map.newBuilder[String, String]
     if (clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s"))) {
       if (!conf.contains(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)) {
-        val prefix = KubernetesUtils.generateExecutorPodNamePrefix(appName, engineRefId)
+        val prefix = KubernetesUtils.generateExecutorPodNamePrefix(
+          appName,
+          engineRefId,
+          forciblyRewriteExecPodNamePrefix)
         map += (KUBERNETES_EXECUTOR_POD_NAME_PREFIX -> prefix)
       }
       if (deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")) {
         if (!conf.contains(KUBERNETES_DRIVER_POD_NAME)) {
-          val name = KubernetesUtils.generateDriverPodName(appName, engineRefId)
+          val name = KubernetesUtils.generateDriverPodName(
+            appName,
+            engineRefId,
+            forciblyRewriteDriverPodName)
           map += (KUBERNETES_DRIVER_POD_NAME -> name)
         }
+      }
+    }
+    map.result().toMap
+  }
+
+  def extraYarnConf(conf: Map[String, String]): Map[String, String] = {
+    val map = mutable.Map.newBuilder[String, String]
+    if (clusterManager().exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))) {
+      if (!conf.contains(YARN_MAX_APP_ATTEMPTS_KEY)) {
+        // Set `spark.yarn.maxAppAttempts` to 1 to avoid invalid attempts.
+        // As mentioned in YARN-5617, it is improved after hadoop `2.8.2/2.9.0/3.0.0`.
+        map += (YARN_MAX_APP_ATTEMPTS_KEY -> "1")
       }
     }
     map.result().toMap
@@ -274,13 +298,11 @@ class SparkProcessBuilder(
   override def validateConf: Unit = Validator.validateConf(conf)
 
   // For spark on kubernetes, spark pod using env SPARK_USER_NAME as current user
-  def setSparkUserName(userName: String, buffer: ArrayBuffer[String]): Unit = {
+  def setSparkUserName(userName: String, buffer: mutable.Buffer[String]): Unit = {
     clusterManager().foreach { cm =>
       if (cm.toUpperCase.startsWith("K8S")) {
-        buffer += CONF
-        buffer += s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$userName"
-        buffer += CONF
-        buffer += s"spark.executorEnv.SPARK_USER_NAME=$userName"
+        buffer ++= confKeyValue("spark.kubernetes.driverEnv.SPARK_USER_NAME", userName)
+        buffer ++= confKeyValue("spark.executorEnv.SPARK_USER_NAME", userName)
       }
     }
   }
@@ -299,6 +321,7 @@ object SparkProcessBuilder {
   final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
   final val KUBERNETES_DRIVER_POD_NAME = "spark.kubernetes.driver.pod.name"
   final val KUBERNETES_EXECUTOR_POD_NAME_PREFIX = "spark.kubernetes.executor.podNamePrefix"
+  final val YARN_MAX_APP_ATTEMPTS_KEY = "spark.yarn.maxAppAttempts"
   final val INTERNAL_RESOURCE = "spark-internal"
 
   /**
@@ -323,7 +346,6 @@ object SparkProcessBuilder {
     "spark.kubernetes.kerberos.krb5.path",
     "spark.kubernetes.file.upload.path")
 
-  final private[spark] val CONF = "--conf"
   final private[spark] val CLASS = "--class"
   final private[spark] val PROXY_USER = "--proxy-user"
   final private[spark] val SPARK_FILES = "spark.files"

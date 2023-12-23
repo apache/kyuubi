@@ -17,20 +17,15 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.util.OptionalLong
-
-import scala.collection.JavaConverters._
 
 import io.trino.tpcds._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.types._
-import org.apache.spark.unsafe.types.UTF8String
 
-case class TPCDSTableChuck(table: String, scale: Double, parallelism: Int, index: Int)
+case class TPCDSTableChunk(table: String, scale: Double, parallelism: Int, index: Int)
   extends InputPartition
 
 class TPCDSBatchScan(
@@ -62,10 +57,10 @@ class TPCDSBatchScan(
   override def readSchema: StructType = schema
 
   override def planInputPartitions: Array[InputPartition] =
-    (1 to parallelism).map { i => TPCDSTableChuck(table.getName, scale, parallelism, i) }.toArray
+    (1 to parallelism).map { i => TPCDSTableChunk(table.getName, scale, parallelism, i) }.toArray
 
   def createReaderFactory: PartitionReaderFactory = (partition: InputPartition) => {
-    val chuck = partition.asInstanceOf[TPCDSTableChuck]
+    val chuck = partition.asInstanceOf[TPCDSTableChunk]
     new TPCDSPartitionReader(chuck.table, chuck.scale, chuck.parallelism, chuck.index, schema)
   }
 
@@ -90,32 +85,9 @@ class TPCDSPartitionReader(
     opt.toSession.withChunkNumber(index)
   }
 
-  private lazy val dateFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-
-  private val reusedRow = new Array[Any](schema.length)
-  private val iterator = Results
-    .constructResults(chuckInfo.getOnlyTableToGenerate, chuckInfo)
-    .iterator.asScala
-    .map { _.get(0).asScala } // the 1st row is specific table row
-    .map { stringRow =>
-      var i = 0
-      while (i < stringRow.length) {
-        reusedRow(i) = (stringRow(i), schema(i).dataType) match {
-          case (null, _) => null
-          case (Options.DEFAULT_NULL_STRING, _) => null
-          case (v, IntegerType) => v.toInt
-          case (v, LongType) => v.toLong
-          case (v, DateType) => LocalDate.parse(v, dateFmt).toEpochDay.toInt
-          case (v, StringType) => UTF8String.fromString(v)
-          case (v, CharType(_)) => UTF8String.fromString(v)
-          case (v, VarcharType(_)) => UTF8String.fromString(v)
-          case (v, DecimalType()) => Decimal(v)
-          case (v, dt) => throw new IllegalArgumentException(s"value: $v, type: $dt")
-        }
-        i += 1
-      }
-      InternalRow(reusedRow: _*)
-    }
+  private val iterator = KyuubiTPCDSResults
+    .constructResults(chuckInfo.getOnlyTableToGenerate, chuckInfo, schema)
+    .iterator
 
   private var currentRow: InternalRow = _
 

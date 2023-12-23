@@ -35,7 +35,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
+import org.apache.kyuubi.server.http.util.HttpAuthUtils.{basicAuthorizationHeader, AUTHORIZATION_HEADER}
 import org.apache.kyuubi.session.SessionType
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -62,8 +62,11 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val statistic = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
     val execPoolStatistic1 = statistic.readEntity(classOf[ExecPoolStatistic])
+    // because this operation is asynchronous,
+    // there is no guarantee that it will complete quickly or fail in the process
+    // so we can not guarantee the poolActiveThread count must equal to 1
     assert(execPoolStatistic1.getExecPoolSize == 1 &&
-      execPoolStatistic1.getExecPoolActiveCount == 1)
+      execPoolStatistic1.getExecPoolActiveCount <= 1)
 
     response = webTarget.path("api/v1/sessions/count").request().get()
     val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
@@ -97,23 +100,23 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     response = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
     assert(200 == response.getStatus)
 
-    // get session list again
-    response2 = webTarget.path("api/v1/sessions").request().get()
-    assert(200 == response2.getStatus)
-    val sessions2 = response2.readEntity(classOf[Seq[SessionData]])
-    assert(sessions2.isEmpty)
+    // because delete is a asynchronous operation, we need eventually to
+    // make sure the delete operation process complete
+    eventually(timeout(3.seconds)) {
+      // get session list again
+      response2 = webTarget.path("api/v1/sessions").request().get()
+      assert(200 == response2.getStatus)
+
+      val sessions = response2.readEntity(classOf[Seq[SessionData]])
+      assert(sessions.isEmpty)
+    }
   }
 
   test("get session event") {
     val sessionOpenRequest = new SessionOpenRequest(Map("testConfig" -> "testValue").asJava)
-
-    val user = "kyuubi".getBytes()
-
     val sessionOpenResp = webTarget.path("api/v1/sessions")
       .request(MediaType.APPLICATION_JSON_TYPE)
-      .header(
-        AUTHORIZATION_HEADER,
-        s"Basic ${new String(Base64.getEncoder().encode(user), StandardCharsets.UTF_8)}")
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("kyuubi"))
       .post(Entity.entity(sessionOpenRequest, MediaType.APPLICATION_JSON_TYPE))
 
     val sessionHandle = sessionOpenResp.readEntity(classOf[SessionHandle]).getIdentifier

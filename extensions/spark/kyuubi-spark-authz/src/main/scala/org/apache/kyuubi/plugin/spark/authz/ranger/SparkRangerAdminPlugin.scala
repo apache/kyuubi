@@ -26,7 +26,6 @@ import org.apache.ranger.plugin.service.RangerBasePlugin
 import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
-import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider
 
 object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
   with RangerConfigProvider {

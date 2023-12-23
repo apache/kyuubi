@@ -19,8 +19,6 @@ package org.apache.kyuubi.session
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_BATCH_PRIORITY
@@ -30,6 +28,7 @@ import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.SessionType.SessionType
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class KyuubiBatchSession(
     user: String,
@@ -81,12 +80,12 @@ class KyuubiBatchSession(
     sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(conf)
 
   val optimizedConf: Map[String, String] = {
-    val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
+    val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
-      normalizedConf.asJava)
+      normalizedConf.asJava).asScala).reduce(_ ++ _)
     if (confOverlay != null) {
       val overlayConf = new KyuubiConf(false)
-      confOverlay.asScala.foreach { case (k, v) => overlayConf.set(k, v) }
+      confOverlay.foreach { case (k, v) => overlayConf.set(k, v) }
       normalizedConf ++ overlayConf.getBatchConf(batchType)
     } else {
       warn(s"the server plugin return null value for user: $user, ignore it")

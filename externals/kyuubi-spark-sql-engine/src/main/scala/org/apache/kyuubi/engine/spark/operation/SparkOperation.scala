@@ -20,21 +20,20 @@ package org.apache.kyuubi.engine.spark.operation
 import java.io.IOException
 import java.time.ZoneId
 
-import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TRowSet}
 import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.execution.SQLExecution
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{BinaryType, StructField, StructType}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE, SESSION_USER_SIGN_ENABLED}
+import org.apache.kyuubi.config.KyuubiConf.{ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING, ENGINE_SPARK_OUTPUT_MODE, EngineSparkOutputMode, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE, SESSION_USER_SIGN_ENABLED}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, SPARK_SCHEDULER_POOL_KEY}
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
-import org.apache.kyuubi.engine.spark.schema.{RowSet, SchemaHelper}
+import org.apache.kyuubi.engine.spark.schema.{SchemaHelper, SparkArrowTRowSetGenerator, SparkTRowSetGenerator}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState, OperationStatus}
@@ -42,6 +41,8 @@ import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TRowSet}
+import org.apache.kyuubi.util.ThriftUtils
 
 abstract class SparkOperation(session: Session)
   extends AbstractOperation(session) {
@@ -63,11 +64,8 @@ abstract class SparkOperation(session: Session)
   override def redactedStatement: String =
     redact(spark.sessionState.conf.stringRedactionPattern, statement)
 
-  protected val operationSparkListenerEnabled =
-    spark.conf.getOption(OPERATION_SPARK_LISTENER_ENABLED.key) match {
-      case Some(s) => s.toBoolean
-      case _ => session.sessionManager.getConf.get(OPERATION_SPARK_LISTENER_ENABLED)
-    }
+  protected val operationSparkListenerEnabled: Boolean =
+    getSessionConf(OPERATION_SPARK_LISTENER_ENABLED, spark)
 
   protected val operationListener: Option[SQLOperationListener] =
     if (operationSparkListenerEnabled) {
@@ -80,12 +78,12 @@ abstract class SparkOperation(session: Session)
     operationListener.foreach(spark.sparkContext.addSparkListener(_))
   }
 
-  private val progressEnable = spark.conf.getOption(SESSION_PROGRESS_ENABLE.key) match {
-    case Some(s) => s.toBoolean
-    case _ => session.sessionManager.getConf.get(SESSION_PROGRESS_ENABLE)
-  }
+  private val progressEnable: Boolean = getSessionConf(SESSION_PROGRESS_ENABLE, spark)
 
   protected def supportProgress: Boolean = false
+
+  protected def outputMode: EngineSparkOutputMode.EngineSparkOutputMode =
+    EngineSparkOutputMode.withName(getSessionConf(ENGINE_SPARK_OUTPUT_MODE, spark))
 
   override def getStatus: OperationStatus = {
     if (progressEnable && supportProgress) {
@@ -113,9 +111,7 @@ abstract class SparkOperation(session: Session)
   protected val forceCancel =
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
 
-  protected val schedulerPool =
-    spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
-      session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
+  protected val schedulerPool = getSessionConf(KyuubiConf.OPERATION_SCHEDULER_POOL, spark)
 
   protected val isSessionUserSignEnabled: Boolean = spark.sparkContext.getConf.getBoolean(
     s"spark.${SESSION_USER_SIGN_ENABLED.key}",
@@ -251,13 +247,16 @@ abstract class SparkOperation(session: Session)
           if (isArrowBasedOperation) {
             if (iter.hasNext) {
               val taken = iter.next().asInstanceOf[Array[Byte]]
-              RowSet.toTRowSet(taken, getProtocolVersion)
+              new SparkArrowTRowSetGenerator().toTRowSet(
+                Seq(taken),
+                new StructType().add(StructField(null, BinaryType)),
+                getProtocolVersion)
             } else {
-              RowSet.emptyTRowSet()
+              ThriftUtils.newEmptyRowSet
             }
           } else {
             val taken = iter.take(rowSetSize)
-            RowSet.toTRowSet(
+            new SparkTRowSetGenerator().toTRowSet(
               taken.toSeq.asInstanceOf[Seq[Row]],
               resultSchema,
               getProtocolVersion)
@@ -279,7 +278,7 @@ abstract class SparkOperation(session: Session)
   protected def resultFormat: String = "thrift"
 
   protected def timestampAsString: Boolean = {
-    spark.conf.get("kyuubi.operation.result.arrow.timestampAsString", "false").toBoolean
+    spark.conf.get(ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING.key, "false").toBoolean
   }
 
   protected def setSessionUserSign(): Unit = {

@@ -31,6 +31,7 @@
 
     <modules>
         <module>kyuubi-flink-it</module>
+        <module>kyuubi-gluten-it</module>
         <module>kyuubi-hive-it</module>
         <module>kyuubi-trino-it</module>
         <module>kyuubi-jdbc-it</module>

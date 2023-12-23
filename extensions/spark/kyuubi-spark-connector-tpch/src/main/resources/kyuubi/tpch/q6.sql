@@ -17,7 +17,7 @@
 -- using default substitutions
 
 select
-    sum(l_extendedprice * l_discount) as revenue
+    round(sum(l_extendedprice * l_discount), 2) as revenue
 from
     lineitem
 where

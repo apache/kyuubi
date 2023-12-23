@@ -111,6 +111,17 @@ public class UtilsTest {
                         StandardCharsets.UTF_8.toString())
                     .replaceAll("\\+", "%20")
                 + "#k4=v4"
+          },
+          {
+            "hostname",
+            "10018",
+            "catalog",
+            "db",
+            new ImmutableMap.Builder<String, String>()
+                .put("k2", "v2")
+                .put("k3", "hostname:10018")
+                .build(),
+            "jdbc:hive2://hostname:10018/catalog/db;k1=v1?k2=v2;k3=hostname:10018"
           }
         });
   }

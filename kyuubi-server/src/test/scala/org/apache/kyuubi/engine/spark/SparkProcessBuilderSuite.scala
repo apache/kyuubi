@@ -28,13 +28,14 @@ import org.scalatestplus.mockito.MockitoSugar
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE, KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME, KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX}
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder._
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.service.ServiceUtils
 import org.apache.kyuubi.util.AssertionUtils._
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   private def conf = KyuubiConf().set("kyuubi.on", "off")
@@ -336,6 +337,15 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val conf4 = Map(APP_KEY -> chineseAppName)
     val driverPodName4 = processBuilder.appendPodNameConf(conf4).get(KUBERNETES_DRIVER_POD_NAME)
     assert(driverPodName4 === Some(s"kyuubi-test-$engineRefId-driver"))
+    val newProcessBuilder = new SparkProcessBuilder(
+      "kyuubi",
+      conf.set(MASTER_KEY, "k8s://internal").set(DEPLOY_MODE_KEY, "cluster").set(
+        KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME,
+        true),
+      engineRefId)
+    val conf5 = Map(APP_KEY -> "test-forcibly-rewrite-app")
+    val driverPodName5 = newProcessBuilder.appendPodNameConf(conf5).get(KUBERNETES_DRIVER_POD_NAME)
+    assert(driverPodName5 === Some(s"kyuubi-$engineRefId-driver"))
   }
 
   test("[KYUUBI #5165] Test SparkProcessBuilder#appendExecutorPodPrefix") {
@@ -363,6 +373,16 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val execPodNamePrefix3 = processBuilder
       .appendPodNameConf(conf3).get(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)
     assert(execPodNamePrefix3 === Some(s"kyuubi-$engineRefId"))
+    val newProcessBuilder = new SparkProcessBuilder(
+      "kyuubi",
+      conf.set(MASTER_KEY, "k8s://internal").set(DEPLOY_MODE_KEY, "cluster").set(
+        KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX,
+        true),
+      engineRefId)
+    val conf5 = Map(APP_KEY -> "test-forcibly-rewrite-app")
+    val execPodNamePrefix4 = newProcessBuilder
+      .appendPodNameConf(conf5).get(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)
+    assert(execPodNamePrefix4 === Some(s"kyuubi-$engineRefId"))
   }
 
   test("extract spark core scala version") {
@@ -404,9 +424,23 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
           }
     }
   }
+
+  test("default spark.yarn.maxAppAttempts conf in yarn mode") {
+    val conf1 = KyuubiConf(false)
+    conf1.set("spark.master", "k8s://test:12345")
+    val builder1 = new SparkProcessBuilder("", conf1)
+    val commands1 = builder1.toString.split(' ')
+    assert(!commands1.contains("spark.yarn.maxAppAttempts"))
+
+    val conf2 = KyuubiConf(false)
+    conf2.set("spark.master", "yarn")
+    val builder2 = new SparkProcessBuilder("", conf2)
+    val commands2 = builder2.toString.split(' ')
+    assert(commands2.contains("spark.yarn.maxAppAttempts=1"))
+  }
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)
   extends SparkProcessBuilder("fake", config) {
-  override protected lazy val commands: Array[String] = Array("ls")
+  override protected lazy val commands: Iterable[String] = Seq("ls")
 }

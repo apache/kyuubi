@@ -37,6 +37,11 @@ export default {
   engine_ui: 'Engine UI',
   failure_reason: '失败原因',
   session_properties: 'Session 参数',
+  no_data: '无数据',
+  no_log: '无日志',
+  run_sql_tips: '请运行SQL获取结果',
+  result: '结果',
+  log: '日志',
   operation: {
     text: '操作',
     delete_confirm: '确认删除',
@@ -44,7 +49,8 @@ export default {
     cancel_confirm: '确认取消',
     close: '关闭',
     cancel: '取消',
-    delete: '删除'
+    delete: '删除',
+    run: '运行'
   },
   message: {
     delete_succeeded: '删除 {name} 成功',
@@ -52,6 +58,10 @@ export default {
     close_succeeded: '关闭 {name} 成功',
     close_failed: '关闭 {name} 失败',
     cancel_succeeded: '取消 {name} 成功',
-    cancel_failed: '取消 {name} 失败'
+    cancel_failed: '取消 {name} 失败',
+    run_sql_failed: '运行SQL失败',
+    get_sql_log_failed: '获取SQL日志失败',
+    get_sql_result_failed: '获取SQL结果失败',
+    get_sql_metadata_failed: '获取SQL元数据失败'
   }
 }

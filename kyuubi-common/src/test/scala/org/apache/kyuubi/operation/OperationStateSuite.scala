@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TOperationState, TProtocolVersion}
-import org.apache.hive.service.rpc.thrift.TOperationState._
-
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.session.NoopSessionManager
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TOperationState, TProtocolVersion}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState._
 
 class OperationStateSuite extends KyuubiFunSuite {
   test("toTOperationState") {

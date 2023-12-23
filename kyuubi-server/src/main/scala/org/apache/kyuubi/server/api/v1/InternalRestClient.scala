@@ -33,10 +33,16 @@ import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
  * @param socketTimeout the socket timeout for http client.
  * @param connectTimeout the connect timeout for http client.
  */
-class InternalRestClient(kyuubiInstance: String, socketTimeout: Int, connectTimeout: Int) {
-  require(
-    InternalSecurityAccessor.get() != null,
-    "Internal secure access across Kyuubi instances is not enabled")
+class InternalRestClient(
+    kyuubiInstance: String,
+    socketTimeout: Int,
+    connectTimeout: Int,
+    securityEnabled: Boolean) {
+  if (securityEnabled) {
+    require(
+      InternalSecurityAccessor.get() != null,
+      "Internal secure access across Kyuubi instances is not enabled")
+  }
 
   private val internalBatchRestApi = new BatchRestApi(initKyuubiRestClient())
 
@@ -54,17 +60,19 @@ class InternalRestClient(kyuubiInstance: String, socketTimeout: Int, connectTime
 
   def deleteBatch(user: String, batchId: String): CloseBatchResponse = {
     withAuthUser(user) {
-      internalBatchRestApi.deleteBatch(batchId, null)
+      internalBatchRestApi.deleteBatch(batchId)
     }
   }
 
   private def initKyuubiRestClient(): KyuubiRestClient = {
-    KyuubiRestClient.builder(s"http://$kyuubiInstance")
+    val builder = KyuubiRestClient.builder(s"http://$kyuubiInstance")
       .apiVersion(KyuubiRestClient.ApiVersion.V1)
       .socketTimeout(socketTimeout)
       .connectionTimeout(connectTimeout)
-      .authHeaderGenerator(InternalRestClient.internalAuthHeaderGenerator)
-      .build()
+    if (securityEnabled) {
+      builder.authHeaderGenerator(InternalRestClient.internalAuthHeaderGenerator)
+    }
+    builder.build()
   }
 
   private def withAuthUser[T](user: String)(f: => T): T = {
@@ -82,7 +90,7 @@ object InternalRestClient {
     override def initialValue(): String = null
   }
 
-  final val internalAuthHeaderGenerator = new AuthHeaderGenerator {
+  final lazy val internalAuthHeaderGenerator = new AuthHeaderGenerator {
     override def generateAuthHeader(): String = {
       val authUser = AUTH_USER.get()
       require(authUser != null, "The auth user shall be not null")

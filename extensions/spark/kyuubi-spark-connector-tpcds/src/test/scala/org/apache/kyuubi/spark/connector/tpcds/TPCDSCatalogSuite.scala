@@ -19,6 +19,8 @@ package org.apache.kyuubi.spark.connector.tpcds
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{AnalysisException, SparkSession}
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -74,42 +76,6 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
           spark.sql(s"SHOW DATABASES").collect.map(_.getString(0)).sorted ===
             (TPCDSSchemaUtils.DATABASES diff expectedExcludeDatabases).sorted)
       }
-    }
-  }
-
-  test("tpcds.tiny count") {
-    val sparkConf = new SparkConf()
-      .setMaster("local[*]")
-      .set("spark.ui.enabled", "false")
-      .set("spark.sql.catalogImplementation", "in-memory")
-      .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
-      .set("spark.sql.cbo.enabled", "true")
-      .set("spark.sql.cbo.planStats.enabled", "true")
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-      assert(spark.table("tpcds.tiny.call_center").count === 2)
-      assert(spark.table("tpcds.tiny.catalog_page").count === 11718)
-      assert(spark.table("tpcds.tiny.catalog_returns").count === 8923)
-      assert(spark.table("tpcds.tiny.catalog_sales").count === 89807)
-      assert(spark.table("tpcds.tiny.customer").count === 1000)
-      assert(spark.table("tpcds.tiny.customer_address").count === 1000)
-      assert(spark.table("tpcds.tiny.customer_demographics").count === 1920800)
-      assert(spark.table("tpcds.tiny.date_dim").count === 73049)
-      assert(spark.table("tpcds.tiny.household_demographics").count === 7200)
-      assert(spark.table("tpcds.tiny.income_band").count === 20)
-      assert(spark.table("tpcds.tiny.inventory").count === 261261)
-      assert(spark.table("tpcds.tiny.item").count === 2000)
-      assert(spark.table("tpcds.tiny.promotion").count === 3)
-      assert(spark.table("tpcds.tiny.reason").count === 1)
-      assert(spark.table("tpcds.tiny.ship_mode").count === 20)
-      assert(spark.table("tpcds.tiny.store").count === 2)
-      assert(spark.table("tpcds.tiny.store_returns").count === 11925)
-      assert(spark.table("tpcds.tiny.store_sales").count === 120527)
-      assert(spark.table("tpcds.tiny.time_dim").count === 86400)
-      assert(spark.table("tpcds.tiny.warehouse").count === 1)
-      assert(spark.table("tpcds.tiny.web_page").count === 2)
-      assert(spark.table("tpcds.tiny.web_returns").count === 1152)
-      assert(spark.table("tpcds.tiny.web_sales").count === 11876)
-      assert(spark.table("tpcds.tiny.web_site").count === 2)
     }
   }
 
@@ -174,4 +140,69 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
         || exception.message.contains("TABLE_OR_VIEW_NOT_FOUND"))
     }
   }
+
+  test("tpcds.tiny count and checksum") {
+    val sparkConf = new SparkConf()
+      .setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
+      .set("spark.sql.cbo.enabled", "true")
+      .set("spark.sql.cbo.planStats.enabled", "true")
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      tableInfo.foreach {
+        case (table, (expectCount, expectChecksum)) =>
+          val (count, checksum) = countAndchecksum(spark, table)
+          assert(count == expectCount)
+          assert(checksum == expectChecksum, s"table $table")
+      }
+    }
+  }
+
+  def countAndchecksum(spark: SparkSession, tableName: String): (String, String) = {
+    val df = spark.table(tableName)
+    val cols = df.schema.map { field =>
+      concat(
+        when(col(field.name).isNull, lit('\u0000').cast("string"))
+          .otherwise(col(field.name).cast("string")),
+        lit('\u0001').cast("string"))
+    }
+
+    df.select(
+      crc32(concat(cols: _*))
+        .cast(DataTypes.createDecimalType(38, 0))
+        .as("row_checksum"))
+      .agg(
+        count("*").cast("string").as("count"),
+        sum("row_checksum").cast("string").as("checksum"))
+      .collect()
+      .map(r => (r.getString(0), r.getString(1)))
+      .head
+  }
+
+  private val tableInfo = Seq(
+    ("tpcds.tiny.call_center", ("2", "4584365911")),
+    ("tpcds.tiny.catalog_page", ("11718", "25416854987711")),
+    ("tpcds.tiny.catalog_returns", ("8923", "19045021547122")),
+    ("tpcds.tiny.catalog_sales", ("89807", "192355655243815")),
+    ("tpcds.tiny.customer", ("1000", "2120827330356")),
+    ("tpcds.tiny.customer_address", ("1000", "2161077976693")),
+    ("tpcds.tiny.customer_demographics", ("1920800", "4124183189708148")),
+    ("tpcds.tiny.date_dim", ("73049", "156926081012862")),
+    ("tpcds.tiny.household_demographics", ("7200", "15494873325812")),
+    ("tpcds.tiny.income_band", ("20", "41180951007")),
+    ("tpcds.tiny.inventory", ("261261", "561290989772724")),
+    ("tpcds.tiny.item", ("2000", "4254103006936")),
+    ("tpcds.tiny.promotion", ("3", "4984911899")),
+    ("tpcds.tiny.reason", ("1", "365440741")),
+    ("tpcds.tiny.ship_mode", ("20", "52349078860")),
+    ("tpcds.tiny.store", ("2", "2964682289")),
+    ("tpcds.tiny.store_returns", ("11925", "25400972943896")),
+    ("tpcds.tiny.store_sales", ("120527", "259296406856838")),
+    ("tpcds.tiny.time_dim", ("86400", "186045071019485")),
+    ("tpcds.tiny.warehouse", ("1", "2956768503")),
+    ("tpcds.tiny.web_page", ("2", "3215766118")),
+    ("tpcds.tiny.web_returns", ("1152", "2464383243098")),
+    ("tpcds.tiny.web_sales", ("11876", "25458905770096")),
+    ("tpcds.tiny.web_site", ("2", "3798438288")))
 }

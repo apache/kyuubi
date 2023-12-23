@@ -25,7 +25,9 @@ import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
 import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
+import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.metric.{SQLMetric, SQLMetrics}
@@ -105,17 +107,31 @@ object SparkDatasetHelper extends Logging {
     val quotedCol = (name: String) => col(quoteIfNeeded(name))
 
     // an udf to call `RowSet.toHiveString` on complex types(struct/array/map) and timestamp type.
+    // TODO: reuse the timeFormatters on greater scale if possible,
+    //  recreating timeFormatters may cause performance issue, see [KYUUBI#5811]
     val toHiveStringUDF = udf[String, Row, String]((row, schemaDDL) => {
       val dt = DataType.fromDDL(schemaDDL)
       dt match {
         case StructType(Array(StructField(_, st: StructType, _, _))) =>
-          RowSet.toHiveString((row, st), nested = true)
+          RowSet.toHiveString(
+            (row, st),
+            nested = true,
+            timeFormatters = HiveResult.getTimeFormatters)
         case StructType(Array(StructField(_, at: ArrayType, _, _))) =>
-          RowSet.toHiveString((row.toSeq.head, at), nested = true)
+          RowSet.toHiveString(
+            (row.toSeq.head, at),
+            nested = true,
+            timeFormatters = HiveResult.getTimeFormatters)
         case StructType(Array(StructField(_, mt: MapType, _, _))) =>
-          RowSet.toHiveString((row.toSeq.head, mt), nested = true)
+          RowSet.toHiveString(
+            (row.toSeq.head, mt),
+            nested = true,
+            timeFormatters = HiveResult.getTimeFormatters)
         case StructType(Array(StructField(_, tt: TimestampType, _, _))) =>
-          RowSet.toHiveString((row.toSeq.head, tt), nested = true)
+          RowSet.toHiveString(
+            (row.toSeq.head, tt),
+            nested = true,
+            timeFormatters = HiveResult.getTimeFormatters)
         case _ =>
           throw new UnsupportedOperationException
       }
@@ -277,5 +293,33 @@ object SparkDatasetHelper extends Logging {
   private def sendDriverMetrics(sc: SparkContext, metrics: Map[String, SQLMetric]): Unit = {
     val executionId = sc.getLocalProperty(SQLExecution.EXECUTION_ID_KEY)
     SQLMetrics.postDriverMetricUpdates(sc, executionId, metrics.values.toSeq)
+  }
+
+  def shouldSaveResultToFs(resultMaxRows: Int, minSize: Long, result: DataFrame): Boolean = {
+    if (isCommandExec(result.queryExecution.executedPlan.nodeName)) {
+      return false
+    }
+    lazy val limit = result.queryExecution.executedPlan match {
+      case collectLimit: CollectLimitExec => collectLimit.limit
+      case _ => resultMaxRows
+    }
+    lazy val stats = if (limit > 0) {
+      limit * EstimationUtils.getSizePerRow(
+        result.queryExecution.executedPlan.output)
+    } else {
+      result.queryExecution.optimizedPlan.stats.sizeInBytes
+    }
+    lazy val colSize =
+      if (result == null || result.schema.isEmpty) {
+        0
+      } else {
+        result.schema.size
+      }
+    minSize > 0 && colSize > 0 && stats >= minSize
+  }
+
+  private def isCommandExec(nodeName: String): Boolean = {
+    nodeName == "org.apache.spark.sql.execution.command.ExecutedCommandExec" ||
+    nodeName == "org.apache.spark.sql.execution.CommandResultExec"
   }
 }

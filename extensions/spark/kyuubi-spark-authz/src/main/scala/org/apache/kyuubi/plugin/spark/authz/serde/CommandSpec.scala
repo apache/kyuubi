@@ -43,6 +43,10 @@ trait CommandSpec extends {
   final def operationType: OperationType = OperationType.withName(opType)
 }
 
+trait CommandSpecs[T <: CommandSpec] {
+  def specs: Seq[T]
+}
+
 /**
  * A specification describe a database command
  *
@@ -53,7 +57,8 @@ trait CommandSpec extends {
 case class DatabaseCommandSpec(
     classname: String,
     databaseDescs: Seq[DatabaseDesc],
-    opType: String = "QUERY") extends CommandSpec {}
+    opType: String = OperationType.QUERY.toString,
+    uriDescs: Seq[UriDesc] = Nil) extends CommandSpec {}
 
 /**
  * A specification describe a function command
@@ -79,7 +84,8 @@ case class TableCommandSpec(
     classname: String,
     tableDescs: Seq[TableDesc],
     opType: String = OperationType.QUERY.toString,
-    queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec {
+    queryDescs: Seq[QueryDesc] = Nil,
+    uriDescs: Seq[UriDesc] = Nil) extends CommandSpec {
   def queries: LogicalPlan => Seq[LogicalPlan] = plan => {
     queryDescs.flatMap { qd =>
       try {
@@ -96,7 +102,8 @@ case class TableCommandSpec(
 case class ScanSpec(
     classname: String,
     scanDescs: Seq[ScanDesc],
-    functionDescs: Seq[FunctionDesc] = Seq.empty) extends CommandSpec {
+    functionDescs: Seq[FunctionDesc] = Seq.empty,
+    uriDescs: Seq[UriDesc] = Seq.empty) extends CommandSpec {
   override def opType: String = OperationType.QUERY.toString
   def tables: (LogicalPlan, SparkSession) => Seq[Table] = (plan, spark) => {
     scanDescs.flatMap { td =>
@@ -105,6 +112,18 @@ case class ScanSpec(
       } catch {
         case e: Exception =>
           LOG.debug(td.error(plan, e))
+          None
+      }
+    }
+  }
+
+  def uris: LogicalPlan => Seq[Uri] = plan => {
+    uriDescs.flatMap { ud =>
+      try {
+        ud.extract(plan)
+      } catch {
+        case e: Exception =>
+          LOG.debug(ud.error(plan, e))
           None
       }
     }

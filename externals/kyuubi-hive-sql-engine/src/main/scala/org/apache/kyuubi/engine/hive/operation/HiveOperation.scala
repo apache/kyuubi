@@ -19,16 +19,18 @@ package org.apache.kyuubi.engine.hive.operation
 
 import java.util.concurrent.Future
 
+import org.apache.hive.service.cli.{FetchOrientation => HiveFetchOrientation}
 import org.apache.hive.service.cli.operation.{Operation, OperationManager}
 import org.apache.hive.service.cli.session.{HiveSession, SessionManager => HiveSessionManager}
-import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.hive.session.HiveSessionImpl
+import org.apache.kyuubi.engine.hive.util.HiveRpcUtils
 import org.apache.kyuubi.operation.{AbstractOperation, FetchOrientation, OperationState, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp}
 
 abstract class HiveOperation(session: Session) extends AbstractOperation(session) {
 
@@ -90,7 +92,7 @@ abstract class HiveOperation(session: Session) extends AbstractOperation(session
   override def getResultSetMetadata: TGetResultSetMetadataResp = {
     val schema = internalHiveOperation.getResultSetSchema.toTTableSchema
     val resp = new TGetResultSetMetadataResp
-    resp.setSchema(schema)
+    resp.setSchema(HiveRpcUtils.asKyuubi(schema))
     resp.setStatus(OK_STATUS)
     resp
   }
@@ -98,18 +100,18 @@ abstract class HiveOperation(session: Session) extends AbstractOperation(session
   override def getNextRowSetInternal(
       order: FetchOrientation,
       rowSetSize: Int): TFetchResultsResp = {
-    val tOrder = FetchOrientation.toTFetchOrientation(order)
-    val hiveOrder = org.apache.hive.service.cli.FetchOrientation.getFetchOrientation(tOrder)
+    val hiveTOrder = HiveRpcUtils.asHive(FetchOrientation.toTFetchOrientation(order))
+    val hiveOrder = HiveFetchOrientation.getFetchOrientation(hiveTOrder)
     val rowSet = internalHiveOperation.getNextRowSet(hiveOrder, rowSetSize)
     val resp = new TFetchResultsResp(OK_STATUS)
-    resp.setResults(rowSet.toTRowSet)
+    resp.setResults(HiveRpcUtils.asKyuubi(rowSet.toTRowSet))
     resp.setHasMoreRows(false)
     resp
   }
 
   def getOperationLogRowSet(order: FetchOrientation, rowSetSize: Int): TFetchResultsResp = {
-    val tOrder = FetchOrientation.toTFetchOrientation(order)
-    val hiveOrder = org.apache.hive.service.cli.FetchOrientation.getFetchOrientation(tOrder)
+    val hiveTOrder = HiveRpcUtils.asHive(FetchOrientation.toTFetchOrientation(order))
+    val hiveOrder = HiveFetchOrientation.getFetchOrientation(hiveTOrder)
     val handle = internalHiveOperation.getHandle
     val rowSet = delegatedOperationManager.getOperationLogRowSet(
       handle,
@@ -117,7 +119,7 @@ abstract class HiveOperation(session: Session) extends AbstractOperation(session
       rowSetSize,
       hive.getHiveConf).toTRowSet
     val resp = new TFetchResultsResp(OK_STATUS)
-    resp.setResults(rowSet)
+    resp.setResults(HiveRpcUtils.asKyuubi(rowSet))
     resp.setHasMoreRows(false)
     resp
   }

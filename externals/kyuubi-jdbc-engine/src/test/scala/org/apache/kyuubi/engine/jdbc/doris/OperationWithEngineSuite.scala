@@ -16,17 +16,16 @@
  */
 package org.apache.kyuubi.engine.jdbc.doris
 
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetInfoReq, TGetInfoType, TStatusCode}
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetInfoReq, TGetInfoType, TStatusCode}
 
 class OperationWithEngineSuite extends DorisOperationSuite with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = jdbcConnectionUrl
 
-  test("Test for Jdbc engine getInfo") {
+  test("doris - test for Jdbc engine getInfo") {
     val metaData = ConnectionProvider.create(kyuubiConf).getMetaData
 
     withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
@@ -60,7 +59,7 @@ class OperationWithEngineSuite extends DorisOperationSuite with HiveJDBCTestHelp
     }
   }
 
-  test("JDBC ExecuteStatement operation should contain operationLog") {
+  test("doris - JDBC ExecuteStatement operation should contain operationLog") {
     withSessionHandle { (client, handle) =>
       val tExecuteStatementReq = new TExecuteStatementReq()
       tExecuteStatementReq.setSessionHandle(handle)

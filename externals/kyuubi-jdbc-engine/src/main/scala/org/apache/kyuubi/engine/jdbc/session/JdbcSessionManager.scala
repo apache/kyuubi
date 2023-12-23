@@ -16,8 +16,6 @@
  */
 package org.apache.kyuubi.engine.jdbc.session
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
@@ -26,6 +24,7 @@ import org.apache.kyuubi.engine.jdbc.JdbcSQLEngine
 import org.apache.kyuubi.engine.jdbc.operation.JdbcOperationManager
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class JdbcSessionManager(name: String)
   extends SessionManager(name) {

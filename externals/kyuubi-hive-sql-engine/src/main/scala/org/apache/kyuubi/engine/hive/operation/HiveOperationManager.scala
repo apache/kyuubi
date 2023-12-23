@@ -20,13 +20,13 @@ package org.apache.kyuubi.engine.hive.operation
 import java.util.List
 
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
-import org.apache.hive.service.rpc.thrift.TFetchResultsResp
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.hive.session.HiveSessionImpl
 import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationManager}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TFetchResultsResp
 
 class HiveOperationManager() extends OperationManager("HiveOperationManager") {
   // we use hive's operation log

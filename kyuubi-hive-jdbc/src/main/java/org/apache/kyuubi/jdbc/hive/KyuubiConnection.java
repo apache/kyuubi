@@ -42,7 +42,6 @@ import javax.security.auth.Subject;
 import javax.security.sasl.Sasl;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hive.service.rpc.thrift.*;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.NoHttpResponseException;
@@ -66,11 +65,12 @@ import org.apache.kyuubi.jdbc.hive.cli.FetchType;
 import org.apache.kyuubi.jdbc.hive.cli.RowSet;
 import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
-import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.transport.THttpClient;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.*;
+import org.apache.kyuubi.shaded.thrift.TException;
+import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol;
+import org.apache.kyuubi.shaded.thrift.transport.THttpClient;
+import org.apache.kyuubi.shaded.thrift.transport.TTransport;
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -539,7 +539,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     if (useSsl) {
       String useTwoWaySSL = sessConfMap.get(USE_TWO_WAY_SSL);
       String sslTrustStorePath = sessConfMap.get(SSL_TRUST_STORE);
-      String sslTrustStorePassword = sessConfMap.get(SSL_TRUST_STORE_PASSWORD);
+      String sslTrustStorePassword =
+          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
       KeyStore sslTrustStore;
       SSLConnectionSocketFactory socketFactory;
       SSLContext sslContext;
@@ -559,7 +560,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           // Pick trust store config from the given path
           sslTrustStore = KeyStore.getInstance(SSL_TRUST_STORE_TYPE);
           try (FileInputStream fis = new FileInputStream(sslTrustStorePath)) {
-            sslTrustStore.load(fis, sslTrustStorePassword.toCharArray());
+            sslTrustStore.load(
+                fis, sslTrustStorePassword != null ? sslTrustStorePassword.toCharArray() : null);
           }
           sslContext = SSLContexts.custom().loadTrustMaterial(sslTrustStore, null).build();
           socketFactory =
@@ -590,7 +592,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     if (isSslConnection()) {
       // get SSL socket
       String sslTrustStore = sessConfMap.get(SSL_TRUST_STORE);
-      String sslTrustStorePassword = sessConfMap.get(SSL_TRUST_STORE_PASSWORD);
+      String sslTrustStorePassword =
+          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
 
       if (sslTrustStore == null || sslTrustStore.isEmpty()) {
         transport = ThriftUtils.getSSLSocket(host, port, connectTimeout, socketTimeout);
@@ -661,7 +664,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       KeyManagerFactory keyManagerFactory =
           KeyManagerFactory.getInstance(SUNX509_ALGORITHM_STRING, SUNJSSE_ALGORITHM_STRING);
       String keyStorePath = sessConfMap.get(SSL_KEY_STORE);
-      String keyStorePassword = sessConfMap.get(SSL_KEY_STORE_PASSWORD);
+      String keyStorePassword =
+          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_KEY_STORE_PASSWORD);
       KeyStore sslKeyStore = KeyStore.getInstance(SSL_KEY_STORE_TYPE);
 
       if (keyStorePath == null || keyStorePath.isEmpty()) {
@@ -677,7 +681,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       TrustManagerFactory trustManagerFactory =
           TrustManagerFactory.getInstance(SUNX509_ALGORITHM_STRING);
       String trustStorePath = sessConfMap.get(SSL_TRUST_STORE);
-      String trustStorePassword = sessConfMap.get(SSL_TRUST_STORE_PASSWORD);
+      String trustStorePassword =
+          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
       KeyStore sslTrustStore = KeyStore.getInstance(SSL_TRUST_STORE_TYPE);
 
       if (trustStorePath == null || trustStorePath.isEmpty()) {
@@ -685,7 +690,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
             SSL_TRUST_STORE + " Not configured for 2 way SSL connection");
       }
       try (FileInputStream fis = new FileInputStream(trustStorePath)) {
-        sslTrustStore.load(fis, trustStorePassword.toCharArray());
+        sslTrustStore.load(
+            fis, trustStorePassword != null ? trustStorePassword.toCharArray() : null);
       }
       trustManagerFactory.init(sslTrustStore);
       SSLContext context = SSLContext.getInstance("TLS");
@@ -733,6 +739,18 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     if (sessVars.containsKey(HS2_PROXY_USER)) {
       openConf.put(HS2_PROXY_USER, sessVars.get(HS2_PROXY_USER));
     }
+    String clientProtocolStr =
+        sessVars.getOrDefault(
+            CLIENT_PROTOCOL_VERSION, openReq.getClient_protocol().getValue() + "");
+    TProtocolVersion clientProtocol =
+        TProtocolVersion.findByValue(Integer.parseInt(clientProtocolStr));
+    if (clientProtocol == null) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Unsupported Hive2 protocol version %s specified by session conf key %s",
+              clientProtocolStr, CLIENT_PROTOCOL_VERSION));
+    }
+    openReq.setClient_protocol(clientProtocol);
     try {
       openConf.put("kyuubi.client.ipAddress", InetAddress.getLocalHost().getHostAddress());
     } catch (UnknownHostException e) {
@@ -870,7 +888,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       AccessControlContext context = AccessController.getContext();
       return Subject.getSubject(context);
     } else if (isTgtCacheAuthMode()) {
-      return KerberosAuthenticationManager.getTgtCacheAuthentication().getSubject();
+      String ticketCache = sessConfMap.get(AUTH_KYUUBI_CLIENT_TICKET_CACHE);
+      return KerberosAuthenticationManager.getTgtCacheAuthentication(ticketCache).getSubject();
     } else {
       // This should never happen
       throw new IllegalArgumentException("Unsupported auth mode");

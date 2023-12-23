@@ -18,8 +18,9 @@
 
 <template>
   <header>
-    <img src="@/assets/kyuubi.png" />
-    <article v-if="!isCollapse">Apache Kyuubi Dashboard</article>
+    <img v-if="!isCollapse" src="@/assets/images/kyuubi-logo.svg" />
+    <img v-else class="collapsed-logo" src="@/assets/images/kyuubi.png" />
+    <span v-if="!isCollapse">{{ version }}</span>
   </header>
   <c-menu :is-collapse="isCollapse" :active-path="activePath" :menus="menus" />
 </template>
@@ -37,34 +38,43 @@
   const { isCollapse } = storeToRefs(store)
   const router = useRoute()
   const activePath = ref(router.path)
+  const version = import.meta.env.VITE_APP_VERSION
 </script>
 
 <style lang="scss" scoped>
+  $height: 64px;
   header {
+    width: 100%;
     position: absolute;
     top: 0;
     left: 0;
-    height: 64px;
-    padding-left: 16px;
-    line-height: 64px;
+    height: $height;
+    line-height: $height;
+    padding: 0 16px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    box-sizing: border-box;
     img {
-      display: inline-block;
-      width: 32px;
-      height: 32px;
-      position: relative;
-      top: -4px;
-      vertical-align: middle;
+      width: 140px;
+      height: 50px;
+      &.collapsed-logo {
+        width: 40px;
+        height: 40px;
+        position: relative;
+        top: -4px;
+        left: -4px;
+      }
     }
-    article {
-      display: inline-block;
-      margin-left: 12px;
-      color: #fff;
-      font-weight: 600;
-      font-size: 14px;
+    span {
+      position: relative;
+      top: 17px;
+      font-size: 10px;
       font-family: 'Myriad Pro', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+      color: rgba(255, 255, 255, 0.87);
     }
   }
   .el-menu {
-    margin-top: 64px;
+    margin-top: $height;
   }
 </style>

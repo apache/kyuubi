@@ -28,6 +28,7 @@ import org.scalatest.Assertions._
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.V2JdbcTableCatalogPrivilegesBuilderSuite._
+import org.apache.kyuubi.plugin.spark.authz.ranger.DeltaCatalogRangerSparkExtensionSuite._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 trait SparkSessionProvider {
@@ -106,7 +107,7 @@ trait SparkSessionProvider {
   }
 
   private def isCatalogSupportPurge(catalogName: String): Boolean = {
-    val unsupportedCatalogs = Set(v2JdbcTableCatalogClassName)
+    val unsupportedCatalogs = Set(v2JdbcTableCatalogClassName, deltaCatalogClassName)
     spark.conf.getOption(s"spark.sql.catalog.$catalogName") match {
       case Some(catalog) if !unsupportedCatalogs.contains(catalog) => true
       case _ => false

@@ -17,12 +17,12 @@
 # under the License.
 #
 
-markdown==3.4.1
+markdown==3.5.1
 recommonmark==0.7.1
-sphinx==4.5.0
-sphinx-book-theme==0.3.3
+sphinx==7.2.6
+sphinx-book-theme==1.1.0
 sphinx-markdown-tables==0.0.17
-sphinx-notfound-page==0.8.3
+sphinx-notfound-page==1.0.0
 sphinx-togglebutton===0.3.2
 sphinxemoji===0.2.0
 sphinx-copybutton===0.5.2

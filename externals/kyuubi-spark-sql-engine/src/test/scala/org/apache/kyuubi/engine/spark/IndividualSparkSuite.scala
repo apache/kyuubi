@@ -104,13 +104,17 @@ class SparkEngineSuites extends KyuubiFunSuite {
     withSystemProperty(Map(
       s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY" -> String.valueOf(submitTime),
       s"spark.${ENGINE_INIT_TIMEOUT.key}" -> String.valueOf(timeout),
-      s"spark.${ENGINE_INITIALIZE_SQL.key}" ->
+      s"spark.${ENGINE_SPARK_INITIALIZE_SQL.key}" ->
         "select 1 where java_method('java.lang.Thread', 'sleep', 60000L) is null")) {
       SparkSQLEngine.setupConf()
       SparkSQLEngine.currentEngine = None
       val logAppender = new LogAppender("test createSpark timeout")
       withLogAppender(logAppender) {
-        SparkSQLEngine.main(Array.empty)
+        try {
+          SparkSQLEngine.main(Array.empty)
+        } catch {
+          case e: Exception => error("", e)
+        }
       }
       assert(SparkSQLEngine.currentEngine.isEmpty)
       val errorMsg = s"The Engine main thread was interrupted, possibly due to `createSpark`" +

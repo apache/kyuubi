@@ -16,13 +16,6 @@
  */
 package org.apache.kyuubi.engine.jdbc.doris
 
-import org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.engine.jdbc.mysql.MySQLSchemaHelper
 
-import org.apache.kyuubi.engine.jdbc.schema.SchemaHelper
-
-class DorisSchemaHelper extends SchemaHelper {
-
-  override def tinyIntToTTypeId: TTypeId = TTypeId.INT_TYPE
-
-  override def smallIntToTTypeId: TTypeId = TTypeId.INT_TYPE
-}
+class DorisSchemaHelper extends MySQLSchemaHelper {}

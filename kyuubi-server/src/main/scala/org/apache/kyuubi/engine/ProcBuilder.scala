@@ -99,7 +99,7 @@ trait ProcBuilder {
 
   protected def proxyUser: String
 
-  protected val commands: Array[String]
+  protected val commands: Iterable[String]
 
   def conf: KyuubiConf
 
@@ -142,7 +142,7 @@ trait ProcBuilder {
   }
 
   final lazy val processBuilder: ProcessBuilder = {
-    val pb = new ProcessBuilder(commands: _*)
+    val pb = new ProcessBuilder(commands.toStream.asJava)
 
     val envs = pb.environment()
     envs.putAll(env.asJava)
@@ -287,10 +287,10 @@ trait ProcBuilder {
 
   override def toString: String = {
     if (commands == null) {
-      super.toString()
+      super.toString
     } else {
       Utils.redactCommandLineArgs(conf, commands).map {
-        case arg if arg.startsWith("--") => s"\\\n\t$arg"
+        case arg if arg.startsWith("-") => s"\\\n\t$arg"
         case arg => arg
       }.mkString(" ")
     }

@@ -35,9 +35,10 @@ import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
-import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
+import org.apache.kyuubi.service.authentication.{AuthMethods, AuthTypes, KyuubiAuthenticationFactory}
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
 import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.
@@ -69,6 +70,17 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
 
   private lazy val port: Int = conf.get(FRONTEND_REST_BIND_PORT)
+
+  private lazy val securityEnabled = {
+    val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+    KyuubiAuthenticationFactory.getValidPasswordAuthMethod(authTypes) != AuthMethods.NONE
+  }
+
+  private lazy val administrators: Set[String] =
+    conf.get(KyuubiConf.SERVER_ADMINISTRATORS) + Utils.currentUser
+
+  def isAdministrator(userName: String): Boolean =
+    if (securityEnabled) administrators.contains(userName) else true
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
@@ -131,7 +143,12 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       }
     }
 
-    batchChecker.scheduleWithFixedDelay(task, interval, interval, TimeUnit.MILLISECONDS)
+    scheduleTolerableRunnableWithFixedDelay(
+      batchChecker,
+      task,
+      interval,
+      interval,
+      TimeUnit.MILLISECONDS)
   }
 
   @VisibleForTesting
@@ -208,9 +225,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       Option(AuthenticationFilter.getUserName).filter(_.nonEmpty).getOrElse("anonymous"))
   }
 
-  def getSessionUser(hs2ProxyUser: String): String = {
-    val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
-      Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
+  def getSessionUser(proxyUser: String): String = {
+    // Internally, we use kyuubi.session.proxy.user to unify the key as proxyUser
+    val sessionConf = Option(proxyUser).filter(_.nonEmpty).map(proxyUser =>
+      Map(PROXY_USER.key -> proxyUser)).getOrElse(Map())
     getSessionUser(sessionConf)
   }
 
@@ -239,12 +257,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     if (sessionConf == null) {
       realUser
     } else {
-      sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER).map { proxyUser =>
-        if (!getConf.get(KyuubiConf.SERVER_ADMINISTRATORS).contains(realUser)) {
-          KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
-        }
-        proxyUser
-      }.getOrElse(realUser)
+      val proxyUser = sessionConf.getOrElse(
+        PROXY_USER.key,
+        sessionConf.getOrElse(KyuubiAuthenticationFactory.HS2_PROXY_USER, realUser))
+      if (!proxyUser.equals(realUser) && !isAdministrator(realUser)) {
+        KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+      }
+      proxyUser
     }
   }
 

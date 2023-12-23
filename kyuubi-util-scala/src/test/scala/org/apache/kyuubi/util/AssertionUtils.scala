@@ -17,9 +17,10 @@
 package org.apache.kyuubi.util
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import java.util.Locale
 
+import scala.collection.JavaConverters._
 import scala.collection.Traversable
 import scala.io.Source
 import scala.reflect.ClassTag
@@ -28,6 +29,8 @@ import scala.util.matching.Regex
 import org.scalactic.Prettifier
 import org.scalactic.source.Position
 import org.scalatest.Assertions._
+
+import org.apache.kyuubi.util.GoldenFileUtils.getLicenceContent
 
 object AssertionUtils {
 
@@ -106,6 +109,24 @@ object AssertionUtils {
     }
   }
 
+  def assertFileContentSorted(
+      filePath: Path,
+      headerSkipPrefix: String = "#",
+      licenceHeader: Iterable[String] = getLicenceContent(),
+      distinct: Boolean = true): Unit = {
+    val sortedLines = Files.readAllLines(filePath).asScala
+      .dropWhile(line => line.trim == "" || line.trim.startsWith(headerSkipPrefix))
+      .map(_.trim).filter(_.nonEmpty)
+      .sorted
+    val expectedSortedLines = if (distinct) {
+      sortedLines.distinct
+    } else {
+      sortedLines
+    }
+    val expectedLines = licenceHeader ++ Seq("") ++ expectedSortedLines
+    assertFileContent(filePath, expectedLines, s"Check SPI provider file sorted $filePath")
+  }
+
   /**
    * Assert the iterable contains all the expected elements
    */
@@ -151,7 +172,7 @@ object AssertionUtils {
 
   /**
    * Asserts that the given function throws an exception of the given type
-   * and with the exception message equals to expected string
+   * and with the exception message contains expected string
    */
   def interceptContains[T <: Exception](f: => Any)(contained: String)(implicit
       classTag: ClassTag[T],
@@ -159,5 +180,17 @@ object AssertionUtils {
     assert(contained != null)
     val exception = intercept[T](f)(classTag, pos)
     assert(exception.getMessage.contains(contained))
+  }
+
+  /**
+   * Asserts that the given function throws an exception of the given type
+   * and with the exception message ends with expected string
+   */
+  def interceptEndsWith[T <: Exception](f: => Any)(end: String)(implicit
+      classTag: ClassTag[T],
+      pos: Position): Unit = {
+    assert(end != null)
+    val exception = intercept[T](f)(classTag, pos)
+    assert(exception.getMessage.endsWith(end))
   }
 }

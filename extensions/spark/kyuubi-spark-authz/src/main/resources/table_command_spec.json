@@ -8,10 +8,17 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_ADDCOLS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AddPartitions",
   "tableDescs" : [ {
@@ -22,10 +29,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_ADDPARTS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterColumn",
   "tableDescs" : [ {
@@ -36,10 +45,17 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_ADDCOLS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterTable",
   "tableDescs" : [ {
@@ -50,10 +66,17 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "ident",
+    "fieldExtractor" : "IdentifierURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AppendData",
   "tableDescs" : [ {
@@ -63,17 +86,26 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "INSERT"
+      "actionType" : "INSERT",
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationURIExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CacheTable",
@@ -81,30 +113,20 @@
   "opType" : "CREATEVIEW",
   "queryDescs" : [ {
     "fieldName" : "table",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CacheTableAsSelect",
   "tableDescs" : [ ],
   "opType" : "CREATEVIEW",
   "queryDescs" : [ {
     "fieldName" : "plan",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
-}, {
-  "classname" : "org.apache.spark.sql.catalyst.plans.logical.Call",
-  "tableDescs" : [ {
-    "fieldName" : "args",
-    "fieldExtractor" : "ExpressionSeqTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
   } ],
-  "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CommentOnTable",
   "tableDescs" : [ {
@@ -115,10 +137,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateTable",
   "tableDescs" : [ {
@@ -129,7 +153,8 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "tableName",
     "fieldExtractor" : "IdentifierTableExtractor",
@@ -138,10 +163,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : {
       "fieldName" : "catalog",
-      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+      "fieldExtractor" : "CatalogPluginCatalogExtractor",
+      "comment" : ""
     },
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedDbObjectNameTableExtractor",
@@ -150,10 +177,27 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "tableSpec",
+    "fieldExtractor" : "TableSpecURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  }, {
+    "fieldName" : "properties",
+    "fieldExtractor" : "PropertiesLocationUriExtractor",
+    "isInput" : false,
+    "comment" : ""
+  }, {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "IdentifierURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateTableAsSelect",
   "tableDescs" : [ {
@@ -164,7 +208,8 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "tableName",
     "fieldExtractor" : "IdentifierTableExtractor",
@@ -173,10 +218,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : {
       "fieldName" : "catalog",
-      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+      "fieldExtractor" : "CatalogPluginCatalogExtractor",
+      "comment" : ""
     },
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "name",
     "fieldExtractor" : "ResolvedDbObjectNameTableExtractor",
@@ -185,12 +232,25 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE_AS_SELECT",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "tableSpec",
+    "fieldExtractor" : "TableSpecURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  }, {
+    "fieldName" : "properties",
+    "fieldExtractor" : "PropertiesLocationUriExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateV2Table",
@@ -202,31 +262,26 @@
     "tableTypeDesc" : null,
     "catalogDesc" : {
       "fieldName" : "catalog",
-      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+      "fieldExtractor" : "CatalogPluginCatalogExtractor",
+      "comment" : ""
     },
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
-}, {
-  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DeleteFromIcebergTable",
-  "tableDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : {
-      "fieldName" : null,
-      "fieldExtractor" : null,
-      "actionType" : "UPDATE"
-    },
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "properties",
+    "fieldExtractor" : "PropertiesLocationUriExtractor",
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
-  } ],
-  "opType" : "QUERY",
-  "queryDescs" : [ ]
+    "comment" : ""
+  }, {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "IdentifierURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DeleteFromTable",
   "tableDescs" : [ {
@@ -236,15 +291,18 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "UPDATE"
+      "actionType" : "UPDATE",
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeRelation",
   "tableDescs" : [ {
@@ -255,10 +313,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : true
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : ""
   } ],
   "opType" : "DESCTABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropColumns",
   "tableDescs" : [ {
@@ -269,10 +329,17 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_ADDCOLS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropPartitions",
   "tableDescs" : [ {
@@ -283,10 +350,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_DROPPARTS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropTable",
   "tableDescs" : [ {
@@ -297,7 +366,8 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedTableTableExtractor",
@@ -306,31 +376,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "DROPTABLE",
-  "queryDescs" : [ ]
-}, {
-  "classname" : "org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable",
-  "tableDescs" : [ {
-    "fieldName" : "targetTable",
-    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : {
-      "fieldName" : null,
-      "fieldExtractor" : null,
-      "actionType" : "UPDATE"
-    },
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
-  } ],
-  "opType" : "QUERY",
-  "queryDescs" : [ {
-    "fieldName" : "sourceTable",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.MergeIntoTable",
   "tableDescs" : [ {
@@ -340,18 +391,22 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "UPDATE"
+      "actionType" : "UPDATE",
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "sourceTable",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.OverwriteByExpression",
   "tableDescs" : [ {
@@ -361,17 +416,26 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "INSERT_OVERWRITE"
+      "actionType" : "INSERT_OVERWRITE",
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationURIExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.OverwritePartitionsDynamic",
@@ -382,17 +446,26 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "INSERT_OVERWRITE"
+      "actionType" : "INSERT_OVERWRITE",
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationURIExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RefreshTable",
@@ -404,10 +477,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RenameColumn",
   "tableDescs" : [ {
@@ -418,10 +493,17 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_RENAMECOL",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RenamePartitions",
   "tableDescs" : [ {
@@ -432,10 +514,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_RENAMEPART",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RepairTable",
   "tableDescs" : [ {
@@ -446,10 +530,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "MSCK",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceColumns",
   "tableDescs" : [ {
@@ -460,10 +546,17 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_REPLACECOLS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceData",
   "tableDescs" : [ {
@@ -473,18 +566,22 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "UPDATE"
+      "actionType" : "UPDATE",
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceTable",
   "tableDescs" : [ {
@@ -495,7 +592,8 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "tableName",
     "fieldExtractor" : "IdentifierTableExtractor",
@@ -504,10 +602,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : {
       "fieldName" : "catalog",
-      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+      "fieldExtractor" : "CatalogPluginCatalogExtractor",
+      "comment" : ""
     },
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedDbObjectNameTableExtractor",
@@ -516,10 +616,27 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "tableSpec",
+    "fieldExtractor" : "TableSpecURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  }, {
+    "fieldName" : "properties",
+    "fieldExtractor" : "PropertiesLocationUriExtractor",
+    "isInput" : false,
+    "comment" : ""
+  }, {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "IdentifierURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceTableAsSelect",
   "tableDescs" : [ {
@@ -530,7 +647,8 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "tableName",
     "fieldExtractor" : "IdentifierTableExtractor",
@@ -539,10 +657,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : {
       "fieldName" : "catalog",
-      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+      "fieldExtractor" : "CatalogPluginCatalogExtractor",
+      "comment" : ""
     },
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "name",
     "fieldExtractor" : "ResolvedDbObjectNameTableExtractor",
@@ -551,12 +671,46 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE_AS_SELECT",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "tableSpec",
+    "fieldExtractor" : "TableSpecURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  }, {
+    "fieldName" : "properties",
+    "fieldExtractor" : "PropertiesLocationUriExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetTableProperties",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowCreateTable",
@@ -568,10 +722,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "SHOW_CREATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowTableProperties",
   "tableDescs" : [ {
@@ -582,10 +738,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "SHOW_TBLPROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.TruncatePartition",
   "tableDescs" : [ {
@@ -596,10 +754,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_DROPPARTS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.TruncateTable",
   "tableDescs" : [ {
@@ -610,49 +770,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "TRUNCATETABLE",
-  "queryDescs" : [ ]
-}, {
-  "classname" : "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable",
-  "tableDescs" : [ {
-    "fieldName" : "targetTable",
-    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : {
-      "fieldName" : null,
-      "fieldExtractor" : null,
-      "actionType" : "UPDATE"
-    },
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
-  } ],
-  "opType" : "QUERY",
-  "queryDescs" : [ {
-    "fieldName" : "sourceTable",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
-}, {
-  "classname" : "org.apache.spark.sql.catalyst.plans.logical.UpdateIcebergTable",
-  "tableDescs" : [ {
-    "fieldName" : "table",
-    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : {
-      "fieldName" : null,
-      "fieldExtractor" : null,
-      "actionType" : "UPDATE"
-    },
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
-  } ],
-  "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.UpdateTable",
   "tableDescs" : [ {
@@ -662,15 +785,73 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "UPDATE"
+      "actionType" : "UPDATE",
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AddArchivesCommand",
+  "tableDescs" : [ ],
+  "opType" : "ADD",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "paths",
+    "fieldExtractor" : "StringSeqURIExtractor",
+    "isInput" : true,
+    "comment" : ""
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AddFileCommand",
+  "tableDescs" : [ ],
+  "opType" : "ADD",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : true,
+    "comment" : ""
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AddFilesCommand",
+  "tableDescs" : [ ],
+  "opType" : "ADD",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "paths",
+    "fieldExtractor" : "StringSeqURIExtractor",
+    "isInput" : true,
+    "comment" : ""
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AddJarCommand",
+  "tableDescs" : [ ],
+  "opType" : "ADD",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : true,
+    "comment" : ""
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AddJarsCommand",
+  "tableDescs" : [ ],
+  "opType" : "ADD",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "paths",
+    "fieldExtractor" : "StringSeqURIExtractor",
+    "isInput" : true,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand",
   "tableDescs" : [ {
@@ -678,16 +859,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "colsToAdd",
-      "fieldExtractor" : "StructFieldSeqColumnExtractor"
+      "fieldExtractor" : "StructFieldSeqColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_ADDCOLS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableAddPartitionCommand",
   "tableDescs" : [ {
@@ -695,16 +879,24 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "partitionSpecsAndLocs",
-      "fieldExtractor" : "PartitionLocsSeqColumnExtractor"
+      "fieldExtractor" : "PartitionLocsSeqColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_ADDPARTS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "partitionSpecsAndLocs",
+    "fieldExtractor" : "PartitionLocsSeqURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableChangeColumnCommand",
   "tableDescs" : [ {
@@ -712,16 +904,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "columnName",
-      "fieldExtractor" : "StringColumnExtractor"
+      "fieldExtractor" : "StringColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_REPLACECOLS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableDropPartitionCommand",
   "tableDescs" : [ {
@@ -729,16 +924,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "specs",
-      "fieldExtractor" : "PartitionSeqColumnExtractor"
+      "fieldExtractor" : "PartitionSeqColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_DROPPARTS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableRecoverPartitionsCommand",
   "tableDescs" : [ {
@@ -749,10 +947,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "MSCK",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableRenameCommand",
   "tableDescs" : [ {
@@ -763,14 +963,17 @@
     "tableTypeDesc" : {
       "fieldName" : "oldName",
       "fieldExtractor" : "TableIdentifierTableTypeExtractor",
-      "skipTypes" : [ "TEMP_VIEW" ]
+      "skipTypes" : [ "TEMP_VIEW" ],
+      "comment" : ""
     },
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_RENAME",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableRenamePartitionCommand",
   "tableDescs" : [ {
@@ -778,16 +981,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "oldPartition",
-      "fieldExtractor" : "PartitionColumnExtractor"
+      "fieldExtractor" : "PartitionColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_RENAMEPART",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableSerDePropertiesCommand",
   "tableDescs" : [ {
@@ -795,16 +1001,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "partSpec",
-      "fieldExtractor" : "PartitionOptionColumnExtractor"
+      "fieldExtractor" : "PartitionOptionColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_SERDEPROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableSetLocationCommand",
   "tableDescs" : [ {
@@ -812,16 +1021,24 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "partitionSpec",
-      "fieldExtractor" : "PartitionOptionColumnExtractor"
+      "fieldExtractor" : "PartitionOptionColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_LOCATION",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "location",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableSetPropertiesCommand",
   "tableDescs" : [ {
@@ -832,10 +1049,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableUnsetPropertiesCommand",
   "tableDescs" : [ {
@@ -846,10 +1065,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterViewAsCommand",
   "tableDescs" : [ {
@@ -860,17 +1081,21 @@
     "tableTypeDesc" : {
       "fieldName" : "name",
       "fieldExtractor" : "TableIdentifierTableTypeExtractor",
-      "skipTypes" : [ "TEMP_VIEW" ]
+      "skipTypes" : [ "TEMP_VIEW" ],
+      "comment" : ""
     },
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERVIEW_AS",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeColumnCommand",
   "tableDescs" : [ {
@@ -881,34 +1106,40 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "tableIdent",
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "columnNames",
-      "fieldExtractor" : "StringSeqColumnExtractor"
+      "fieldExtractor" : "StringSeqColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "tableIdent",
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "columnNames",
-      "fieldExtractor" : "StringSeqOptionColumnExtractor"
+      "fieldExtractor" : "StringSeqOptionColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzePartitionCommand",
   "tableDescs" : [ {
@@ -919,22 +1150,26 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "tableIdent",
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "partitionSpec",
-      "fieldExtractor" : "PartitionColumnExtractor"
+      "fieldExtractor" : "PartitionColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTableCommand",
   "tableDescs" : [ {
@@ -945,7 +1180,8 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   }, {
     "fieldName" : "tableIdent",
     "fieldExtractor" : "TableIdentifierTableExtractor",
@@ -954,18 +1190,22 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CacheTableCommand",
   "tableDescs" : [ ],
   "opType" : "CREATEVIEW",
   "queryDescs" : [ {
     "fieldName" : "plan",
-    "fieldExtractor" : "LogicalPlanOptionQueryExtractor"
-  } ]
+    "fieldExtractor" : "LogicalPlanOptionQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand",
   "tableDescs" : [ {
@@ -976,12 +1216,20 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : true
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE_AS_SELECT",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand",
@@ -993,10 +1241,17 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : true
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateTableCommand",
   "tableDescs" : [ {
@@ -1007,10 +1262,17 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : true
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateTableLikeCommand",
   "tableDescs" : [ {
@@ -1021,7 +1283,8 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : true
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : ""
   }, {
     "fieldName" : "sourceTable",
     "fieldExtractor" : "TableIdentifierTableExtractor",
@@ -1030,10 +1293,17 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : true
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "fileFormat",
+    "fieldExtractor" : "CatalogStorageFormatURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateViewCommand",
   "tableDescs" : [ {
@@ -1044,20 +1314,25 @@
     "tableTypeDesc" : {
       "fieldName" : "viewType",
       "fieldExtractor" : "ViewTypeTableTypeExtractor",
-      "skipTypes" : [ "TEMP_VIEW", "GLOBAL_TEMP_VIEW" ]
+      "skipTypes" : [ "TEMP_VIEW", "GLOBAL_TEMP_VIEW" ],
+      "comment" : ""
     },
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "CREATEVIEW",
   "queryDescs" : [ {
     "fieldName" : "plan",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
   }, {
     "fieldName" : "child",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeColumnCommand",
   "tableDescs" : [ {
@@ -1065,16 +1340,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "colNameParts",
-      "fieldExtractor" : "StringSeqLastColumnExtractor"
+      "fieldExtractor" : "StringSeqLastColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "DESCTABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeTableCommand",
   "tableDescs" : [ {
@@ -1082,16 +1360,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "partitionSpec",
-      "fieldExtractor" : "PartitionColumnExtractor"
+      "fieldExtractor" : "PartitionColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : true
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : ""
   } ],
   "opType" : "DESCTABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DropTableCommand",
   "tableDescs" : [ {
@@ -1102,21 +1383,31 @@
     "tableTypeDesc" : {
       "fieldName" : "tableName",
       "fieldExtractor" : "TableIdentifierTableTypeExtractor",
-      "skipTypes" : [ "TEMP_VIEW" ]
+      "skipTypes" : [ "TEMP_VIEW" ],
+      "comment" : ""
     },
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "DROPTABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand",
   "tableDescs" : [ ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "storage",
+    "fieldExtractor" : "CatalogStorageFormatURIExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.LoadDataCommand",
@@ -1125,20 +1416,29 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "partition",
-      "fieldExtractor" : "PartitionOptionColumnExtractor"
+      "fieldExtractor" : "PartitionOptionColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : {
       "fieldName" : "isOverwrite",
       "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",
-      "actionType" : null
+      "actionType" : null,
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "LOAD",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : true,
+    "comment" : ""
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.RefreshTableCommand",
   "tableDescs" : [ {
@@ -1149,10 +1449,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.RepairTableCommand",
   "tableDescs" : [ {
@@ -1163,10 +1465,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "MSCK",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.ShowColumnsCommand",
   "tableDescs" : [ {
@@ -1177,10 +1481,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "SHOWCOLUMNS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.ShowCreateTableAsSerdeCommand",
   "tableDescs" : [ {
@@ -1191,10 +1497,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "SHOW_CREATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.ShowCreateTableCommand",
   "tableDescs" : [ {
@@ -1205,10 +1513,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "SHOW_CREATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.ShowPartitionsCommand",
   "tableDescs" : [ {
@@ -1216,16 +1526,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "spec",
-      "fieldExtractor" : "PartitionOptionColumnExtractor"
+      "fieldExtractor" : "PartitionOptionColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "SHOWPARTITIONS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.ShowTablePropertiesCommand",
   "tableDescs" : [ {
@@ -1236,10 +1549,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "SHOW_TBLPROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.TruncateTableCommand",
   "tableDescs" : [ {
@@ -1247,16 +1562,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "partitionSpec",
-      "fieldExtractor" : "PartitionOptionColumnExtractor"
+      "fieldExtractor" : "PartitionOptionColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "TRUNCATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.CreateTable",
   "tableDescs" : [ {
@@ -1267,18 +1585,27 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanOptionQueryExtractor"
+    "fieldExtractor" : "LogicalPlanOptionQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "tableDesc",
+    "fieldExtractor" : "CatalogTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.CreateTempViewUsing",
   "tableDescs" : [ ],
   "opType" : "CREATEVIEW",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.InsertIntoDataSourceCommand",
   "tableDescs" : [ {
@@ -1288,18 +1615,22 @@
     "actionTypeDesc" : {
       "fieldName" : "overwrite",
       "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",
-      "actionType" : null
+      "actionType" : null,
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand",
   "tableDescs" : [ {
@@ -1307,23 +1638,28 @@
     "fieldExtractor" : "CatalogTableOptionTableExtractor",
     "columnDesc" : {
       "fieldName" : "outputColumnNames",
-      "fieldExtractor" : "StringSeqColumnExtractor"
+      "fieldExtractor" : "StringSeqColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : {
       "fieldName" : "mode",
       "fieldExtractor" : "SaveModeActionTypeExtractor",
-      "actionType" : null
+      "actionType" : null,
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.RefreshTable",
   "tableDescs" : [ {
@@ -1334,17 +1670,26 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand",
   "tableDescs" : [ ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "options",
+    "fieldExtractor" : "PropertiesPathUriExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand",
@@ -1353,18 +1698,27 @@
     "fieldExtractor" : "CatalogTableTableExtractor",
     "columnDesc" : {
       "fieldName" : "outputColumnNames",
-      "fieldExtractor" : "StringSeqColumnExtractor"
+      "fieldExtractor" : "StringSeqColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE_AS_SELECT",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "tableDesc",
+    "fieldExtractor" : "CatalogTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand",
@@ -1372,7 +1726,14 @@
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "storage",
+    "fieldExtractor" : "CatalogStorageFormatURIExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
 }, {
   "classname" : "org.apache.spark.sql.hive.execution.InsertIntoHiveTable",
@@ -1381,23 +1742,28 @@
     "fieldExtractor" : "CatalogTableTableExtractor",
     "columnDesc" : {
       "fieldName" : "outputColumnNames",
-      "fieldExtractor" : "StringSeqColumnExtractor"
+      "fieldExtractor" : "StringSeqColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : {
       "fieldName" : "overwrite",
       "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",
-      "actionType" : null
+      "actionType" : null,
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand",
   "tableDescs" : [ {
@@ -1405,19 +1771,136 @@
     "fieldExtractor" : "CatalogTableTableExtractor",
     "columnDesc" : {
       "fieldName" : "outputColumnNames",
-      "fieldExtractor" : "StringSeqColumnExtractor"
+      "fieldExtractor" : "StringSeqColumnExtractor",
+      "comment" : ""
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "CREATETABLE_AS_SELECT",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "tableDesc",
+    "fieldExtractor" : "CatalogTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
   } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.Call",
+  "tableDescs" : [ {
+    "fieldName" : "args",
+    "fieldExtractor" : "ExpressionSeqTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Iceberg"
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DeleteFromIcebergTable",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE",
+      "comment" : ""
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Iceberg"
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable",
+  "tableDescs" : [ {
+    "fieldName" : "targetTable",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE",
+      "comment" : ""
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Iceberg"
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "sourceTable",
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable",
+  "tableDescs" : [ {
+    "fieldName" : "targetTable",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE",
+      "comment" : ""
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Iceberg"
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "sourceTable",
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.UpdateIcebergTable",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE",
+      "comment" : ""
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Iceberg"
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableAddColumnsCommand",
   "tableDescs" : [ {
@@ -1425,16 +1908,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "colsToAdd",
-      "fieldExtractor" : "StructFieldSeqColumnExtractor"
+      "fieldExtractor" : "StructFieldSeqColumnExtractor",
+      "comment" : "Hudi"
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "ALTERTABLE_ADDCOLS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableChangeColumnCommand",
   "tableDescs" : [ {
@@ -1442,16 +1928,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "columnName",
-      "fieldExtractor" : "StringColumnExtractor"
+      "fieldExtractor" : "StringColumnExtractor",
+      "comment" : "Hudi"
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "ALTERTABLE_REPLACECOLS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableDropPartitionCommand",
   "tableDescs" : [ {
@@ -1459,16 +1948,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "partitionSpecs",
-      "fieldExtractor" : "PartitionSeqColumnExtractor"
+      "fieldExtractor" : "PartitionSeqColumnExtractor",
+      "comment" : "Hudi"
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "ALTERTABLE_DROPPARTS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableRenameCommand",
   "tableDescs" : [ {
@@ -1479,14 +1971,17 @@
     "tableTypeDesc" : {
       "fieldName" : "oldName",
       "fieldExtractor" : "TableIdentifierTableTypeExtractor",
-      "skipTypes" : [ "TEMP_VIEW" ]
+      "skipTypes" : [ "TEMP_VIEW" ],
+      "comment" : "Hudi"
     },
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "ALTERTABLE_RENAME",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterTableCommand",
   "tableDescs" : [ {
@@ -1497,10 +1992,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CallProcedureHoodieCommand",
   "tableDescs" : [ {
@@ -1510,12 +2007,14 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "OTHER"
+      "actionType" : "OTHER",
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : true
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : ""
   }, {
     "fieldName" : "clone",
     "fieldExtractor" : "HudiCallProcedureOutputTableExtractor",
@@ -1523,15 +2022,29 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "UPDATE"
+      "actionType" : "UPDATE",
+      "comment" : ""
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : true
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : ""
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.CompactionHoodiePathCommand",
+  "tableDescs" : [ ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false,
+    "comment" : "Hudi"
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CompactionHoodieTableCommand",
   "tableDescs" : [ {
@@ -1542,19 +2055,23 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
-  }, {
-    "fieldName" : "table",
-    "fieldExtractor" : "CatalogTableTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.hudi.command.CompactionShowHoodiePathCommand",
+  "tableDescs" : [ ],
+  "opType" : "SHOW_TBLPROPERTIES",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : true,
+    "comment" : "Hudi"
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CompactionShowHoodieTableCommand",
   "tableDescs" : [ {
@@ -1565,10 +2082,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "SHOW_TBLPROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CreateHoodieTableAsSelectCommand",
   "tableDescs" : [ {
@@ -1579,13 +2098,16 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "CREATETABLE_AS_SELECT",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CreateHoodieTableCommand",
   "tableDescs" : [ {
@@ -1596,10 +2118,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CreateHoodieTableLikeCommand",
   "tableDescs" : [ {
@@ -1610,7 +2134,8 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : true
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : "Hudi"
   }, {
     "fieldName" : "sourceTable",
     "fieldExtractor" : "TableIdentifierTableExtractor",
@@ -1619,10 +2144,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : true
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : "Hudi"
   } ],
   "opType" : "CREATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CreateIndexCommand",
   "tableDescs" : [ {
@@ -1633,10 +2160,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "CREATEINDEX",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.DeleteHoodieTableCommand",
   "tableDescs" : [ {
@@ -1646,15 +2175,18 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "UPDATE"
+      "actionType" : "UPDATE",
+      "comment" : "Hudi"
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.DropHoodieTableCommand",
   "tableDescs" : [ {
@@ -1665,14 +2197,17 @@
     "tableTypeDesc" : {
       "fieldName" : "tableIdentifier",
       "fieldExtractor" : "TableIdentifierTableTypeExtractor",
-      "skipTypes" : [ "TEMP_VIEW" ]
+      "skipTypes" : [ "TEMP_VIEW" ],
+      "comment" : "Hudi"
     },
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "DROPTABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.DropIndexCommand",
   "tableDescs" : [ {
@@ -1683,10 +2218,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "DROPINDEX",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.InsertIntoHoodieTableCommand",
   "tableDescs" : [ {
@@ -1696,18 +2233,22 @@
     "actionTypeDesc" : {
       "fieldName" : "overwrite",
       "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",
-      "actionType" : null
+      "actionType" : null,
+      "comment" : "Hudi"
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor"
-  } ]
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.MergeIntoHoodieTableCommand",
   "tableDescs" : [ {
@@ -1717,18 +2258,22 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "UPDATE"
+      "actionType" : "UPDATE",
+      "comment" : "Hudi"
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ {
     "fieldName" : "mergeInto",
-    "fieldExtractor" : "HudiMergeIntoSourceTableExtractor"
-  } ]
+    "fieldExtractor" : "HudiMergeIntoSourceTableExtractor",
+    "comment" : "Hudi"
+  } ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.RefreshIndexCommand",
   "tableDescs" : [ {
@@ -1739,10 +2284,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "ALTERINDEX_REBUILD",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.RepairHoodieTableCommand",
   "tableDescs" : [ {
@@ -1753,10 +2300,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
   } ],
   "opType" : "MSCK",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.ShowHoodieTablePartitionsCommand",
   "tableDescs" : [ {
@@ -1764,16 +2313,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "specOpt",
-      "fieldExtractor" : "PartitionOptionColumnExtractor"
+      "fieldExtractor" : "PartitionOptionColumnExtractor",
+      "comment" : "Hudi"
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "SHOWPARTITIONS",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.ShowIndexesCommand",
   "tableDescs" : [ {
@@ -1784,10 +2336,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "SHOWINDEXES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.Spark31AlterTableCommand",
   "tableDescs" : [ {
@@ -1798,10 +2352,12 @@
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "ALTERTABLE_PROPERTIES",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.TruncateHoodieTableCommand",
   "tableDescs" : [ {
@@ -1809,16 +2365,19 @@
     "fieldExtractor" : "TableIdentifierTableExtractor",
     "columnDesc" : {
       "fieldName" : "partitionSpec",
-      "fieldExtractor" : "PartitionOptionColumnExtractor"
+      "fieldExtractor" : "PartitionOptionColumnExtractor",
+      "comment" : "Hudi"
     },
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "TRUNCATETABLE",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.UpdateHoodieTableCommand",
   "tableDescs" : [ {
@@ -1828,13 +2387,180 @@
     "actionTypeDesc" : {
       "fieldName" : null,
       "fieldExtractor" : null,
-      "actionType" : "UPDATE"
+      "actionType" : "UPDATE",
+      "comment" : "Hudi"
     },
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi"
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ ]
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "io.delta.tables.execution.VacuumTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Delta"
+  }, {
+    "fieldName" : "table",
+    "fieldExtractor" : "TableIdentifierOptionTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Delta"
+  } ],
+  "opType" : "MSCK",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  }, {
+    "fieldName" : "table",
+    "fieldExtractor" : "TableIdentifierOptionURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  }, {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.delta.commands.DeleteCommand",
+  "tableDescs" : [ {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE",
+      "comment" : "Delta"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Delta"
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.delta.commands.MergeIntoCommand",
+  "tableDescs" : [ {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE",
+      "comment" : "Delta"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Delta"
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "source",
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : "Delta"
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.delta.commands.OptimizeTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Delta"
+  }, {
+    "fieldName" : "tableId",
+    "fieldExtractor" : "TableIdentifierOptionTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Delta"
+  } ],
+  "opType" : "ALTERTABLE_COMPACT",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  }, {
+    "fieldName" : "tableId",
+    "fieldExtractor" : "TableIdentifierOptionURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  }, {
+    "fieldName" : "path",
+    "fieldExtractor" : "StringURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.delta.commands.UpdateCommand",
+  "tableDescs" : [ {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE",
+      "comment" : "Delta"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Delta"
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "target",
+    "fieldExtractor" : "SubqueryAliasURIExtractor",
+    "isInput" : false,
+    "comment" : "Delta"
+  } ]
 } ]

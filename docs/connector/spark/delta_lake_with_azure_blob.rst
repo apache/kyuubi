@@ -171,6 +171,7 @@ Enter the ./kyuubi/conf directory
 Add the following content:
 
 .. code-block:: properties
+
    spark.master                    spark://<YOUR_HOST>:7077
    kyuubi.authentication           NONE
    kyuubi.frontend.bind.host       <YOUR_HOST>
@@ -220,6 +221,7 @@ Create Table
 ************
 
 .. code-block:: sql
+
    -- Create or replace table with path
    CREATE OR REPLACE TABLE delta.`wasbs://1000@azure_account.blob.core.windows.net/alexDemo20211129` (
      date DATE,
@@ -276,6 +278,7 @@ Overwrite Mode
 Result:
 
 .. code-block:: text
+
    +-------------+----------+------------+---------------+
    |    date     | eventId  | eventType  |     data      |
    +-------------+----------+------------+---------------+
@@ -287,6 +290,7 @@ Delete Table Data
 *****************
 
 .. code-block:: sql
+
    DELETE FROM
       delta.`wasbs://1000@azure_account.blob.core.windows.net/alexDemo20211129`
    WHERE eventId = 002;

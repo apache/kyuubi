@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.util
 
-import java.util.concurrent.{Executors, ExecutorService, LinkedBlockingQueue, ScheduledExecutorService, ScheduledThreadPoolExecutor, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent._
 
 import scala.concurrent.Awaitable
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -108,5 +108,28 @@ object ThreadUtils extends Logging {
     thread.setDaemon(isDaemon)
     thread.setUncaughtExceptionHandler(NamedThreadFactory.kyuubiUncaughtExceptionHandler)
     thread.start()
+  }
+
+  /**
+   * Schedule a runnable to the scheduled executor service.
+   * The exceptions thrown in the runnable will be caught and logged.
+   */
+  def scheduleTolerableRunnableWithFixedDelay(
+      scheduler: ScheduledExecutorService,
+      runnable: Runnable,
+      initialDelay: Long,
+      delay: Long,
+      timeUnit: TimeUnit): Unit = {
+    scheduler.scheduleWithFixedDelay(
+      () =>
+        try {
+          runnable.run()
+        } catch {
+          case t: Throwable =>
+            error(s"Uncaught exception in thread ${Thread.currentThread().getName}", t)
+        },
+      initialDelay,
+      delay,
+      timeUnit)
   }
 }

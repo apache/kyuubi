@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionType._
 
-object Scans {
+object Scans extends CommandSpecs[ScanSpec] {
 
   val HiveTableRelation = {
     val r = "org.apache.spark.sql.catalyst.catalog.HiveTableRelation"
@@ -37,7 +37,8 @@ object Scans {
       ScanDesc(
         "catalogTable",
         classOf[CatalogTableOptionTableExtractor])
-    ScanSpec(r, Seq(tableDesc))
+    val uriDesc = UriDesc("relation", classOf[BaseRelationFileIndexURIExtractor])
+    ScanSpec(r, Seq(tableDesc), uriDescs = Seq(uriDesc))
   }
 
   val DataSourceV2Relation = {
@@ -50,7 +51,7 @@ object Scans {
   }
 
   val PermanentViewMarker = {
-    val r = "org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker"
+    val r = "org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker"
     val tableDesc =
       ScanDesc(
         "catalogTable",
@@ -79,7 +80,7 @@ object Scans {
 
   val HiveGenericUDTF = HiveSimpleUDF.copy(classname = "org.apache.spark.sql.hive.HiveGenericUDTF")
 
-  val data: Array[ScanSpec] = Array(
+  override def specs: Seq[ScanSpec] = Seq(
     HiveTableRelation,
     LogicalRelation,
     DataSourceV2Relation,

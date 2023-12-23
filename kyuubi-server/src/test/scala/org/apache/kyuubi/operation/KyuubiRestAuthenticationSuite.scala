@@ -29,8 +29,8 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi.RestClientTestHelper
 import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, SessionOpenRequest}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.http.authentication.AuthSchemes
+import org.apache.kyuubi.server.http.util.HttpAuthUtils._
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.KyuubiSession
 
@@ -52,13 +52,10 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
   }
 
   test("test with LDAP authorization") {
-    val encodeAuthorization = new String(
-      Base64.getEncoder.encode(
-        s"$ldapUser:$ldapUserPasswd".getBytes()),
-      "UTF-8")
+
     val response = webTarget.path("api/v1/sessions/count")
       .request()
-      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(ldapUser, ldapUserPasswd))
       .get()
 
     assert(HttpServletResponse.SC_OK == response.getStatus)
@@ -67,13 +64,9 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
   }
 
   test("test with CUSTOM authorization") {
-    val encodeAuthorization = new String(
-      Base64.getEncoder.encode(
-        s"$customUser:$customPasswd".getBytes()),
-      "UTF-8")
     val response = webTarget.path("api/v1/sessions/count")
       .request()
-      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(customUser, customPasswd))
       .get()
 
     assert(HttpServletResponse.SC_FORBIDDEN == response.getStatus)
@@ -170,7 +163,7 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
       "UTF-8")
     var response = webTarget.path("api/v1/sessions/count")
       .request()
-      .header(AUTHORIZATION_HEADER, s"${AuthSchemes.KYUUBI_INTERNAL.toString} $encodeAuthorization")
+      .header(AUTHORIZATION_HEADER, s"${AuthSchemes.KYUUBI_INTERNAL} $encodeAuthorization")
       .get()
 
     assert(HttpServletResponse.SC_OK == response.getStatus)
@@ -183,7 +176,7 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
       "UTF-8")
     response = webTarget.path("api/v1/sessions/count")
       .request()
-      .header(AUTHORIZATION_HEADER, s"${AuthSchemes.KYUUBI_INTERNAL.toString} $badAuthorization")
+      .header(AUTHORIZATION_HEADER, s"${AuthSchemes.KYUUBI_INTERNAL} $badAuthorization")
       .get()
 
     assert(HttpServletResponse.SC_UNAUTHORIZED == response.getStatus)

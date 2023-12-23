@@ -22,7 +22,7 @@ import scala.annotation.tailrec
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression, UnaryExpression}
 import org.apache.spark.sql.catalyst.planning.ExtractEquiJoinKeys
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftAnti, LeftOuter, LeftSemi, RightOuter}
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Filter, LogicalPlan, Project, Sort, SubqueryAlias, View}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Filter, Generate, LogicalPlan, Project, Sort, SubqueryAlias, View, Window}
 
 /**
  * Infer the columns for Rebalance and Sort to improve the compression ratio.
@@ -96,6 +96,12 @@ object InferRebalanceAndSortOrders {
         case f: Filter => candidateKeys(f.child, output)
         case s: SubqueryAlias => candidateKeys(s.child, output)
         case v: View => candidateKeys(v.child, output)
+        case g: Generate => candidateKeys(g.child, AttributeSet(g.requiredChildOutput))
+        case w: Window =>
+          val aliasMap = getAliasMap(w.windowExpressions)
+          Some((
+            w.partitionSpec.map(p => aliasMap.getOrElse(p.canonicalized, p)),
+            w.orderSpec.map(_.child).map(o => aliasMap.getOrElse(o.canonicalized, o))))
 
         case _ => None
       }

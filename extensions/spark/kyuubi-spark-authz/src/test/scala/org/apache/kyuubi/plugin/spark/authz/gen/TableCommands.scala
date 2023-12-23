@@ -22,7 +22,7 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.serde.TableType._
 
-object TableCommands {
+object TableCommands extends CommandSpecs[TableCommandSpec] {
   // table extractors
   val tite = classOf[TableIdentifierTableExtractor]
   val tableNameDesc = TableDesc("tableName", tite)
@@ -39,7 +39,8 @@ object TableCommands {
   val AlterTable = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.AlterTable"
     val tableDesc = TableDesc("ident", classOf[IdentifierTableExtractor])
-    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
+    val uriDescs = Seq(UriDesc("ident", classOf[IdentifierURIExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES, uriDescs = uriDescs)
   }
 
   val AlterTableAddColumns = {
@@ -51,7 +52,8 @@ object TableCommands {
 
   val AddColumns = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.AddColumns"
-    TableCommandSpec(cmd, Seq(resolvedTableDesc), ALTERTABLE_ADDCOLS)
+    val uriDescs = Seq(UriDesc("child", classOf[ResolvedTableURIExtractor]))
+    TableCommandSpec(cmd, Seq(resolvedTableDesc), ALTERTABLE_ADDCOLS, uriDescs = uriDescs)
   }
 
   val AlterColumn = {
@@ -66,22 +68,24 @@ object TableCommands {
 
   val ReplaceColumns = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.ReplaceColumns"
-    TableCommandSpec(cmd, Seq(resolvedTableDesc), ALTERTABLE_REPLACECOLS)
+    AddColumns.copy(classname = cmd, opType = ALTERTABLE_REPLACECOLS)
   }
 
   val RenameColumn = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.RenameColumn"
-    TableCommandSpec(cmd, Seq(resolvedTableDesc), ALTERTABLE_RENAMECOL)
+    AddColumns.copy(classname = cmd, opType = ALTERTABLE_RENAMECOL)
   }
 
   val AlterTableAddPartition = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableAddPartitionCommand"
     val columnDesc =
       ColumnDesc("partitionSpecsAndLocs", classOf[PartitionLocsSeqColumnExtractor])
+    val uriDesc = UriDesc("partitionSpecsAndLocs", classOf[PartitionLocsSeqURIExtractor])
     TableCommandSpec(
       cmd,
       Seq(tableNameDesc.copy(columnDesc = Some(columnDesc))),
-      ALTERTABLE_ADDPARTS)
+      ALTERTABLE_ADDPARTS,
+      uriDescs = Seq(uriDesc))
   }
 
   val AlterTableChangeColumn = {
@@ -150,10 +154,12 @@ object TableCommands {
   val AlterTableSetLocation = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableSetLocationCommand"
     val columnDesc = ColumnDesc("partitionSpec", classOf[PartitionOptionColumnExtractor])
+    val uriDesc = UriDesc("location", classOf[StringURIExtractor])
     TableCommandSpec(
       cmd,
       Seq(tableNameDesc.copy(columnDesc = Some(columnDesc))),
-      ALTERTABLE_LOCATION)
+      ALTERTABLE_LOCATION,
+      uriDescs = Seq(uriDesc))
   }
 
   val AlterTableSetProperties = TableCommandSpec(
@@ -210,10 +216,15 @@ object TableCommands {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
+    val uriDescs = Seq(
+      UriDesc("tableSpec", classOf[TableSpecURIExtractor]),
+      UriDesc("properties", classOf[PropertiesLocationUriExtractor]),
+      UriDesc("tableName", classOf[IdentifierURIExtractor]))
     TableCommandSpec(
       cmd,
       Seq(resolvedIdentifierTableDesc, tableDesc, resolvedDbObjectNameDesc),
-      CREATETABLE)
+      CREATETABLE,
+      uriDescs = uriDescs)
   }
 
   val CreateV2Table = {
@@ -222,7 +233,10 @@ object TableCommands {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
-    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
+    val uriDescs = Seq(
+      UriDesc("properties", classOf[PropertiesLocationUriExtractor]),
+      UriDesc("tableName", classOf[IdentifierURIExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE, uriDescs = uriDescs)
   }
 
   val CreateTableAsSelectV2 = {
@@ -231,6 +245,9 @@ object TableCommands {
       "tableName",
       classOf[IdentifierTableExtractor],
       catalogDesc = Some(CatalogDesc()))
+    val uriDescs = Seq(
+      UriDesc("tableSpec", classOf[TableSpecURIExtractor]),
+      UriDesc("properties", classOf[PropertiesLocationUriExtractor]))
     TableCommandSpec(
       cmd,
       Seq(
@@ -238,7 +255,8 @@ object TableCommands {
         tableDesc,
         resolvedDbObjectNameDesc.copy(fieldName = "name")),
       CREATETABLE_AS_SELECT,
-      Seq(queryQueryDesc))
+      Seq(queryQueryDesc),
+      uriDescs = uriDescs)
   }
 
   val CommentOnTable = {
@@ -254,7 +272,8 @@ object TableCommands {
         "table",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
+    val uriDescs = Seq(UriDesc("table", classOf[DataSourceV2RelationURIExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc), uriDescs = uriDescs)
   }
 
   val ReplaceData = {
@@ -292,7 +311,8 @@ object TableCommands {
         "table",
         classOf[DataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
+    val uriDescs = Seq(UriDesc("table", classOf[DataSourceV2RelationURIExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc), uriDescs = uriDescs)
   }
 
   val OverwritePartitionsDynamic = {
@@ -372,14 +392,21 @@ object TableCommands {
     val cmd = "org.apache.spark.sql.execution.datasources.CreateTable"
     val tableDesc = TableDesc("tableDesc", classOf[CatalogTableTableExtractor])
     val queryDesc = QueryDesc("query", "LogicalPlanOptionQueryExtractor")
-    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE, queryDescs = Seq(queryDesc))
+    val uriDesc = UriDesc("tableDesc", classOf[CatalogTableURIExtractor])
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      CREATETABLE,
+      queryDescs = Seq(queryDesc),
+      uriDescs = Seq(uriDesc))
   }
 
   val CreateDataSourceTable = {
     val cmd = "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand"
     val tableDesc =
       TableDesc("table", classOf[CatalogTableTableExtractor], setCurrentDatabaseIfMissing = true)
-    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE)
+    val uriDesc = UriDesc("table", classOf[CatalogTableURIExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc), CREATETABLE, uriDescs = Seq(uriDesc))
   }
 
   val CreateDataSourceTableAsSelect = {
@@ -395,8 +422,14 @@ object TableCommands {
     val columnDesc = ColumnDesc("outputColumnNames", classOf[StringSeqColumnExtractor])
     val tableDesc =
       TableDesc("tableDesc", classOf[CatalogTableTableExtractor], Some(columnDesc))
+    val uriDesc = UriDesc("tableDesc", classOf[CatalogTableURIExtractor])
     val queryDesc = queryQueryDesc
-    TableCommandSpec(cmd, Seq(tableDesc), "CREATETABLE_AS_SELECT", queryDescs = Seq(queryDesc))
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      "CREATETABLE_AS_SELECT",
+      queryDescs = Seq(queryDesc),
+      uriDescs = Seq(uriDesc))
   }
 
   val CreateTableLike = {
@@ -410,7 +443,8 @@ object TableCommands {
       classOf[TableIdentifierTableExtractor],
       isInput = true,
       setCurrentDatabaseIfMissing = true)
-    TableCommandSpec(cmd, Seq(tableDesc1, tableDesc2), CREATETABLE)
+    val uriDesc = UriDesc("fileFormat", classOf[CatalogStorageFormatURIExtractor])
+    TableCommandSpec(cmd, Seq(tableDesc1, tableDesc2), CREATETABLE, uriDescs = Seq(uriDesc))
   }
 
   val DescribeColumn = {
@@ -552,7 +586,15 @@ object TableCommands {
   val InsertIntoDataSourceDir = {
     val cmd = "org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand"
     val queryDesc = queryQueryDesc
-    TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc))
+    val uriDesc = UriDesc("storage", classOf[CatalogStorageFormatURIExtractor])
+    TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
+  }
+
+  val SaveIntoDataSourceCommand = {
+    val cmd = "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand"
+    val queryDesc = queryQueryDesc
+    val uriDesc = UriDesc("options", classOf[PropertiesPathUriExtractor])
+    TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
   }
 
   val InsertIntoHadoopFsRelationCommand = {
@@ -576,7 +618,8 @@ object TableCommands {
       fieldName = "table",
       columnDesc = Some(columnDesc),
       actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), "LOAD")
+    val uriDesc = UriDesc("path", classOf[StringURIExtractor], isInput = true)
+    TableCommandSpec(cmd, Seq(tableDesc), LOAD, uriDescs = Seq(uriDesc))
   }
 
   val RefreshTable = {
@@ -594,7 +637,32 @@ object TableCommands {
     TableCommandSpec(cmd, Seq(tableIdentDesc.copy(isInput = true)))
   }
 
-  val data: Array[TableCommandSpec] = Array(
+  val SetTableProperties = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.SetTableProperties"
+    val tableDesc = TableDesc("table", classOf[ResolvedTableTableExtractor])
+    val uriDescs = Seq(UriDesc("table", classOf[ResolvedTableURIExtractor]))
+    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES, uriDescs = uriDescs)
+  }
+
+  val AddArchivesCommand = {
+    val cmd = "org.apache.spark.sql.execution.command.AddArchivesCommand"
+    val uriDesc = UriDesc("paths", classOf[StringSeqURIExtractor], isInput = true)
+    TableCommandSpec(cmd, Nil, ADD, uriDescs = Seq(uriDesc))
+  }
+
+  // For spark-3.1
+  val AddFileCommand = {
+    val cmd = "org.apache.spark.sql.execution.command.AddFileCommand"
+    val uriDesc = UriDesc("path", classOf[StringURIExtractor], isInput = true)
+    TableCommandSpec(cmd, Nil, ADD, uriDescs = Seq(uriDesc))
+  }
+
+  override def specs: Seq[TableCommandSpec] = Seq(
+    AddArchivesCommand,
+    AddArchivesCommand.copy(classname = "org.apache.spark.sql.execution.command.AddFilesCommand"),
+    AddArchivesCommand.copy(classname = "org.apache.spark.sql.execution.command.AddJarsCommand"),
+    AddFileCommand,
+    AddFileCommand.copy(classname = "org.apache.spark.sql.execution.command.AddJarCommand"),
     AddPartitions,
     DropPartitions,
     RenamePartitions,
@@ -653,8 +721,7 @@ object TableCommands {
     DropTableV2,
     InsertIntoDataSource,
     InsertIntoDataSourceDir,
-    InsertIntoDataSourceDir.copy(classname =
-      "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand"),
+    SaveIntoDataSourceCommand,
     InsertIntoHadoopFsRelationCommand,
     InsertIntoDataSourceDir.copy(classname =
       "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand"),
@@ -668,6 +735,7 @@ object TableCommands {
     RefreshTableV2,
     RefreshTable3d0,
     ReplaceData,
+    SetTableProperties,
     ShowColumns,
     ShowCreateTable,
     ShowCreateTable.copy(classname =

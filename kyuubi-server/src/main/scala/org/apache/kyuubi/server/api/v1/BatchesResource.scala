@@ -23,7 +23,6 @@ import java.util.{Collections, Locale, UUID}
 import java.util.concurrent.ConcurrentHashMap
 import javax.ws.rs._
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response.Status
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
@@ -58,6 +57,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT).toInt
   private lazy val internalConnectTimeout =
     fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT).toInt
+  private lazy val internalSecurityEnabled =
+    fe.getConf.get(ENGINE_SECURITY_ENABLED)
 
   private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
     KyuubiServer.kyuubiServer.getConf.get(BATCH_SUBMITTER_ENABLED) &&
@@ -67,7 +68,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private def getInternalRestClient(kyuubiInstance: String): InternalRestClient = {
     internalRestClients.computeIfAbsent(
       kyuubiInstance,
-      k => new InternalRestClient(k, internalSocketTimeout, internalConnectTimeout))
+      kyuubiInstance =>
+        new InternalRestClient(
+          kyuubiInstance,
+          internalSocketTimeout,
+          internalConnectTimeout,
+          internalSecurityEnabled))
   }
 
   private def sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
@@ -212,6 +218,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
     request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
 
+    val userName = fe.getSessionUser(request.getConf.asScala.toMap)
+    val ipAddress = fe.getIpAddress
     val userProvidedBatchId = request.getConf.asScala.get(KYUUBI_BATCH_ID_KEY)
     userProvidedBatchId.foreach { batchId =>
       try UUID.fromString(batchId)
@@ -227,8 +235,6 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       case Some(batch) =>
         markDuplicated(batch)
       case None =>
-        val userName = fe.getSessionUser(request.getConf.asScala.toMap)
-        val ipAddress = fe.getIpAddress
         val batchId = userProvidedBatchId.getOrElse(UUID.randomUUID().toString)
         request.setConf(
           (request.getConf.asScala ++ Map(
@@ -441,18 +447,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     description = "close and cancel a batch session")
   @DELETE
   @Path("{batchId}")
-  def closeBatchSession(
-      @PathParam("batchId") batchId: String,
-      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): CloseBatchResponse = {
-
-    def checkPermission(operator: String, owner: String): Unit = {
-      if (operator != owner) {
-        throw new WebApplicationException(
-          s"$operator is not allowed to close the session belong to $owner",
-          Status.METHOD_NOT_ALLOWED)
-      }
-    }
-
+  def closeBatchSession(@PathParam("batchId") batchId: String): CloseBatchResponse = {
     def forceKill(
         appMgrInfo: ApplicationManagerInfo,
         batchId: String,
@@ -465,16 +460,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
 
     val sessionHandle = formatSessionHandle(batchId)
-    val userName = fe.getSessionUser(hs2ProxyUser)
-
     sessionManager.getBatchSession(sessionHandle).map { batchSession =>
-      checkPermission(userName, batchSession.user)
+      fe.getSessionUser(batchSession.user)
       sessionManager.closeSession(batchSession.handle)
       val (killed, msg) = batchSession.batchJobSubmissionOp.getKillMessage
       new CloseBatchResponse(killed, msg)
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
-        checkPermission(userName, metadata.username)
+        fe.getSessionUser(metadata.username)
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
         } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED" &&
@@ -485,21 +478,21 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         } else if (batchV2Enabled(metadata.requestConf) && metadata.kyuubiInstance == null) {
           // code goes here indicates metadata is outdated, recursively calls itself to refresh
           // the metadata
-          closeBatchSession(batchId, hs2ProxyUser)
+          closeBatchSession(batchId)
         } else if (metadata.kyuubiInstance != fe.connectionUrl) {
           info(s"Redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}")
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           try {
-            internalRestClient.deleteBatch(userName, batchId)
+            internalRestClient.deleteBatch(metadata.username, batchId)
           } catch {
             case e: KyuubiRestException =>
               error(s"Error redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}", e)
-              val (killed, msg) = forceKill(metadata.appMgrInfo, batchId, userName)
+              val (killed, msg) = forceKill(metadata.appMgrInfo, batchId, metadata.username)
               new CloseBatchResponse(killed, if (killed) msg else Utils.stringifyException(e))
           }
         } else { // should not happen, but handle this for safe
           warn(s"Something wrong on deleting batch[$batchId], try forcibly killing application")
-          val (killed, msg) = forceKill(metadata.appMgrInfo, batchId, userName)
+          val (killed, msg) = forceKill(metadata.appMgrInfo, batchId, metadata.username)
           new CloseBatchResponse(killed, msg)
         }
       }.getOrElse {

@@ -33,6 +33,7 @@ public class JdbcConnectionParams {
 
   // Client param names:
 
+  static final String CLIENT_PROTOCOL_VERSION = "clientProtocolVersion";
   // Retry setting
   static final String RETRIES = "retries";
 
@@ -48,6 +49,7 @@ public class JdbcConnectionParams {
   public static final String AUTH_KYUUBI_SERVER_PRINCIPAL = "kyuubiServerPrincipal";
   public static final String AUTH_KYUUBI_CLIENT_PRINCIPAL = "kyuubiClientPrincipal";
   public static final String AUTH_KYUUBI_CLIENT_KEYTAB = "kyuubiClientKeytab";
+  public static final String AUTH_KYUUBI_CLIENT_TICKET_CACHE = "kyuubiClientTicketCache";
   public static final String AUTH_PASSWD = "password";
   public static final String AUTH_KERBEROS_AUTH_TYPE = "kerberosAuthType";
   public static final String AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT = "fromSubject";
@@ -113,6 +115,8 @@ public class JdbcConnectionParams {
   // Non-configurable params:
   // Currently supports JKS keystore format
   static final String SSL_TRUST_STORE_TYPE = "JKS";
+
+  static final String SSL_STORE_PASSWORD_PATH = "storePasswordPath";
 
   static final String HIVE_VAR_PREFIX = "hivevar:";
   static final String HIVE_CONF_PREFIX = "hiveconf:";

@@ -34,6 +34,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, SCALA_COMPILE_VERSION,
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_APPLICATION_JARS, KYUUBI_HOME}
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ADDRESSES
+import org.apache.kyuubi.util.command.CommandLineUtils._
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 import org.apache.kyuubi.zookeeper.ZookeeperConf.{ZK_CLIENT_PORT, ZK_CLIENT_PORT_ADDRESS}
 
@@ -179,10 +180,7 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite with WithFlinkTestResource
       conf.set(k, v)
     }
 
-    for ((k, v) <- conf.getAll) {
-      command += "--conf"
-      command += s"$k=$v"
-    }
+    command ++= confKeyValues(conf.getAll)
 
     processBuilder.command(command.toList.asJava)
     processBuilder.redirectOutput(Redirect.INHERIT)

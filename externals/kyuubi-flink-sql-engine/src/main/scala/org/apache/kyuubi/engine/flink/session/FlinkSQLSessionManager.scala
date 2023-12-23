@@ -23,12 +23,12 @@ import scala.collection.JavaConverters.mapAsJavaMap
 import org.apache.flink.table.gateway.api.session.SessionEnvironment
 import org.apache.flink.table.gateway.rest.util.SqlGatewayRestAPIVersion
 import org.apache.flink.table.gateway.service.context.DefaultContext
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
 import org.apache.kyuubi.engine.flink.shim.FlinkSessionManager
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class FlinkSQLSessionManager(engineContext: DefaultContext)
   extends SessionManager("FlinkSQLSessionManager") {

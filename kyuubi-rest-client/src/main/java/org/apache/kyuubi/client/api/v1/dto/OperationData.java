@@ -25,6 +25,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class OperationData {
   private String identifier;
+  private String remoteId;
   private String statement;
   private String state;
   private Long createTime;
@@ -36,11 +37,13 @@ public class OperationData {
   private String sessionType;
   private String kyuubiInstance;
   private Map<String, String> metrics;
+  private OperationProgress progress;
 
   public OperationData() {}
 
   public OperationData(
       String identifier,
+      String remoteId,
       String statement,
       String state,
       Long createTime,
@@ -51,8 +54,10 @@ public class OperationData {
       String sessionUser,
       String sessionType,
       String kyuubiInstance,
-      Map<String, String> metrics) {
+      Map<String, String> metrics,
+      OperationProgress progress) {
     this.identifier = identifier;
+    this.remoteId = remoteId;
     this.statement = statement;
     this.state = state;
     this.createTime = createTime;
@@ -64,6 +69,7 @@ public class OperationData {
     this.sessionType = sessionType;
     this.kyuubiInstance = kyuubiInstance;
     this.metrics = metrics;
+    this.progress = progress;
   }
 
   public String getIdentifier() {
@@ -72,6 +78,14 @@ public class OperationData {
 
   public void setIdentifier(String identifier) {
     this.identifier = identifier;
+  }
+
+  public String getRemoteId() {
+    return remoteId;
+  }
+
+  public void setRemoteId(String remoteId) {
+    this.remoteId = remoteId;
   }
 
   public String getStatement() {
@@ -163,6 +177,14 @@ public class OperationData {
 
   public void setMetrics(Map<String, String> metrics) {
     this.metrics = metrics;
+  }
+
+  public OperationProgress getProgress() {
+    return progress;
+  }
+
+  public void setProgress(OperationProgress progress) {
+    this.progress = progress;
   }
 
   @Override

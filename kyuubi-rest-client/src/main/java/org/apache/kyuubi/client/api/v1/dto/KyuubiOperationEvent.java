@@ -51,6 +51,8 @@ public class KyuubiOperationEvent {
 
   private Map<String, String> metrics;
 
+  private OperationProgress progress;
+
   public KyuubiOperationEvent() {}
 
   public KyuubiOperationEvent(
@@ -68,7 +70,8 @@ public class KyuubiOperationEvent {
       String sessionUser,
       String sessionType,
       String kyuubiInstance,
-      Map<String, String> metrics) {
+      Map<String, String> metrics,
+      OperationProgress progress) {
     this.statementId = statementId;
     this.remoteId = remoteId;
     this.statement = statement;
@@ -84,6 +87,7 @@ public class KyuubiOperationEvent {
     this.sessionType = sessionType;
     this.kyuubiInstance = kyuubiInstance;
     this.metrics = metrics;
+    this.progress = progress;
   }
 
   public static KyuubiOperationEvent.KyuubiOperationEventBuilder builder() {
@@ -120,6 +124,8 @@ public class KyuubiOperationEvent {
     private String kyuubiInstance;
 
     private Map<String, String> metrics;
+
+    private OperationProgress progress;
 
     public KyuubiOperationEventBuilder() {}
 
@@ -201,6 +207,12 @@ public class KyuubiOperationEvent {
       return this;
     }
 
+    public KyuubiOperationEvent.KyuubiOperationEventBuilder progress(
+        final OperationProgress progress) {
+      this.progress = progress;
+      return this;
+    }
+
     public KyuubiOperationEvent build() {
       return new KyuubiOperationEvent(
           statementId,
@@ -217,7 +229,8 @@ public class KyuubiOperationEvent {
           sessionUser,
           sessionType,
           kyuubiInstance,
-          metrics);
+          metrics,
+          progress);
     }
   }
 
@@ -339,5 +352,13 @@ public class KyuubiOperationEvent {
 
   public void setMetrics(Map<String, String> metrics) {
     this.metrics = metrics;
+  }
+
+  public OperationProgress getProgress() {
+    return progress;
+  }
+
+  public void setProgress(OperationProgress progress) {
+    this.progress = progress;
   }
 }

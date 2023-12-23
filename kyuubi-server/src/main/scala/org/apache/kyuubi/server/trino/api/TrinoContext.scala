@@ -28,11 +28,11 @@ import scala.collection.JavaConverters._
 import com.google.common.collect.ImmutableList
 import io.trino.client.{ClientStandardTypes, ClientTypeSignature, ClientTypeSignatureParameter, Column, NamedClientTypeSignature, QueryError, QueryResults, RowFieldName, StatementStats, Warning}
 import io.trino.client.ProtocolHeaders.TRINO_HEADERS
-import org.apache.hive.service.rpc.thrift.{TCLIServiceConstants, TGetResultSetMetadataResp, TRowSet, TTypeEntry, TTypeId}
 
 import org.apache.kyuubi.operation.OperationState.FINISHED
 import org.apache.kyuubi.operation.OperationStatus
 import org.apache.kyuubi.server.trino.api.Query.KYUUBI_SESSION_ID
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCLIServiceConstants, TGetResultSetMetadataResp, TRowSet, TTypeEntry, TTypeId}
 
 // TODO: Support replace `preparedStatement` for Trino-jdbc
 /**
