@@ -51,6 +51,10 @@ KYUUBIADMIN: 'KYUUBIADMIN';
 
 SESSION: 'SESSION';
 
+ENGINE: 'ENGINE';
+
+RESTART: 'RESTART';
+
 BACKQUOTED_IDENTIFIER
     : '`' ( ~'`' | '``' )* '`'
     ;

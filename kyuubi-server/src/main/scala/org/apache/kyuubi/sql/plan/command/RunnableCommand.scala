@@ -30,6 +30,10 @@ trait RunnableCommand extends KyuubiTreeNode {
 
   protected var isAdmin: Boolean = false
 
+  val statement: String
+
+  override def name(): String = statement + " Node"
+
   def run(kyuubiSession: KyuubiSession): Unit
 
   def resultSchema: Schema

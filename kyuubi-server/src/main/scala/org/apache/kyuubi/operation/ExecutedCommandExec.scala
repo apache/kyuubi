@@ -30,6 +30,8 @@ class ExecutedCommandExec(
     command: RunnableCommand)
   extends KyuubiOperation(session) {
 
+  override def redactedStatement: String = command.statement
+
   private lazy val _operationLog: OperationLog =
     if (shouldRunAsync) {
       OperationLog.createOperationLog(session, getHandle)

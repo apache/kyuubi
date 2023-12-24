@@ -42,6 +42,8 @@ import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 class KyuubiSyncThriftClient private (
+    host: String,
+    port: Int,
     protocol: TProtocol,
     engineAliveProbeProtocol: Option[TProtocol],
     engineAliveProbeInterval: Long,
@@ -76,6 +78,9 @@ class KyuubiSyncThriftClient private (
 
   @VisibleForTesting
   private[kyuubi] def getEngineAliveProbeProtocol: Option[TProtocol] = engineAliveProbeProtocol
+
+  private[kyuubi] def getHost: String = this.host
+  private[kyuubi] def getPort: Int = this.port
 
   private def shutdownAsyncRequestExecutor(): Unit = {
     Option(asyncRequestExecutor).filterNot(_.isShutdown).foreach(ThreadUtils.shutdown(_))
@@ -483,6 +488,8 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
         None
       }
     new KyuubiSyncThriftClient(
+      host,
+      port,
       tProtocol,
       aliveProbeProtocol,
       aliveProbeInterval,

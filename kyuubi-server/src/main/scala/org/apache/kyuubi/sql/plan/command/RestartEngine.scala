@@ -20,7 +20,7 @@ package org.apache.kyuubi.sql.plan.command
 import scala.collection.mutable.ListBuffer
 
 import org.apache.kyuubi.operation.IterableFetchIterator
-import org.apache.kyuubi.session.KyuubiSession
+import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionImpl}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId
 import org.apache.kyuubi.sql.schema.{Column, Row, Schema}
 
@@ -29,35 +29,36 @@ import org.apache.kyuubi.sql.schema.{Column, Row, Schema}
  *
  * The syntax of using this command in SQL is:
  * {{{
- *   [DESC|DESCRIBE] SESSION;
+ *   RESTART ENGINE;
  * }}}
  */
-case class DescribeSession() extends RunnableCommand {
+case class RestartEngine() extends RunnableCommand {
 
   override def run(kyuubiSession: KyuubiSession): Unit = {
-    val rows = Seq(kyuubiSession).map { session =>
+    val rows = Seq(kyuubiSession.asInstanceOf[KyuubiSessionImpl]).map { session =>
+      session.reLaunchEngine()
+      val client = session.client
       val values = new ListBuffer[String]()
-      values += session.handle.identifier.toString
-      values += session.user
-      values += session.sessionType.toString
+      values += client.engineId.getOrElse("")
+      values += client.engineName.getOrElse("")
+      values += client.engineUrl.getOrElse("")
       Row(values.toList)
     }
     iter = new IterableFetchIterator(rows)
   }
 
   override def resultSchema: Schema = {
-    Schema(DescribeSession.outputCols().toList)
+    Schema(RestartEngine.outputCols().toList)
   }
 
-  override val statement: String = "Describe Session"
+  override val statement: String = "Restart Session Engine"
 }
 
-object DescribeSession {
-
+object RestartEngine {
   def outputCols(): Seq[Column] = {
     Seq(
-      Column("SESSION_ID", TTypeId.STRING_TYPE, Some("Kyuubi session identify")),
-      Column("SESSION_USER", TTypeId.STRING_TYPE, Some("Kyuubi session user")),
-      Column("SESSION_TYPE", TTypeId.STRING_TYPE, Some("Kyuubi session type")))
+      Column("ENGINE_ID", TTypeId.STRING_TYPE, Some("Kyuubi engine identify")),
+      Column("ENGINE_NAME", TTypeId.STRING_TYPE, Some("Kyuubi engine name")),
+      Column("ENGINE_URL", TTypeId.STRING_TYPE, Some("Kyuubi engine url")))
   }
 }

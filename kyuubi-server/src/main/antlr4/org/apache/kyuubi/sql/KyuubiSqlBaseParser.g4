@@ -30,4 +30,6 @@ statement
 
 runnableCommand
     : (DESC | DESCRIBE) SESSION                                     #describeSession
+    | (DESC | DESCRIBE) ENGINE                                      #describeEngine
+    | RESTART ENGINE                                                #restartEngine
     ;

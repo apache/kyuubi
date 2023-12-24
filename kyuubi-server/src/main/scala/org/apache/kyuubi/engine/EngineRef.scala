@@ -86,7 +86,7 @@ private[kyuubi] class EngineRef(
   // a small amount of time for timeout
   private val LOCK_TIMEOUT_SPAN_FACTOR = if (Utils.isTesting) 0.5 else 0.1
 
-  private var builder: ProcBuilder = _
+  @volatile private var builder: ProcBuilder = _
 
   private[kyuubi] def getEngineRefId(): String = engineRefId
 

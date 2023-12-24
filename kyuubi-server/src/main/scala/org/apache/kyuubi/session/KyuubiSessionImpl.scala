@@ -80,7 +80,7 @@ class KyuubiSessionImpl(
     handle.identifier.toString,
     sessionManager.applicationManager,
     sessionManager.engineStartupProcessSemaphore)
-  private[kyuubi] val launchEngineOp = sessionManager.operationManager
+  @volatile private[kyuubi]  var launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
   private lazy val sessionUserSignBase64: String =
@@ -115,6 +115,18 @@ class KyuubiSessionImpl(
     // we should call super.open before running launch engine operation
     super.open()
 
+    runOperation(launchEngineOp)
+    engineLastAlive = System.currentTimeMillis()
+  }
+
+  def reLaunchEngine(): Unit = handleSessionException {
+    withDiscoveryClient(sessionConf) { discoveryClient =>
+      engine.deregister(discoveryClient, (_client.getHost, _client.getPort))
+    }
+    _client.closeSession()
+    engineLaunched = false
+    launchEngineOp = sessionManager.operationManager
+      .newLaunchEngineOperation(this, shouldRunAsync = false)
     runOperation(launchEngineOp)
     engineLastAlive = System.currentTimeMillis()
   }
@@ -314,6 +326,7 @@ class KyuubiSessionImpl(
 
   def checkEngineConnectionAlive(): Boolean = {
     try {
+      if (!engineLaunched) return true
       if (Option(client).exists(_.engineConnectionClosed)) return false
       if (!aliveProbeEnabled) return true
       getInfo(TGetInfoType.CLI_DBMS_VER)

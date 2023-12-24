@@ -17,18 +17,18 @@
 
 package org.apache.kyuubi.operation.parser
 
-class DescribeSessionSuite extends ExecutedCommandExecSuite {
+class DescribeEngineSuite extends ExecutedCommandExecSuite {
 
-  test("desc/describe kyuubi session") {
+  test("desc/describe kyuubi engine") {
     Seq("desc", "describe").foreach { desc =>
       withJdbcStatement() { statement =>
-        val resultSet = statement.executeQuery(s"KYUUBI $desc SESSION")
+        val resultSet = statement.executeQuery(s"KYUUBI $desc ENGINE")
         assert(resultSet.next())
 
         assert(resultSet.getMetaData.getColumnCount == 3)
-        assert(resultSet.getMetaData.getColumnName(1) == "SESSION_ID")
-        assert(resultSet.getMetaData.getColumnName(2) == "SESSION_USER")
-        assert(resultSet.getMetaData.getColumnName(3) == "SESSION_TYPE")
+        assert(resultSet.getMetaData.getColumnName(1) == "ENGINE_ID")
+        assert(resultSet.getMetaData.getColumnName(2) == "ENGINE_NAME")
+        assert(resultSet.getMetaData.getColumnName(3) == "ENGINE_URL")
       }
     }
   }
