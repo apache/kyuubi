@@ -80,7 +80,7 @@ class KyuubiSessionImpl(
     handle.identifier.toString,
     sessionManager.applicationManager,
     sessionManager.engineStartupProcessSemaphore)
-  @volatile private[kyuubi]  var launchEngineOp = sessionManager.operationManager
+  @volatile private[kyuubi] var launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
   private lazy val sessionUserSignBase64: String =
