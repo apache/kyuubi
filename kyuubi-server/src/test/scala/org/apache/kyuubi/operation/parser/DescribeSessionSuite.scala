@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation.parser
 class DescribeSessionSuite extends ExecutedCommandExecSuite {
 
   test("desc/describe kyuubi session") {
-    Seq("desc", "describe").foreach { desc =>
+    Seq("DESC", "DESCRIBE").foreach { desc =>
       withJdbcStatement() { statement =>
         val resultSet = statement.executeQuery(s"KYUUBI $desc SESSION")
         assert(resultSet.next())

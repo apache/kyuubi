@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation.parser
 class DescribeEngineSuite extends ExecutedCommandExecSuite {
 
   test("desc/describe kyuubi engine") {
-    Seq("desc", "describe").foreach { desc =>
+    Seq("DESC", "DESCRIBE").foreach { desc =>
       withJdbcStatement() { statement =>
         val resultSet = statement.executeQuery(s"KYUUBI $desc ENGINE")
         assert(resultSet.next())
