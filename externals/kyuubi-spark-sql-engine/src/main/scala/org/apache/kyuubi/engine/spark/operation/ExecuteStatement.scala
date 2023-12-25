@@ -237,6 +237,11 @@ class ArrowBasedExecuteStatement(
     executeCollect(convertComplexType(resultDF.limit(maxRows)))
   }
 
+  override def getResultSetMetadataHints(): Seq[String] =
+    Seq(
+      s"__kyuubi_operation_result_format__=$resultFormat",
+      s"__kyuubi_operation_result_arrow_timestampAsString__=$timestampAsString")
+
   override protected def isArrowBasedOperation: Boolean = true
 
   override val resultFormat = "arrow"
