@@ -50,7 +50,7 @@ case class DescribeEngine() extends RunnableCommand {
     Schema(DescribeEngine.outputCols().toList)
   }
 
-  override val statement: String = "Describe Engine"
+  override def name: String = "Describe Engine"
 }
 
 object DescribeEngine {

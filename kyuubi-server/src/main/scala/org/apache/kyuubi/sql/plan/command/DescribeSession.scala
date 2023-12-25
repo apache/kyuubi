@@ -49,7 +49,7 @@ case class DescribeSession() extends RunnableCommand {
     Schema(DescribeSession.outputCols().toList)
   }
 
-  override val statement: String = "Describe Session"
+  override def name: String = "Describe Session"
 }
 
 object DescribeSession {
