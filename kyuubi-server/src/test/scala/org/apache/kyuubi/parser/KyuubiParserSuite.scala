@@ -20,7 +20,7 @@ package org.apache.kyuubi.parser
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.sql.plan.PassThroughNode
-import org.apache.kyuubi.sql.plan.command.DescribeSession
+import org.apache.kyuubi.sql.plan.command.{DescribeEngine, DescribeSession, RestartEngine}
 
 class KyuubiParserSuite extends KyuubiFunSuite {
 
@@ -50,5 +50,19 @@ class KyuubiParserSuite extends KyuubiFunSuite {
 
     assert(node.isInstanceOf[DescribeSession])
     assert(node.name() == "Describe Session Node")
+  }
+
+  test("Describe session engine") {
+    val node = parser.parsePlan("KYUUBI DESC ENGINE")
+
+    assert(node.isInstanceOf[DescribeEngine])
+    assert(node.name() == "Describe Engine Node")
+  }
+
+  test("Restart session engine") {
+    val node = parser.parsePlan("KYUUBI RESTART ENGINE")
+
+    assert(node.isInstanceOf[RestartEngine])
+    assert(node.name() == "Restart Session Engine Node")
   }
 }

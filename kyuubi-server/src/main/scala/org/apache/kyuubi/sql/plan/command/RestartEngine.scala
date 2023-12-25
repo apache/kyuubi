@@ -51,7 +51,7 @@ case class RestartEngine() extends RunnableCommand {
     Schema(RestartEngine.outputCols().toList)
   }
 
-  override def name(): String = "Restart Session Engine"
+  override def name(): String = "Restart Session Engine Node"
 }
 
 object RestartEngine {
