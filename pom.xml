@@ -134,6 +134,7 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <etcd.version>0.7.3</etcd.version>
+        <elastic4s.version>8.9.1</elastic4s.version>
         <delta.artifact>delta-core</delta.artifact>
         <delta.version>2.4.0</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
@@ -589,6 +590,12 @@
             <dependency>
                 <groupId>com.dimafeng</groupId>
                 <artifactId>testcontainers-scala-kafka_${scala.binary.version}</artifactId>
+                <version>${testcontainers-scala.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.dimafeng</groupId>
+                <artifactId>testcontainers-scala-elasticsearch_${scala.binary.version}</artifactId>
                 <version>${testcontainers-scala.version}</version>
             </dependency>
 
@@ -1252,6 +1259,13 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka.version}</version>
+                <optional>true</optional>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sksamuel.elastic4s</groupId>
+                <artifactId>elastic4s-client-esjava_${scala.binary.version}</artifactId>
+                <version>${elastic4s.version}</version>
                 <optional>true</optional>
             </dependency>
 
