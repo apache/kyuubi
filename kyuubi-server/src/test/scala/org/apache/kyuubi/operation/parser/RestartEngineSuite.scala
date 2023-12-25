@@ -36,18 +36,34 @@ class RestartEngineSuite extends ExecutedCommandExecSuite {
       assert(resultSet.getMetaData.getColumnName(2) == "ENGINE_NAME")
       assert(resultSet.getMetaData.getColumnName(3) == "ENGINE_URL")
 
-      val rs = statement.getConnection.createStatement().executeQuery("KYUUBI DESC ENGINE")
-      assert(rs.next())
-      assert(rs.getMetaData.getColumnCount == 3)
-      assert(rs.getMetaData.getColumnName(1) == "ENGINE_ID")
-      assert(rs.getMetaData.getColumnName(2) == "ENGINE_NAME")
-      assert(rs.getMetaData.getColumnName(3) == "ENGINE_URL")
-
-      val engineDesc = rs.getString("ENGINE_ID")
-
       val engineAlive = resultSet.getString("ENGINE_ID")
+
+      resultSet = statement.executeQuery("KYUUBI DESC ENGINE")
+      assert(resultSet.next())
+      assert(resultSet.getMetaData.getColumnCount == 3)
+      assert(resultSet.getMetaData.getColumnName(1) == "ENGINE_ID")
+      assert(resultSet.getMetaData.getColumnName(2) == "ENGINE_NAME")
+      assert(resultSet.getMetaData.getColumnName(3) == "ENGINE_URL")
+
+      val engineDesc = resultSet.getString("ENGINE_ID")
+
       assert(engineDied != engineAlive)
       assert(engineDesc == engineAlive)
+    }
+  }
+
+  test("Restart/Select kyuubi engine") {
+    withJdbcStatement() { statement =>
+      var resultSet = statement.executeQuery("KYUUBI RESTART ENGINE")
+      assert(resultSet.next())
+      assert(resultSet.getMetaData.getColumnCount == 3)
+      assert(resultSet.getMetaData.getColumnName(1) == "ENGINE_ID")
+      assert(resultSet.getMetaData.getColumnName(2) == "ENGINE_NAME")
+      assert(resultSet.getMetaData.getColumnName(3) == "ENGINE_URL")
+
+      resultSet = statement.executeQuery("SELECT 1")
+      assert(resultSet.next())
+      assert(resultSet.getInt(1) == 1)
     }
   }
 }
