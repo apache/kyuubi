@@ -40,4 +40,32 @@ class RestartEngineSuite extends ExecutedCommandExecSuite {
       assert(engineDied != engineAlive)
     }
   }
+
+  test("Restart kyuubi engine multiple threads ") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("KYUUBI RESTART ENGINE")
+      @volatile var engineAlive = ""
+      new Runnable {
+        override def run(): Unit = {
+          val rs = statement.getConnection.createStatement().executeQuery("KYUUBI DESC ENGINE")
+          assert(rs.next())
+          assert(rs.getMetaData.getColumnCount == 3)
+          assert(rs.getMetaData.getColumnName(1) == "ENGINE_ID")
+          assert(rs.getMetaData.getColumnName(2) == "ENGINE_NAME")
+          assert(rs.getMetaData.getColumnName(3) == "ENGINE_URL")
+
+          engineAlive = rs.getString("ENGINE_ID")
+        }
+      }.run()
+
+      assert(resultSet.next())
+      assert(resultSet.getMetaData.getColumnCount == 3)
+      assert(resultSet.getMetaData.getColumnName(1) == "ENGINE_ID")
+      assert(resultSet.getMetaData.getColumnName(2) == "ENGINE_NAME")
+      assert(resultSet.getMetaData.getColumnName(3) == "ENGINE_URL")
+      val engineDied = resultSet.getString("ENGINE_ID")
+
+      assert(engineDied == engineAlive)
+    }
+  }
 }

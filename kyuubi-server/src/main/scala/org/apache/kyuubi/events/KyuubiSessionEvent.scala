@@ -34,7 +34,7 @@ import org.apache.kyuubi.session.KyuubiSession
  * @param startTime session create time
  * @param remoteSessionId remote engine session id
  * @param engineId engine id. For engine on yarn, it is applicationId.
- * @param openedTime session engine opened time
+ * @param openedTime session opened time
  * @param endTime session end time
  * @param totalOperations how many queries and meta calls
  * @param exception the session exception, such as the exception that occur when opening session
