@@ -137,7 +137,7 @@ class KyuubiSessionImpl(
       engine.deregister(discoveryClient, (_client.getHost, _client.getPort))
     }
     launchEngineOp = sessionManager.operationManager
-      .newLaunchEngineOperation(this, shouldRunAsync = false)
+      .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
     runOperation(launchEngineOp)
     engineLastAlive = System.currentTimeMillis()
   }
