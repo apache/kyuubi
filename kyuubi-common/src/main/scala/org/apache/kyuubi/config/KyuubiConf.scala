@@ -369,13 +369,6 @@ object KyuubiConf {
       .checkValue(_ >= Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
       .createWithDefault(Duration.ofHours(6).toMillis)
 
-  val CREDENTIALS_HADOOP_FS_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.credentials.hadoopfs.enabled")
-      .doc("Whether to renew Hadoop filesystem delegation tokens")
-      .version("1.4.0")
-      .booleanConf
-      .createWithDefault(true)
-
   val CREDENTIALS_HADOOP_FS_URIS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.credentials.hadoopfs.uris")
       .doc("Extra Hadoop filesystem URIs for which to request delegation tokens. " +
@@ -384,13 +377,6 @@ object KyuubiConf {
       .stringConf
       .toSequence()
       .createWithDefault(Nil)
-
-  val CREDENTIALS_HIVE_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.credentials.hive.enabled")
-      .doc("Whether to renew Hive metastore delegation token")
-      .version("1.4.0")
-      .booleanConf
-      .createWithDefault(true)
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //
@@ -742,14 +728,6 @@ object KyuubiConf {
       .stringConf
       .toSequence()
       .createWithDefault(Nil)
-
-  val FRONTEND_THRIFT_HTTP_ALLOW_USER_SUBSTITUTION: ConfigEntry[Boolean] =
-    buildConf("kyuubi.frontend.thrift.http.allow.user.substitution")
-      .doc("Allow alternate user to be specified as part of open connection" +
-        " request when using HTTP transport mode.")
-      .version("1.6.0")
-      .booleanConf
-      .createWithDefault(true)
 
   val FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER: ConfigEntry[String] =
     buildConf("kyuubi.frontend.proxy.http.client.ip.header")
@@ -1456,14 +1434,6 @@ object KyuubiConf {
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
-
-  val ENGINE_HIVE_MAIN_RESOURCE: OptionalConfigEntry[String] =
-    buildConf("kyuubi.session.engine.hive.main.resource")
-      .doc("The package used to create Hive engine remote job. If it is undefined," +
-        " Kyuubi will use the default")
-      .version("1.6.0")
-      .stringConf
-      .createOptional
 
   val ENGINE_LOGIN_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.engine.login.timeout")
     .doc("The timeout of creating the connection to remote sql query engine")
