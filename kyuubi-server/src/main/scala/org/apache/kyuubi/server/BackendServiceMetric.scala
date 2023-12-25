@@ -206,8 +206,7 @@ trait BackendServiceMetric extends BackendService {
       } else Map[String, String]()
       val resultFormat = properties.getOrElse("__kyuubi_operation_result_format__", "thrift")
       val rowSet = fetchResultsResp.getResults
-
-      // TODO: the statistics are wrong when we enabled the arrow.
+      
       val rowsSize =
         if (rowSet.getColumnsSize > 0) {
           rowSet.getColumns.get(0).getFieldValue match {
