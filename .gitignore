@@ -81,6 +81,6 @@ kyuubi-server/gen
 kyuubi-server/src/main/antlr4/org/apache/kyuubi/sql/*.tokens
 kyuubi-server/src/main/antlr4/org/apache/kyuubi/sql/gen/
 
-# For DrawIO
+# For draw.io
 .$*.bkp
 .$*.dtmp
