@@ -62,9 +62,7 @@ class OptionalConfigEntry[T](
     v => v.map(rawStrConverter).orNull
   }
 
-  override def defaultValStr: String = {
-    ConfigEntry.UNDEFINED
-  }
+  override def defaultValStr: String = ConfigEntry.NONE_PLACEHOLDER
 
   override def readFrom(conf: ConfigProvider): Option[T] = {
     readString(conf).map(rawValueConverter)
@@ -200,7 +198,7 @@ class ConfigEntryFallback[T](
 }
 
 object ConfigEntry {
-  val UNDEFINED = "<undefined>"
+  val NONE_PLACEHOLDER = "(none)"
 
   private val knownConfigs = new java.util.concurrent.ConcurrentHashMap[String, ConfigEntry[_]]()
 

@@ -37,13 +37,13 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.key === "kyuubi.int.spark")
     assert(e1.valueConverter("2") === Some(3))
     assert(e1.strConverter(Some(1)) === "0")
-    assert(e1.defaultValStr === ConfigEntry.UNDEFINED)
+    assert(e1.defaultValStr === ConfigEntry.NONE_PLACEHOLDER)
     assert(e1.defaultVal.isEmpty)
     assert(e1.doc === doc)
     assert(e1.version === "<none>")
     assert(e1.typ === "int")
     assert(e1.internal === false)
-    assert(e1.toString === s"ConfigEntry(key=kyuubi.int.spark, defaultValue=<undefined>," +
+    assert(e1.toString === s"ConfigEntry(key=kyuubi.int.spark, defaultValue=(none)," +
       s" doc=$doc, version=<none>, type=int)")
 
     KyuubiConf.register(e1)
