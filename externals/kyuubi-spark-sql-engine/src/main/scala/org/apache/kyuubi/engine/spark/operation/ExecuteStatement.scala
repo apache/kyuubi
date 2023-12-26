@@ -17,12 +17,12 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.io.File
 import java.util.concurrent.RejectedExecutionException
 
-import scala.Array._
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FileUtil, Path}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
@@ -31,7 +31,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_DIR, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
-import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
+import org.apache.kyuubi.operation._
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -180,21 +180,24 @@ class ExecuteStatement(
         val sessionId = session.handle.identifier.toString
         val savePath = session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)
         saveFileName = Some(s"$savePath/$engineId/$sessionId/$statementId")
-        // Rename all col name to avoid duplicate columns
-        val colName = range(0, result.schema.size).map(x => "col" + x)
-
-        val codec = if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") "zstd" else "zlib"
-        // df.write will introduce an extra shuffle for the outermost limit, and hurt performance
-        if (resultMaxRows > 0) {
-          result.toDF(colName: _*).limit(resultMaxRows).write
-            .option("compression", codec).format("orc").save(saveFileName.get)
-        } else {
-          result.toDF(colName: _*).write
-            .option("compression", codec).format("orc").save(saveFileName.get)
+        val saveFile = saveFileName.get
+        FileUtil.fullyDeleteOnExit(new File(saveFile))
+        val resultDfToSave: DataFrame = {
+          // Rename all col name to avoid duplicate columns
+          val df = resultDF.toDF(result.schema.indices.map(x => s"col_$x"): _*)
+          if (resultMaxRows > 0) {
+            // df.write will introduce an extra shuffle for the outermost limit,
+            // and hurt performance
+            df.limit(resultMaxRows)
+          } else {
+            df
+          }
         }
-        info(s"Save result to $saveFileName")
+        val codec = if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") "zstd" else "zlib"
+        resultDfToSave.write.option("compression", codec).format("orc").save(saveFile)
+        info(s"Save result of statement $statementId to $saveFileName.get")
         fetchOrcStatement = Some(new FetchOrcStatement(spark))
-        return fetchOrcStatement.get.getIterator(saveFileName.get, resultSchema)
+        return fetchOrcStatement.get.getIterator(saveFile, resultSchema)
       }
       val internalArray = if (resultMaxRows <= 0) {
         info("Execute in full collect mode")
