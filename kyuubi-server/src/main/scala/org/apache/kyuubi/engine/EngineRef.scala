@@ -297,6 +297,7 @@ private[kyuubi] class EngineRef(
    *
    * @param discoveryClient the zookeeper client to get or create engine instance
    * @param extraEngineLog the launch engine operation log, used to inject engine log into it
+   * @return engine host and port
    */
   def getOrCreate(
       discoveryClient: DiscoveryClient,
@@ -312,8 +313,9 @@ private[kyuubi] class EngineRef(
    *
    * @param discoveryClient the zookeeper client to get or create engine instance
    * @param hostPort the existing engine host and port
+   * @return deregister result and message
    */
-  def deregister(discoveryClient: DiscoveryClient, hostPort: (String, Int)): (String, Boolean) =
+  def deregister(discoveryClient: DiscoveryClient, hostPort: (String, Int)): (Boolean, String) =
     tryWithLock(discoveryClient) {
       // refer the DiscoveryClient::getServerHost implementation
       discoveryClient.getServiceNodesInfo(engineSpace, Some(1), silent = true) match {
@@ -322,16 +324,16 @@ private[kyuubi] class EngineRef(
             val msg = s"Deleting engine node:$sn"
             info(msg)
             discoveryClient.delete(s"$engineSpace/${sn.nodeName}")
-            (msg, true)
+            (true, msg)
           } else {
             val msg = s"Engine node:$sn is not matched with host&port[$hostPort]"
             warn(msg)
-            (msg, false)
+            (false, msg)
           }
         case _ =>
           val msg = s"No engine node found in $engineSpace"
           warn(msg)
-          (msg, false)
+          (false, msg)
       }
     }
 

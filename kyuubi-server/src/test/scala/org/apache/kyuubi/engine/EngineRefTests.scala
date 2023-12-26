@@ -357,9 +357,9 @@ trait EngineRefTests extends KyuubiFunSuite {
     DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
       val hp = engine.getOrCreate(client)
       assert(client.getServerHost(engine.engineSpace) == Option(hp))
-      assert(!engine.deregister(client, ("non_existing_host", 0))._2)
+      assert(!engine.deregister(client, ("non_existing_host", 0))._1)
       assert(client.getServerHost(engine.engineSpace) == Option(hp))
-      assert(engine.deregister(client, hp)._2)
+      assert(engine.deregister(client, hp)._1)
       eventually(Timeout(10.seconds)) {
         assert(client.getServerHost(engine.engineSpace).isEmpty)
       }
