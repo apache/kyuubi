@@ -97,11 +97,13 @@ object ApplicationMaster extends Logging {
     val buffer = new ArrayBuffer[String]()
     buffer ++= confKeyValues(kyuubiConf.getAll)
 
-    val instance =
-      DynFields.builder().impl(currentEngineMainClass, "MODULE$").build[Object]().get(null)
-    DynMethods.builder("main").hiddenImpl(
-      currentEngineMainClass,
-      classOf[Array[String]]).buildChecked().invoke(instance, buffer.toArray)
+    val instance = DynFields.builder()
+      .impl(currentEngineMainClass, "MODULE$")
+      .build[Object].get(null)
+    DynMethods.builder("main")
+      .hiddenImpl(currentEngineMainClass, classOf[Array[String]])
+      .buildChecked()
+      .invoke(instance, buffer.toArray)
 
     currentEngine = DynFields.builder().hiddenImpl(
       currentEngineMainClass,
