@@ -30,7 +30,8 @@ case class RunConfig(
     iterations: Int = 3,
     breakdown: Boolean = false,
     resultsDir: String = "/spark/sql/performance",
-    queries: Set[String] = Set.empty)
+    queries: Set[String] = Set.empty,
+    skip: Set[String] = Set.empty)
 
 // scalastyle:off
 /**
@@ -71,6 +72,11 @@ object RunBenchmark {
           c.copy(queries = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
         }
         .text("name of the queries to run, use , split multiple name")
+      opt[String]('s', "skip")
+        .action { case (x, c) =>
+          c.copy(skip = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
+        }
+        .text("name of the queries to skip, use , split multiple name, e.g. q2,q4")
       help("help")
         .text("prints this usage text")
     }
@@ -102,12 +108,16 @@ object RunBenchmark {
       benchmark.tpcds2_4Queries
     }
 
-    val runQueries =
+    var runQueries =
       if (config.queries.nonEmpty) {
         allQueries.filter(q => config.queries.contains(q.name.split('-')(0)))
       } else {
         allQueries
       }
+
+    if (config.skip.nonEmpty) {
+      runQueries = runQueries.filterNot(q => config.skip.contains(q.name.split('-')(0)))
+    }
 
     println("== QUERY LIST ==")
     runQueries.foreach(q => println(q.name))
