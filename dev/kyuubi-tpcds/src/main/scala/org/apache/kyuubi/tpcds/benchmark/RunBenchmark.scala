@@ -26,12 +26,11 @@ import org.apache.spark.sql.functions._
 case class RunConfig(
     db: String = null,
     benchmarkName: String = "tpcds-v2.4-benchmark",
-    filter: Option[String] = None,
     iterations: Int = 3,
     breakdown: Boolean = false,
     resultsDir: String = "/spark/sql/performance",
-    queries: Set[String] = Set.empty,
-    skip: Set[String] = Set.empty)
+    include: Set[String] = Set.empty,
+    exclude: Set[String] = Set.empty)
 
 // scalastyle:off
 /**
@@ -55,9 +54,6 @@ object RunBenchmark {
       opt[String]('b', "benchmark")
         .action { (x, c) => c.copy(benchmarkName = x) }
         .text("the name of the benchmark to run")
-      opt[String]('f', "filter")
-        .action((x, c) => c.copy(filter = Some(x)))
-        .text("a filter on the name of the queries to run")
       opt[Boolean]('B', "breakdown")
         .action((x, c) => c.copy(breakdown = x))
         .text("whether to record breakdown results of an execution")
@@ -67,16 +63,16 @@ object RunBenchmark {
       opt[String]('r', "results-dir")
         .action((x, c) => c.copy(resultsDir = x))
         .text("dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref")
-      opt[String]('q', "queries")
+      opt[String]('I', "include")
         .action { case (x, c) =>
-          c.copy(queries = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
+          c.copy(include = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
         }
-        .text("name of the queries to run, use , split multiple name")
-      opt[String]('s', "skip")
+        .text("name of the queries to run, use , split multiple name, e.g. q1,q2")
+      opt[String]('E', "exclude")
         .action { case (x, c) =>
-          c.copy(skip = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
+          c.copy(exclude = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
         }
-        .text("name of the queries to skip, use , split multiple name, e.g. q2,q4")
+        .text("name of the queries to exclude, use , split multiple name, e.g. q2,q4")
       help("help")
         .text("prints this usage text")
     }
@@ -102,21 +98,16 @@ object RunBenchmark {
     println(config.db)
     sparkSession.sql(s"use ${config.db}")
 
-    val allQueries = config.filter.map { f =>
-      benchmark.tpcds2_4Queries.filter(_.name contains f)
-    } getOrElse {
-      benchmark.tpcds2_4Queries
-    }
-
     var runQueries =
-      if (config.queries.nonEmpty) {
-        allQueries.filter(q => config.queries.contains(q.name.split('-')(0)))
+      if (config.include.nonEmpty) {
+        benchmark.tpcds2_4Queries.filter(q => config.include.contains(q.name.split('-')(0)))
       } else {
-        allQueries
+        benchmark.tpcds2_4Queries
       }
 
-    if (config.skip.nonEmpty) {
-      runQueries = runQueries.filterNot(q => config.skip.contains(q.name.split('-')(0)))
+    // runQueries = include - exclude
+    if (config.exclude.nonEmpty) {
+      runQueries = runQueries.filterNot(q => config.exclude.contains(q.name.split('-')(0)))
     }
 
     println("== QUERY LIST ==")
