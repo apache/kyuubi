@@ -105,9 +105,11 @@ object ApplicationMaster extends Logging {
       .buildChecked()
       .invoke(instance, buffer.toArray)
 
-    currentEngine = DynFields.builder().hiddenImpl(
-      currentEngineMainClass,
-      "currentEngine").buildChecked[Option[Serverable]]().get(instance).get
+    currentEngine = DynFields.builder()
+      .hiddenImpl(currentEngineMainClass, "currentEngine")
+      .buildChecked[Option[Serverable]]()
+      .get(instance)
+      .get
   }
 
   def initAmClient(): Unit = {
