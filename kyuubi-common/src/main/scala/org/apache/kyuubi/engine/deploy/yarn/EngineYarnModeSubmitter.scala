@@ -254,15 +254,14 @@ abstract class EngineYarnModeSubmitter extends Logging {
 
   def listDistinctFiles(archive: String): Seq[File] = {
     val distinctFiles = new mutable.LinkedHashSet[File]
-    archive.split(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR).foreach {
-      path =>
-        val file = new File(path)
-        val files = Utils.listFilesRecursive(file)
-        files.foreach { f =>
-          if (f.isFile && f.canRead) {
-            distinctFiles += f
-          }
+    archive.split(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR).foreach { path =>
+      val file = new File(path)
+      val files = Utils.listFilesRecursive(file)
+      files.foreach { f =>
+        if (f.isFile && f.canRead) {
+          distinctFiles += f
         }
+      }
     }
     distinctFiles.groupBy(_.getName).map {
       case (_, items) => items.head
