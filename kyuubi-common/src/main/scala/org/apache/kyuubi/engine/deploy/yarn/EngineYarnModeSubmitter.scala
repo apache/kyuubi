@@ -61,8 +61,8 @@ abstract class EngineYarnModeSubmitter extends Logging {
    * |   |   `-- ...
    * |   `-- __kyuubi_conf__.properties
    * `-- __kyuubi_engine_libs__
-   *    |-- kyuubi_engine.jar
-   *    `-- ...
+   *     |-- kyuubi_engine.jar
+   *     `-- ...
    */
   val LOCALIZED_LIB_DIR = "__kyuubi_engine_libs__"
   val LOCALIZED_CONF_DIR = "__kyuubi_engine_conf__"
