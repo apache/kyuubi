@@ -195,7 +195,7 @@ class ExecuteStatement(
         }
         val codec = if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") "zstd" else "zlib"
         resultDfToSave.write.option("compression", codec).format("orc").save(saveFile)
-        info(s"Save result of statement $statementId to $saveFileName.get")
+        info(s"Save result of statement $statementId to $saveFile")
         fetchOrcStatement = Some(new FetchOrcStatement(spark))
         return fetchOrcStatement.get.getIterator(saveFile, resultSchema)
       }
