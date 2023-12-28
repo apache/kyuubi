@@ -331,7 +331,7 @@ abstract class EngineYarnModeSubmitter extends Logging {
     kyuubiConf.get(ENGINE_DEPLOY_YARN_MODE_PRIORITY).foreach { appPriority =>
       appContext.setPriority(Priority.newInstance(appPriority))
     }
-    appContext.setApplicationType(s"KYUUBI-${engineType.toUpperCase(Locale.ROOT)}-ENGINE")
+    appContext.setApplicationType(s"${engineType.toUpperCase(Locale.ROOT)}")
 
     val allTags = new util.HashSet[String]
     kyuubiConf.get(ENGINE_DEPLOY_YARN_MODE_TAGS).foreach { tags =>
