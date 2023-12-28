@@ -117,6 +117,9 @@ abstract class SparkOperation(session: Session)
     s"spark.${SESSION_USER_SIGN_ENABLED.key}",
     SESSION_USER_SIGN_ENABLED.defaultVal.get)
 
+  protected val isGenerateTRowSetInParallel: Boolean =
+    getSessionConf(KyuubiConf.OPERATION_TROWSET_GENERATION_IN_PARALLEL, spark)
+
   protected def eventEnabled: Boolean = true
 
   if (eventEnabled) EventBus.post(SparkOperationEvent(this))
@@ -259,7 +262,8 @@ abstract class SparkOperation(session: Session)
             new SparkTRowSetGenerator().toTRowSet(
               taken.toSeq.asInstanceOf[Seq[Row]],
               resultSchema,
-              getProtocolVersion)
+              getProtocolVersion,
+              isGenerateTRowSetInParallel)
           }
         resultRowSet.setStartRowOffset(iter.getPosition)
       }

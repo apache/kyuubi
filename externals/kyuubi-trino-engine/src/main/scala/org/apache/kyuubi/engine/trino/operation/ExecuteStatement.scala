@@ -96,8 +96,11 @@ class ExecuteStatement(
         throw KyuubiSQLException(s"Fetch orientation[$order] is not supported in $mode mode")
     }
     val taken = iter.take(rowSetSize)
-    val resultRowSet = new TrinoTRowSetGenerator()
-      .toTRowSet(taken.toList, schema, getProtocolVersion)
+    val resultRowSet = new TrinoTRowSetGenerator().toTRowSet(
+      taken.toList,
+      schema,
+      getProtocolVersion,
+      isGenerateTRowSetInParallel)
     resultRowSet.setStartRowOffset(iter.getPosition)
     val fetchResultsResp = new TFetchResultsResp(OK_STATUS)
     fetchResultsResp.setResults(resultRowSet)

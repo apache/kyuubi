@@ -268,4 +268,14 @@ class RowSetSuite extends KyuubiFunSuite {
       }
     }
   }
+
+  test("to TRowset in parallel") {
+    TProtocolVersion.values().foreach { proto =>
+      val set1 =
+        new SparkTRowSetGenerator().toTRowSet(rows, schema, proto, isExecuteInParallel = false)
+      val set2 =
+        new SparkTRowSetGenerator().toTRowSet(rows, schema, proto, isExecuteInParallel = true)
+      assert(set1 == set2)
+    }
+  }
 }

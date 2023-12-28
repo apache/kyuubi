@@ -3470,4 +3470,13 @@ object KyuubiConf {
       .version("1.8.1")
       .booleanConf
       .createWithDefault(false)
+
+  val OPERATION_TROWSET_GENERATION_IN_PARALLEL: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.trowset.generation.in.parallel")
+      .doc("Whether to generate the TRowSet in parallel by column on engine side. If enabled, " +
+        "the TRowSet will be generated in parallel with a fork join pool with " +
+        "guaranteed original column order.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
 }
