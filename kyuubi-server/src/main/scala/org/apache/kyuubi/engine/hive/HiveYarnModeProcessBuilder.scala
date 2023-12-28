@@ -25,11 +25,10 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.{KyuubiException, Logging, SCALA_COMPILE_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_LIB_DIR, ENGINE_HIVE_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
-import org.apache.kyuubi.engine.KyuubiApplicationManager
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter._
-import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_HADOOP_CLASSPATH_KEY
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils.{confKeyValue, confKeyValues}
 
@@ -52,6 +51,8 @@ class HiveYarnModeProcessBuilder(
 
   override def clusterManager(): Option[String] = Some("yarn")
 
+  override def appMgrInfo(): ApplicationManagerInfo = ApplicationManagerInfo(clusterManager())
+
   override protected val commands: Iterable[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     val buffer = new ArrayBuffer[String]()
@@ -62,7 +63,9 @@ class HiveYarnModeProcessBuilder(
     buffer += "-cp"
 
     val classpathEntries = new util.LinkedHashSet[String]
-    classpathEntries.addAll(hadoopConfFiles(true))
+    classpathEntries.addAll(hiveConfFiles())
+    classpathEntries.addAll(hadoopConfFiles())
+    classpathEntries.addAll(yarnConfFiles())
     classpathEntries.addAll(jarFiles(true))
 
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)
@@ -74,9 +77,16 @@ class HiveYarnModeProcessBuilder(
     buffer ++= confKeyValue(
       KYUUBI_ENGINE_DEPLOY_YARN_MODE_JARS_KEY,
       jarFiles(false).asScala.mkString(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR))
+
+    buffer ++= confKeyValue(
+      KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY,
+      hiveConfFiles().asScala.mkString(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR))
     buffer ++= confKeyValue(
       KYUUBI_ENGINE_DEPLOY_YARN_MODE_HADOOP_CONF_KEY,
-      hadoopConfFiles(false).asScala.mkString(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR))
+      hadoopConfFiles().asScala.mkString(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR))
+    buffer ++= confKeyValue(
+      KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY,
+      yarnConfFiles().asScala.mkString(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR))
 
     buffer ++= confKeyValues(conf.getAll)
 
@@ -90,21 +100,18 @@ class HiveYarnModeProcessBuilder(
 
     jarEntries.add(s"$hiveHome${File.separator}lib${appendClasspathSuffix(isClasspath)}")
 
-    val hadoopCp = env.get(HIVE_HADOOP_CLASSPATH_KEY)
-    hadoopCp.foreach(jarEntries.add)
+    val extraLibDir = conf.get(ENGINE_HIVE_EXTRA_LIB_DIR)
+    extraLibDir.foreach(libs => jarEntries.add(s"$libs${appendClasspathSuffix(isClasspath)}"))
 
-    val extraCp = conf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
-    extraCp.foreach(jarEntries.add)
-
-    if (hadoopCp.isEmpty && extraCp.isEmpty) {
+    if (extraLibDir.isEmpty) {
       mainResource.foreach { path =>
         val devHadoopJars = Paths.get(path).getParent
           .resolve(s"scala-$SCALA_COMPILE_VERSION")
           .resolve("jars")
         if (!Files.exists(devHadoopJars)) {
           throw new KyuubiException(s"The path $devHadoopJars does not exists. " +
-            s"Please set ${HIVE_HADOOP_CLASSPATH_KEY} or ${ENGINE_HIVE_EXTRA_CLASSPATH.key} for " +
-            s"configuring location of hadoop client jars, etc")
+            s"Please set $ENGINE_HIVE_EXTRA_LIB_DIR for configuring location " +
+            s"of hadoop client jars, etc")
         }
         jarEntries.add(s"$devHadoopJars${appendClasspathSuffix(isClasspath)}")
       }
@@ -113,12 +120,24 @@ class HiveYarnModeProcessBuilder(
     jarEntries
   }
 
-  private def hadoopConfFiles(isClasspath: Boolean): util.LinkedHashSet[String] = {
+  private def hiveConfFiles(): util.LinkedHashSet[String] = {
     val confEntries = new util.LinkedHashSet[String]
     confEntries.add(env.getOrElse(
       "HIVE_CONF_DIR",
-      s"$hiveHome${File.separator}conf${appendClasspathSuffix(isClasspath)}"))
+      s"$hiveHome${File.separator}conf"))
+
+    confEntries
+  }
+
+  private def hadoopConfFiles(): util.LinkedHashSet[String] = {
+    val confEntries = new util.LinkedHashSet[String]
     env.get("HADOOP_CONF_DIR").foreach(confEntries.add)
+
+    confEntries
+  }
+
+  private def yarnConfFiles(): util.LinkedHashSet[String] = {
+    val confEntries = new util.LinkedHashSet[String]
     env.get("YARN_CONF_DIR").foreach(confEntries.add)
 
     confEntries

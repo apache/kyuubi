@@ -19,7 +19,7 @@ package org.apache.kyuubi.it.hive.operation
 import org.apache.kyuubi.{HiveEngineTests, Utils, WithKyuubiServerAndHadoopMiniCluster}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_TYPE, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
-import org.apache.kyuubi.engine.deploy.YarnMode
+import org.apache.kyuubi.engine.deploy.DeployMode
 
 class KyuubiOperationHiveEngineYarnModeSuite extends HiveEngineTests
   with WithKyuubiServerAndHadoopMiniCluster {
@@ -30,7 +30,7 @@ class KyuubiOperationHiveEngineYarnModeSuite extends HiveEngineTests
     KyuubiConf()
       .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
       .set(ENGINE_TYPE, "HIVE_SQL")
-      .set(KyuubiConf.ENGINE_DEPLOY_MODE, YarnMode.name)
+      .set(KyuubiConf.ENGINE_HIVE_DEPLOY_MODE, DeployMode.YARN.toString)
       // increase this to 30s as hive session state and metastore client is slow initializing
       .setIfMissing(ENGINE_IDLE_TIMEOUT, 30000L)
       .set("javax.jdo.option.ConnectionURL", s"jdbc:derby:;databaseName=$metastore;create=true")
@@ -40,7 +40,6 @@ class KyuubiOperationHiveEngineYarnModeSuite extends HiveEngineTests
     super.beforeAll()
     conf
       .set(KyuubiConf.ENGINE_DEPLOY_YARN_MODE_MEMORY, Math.min(getYarnMaximumAllocationMb, 1024))
-      .set(KyuubiConf.ENGINE_DEPLOY_YARN_MODE_MAX_APP_ATTEMPTS, 1)
       .set(KyuubiConf.ENGINE_DEPLOY_YARN_MODE_CORES, 1)
   }
 

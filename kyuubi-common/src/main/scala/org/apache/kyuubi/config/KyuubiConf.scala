@@ -30,7 +30,7 @@ import scala.util.matching.Regex
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
-import org.apache.kyuubi.engine.deploy.LocalMode
+import org.apache.kyuubi.engine.deploy.DeployMode
 import org.apache.kyuubi.operation.{NoneMode, PlainStyle}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
@@ -2695,23 +2695,31 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val ENGINE_DEPLOY_MODE: ConfigEntry[String] =
-    buildConf("kyuubi.engine.deploy.mode")
-      .doc("Configures the engine deploy mode, The value can be 'local', 'yarn'. " +
+  val ENGINE_HIVE_EXTRA_LIB_DIR: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.hive.extra.libDir")
+      .doc("The extra lib directory for the Hive query engine, for configuring location" +
+        " of the hadoop client jars and etc.")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_HIVE_DEPLOY_MODE: ConfigEntry[String] =
+    buildConf("kyuubi.engine.hive.deploy.mode")
+      .doc("Configures the hive engine deploy mode, The value can be 'local', 'yarn'. " +
         "In local mode, the engine operates on the same node as the KyuubiServer. " +
-        "In YARN mode, the engine runs within the Application Master (AM) container of YARN. " +
-        "Currently, only Hive engine supports YARN mode.")
+        "In YARN mode, the engine runs within the Application Master (AM) container of YARN. ")
       .version("1.9.0")
       .stringConf
       .transformToUpperCase
       .checkValue(
         mode => Set("LOCAL", "YARN").contains(mode),
         "Invalid value for 'kyuubi.engine.hive.deploy.mode'. Valid values are 'local', 'yarn'.")
-      .createWithDefault(LocalMode.name)
+      .createWithDefault(DeployMode.LOCAL.toString)
 
   val ENGINE_DEPLOY_YARN_MODE_STAGING_DIR: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.yarn.stagingDir")
-      .doc("Staging directory used while submitting kyuubi engine to YARN.")
+      .doc("Staging directory used while submitting kyuubi engine to YARN, " +
+        "It should be a absolute path in HDFS.")
       .version("1.9.0")
       .stringConf
       .createOptional
@@ -2726,7 +2734,7 @@ object KyuubiConf {
 
   val ENGINE_DEPLOY_YARN_MODE_TAGS: OptionalConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.yarn.tags")
-      .doc(s"kyuubi engine yarn tags when `${ENGINE_DEPLOY_MODE.key}` is YARN.")
+      .doc(s"kyuubi engine yarn tags when the engine deploy mode is YARN.")
       .version("1.9.0")
       .stringConf
       .toSequence()
@@ -2734,36 +2742,42 @@ object KyuubiConf {
 
   val ENGINE_DEPLOY_YARN_MODE_QUEUE: ConfigEntry[String] =
     buildConf("kyuubi.engine.yarn.queue")
-      .doc(s"kyuubi engine yarn queue when `${ENGINE_DEPLOY_MODE.key}` is YARN.")
+      .doc(s"kyuubi engine yarn queue when the engine deploy mode is YARN.")
       .version("1.9.0")
       .stringConf
       .createWithDefault("default")
 
-  val ENGINE_DEPLOY_YARN_MODE_MAX_APP_ATTEMPTS: OptionalConfigEntry[Int] =
-    buildConf("kyuubi.engine.yarn.maxAppAttempts")
-      .doc(s"Maximum number of AM attempts before failing the app " +
-        s"when `${ENGINE_DEPLOY_MODE.key}` is YARN.")
+  val ENGINE_DEPLOY_YARN_MODE_PRIORITY: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.engine.yarn.priority")
+      .doc(s"kyuubi engine yarn priority when the engine deploy mode is YARN.")
       .version("1.9.0")
       .intConf
       .createOptional
 
+  val ENGINE_DEPLOY_YARN_MODE_APP_NAME: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.yarn.app.name")
+      .doc(s"The YARN app name when the engine deploy mode is YARN.")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_DEPLOY_YARN_MODE_MEMORY: ConfigEntry[Int] =
     buildConf("kyuubi.engine.yarn.memory")
-      .doc(s"kyuubi engine container memory in mb when `${ENGINE_DEPLOY_MODE.key}` is YARN.")
+      .doc(s"kyuubi engine container memory in mb when the engine deploy mode is YARN.")
       .version("1.9.0")
       .intConf
       .createWithDefault(1024)
 
   val ENGINE_DEPLOY_YARN_MODE_CORES: ConfigEntry[Int] =
     buildConf("kyuubi.engine.yarn.cores")
-      .doc(s"kyuubi engine container core number when `${ENGINE_DEPLOY_MODE.key}` is YARN.")
+      .doc(s"kyuubi engine container core number when the engine deploy mode is YARN.")
       .version("1.9.0")
       .intConf
       .createWithDefault(1)
 
   val ENGINE_DEPLOY_YARN_MODE_JAVA_OPTIONS: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.yarn.java.options")
-      .doc(s"The extra Java options for the AM when `${ENGINE_DEPLOY_MODE.key}` is YARN.")
+      .doc(s"The extra Java options for the AM when the engine deploy mode is YARN.")
       .version("1.9.0")
       .stringConf
       .createOptional

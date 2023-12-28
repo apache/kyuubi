@@ -16,35 +16,19 @@
  */
 package org.apache.kyuubi.engine.deploy
 
-import java.util.Locale
-
-import org.apache.kyuubi.Logging
-
-sealed trait DeployMode {
-
+object DeployMode extends Enumeration {
+  type DeployMode = Value
+  val
   /**
-   * String name of the engine deploy mode.
+   * In this mode, the engine will be launched locally.
    */
-  def name: String
-}
-
-case object LocalMode extends DeployMode { val name = "local" }
-
-case object YarnMode extends DeployMode { val name = "yarn" }
-
-case object KubernetesMode extends DeployMode { val name = "kubernetes" }
-
-object DeployMode extends Logging {
-
+  LOCAL,
   /**
-   * Returns the engine deploy mode from the given string.
+   * In this mode, the engine will be launched on YARN.
    */
-  def fromString(mode: String): DeployMode = mode.toLowerCase(Locale.ROOT) match {
-    case LocalMode.name => LocalMode
-    case YarnMode.name => YarnMode
-    case KubernetesMode.name => KubernetesMode
-    case _ =>
-      warn(s"Unknown deploy mode: $mode, fallback to local mode.")
-      LocalMode
-  }
+  YARN,
+  /**
+   * In this mode, the engine will be launched on Kubernetes.
+   */
+  KUBERNETES = Value
 }

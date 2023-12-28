@@ -26,7 +26,6 @@ import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.util.control.NonFatal
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -36,7 +35,6 @@ import org.apache.hadoop.yarn.api.ApplicationConstants
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
 import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.client.api.{YarnClient, YarnClientApplication}
-import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException
 import org.apache.hadoop.yarn.util.Records
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
@@ -89,10 +87,8 @@ abstract class EngineYarnModeSubmitter extends Logging {
   var engineType: String
 
   protected def submitApplication(): Unit = {
-    assert(
-      hadoopConf != null && yarnConf != null,
-      "Hadoop Configuration is not initialized. " +
-        "Please initialize it before submitting application.")
+    yarnConf = KyuubiHadoopUtils.newYarnConfiguration(kyuubiConf)
+    hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
     try {
       yarnClient = YarnClient.createYarnClient()
       yarnClient.init(yarnConf)
@@ -185,7 +181,7 @@ abstract class EngineYarnModeSubmitter extends Logging {
     FileSystem.mkdirs(fs, destDir, new FsPermission(STAGING_DIR_PERMISSION))
 
     distributeJars(localResources, env)
-    distributeConf(localResources)
+    distributeConf(localResources, env)
     localResources
   }
 
@@ -197,10 +193,9 @@ abstract class EngineYarnModeSubmitter extends Logging {
     try {
       jarsStream.setLevel(0)
       val jars = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_JARS_KEY)
-      assert(jars.isDefined, "No jars specified for engine AM")
       val putedEntry = new ListBuffer[String]
       jars.get.split(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR).foreach { path =>
-        val jars = Utils.listFilesRecursive(new File(path))
+        val jars = Utils.listFilesRecursively(new File(path))
         jars.foreach { f =>
           if (!putedEntry.contains(f.getName) && f.isFile && f.getName.toLowerCase(
               Locale.ROOT).endsWith(".jar") && f.canRead) {
@@ -224,20 +219,33 @@ abstract class EngineYarnModeSubmitter extends Logging {
       localResources)
   }
 
-  private def distributeConf(localResources: mutable.HashMap[String, LocalResource]): Unit = {
+  private def distributeConf(
+      localResources: mutable.HashMap[String, LocalResource],
+      env: mutable.HashMap[String, String]): Unit = {
     val confArchive = File.createTempFile(LOCALIZED_CONF_DIR, ".zip", Utils.createTempDir().toFile)
     val confStream = new ZipOutputStream(new FileOutputStream(confArchive))
     try {
       confStream.setLevel(0)
-      val confs = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HADOOP_CONF_KEY)
-      assert(confs.isDefined, "No conf specified for engine AM")
-      listDistinctFiles(confs.get).foreach { f =>
-        if (f.isFile && f.canRead) {
+      val putedEntry = new ListBuffer[String]
+      def putEntry(f: File): Unit = {
+        if (!putedEntry.contains(f.getName) && f.isFile && f.canRead) {
           confStream.putNextEntry(new ZipEntry(s"$HADOOP_CONF_DIR/${f.getName}"))
           Files.copy(f.toPath, confStream)
           confStream.closeEntry()
+          putedEntry += f.getName
+          addClasspathEntry(
+            buildPath(Environment.PWD.$$(), LOCALIZED_CONF_DIR, HADOOP_CONF_DIR, f.getName),
+            env)
         }
       }
+      // respect the following priority loading configuration, and distinct files
+      // hive configuration -> hadoop configuration -> yarn configuration
+      val hiveConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY)
+      listDistinctFiles(hiveConf.get).foreach(putEntry)
+      val hadoopConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HADOOP_CONF_KEY)
+      listDistinctFiles(hadoopConf.get).foreach(putEntry)
+      val yarnConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY)
+      listDistinctFiles(yarnConf.get).foreach(putEntry)
 
       val properties = confToProperties(kyuubiConf)
       writePropertiesToArchive(properties, KYUUBI_CONF_FILE, confStream)
@@ -256,7 +264,7 @@ abstract class EngineYarnModeSubmitter extends Logging {
     val distinctFiles = new mutable.LinkedHashSet[File]
     archive.split(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR).foreach { path =>
       val file = new File(path)
-      val files = Utils.listFilesRecursive(file)
+      val files = Utils.listFilesRecursively(file)
       files.foreach { f =>
         if (f.isFile && f.canRead) {
           distinctFiles += f
@@ -316,21 +324,21 @@ abstract class EngineYarnModeSubmitter extends Logging {
       containerContext: ContainerLaunchContext): ApplicationSubmissionContext = {
 
     val appContext = newApp.getApplicationSubmissionContext
-    appContext.setApplicationName(s"Apache Kyuubi $engineType Engine")
+    appContext.setApplicationName(kyuubiConf.get(ENGINE_DEPLOY_YARN_MODE_APP_NAME)
+      .getOrElse(s"Apache Kyuubi $engineType Engine"))
     appContext.setQueue(kyuubiConf.get(ENGINE_DEPLOY_YARN_MODE_QUEUE))
     appContext.setAMContainerSpec(containerContext)
+    kyuubiConf.get(ENGINE_DEPLOY_YARN_MODE_PRIORITY).foreach { appPriority =>
+      appContext.setPriority(Priority.newInstance(appPriority))
+    }
+    appContext.setApplicationType(s"KYUUBI-${engineType.toUpperCase(Locale.ROOT)}-ENGINE")
 
     val allTags = new util.HashSet[String]
     kyuubiConf.get(ENGINE_DEPLOY_YARN_MODE_TAGS).foreach { tags =>
       allTags.addAll(tags.asJava)
     }
     appContext.setApplicationTags(allTags)
-
-    kyuubiConf.get(ENGINE_DEPLOY_YARN_MODE_MAX_APP_ATTEMPTS) match {
-      case Some(v) => appContext.setMaxAppAttempts(v)
-      case None => debug(s"${ENGINE_DEPLOY_YARN_MODE_MAX_APP_ATTEMPTS.key} is not set. " +
-          "Cluster's default value will be used.")
-    }
+    appContext.setMaxAppAttempts(1)
 
     val capability = Records.newRecord(classOf[Resource])
     capability.setMemorySize(kyuubiConf.get(ENGINE_DEPLOY_YARN_MODE_MEMORY))
@@ -342,25 +350,11 @@ abstract class EngineYarnModeSubmitter extends Logging {
   }
 
   private def monitorApplication(appId: ApplicationId): Unit = {
-    if (kyuubiConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)) {
-      val YarnAppReport(appState, finalState, diags) = monitorApplication()
-      info(s"Application report for $appId (state: $appState, final state: $finalState)")
-      if (appState == YarnApplicationState.FAILED || finalState == FinalApplicationStatus.FAILED) {
-        diags.foreach { err =>
-          error(s"Application diagnostics message: $err")
-        }
-        throw new KyuubiException(s"Application $appId finished with failed status")
-      }
-      if (appState == YarnApplicationState.KILLED || finalState == FinalApplicationStatus.KILLED) {
-        throw new KyuubiException(s"Application $appId is killed")
-      }
-    } else {
-      val report = yarnClient.getApplicationReport(appId)
-      val state = report.getYarnApplicationState
-      info(s"Application report for $appId (state: $state)")
-      if (state == YarnApplicationState.FAILED || state == YarnApplicationState.KILLED) {
-        throw new KyuubiException(s"Application $appId finished with status: $state")
-      }
+    val report = yarnClient.getApplicationReport(appId)
+    val state = report.getYarnApplicationState
+    info(s"Application report for $appId (state: $state)")
+    if (state == YarnApplicationState.FAILED || state == YarnApplicationState.KILLED) {
+      throw new KyuubiException(s"Application $appId finished with status: $state")
     }
   }
 
@@ -374,51 +368,6 @@ abstract class EngineYarnModeSubmitter extends Logging {
       case ioe: IOException =>
         warn("Failed to cleanup staging dir " + stagingDirPath, ioe)
     }
-  }
-
-  private def monitorApplication(
-      interval: Long = kyuubiConf.get(ENGINE_DEPLOY_YARN_MODE_REPORT_INTERVAL)): YarnAppReport = {
-    var lastState: YarnApplicationState = null
-    while (true) {
-      Thread.sleep(interval)
-      val report: ApplicationReport =
-        try {
-          yarnClient.getApplicationReport(appId)
-        } catch {
-          case e: ApplicationNotFoundException =>
-            error(s"Application $appId not found.")
-            cleanupStagingDir()
-            return YarnAppReport(YarnApplicationState.KILLED, FinalApplicationStatus.KILLED, None)
-          case NonFatal(e) if !e.isInstanceOf[InterruptedIOException] =>
-            val msg = s"Failed to contact YARN for application $appId."
-            error(msg, e)
-            // Don't necessarily clean up staging dir because status is unknown
-            return YarnAppReport(
-              YarnApplicationState.FAILED,
-              FinalApplicationStatus.FAILED,
-              Some(msg))
-        }
-      val state = report.getYarnApplicationState
-      if (state == YarnApplicationState.FINISHED ||
-        state == YarnApplicationState.FAILED ||
-        state == YarnApplicationState.KILLED) {
-        cleanupStagingDir()
-        return createAppReport(report)
-      }
-
-      if (state == YarnApplicationState.RUNNING) {
-        return createAppReport(report)
-      }
-      lastState = state
-    }
-    // Never reached, but keeps compiler happy
-    throw new KyuubiException("While loop is depleted! This should never happen...")
-  }
-
-  private def createAppReport(report: ApplicationReport): YarnAppReport = {
-    val diags = report.getDiagnostics
-    val diagsOpt = if (diags != null && diags.nonEmpty) Some(diags) else None
-    YarnAppReport(report.getYarnApplicationState, report.getFinalApplicationStatus, diagsOpt)
   }
 
   /**
@@ -465,8 +414,12 @@ abstract class EngineYarnModeSubmitter extends Logging {
 
 object EngineYarnModeSubmitter {
   final val KYUUBI_ENGINE_DEPLOY_YARN_MODE_JARS_KEY = "kyuubi.engine.deploy.yarn.mode.jars"
+  final val KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY =
+    "kyuubi.engine.deploy.yarn.mode.hiveConf"
   final val KYUUBI_ENGINE_DEPLOY_YARN_MODE_HADOOP_CONF_KEY =
     "kyuubi.engine.deploy.yarn.mode.hadoopConf"
+  final val KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY =
+    "kyuubi.engine.deploy.yarn.mode.yarnConf"
 
   final val KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR = ","
 }

@@ -26,10 +26,11 @@ import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_MODE, ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, ENGINE_HIVE_DEPLOY_MODE, ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_EXTRA_LIB_DIR, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
-import org.apache.kyuubi.engine.deploy.{DeployMode, LocalMode, YarnMode}
+import org.apache.kyuubi.engine.deploy.DeployMode
+import org.apache.kyuubi.engine.deploy.DeployMode.{LOCAL, YARN}
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_HADOOP_CLASSPATH_KEY
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils._
@@ -84,7 +85,10 @@ class HiveProcessBuilder(
     hadoopCp.foreach(classpathEntries.add)
     val extraCp = conf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
-    if (hadoopCp.isEmpty && extraCp.isEmpty) {
+    val extraLibDir = conf.get(ENGINE_HIVE_EXTRA_LIB_DIR)
+    extraLibDir.foreach(libs => classpathEntries.add(s"$libs${File.separator}*"))
+    classpathEntries.add(s"$extraLibDir${File.separator}*")
+    if (hadoopCp.isEmpty && extraCp.isEmpty && extraLibDir.isEmpty) {
       warn(s"The conf of ${HIVE_HADOOP_CLASSPATH_KEY} and ${ENGINE_HIVE_EXTRA_CLASSPATH.key}" +
         s" is empty.")
       debug("Detected development environment")
@@ -94,8 +98,8 @@ class HiveProcessBuilder(
           .resolve("jars")
         if (!Files.exists(devHadoopJars)) {
           throw new KyuubiException(s"The path $devHadoopJars does not exists. " +
-            s"Please set ${HIVE_HADOOP_CLASSPATH_KEY} or ${ENGINE_HIVE_EXTRA_CLASSPATH.key} for " +
-            s"configuring location of hadoop client jars, etc")
+            s"Please set ${HIVE_HADOOP_CLASSPATH_KEY}, ${ENGINE_HIVE_EXTRA_CLASSPATH.key} " +
+            s"or ${ENGINE_HIVE_EXTRA_LIB_DIR} for configuring location of hadoop client jars, etc")
         }
         classpathEntries.add(s"$devHadoopJars${File.separator}*")
       }
@@ -122,16 +126,15 @@ object HiveProcessBuilder extends Logging {
       appUser: String,
       conf: KyuubiConf,
       engineRefId: String,
-      extraEngineLog: Option[OperationLog]): HiveProcessBuilder = {
-    val modeStr = conf.get(ENGINE_DEPLOY_MODE)
-    DeployMode.fromString(conf.get(ENGINE_DEPLOY_MODE)) match {
-      case LocalMode => new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
-      case YarnMode =>
-        warn(s"Hive on YARN model is experimental, please use it carefully. " +
-          s"Set `${ENGINE_DEPLOY_MODE.key}` to `${LocalMode.toString}` " +
-          s"if you want to use it on production.")
+      extraEngineLog: Option[OperationLog],
+      defaultEngineName: String): HiveProcessBuilder = {
+    DeployMode.withName(conf.get(ENGINE_HIVE_DEPLOY_MODE)) match {
+      case LOCAL => new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+      case YARN =>
+        warn(s"Hive on YARN model is experimental.")
+        conf.setIfMissing(ENGINE_DEPLOY_YARN_MODE_APP_NAME, Some(defaultEngineName))
         new HiveYarnModeProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
-      case _ => throw new KyuubiException(s"Unsupported deploy mode: $modeStr")
+      case other => throw new KyuubiException(s"Unsupported deploy mode: $other")
     }
   }
 }

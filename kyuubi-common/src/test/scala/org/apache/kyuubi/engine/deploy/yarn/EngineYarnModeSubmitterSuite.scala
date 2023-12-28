@@ -60,7 +60,7 @@ class EngineYarnModeSubmitterSuite extends KyuubiFunSuite with Matchers {
     // double the jars to make sure the distinct works
     val archives = s"$targetJars,$targetJars"
     val files = MockEngineYarnModeSubmitter.listDistinctFiles(archives)
-    val targetFiles = Utils.listFilesRecursive(new File(targetJars))
+    val targetFiles = Utils.listFilesRecursively(new File(targetJars))
     assert(targetFiles != null)
     assert(targetFiles.length == files.length)
   }

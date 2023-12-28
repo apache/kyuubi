@@ -189,7 +189,7 @@ object KyuubiApplicationManager {
         // running flink on other platforms is not yet supported
         setupFlinkYarnTag(applicationTag, conf)
       // other engine types are running locally yet
-      case ("Hive", Some("YARN")) =>
+      case ("HIVE", Some("YARN")) =>
         setupEngineYarnModeTag(applicationTag, conf)
       case _ =>
     }

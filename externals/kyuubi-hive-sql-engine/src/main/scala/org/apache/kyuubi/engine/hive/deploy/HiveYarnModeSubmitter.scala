@@ -19,21 +19,12 @@ package org.apache.kyuubi.engine.hive.deploy
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
-import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 object HiveYarnModeSubmitter extends EngineYarnModeSubmitter {
 
   def main(args: Array[String]): Unit = {
     Utils.fromCommandLineArgs(args, kyuubiConf)
-    // Initialize the engine submitter.
-    init()
-    // Submit the engine application to YARN.
     submitApplication()
-  }
-
-  private def init(): Unit = {
-    yarnConf = KyuubiHadoopUtils.newYarnConfiguration(kyuubiConf)
-    hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
   }
 
   override var engineType: String = "hive"

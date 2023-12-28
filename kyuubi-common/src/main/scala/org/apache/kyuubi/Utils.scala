@@ -162,11 +162,11 @@ object Utils extends Logging {
   /**
    * List the files recursively in a directory.
    */
-  def listFilesRecursive(file: File): Seq[File] = {
+  def listFilesRecursively(file: File): Seq[File] = {
     if (!file.isDirectory) {
       file :: Nil
     } else {
-      file.listFiles().flatMap(listFilesRecursive)
+      file.listFiles().flatMap(listFilesRecursively)
     }
   }
 
