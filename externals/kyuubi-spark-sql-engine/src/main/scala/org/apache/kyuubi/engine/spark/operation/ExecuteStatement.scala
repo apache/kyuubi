@@ -17,20 +17,22 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.util.concurrent.RejectedExecutionException
+
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.fs.Path
-import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_DIR, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
-import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
-import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.operation._
-import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
 
-import java.util.concurrent.RejectedExecutionException
-import scala.collection.JavaConverters._
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_DIR, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
+import org.apache.kyuubi.operation._
+import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
     session: Session,
@@ -68,7 +70,10 @@ class ExecuteStatement(
   override def close(): Unit = {
     super.close()
     fetchOrcStatement.foreach(_.close())
-    cleanupSavedResultFile()
+    saveFileName.foreach { p =>
+      val path = new Path(p)
+      path.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(path, true)
+    }
   }
 
   protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
