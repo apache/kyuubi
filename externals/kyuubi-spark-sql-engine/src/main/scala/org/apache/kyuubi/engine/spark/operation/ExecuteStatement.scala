@@ -26,7 +26,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_DIR, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
@@ -70,10 +70,7 @@ class ExecuteStatement(
   override def close(): Unit = {
     super.close()
     fetchOrcStatement.foreach(_.close())
-    saveFileName.foreach { p =>
-      val path = new Path(p)
-      path.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(path, true)
-    }
+    cleanupSavedResultFile()
   }
 
   protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
@@ -182,10 +179,8 @@ class ExecuteStatement(
             session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)
           Some(s"$resultSaveToDir/$engineId/$sessionId/$statementId")
         }
+        Utils.addShutdownHook(() => cleanupSavedResultFile())
         val saveFile = saveFileName.get
-        val saveFilePath = new Path(saveFile)
-        saveFilePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
-          .deleteOnExit(saveFilePath)
         val resultDfToSave: DataFrame = {
           // Rename all col name to avoid duplicate columns
           val df = resultDF.toDF(result.schema.indices.map(x => s"col_$x"): _*)
@@ -211,6 +206,20 @@ class ExecuteStatement(
         takeResult(resultDF, resultMaxRows)
       }
       new ArrayFetchIterator(internalArray)
+    }
+  }
+
+  private def cleanupSavedResultFile(): Unit = {
+    saveFileName.foreach { p =>
+      try {
+        val path = new Path(p)
+        val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
+        if (fs.exists(path)) {
+          fs.delete(path, true)
+        }
+      } catch {
+        case e: Exception => warn(s"Failed to cleanup saved result file $p", e)
+      }
     }
   }
 }
