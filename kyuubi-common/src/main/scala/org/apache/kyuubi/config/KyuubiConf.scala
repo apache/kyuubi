@@ -3728,4 +3728,13 @@ object KyuubiConf {
       .version("1.9.1")
       .serverOnly
       .fallbackConf(HIVE_SERVER2_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE)
+
+  val OPERATION_TROWSET_GENERATION_IN_PARALLEL: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.trowset.generation.in.parallel")
+      .doc("Whether to generate the TRowSet in parallel by column on engine side. If enabled, " +
+        "the TRowSet will be generated in parallel with a fork join pool with " +
+        "guaranteed original column order.")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(false)
 }
