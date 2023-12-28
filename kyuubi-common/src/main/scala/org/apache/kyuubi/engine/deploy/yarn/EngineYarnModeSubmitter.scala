@@ -197,8 +197,8 @@ abstract class EngineYarnModeSubmitter extends Logging {
       jars.get.split(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR).foreach { path =>
         val jars = Utils.listFilesRecursively(new File(path))
         jars.foreach { f =>
-          if (!putedEntry.contains(f.getName) && f.isFile && f.getName.toLowerCase(
-              Locale.ROOT).endsWith(".jar") && f.canRead) {
+          if (!putedEntry.contains(f.getName) && f.isFile &&
+              f.getName.toLowerCase(Locale.ROOT).endsWith(".jar") && f.canRead) {
             jarsStream.putNextEntry(new ZipEntry(f.getName))
             Files.copy(f.toPath, jarsStream)
             jarsStream.closeEntry()
