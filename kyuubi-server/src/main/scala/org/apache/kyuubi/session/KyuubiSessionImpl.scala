@@ -293,7 +293,7 @@ class KyuubiSessionImpl(
     }
   }
 
-  override def close(): Unit = withWriteLockAcquired {
+  override def close(): Unit = {
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {
