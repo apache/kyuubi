@@ -63,16 +63,16 @@ object RunBenchmark {
       opt[String]('r', "results-dir")
         .action((x, c) => c.copy(resultsDir = x))
         .text("dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref")
-      opt[String]('I', "include")
+      opt[String]("include")
         .action { case (x, c) =>
           c.copy(include = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
         }
-        .text("name of the queries to run, use , split multiple name, e.g. q1,q2")
-      opt[String]('E', "exclude")
+        .text("name of the queries to run, use comma to split multiple names, e.g. q1,q2")
+      opt[String]("exclude")
         .action { case (x, c) =>
           c.copy(exclude = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
         }
-        .text("name of the queries to exclude, use , split multiple name, e.g. q2,q4")
+        .text("name of the queries to exclude, use comma to split multiple names, e.g. q2,q4")
       help("help")
         .text("prints this usage text")
     }
