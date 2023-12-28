@@ -743,14 +743,6 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
-  val FRONTEND_THRIFT_HTTP_ALLOW_USER_SUBSTITUTION: ConfigEntry[Boolean] =
-    buildConf("kyuubi.frontend.thrift.http.allow.user.substitution")
-      .doc("Allow alternate user to be specified as part of open connection" +
-        " request when using HTTP transport mode.")
-      .version("1.6.0")
-      .booleanConf
-      .createWithDefault(true)
-
   val FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER: ConfigEntry[String] =
     buildConf("kyuubi.frontend.proxy.http.client.ip.header")
       .doc("The HTTP header to record the real client IP address. If your server is behind a load" +
