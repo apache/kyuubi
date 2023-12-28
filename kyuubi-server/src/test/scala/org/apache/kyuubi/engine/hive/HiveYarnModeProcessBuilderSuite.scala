@@ -18,8 +18,7 @@ package org.apache.kyuubi.engine.hive
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_HIVE_EXTRA_LIB_DIR
-import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter.{KYUUBI_ENGINE_DEPLOY_YARN_MODE_HADOOP_CONF_KEY, KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY, KYUUBI_ENGINE_DEPLOY_YARN_MODE_JARS_KEY, KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY}
+import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter.{KYUUBI_ENGINE_DEPLOY_YARN_MODE_HADOOP_CONF_KEY, KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY, KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY}
 
 class HiveYarnModeProcessBuilderSuite extends KyuubiFunSuite {
 
@@ -35,15 +34,6 @@ class HiveYarnModeProcessBuilderSuite extends KyuubiFunSuite {
     assert(builder.toString.contains("--conf kyuubi.on=off"))
     assert(builder.toString.contains(
       s"--conf $KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY=/etc/hive/conf"))
-  }
-
-  test("hive extra lib dir") {
-    val conf = KyuubiConf()
-      .set(ENGINE_HIVE_EXTRA_LIB_DIR, "/hadoop/jars")
-    val builder = new HiveYarnModeProcessBuilder("kyuubi", conf, "")
-    val command = builder.toString
-    assert(command.contains(
-      s"--conf $KYUUBI_ENGINE_DEPLOY_YARN_MODE_JARS_KEY") && command.contains("/hadoop/jars"))
   }
 
   test("hadoop conf dir") {

@@ -26,7 +26,7 @@ import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, ENGINE_HIVE_DEPLOY_MODE, ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_EXTRA_LIB_DIR, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, ENGINE_HIVE_DEPLOY_MODE, ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.deploy.DeployMode
@@ -85,10 +85,7 @@ class HiveProcessBuilder(
     hadoopCp.foreach(classpathEntries.add)
     val extraCp = conf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
-    val extraLibDir = conf.get(ENGINE_HIVE_EXTRA_LIB_DIR)
-    extraLibDir.foreach(libs => classpathEntries.add(s"$libs${File.separator}*"))
-    classpathEntries.add(s"$extraLibDir${File.separator}*")
-    if (hadoopCp.isEmpty && extraCp.isEmpty && extraLibDir.isEmpty) {
+    if (hadoopCp.isEmpty && extraCp.isEmpty) {
       warn(s"The conf of ${HIVE_HADOOP_CLASSPATH_KEY} and ${ENGINE_HIVE_EXTRA_CLASSPATH.key}" +
         s" is empty.")
       debug("Detected development environment")
@@ -98,8 +95,8 @@ class HiveProcessBuilder(
           .resolve("jars")
         if (!Files.exists(devHadoopJars)) {
           throw new KyuubiException(s"The path $devHadoopJars does not exists. " +
-            s"Please set ${HIVE_HADOOP_CLASSPATH_KEY}, ${ENGINE_HIVE_EXTRA_CLASSPATH.key} " +
-            s"or ${ENGINE_HIVE_EXTRA_LIB_DIR} for configuring location of hadoop client jars, etc")
+            s"Please set ${HIVE_HADOOP_CLASSPATH_KEY} or ${ENGINE_HIVE_EXTRA_CLASSPATH.key} for " +
+            s"configuring location of hadoop client jars, etc")
         }
         classpathEntries.add(s"$devHadoopJars${File.separator}*")
       }

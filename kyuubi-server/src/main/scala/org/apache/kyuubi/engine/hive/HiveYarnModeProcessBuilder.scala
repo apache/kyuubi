@@ -25,10 +25,11 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.{KyuubiException, Logging, SCALA_COMPILE_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_LIB_DIR, ENGINE_HIVE_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter._
+import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_HADOOP_CLASSPATH_KEY
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils.{confKeyValue, confKeyValues}
 
@@ -100,18 +101,25 @@ class HiveYarnModeProcessBuilder(
 
     jarEntries.add(s"$hiveHome${File.separator}lib${appendClasspathSuffix(isClasspath)}")
 
-    val extraLibDir = conf.get(ENGINE_HIVE_EXTRA_LIB_DIR)
-    extraLibDir.foreach(libs => jarEntries.add(s"$libs${appendClasspathSuffix(isClasspath)}"))
-
-    if (extraLibDir.isEmpty) {
+    val hadoopCp = env.get(HIVE_HADOOP_CLASSPATH_KEY)
+    val extraCp = conf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
+    // the classpath of the ApplicationMaster is resolved when submit hive engine to YARN.
+    if (isClasspath) {
+      extraCp.foreach(jarEntries.add)
+      hadoopCp.foreach(jarEntries.add)
+    }
+    if (hadoopCp.isEmpty && extraCp.isEmpty) {
+      warn(s"The conf of ${HIVE_HADOOP_CLASSPATH_KEY} and ${ENGINE_HIVE_EXTRA_CLASSPATH.key}" +
+        s" is empty.")
+      debug("Detected development environment")
       mainResource.foreach { path =>
         val devHadoopJars = Paths.get(path).getParent
           .resolve(s"scala-$SCALA_COMPILE_VERSION")
           .resolve("jars")
         if (!Files.exists(devHadoopJars)) {
           throw new KyuubiException(s"The path $devHadoopJars does not exists. " +
-            s"Please set $ENGINE_HIVE_EXTRA_LIB_DIR for configuring location " +
-            s"of hadoop client jars, etc")
+            s"Please set ${HIVE_HADOOP_CLASSPATH_KEY} or ${ENGINE_HIVE_EXTRA_CLASSPATH.key} for " +
+            s"configuring location of hadoop client jars, etc")
         }
         jarEntries.add(s"$devHadoopJars${appendClasspathSuffix(isClasspath)}")
       }

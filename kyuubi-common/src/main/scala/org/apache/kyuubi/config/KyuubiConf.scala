@@ -2695,14 +2695,6 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val ENGINE_HIVE_EXTRA_LIB_DIR: OptionalConfigEntry[String] =
-    buildConf("kyuubi.engine.hive.extra.libDir")
-      .doc("The extra lib directory for the Hive query engine, for configuring location" +
-        " of the hadoop client jars and etc.")
-      .version("1.9.0")
-      .stringConf
-      .createOptional
-
   val ENGINE_HIVE_DEPLOY_MODE: ConfigEntry[String] =
     buildConf("kyuubi.engine.hive.deploy.mode")
       .doc("Configures the hive engine deploy mode, The value can be 'local', 'yarn'. " +

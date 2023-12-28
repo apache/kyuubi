@@ -82,9 +82,14 @@ abstract class EngineYarnModeSubmitter extends Logging {
   var yarnConf: Configuration = _
   var hadoopConf: Configuration = _
 
+  var engineType: String
+
   def engineMainClass(): String
 
-  var engineType: String
+  /**
+   * The extra jars that will be added to the classpath of the engine.
+   */
+  def engineExtraJars(): Seq[File] = Seq.empty
 
   protected def submitApplication(): Unit = {
     yarnConf = KyuubiHadoopUtils.newYarnConfiguration(kyuubiConf)
@@ -195,10 +200,10 @@ abstract class EngineYarnModeSubmitter extends Logging {
       val jars = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_JARS_KEY)
       val putedEntry = new ListBuffer[String]
       jars.get.split(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR).foreach { path =>
-        val jars = Utils.listFilesRecursively(new File(path))
+        val jars = Utils.listFilesRecursively(new File(path)) ++ engineExtraJars()
         jars.foreach { f =>
           if (!putedEntry.contains(f.getName) && f.isFile &&
-              f.getName.toLowerCase(Locale.ROOT).endsWith(".jar") && f.canRead) {
+            f.getName.toLowerCase(Locale.ROOT).endsWith(".jar") && f.canRead) {
             jarsStream.putNextEntry(new ZipEntry(f.getName))
             Files.copy(f.toPath, jarsStream)
             jarsStream.closeEntry()
