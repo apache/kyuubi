@@ -46,7 +46,7 @@ class HiveSQLEngine extends Serverable("HiveSQLEngine") {
     // Start engine self-terminating checker after all services are ready and it can be reached by
     // all servers in engine spaces.
     backendService.sessionManager.startTerminatingChecker(() => {
-      selfExist = true
+      selfExited = true
       stop()
     })
   }
