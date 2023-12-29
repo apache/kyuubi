@@ -22,6 +22,7 @@ import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._
 
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
@@ -356,10 +357,12 @@ trait EngineRefTests extends KyuubiFunSuite {
     DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
       val hp = engine.getOrCreate(client)
       assert(client.getServerHost(engine.engineSpace) == Option(hp))
-      engine.deregister(client, ("non_existing_host", 0))
+      assert(!engine.deregister(client, ("non_existing_host", 0))._1)
       assert(client.getServerHost(engine.engineSpace) == Option(hp))
-      engine.deregister(client, hp)
-      assert(client.getServerHost(engine.engineSpace).isEmpty)
+      assert(engine.deregister(client, hp)._1)
+      eventually(Timeout(10.seconds)) {
+        assert(client.getServerHost(engine.engineSpace).isEmpty)
+      }
     }
   }
 }
