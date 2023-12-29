@@ -15,20 +15,21 @@
  * limitations under the License.
  */
 
-parser grammar KyuubiSqlBaseParser;
+package org.apache.kyuubi.operation.parser
 
-options { tokenVocab = KyuubiSqlBaseLexer; }
+class DescribeEngineSuite extends ExecutedCommandExecSuite {
 
-singleStatement
-    : statement SEMICOLON* EOF
-    ;
+  test("desc/describe kyuubi engine") {
+    Seq("DESC", "DESCRIBE").foreach { desc =>
+      withJdbcStatement() { statement =>
+        val resultSet = statement.executeQuery(s"KYUUBI $desc ENGINE")
+        assert(resultSet.next())
 
-statement
-    : (KYUUBI | KYUUBIADMIN) runnableCommand                        #runnable
-    | .*?                                                           #passThrough
-    ;
-
-runnableCommand
-    : (DESC | DESCRIBE) SESSION                                     #describeSession
-    | (DESC | DESCRIBE) ENGINE                                      #describeEngine
-    ;
+        assert(resultSet.getMetaData.getColumnCount == 3)
+        assert(resultSet.getMetaData.getColumnName(1) == "ENGINE_ID")
+        assert(resultSet.getMetaData.getColumnName(2) == "ENGINE_NAME")
+        assert(resultSet.getMetaData.getColumnName(3) == "ENGINE_URL")
+      }
+    }
+  }
+}

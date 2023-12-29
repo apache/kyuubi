@@ -19,15 +19,17 @@ package org.apache.kyuubi.operation.parser
 
 class DescribeSessionSuite extends ExecutedCommandExecSuite {
 
-  test("desc kyuubi session") {
-    withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("KYUUBI DESC SESSION")
-      assert(resultSet.next())
+  test("desc/describe kyuubi session") {
+    Seq("DESC", "DESCRIBE").foreach { desc =>
+      withJdbcStatement() { statement =>
+        val resultSet = statement.executeQuery(s"KYUUBI $desc SESSION")
+        assert(resultSet.next())
 
-      assert(resultSet.getMetaData.getColumnCount == 3)
-      assert(resultSet.getMetaData.getColumnName(1) == "id")
-      assert(resultSet.getMetaData.getColumnName(2) == "user")
-      assert(resultSet.getMetaData.getColumnName(3) == "type")
+        assert(resultSet.getMetaData.getColumnCount == 3)
+        assert(resultSet.getMetaData.getColumnName(1) == "SESSION_ID")
+        assert(resultSet.getMetaData.getColumnName(2) == "SESSION_USER")
+        assert(resultSet.getMetaData.getColumnName(3) == "SESSION_TYPE")
+      }
     }
   }
 }
