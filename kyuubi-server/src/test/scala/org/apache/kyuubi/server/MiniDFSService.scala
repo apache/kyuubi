@@ -60,7 +60,7 @@ class MiniDFSService(name: String, hdfsConf: Configuration)
       s"NameNode address in configuration is " +
         s"${hdfsConf.get(HdfsClientConfigKeys.DFS_NAMENODE_RPC_ADDRESS_KEY)}")
     super.start()
-    saveHadoopConf()
+    saveHadoopConf(hadoopConfDir)
   }
 
   override def stop(): Unit = {
@@ -68,7 +68,7 @@ class MiniDFSService(name: String, hdfsConf: Configuration)
     super.stop()
   }
 
-  private def saveHadoopConf(): Unit = {
+  def saveHadoopConf(hadoopConfDir: File): Unit = {
     val configToWrite = new Configuration(false)
     val hostName = InetAddress.getLocalHost.getHostName
     hdfsConf.iterator().asScala.foreach { kv =>
