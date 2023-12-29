@@ -45,7 +45,7 @@ object HiveYarnModeSubmitter extends EngineYarnModeSubmitter {
     val jars = new ListBuffer[File]
     hadoopCp.foreach(cp => parseClasspath(cp, jars))
     extraCp.foreach(cp => parseClasspath(cp, jars))
-    jars
+    jars.toSeq
   }
 
   private[hive] def parseClasspath(classpath: String, jars: ListBuffer[File]): Unit = {

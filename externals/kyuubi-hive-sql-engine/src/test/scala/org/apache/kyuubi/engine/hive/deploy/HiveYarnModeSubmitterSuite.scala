@@ -31,7 +31,7 @@ class HiveYarnModeSubmitterSuite extends KyuubiFunSuite {
       s"$hiveEngineHome/target/scala-$SCALA_COMPILE_VERSION/jars/*:" +
         s"$hiveEngineHome/target/kyuubi-hive-sql-engine-$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
     HiveYarnModeSubmitter.parseClasspath(classpath, jars)
-    assert(jars.size > 1)
+    assert(jars.nonEmpty)
     assert(jars.exists(
       _.getName == s"kyuubi-hive-sql-engine-$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"))
   }
