@@ -60,7 +60,7 @@ object ApplicationMaster extends Logging {
       yarnConf = KyuubiHadoopUtils.newYarnConfiguration(kyuubiConf)
       Utils.addShutdownHook(() => {
         if (!unregistered) {
-          if (currentEngine != null && currentEngine.selfExist) {
+          if (currentEngine != null && currentEngine.selfExited) {
             finalMsg = "Kyuubi Application Master is shutting down."
             finalStatus = FinalApplicationStatus.SUCCEEDED
           } else {
