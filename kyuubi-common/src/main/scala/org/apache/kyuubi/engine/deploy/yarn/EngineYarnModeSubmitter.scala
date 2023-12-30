@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.deploy.yarn
 import java.io._
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.security.PrivilegedExceptionAction
 import java.util
 import java.util.{Locale, Properties}
 import java.util.zip.{ZipEntry, ZipOutputStream}
@@ -40,6 +41,7 @@ import org.apache.hadoop.yarn.util.Records
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
@@ -92,6 +94,28 @@ abstract class EngineYarnModeSubmitter extends Logging {
   def engineExtraJars(): Seq[File] = Seq.empty
 
   protected def submitApplication(): Unit = {
+    val user = kyuubiConf.getOption(KYUUBI_SESSION_USER_KEY)
+    if (user.isDefined) {
+      val proxyUser =
+        UserGroupInformation.createProxyUser(user.get, UserGroupInformation.getCurrentUser)
+      try {
+        proxyUser.doAs(new PrivilegedExceptionAction[Unit]() {
+          override def run(): Unit = {
+            submit()
+          }
+        })
+      } catch {
+        case e: Exception =>
+          throw e
+      } finally {
+        FileSystem.closeAllForUGI(proxyUser)
+      }
+    } else {
+      submit()
+    }
+  }
+
+  private def submit(): Unit = {
     yarnConf = KyuubiHadoopUtils.newYarnConfiguration(kyuubiConf)
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
     try {
