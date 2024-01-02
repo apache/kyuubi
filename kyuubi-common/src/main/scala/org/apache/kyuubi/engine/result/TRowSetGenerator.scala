@@ -46,9 +46,9 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
       toRowBasedSet(rows, schema)
     } else {
       if (isExecuteInParallel) {
-        toColumnBasedSet(rows, schema)
-      } else {
         toColumnBasedSetInParallel(rows, schema)
+      } else {
+        toColumnBasedSet(rows, schema)
       }
     }
   }
