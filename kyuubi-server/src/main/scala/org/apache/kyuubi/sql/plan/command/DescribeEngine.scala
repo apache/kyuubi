@@ -25,7 +25,7 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId
 import org.apache.kyuubi.sql.schema.{Column, Row, Schema}
 
 /**
- * A runnable node for description the current session.
+ * A runnable node for description the current session engine.
  *
  * The syntax of using this command in SQL is:
  * {{{
