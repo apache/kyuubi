@@ -117,7 +117,6 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.18</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
-        <scala.parallel-collections.version>1.0.3</scala.parallel-collections.version>
         <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
         <arrow.version>12.0.0</arrow.version>
@@ -325,12 +324,6 @@
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-reflect</artifactId>
                 <version>${scala.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.scala-lang.modules</groupId>
-                <artifactId>scala-parallel-collections_${scala.binary.version}</artifactId>
-                <version>${scala.parallel-collections.version}</version>
             </dependency>
 
             <dependency>
@@ -2187,12 +2180,6 @@
                 <scala.version>2.13.8</scala.version>
                 <spark.archive.scala.suffix>-scala${scala.binary.version}</spark.archive.scala.suffix>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.scala-lang.modules</groupId>
-                    <artifactId>scala-parallel-collections_${scala.binary.version}</artifactId>
-                </dependency>
-            </dependencies>
             <build>
                 <pluginManagement>
                     <plugins>

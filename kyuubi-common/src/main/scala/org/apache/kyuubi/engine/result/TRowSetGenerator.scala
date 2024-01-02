@@ -19,7 +19,8 @@ package org.apache.kyuubi.engine.result
 import java.util.{ArrayList => JArrayList}
 
 import scala.collection.JavaConverters._
-import scala.collection.parallel
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.duration.Duration
 
 import org.apache.kyuubi.engine.result.TRowSetGenerator._
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
@@ -89,11 +90,18 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
   }
 
   def toColumnBasedSetInParallel(rows: Seq[RowT], schema: SchemaT): TRowSet = {
-    val columnIndexPar = (0 until getColumnSizeFromSchemaType(schema)).par
-    columnIndexPar.tasksupport = tColumnParallelGenerator
-    val tColumns = columnIndexPar.map { colIdx =>
-      (colIdx, toTColumn(rows, colIdx, getColumnType(schema, colIdx)))
-    }.toStream.sortBy(_._1).map(_._2).asJava
+    implicit val ec: ExecutionContextExecutor = tColumnParallelGenerator
+
+    val columnIndexSeq = 0 until getColumnSizeFromSchemaType(schema)
+    val tColumnsFutures = columnIndexSeq.map { colIdx =>
+      Future {
+        (colIdx, toTColumn(rows, colIdx, getColumnType(schema, colIdx)))
+      }
+    }
+    val tColumns = Await.result(Future.sequence(tColumnsFutures), Duration.Inf)
+      .sortBy(_._1)
+      .map(_._2)
+      .asJava
     val tRowSet = new TRowSet(0, new JArrayList[TRow](rows.length))
     tRowSet.setColumns(tColumns)
     tRowSet
@@ -101,6 +109,6 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
 }
 
 object TRowSetGenerator {
-  private lazy val tColumnParallelGenerator = new parallel.ForkJoinTaskSupport(
+  private lazy val tColumnParallelGenerator = ExecutionContext.fromExecutor(
     ThreadUtils.newForkJoinPool(prefix = "tcolumn-parallel-generator"))
 }
