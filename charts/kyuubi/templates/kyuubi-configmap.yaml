@@ -24,7 +24,6 @@ metadata:
 data:
   {{- with .Values.kyuubiConf.kyuubiEnv }}
   kyuubi-env.sh: |
-    #!/usr/bin/env bash
     {{- tpl . $ | nindent 4 }}
   {{- end }}
   kyuubi-defaults.conf: |
