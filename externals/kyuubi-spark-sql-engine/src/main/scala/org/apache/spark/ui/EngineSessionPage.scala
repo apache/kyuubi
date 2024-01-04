@@ -151,7 +151,7 @@ case class EngineSessionPage(parent: EngineTab)
       content ++=
         <span id="sqlsessionstat" class="collapse-aggregated-runningSqlstat collapse-table"
               onClick="collapseTable('collapse-aggregated-runningSqlstat',
-									'aggregated-runningSqlstat')">
+              'aggregated-runningSqlstat')">
           <h4>
             <span class="collapse-table-arrow arrow-open"></span>
             <a>Running Statement Statistics</a>
@@ -175,7 +175,7 @@ case class EngineSessionPage(parent: EngineTab)
       content ++=
         <span id="completed" class="collapse-aggregated-completedSqlstat collapse-table"
               onClick="collapseTable('collapse-aggregated-completedSqlstat',
-							'aggregated-completedSqlstat')">
+              'aggregated-completedSqlstat')">
           <h4>
             <span class="collapse-table-arrow arrow-open"></span>
             <a>Completed Statement Statistics (
@@ -201,7 +201,7 @@ case class EngineSessionPage(parent: EngineTab)
       content ++=
         <span id="failed" class="collapse-aggregated-failedSqlstat collapse-table"
               onClick="collapseTable('collapse-aggregated-failedSqlstat',
-							'aggregated-failedSqlstat')">
+              'aggregated-failedSqlstat')">
           <h4>
             <span class="collapse-table-arrow arrow-open"></span>
             <a>Failed Statement Statistics (
