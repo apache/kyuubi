@@ -90,7 +90,7 @@ services:
       - 9090:9090
       - 8123:8123
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
     image: grafana/grafana:${GRAFANA_VERSION}
