@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         profiles:
-          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.5,spark-3.4,spark-3.3,spark-3.2,tpcds,kubernetes-it'
+          - '-Pflink-provided,hive-provided,spark-provided,spark-3.5,spark-3.4,spark-3.3,spark-3.2,tpcds,kubernetes-it'
 
     steps:
       - uses: actions/checkout@v4
@@ -65,7 +65,7 @@ jobs:
         if: steps.modules-check.conclusion == 'success' && steps.modules-check.outcome == 'failure'
         run: |
           MVN_OPT="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip"
-          build/mvn clean install ${MVN_OPT} -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.2,tpcds
+          build/mvn clean install ${MVN_OPT} -Pflink-provided,hive-provided,spark-provided,spark-3.2,tpcds
           build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-1 -Pspark-3.1
           build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-3,extensions/spark/kyuubi-spark-connector-hive -Pspark-3.3
           build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-4 -Pspark-3.4

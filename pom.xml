@@ -2377,13 +2377,6 @@
         </profile>
 
         <profile>
-            <id>spark-block-cleaner</id>
-            <modules>
-                <module>tools/spark-block-cleaner</module>
-            </modules>
-        </profile>
-
-        <profile>
             <id>spotless-python</id>
             <properties>
                 <spotless.python.includes>src/**/*.py</spotless.python.includes>
