@@ -17,6 +17,9 @@
 
 # Kubernetes Tools Spark Block Cleaner
 
+**Note**:
+This tool been removed since Kyuubi 1.9.0.
+
 ## Requirements
 
 You'd better have cognition upon the following things when you want to use spark-block-cleaner.
