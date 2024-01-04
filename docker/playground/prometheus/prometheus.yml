@@ -1,0 +1,4 @@
+scrape_configs:
+  - job_name: kyuubi
+    static_configs:
+    - targets: ['kyuubi:10019']

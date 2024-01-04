@@ -81,3 +81,24 @@ services:
       - metastore
       - minio
       - zookeeper
+
+  prometheus:
+    image: prom/prometheus:${PROMETHEUS_VERSION}
+    container_name: prometheus
+    hostname: prometheus
+    ports:
+      - 9090:9090
+      - 8123:8123
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml
+
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION}
+    container_name: grafana
+    hostname: grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana/datasource/prometheus.yaml:/etc/grafana/provisioning/datasources/prometheus.yaml
+    depends_on:
+    - prometheus
