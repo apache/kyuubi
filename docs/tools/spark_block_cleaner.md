@@ -18,4 +18,4 @@
 # Kubernetes Tools Spark Block Cleaner
 
 **Note**:
-This tool been removed since Kyuubi 1.9.0.
+This tool has been removed since Kyuubi 1.9.0.
