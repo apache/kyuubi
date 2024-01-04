@@ -83,7 +83,8 @@ services:
       - zookeeper
 
   prometheus:
-    image: prom/prometheus:${PROMETHEUS_VERSION}
+    # leave `v` here for match prometheus docker image tag
+    image: prom/prometheus:v${PROMETHEUS_VERSION}
     container_name: prometheus
     hostname: prometheus
     ports:
