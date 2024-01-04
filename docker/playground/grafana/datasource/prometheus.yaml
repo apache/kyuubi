@@ -21,7 +21,8 @@ datasources:
 - name: prometheus
   type: prometheus
   url: http://prometheus:9090
-  isDefault: true
+  orgId: 1
+  isDefault: false
   access: server
   editable: true
   version: 1

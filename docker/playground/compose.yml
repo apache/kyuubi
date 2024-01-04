@@ -94,11 +94,14 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
-    image: grafana/grafana:${GRAFANA_VERSION}
+    image: grafana/grafana-oss:${GRAFANA_VERSION}
     container_name: grafana
     hostname: grafana
     ports:
       - 3000:3000
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
     volumes:
       - ./grafana/datasource/prometheus.yaml:/etc/grafana/provisioning/datasources/prometheus.yaml
     depends_on:
