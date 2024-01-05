@@ -38,7 +38,7 @@ import org.apache.kyuubi.engine.jdbc.JdbcProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
-import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths}
+import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
@@ -336,6 +336,15 @@ private[kyuubi] class EngineRef(
           (false, msg)
       }
     }
+
+  def getServiceNodes(
+      discoveryClient: DiscoveryClient,
+      hostPort: (String, Int)): Seq[ServiceNodeInfo] = {
+    tryWithLock(discoveryClient) {
+      val serviceNodes = discoveryClient.getServiceNodesInfo(engineSpace)
+      serviceNodes.filter { sn => (sn.host, sn.port) == hostPort }
+    }
+  }
 
   def close(): Unit = {
     if (shareLevel == CONNECTION && builder != null) {

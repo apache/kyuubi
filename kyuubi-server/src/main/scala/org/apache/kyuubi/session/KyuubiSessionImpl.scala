@@ -30,6 +30,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KE
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
+import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
@@ -117,6 +118,12 @@ class KyuubiSessionImpl(
 
     runOperation(launchEngineOp)
     engineLastAlive = System.currentTimeMillis()
+  }
+
+  def listZkEngineNodes: Seq[ServiceNodeInfo] = {
+    withDiscoveryClient(sessionConf) { discoveryClient =>
+      engine.getServiceNodes(discoveryClient, _client.engineHostPort)
+    }
   }
 
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit =
