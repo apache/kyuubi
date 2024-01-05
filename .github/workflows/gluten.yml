@@ -99,11 +99,6 @@ jobs:
         with:
           path: gluten/package/target/
           key: gluten_package_${{ steps.date.outputs.date }}
-      - name: Cache Gluten Package
-        uses: actions/cache@v3
-        with:
-          path: gluten/package/target/
-          key: gluten_package
       - name: Setup JDK 8
         uses: actions/setup-java@v4
         with:
