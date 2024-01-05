@@ -42,7 +42,6 @@ case class DescribeEngine() extends RunnableCommand {
         values += client.engineId.getOrElse("")
         values += client.engineName.getOrElse("")
         values += client.engineUrl.getOrElse("")
-        values += nodeInfo.namespace
         values += s"${nodeInfo.host}:${nodeInfo.port}"
         values += nodeInfo.version.getOrElse("")
         values += nodeInfo.attributes.filter(_._1.contains("memory")).mkString(";")
@@ -66,7 +65,6 @@ object DescribeEngine {
       Column("ENGINE_ID", TTypeId.STRING_TYPE, Some("Kyuubi engine identify")),
       Column("ENGINE_NAME", TTypeId.STRING_TYPE, Some("Kyuubi engine name")),
       Column("ENGINE_URL", TTypeId.STRING_TYPE, Some("Kyuubi engine url")),
-      Column("ENGINE_NAMESPACE", TTypeId.STRING_TYPE, Some("Kyuubi engine zk namespace")),
       Column("ENGINE_INSTANCE", TTypeId.STRING_TYPE, Some("Kyuubi engine instance host and port")),
       Column("ENGINE_VERSION", TTypeId.STRING_TYPE, Some("Kyuubi engine version")),
       Column("ENGINE_ATTRIBUTES", TTypeId.STRING_TYPE, Some("Kyuubi engine attributes")))

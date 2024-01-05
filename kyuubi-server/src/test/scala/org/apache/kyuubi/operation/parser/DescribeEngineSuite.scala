@@ -25,14 +25,13 @@ class DescribeEngineSuite extends ExecutedCommandExecSuite {
         val resultSet = statement.executeQuery(s"KYUUBI $desc ENGINE")
         assert(resultSet.next())
 
-        assert(resultSet.getMetaData.getColumnCount == 7)
+        assert(resultSet.getMetaData.getColumnCount == 6)
         assert(resultSet.getMetaData.getColumnName(1) == "ENGINE_ID")
         assert(resultSet.getMetaData.getColumnName(2) == "ENGINE_NAME")
         assert(resultSet.getMetaData.getColumnName(3) == "ENGINE_URL")
-        assert(resultSet.getMetaData.getColumnName(4) == "ENGINE_NAMESPACE")
-        assert(resultSet.getMetaData.getColumnName(5) == "ENGINE_INSTANCE")
-        assert(resultSet.getMetaData.getColumnName(6) == "ENGINE_VERSION")
-        assert(resultSet.getMetaData.getColumnName(7) == "ENGINE_ATTRIBUTES")
+        assert(resultSet.getMetaData.getColumnName(4) == "ENGINE_INSTANCE")
+        assert(resultSet.getMetaData.getColumnName(5) == "ENGINE_VERSION")
+        assert(resultSet.getMetaData.getColumnName(6) == "ENGINE_ATTRIBUTES")
       }
     }
   }
