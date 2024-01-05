@@ -1330,6 +1330,16 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(0)
 
+  val ENGINE_SPARK_MAX_LIFETIME_GRACEFUL_PERIOD: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.spark.max.lifetime.gracefulPeriod")
+      .doc("Graceful period for Spark engine to wait the connections disconnected after reaching" +
+        " the end of life. After the graceful period, all the connections without running" +
+        " operations will be forcibly disconnected. 0 or negative means always waiting the" +
+        " connections disconnected.")
+      .version("1.8.1")
+      .timeConf
+      .createWithDefault(0)
+
   val ENGINE_SPARK_MAX_INITIAL_WAIT: ConfigEntry[Long] =
     buildConf("kyuubi.session.engine.spark.max.initial.wait")
       .doc("Max wait time for the initial connection to Spark engine. The engine will" +
