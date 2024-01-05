@@ -21,7 +21,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 6,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -39,7 +39,10 @@
       "type": "row"
     },
     {
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -92,7 +95,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
@@ -107,7 +110,10 @@
       "type": "stat"
     },
     {
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -133,7 +139,7 @@
               }
             ]
           },
-          "unit": "dateTimeAsIso"
+          "unit": "dtdurationms"
         },
         "overrides": []
       },
@@ -160,167 +166,29 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "process_uptime_seconds{instance=~\"$instance\"}*1000",
+          "expr": "kyuubi_jvm_uptime{instance=~\"$instance\"}",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Update time",
+      "title": "Alive time",
       "type": "stat"
-    },
-    {
-      "datasource": "${KYUUBI_METRIC_DS}",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 100
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 5
-      },
-      "id": 32,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "pluginVersion": "9.5.7",
-      "targets": [
-        {
-          "datasource": "${KYUUBI_METRIC_DS}",
-          "editorMode": "code",
-          "expr": "sum(kyuubi_memory_usage_heap_used{instance=~\"$instance\"}) by (instance) / sum(kyuubi_memory_usage_heap_max{instance=~\"$instance\"}) by (instance) * 100",
-          "legendFormat": "{{instance}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Heap Used",
-      "type": "gauge"
-    },
-    {
-      "datasource": "${KYUUBI_METRIC_DS}",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "index": 0,
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 100
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 5
-      },
-      "id": 55,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "pluginVersion": "9.5.7",
-      "targets": [
-        {
-          "datasource": "${KYUUBI_METRIC_DS}",
-          "editorMode": "code",
-          "expr": "clamp_min(sum(kyuubi_memory_usage_non_heap_used{instance=~\"$instance\"}) by (instance) / sum(kyuubi_memory_usage_non_heap_max{instance=~\"$instance\"}) by (instance),0)",
-          "legendFormat": "{{instance}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Non-Heap Used",
-      "type": "gauge"
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "links": [],
@@ -334,7 +202,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 12
+        "y": 5
       },
       "hiddenSeries": false,
       "id": 56,
@@ -359,7 +227,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -430,7 +298,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -443,7 +314,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 12
+        "y": 5
       },
       "hiddenSeries": false,
       "id": 34,
@@ -468,7 +339,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -493,7 +364,7 @@
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": " kyuubi_memory_usage_total_used",
+          "expr": "kyuubi_memory_usage_total_used",
           "hide": false,
           "legendFormat": "{{instance}}",
           "range": true,
@@ -541,7 +412,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 13
       },
       "id": 60,
       "panels": [],
@@ -549,11 +420,462 @@
       "type": "row"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "id": 32,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": "${KYUUBI_METRIC_DS}",
+          "editorMode": "code",
+          "expr": "kyuubi_memory_usage_heap_used{instance=~\"$instance\"}",
+          "legendFormat": "{{instance}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Heap Used",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "id": 69,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": "${KYUUBI_METRIC_DS}",
+          "editorMode": "code",
+          "expr": "kyuubi_memory_usage_heap_used{instance=~\"$instance\"}",
+          "legendFormat": "{{instance}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Heap Used",
+      "type": "timeseries"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "hiddenSeries": false,
+      "id": 70,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "rightSide": false,
+        "show": true,
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "maxPerRow": 2,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "9.5.2",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeatDirection": "h",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:1328",
+          "alias": "Usage %",
+          "bars": true,
+          "color": "#6d1f62",
+          "legend": false,
+          "lines": false,
+          "yaxis": 2,
+          "zindex": -1
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "datasource": "${KYUUBI_METRIC_DS}",
+          "editorMode": "code",
+          "expr": "sum(kyuubi_gc_PS_MarkSweep_count{instance=~\"${instance}\"})",
+          "hide": false,
+          "legendFormat": "MarkSweep Count",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": "${KYUUBI_METRIC_DS}",
+          "editorMode": "code",
+          "expr": "sum(kyuubi_gc_PS_Scavenge_count{instance=~\"${instance}\"})",
+          "hide": false,
+          "legendFormat": "Scavenge Count",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeRegions": [],
+      "title": "GC Count",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1351",
+          "format": "none",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1352",
+          "format": "none",
+          "label": "",
+          "logBase": 1,
+          "max": "1",
+          "min": "0",
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 21
+      },
+      "hiddenSeries": false,
+      "id": 71,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "sortDesc": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "maxPerRow": 2,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "9.5.2",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeatDirection": "h",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:1328",
+          "alias": "Usage %",
+          "bars": true,
+          "color": "#6d1f62",
+          "legend": false,
+          "lines": false,
+          "yaxis": 2,
+          "zindex": -1
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "datasource": "${KYUUBI_METRIC_DS}",
+          "editorMode": "code",
+          "expr": "sum(kyuubi_gc_PS_MarkSweep_time{instance=~\"${instance}\"})",
+          "hide": false,
+          "legendFormat": "GC MarkSweep Time",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": "${KYUUBI_METRIC_DS}",
+          "editorMode": "code",
+          "expr": "sum(kyuubi_gc_PS_Scavenge_time{instance=~\"${instance}\"})",
+          "hide": false,
+          "legendFormat": "GC Scavenge_ Time",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeRegions": [],
+      "title": "GC Time",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1351",
+          "format": "ms",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1352",
+          "format": "percentunit",
+          "label": "",
+          "logBase": 1,
+          "max": "1",
+          "min": "0",
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -566,7 +888,7 @@
         "h": 10,
         "w": 8,
         "x": 0,
-        "y": 21
+        "y": 31
       },
       "hiddenSeries": false,
       "id": 64,
@@ -591,7 +913,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -615,7 +937,7 @@
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "sum(kyuubi_memory_usage_pools_Par_Eden_Space_used)",
+          "expr": "sum(kyuubi_memory_usage_pools_PS_Eden_Space_used)",
           "hide": false,
           "legendFormat": "Eden Space Used",
           "range": true,
@@ -624,7 +946,7 @@
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "sum(kyuubi_memory_usage_pools_Par_Eden_Space_committed)",
+          "expr": "sum(kyuubi_memory_usage_pools_PS_Eden_Space_committed)",
           "hide": false,
           "legendFormat": "Eden Space Committed",
           "range": true,
@@ -633,7 +955,7 @@
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "sum(kyuubi_memory_usage_pools_Par_Eden_Space_max)",
+          "expr": "sum(kyuubi_memory_usage_pools_PS_Eden_Space_max)",
           "hide": false,
           "legendFormat": "Eden Space Max",
           "range": true,
@@ -680,7 +1002,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -693,7 +1018,7 @@
         "h": 10,
         "w": 8,
         "x": 8,
-        "y": 21
+        "y": 31
       },
       "hiddenSeries": false,
       "id": 61,
@@ -718,7 +1043,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -742,7 +1067,7 @@
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "sum(kyuubi_memory_usage_pools_CMS_Old_Gen_used)",
+          "expr": "sum(kyuubi_memory_usage_pools_PS_Old_Gen_used)",
           "hide": false,
           "legendFormat": "Old Gen Used",
           "range": true,
@@ -751,7 +1076,7 @@
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "sum(kyuubi_memory_usage_pools_CMS_Old_Gen_committed)",
+          "expr": "sum(kyuubi_memory_usage_pools_PS_Old_Gen_committed)",
           "hide": false,
           "legendFormat": "Old Gen Committed",
           "range": true,
@@ -760,7 +1085,7 @@
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "sum(kyuubi_memory_usage_pools_CMS_Old_Gen_max)",
+          "expr": "sum(kyuubi_memory_usage_pools_PS_Old_Gen_max)",
           "hide": false,
           "legendFormat": "Old Gen Max",
           "range": true,
@@ -807,7 +1132,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -820,7 +1148,7 @@
         "h": 10,
         "w": 8,
         "x": 16,
-        "y": 21
+        "y": 31
       },
       "hiddenSeries": false,
       "id": 63,
@@ -845,7 +1173,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -869,7 +1197,7 @@
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "sum(kyuubi_memory_usage_pools_Par_Survivor_Space_used)",
+          "expr": "sum(kyuubi_memory_usage_pools_PS_Survivor_Space_used)",
           "hide": false,
           "legendFormat": "Survivor Space Used",
           "range": true,
@@ -878,7 +1206,7 @@
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "sum(kyuubi_memory_usage_pools_Par_Survivor_Space_committed)",
+          "expr": "sum(kyuubi_memory_usage_pools_PS_Survivor_Space_committed)",
           "hide": false,
           "legendFormat": "Survivor Space Committed",
           "range": true,
@@ -887,7 +1215,7 @@
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "sum(kyuubi_memory_usage_pools_Par_Survivor_Space_max)",
+          "expr": "sum(kyuubi_memory_usage_pools_PS_Survivor_Space_max)",
           "hide": false,
           "legendFormat": "Survivor Space Max",
           "range": true,
@@ -947,7 +1275,7 @@
         "h": 9,
         "w": 8,
         "x": 0,
-        "y": 31
+        "y": 41
       },
       "hiddenSeries": false,
       "id": 62,
@@ -972,7 +1300,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1074,7 +1402,7 @@
         "h": 9,
         "w": 8,
         "x": 8,
-        "y": 31
+        "y": 41
       },
       "hiddenSeries": false,
       "id": 65,
@@ -1099,7 +1427,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1201,7 +1529,7 @@
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 31
+        "y": 41
       },
       "hiddenSeries": false,
       "id": 66,
@@ -1226,7 +1554,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1316,7 +1644,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 50
       },
       "id": 68,
       "panels": [],
@@ -1324,49 +1652,36 @@
       "type": "row"
     },
     {
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "fixedColor": "green",
+            "mode": "fixed"
           },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
-          },
-          "unit": "string"
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 12,
         "x": 0,
-        "y": 41
+        "y": 51
       },
-      "id": 53,
-      "links": [],
-      "maxDataPoints": 100,
+      "id": 74,
       "options": {
         "orientation": "auto",
         "reduceOptions": {
@@ -1379,12 +1694,15 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
+          "exemplar": false,
           "expr": "kyuubi_exec_pool_threads_alive{instance=~\"$instance\"}",
+          "format": "time_series",
+          "instant": false,
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
@@ -1394,49 +1712,36 @@
       "type": "gauge"
     },
     {
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "fixedColor": "green",
+            "mode": "fixed"
           },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
-          },
-          "unit": "string"
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 12,
         "x": 12,
-        "y": 41
+        "y": 51
       },
-      "id": 52,
-      "links": [],
-      "maxDataPoints": 100,
+      "id": 73,
       "options": {
         "orientation": "auto",
         "reduceOptions": {
@@ -1449,12 +1754,15 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
+          "exemplar": false,
           "expr": "kyuubi_exec_pool_threads_active{instance=~\"$instance\"}",
+          "format": "time_series",
+          "instant": false,
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
@@ -1464,41 +1772,15 @@
       "type": "gauge"
     },
     {
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "fixedColor": "green",
+            "mode": "fixed"
           },
           "mappings": [],
           "thresholds": {
@@ -1507,10 +1789,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -1518,42 +1796,65 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
+        "h": 8,
         "w": 12,
         "x": 0,
-        "y": 48
+        "y": 59
       },
-      "id": 43,
+      "id": 41,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
+      "pluginVersion": "9.5.2",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "kyuubi_engine_total\r\n",
-          "legendFormat": "{{instance}}",
+          "exemplar": false,
+          "expr": "sum(kyuubi_connection_opened{instance=~\"${instance}\"})",
+          "format": "time_series",
+          "instant": false,
+          "legendFormat": "Connection Opened",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${KYUUBI_METRIC_DS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(kyuubi_connection_total{instance=~\"${instance}\"})",
+          "hide": false,
+          "legendFormat": "Connection Total",
+          "range": true,
+          "refId": "B"
         }
       ],
-      "title": "Engine Total",
-      "type": "timeseries"
+      "title": "Connection Statistics",
+      "type": "gauge"
     },
     {
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1568,10 +1869,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
+        "h": 8,
         "w": 12,
         "x": 12,
-        "y": 48
+        "y": 59
       },
       "id": 47,
       "options": {
@@ -1586,7 +1887,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "9.5.7",
+      "pluginVersion": "9.5.2",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
@@ -1597,7 +1898,10 @@
           "refId": "A"
         },
         {
-          "datasource": "${KYUUBI_METRIC_DS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${KYUUBI_METRIC_DS}"
+          },
           "editorMode": "code",
           "expr": "sum(kyuubi_operation_state_ExecuteStatement_finished_total)",
           "hide": false,
@@ -1606,24 +1910,25 @@
           "refId": "B"
         },
         {
-          "datasource": "${KYUUBI_METRIC_DS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${KYUUBI_METRIC_DS}"
+          },
           "editorMode": "code",
-          "exemplar": false,
           "expr": "sum(kyuubi_operation_state_ExecuteStatement_error_total)",
-          "format": "time_series",
           "hide": false,
-          "instant": false,
           "legendFormat": "Error",
           "range": true,
           "refId": "C"
         },
         {
-          "datasource": "${KYUUBI_METRIC_DS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${KYUUBI_METRIC_DS}"
+          },
           "editorMode": "code",
-          "exemplar": false,
           "expr": "sum(kyuubi_operation_state_ExecuteStatement_pending_total)",
           "hide": false,
-          "instant": false,
           "legendFormat": "Pending",
           "range": true,
           "refId": "D"
@@ -1633,41 +1938,14 @@
       "type": "gauge"
     },
     {
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
           "thresholds": {
@@ -1690,73 +1968,46 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 57
+        "y": 67
       },
-      "id": 41,
+      "id": 72,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
+      "pluginVersion": "9.5.2",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "exemplar": false,
-          "expr": "kyuubi_connection_opened",
-          "format": "time_series",
-          "instant": false,
+          "expr": "sum(kyuubi_engine_total{instance=~\"${instance}\"})",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Connection Opened",
-      "type": "timeseries"
+      "title": "Engine Created",
+      "type": "gauge"
     },
     {
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "fixedColor": "green",
+            "mode": "fixed"
           },
           "mappings": [],
           "thresholds": {
@@ -1765,10 +2016,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -1779,36 +2026,121 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 57
+        "y": 67
       },
-      "id": 45,
+      "id": 75,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
+      "pluginVersion": "9.5.2",
       "targets": [
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "kyuubi_thrift_binary_connection_total",
+          "expr": "sum(kyuubi_operation_state_LaunchEngine_running_total)",
+          "legendFormat": "Running",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${KYUUBI_METRIC_DS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(kyuubi_operation_state_LaunchEngine_finished_total)",
+          "hide": false,
+          "legendFormat": "Finished",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${KYUUBI_METRIC_DS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(kyuubi_operation_state_LaunchEngine_pending_total)",
+          "hide": false,
+          "legendFormat": "Pending",
+          "range": true,
+          "refId": "D"
+        }
+      ],
+      "title": "Launch Engine Statistics",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 75
+      },
+      "id": 45,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": "${KYUUBI_METRIC_DS}",
+          "editorMode": "code",
+          "expr": "sum(kyuubi_rest_connection_opened{instance=~\"${instance}\"})",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Thrift Binary Connection",
-      "type": "timeseries"
+      "title": "Rest Connection Opened",
+      "type": "gauge"
     },
     {
-      "datasource": "${KYUUBI_METRIC_DS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${KYUUBI_METRIC_DS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1864,8 +2196,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 65
+        "x": 12,
+        "y": 75
       },
       "id": 49,
       "options": {
@@ -1902,14 +2234,14 @@
         {
           "datasource": "${KYUUBI_METRIC_DS}",
           "editorMode": "code",
-          "expr": "sum(kyuubi_thread_state_waiting_count)\r\n",
+          "expr": "sum(kyuubi_thread_state_waiting_count)",
           "hide": false,
           "legendFormat": "Waiting",
           "range": true,
           "refId": "C"
         }
       ],
-      "title": "Threads",
+      "title": "Thread Status",
       "type": "timeseries"
     }
   ],
@@ -1922,7 +2254,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Prometheus",
           "value": "Prometheus"
         },
@@ -1995,6 +2327,6 @@
   "timezone": "",
   "title": "Kyuubi",
   "uid": "S43WG_yVk",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }

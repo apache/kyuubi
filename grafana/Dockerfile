@@ -16,8 +16,13 @@
 #
 
 FROM grafana/grafana:9.5.7
+
 ARG PROMETHEUS_URL_ARG
+
 ENV PROMETHEUS_URL=$PROMETHEUS_URL_ARG
+
 COPY ./dashboard.yml /etc/grafana/provisioning/dashboards/
+
 COPY ./datasource.yml  /etc/grafana/provisioning/datasources/
+
 COPY ./*.json /var/lib/grafana/dashboards/
