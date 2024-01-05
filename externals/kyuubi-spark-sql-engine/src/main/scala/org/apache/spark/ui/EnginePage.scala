@@ -71,8 +71,12 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         {onlineSession.size} session(s) are online,
         running {runningSqlStat.size} operation(s)
       </h4> ++
-        generateSessionStatsTable(request, onlineSession, closedSession) ++
-        generateStatementStatsTable(request, runningSqlStat, completedSqlStat, failedSqlStat)
+        generateSessionStatsTable(request, onlineSession.toSeq, closedSession.toSeq) ++
+        generateStatementStatsTable(
+          request,
+          runningSqlStat.toSeq,
+          completedSqlStat.toSeq,
+          failedSqlStat.toSeq)
     UIUtils.headerSparkPage(request, parent.name, content, parent)
   }
 
@@ -252,7 +256,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         data,
         "kyuubi",
         UIUtils.prependBaseUri(request, parent.basePath),
-        sqlTableTag).table(sqlTablePage)
+        s"${sqlTableTag}-table").table(sqlTablePage)
     } catch {
       case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
         <div class="alert alert-error">
@@ -335,7 +339,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         data,
         "kyuubi",
         UIUtils.prependBaseUri(request, parent.basePath),
-        sessionTage).table(sessionPage)
+        s"${sessionTage}-table").table(sessionPage)
     } catch {
       case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
         <div class="alert alert-error">

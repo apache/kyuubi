@@ -143,6 +143,9 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
       // check sql stats table title
       assert(resp.contains("Query Details"))
+      while (true) {
+        Thread.sleep(1000000)
+      }
     }
     response = client.execute(req)
     assert(response.getStatusLine.getStatusCode === 200)

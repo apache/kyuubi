@@ -147,7 +147,7 @@ case class EngineSessionPage(parent: EngineTab)
     val content = mutable.ListBuffer[Node]()
     if (running.nonEmpty) {
       val sqlTableTag = "running"
-      val table = statementStatsTable(request, sqlTableTag, parent, running)
+      val table = statementStatsTable(request, sqlTableTag, parent, running.toSeq)
       content ++=
         <span id="sqlsessionstat" class="collapse-aggregated-runningSqlstat collapse-table"
               onClick="collapseTable('collapse-aggregated-runningSqlstat',
@@ -164,12 +164,12 @@ case class EngineSessionPage(parent: EngineTab)
 
     if (completed.nonEmpty) {
       val table = {
-        val sessionTableTag = "completed"
+        val sqlTableTag = "completed"
         statementStatsTable(
           request,
-          sessionTableTag,
+          sqlTableTag,
           parent,
-          completed)
+          completed.toSeq)
       }
 
       content ++=
@@ -190,12 +190,12 @@ case class EngineSessionPage(parent: EngineTab)
 
     if (failed.nonEmpty) {
       val table = {
-        val sessionTableTag = "failed"
+        val sqlTableTag = "failed"
         statementStatsTable(
           request,
-          sessionTableTag,
+          sqlTableTag,
           parent,
-          failed)
+          failed.toSeq)
       }
 
       content ++=
@@ -232,7 +232,7 @@ case class EngineSessionPage(parent: EngineTab)
         data,
         "kyuubi/session",
         UIUtils.prependBaseUri(request, parent.basePath),
-        sqlTableTag).table(sqlTablePage)
+        s"${sqlTableTag}").table(sqlTablePage)
     } catch {
       case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
         <div class="alert alert-error">
