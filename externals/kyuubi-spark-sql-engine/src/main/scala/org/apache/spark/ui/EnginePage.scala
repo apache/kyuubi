@@ -188,10 +188,10 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 
     if (completed.nonEmpty) {
       val table = {
-        val sessionTableTag = "completed"
+        val sqlTableTag = "completed"
         statementStatsTable(
           request,
-          sessionTableTag,
+          sqlTableTag,
           parent,
           completed)
       }
@@ -214,10 +214,10 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 
     if (failed.nonEmpty) {
       val table = {
-        val sessionTableTag = "failed"
+        val sqlTableTag = "failed"
         statementStatsTable(
           request,
-          sessionTableTag,
+          sqlTableTag,
           parent,
           failed)
       }

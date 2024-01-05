@@ -149,7 +149,7 @@ case class EngineSessionPage(parent: EngineTab)
       val sqlTableTag = "running"
       val table = statementStatsTable(request, sqlTableTag, parent, running.toSeq)
       content ++=
-        <span id="sqlsessionstat" class="collapse-aggregated-runningSqlstat collapse-table"
+        <span id="running" class="collapse-aggregated-runningSqlstat collapse-table"
               onClick="collapseTable('collapse-aggregated-runningSqlstat',
               'aggregated-runningSqlstat')">
           <h4>
