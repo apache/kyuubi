@@ -861,7 +861,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         && !hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB)
         && (AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
                 sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE))
-            || isHadoopUserGroupInformationDoAs());
+            || (!AUTH_KERBEROS_AUTH_TYPE_FROM_TICKET_CACHE.equalsIgnoreCase(
+                    sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE))
+                && isHadoopUserGroupInformationDoAs()));
   }
 
   private boolean isTgtCacheAuthMode() {
