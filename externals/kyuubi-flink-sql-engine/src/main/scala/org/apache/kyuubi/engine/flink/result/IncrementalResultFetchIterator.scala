@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.flink.result
 
 import java.util
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, TimeoutException}
 
 import scala.collection.convert.ImplicitConversions._
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
@@ -125,7 +125,16 @@ class IncrementalResultFetchIterator(
         Thread.sleep(FETCH_INTERVAL_MS)
       }
     })
-    Await.result(future, resultFetchTimeout)
+    try {
+      Await.result(future, resultFetchTimeout)
+    } catch {
+      case e: TimeoutException =>
+        if (bufferedRows.nonEmpty) {
+          hasNext = false
+        } else {
+          throw e
+        }
+    }
   }
 
   /**
