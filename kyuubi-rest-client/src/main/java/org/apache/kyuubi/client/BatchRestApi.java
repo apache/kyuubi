@@ -19,6 +19,7 @@ package org.apache.kyuubi.client;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.kyuubi.client.api.v1.dto.*;
 import org.apache.kyuubi.client.util.JsonUtils;
@@ -50,6 +51,20 @@ public class BatchRestApi {
     Map<String, MultiPart> multiPartMap = new HashMap<>();
     multiPartMap.put("batchRequest", new MultiPart(MultiPart.MultiPartType.JSON, request));
     multiPartMap.put("resourceFile", new MultiPart(MultiPart.MultiPartType.FILE, resourceFile));
+    return this.getClient().post(API_BASE_PATH, multiPartMap, Batch.class, client.getAuthHeader());
+  }
+
+  public Batch createBatchWithSubResources(
+      BatchRequest request, File resourceFile, List<String> subResources) {
+    setClientVersion(request);
+    Map<String, MultiPart> multiPartMap = new HashMap<>();
+    multiPartMap.put("batchRequest", new MultiPart(MultiPart.MultiPartType.JSON, request));
+    multiPartMap.put("resourceFile", new MultiPart(MultiPart.MultiPartType.FILE, resourceFile));
+    for (String path : subResources) {
+      File file = new File(path);
+      String fileName = file.getName();
+      multiPartMap.put(fileName, new MultiPart(MultiPart.MultiPartType.FILE, file));
+    }
     return this.getClient().post(API_BASE_PATH, multiPartMap, Batch.class, client.getAuthHeader());
   }
 

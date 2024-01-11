@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
+import org.glassfish.jersey.media.multipart.{FormDataContentDisposition, FormDataMultiPart, FormDataParam}
 import org.glassfish.jersey.media.multipart.{FormDataContentDisposition, FormDataParam}
 
 import org.apache.kyuubi.{Logging, Utils}
@@ -190,7 +191,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   def openBatchSessionWithUpload(
       @FormDataParam("batchRequest") batchRequest: BatchRequest,
       @FormDataParam("resourceFile") resourceFileInputStream: InputStream,
-      @FormDataParam("resourceFile") resourceFileMetadata: FormDataContentDisposition): Batch = {
+      @FormDataParam("resourceFile") resourceFileMetadata: FormDataContentDisposition,
+      multiPart: FormDataMultiPart): Batch = {
     require(
       fe.getConf.get(BATCH_RESOURCE_UPLOAD_ENABLED),
       "Batch resource upload function is disabled.")
@@ -203,6 +205,20 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       KyuubiApplicationManager.uploadWorkDir,
       resourceFileMetadata.getFileName)
     batchRequest.setResource(tempFile.getPath)
+
+    val subresoucesMap = batchRequest.getSubresourcesMap
+    val transformedSubMap = subresoucesMap.entrySet().asScala.map { a =>
+      val targetConfKey = a.getKey
+      val subresourceFileName = a.getValue
+      val filePart = multiPart.getField(subresourceFileName)
+      val subresourceFile = Utils.writeToTempFile(
+        filePart.getValueAs(classOf[InputStream]),
+        KyuubiApplicationManager.uploadWorkDir,
+        filePart.getContentDisposition.getFileName)
+      (targetConfKey, subresourceFile.getPath)
+    }.toMap.asJava
+    batchRequest.setTransformedSubresourcesMap(transformedSubMap)
+
     openBatchSessionInternal(batchRequest, isResourceFromUpload = true)
   }
 

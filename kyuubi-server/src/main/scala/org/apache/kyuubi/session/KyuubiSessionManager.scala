@@ -149,7 +149,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       className: String,
       batchArgs: Seq[String],
       metadata: Option[Metadata] = None,
-      fromRecovery: Boolean): KyuubiBatchSession = {
+      fromRecovery: Boolean,
+      subResources: Map[String, String]): KyuubiBatchSession = {
     // scalastyle:on
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     val sessionConf = this.getConf.getUserDefaults(user)
@@ -166,7 +167,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       className,
       batchArgs,
       metadata,
-      fromRecovery)
+      fromRecovery,
+      subResources)
   }
 
   private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSession): SessionHandle = {
@@ -215,7 +217,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       batchRequest.getClassName,
       batchRequest.getArgs.asScala.toSeq,
       None,
-      fromRecovery = false)
+      fromRecovery = false,
+      subResources = batchRequest.getTransformedSubresourcesMap.asScala.toMap)
     openBatchSession(batchSession)
   }
 
@@ -314,7 +317,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           metadata.className,
           metadata.requestArgs,
           Some(metadata),
-          fromRecovery = true)
+          fromRecovery = true,
+          // todo: subResources
+          subResources = Map.empty[String, String])
       }).getOrElse(Seq.empty)
     }
   }

@@ -32,6 +32,10 @@ public class BatchRequest {
   private Map<String, String> conf = Collections.emptyMap();
   private List<String> args = Collections.emptyList();
 
+  private Map<String, String> subresourcesMap = Collections.emptyMap();
+
+  private Map<String, String> transformedSubresourcesMap = Collections.emptyMap();
+
   public BatchRequest() {}
 
   public BatchRequest(
@@ -110,6 +114,22 @@ public class BatchRequest {
     this.args = args;
   }
 
+  public Map<String, String> getSubresourcesMap() {
+    return subresourcesMap;
+  }
+
+  public void setSubresourcesMap(Map<String, String> subresourcesMap) {
+    this.subresourcesMap = subresourcesMap;
+  }
+
+  public Map<String, String> getTransformedSubresourcesMap() {
+    return transformedSubresourcesMap;
+  }
+
+  public void setTransformedSubresourcesMap(Map<String, String> transformedSubresourcesMap) {
+    this.transformedSubresourcesMap = transformedSubresourcesMap;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -120,13 +140,20 @@ public class BatchRequest {
         && Objects.equals(getClassName(), that.getClassName())
         && Objects.equals(getName(), that.getName())
         && Objects.equals(getConf(), that.getConf())
-        && Objects.equals(getArgs(), that.getArgs());
+        && Objects.equals(getArgs(), that.getArgs())
+        && Objects.equals(getSubresourcesMap(), that.getSubresourcesMap());
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        getBatchType(), getResource(), getClassName(), getName(), getConf(), getArgs());
+        getBatchType(),
+        getResource(),
+        getClassName(),
+        getName(),
+        getConf(),
+        getArgs(),
+        getSubresourcesMap());
   }
 
   @Override

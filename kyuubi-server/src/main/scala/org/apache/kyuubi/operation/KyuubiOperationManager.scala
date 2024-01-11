@@ -80,7 +80,8 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       className: String,
       batchConf: Map[String, String],
       batchArgs: Seq[String],
-      metadata: Option[Metadata]): BatchJobSubmission = {
+      metadata: Option[Metadata],
+      subResources: Map[String, String]): BatchJobSubmission = {
     val operation = new BatchJobSubmission(
       session,
       batchType,
@@ -89,7 +90,8 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       className,
       batchConf,
       batchArgs,
-      metadata)
+      metadata,
+      subResources)
     addOperation(operation)
     operation
   }

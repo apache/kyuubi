@@ -81,7 +81,8 @@ case class Metadata(
     // keep consistent with table creation DDL
     // find why we set 10 as default in KYUUBI #5329
     priority: Int = 10,
-    peerInstanceClosed: Boolean = false) {
+    peerInstanceClosed: Boolean = false,
+    subResources: Map[String, String] = Map.empty) {
   def appMgrInfo: ApplicationManagerInfo = {
     ApplicationManagerInfo(
       clusterManager,

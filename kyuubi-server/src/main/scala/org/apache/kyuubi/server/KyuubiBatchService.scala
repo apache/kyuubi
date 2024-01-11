@@ -83,7 +83,9 @@ class KyuubiBatchService(
               metadata.className,
               metadata.requestArgs,
               Some(metadata),
-              fromRecovery = false)
+              fromRecovery = false,
+              // todo: subResources
+              subResources = metadata.subResources)
             sessionManager.openBatchSession(batchSession)
             var submitted = false
             while (!submitted) { // block until batch job submitted
