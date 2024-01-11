@@ -300,7 +300,12 @@ object SparkDatasetHelper extends Logging {
       return false
     }
     lazy val limit = result.queryExecution.executedPlan match {
-      case collectLimit: CollectLimitExec => collectLimit.limit
+      case collectLimit: CollectLimitExec =>
+        if (resultMaxRows > 0) {
+          math.min(resultMaxRows, collectLimit.limit)
+        } else {
+          collectLimit.limit
+        }
       case _ => resultMaxRows
     }
     lazy val stats = if (limit > 0) {
