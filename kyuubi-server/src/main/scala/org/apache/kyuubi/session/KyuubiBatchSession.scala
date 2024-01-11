@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.nio.file.Path
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.client.util.BatchUtils._
@@ -26,6 +28,7 @@ import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.operation.OperationState
+import org.apache.kyuubi.server.api.v1.BatchesResource
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.SessionType.SessionType
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
@@ -79,6 +82,9 @@ class KyuubiBatchSession(
   override val normalizedConf: Map[String, String] =
     sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(conf)
 
+  private[kyuubi] def resourceUploadFolderPath: Path =
+    BatchesResource.batchResourceUploadFolderPath(batchJobSubmissionOp.batchId)
+
   val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
@@ -101,8 +107,8 @@ class KyuubiBatchSession(
     batchName.filterNot(_.trim.isEmpty).orElse(optimizedConf.get(KyuubiConf.SESSION_NAME.key))
 
   // whether the resource file is from uploading
-  private[kyuubi] val isResourceUploaded: Boolean =
-    conf.getOrElse(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
+  private[kyuubi] lazy val isResourceUploaded: Boolean =
+    conf.getOrElse(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, false.toString).toBoolean
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(

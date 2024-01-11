@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.io.InputStream
+import java.nio.file.{Path => JPath}
 import java.util
 import java.util.{Collections, Locale, UUID}
 import java.util.concurrent.ConcurrentHashMap
@@ -32,7 +33,7 @@ import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
-import org.glassfish.jersey.media.multipart.{FormDataContentDisposition, FormDataParam}
+import org.glassfish.jersey.media.multipart.{FormDataContentDisposition, FormDataMultiPart, FormDataParam}
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
@@ -190,7 +191,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   def openBatchSessionWithUpload(
       @FormDataParam("batchRequest") batchRequest: BatchRequest,
       @FormDataParam("resourceFile") resourceFileInputStream: InputStream,
-      @FormDataParam("resourceFile") resourceFileMetadata: FormDataContentDisposition): Batch = {
+      @FormDataParam("resourceFile") resourceFileMetadata: FormDataContentDisposition,
+      formDataMultiPart: FormDataMultiPart): Batch = {
     require(
       fe.getConf.get(BATCH_RESOURCE_UPLOAD_ENABLED),
       "Batch resource upload function is disabled.")
@@ -198,12 +200,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       batchRequest != null,
       "batchRequest is required and please check the content type" +
         " of batchRequest is application/json")
-    val tempFile = Utils.writeToTempFile(
-      resourceFileInputStream,
-      KyuubiApplicationManager.uploadWorkDir,
-      resourceFileMetadata.getFileName)
-    batchRequest.setResource(tempFile.getPath)
-    openBatchSessionInternal(batchRequest, isResourceFromUpload = true)
+    openBatchSessionInternal(
+      batchRequest,
+      isResourceFromUpload = true,
+      resourceFileInputStream = Some(resourceFileInputStream),
+      resourceFileMetadata = Some(resourceFileMetadata),
+      formDataMultiPartOpt = Some(formDataMultiPart))
   }
 
   /**
@@ -215,7 +217,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
    */
   private def openBatchSessionInternal(
       request: BatchRequest,
-      isResourceFromUpload: Boolean = false): Batch = {
+      isResourceFromUpload: Boolean = false,
+      resourceFileInputStream: Option[InputStream] = None,
+      resourceFileMetadata: Option[FormDataContentDisposition] = None,
+      formDataMultiPartOpt: Option[FormDataMultiPart] = None): Batch = {
     require(
       supportedBatchType(request.getBatchType),
       s"${request.getBatchType} is not in the supported list: $SUPPORTED_BATCH_TYPES}")
@@ -243,6 +248,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         markDuplicated(batch)
       case None =>
         val batchId = userProvidedBatchId.getOrElse(UUID.randomUUID().toString)
+        if (isResourceFromUpload) {
+          handleUploadingFiles(
+            batchId,
+            request,
+            resourceFileInputStream.get,
+            resourceFileMetadata.get.getFileName,
+            formDataMultiPartOpt)
+        }
         request.setConf(
           (request.getConf.asScala ++ Map(
             KYUUBI_BATCH_ID_KEY -> batchId,
@@ -525,22 +538,104 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       }
     }
   }
+
+  private def handleUploadingFiles(
+      batchId: String,
+      request: BatchRequest,
+      resourceFileInputStream: InputStream,
+      resourceFileName: String,
+      formDataMultiPartOpt: Option[FormDataMultiPart]): Option[JPath] = {
+    val uploadFileFolderPath = batchResourceUploadFolderPath(batchId)
+    handleUploadingResourceFile(
+      request,
+      resourceFileInputStream,
+      resourceFileName,
+      uploadFileFolderPath)
+    handleUploadingExtraResourcesFiles(request, formDataMultiPartOpt, uploadFileFolderPath)
+    Some(uploadFileFolderPath)
+  }
+
+  private def handleUploadingResourceFile(
+      request: BatchRequest,
+      inputStream: InputStream,
+      fileName: String,
+      uploadFileFolderPath: JPath): Unit = {
+    try {
+      val tempFile = Utils.writeToTempFile(inputStream, uploadFileFolderPath, fileName)
+      request.setResource(tempFile.getPath)
+    } catch {
+      case e: Exception =>
+        throw new RuntimeException(
+          s"Failed handling uploaded resource file $fileName: ${e.getMessage}",
+          e)
+    }
+  }
+
+  private def handleUploadingExtraResourcesFiles(
+      request: BatchRequest,
+      formDataMultiPartOpt: Option[FormDataMultiPart],
+      uploadFileFolderPath: JPath): Unit = {
+    val extraResourceMap = request.getExtraResourcesMap.asScala
+    if (extraResourceMap.nonEmpty) {
+      val fileNameSeparator = ","
+      val formDataMultiPart = formDataMultiPartOpt.get
+      val transformedExtraResourcesMap = extraResourceMap
+        .mapValues(confValue =>
+          confValue.split(fileNameSeparator).filter(StringUtils.isNotBlank(_)))
+        .filter { case (confKey, fileNames) =>
+          fileNames.nonEmpty && StringUtils.isNotBlank(confKey)
+        }.mapValues { fileNames =>
+          fileNames.map(fileName =>
+            Option(formDataMultiPart.getField(fileName))
+              .getOrElse(throw new RuntimeException(s"File part for file $fileName not found")))
+        }.map {
+          case (confKey, fileParts) =>
+            val tempFilePaths = fileParts.map { filePart =>
+              val fileName = filePart.getContentDisposition.getFileName
+              try {
+                Utils.writeToTempFile(
+                  filePart.getValueAs(classOf[InputStream]),
+                  uploadFileFolderPath,
+                  fileName).getPath
+              } catch {
+                case e: Exception =>
+                  throw new RuntimeException(
+                    s"Failed handling uploaded extra resource file $fileName: ${e.getMessage}",
+                    e)
+              }
+            }
+            (confKey, tempFilePaths.mkString(fileNameSeparator))
+        }
+
+      val conf = request.getConf
+      transformedExtraResourcesMap.foreach { case (confKey, tempFilePathStr) =>
+        conf.get(confKey) match {
+          case confValue: String if StringUtils.isNotBlank(confValue) =>
+            conf.put(confKey, List(confValue.trim, tempFilePathStr).mkString(fileNameSeparator))
+          case _ => conf.put(confKey, tempFilePathStr)
+        }
+      }
+    }
+  }
 }
 
 object BatchesResource {
-  val SUPPORTED_BATCH_TYPES = Seq("SPARK", "PYSPARK")
-  val VALID_BATCH_STATES = Seq(
+  private lazy val SUPPORTED_BATCH_TYPES = Set("SPARK", "PYSPARK")
+  private lazy val VALID_BATCH_STATES = Set(
     OperationState.PENDING,
     OperationState.RUNNING,
     OperationState.FINISHED,
     OperationState.ERROR,
     OperationState.CANCELED).map(_.toString)
 
-  def supportedBatchType(batchType: String): Boolean = {
+  private def supportedBatchType(batchType: String): Boolean = {
     Option(batchType).exists(bt => SUPPORTED_BATCH_TYPES.contains(bt.toUpperCase(Locale.ROOT)))
   }
 
-  def validBatchState(batchState: String): Boolean = {
+  private def validBatchState(batchState: String): Boolean = {
     Option(batchState).exists(bt => VALID_BATCH_STATES.contains(bt.toUpperCase(Locale.ROOT)))
   }
+
+  def batchResourceUploadFolderPath(batchId: String): JPath =
+    KyuubiApplicationManager.uploadWorkDir.resolve(s"batch-$batchId")
 }
