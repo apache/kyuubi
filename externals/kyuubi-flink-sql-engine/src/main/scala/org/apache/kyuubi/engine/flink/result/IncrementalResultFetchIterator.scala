@@ -130,6 +130,7 @@ class IncrementalResultFetchIterator(
     } catch {
       case e: TimeoutException =>
         if (bufferedRows.nonEmpty) {
+          debug(s"Timeout fetching more data,Returning the current fetched data.")
           hasNext = false
         } else {
           throw e

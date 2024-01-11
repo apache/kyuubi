@@ -1287,23 +1287,18 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       ENGINE_FLINK_MAX_ROWS.key -> "10",
       ENGINE_FLINK_FETCH_TIMEOUT.key -> "PT5S"))(Map.empty) {
       withJdbcStatement() { statement =>
-        // bounded data : only have one rows.
-        statement.execute("create table tbl_src_a (a bigint) with (" +
-          "'connector' = 'datagen', 'rows-per-second' = '1','number-of-rows' = '1')")
         // unbounded data.
         statement.execute("create table tbl_src_b (a bigint) with (" +
           "'connector' = 'datagen', 'rows-per-second' = '0')")
 
-        // unbounded data view, just like query from kafka,but it have only one rows.
-        statement.execute("create view v1 as " +
-          "select a from tbl_src_a union all select a from tbl_src_b")
-
-        // we shoud also return the only one rows before we cancel the query job
-        val resultSet = statement.executeQuery(s"select a from v1")
+        // unbounded data query, just like query from kafka,but it have only one rows.
+        val resultSet = statement.executeQuery(
+          s"select  cast(1 as bigint) as a union all select a from tbl_src_b")
         var rows = 0
         while (resultSet.next()) {
           rows += 1
         }
+        // we shoud also return the only one rows before we cancel the query job
         assert(rows === 1)
       }
     }
