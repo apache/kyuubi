@@ -3248,4 +3248,13 @@ object KyuubiConf {
       .version("1.8.1")
       .booleanConf
       .createWithDefault(false)
+
+  val BATCH_INFORMATION_RESPONSE_MODEL: ConfigEntry[String] =
+    buildConf("kyuubi.batch.information.response.model")
+      .doc("When get batch object by ID use compact or fat model." +
+        "When use fat model will return additional information. for example the request args.")
+      .version("1.8.1")
+      .stringConf
+      .createWithDefault("compact")
+
 }
