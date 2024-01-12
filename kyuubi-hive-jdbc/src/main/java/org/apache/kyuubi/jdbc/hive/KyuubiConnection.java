@@ -847,30 +847,59 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
   }
 
+  private boolean isForciblyFromKeytabAuthMode() {
+    return AUTH_KERBEROS_AUTH_TYPE_FROM_KEYTAB.equalsIgnoreCase(
+        sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE));
+  }
+
+  private boolean isForciblyFromSubjectAuthMode() {
+    return AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
+        sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE));
+  }
+
+  private boolean isForciblyTgtCacheAuthMode() {
+    return AUTH_KERBEROS_AUTH_TYPE_FROM_TICKET_CACHE.equalsIgnoreCase(
+        sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE));
+  }
+
   private boolean isKeytabAuthMode() {
-    return isSaslAuthMode()
-        && hasSessionValue(AUTH_PRINCIPAL)
+    // handle explicit cases first
+    if (isForciblyFromSubjectAuthMode() || isForciblyTgtCacheAuthMode()) {
+      return false;
+    }
+    if (isKerberosAuthMode() && isForciblyFromKeytabAuthMode()) {
+      return true;
+    }
+    // handle implicit cases then
+    return isKerberosAuthMode()
         && hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
         && hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB);
   }
 
   private boolean isFromSubjectAuthMode() {
-    return isSaslAuthMode()
-        && hasSessionValue(AUTH_PRINCIPAL)
-        && !hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
+    // handle explicit cases first
+    if (isForciblyFromKeytabAuthMode() || isForciblyTgtCacheAuthMode()) {
+      return false;
+    }
+    if (isKerberosAuthMode() && isForciblyFromSubjectAuthMode()) {
+      return true;
+    }
+    // handle implicit cases then
+    return isKerberosAuthMode()
         && !hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB)
-        && (AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
-                sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE))
-            || (!AUTH_KERBEROS_AUTH_TYPE_FROM_TICKET_CACHE.equalsIgnoreCase(
-                    sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE))
-                && isHadoopUserGroupInformationDoAs()));
+        && isHadoopUserGroupInformationDoAs();
   }
 
   private boolean isTgtCacheAuthMode() {
-    return isSaslAuthMode()
-        && hasSessionValue(AUTH_PRINCIPAL)
-        && !hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
-        && !hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB);
+    // handle explicit cases first
+    if (isForciblyFromKeytabAuthMode() || isForciblyFromSubjectAuthMode()) {
+      return false;
+    }
+    if (isKerberosAuthMode() && isForciblyTgtCacheAuthMode()) {
+      return true;
+    }
+    // handle implicit cases then
+    return isKerberosAuthMode() && !hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB);
   }
 
   private boolean isPlainSaslAuthMode() {
