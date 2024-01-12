@@ -25,8 +25,9 @@ import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
-import org.apache.spark.sql.execution.{CollectLimitExec, HiveResult, LocalTableScanExec, SparkPlan, SQLExecution, TakeOrderedAndProjectExec}
+import org.apache.spark.sql.execution.{CollectLimitExec, HiveResult, LocalTableScanExec, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.metric.{SQLMetric, SQLMetrics}
@@ -294,10 +295,8 @@ object SparkDatasetHelper extends Logging {
     SQLMetrics.postDriverMetricUpdates(sc, executionId, metrics.values.toSeq)
   }
 
-  private[kyuubi] def planLimit(plan: SparkPlan): Option[Int] = plan match {
-    case tp: TakeOrderedAndProjectExec => Option(tp.limit)
-    case c: CollectLimitExec => Option(c.limit)
-    case ap: AdaptiveSparkPlanExec => planLimit(ap.inputPlan)
+  private[kyuubi] def logicalPlanLimit(plan: LogicalPlan): Option[Long] = plan match {
+    case globalLimit: GlobalLimit => globalLimit.maxRows
     case _ => None
   }
 
@@ -305,7 +304,7 @@ object SparkDatasetHelper extends Logging {
     if (isCommandExec(result.queryExecution.executedPlan.nodeName)) {
       return false
     }
-    val limit = planLimit(result.queryExecution.executedPlan) match {
+    val limit = logicalPlanLimit(result.queryExecution.logical) match {
       case Some(limit) if resultMaxRows > 0 => math.min(limit, resultMaxRows)
       case Some(limit) => limit
       case None => resultMaxRows
