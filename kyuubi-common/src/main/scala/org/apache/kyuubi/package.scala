@@ -18,6 +18,7 @@
 package org.apache
 
 import java.util.Properties
+
 import scala.util.Try
 
 package object kyuubi {
