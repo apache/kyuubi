@@ -57,6 +57,9 @@ class TrinoSessionImpl(
   private val username: String = sessionConf
     .getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY).getOrElse(currentUser)
 
+  private val trinoUser: String = sessionConf
+    .get(KyuubiConf.ENGINE_TRINO_CONNECTION_USER).getOrElse(username)
+
   var trinoContext: TrinoContext = _
   private var clientSession: ClientSession = _
   private var catalogName: String = _
@@ -133,7 +136,7 @@ class TrinoSessionImpl(
       require(
         serverScheme.equalsIgnoreCase("https"),
         "Trino engine using username/password requires HTTPS to be enabled")
-      builder.addInterceptor(OkHttpUtil.basicAuth(username, password))
+      builder.addInterceptor(OkHttpUtil.basicAuth(trinoUser, password))
     }
 
     builder.build()
