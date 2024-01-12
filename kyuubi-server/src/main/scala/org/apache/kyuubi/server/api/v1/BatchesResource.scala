@@ -348,7 +348,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       .withName(fe.getConf.get(BATCH_INFORMATION_RESPONSE_MODEL).toUpperCase)
     responseModel match {
       case ResponseModels.FAT => return batch2return
-      case _ => batch2return.setArgs(new java.util.ArrayList[String]())
+      case _ => batch2return.setArgs(java.util.Collections.emptyList())
     }
     batch2return
   }
