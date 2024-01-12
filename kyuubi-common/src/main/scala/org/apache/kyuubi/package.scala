@@ -43,20 +43,20 @@ package object kyuubi {
       Try(buildFileStream.close())
     }
 
-    val version: String = props.getProperty("kyuubi_version", unknown)
-    val java_version: String = props.getProperty("kyuubi_java_version", unknown)
-    val scala_version: String = props.getProperty("kyuubi_scala_version", unknown)
-    val spark_version: String = props.getProperty("kyuubi_spark_version", unknown)
-    val hive_version: String = props.getProperty("kyuubi_hive_version", unknown)
-    val hadoop_version: String = props.getProperty("kyuubi_hadoop_version", unknown)
-    val flink_version: String = props.getProperty("kyuubi_flink_version", unknown)
-    val trino_version: String = props.getProperty("kyuubi_trino_version", unknown)
-    val branch: String = props.getProperty("branch", unknown)
-    val revision: String = props.getProperty("revision", unknown)
-    val revisionTime: String = props.getProperty("revision_time", unknown)
-    val user: String = props.getProperty("user", unknown)
-    val repoUrl: String = props.getProperty("url", unknown)
-    val buildDate: String = props.getProperty("date", unknown)
+    val version: String = getProperty(props, "kyuubi_version", unknown)
+    val java_version: String = getProperty(props, "kyuubi_java_version", unknown)
+    val scala_version: String = getProperty(props, "kyuubi_scala_version", unknown)
+    val spark_version: String = getProperty(props, "kyuubi_spark_version", unknown)
+    val hive_version: String = getProperty(props, "kyuubi_hive_version", unknown)
+    val hadoop_version: String = getProperty(props, "kyuubi_hadoop_version", unknown)
+    val flink_version: String = getProperty(props, "kyuubi_flink_version", unknown)
+    val trino_version: String = getProperty(props, "kyuubi_trino_version", unknown)
+    val branch: String = getProperty(props, "branch", unknown)
+    val revision: String = getProperty(props, "revision", unknown)
+    val revisionTime: String = getProperty(props, "revision_time", unknown)
+    val user: String = getProperty(props, "user", unknown)
+    val repoUrl: String = getProperty(props, "url", unknown)
+    val buildDate: String = getProperty(props, "date", unknown)
   }
 
   val KYUUBI_VERSION: String = BuildInfo.version
@@ -73,4 +73,8 @@ package object kyuubi {
   val BUILD_USER: String = BuildInfo.user
   val REPO_URL: String = BuildInfo.repoUrl
   val BUILD_DATE: String = BuildInfo.buildDate
+
+  private def getProperty(props: Properties, key: String, defaultValue: String): String = {
+    Option(props.getProperty(key, defaultValue)).filterNot(_.isEmpty).getOrElse(defaultValue)
+  }
 }
