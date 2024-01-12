@@ -18,7 +18,6 @@
 package org.apache
 
 import java.util.Properties
-
 import scala.util.Try
 
 package object kyuubi {
@@ -41,6 +40,13 @@ package object kyuubi {
       props.load(buildFileStream)
     } finally {
       Try(buildFileStream.close())
+    }
+
+    private def getProperty(
+        props: Properties,
+        key: String,
+        defaultValue: String = unknown): String = {
+      Option(props.getProperty(key, defaultValue)).filterNot(_.isEmpty).getOrElse(defaultValue)
     }
 
     val version: String = getProperty(props, "kyuubi_version", unknown)
@@ -73,8 +79,4 @@ package object kyuubi {
   val BUILD_USER: String = BuildInfo.user
   val REPO_URL: String = BuildInfo.repoUrl
   val BUILD_DATE: String = BuildInfo.buildDate
-
-  private def getProperty(props: Properties, key: String, defaultValue: String): String = {
-    Option(props.getProperty(key, defaultValue)).filterNot(_.isEmpty).getOrElse(defaultValue)
-  }
 }
