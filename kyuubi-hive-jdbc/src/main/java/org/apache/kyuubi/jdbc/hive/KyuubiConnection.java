@@ -870,6 +870,15 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     if (isKerberosAuthMode() && isForciblyFromKeytabAuthMode()) {
       return true;
     }
+    if (isKerberosAuthMode()
+        && hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB)
+        && !hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)) {
+      throw new IllegalArgumentException(
+          AUTH_KYUUBI_CLIENT_KEYTAB
+              + " is set but "
+              + AUTH_KYUUBI_CLIENT_PRINCIPAL
+              + " is not set");
+    }
     // handle implicit cases then
     return isKerberosAuthMode()
         && hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
