@@ -644,4 +644,28 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(showCommitsSql))
     }
   }
+
+  test("ShowClusteringProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL SHOW_CLUSTERING(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [read] privilege on [[$path, $path/]]")
+  }
+
+  test("RunClusteringProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL RUN_CLUSTERING(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [write] privilege on [[$path, $path/]]")
+  }
+
+  test("RunCompactionProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL RUN_COMPACTION(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [write] privilege on [[$path, $path/]]")
+  }
 }
