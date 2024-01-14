@@ -439,6 +439,9 @@ abstract class HudiCallProcedureTableExtractor extends TableExtractor {
       s"$PROCEDURE_CLASS_PATH.ShowClusteringProcedure",
       ProcedureArgsInputOutputPair(input = Some("table"))),
     (
+      s"$PROCEDURE_CLASS_PATH.ShowCommitsProcedure",
+      ProcedureArgsInputOutputPair(input = Some("table"))),
+    (
       s"$PROCEDURE_CLASS_PATH.ShowCommitExtraMetadataProcedure",
       ProcedureArgsInputOutputPair(input = Some("table"))),
     (
