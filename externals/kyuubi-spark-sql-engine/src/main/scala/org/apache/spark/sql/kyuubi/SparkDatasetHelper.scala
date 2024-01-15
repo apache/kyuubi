@@ -304,13 +304,13 @@ object SparkDatasetHelper extends Logging {
     if (isCommandExec(result.queryExecution.executedPlan.nodeName)) {
       return false
     }
-    val limit = logicalPlanLimit(result.queryExecution.logical) match {
+    val finalLimit = logicalPlanLimit(result.queryExecution.logical) match {
       case Some(limit) if resultMaxRows > 0 => math.min(limit, resultMaxRows)
       case Some(limit) => limit
       case None => resultMaxRows
     }
-    lazy val stats = if (limit > 0) {
-      limit * EstimationUtils.getSizePerRow(
+    lazy val stats = if (finalLimit > 0) {
+      finalLimit * EstimationUtils.getSizePerRow(
         result.queryExecution.executedPlan.output)
     } else {
       result.queryExecution.optimizedPlan.stats.sizeInBytes
