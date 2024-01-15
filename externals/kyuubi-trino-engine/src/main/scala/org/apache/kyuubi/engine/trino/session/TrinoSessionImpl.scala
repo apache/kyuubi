@@ -135,7 +135,7 @@ class TrinoSessionImpl(
       Optional.ofNullable(keystoreType.orNull),
       Optional.ofNullable(truststorePath.orNull),
       Optional.ofNullable(truststorePassword.orNull),
-      Optional.ofNullable(truststoreType.orNull))
+      Optional.ofNullable(truststoreType.orNull), true)
 
     sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_PASSWORD).foreach { password =>
       require(
