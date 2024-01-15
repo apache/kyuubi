@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.trino.api
 
 import java.net.URI
 import java.time.ZoneId
-import java.util.{Collections, Locale, Optional}
+import java.util.{Locale, Optional}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
