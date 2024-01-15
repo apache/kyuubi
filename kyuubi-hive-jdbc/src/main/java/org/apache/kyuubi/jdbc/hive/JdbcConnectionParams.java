@@ -52,7 +52,9 @@ public class JdbcConnectionParams {
   public static final String AUTH_KYUUBI_CLIENT_TICKET_CACHE = "kyuubiClientTicketCache";
   public static final String AUTH_PASSWD = "password";
   public static final String AUTH_KERBEROS_AUTH_TYPE = "kerberosAuthType";
+  public static final String AUTH_KERBEROS_AUTH_TYPE_FROM_KEYTAB = "fromKeytab";
   public static final String AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT = "fromSubject";
+  public static final String AUTH_KERBEROS_AUTH_TYPE_FROM_TICKET_CACHE = "fromTicketCache";
   public static final String ANONYMOUS_USER = "anonymous";
   public static final String ANONYMOUS_PASSWD = "anonymous";
   public static final String USE_SSL = "ssl";
