@@ -233,6 +233,7 @@ io.grpc:grpc-netty
 io.grpc:grpc-protobuf
 io.grpc:grpc-protobuf-lite
 io.grpc:grpc-stub
+io.grpc:grpc-util
 io.netty:netty-buffer
 io.netty:netty-codec
 io.netty:netty-codec-dns
