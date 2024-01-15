@@ -214,6 +214,7 @@ commons-logging:commons-logging
 org.apache.commons:commons-lang3
 org.apache.derby:derby
 com.google.errorprone:error_prone_annotations
+dev.failsafe:failsafe
 net.jodah:failsafe
 com.jakewharton.fliptables:fliptables
 com.github.mifmif:generex

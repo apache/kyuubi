@@ -133,10 +133,10 @@
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
-        <etcd.version>0.7.3</etcd.version>
         <delta.artifact>delta-core</delta.artifact>
         <delta.version>2.4.0</delta.version>
-        <failsafe.verion>2.4.4</failsafe.verion>
+        <failsafe2.verion>2.4.4</failsafe2.verion>
+        <failsafe.verion>3.3.2</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
         <flink.version>1.17.2</flink.version>
@@ -168,6 +168,7 @@
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jersey.version>2.39.1</jersey.version>
+        <jetcd.version>0.7.7</jetcd.version>
         <jetty.version>9.4.52.v20230823</jetty.version>
         <jline.version>0.9.94</jline.version>
         <junit.version>4.13.2</junit.version>
@@ -1105,7 +1106,7 @@
             <dependency>
                 <groupId>io.etcd</groupId>
                 <artifactId>jetcd-core</artifactId>
-                <version>${etcd.version}</version>
+                <version>${jetcd.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>javax.annotation</groupId>
@@ -1117,7 +1118,7 @@
             <dependency>
                 <groupId>io.etcd</groupId>
                 <artifactId>jetcd-launcher</artifactId>
-                <version>${etcd.version}</version>
+                <version>${jetcd.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.testcontainers</groupId>
@@ -1176,6 +1177,12 @@
 
             <dependency>
                 <groupId>net.jodah</groupId>
+                <artifactId>failsafe</artifactId>
+                <version>${failsafe2.verion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>dev.failsafe</groupId>
                 <artifactId>failsafe</artifactId>
                 <version>${failsafe.verion}</version>
             </dependency>

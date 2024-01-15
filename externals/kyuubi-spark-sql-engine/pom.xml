@@ -237,12 +237,12 @@
                             <include>com.google.guava:*</include>
                             <include>com.google.j2objc:j2objc-annotations</include>
                             <include>com.google.protobuf:*</include>
+                            <include>dev.failsafe:failsafe</include>
                             <include>io.etcd:*</include>
                             <include>io.grpc:*</include>
                             <include>io.netty:*</include>
                             <include>io.perfmark:perfmark-api</include>
                             <include>io.vertx:*</include>
-                            <include>net.jodah:failsafe</include>
                             <include>org.apache.kyuubi:*</include>
                             <include>org.checkerframework:checker-qual</include>
                             <include>org.codehaus.mojo:animal-sniffer-annotations</include>
@@ -268,6 +268,13 @@
                         </filter>
                     </filters>
                     <relocations>
+                        <relocation>
+                            <pattern>dev.failsafe</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.dev.failsafe</shadedPattern>
+                            <includes>
+                                <include>dev.failsafe.**</include>
+                            </includes>
+                        </relocation>
                         <relocation>
                             <pattern>io.etcd</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.io.etcd</shadedPattern>
@@ -295,13 +302,6 @@
                             <shadedPattern>${kyuubi.shade.packageName}.io.vertx</shadedPattern>
                             <includes>
                                 <include>io.vertx.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>net.jodah</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.net.jodah</shadedPattern>
-                            <includes>
-                                <include>net.jodah.**</include>
                             </includes>
                         </relocation>
                         <relocation>
