@@ -221,6 +221,7 @@ com.google.errorprone:error_prone_annotations
 com.google.guava:guava
 com.google.guava:failureaccess
 com.google.j2objc:j2objc-annotations
+dev.failsafe:failsafe
 io.etcd:jetcd-api
 io.etcd:jetcd-common
 io.etcd:jetcd-core
@@ -252,7 +253,6 @@ io.netty:netty-transport-native-unix-common
 io.perfmark:perfmark-api
 io.vertx:vertx-grpc
 io.vertx:vertx-core
-net.jodah:failsafe
 
 BSD License
 --------------------------
