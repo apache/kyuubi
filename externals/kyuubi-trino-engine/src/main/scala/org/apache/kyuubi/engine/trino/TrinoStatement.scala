@@ -128,13 +128,13 @@ class TrinoStatement(
     // update catalog and schema
     if (trino.getSetCatalog.isPresent || trino.getSetSchema.isPresent) {
       builder = builder
-        .withCatalog(trino.getSetCatalog.orElse(session.getCatalog))
-        .withSchema(trino.getSetSchema.orElse(session.getSchema))
+        .catalog(trino.getSetCatalog.orElse(session.getCatalog))
+        .schema(trino.getSetSchema.orElse(session.getSchema))
     }
 
     // update path if present
     if (trino.getSetPath.isPresent) {
-      builder = builder.withPath(trino.getSetPath.get)
+      builder = builder.path(trino.getSetPath.get)
     }
 
     // update session properties if present
@@ -142,7 +142,7 @@ class TrinoStatement(
       val properties = session.getProperties.asScala.clone()
       properties ++= trino.getSetSessionProperties.asScala
       properties --= trino.getResetSessionProperties.asScala
-      builder = builder.withProperties(properties.asJava)
+      builder = builder.properties(properties.asJava)
     }
 
     trinoContext.clientSession.set(builder.build())

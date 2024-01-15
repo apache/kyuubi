@@ -135,7 +135,6 @@
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <delta.artifact>delta-core</delta.artifact>
         <delta.version>2.4.0</delta.version>
-        <failsafe2.verion>2.4.4</failsafe2.verion>
         <failsafe.verion>3.3.2</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
@@ -213,7 +212,8 @@
         <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
         <threeten.version>1.7.0</threeten.version>
         <thrift.version>0.9.3</thrift.version>
-        <trino.client.version>363</trino.client.version>
+        <!-- trino-client involves kotlin runtime dependencies since 412 because of upgrading okhttp -->
+        <trino.client.version>411</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <trino.tpch.version>1.1</trino.tpch.version>
 
@@ -1173,12 +1173,6 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java-util</artifactId>
                 <version>${protobuf.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>net.jodah</groupId>
-                <artifactId>failsafe</artifactId>
-                <version>${failsafe2.verion}</version>
             </dependency>
 
             <dependency>

@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.trino.session
 
 import java.net.URI
 import java.time.ZoneId
-import java.util.{Collections, Locale, Optional}
+import java.util.{Locale, Optional}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
@@ -93,27 +93,18 @@ class TrinoSessionImpl(
 
     val properties = getTrinoSessionConf(sessionConf).asJava
 
-    new ClientSession(
-      URI.create(connectionUrl),
-      username,
-      Optional.empty(),
-      "kyuubi",
-      Optional.empty(),
-      Collections.emptySet(),
-      null,
-      catalogName,
-      databaseName,
-      null,
-      ZoneId.systemDefault(),
-      Locale.getDefault,
-      Collections.emptyMap(),
-      properties,
-      Collections.emptyMap(),
-      Collections.emptyMap(),
-      Collections.emptyMap(),
-      null,
-      new Duration(clientRequestTimeout, TimeUnit.MILLISECONDS),
-      true)
+    ClientSession.builder()
+      .server(URI.create(connectionUrl))
+      .principal(Optional.of(username))
+      .source("kyuubi")
+      .catalog(catalogName)
+      .schema(databaseName)
+      .timeZone(ZoneId.systemDefault())
+      .locale(Locale.getDefault)
+      .properties(properties)
+      .clientRequestTimeout(new Duration(clientRequestTimeout, TimeUnit.MILLISECONDS))
+      .compressionDisabled(true)
+      .build()
   }
 
   private def createHttpClient(): OkHttpClient = {
@@ -135,7 +126,8 @@ class TrinoSessionImpl(
       Optional.ofNullable(keystoreType.orNull),
       Optional.ofNullable(truststorePath.orNull),
       Optional.ofNullable(truststorePassword.orNull),
-      Optional.ofNullable(truststoreType.orNull))
+      Optional.ofNullable(truststoreType.orNull),
+      true)
 
     sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_PASSWORD).foreach { password =>
       require(
