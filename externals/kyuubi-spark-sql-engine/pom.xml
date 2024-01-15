@@ -269,6 +269,13 @@
                     </filters>
                     <relocations>
                         <relocation>
+                            <pattern>dev.failsafe</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.dev.failsafe</shadedPattern>
+                            <includes>
+                                <include>dev.failsafe.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
                             <pattern>io.etcd</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.io.etcd</shadedPattern>
                             <includes>
@@ -295,13 +302,6 @@
                             <shadedPattern>${kyuubi.shade.packageName}.io.vertx</shadedPattern>
                             <includes>
                                 <include>io.vertx.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>net.jodah</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.net.jodah</shadedPattern>
-                            <includes>
-                                <include>net.jodah.**</include>
                             </includes>
                         </relocation>
                         <relocation>
