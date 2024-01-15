@@ -2708,14 +2708,6 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val ENGINE_DEPLOY_YARN_MODE_REPORT_INTERVAL: ConfigEntry[Long] =
-    buildConf("kyuubi.engine.yarn.report.interval")
-      .doc("Interval between reports of the current engine on yarn app status.")
-      .version("1.9.0")
-      .timeConf
-      .checkValue(t => t > 0, "must be positive integer")
-      .createWithDefault(Duration.ofSeconds(1).toMillis)
-
   val ENGINE_DEPLOY_YARN_MODE_TAGS: OptionalConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.yarn.tags")
       .doc(s"kyuubi engine yarn tags when the engine deploy mode is YARN.")
