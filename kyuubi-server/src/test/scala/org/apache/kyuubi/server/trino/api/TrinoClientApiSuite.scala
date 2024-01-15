@@ -123,32 +123,26 @@ class TrinoClientApiSuite extends KyuubiFunSuite with TrinoRestFrontendTestHelpe
   }
 
   private def createTestClientSession(connectUrl: URI): ClientSession = {
-    new ClientSession(
-      connectUrl,
-      "kyuubi_test",
-      Optional.of("test_user"),
-      "kyuubi",
-      Optional.of("test_token_tracing"),
-      Set[String]().asJava,
-      "test_client_info",
-      "test_catalog",
-      "test_schema",
-      null,
-      ZoneId.systemDefault(),
-      Locale.getDefault,
-      Collections.emptyMap(),
-      Map[String, String](
+    ClientSession.builder()
+      .server(connectUrl)
+      .principal(Optional.of("kyuubi_test"))
+      .user(Optional.of("test_user"))
+      .source("kyuubi")
+      .traceToken(Optional.of("test_token_tracing"))
+      .clientInfo("test_client_info")
+      .catalog("test_catalog")
+      .schema("test_schema")
+      .timeZone(ZoneId.systemDefault())
+      .locale(Locale.getDefault)
+      .properties(Map[String, String](
         "test_property_key0" -> "test_property_value0",
-        "test_property_key1" -> "test_propert_value1").asJava,
-      Map[String, String](
+        "test_property_key1" -> "test_propert_value1").asJava)
+      .preparedStatements(Map[String, String](
         "test_statement_key0" -> "select 1",
-        "test_statement_key1" -> "select 2").asJava,
-      Collections.emptyMap(),
-      Collections.emptyMap(),
-      null,
-      new Duration(2, TimeUnit.MINUTES),
-      true)
-
+        "test_statement_key1" -> "select 2").asJava)
+      .clientRequestTimeout(new Duration(2, TimeUnit.MINUTES))
+      .compressionDisabled(true)
+      .build()
   }
 
 }
