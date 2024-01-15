@@ -225,6 +225,7 @@ io.grpc:grpc-netty
 io.grpc:grpc-protobuf-lite
 io.grpc:grpc-protobuf
 io.grpc:grpc-stub
+io.grpc:grpc-util
 com.google.code.gson:gson
 com.google.guava:failureaccess
 com.google.guava:guava
