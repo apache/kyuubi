@@ -237,12 +237,12 @@
                             <include>com.google.guava:*</include>
                             <include>com.google.j2objc:j2objc-annotations</include>
                             <include>com.google.protobuf:*</include>
+                            <include>dev.failsafe:failsafe</include>
                             <include>io.etcd:*</include>
                             <include>io.grpc:*</include>
                             <include>io.netty:*</include>
                             <include>io.perfmark:perfmark-api</include>
                             <include>io.vertx:*</include>
-                            <include>net.jodah:failsafe</include>
                             <include>org.apache.kyuubi:*</include>
                             <include>org.checkerframework:checker-qual</include>
                             <include>org.codehaus.mojo:animal-sniffer-annotations</include>
