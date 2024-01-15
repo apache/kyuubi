@@ -38,7 +38,7 @@ import org.apache.kyuubi.config.KyuubiConf
 
 trait WithTrinoContainerServer extends KyuubiFunSuite with TestContainerForAll {
 
-  final val IMAGE_VERSION = 363
+  final val IMAGE_VERSION = 411
   final val DOCKER_IMAGE_NAME = s"trinodb/trino:${IMAGE_VERSION}"
 
   override val containerDef = TrinoContainer.Def(DockerImageName.parse(DOCKER_IMAGE_NAME))
