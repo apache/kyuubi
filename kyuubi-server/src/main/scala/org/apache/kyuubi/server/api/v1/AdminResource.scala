@@ -33,13 +33,14 @@ import org.apache.kyuubi.{KYUUBI_VERSION, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.ApplicationManagerInfo
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
-import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionManager, SessionHandle}
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -277,7 +278,11 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("proxyUser") kyuubiProxyUser: String,
-      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
+      @QueryParam("refId") refId: String,
+      @QueryParam("sparK8Context") sparK8Context: String,
+      @QueryParam("sparK8Namespace") sparK8Namespace: String,
+      @QueryParam("sparkMaster") sparkMaster: String): Response = {
     val activeProxyUser = Option(kyuubiProxyUser).getOrElse(hs2ProxyUser)
     val userName = if (fe.isAdministrator(fe.getRealUser())) {
       Option(activeProxyUser).getOrElse(fe.getRealUser())
@@ -301,6 +306,18 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
               s"${e.getMessage}")
         }
       }
+
+      if (Option(refId).isDefined) {
+
+        val applicationManagerInfo = ApplicationManagerInfo(
+          Option(sparkMaster),
+          Option(sparK8Context),
+          Option(sparK8Namespace))
+
+        fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+          .applicationManager.killApplication(applicationManagerInfo, refId)
+      }
+
     }
 
     Response.ok(s"Engine $engineSpace is deleted successfully.").build()
