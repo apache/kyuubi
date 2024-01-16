@@ -26,6 +26,8 @@ import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Proje
 case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
   extends LeafNode with MultiInstanceRelation {
 
+  private val PVM_NEW_INSTANCE_TAG = TreeNodeTag[Unit]("__PVM_NEW_INSTANCE_TAG")
+
   override def output: Seq[Attribute] = child.output
 
   override def argString(maxFields: Int): String = ""
@@ -38,6 +40,18 @@ case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
     val projectList = child.output.map { case attr =>
       Alias(Cast(attr, attr.dataType), attr.name)(explicitMetadata = Some(attr.metadata))
     }
-    this.copy(child = Project(projectList, child), catalogTable = catalogTable)
+    val newProj = Project(projectList, child)
+    newProj.setTagValue(PVM_NEW_INSTANCE_TAG, ())
+
+    this.copy(child = newProj, catalogTable = catalogTable)
+  }
+
+  override def doCanonicalize(): LogicalPlan = {
+    child match {
+      case p @ Project(_, view @ View(_, _, _))
+          if p.getTagValue(PVM_NEW_INSTANCE_TAG).contains(true) =>
+        view.canonicalized
+      case _ => child.canonicalized
+    }
   }
 }
