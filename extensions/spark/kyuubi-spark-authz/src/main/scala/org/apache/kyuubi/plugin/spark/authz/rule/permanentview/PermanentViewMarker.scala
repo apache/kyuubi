@@ -49,10 +49,10 @@ case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
 
   override def doCanonicalize(): LogicalPlan = {
     child match {
-      case p @ Project(_, view @ View(_, _, _))
-          if p.getTagValue(PVM_NEW_INSTANCE_TAG).contains(true) =>
+      case p @ Project(_, view: View) if p.getTagValue(PVM_NEW_INSTANCE_TAG).contains(true) =>
         view.canonicalized
-      case _ => child.canonicalized
+      case _ =>
+        child.canonicalized
     }
   }
 }
