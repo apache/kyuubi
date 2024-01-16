@@ -24,7 +24,7 @@ import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 class SparkDatasetHelperSuite extends WithSparkSQLEngine {
   override def withKyuubiConf: Map[String, String] = Map.empty
 
-  test("get limit from logical plan") {
+  test("get limit from spark plan") {
     Seq(true, false).foreach { aqe =>
       val topKThreshold = 3
       spark.sessionState.conf.setConf(SQLConf.ADAPTIVE_EXECUTION_ENABLED, aqe)
@@ -32,13 +32,14 @@ class SparkDatasetHelperSuite extends WithSparkSQLEngine {
       spark.sql("CREATE OR REPLACE TEMPORARY VIEW tv AS" +
         " SELECT * FROM VALUES(1),(2),(3),(4) AS t(id)")
 
-      val topKStatement = s"SELECT * FROM tv ORDER BY id LIMIT ${topKThreshold - 1}"
-      assert(SparkDatasetHelper.logicalPlanLimit(
-        spark.sql(topKStatement).queryExecution.logical) === Option(topKThreshold - 1))
+      val topKStatement = s"SELECT * FROM(SELECT * FROM tv ORDER BY id LIMIT ${topKThreshold - 1})"
+      assert(SparkDatasetHelper.planLimit(
+        spark.sql(topKStatement).queryExecution.sparkPlan) === Option(topKThreshold - 1))
 
-      val collectLimitStatement = s"SELECT * FROM tv ORDER BY id LIMIT $topKThreshold"
-      assert(SparkDatasetHelper.logicalPlanLimit(
-        spark.sql(collectLimitStatement).queryExecution.logical) === Option(topKThreshold))
+      val collectLimitStatement =
+        s"SELECT * FROM (SELECT * FROM tv ORDER BY id LIMIT $topKThreshold)"
+      assert(SparkDatasetHelper.planLimit(
+        spark.sql(collectLimitStatement).queryExecution.sparkPlan) === Option(topKThreshold))
     }
   }
 }
