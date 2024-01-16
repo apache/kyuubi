@@ -1716,7 +1716,11 @@
   "classname" : "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand",
   "tableDescs" : [ ],
   "opType" : "QUERY",
-  "queryDescs" : [ ],
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
   "uriDescs" : [ {
     "fieldName" : "storage",
     "fieldExtractor" : "CatalogStorageFormatURIExtractor",
