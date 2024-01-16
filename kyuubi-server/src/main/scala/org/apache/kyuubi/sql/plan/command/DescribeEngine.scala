@@ -49,7 +49,6 @@ case class DescribeEngine() extends RunnableCommand {
         case None =>
           values += ("", "", "")
       }
-
       Row(values.toList)
     }
     iter = new IterableFetchIterator(rows)
