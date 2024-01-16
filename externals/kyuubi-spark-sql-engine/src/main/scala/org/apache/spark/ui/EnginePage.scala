@@ -275,14 +275,14 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
       closed: Seq[SessionEvent]): Seq[Node] = {
     val content = mutable.ListBuffer[Node]()
     if (online.nonEmpty) {
-      val sessionTableTag = "online"
+      val sessionTableTag = "online-sessionstat"
       val table = sessionTable(
         request,
         sessionTableTag,
         parent,
         online)
       content ++=
-        <span id="online" class="collapse-aggregated-onlineSessionstat collapse-table"
+        <span id="online-sessionstat" class="collapse-aggregated-onlineSessionstat collapse-table"
               onClick="collapseTable('collapse-aggregated-onlineSessionstat',
               'aggregated-onlineSessionstat')">
           <h4>
@@ -299,7 +299,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 
     if (closed.nonEmpty) {
       val table = {
-        val sessionTableTag = "closed"
+        val sessionTableTag = "closed-sessionstat"
         sessionTable(
           request,
           sessionTableTag,
@@ -308,7 +308,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
       }
 
       content ++=
-        <span id="closed" class="collapse-aggregated-closedSessionstat collapse-table"
+        <span id="closed-sessionstat" class="collapse-aggregated-closedSessionstat collapse-table"
               onClick="collapseTable('collapse-aggregated-closedSessionstat',
               'aggregated-closedSessionstat')">
           <h4>
