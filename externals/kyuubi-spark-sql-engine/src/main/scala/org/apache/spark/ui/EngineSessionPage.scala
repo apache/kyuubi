@@ -146,7 +146,7 @@ case class EngineSessionPage(parent: EngineTab)
       }
     val content = mutable.ListBuffer[Node]()
     if (running.nonEmpty) {
-      val sqlTableTag = "running"
+      val sqlTableTag = "running-sqlstat"
       val table = statementStatsTable(request, sqlTableTag, parent, running.toSeq)
       content ++=
         <span id="running" class="collapse-aggregated-runningSqlstat collapse-table"
@@ -164,7 +164,7 @@ case class EngineSessionPage(parent: EngineTab)
 
     if (completed.nonEmpty) {
       val table = {
-        val sqlTableTag = "completed"
+        val sqlTableTag = "completed-sqlstat"
         statementStatsTable(
           request,
           sqlTableTag,
@@ -190,7 +190,7 @@ case class EngineSessionPage(parent: EngineTab)
 
     if (failed.nonEmpty) {
       val table = {
-        val sqlTableTag = "failed"
+        val sqlTableTag = "failed-sqlstat"
         statementStatsTable(
           request,
           sqlTableTag,

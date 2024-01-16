@@ -167,11 +167,11 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 
     val content = mutable.ListBuffer[Node]()
     if (running.nonEmpty) {
-      val sqlTableTag = "running"
+      val sqlTableTag = "running-sqlstat"
       val table =
         statementStatsTable(request, sqlTableTag, parent, running)
       content ++=
-        <span id="running" class="collapse-aggregated-runningSqlstat collapse-table"
+        <span id="running-sqlstat" class="collapse-aggregated-runningSqlstat collapse-table"
               onClick="collapseTable('collapse-aggregated-runningSqlstat',
               'aggregated-runningSqlstat')">
           <h4>
@@ -188,7 +188,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 
     if (completed.nonEmpty) {
       val table = {
-        val sqlTableTag = "completed"
+        val sqlTableTag = "completed-sqlstat"
         statementStatsTable(
           request,
           sqlTableTag,
@@ -197,7 +197,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
       }
 
       content ++=
-        <span id="completed" class="collapse-aggregated-completedSqlstat collapse-table"
+        <span id="completed-sqlstat" class="collapse-aggregated-completedSqlstat collapse-table"
               onClick="collapseTable('collapse-aggregated-completedSqlstat',
               'aggregated-completedSqlstat')">
           <h4>
@@ -214,7 +214,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 
     if (failed.nonEmpty) {
       val table = {
-        val sqlTableTag = "failed"
+        val sqlTableTag = "failed-sqlstat"
         statementStatsTable(
           request,
           sqlTableTag,
@@ -223,7 +223,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
       }
 
       content ++=
-        <span id="failed" class="collapse-aggregated-failedSqlstat collapse-table"
+        <span id="failed-sqlstat" class="collapse-aggregated-failedSqlstat collapse-table"
               onClick="collapseTable('collapse-aggregated-failedSqlstat',
               'aggregated-failedSqlstat')">
           <h4>
