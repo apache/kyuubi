@@ -35,18 +35,22 @@ import org.apache.kyuubi.sql.schema.{Column, Row, Schema}
 case class DescribeEngine() extends RunnableCommand {
 
   override def run(kyuubiSession: KyuubiSession): Unit = {
-    val rows = Seq(kyuubiSession.asInstanceOf[KyuubiSessionImpl]).flatMap { session =>
+    val rows = Seq(kyuubiSession.asInstanceOf[KyuubiSessionImpl]).map { session =>
       lazy val client = session.client
-      session.listZkEngineNodes.map { nodeInfo =>
-        val values = new ListBuffer[String]()
-        values += client.engineId.getOrElse("")
-        values += client.engineName.getOrElse("")
-        values += client.engineUrl.getOrElse("")
-        values += s"${nodeInfo.host}:${nodeInfo.port}"
-        values += nodeInfo.version.getOrElse("")
-        values += nodeInfo.attributes.filter(_._1.contains("memory")).mkString(";")
-        Row(values.toList)
+      val values = new ListBuffer[String]()
+      values += client.engineId.getOrElse("")
+      values += client.engineName.getOrElse("")
+      values += client.engineUrl.getOrElse("")
+      session.getEngineNode match {
+        case Some(nodeInfo) =>
+          values += s"${nodeInfo.host}:${nodeInfo.port}"
+          values += nodeInfo.version.getOrElse("")
+          values += nodeInfo.attributes.mkString(",")
+        case None =>
+          values += ("", "", "")
       }
+
+      Row(values.toList)
     }
     iter = new IterableFetchIterator(rows)
   }

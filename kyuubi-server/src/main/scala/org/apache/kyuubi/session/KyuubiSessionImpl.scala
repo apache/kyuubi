@@ -120,7 +120,7 @@ class KyuubiSessionImpl(
     engineLastAlive = System.currentTimeMillis()
   }
 
-  def listZkEngineNodes: Seq[ServiceNodeInfo] = {
+  def getEngineNode: Option[ServiceNodeInfo] = {
     withDiscoveryClient(sessionConf) { discoveryClient =>
       engine.getServiceNodes(discoveryClient, _client.engineHostPort)
     }
