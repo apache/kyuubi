@@ -567,7 +567,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       "logicalRelation",
       classOf[LogicalRelationTableExtractor],
       actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
+    TableCommandSpec(cmd, Seq(tableDesc))
   }
 
   val InsertIntoHiveTable = {
@@ -587,7 +587,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     val cmd = "org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand"
     val queryDesc = queryQueryDesc
     val uriDesc = UriDesc("storage", classOf[CatalogStorageFormatURIExtractor])
-    TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
+    TableCommandSpec(cmd, Nil, uriDescs = Seq(uriDesc))
   }
 
   val SaveIntoDataSourceCommand = {
