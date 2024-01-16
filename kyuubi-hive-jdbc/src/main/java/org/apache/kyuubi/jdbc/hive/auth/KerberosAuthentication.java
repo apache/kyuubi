@@ -107,10 +107,10 @@ public class KerberosAuthentication {
     if (StringUtils.isBlank(ticketCache)) {
       ticketCache = System.getenv("KRB5CCNAME");
     }
-    if (!Files.exists(Paths.get(ticketCache))) {
-      LOG.warn("TicketCache {} does not exist", ticketCache);
-    }
     if (StringUtils.isNotBlank(ticketCache)) {
+      if (!Files.exists(Paths.get(ticketCache))) {
+        LOG.warn("TicketCache {} does not exist", ticketCache);
+      }
       optionsBuilder.put("ticketCache", ticketCache);
     }
     return createConfiguration(optionsBuilder);
