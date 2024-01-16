@@ -149,7 +149,7 @@ case class EngineSessionPage(parent: EngineTab)
       val sqlTableTag = "running-sqlstat"
       val table = statementStatsTable(request, sqlTableTag, parent, running.toSeq)
       content ++=
-        <span id="running" class="collapse-aggregated-runningSqlstat collapse-table"
+        <span id="running-sqlstat" class="collapse-aggregated-runningSqlstat collapse-table"
               onClick="collapseTable('collapse-aggregated-runningSqlstat',
               'aggregated-runningSqlstat')">
           <h4>
@@ -173,7 +173,7 @@ case class EngineSessionPage(parent: EngineTab)
       }
 
       content ++=
-        <span id="completed" class="collapse-aggregated-completedSqlstat collapse-table"
+        <span id="completed-sqlstat" class="collapse-aggregated-completedSqlstat collapse-table"
               onClick="collapseTable('collapse-aggregated-completedSqlstat',
               'aggregated-completedSqlstat')">
           <h4>
@@ -199,7 +199,7 @@ case class EngineSessionPage(parent: EngineTab)
       }
 
       content ++=
-        <span id="failed" class="collapse-aggregated-failedSqlstat collapse-table"
+        <span id="failed-sqlstat" class="collapse-aggregated-failedSqlstat collapse-table"
               onClick="collapseTable('collapse-aggregated-failedSqlstat',
               'aggregated-failedSqlstat')">
           <h4>
