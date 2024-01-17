@@ -85,7 +85,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
   override protected lazy val conf: KyuubiConf = {
     val testResourceDir = Paths.get(sparkBatchTestResource.get).getParent
     val kyuubiConf = KyuubiConf()
-      .set(AUTHENTICATION_METHOD, Set("CUSTOM"))
+      .set(AUTHENTICATION_METHOD, Seq("CUSTOM"))
       .set(AUTHENTICATION_CUSTOM_CLASS, classOf[AnonymousAuthenticationProviderImpl].getName)
       .set(SERVER_ADMINISTRATORS, Set("admin"))
       .set(BATCH_IMPL_VERSION, batchVersion)
