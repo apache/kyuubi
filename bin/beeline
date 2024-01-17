@@ -20,7 +20,7 @@
 CLASS="org.apache.hive.beeline.KyuubiBeeLine"
 
 if [ -z "${KYUUBI_HOME}" ]; then
-  export KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
+  KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
 fi
 
 . "${KYUUBI_HOME}/bin/load-kyuubi-env.sh" -s
