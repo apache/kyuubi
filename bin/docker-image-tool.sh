@@ -25,7 +25,7 @@ function error {
 }
 
 if [ -z "${KYUUBI_HOME}" ]; then
-  KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
+  export KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
 fi
 KYUUBI_IMAGE_NAME="kyuubi"
 
