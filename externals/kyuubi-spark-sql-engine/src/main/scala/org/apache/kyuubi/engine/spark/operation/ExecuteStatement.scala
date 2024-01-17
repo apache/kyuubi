@@ -28,9 +28,9 @@ import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_DIR, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
-import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
+import org.apache.kyuubi.engine.spark.session.{SparkSessionImpl, SparkSQLSessionManager}
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -172,14 +172,16 @@ class ExecuteStatement(
       })
     } else {
       val resultSaveEnabled = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE, spark)
-      lazy val resultSaveThreshold = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE_MINSIZE, spark)
+      val resultSaveThreshold = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE_MINSIZE, spark)
       if (hasResultSet && resultSaveEnabled && shouldSaveResultToFs(
           resultMaxRows,
           resultSaveThreshold,
           result)) {
-        val sessionId = session.handle.identifier.toString
-        val savePath = session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)
-        saveFileName = Some(s"$savePath/$engineId/$sessionId/$statementId")
+        saveFileName =
+          Some(
+            session.sessionManager.asInstanceOf[SparkSQLSessionManager].getOperationResultSavePath(
+              session.handle,
+              handle))
         // Rename all col name to avoid duplicate columns
         val colName = range(0, result.schema.size).map(x => "col" + x)
 
@@ -192,7 +194,7 @@ class ExecuteStatement(
           result.toDF(colName: _*).write
             .option("compression", codec).format("orc").save(saveFileName.get)
         }
-        info(s"Save result to $saveFileName")
+        info(s"Save result to ${saveFileName.get}")
         fetchOrcStatement = Some(new FetchOrcStatement(spark))
         return fetchOrcStatement.get.getIterator(saveFileName.get, resultSchema)
       }

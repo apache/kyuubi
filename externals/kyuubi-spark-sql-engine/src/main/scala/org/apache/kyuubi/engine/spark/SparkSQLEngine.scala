@@ -38,10 +38,9 @@ import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_SUBMIT_TIME_KEY, KYUUBI_ENGINE_URL}
 import org.apache.kyuubi.engine.ShareLevel
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.engineId
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
-import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
+import org.apache.kyuubi.engine.spark.session.{SparkSessionImpl, SparkSQLSessionManager}
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
@@ -60,7 +59,8 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
   @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
   @volatile private var stopEngineExec: Option[ThreadPoolExecutor] = None
-  @volatile private var engineSavePath: Option[String] = None
+  private lazy val engineSavePath =
+    backendService.sessionManager.asInstanceOf[SparkSQLSessionManager].getEngineResultSavePath()
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
@@ -92,9 +92,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     }
 
     if (backendService.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE)) {
-      val savePath = backendService.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)
-      engineSavePath = Some(s"$savePath/$engineId")
-      val path = new Path(engineSavePath.get)
+      val path = new Path(engineSavePath)
       val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
       fs.mkdirs(path)
       fs.deleteOnExit(path)
@@ -114,9 +112,14 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         exec,
         Duration(60, TimeUnit.SECONDS))
     })
-    engineSavePath.foreach { p =>
-      val path = new Path(p)
-      path.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(path, true)
+    try {
+      val path = new Path(engineSavePath)
+      val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
+      if (fs.exists(path)) {
+        fs.delete(path, true)
+      }
+    } catch {
+      case e: Throwable => error(s"Error cleaning engine result save path: $engineSavePath", e)
     }
   }
 
