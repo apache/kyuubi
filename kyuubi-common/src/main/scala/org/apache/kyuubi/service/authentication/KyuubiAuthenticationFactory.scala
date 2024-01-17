@@ -156,8 +156,8 @@ object KyuubiAuthenticationFactory extends Logging {
     }
   }
 
-  def getValidPasswordAuthMethod(authTypes: Set[AuthType]): AuthMethod = {
-    if (authTypes == Set(NOSASL)) AuthMethods.NONE
+  def getValidPasswordAuthMethod(authTypes: Seq[AuthType]): AuthMethod = {
+    if (authTypes == Seq(NOSASL)) AuthMethods.NONE
     else if (authTypes.contains(NONE)) AuthMethods.NONE
     else if (authTypes.contains(LDAP)) AuthMethods.LDAP
     else if (authTypes.contains(JDBC)) AuthMethods.JDBC
