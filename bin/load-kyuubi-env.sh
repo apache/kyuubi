@@ -17,8 +17,9 @@
 #
 
 
-export KYUUBI_HOME="${KYUUBI_HOME:-"$(cd "$(dirname "$0")"/.. || exit; pwd)"}"
-
+if [ -z "${KYUUBI_HOME}" ]; then
+  export KYUUBI_HOME="$(cd "$(dirname "$0")"/.. || exit; pwd)"
+fi
 export KYUUBI_CONF_DIR="${KYUUBI_CONF_DIR:-"${KYUUBI_HOME}"/conf}"
 
 silent=0
