@@ -69,8 +69,12 @@ object PrivilegesBuilder {
       if (projectionList.isEmpty) {
         privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
       } else {
+        val planOutputMapping = plan.output.map(e => e.exprId -> e.name).toMap
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
-          .filter(plan.outputSet.contains).map(_.name).distinct
+          .filter(e => plan.outputSet.contains(e))
+          .map(_.exprId)
+          .distinct
+          .map(planOutputMapping(_))
         privilegeObjects += PrivilegeObject(table, cols)
       }
     }

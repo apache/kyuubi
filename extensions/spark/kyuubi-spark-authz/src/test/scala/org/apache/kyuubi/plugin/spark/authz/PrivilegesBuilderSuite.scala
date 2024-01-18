@@ -1781,6 +1781,26 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(pi4.columns.size === 2)
     assert(pi4.columns === Seq("key", "pid"))
   }
+
+  test("KYUUBI #4533: Cols extracted by authZ should resolve caseSensitive") {
+    val plan1 = sql(s"SELECT key, pid FROM $reusedPartTable WHERE PID = '1'")
+      .queryExecution.optimizedPlan
+    val (in1, out1, _) = PrivilegesBuilder.build(plan1, spark)
+    assert(in1.size === 1)
+    assert(out1.isEmpty)
+    val pi1 = in1.head
+    assert(pi1.columns.size === 2)
+    assert(pi1.columns === Seq("key", "pid"))
+
+    val plan2 = sql(s"SELECT key FROM $reusedPartTable WHERE PID = '1'")
+      .queryExecution.optimizedPlan
+    val (in2, out2, _) = PrivilegesBuilder.build(plan2, spark)
+    assert(in2.size === 1)
+    assert(out2.isEmpty)
+    val pi2 = in2.head
+    assert(pi2.columns.size === 2)
+    assert(pi2.columns === Seq("key", "pid"))
+  }
 }
 
 case class SimpleInsert(userSpecifiedSchema: StructType)(@transient val sparkSession: SparkSession)
