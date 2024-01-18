@@ -337,13 +337,11 @@ private[kyuubi] class EngineRef(
       }
     }
 
-  def getServiceNodes(
+  def getServiceNode(
       discoveryClient: DiscoveryClient,
       hostPort: (String, Int)): Option[ServiceNodeInfo] = {
-    tryWithLock(discoveryClient) {
-      val serviceNodes = discoveryClient.getServiceNodesInfo(engineSpace)
-      serviceNodes.filter { sn => (sn.host, sn.port) == hostPort }.headOption
-    }
+    val serviceNodes = discoveryClient.getServiceNodesInfo(engineSpace)
+    serviceNodes.filter { sn => (sn.host, sn.port) == hostPort }.headOption
   }
 
   def close(): Unit = {

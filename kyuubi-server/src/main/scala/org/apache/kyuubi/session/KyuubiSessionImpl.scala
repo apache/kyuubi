@@ -122,7 +122,7 @@ class KyuubiSessionImpl(
 
   def getEngineNode: Option[ServiceNodeInfo] = {
     withDiscoveryClient(sessionConf) { discoveryClient =>
-      engine.getServiceNodes(discoveryClient, _client.engineHostPort)
+      engine.getServiceNode(discoveryClient, _client.engineHostPort)
     }
   }
 

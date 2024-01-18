@@ -42,7 +42,7 @@ import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 class KyuubiSyncThriftClient private (
-    hostPort: (String, Int),
+    val hostPort: (String, Int),
     protocol: TProtocol,
     engineAliveProbeProtocol: Option[TProtocol],
     engineAliveProbeInterval: Long,
@@ -53,7 +53,7 @@ class KyuubiSyncThriftClient private (
   @volatile private var _engineId: Option[String] = _
   @volatile private var _engineUrl: Option[String] = _
   @volatile private var _engineName: Option[String] = _
-  private[kyuubi] def engineHostPort: (String, Int) = hostPort
+  def engineHostPort: (String, Int) = hostPort
 
   private[kyuubi] def engineConnectionClosed: Boolean = !protocol.getTransport.isOpen
 
