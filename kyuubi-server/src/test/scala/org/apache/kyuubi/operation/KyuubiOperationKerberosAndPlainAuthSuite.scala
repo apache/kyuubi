@@ -64,7 +64,7 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
     assert(UserGroupInformation.isSecurityEnabled)
 
     KyuubiConf()
-      .set(KyuubiConf.AUTHENTICATION_METHOD, Set("KERBEROS", "LDAP", "CUSTOM"))
+      .set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "LDAP", "CUSTOM"))
       .set(KyuubiConf.SERVER_KEYTAB, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
       .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)

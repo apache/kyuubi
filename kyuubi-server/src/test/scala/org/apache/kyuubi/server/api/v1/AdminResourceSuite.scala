@@ -51,7 +51,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   private val engineMgr = new KyuubiApplicationManager()
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
-    .set(AUTHENTICATION_METHOD, Set("CUSTOM"))
+    .set(AUTHENTICATION_METHOD, Seq("CUSTOM"))
     .set(AUTHENTICATION_CUSTOM_CLASS, classOf[AnonymousAuthenticationProviderImpl].getName)
     .set(SERVER_ADMINISTRATORS, Set("admin001"))
     .set(ENGINE_IDLE_TIMEOUT, Duration.ofMinutes(3).toMillis)
