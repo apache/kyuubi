@@ -2515,5 +2515,10 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <!-- kyuubi-spark-authz-shaded module built into kyuubi-spark-sql-engine -->
+            <id>spark-authz-compile</id>
+        </profile>
     </profiles>
 </project>
