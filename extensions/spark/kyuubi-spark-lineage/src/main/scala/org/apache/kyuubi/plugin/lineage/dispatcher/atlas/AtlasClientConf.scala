@@ -21,12 +21,17 @@ import org.apache.atlas.ApplicationProperties
 import org.apache.commons.configuration.Configuration
 import org.apache.spark.kyuubi.lineage.SparkContextHelper
 
+import java.util
+
 class AtlasClientConf(configuration: Configuration) {
 
   def get(entry: ConfigEntry): String = {
     configuration.getProperty(entry.key) match {
       case s: String => s
       case l: List[_] => l.mkString(",")
+      case jl: util.List[_] =>
+        val jlString = jl.toString
+        jlString.substring(1, jlString.length() - 1)
       case o if o != null => o.toString
       case _ => entry.defaultValue
     }
