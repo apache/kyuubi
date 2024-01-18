@@ -136,7 +136,7 @@ class ThriftHttpServlet(
       } else SessionManager.setForwardedAddresses(List.empty[String])
 
       // Generate new cookie and add it to the response
-      if (requireNewCookie && !authFactory.noSaslEnabled) {
+      if (requireNewCookie && !authFactory.saslDisabled) {
         val cookieToken = HttpAuthUtils.createCookieToken(clientUserName)
         val hs2Cookie = createCookie(signer.signCookie(cookieToken))
         if (isHttpOnlyCookie) response.setHeader("SET-COOKIE", getHttpOnlyCookieHeader(hs2Cookie))

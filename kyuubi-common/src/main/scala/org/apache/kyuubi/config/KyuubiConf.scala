@@ -757,7 +757,7 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("X-Real-IP")
 
-  val AUTHENTICATION_METHOD: ConfigEntry[Set[String]] = buildConf("kyuubi.authentication")
+  val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("kyuubi.authentication")
     .doc("A comma-separated list of client authentication types." +
       "<ul>" +
       " <li>NOSASL: raw transport.</li>" +
@@ -793,9 +793,9 @@ object KyuubiConf {
     .serverOnly
     .stringConf
     .transformToUpperCase
-    .toSet()
+    .toSequence()
     .checkValues(AuthTypes)
-    .createWithDefault(Set(AuthTypes.NONE.toString))
+    .createWithDefault(Seq(AuthTypes.NONE.toString))
 
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.custom.class")
