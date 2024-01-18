@@ -23,8 +23,6 @@ import org.apache.spark.kyuubi.lineage.SparkContextHelper
 
 import java.util
 
-
-
 class AtlasClientConf(configuration: Configuration) {
 
   def get(entry: ConfigEntry): String = {
