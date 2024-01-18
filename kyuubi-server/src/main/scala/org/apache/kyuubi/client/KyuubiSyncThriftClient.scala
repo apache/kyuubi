@@ -53,7 +53,6 @@ class KyuubiSyncThriftClient private (
   @volatile private var _engineId: Option[String] = _
   @volatile private var _engineUrl: Option[String] = _
   @volatile private var _engineName: Option[String] = _
-  def engineHostPort: (String, Int) = hostPort
 
   private[kyuubi] def engineConnectionClosed: Boolean = !protocol.getTransport.isOpen
 
