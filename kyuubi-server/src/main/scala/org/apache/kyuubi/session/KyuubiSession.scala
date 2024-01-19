@@ -17,13 +17,13 @@
 package org.apache.kyuubi.session
 
 import com.codahale.metrics.MetricRegistry
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.session.SessionType.SessionType
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 abstract class KyuubiSession(
     protocol: TProtocolVersion,

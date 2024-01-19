@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.engine.spark
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkBatchProcessBuilder(
     override val proxyUser: String,
@@ -37,7 +38,7 @@ class SparkBatchProcessBuilder(
   import SparkProcessBuilder._
 
   override protected lazy val commands: Iterable[String] = {
-    val buffer = new ArrayBuffer[String]()
+    val buffer = new mutable.ListBuffer[String]()
     buffer += executable
     Option(mainClass).foreach { cla =>
       buffer += CLASS
@@ -51,13 +52,11 @@ class SparkBatchProcessBuilder(
     // tag batch application
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
-    (batchKyuubiConf.getAll ++
+    val allConfigs = batchKyuubiConf.getAll ++
       sparkAppNameConf() ++
       engineLogPathConf() ++
-      appendPodNameConf(batchConf)).foreach { case (k, v) =>
-      buffer += CONF
-      buffer += s"${convertConfigKey(k)}=$v"
-    }
+      appendPodNameConf(batchConf)
+    buffer ++= confKeyValues(allConfigs)
 
     setupKerberos(buffer)
 

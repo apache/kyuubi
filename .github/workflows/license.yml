@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 8
@@ -44,7 +44,7 @@ jobs:
           check-latest: false
       - run: >-
           build/mvn org.apache.rat:apache-rat-plugin:check
-          -Ptpcds -Pspark-block-cleaner -Pkubernetes-it
+          -Ptpcds -Pkubernetes-it
           -Pspark-3.1 -Pspark-3.2 -Pspark-3.3 -Pspark-3.4 -Pspark-3.5
       - name: Upload rat report
         if: failure()

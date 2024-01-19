@@ -17,10 +17,9 @@
 
 package org.apache.kyuubi.server.rest.client
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.RestClientTestHelper
 import org.apache.kyuubi.ctl.{CtlConf, TestPrematureExit}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class SessionCtlSuite extends RestClientTestHelper with TestPrematureExit {
   override def beforeAll(): Unit = {

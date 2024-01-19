@@ -126,25 +126,24 @@
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
         <bouncycastle.version>1.67</bouncycastle.version>
-        <codahale.metrics.version>4.2.8</codahale.metrics.version>
+        <codahale.metrics.version>4.2.23</codahale.metrics.version>
         <commons-cli.version>1.5.0</commons-cli.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
-        <etcd.version>0.7.3</etcd.version>
         <delta.artifact>delta-core</delta.artifact>
         <delta.version>2.4.0</delta.version>
-        <failsafe.verion>2.4.4</failsafe.verion>
+        <failsafe.verion>3.3.2</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
-        <flink.version>1.17.1</flink.version>
+        <flink.version>1.17.2</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_2.12.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
-        <grpc.version>1.53.0</grpc.version>
+        <grpc.version>1.60.1</grpc.version>
         <guava.version>32.0.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
         <hadoop.version>3.3.6</hadoop.version>
@@ -168,19 +167,21 @@
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jersey.version>2.39.1</jersey.version>
+        <jetcd.version>0.7.7</jetcd.version>
         <jetty.version>9.4.52.v20230823</jetty.version>
         <jline.version>0.9.94</jline.version>
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.5.1</kafka.version>
         <kubernetes-client.version>6.8.1</kubernetes-client.version>
-        <kyuubi-shaded-zookeeper.artifacts>kyuubi-shaded-zookeeper-34</kyuubi-shaded-zookeeper.artifacts>
-        <kyuubi-shaded-zookeeper.version>0.1.0</kyuubi-shaded-zookeeper.version>
+        <kyuubi-relocated.version>0.2.0</kyuubi-relocated.version>
+        <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.20.0</log4j.version>
         <mysql.jdbc.version>8.0.32</mysql.jdbc.version>
         <mockito.version>4.11.0</mockito.version>
         <netty.version>4.1.100.Final</netty.version>
         <openai.java.version>0.12.0</openai.java.version>
+        <retrofit.version>2.9.0</retrofit.version>
         <paimon.version>0.5.0-incubating</paimon.version>
         <paimon.spark.binary.version>${spark.binary.version}</paimon.spark.binary.version>
         <parquet.version>1.10.1</parquet.version>
@@ -199,7 +200,7 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.4.1</spark.version>
+        <spark.version>3.4.2</spark.version>
         <spark.binary.version>3.4</spark.binary.version>
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
@@ -211,7 +212,8 @@
         <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
         <threeten.version>1.7.0</threeten.version>
         <thrift.version>0.9.3</thrift.version>
-        <trino.client.version>363</trino.client.version>
+        <!-- trino-client involves kotlin runtime dependencies since 412 because of upgrading okhttp -->
+        <trino.client.version>411</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <trino.tpch.version>1.1</trino.tpch.version>
 
@@ -279,8 +281,13 @@
         <dependencies>
             <dependency>
                 <groupId>org.apache.kyuubi</groupId>
-                <artifactId>${kyuubi-shaded-zookeeper.artifacts}</artifactId>
-                <version>${kyuubi-shaded-zookeeper.version}</version>
+                <artifactId>kyuubi-relocated-hive-service-rpc</artifactId>
+                <version>${kyuubi-relocated.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>${kyuubi-relocated-zookeeper.artifacts}</artifactId>
+                <version>${kyuubi-relocated.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -565,6 +572,12 @@
             <dependency>
                 <groupId>com.dimafeng</groupId>
                 <artifactId>testcontainers-scala-mysql_${scala.binary.version}</artifactId>
+                <version>${testcontainers-scala.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.dimafeng</groupId>
+                <artifactId>testcontainers-scala-postgresql_${scala.binary.version}</artifactId>
                 <version>${testcontainers-scala.version}</version>
             </dependency>
 
@@ -1093,7 +1106,7 @@
             <dependency>
                 <groupId>io.etcd</groupId>
                 <artifactId>jetcd-core</artifactId>
-                <version>${etcd.version}</version>
+                <version>${jetcd.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>javax.annotation</groupId>
@@ -1105,7 +1118,7 @@
             <dependency>
                 <groupId>io.etcd</groupId>
                 <artifactId>jetcd-launcher</artifactId>
-                <version>${etcd.version}</version>
+                <version>${jetcd.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.testcontainers</groupId>
@@ -1145,6 +1158,12 @@
             </dependency>
 
             <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-util</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${protobuf.version}</version>
@@ -1157,7 +1176,7 @@
             </dependency>
 
             <dependency>
-                <groupId>net.jodah</groupId>
+                <groupId>dev.failsafe</groupId>
                 <artifactId>failsafe</artifactId>
                 <version>${failsafe.verion}</version>
             </dependency>
@@ -2054,11 +2073,6 @@
             </plugin>
 
             <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
             </plugin>
@@ -2276,7 +2290,7 @@
             <properties>
                 <delta.artifact>delta-core</delta.artifact>
                 <delta.version>2.4.0</delta.version>
-                <spark.version>3.4.1</spark.version>
+                <spark.version>3.4.2</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
@@ -2330,7 +2344,7 @@
         <profile>
             <id>flink-1.17</id>
             <properties>
-                <flink.version>1.17.1</flink.version>
+                <flink.version>1.17.2</flink.version>
             </properties>
         </profile>
 
@@ -2344,7 +2358,7 @@
         <profile>
             <id>zookeeper-3.6</id>
             <properties>
-                <kyuubi-shaded-zookeeper.artifacts>kyuubi-shaded-zookeeper-36</kyuubi-shaded-zookeeper.artifacts>
+                <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-36</kyuubi-relocated-zookeeper.artifacts>
             </properties>
         </profile>
 
@@ -2367,13 +2381,6 @@
             <properties>
                 <hive.archive.download.skip>true</hive.archive.download.skip>
             </properties>
-        </profile>
-
-        <profile>
-            <id>spark-block-cleaner</id>
-            <modules>
-                <module>tools/spark-block-cleaner</module>
-            </modules>
         </profile>
 
         <profile>
@@ -2419,6 +2426,18 @@
             <properties>
                 <webui.skip>false</webui.skip>
             </properties>
+        </profile>
+
+        <profile>
+            <id>codecov</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>

@@ -63,9 +63,24 @@ Since v1.1.0, Kyuubi support building with different Spark profiles,
 
 |   Profile   | Default | Since |
 |-------------|---------|-------|
-| -Pspark-3.1 | No      | 1.1.0 |
-| -Pspark-3.2 | No      | 1.4.0 |
-| -Pspark-3.3 | Yes     | 1.6.0 |
+| -Pspark-3.1 |         | 1.1.0 |
+| -Pspark-3.2 |         | 1.4.0 |
+| -Pspark-3.3 |         | 1.6.0 |
+| -Pspark-3.4 | ✓       | 1.8.0 |
+| -Pspark-3.5 |         | 1.8.0 |
+
+## Building Kyuubi Against Different Scala Versions
+
+Since v1.8.0, Kyuubi support building with different Scala profile. Currently, Kyuubi supports building with Scala 2.12 and 2.13, while Scala 2.12 by default.
+
+|   Profile    | Default | Since |
+|--------------|---------|-------|
+| (Scala 2.12) | ✓       | -     |
+| -Pscala-2.13 |         | 1.8.0 |
+
+Please activate `scala-2.13` profile when Scala 2.13 support is needed. The GA tests have covered integration test with the Kyuubi server, engines and related plugins, while the Flink engine and it's integration tests are not included for the reason that Flink does not support Scala 2.13 yet and will pull out client support for Scala.
+
+For the Scala version for Spark engines, the server will look up the `SPARK_SCALA_VERSION` system environment variable first, and then the Scala version of the server compiled with if the former one not set. For the Scala version for other engines, the server will use the Scala version of the server compiled with.
 
 ## Building With Apache dlcdn Site
 

@@ -33,7 +33,7 @@ class SetCurrentCatalog(session: Session, catalog: String)
     try {
       val session = trinoContext.clientSession.get
       var builder = ClientSession.builder(session)
-      builder = builder.withCatalog(catalog)
+      builder = builder.catalog(catalog)
       trinoContext.clientSession.set(builder.build())
       setHasResultSet(false)
     } catch onError()

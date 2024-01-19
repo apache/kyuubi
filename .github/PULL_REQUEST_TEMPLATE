@@ -29,28 +29,10 @@ Please include a summary of the change and which issue is fixed. Please also inc
 
 ---
 
-# Checklists
-## 📝 Author Self Checklist
+# Checklist 📝
 <!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
 <!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
-- [ ] My code follows the [style guidelines](https://kyuubi.readthedocs.io/en/master/contributing/code/style.html) of this project
-- [ ] I have performed a self-review
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
+
 - [ ] This patch was not authored or co-authored using [Generative Tooling](https://www.apache.org/legal/generative-tooling.html)
-
-## 📝 Committer Pre-Merge Checklist
-
-- [ ] Pull request title is okay.
-- [ ] No license issues.
-- [ ] Milestone correctly set?
-- [ ] Test coverage is ok
-- [ ] Assignees are selected.
-- [ ] Minimum number of approvals
-- [ ] No changes are requested
-
 
 **Be nice. Be informative.**

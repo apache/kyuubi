@@ -17,11 +17,11 @@
 
 package org.apache.kyuubi.jdbc.hive.cli;
 
-import static org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6;
+import static org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6;
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion;
-import org.apache.hive.service.rpc.thrift.TRowSet;
-import org.apache.thrift.TException;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TRowSet;
+import org.apache.kyuubi.shaded.thrift.TException;
 
 public class RowSetFactory {
 

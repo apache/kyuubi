@@ -19,109 +19,179 @@
 # Pull Request Labeler Github Action Configuration: https://github.com/marketplace/actions/labeler
 
 "kind:build":
-  - ".dockerignore"
-  - ".rat-excludes"
-  - ".scalafmt"
-  - "**/*pom.xml"
-  - "bin/docker-image-tool.sh"
-  - "build/**/*"
-  - "docker/**/*"
-  - "docs/requirements"
-  - "kyuubi-assembly/**/*"
-  - "scalastyle-config.xml"
-  - any: ["dev/**/*", "!dev/kyuubi-codecov/**/*", "!dev/kyuubi-tpcds/**/*"]
+  - changed-files:
+    - any-glob-to-any-file: [
+      '.dockerignore',
+      '.rat-excludes',
+      '.scalafmt',
+      '**/*pom.xml',
+      'bin/docker-image-tool.sh',
+      'build/**/*',
+      'docker/**/*',
+      'docs/requirements',
+      'kyuubi-assembly/**/*',
+      'scalastyle-config.xml'
+    ]
+    - all-globs-to-any-file: [
+      'dev/**/*',
+      '!dev/kyuubi-codecov/**/*',
+      '!dev/kyuubi-tpcds/**/*'
+    ]
 
 "kind:deploy":
-  - any: ["bin/**/*", "!bin/beeline", "!bin/docker-image-tool.sh"]
+  - changed-files:
+    - all-globs-to-any-file: [
+      'bin/**/*',
+      '!bin/beeline',
+      '!bin/docker-image-tool.sh'
+    ]
     
 "kind:documentation":
-  - "*.md"
-  - "conf/**/*"
-  - "docs/**/*"
-  - "readthedocs.yml"
+  - changed-files:
+    - any-glob-to-any-file: [
+      '*.md',
+      'conf/**/*',
+      'docs/**/*',
+      'readthedocs.yml'
+    ]
 
 "kind:infra":
-  - ".asf.yaml"
-  - ".gitattributes"
-  - ".github/**/*"
-  - ".gitignore"
-  - "LICENSE"
-  - "LICENSE-binary"
-  - "NOTICE"
-  - "NOTICE-binary"
-  - "codecov.yml"
-  - "dev/kyuubi-codecov/**/*"
-  - "licenses-binary"
+  - changed-files:
+    - any-glob-to-any-file: [
+      '.asf.yaml',
+      '.gitattributes',
+      '.github/**/*',
+      '.gitignore',
+      'LICENSE',
+      'LICENSE-binary',
+      'NOTICE',
+      'NOTICE-binary',
+      'codecov.yml',
+      'dev/kyuubi-codecov/**/*',
+      'licenses-binary'
+    ]
 
 "module:common":
-  - "kyuubi-common/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'kyuubi-common/**/*'
+    ]
 
 "module:ctl":
-  - "bin/beeline"
-  - "kyuubi-ctl/**/*"
-  - "kyuubi-hive-beeline/**/*"
-  - "kyuubi-hive-jdbc/**/*"
-  - "kyuubi-hive-jdbc-shaded/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'bin/beeline',
+      'kyuubi-ctl/**/*',
+      'kyuubi-hive-beeline/**/*',
+      'kyuubi-hive-jdbc/**/*',
+      'kyuubi-hive-jdbc-shaded/**/*'
+    ]
 
 "module:events":
-  - "kyuubi-events/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'kyuubi-events/**/*'
+    ]
 
 "module:flink":
-  - "externals/kyuubi-flink-sql-engine/**/*"
-  - "integration-tests/kyuubi-flink-it/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'externals/kyuubi-flink-sql-engine/**/*',
+      'integration-tests/kyuubi-flink-it/**/*'
+    ]
 
 "module:ha":
-  - "kyuubi-ha/**/*"
-  - "kyuubi-zookeeper/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'kyuubi-ha/**/*',
+      'kyuubi-zookeeper/**/*'
+    ]
 
 "module:hive":
-  - "bin/beeline"
-  - "externals/kyuubi-hive-sql-engine/**/*"
-  - "kyuubi-hive-beeline/**/*"
-  - "kyuubi-hive-jdbc/**/*"
-  - "kyuubi-hive-jdbc-shaded/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'bin/beeline',
+      'externals/kyuubi-hive-sql-engine/**/*',
+      'kyuubi-hive-beeline/**/*',
+      'kyuubi-hive-jdbc/**/*',
+      'kyuubi-hive-jdbc-shaded/**/*'
+    ]
 
 "module:jdbc":
-  - "externals/kyuubi-jdbc-engine/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'externals/kyuubi-jdbc-engine/**/*'
+    ]
 
 "module:kubernetes":
-  - ".dockerignore"
-  - "bin/docker-image-tool.sh"
-  - "docker/**/*"
-  - "integration-tests/kyuubi-kubernetes-it/**/*"
-  - "tools/spark-block-cleaner/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      '.dockerignore',
+      'bin/docker-image-tool.sh',
+      'docker/**/*',
+      'integration-tests/kyuubi-kubernetes-it/**/*'
+    ]
 
 "module:metrics":
-  - "kyuubi-metrics/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'kyuubi-metrics/**/*'
+    ]
 
 "module:trino":
-  - "externals/kyuubi-trino-engine/**/*" 
+  - changed-files:
+    - any-glob-to-any-file: [
+      'externals/kyuubi-trino-engine/**/*'
+    ]
 
 "module:tpcds":
-  - "dev/kyuubi-tpcds/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'dev/kyuubi-tpcds/**/*'
+    ]
 
 "module:server":
-  - "bin/kyuubi"
-  - "kyuubi-server/src/**/*"
-  - "kyuubi-server/pom.xml"
-  - "extension/server/kyuubi-server-plugin/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'bin/kyuubi',
+      'kyuubi-server/src/**/*',
+      'kyuubi-server/pom.xml',
+      'extension/server/kyuubi-server-plugin/**/*'
+    ]
 
 "module:spark":
-  - "externals/kyuubi-spark-sql-engine/**/*" 
-  - "extensions/spark/**/*"
-  - "tools/spark-block-cleaner/**/*"
+  - changed-files:
+      - any-glob-to-any-file: [
+        'externals/kyuubi-spark-sql-engine/**/*',
+        'extensions/spark/**/*'
+      ]
 
 "module:extensions":
-  - "extensions/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'extensions/**/*'
+    ]
 
 "module:rest-client":
-  - "kyuubi-rest-client/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'kyuubi-rest-client/**/*'
+    ]
 
 "module:integration-tests":
-  - "integration-tests/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'integration-tests/**/*'
+    ]
 
 "module:authz":
-  - "extensions/spark/kyuubi-spark-authz/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'extensions/spark/kyuubi-spark-authz/**/*'
+    ]
 
 "module:ui":
-  - "kyuubi-server/web-ui/**/*"
+  - changed-files:
+    - any-glob-to-any-file: [
+      'kyuubi-server/web-ui/**/*'
+    ]

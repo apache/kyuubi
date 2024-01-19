@@ -22,13 +22,13 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Set
 
 import io.trino.client.ClientStandardTypes._
-import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.trino.{TrinoQueryTests, TrinoStatement, WithTrinoEngine}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
   override def withKyuubiConf: Map[String, String] = Map(
@@ -89,7 +89,9 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
         "tdigest",
         "LikePattern",
         "function",
-        "Classifier")
+        "Classifier",
+        "json2016",
+        "JsonPath2016")
       val typeInfos: Set[String] = Set()
       while (typeInfo.next()) {
         assert(expectedTypes.contains(typeInfo.getString(TYPE_NAME)))

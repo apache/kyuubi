@@ -35,6 +35,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.service.ServiceUtils
 import org.apache.kyuubi.util.AssertionUtils._
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   private def conf = KyuubiConf().set("kyuubi.on", "off")
@@ -422,6 +423,20 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
             assertNotMatches(sparkHome, SPARK_HOME_REGEX_SCALA_212)
           }
     }
+  }
+
+  test("default spark.yarn.maxAppAttempts conf in yarn mode") {
+    val conf1 = KyuubiConf(false)
+    conf1.set("spark.master", "k8s://test:12345")
+    val builder1 = new SparkProcessBuilder("", conf1)
+    val commands1 = builder1.toString.split(' ')
+    assert(!commands1.contains("spark.yarn.maxAppAttempts"))
+
+    val conf2 = KyuubiConf(false)
+    conf2.set("spark.master", "yarn")
+    val builder2 = new SparkProcessBuilder("", conf2)
+    val commands2 = builder2.toString.split(' ')
+    assert(commands2.contains("spark.yarn.maxAppAttempts=1"))
   }
 }
 

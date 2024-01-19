@@ -152,12 +152,13 @@ monitoring:
 
 # $KYUUBI_CONF_DIR directory
 kyuubiConfDir: /opt/kyuubi/conf
-# Kyuubi configurations files
+# Kyuubi configuration files
 kyuubiConf:
   # The value (templated string) is used for kyuubi-env.sh file
   # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/configuration/settings.html#environments for more details
   kyuubiEnv: ~
   #  kyuubiEnv: |
+  #    #!/usr/bin/env bash
   #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
   #    export SPARK_HOME=/opt/spark
   #    export FLINK_HOME=/opt/flink
@@ -178,6 +179,46 @@ kyuubiConf:
   # The value (templated string) is used for log4j2.xml file
   # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/configuration/settings.html#logging for more details
   log4j2: ~
+
+# $SPARK_CONF_DIR directory
+sparkConfDir: /opt/spark/conf
+# Spark configuration files
+sparkConf:
+  # The value (templated string) is used for spark-env.sh file
+  # See example at https://github.com/apache/spark/blob/master/conf/spark-env.sh.template and Spark documentation for more details
+  sparkEnv: ~
+  #  sparkEnv: |
+  #    #!/usr/bin/env bash
+  #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
+  #    export SPARK_LOG_DIR=/opt/spark/logs
+  #    export SPARK_LOG_MAX_FILES=5
+
+  # The value (templated string) is used for spark-defaults.conf file
+  # See example at https://github.com/apache/spark/blob/master/conf/spark-defaults.conf.template and Spark documentation for more details
+  sparkDefaults: ~
+  #  sparkDefaults: |
+  #    spark.submit.deployMode=cluster
+  #    spark.kubernetes.container.image=apache/spark:3.5.0
+  #    spark.kubernetes.authenticate.driver.serviceAccountName=spark
+  #    spark.kubernetes.file.upload.path=s3a://kyuubi/spark
+  #    # S3 dependencies
+  #    spark.jars.packages=org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262
+  #    spark.driver.extraJavaOptions=-Divy.cache.dir=/tmp -Divy.home=/tmp
+  #    # S3A configuration
+  #    spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem
+  #    spark.hadoop.fs.s3a.endpoint=http://object-storage:80
+  #    spark.hadoop.fs.s3a.access.key=******
+  #    spark.hadoop.fs.s3a.secret.key=********
+  #    spark.hadoop.fs.s3a.path.style.access=true
+  #    spark.hadoop.fs.s3a.fast.upload=true
+
+  # The value (templated string) is used for log4j2.properties file
+  # See example at https://github.com/apache/spark/blob/master/conf/log4j2.properties.template and Spark documentation for more details
+  log4j2: ~
+
+  # The value (templated string) is used for metrics.properties file
+  # See example at https://github.com/apache/spark/blob/master/conf/metrics.properties.template and Spark documentation for more details
+  metrics: ~
 
 # Command to launch Kyuubi server (templated)
 command: ~

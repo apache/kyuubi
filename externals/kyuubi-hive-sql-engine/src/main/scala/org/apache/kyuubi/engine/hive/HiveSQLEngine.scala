@@ -45,7 +45,10 @@ class HiveSQLEngine extends Serverable("HiveSQLEngine") {
     super.start()
     // Start engine self-terminating checker after all services are ready and it can be reached by
     // all servers in engine spaces.
-    backendService.sessionManager.startTerminatingChecker(() => stop())
+    backendService.sessionManager.startTerminatingChecker(() => {
+      selfExited = true
+      stop()
+    })
   }
 
   override protected def stopServer(): Unit = {
@@ -79,6 +82,14 @@ object HiveSQLEngine extends Logging {
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
+    // align with the operational behavior of HiveServer2, it is necessary to
+    // include the `hiveserver2-site.xml` configuration within the HiveConf settings.
+    // for instance, upon the installation of the Hive Ranger plugin, authorization
+    // configurations are appended to the `hiveserver2-site.xml` file. Similarly, to activate
+    // the Ranger plugin for the Hive engine within Kyuubi, it is essential for the Hive engine
+    // to load the `hiveserver2-site.xml` file. This ensures that the Hive engine's
+    // security features are consistent with those managed by HiveServer2. See [KYUUBI #5878].
+    hiveConf.addResource("hiveserver2-site.xml")
     for ((k, v) <- kyuubiConf.getAll) {
       hiveConf.set(k, v)
     }
@@ -143,7 +154,8 @@ object HiveSQLEngine extends Logging {
       }
 
     } catch {
-      case t: Throwable => currentEngine match {
+      case t: Throwable =>
+        currentEngine match {
           case Some(engine) =>
             engine.stop()
             val event = HiveEngineEvent(engine)
@@ -152,6 +164,7 @@ object HiveSQLEngine extends Logging {
           case _ =>
             error(s"Failed to start Hive SQL engine: ${t.getMessage}.", t)
         }
+        throw t
     }
   }
 }

@@ -26,7 +26,6 @@ import scala.collection.JavaConverters._
 import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.PipelineOptions
 import org.apache.flink.table.types.logical.LogicalTypeRoot
-import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
@@ -38,6 +37,7 @@ import org.apache.kyuubi.jdbc.hive.{KyuubiSQLException, KyuubiStatement}
 import org.apache.kyuubi.jdbc.hive.common.TimestampTZ
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTestResources {
 
@@ -1148,6 +1148,22 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
         assert(rows === 200)
       }
     }
+    if (FLINK_RUNTIME_VERSION >= "1.17") {
+      withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "10"))(Map.empty) {
+        withJdbcStatement() { statement =>
+          for (i <- 0 to 10) {
+            statement.execute(s"create table tbl_src$i (a bigint) " +
+              s"with ('connector' = 'blackhole')")
+          }
+          val resultSet = statement.executeQuery("show tables")
+          var rows = 0
+          while (resultSet.next()) {
+            rows += 1
+          }
+          assert(rows === 11)
+        }
+      }
+    }
   }
 
   test("execute statement - add/show jar") {
@@ -1255,7 +1271,7 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
 
   test("test result fetch timeout") {
     val exception = intercept[KyuubiSQLException](
-      withSessionConf()(Map(ENGINE_FLINK_FETCH_TIMEOUT.key -> "60000"))() {
+      withSessionConf()(Map(ENGINE_FLINK_FETCH_TIMEOUT.key -> "PT60S"))() {
         withJdbcStatement("tbl_a") { stmt =>
           stmt.executeQuery("create table tbl_a (a int) " +
             "with ('connector' = 'datagen', 'rows-per-second'='0')")

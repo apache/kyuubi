@@ -214,7 +214,7 @@ commons-logging:commons-logging
 org.apache.commons:commons-lang3
 org.apache.derby:derby
 com.google.errorprone:error_prone_annotations
-net.jodah:failsafe
+dev.failsafe:failsafe
 com.jakewharton.fliptables:fliptables
 com.github.mifmif:generex
 io.grpc:grpc-api
@@ -225,6 +225,7 @@ io.grpc:grpc-netty
 io.grpc:grpc-protobuf-lite
 io.grpc:grpc-protobuf
 io.grpc:grpc-stub
+io.grpc:grpc-util
 com.google.code.gson:gson
 com.google.guava:failureaccess
 com.google.guava:guava

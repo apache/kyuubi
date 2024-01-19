@@ -335,7 +335,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val extraInfo = attributes.map(kv => kv._1 + "=" + kv._2).mkString(";", ";", "")
     val pathPrefix = DiscoveryPaths.makePath(
       namespace,
-      s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)}" +
+      s"serverUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)}" +
         s"${extraInfo.stripSuffix(";")};${session}sequence=")
     val znode = instance
 

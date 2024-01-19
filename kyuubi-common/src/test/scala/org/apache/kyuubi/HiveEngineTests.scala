@@ -230,11 +230,12 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
     assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
     withJdbcStatement() { statement =>
       val resultSet = statement.getConnection.getMetaData.getTableTypes
-      // Hive3 removes support for INDEX_TABLE
-      val hive2Expected = Set("TABLE", "VIEW", "MATERIALIZED_VIEW", "INDEX_TABLE")
+      val hive2_1Expected = Set("TABLE", "VIEW", "INDEX_TABLE")
+      val hive2_3Expected = Set("TABLE", "VIEW", "MATERIALIZED_VIEW", "INDEX_TABLE")
       val hive3Expected = Set("TABLE", "VIEW", "MATERIALIZED_VIEW")
       val tableTypes = JdbcUtils.mapResultSet(resultSet) { rs => rs.getString(TABLE_TYPE) }.toSet
-      assert(tableTypes === hive2Expected || tableTypes === hive3Expected)
+      assert(tableTypes === hive2_1Expected || tableTypes === hive2_3Expected ||
+        tableTypes === hive3Expected)
     }
   }
 

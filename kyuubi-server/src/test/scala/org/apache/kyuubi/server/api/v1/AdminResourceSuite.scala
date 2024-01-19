@@ -24,7 +24,6 @@ import javax.ws.rs.core.{GenericType, MediaType, Response}
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 import org.mockito.Mockito.lenient
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -45,6 +44,7 @@ import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.util.HttpAuthUtils
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.AnonymousAuthenticationProviderImpl
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -695,8 +695,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(restFrontendService.connectionUrl.equals(testServer.getInstance()))
       assert(!testServer.getAttributes.isEmpty)
       val attributes = testServer.getAttributes
-      assert(attributes.containsKey("serviceUri") &&
-        attributes.get("serviceUri").equals(fe.connectionUrl))
+      assert(attributes.containsKey("serverUri") &&
+        attributes.get("serverUri").equals(fe.connectionUrl))
       assert(attributes.containsKey("version"))
       assert(attributes.containsKey("sequence"))
       assert("Running".equals(testServer.getStatus))

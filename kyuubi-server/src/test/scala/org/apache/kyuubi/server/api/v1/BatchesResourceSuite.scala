@@ -28,7 +28,6 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.DurationInt
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.glassfish.jersey.media.multipart.FormDataMultiPart
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart
 
@@ -48,6 +47,7 @@ import org.apache.kyuubi.server.http.util.HttpAuthUtils.{basicAuthorizationHeade
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, KyuubiAuthenticationFactory}
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class BatchesV1ResourceSuite extends BatchesResourceSuiteBase {
   override def batchVersion: String = "1"

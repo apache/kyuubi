@@ -24,12 +24,13 @@ import java.time.{Instant, LocalDate}
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.CalendarInterval
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class RowSetSuite extends KyuubiFunSuite {
 
@@ -98,7 +99,7 @@ class RowSetSuite extends KyuubiFunSuite {
   private val rows: Seq[Row] = (0 to 10).map(genRow) ++ Seq(Row.fromSeq(Seq.fill(17)(null)))
 
   test("column based set") {
-    val tRowSet = RowSet.toColumnBasedSet(rows, schema)
+    val tRowSet = new SparkTRowSetGenerator().toColumnBasedSet(rows, schema)
     assert(tRowSet.getColumns.size() === schema.size)
     assert(tRowSet.getRowsSize === 0)
 
@@ -165,14 +166,18 @@ class RowSetSuite extends KyuubiFunSuite {
     dateCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
       case (b, i) =>
-        assert(b === RowSet.toHiveString(Date.valueOf(s"2018-11-${i + 1}") -> DateType))
+        assert(b === RowSet.toHiveString(
+          Date.valueOf(s"2018-11-${i + 1}") -> DateType,
+          timeFormatters = HiveResult.getTimeFormatters))
     }
 
     val tsCol = cols.next().getStringVal
     tsCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b ===
-          RowSet.toHiveString(Timestamp.valueOf(s"2018-11-17 13:33:33.$i") -> TimestampType))
+          RowSet.toHiveString(
+            Timestamp.valueOf(s"2018-11-17 13:33:33.$i") -> TimestampType,
+            timeFormatters = HiveResult.getTimeFormatters))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -185,14 +190,16 @@ class RowSetSuite extends KyuubiFunSuite {
     arrCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b === RowSet.toHiveString(
-          Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq -> ArrayType(DoubleType)))
+          Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq -> ArrayType(DoubleType),
+          timeFormatters = HiveResult.getTimeFormatters))
     }
 
     val mapCol = cols.next().getStringVal
     mapCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b === RowSet.toHiveString(
-          Map(i -> java.lang.Double.valueOf(s"$i.$i")) -> MapType(IntegerType, DoubleType)))
+          Map(i -> java.lang.Double.valueOf(s"$i.$i")) -> MapType(IntegerType, DoubleType),
+          timeFormatters = HiveResult.getTimeFormatters))
     }
 
     val intervalCol = cols.next().getStringVal
@@ -203,7 +210,7 @@ class RowSetSuite extends KyuubiFunSuite {
   }
 
   test("row based set") {
-    val tRowSet = RowSet.toRowBasedSet(rows, schema)
+    val tRowSet = new SparkTRowSetGenerator().toRowBasedSet(rows, schema)
     assert(tRowSet.getColumnCount === 0)
     assert(tRowSet.getRowsSize === rows.size)
     val iter = tRowSet.getRowsIterator
@@ -241,7 +248,9 @@ class RowSetSuite extends KyuubiFunSuite {
     val r8 = iter.next().getColVals
     assert(r8.get(12).getStringVal.getValue === Array.fill(7)(7.7d).mkString("[", ",", "]"))
     assert(r8.get(13).getStringVal.getValue ===
-      RowSet.toHiveString(Map(7 -> 7.7d) -> MapType(IntegerType, DoubleType)))
+      RowSet.toHiveString(
+        Map(7 -> 7.7d) -> MapType(IntegerType, DoubleType),
+        timeFormatters = HiveResult.getTimeFormatters))
 
     val r9 = iter.next().getColVals
     assert(r9.get(14).getStringVal.getValue === new CalendarInterval(8, 8, 8).toString)
@@ -249,7 +258,7 @@ class RowSetSuite extends KyuubiFunSuite {
 
   test("to row set") {
     TProtocolVersion.values().foreach { proto =>
-      val set = RowSet.toTRowSet(rows, schema, proto)
+      val set = new SparkTRowSetGenerator().toTRowSet(rows, schema, proto)
       if (proto.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
         assert(!set.isSetColumns, proto.toString)
         assert(set.isSetRows, proto.toString)

@@ -21,13 +21,15 @@ import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
 
 trait WithPostgreSQLEngine extends WithJdbcEngine with WithPostgreSQLContainer {
 
-  override def withKyuubiConf: Map[String, String] = Map(
-    ENGINE_SHARE_LEVEL.key -> "SERVER",
-    ENGINE_JDBC_CONNECTION_URL.key -> s"jdbc:postgresql://$queryUrl/postgres",
-    ENGINE_JDBC_CONNECTION_USER.key -> "postgres",
-    ENGINE_JDBC_CONNECTION_PASSWORD.key -> "postgres",
-    ENGINE_TYPE.key -> "jdbc",
-    ENGINE_JDBC_SHORT_NAME.key -> "postgresql",
-    ENGINE_JDBC_DRIVER_CLASS.key -> "org.postgresql.Driver")
+  override def withKyuubiConf: Map[String, String] = withContainers { container =>
+    Map(
+      ENGINE_SHARE_LEVEL.key -> "SERVER",
+      ENGINE_JDBC_CONNECTION_URL.key -> container.jdbcUrl,
+      ENGINE_JDBC_CONNECTION_USER.key -> container.username,
+      ENGINE_JDBC_CONNECTION_PASSWORD.key -> container.password,
+      ENGINE_TYPE.key -> "jdbc",
+      ENGINE_JDBC_SHORT_NAME.key -> "postgresql",
+      ENGINE_JDBC_DRIVER_CLASS.key -> container.driverClassName)
+  }
 
 }

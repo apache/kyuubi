@@ -20,8 +20,8 @@ package org.apache.kyuubi.jdbc.hive.auth;
 import java.util.HashMap;
 import javax.security.auth.callback.*;
 import javax.security.sasl.SaslException;
-import org.apache.thrift.transport.TSaslClientTransport;
-import org.apache.thrift.transport.TTransport;
+import org.apache.kyuubi.shaded.thrift.transport.TSaslClientTransport;
+import org.apache.kyuubi.shaded.thrift.transport.TTransport;
 
 public final class PlainSaslHelper {
 

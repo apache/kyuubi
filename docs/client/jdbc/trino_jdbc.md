@@ -33,7 +33,7 @@ kyuubi.frontend.trino.bind.port 10999 #default port
 
 ## Install Trino JDBC
 
-Download [trino-jdbc-363.jar](https://repo1.maven.org/maven2/io/trino/trino-jdbc/363/trino-jdbc-363.jar) and add it to the classpath of your Java application.
+Download [trino-jdbc-411.jar](https://repo1.maven.org/maven2/io/trino/trino-jdbc/411/trino-jdbc-363.jar) and add it to the classpath of your Java application.
 
 The driver is also available from Maven Central:
 
@@ -41,7 +41,7 @@ The driver is also available from Maven Central:
 <dependency>
     <groupId>io.trino</groupId>
     <artifactId>trino-jdbc</artifactId>
-    <version>363</version>
+    <version>411</version>
 </dependency>
 ```
 

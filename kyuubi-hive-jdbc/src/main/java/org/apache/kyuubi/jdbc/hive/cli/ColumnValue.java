@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.jdbc.hive.cli;
 
-import org.apache.hive.service.rpc.thrift.*;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.*;
 
 /** Protocols before HIVE_CLI_SERVICE_PROTOCOL_V6 (used by RowBasedSet) */
 public class ColumnValue {

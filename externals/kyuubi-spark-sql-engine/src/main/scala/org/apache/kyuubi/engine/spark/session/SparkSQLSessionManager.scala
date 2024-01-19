@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark.session
 
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hadoop.fs.Path
 import org.apache.spark.api.python.KyuubiPythonGatewayServer
 import org.apache.spark.sql.SparkSession
 
@@ -29,8 +29,10 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel._
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.engineId
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.util.ThreadUtils
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
@@ -130,7 +132,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   private def newSparkSession(rootSparkSession: SparkSession): SparkSession = {
     val newSparkSession = rootSparkSession.newSession()
-    KyuubiSparkUtil.initializeSparkSession(newSparkSession, conf.get(ENGINE_SESSION_INITIALIZE_SQL))
+    KyuubiSparkUtil.initializeSparkSession(
+      newSparkSession,
+      conf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL))
     newSparkSession
   }
 
@@ -181,6 +185,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     if (shareLevel == ShareLevel.CONNECTION) {
       info("Session stopped due to shared level is Connection.")
       stopSession()
+    }
+    if (conf.get(OPERATION_RESULT_SAVE_TO_FILE)) {
+      val path = new Path(s"${conf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)}/" +
+        s"$engineId/${sessionHandle.identifier}")
+      path.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(path, true)
+      info(s"Delete session result file $path")
     }
   }
 
