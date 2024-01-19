@@ -43,7 +43,8 @@ class FileSessionConfAdvisor extends SessionConfAdvisor {
 }
 
 object FileSessionConfAdvisor extends Logging {
-  private val reloadInterval: Long = KyuubiConf().get(KyuubiConf.SESSION_CONF_FILE_RELOAD_INTERVAL)
+  private val reloadInterval: Long =
+    KyuubiConf().loadFileDefaults().get(KyuubiConf.SESSION_CONF_FILE_RELOAD_INTERVAL)
   private lazy val sessionConfCache: LoadingCache[String, JMap[String, String]] =
     CacheBuilder.newBuilder()
       .expireAfterWrite(
