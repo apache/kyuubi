@@ -29,7 +29,6 @@ import org.apache.hadoop.security.authorize.ProxyUsers
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
 import org.apache.kyuubi.service.authentication.AuthTypes._
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.kyuubi.shaded.thrift.TProcessorFactory
@@ -38,14 +37,9 @@ import org.apache.kyuubi.shaded.thrift.transport.{TSaslServerTransport, TTranspo
 class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
 
   val authTypes: Seq[AuthType] = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
-  val saslDisabled: Boolean = authTypes == Seq(NOSASL)
-  val kerberosEnabled: Boolean = authTypes.contains(KERBEROS)
-
-  // take the first declared SASL/PLAIN auth type
-  private val effectivePlainAuthType = authTypes.find {
-    case NOSASL | KERBEROS => false
-    case _ => true
-  }
+  val saslDisabled: Boolean = AuthUtils.saslDisabled(authTypes)
+  val kerberosEnabled: Boolean = AuthUtils.kerberosEnabled(authTypes)
+  val effectivePlainAuthType: Option[AuthType] = AuthUtils.effectivePlainAuthType(authTypes)
 
   private val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
     if (kerberosEnabled) {
@@ -123,7 +117,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
       .orElse(Option(TSetIpAddressProcessor.getUserIpAddress))
   }
 }
-object KyuubiAuthenticationFactory extends Logging {
+object AuthUtils extends Logging {
   val HS2_PROXY_USER = "hive.server2.proxy.user"
 
   @throws[KyuubiSQLException]
@@ -156,12 +150,13 @@ object KyuubiAuthenticationFactory extends Logging {
     }
   }
 
-  def getValidPasswordAuthMethod(authTypes: Seq[AuthType]): AuthMethod = {
-    if (authTypes == Seq(NOSASL)) AuthMethods.NONE
-    else if (authTypes.contains(NONE)) AuthMethods.NONE
-    else if (authTypes.contains(LDAP)) AuthMethods.LDAP
-    else if (authTypes.contains(JDBC)) AuthMethods.JDBC
-    else if (authTypes.contains(CUSTOM)) AuthMethods.CUSTOM
-    else throw new IllegalArgumentException("No valid Password Auth detected")
+  def saslDisabled(authTypes: Seq[AuthType]): Boolean = authTypes == Seq(NOSASL)
+
+  def kerberosEnabled(authTypes: Seq[AuthType]): Boolean = authTypes.contains(KERBEROS)
+
+  // take the first declared SASL/PLAIN auth type
+  def effectivePlainAuthType(authTypes: Seq[AuthType]): Option[AuthType] = authTypes.find {
+    case NOSASL | KERBEROS => false
+    case _ => true
   }
 }
