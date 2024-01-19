@@ -37,11 +37,15 @@ import org.apache.kyuubi.shaded.thrift.transport.{TSaslServerTransport, TTranspo
 
 class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
 
-  val authTypes: Set[AuthType] = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
-  val noSaslEnabled: Boolean = authTypes == Set(NOSASL)
+  val authTypes: Seq[AuthType] = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+  val saslDisabled: Boolean = authTypes == Seq(NOSASL)
   val kerberosEnabled: Boolean = authTypes.contains(KERBEROS)
-  private val plainAuthTypeOpt = authTypes.filterNot(_.equals(KERBEROS))
-    .filterNot(_.equals(NOSASL)).headOption
+
+  // take the first declared SASL/PLAIN auth type
+  private val effectivePlainAuthType = authTypes.find {
+    case NOSASL | KERBEROS => false
+    case _ => true
+  }
 
   private val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
     if (kerberosEnabled) {
@@ -70,7 +74,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
   }
 
   def getTTransportFactory: TTransportFactory = {
-    if (noSaslEnabled) {
+    if (saslDisabled) {
       new TTransportFactory()
     } else {
       var transportFactory: TSaslServerTransport.Factory = null
@@ -87,7 +91,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
         case _ =>
       }
 
-      plainAuthTypeOpt match {
+      effectivePlainAuthType match {
         case Some(plainAuthType) =>
           transportFactory = PlainSASLHelper.getTransportFactory(
             plainAuthType.toString,
@@ -152,8 +156,8 @@ object KyuubiAuthenticationFactory extends Logging {
     }
   }
 
-  def getValidPasswordAuthMethod(authTypes: Set[AuthType]): AuthMethod = {
-    if (authTypes == Set(NOSASL)) AuthMethods.NONE
+  def getValidPasswordAuthMethod(authTypes: Seq[AuthType]): AuthMethod = {
+    if (authTypes == Seq(NOSASL)) AuthMethods.NONE
     else if (authTypes.contains(NONE)) AuthMethods.NONE
     else if (authTypes.contains(LDAP)) AuthMethods.LDAP
     else if (authTypes.contains(JDBC)) AuthMethods.JDBC

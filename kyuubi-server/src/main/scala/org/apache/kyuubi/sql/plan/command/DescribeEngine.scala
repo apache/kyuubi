@@ -35,12 +35,20 @@ import org.apache.kyuubi.sql.schema.{Column, Row, Schema}
 case class DescribeEngine() extends RunnableCommand {
 
   override def run(kyuubiSession: KyuubiSession): Unit = {
-    val rows = Seq(kyuubiSession).map { session =>
-      lazy val client = session.asInstanceOf[KyuubiSessionImpl].client
+    val rows = Seq(kyuubiSession.asInstanceOf[KyuubiSessionImpl]).map { session =>
+      lazy val client = session.client
       val values = new ListBuffer[String]()
       values += client.engineId.getOrElse("")
       values += client.engineName.getOrElse("")
       values += client.engineUrl.getOrElse("")
+      session.getEngineNode match {
+        case Some(nodeInfo) =>
+          values += s"${nodeInfo.host}:${nodeInfo.port}"
+          values += nodeInfo.version.getOrElse("")
+          values += nodeInfo.attributes.mkString(",")
+        case None =>
+          values += ("", "", "")
+      }
       Row(values.toList)
     }
     iter = new IterableFetchIterator(rows)
@@ -59,6 +67,9 @@ object DescribeEngine {
     Seq(
       Column("ENGINE_ID", TTypeId.STRING_TYPE, Some("Kyuubi engine identify")),
       Column("ENGINE_NAME", TTypeId.STRING_TYPE, Some("Kyuubi engine name")),
-      Column("ENGINE_URL", TTypeId.STRING_TYPE, Some("Kyuubi engine url")))
+      Column("ENGINE_URL", TTypeId.STRING_TYPE, Some("Kyuubi engine url")),
+      Column("ENGINE_INSTANCE", TTypeId.STRING_TYPE, Some("Kyuubi engine instance host and port")),
+      Column("ENGINE_VERSION", TTypeId.STRING_TYPE, Some("Kyuubi engine version")),
+      Column("ENGINE_ATTRIBUTES", TTypeId.STRING_TYPE, Some("Kyuubi engine attributes")))
   }
 }
