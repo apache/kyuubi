@@ -45,7 +45,7 @@ import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.server.{KyuubiBatchService, KyuubiRestFrontendService}
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.{basicAuthorizationHeader, AUTHORIZATION_HEADER}
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
-import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, KyuubiAuthenticationFactory}
+import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, AuthUtils}
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
 
 class BatchesV1ResourceSuite extends BatchesResourceSuiteBase {
@@ -129,7 +129,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     assert(batch.getEndTime === 0)
 
     requestObj.setConf((requestObj.getConf.asScala ++
-      Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> "root")).asJava)
+      Map(AuthUtils.HS2_PROXY_USER -> "root")).asJava)
     val proxyUserRequest = requestObj
     val proxyUserResponse = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
