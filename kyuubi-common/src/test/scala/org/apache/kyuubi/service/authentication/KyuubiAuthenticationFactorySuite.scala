@@ -28,21 +28,20 @@ import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
-  import KyuubiAuthenticationFactory._
 
   test("verify proxy access") {
     val kyuubiConf = KyuubiConf()
     val hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
 
     val e1 = intercept[KyuubiSQLException] {
-      verifyProxyAccess("kent", "yao", "localhost", hadoopConf)
+      AuthUtils.verifyProxyAccess("kent", "yao", "localhost", hadoopConf)
     }
     assert(e1.getMessage === "Failed to validate proxy privilege of kent for yao")
 
     kyuubiConf.set("hadoop.proxyuser.kent.groups", "*")
     kyuubiConf.set("hadoop.proxyuser.kent.hosts", "*")
     val hadoopConf2 = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
-    verifyProxyAccess("kent", "yao", "localhost", hadoopConf2)
+    AuthUtils.verifyProxyAccess("kent", "yao", "localhost", hadoopConf2)
   }
 
   test("AuthType NONE") {
