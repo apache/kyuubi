@@ -35,7 +35,7 @@ import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
-import org.apache.kyuubi.service.authentication.{AuthMethods, AuthTypes, AuthUtils}
+import org.apache.kyuubi.service.authentication.{AuthTypes, AuthUtils}
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
 import org.apache.kyuubi.util.ThreadUtils
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
@@ -71,10 +71,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private lazy val port: Int = conf.get(FRONTEND_REST_BIND_PORT)
 
-  private lazy val securityEnabled = {
+  private[kyuubi] lazy val securityEnabled = {
     val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
     AuthUtils.kerberosEnabled(authTypes) ||
-    !AuthUtils.effectivePlainAuthType(authTypes).contains(AuthMethods.NONE)
+    !AuthUtils.effectivePlainAuthType(authTypes).contains(AuthTypes.NONE)
   }
 
   private lazy val administrators: Set[String] =
