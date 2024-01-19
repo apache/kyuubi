@@ -105,12 +105,15 @@ object PrivilegesBuilder {
           //   1. `MapInPandas`, `ScriptTransformation`
           //   2. `Project` output only have constant value
           if (columnPrune(p.references.toSeq ++ p.output, p.inputSet).isEmpty) {
-            buildQuery(
-              child,
-              privilegeObjects,
-              p.inputSet.map(_.toAttribute).toSeq,
-              Nil,
-              spark)
+            // If plan is project and output don't have relation to input, can ignore.
+            if (!p.isInstanceOf[Project]) {
+              buildQuery(
+                child,
+                privilegeObjects,
+                p.inputSet.map(_.toAttribute).toSeq,
+                Nil,
+                spark)
+            }
           } else {
             buildQuery(
               child,
