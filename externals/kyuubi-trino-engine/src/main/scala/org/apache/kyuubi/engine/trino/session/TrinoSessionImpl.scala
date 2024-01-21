@@ -54,7 +54,7 @@ class TrinoSessionImpl(
   override val handle: SessionHandle =
     conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
-  private val username: String = sessionConf
+  private val sessionUser: String = sessionConf
     .getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY).getOrElse(currentUser)
 
   var trinoContext: TrinoContext = _
@@ -95,7 +95,7 @@ class TrinoSessionImpl(
 
     ClientSession.builder()
       .server(URI.create(connectionUrl))
-      .principal(Optional.of(username))
+      .principal(Optional.of(sessionUser))
       .source("kyuubi")
       .catalog(catalogName)
       .schema(databaseName)
@@ -133,7 +133,9 @@ class TrinoSessionImpl(
       require(
         serverScheme.equalsIgnoreCase("https"),
         "Trino engine using username/password requires HTTPS to be enabled")
-      builder.addInterceptor(OkHttpUtil.basicAuth(username, password))
+      val user: String = sessionConf
+        .get(KyuubiConf.ENGINE_TRINO_CONNECTION_USER).getOrElse(sessionUser)
+      builder.addInterceptor(OkHttpUtil.basicAuth(user, password))
     }
 
     builder.build()
