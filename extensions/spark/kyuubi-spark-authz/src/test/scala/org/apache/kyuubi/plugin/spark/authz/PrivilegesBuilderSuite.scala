@@ -979,7 +979,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("Query: Literal") {
-    checkColumns(s"select 1 from $reusedTable", Seq.empty)
+    checkColumns(s"select 1 from $reusedTable", Nil)
   }
 
   test("Query: Function") {
