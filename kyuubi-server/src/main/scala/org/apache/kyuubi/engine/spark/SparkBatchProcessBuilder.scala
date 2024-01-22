@@ -34,7 +34,8 @@ class SparkBatchProcessBuilder(
     batchConf: Map[String, String],
     batchArgs: Seq[String],
     override val extraEngineLog: Option[OperationLog])
-  extends SparkProcessBuilder(proxyUser, conf, batchId, extraEngineLog) {
+// TODO respect doAsEnabled
+  extends SparkProcessBuilder(proxyUser, true, conf, batchId, extraEngineLog) {
   import SparkProcessBuilder._
 
   override protected lazy val commands: Iterable[String] = {

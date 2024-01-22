@@ -55,6 +55,7 @@ import org.apache.kyuubi.server.KyuubiServer
 private[kyuubi] class EngineRef(
     conf: KyuubiConf,
     user: String,
+    doAsEnabled: Boolean,
     groupProvider: GroupProvider,
     engineRefId: String,
     engineManager: KyuubiApplicationManager,
@@ -188,19 +189,25 @@ private[kyuubi] class EngineRef(
     builder = engineType match {
       case SPARK_SQL =>
         conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
-        new SparkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        new SparkProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case FLINK_SQL =>
         conf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
-        new FlinkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        new FlinkProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case TRINO =>
-        new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        new TrinoProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case HIVE_SQL =>
         conf.setIfMissing(HiveProcessBuilder.HIVE_ENGINE_NAME, defaultEngineName)
-        HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog, defaultEngineName)
+        HiveProcessBuilder(
+          appUser,
+          doAsEnabled,
+          conf,
+          engineRefId,
+          extraEngineLog,
+          defaultEngineName)
       case JDBC =>
-        new JdbcProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        new JdbcProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case CHAT =>
-        new ChatProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        new ChatProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
     }
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))

@@ -34,6 +34,7 @@ import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManage
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.{KubernetesUtils, Validator}
@@ -41,14 +42,15 @@ import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilder(
     override val proxyUser: String,
+    override val doAsEnabled: Boolean,
     override val conf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   @VisibleForTesting
-  def this(proxyUser: String, conf: KyuubiConf) {
-    this(proxyUser, conf, "")
+  def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) {
+    this(proxyUser, doAsEnabled, conf, "")
   }
 
   import SparkProcessBuilder._
@@ -135,14 +137,12 @@ class SparkProcessBuilder(
     var allConf = conf.getAll
 
     // if enable sasl kerberos authentication for zookeeper, need to upload the server keytab file
-    if (AuthTypes.withName(conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE))
-        == AuthTypes.KERBEROS) {
+    if (AuthTypes.withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
     // pass spark engine log path to spark conf
     (allConf ++ engineLogPathConf ++ extraYarnConf(allConf) ++ appendPodNameConf(allConf)).foreach {
-      case (k, v) =>
-        buffer ++= confKeyValue(convertConfigKey(k), v)
+      case (k, v) => buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 
     setupKerberos(buffer)
@@ -157,10 +157,12 @@ class SparkProcessBuilder(
   protected def setupKerberos(buffer: mutable.Buffer[String]): Unit = {
     // if the keytab is specified, PROXY_USER is not supported
     tryKeytab() match {
-      case None =>
+      case None if doAsEnabled =>
         setSparkUserName(proxyUser, buffer)
         buffer += PROXY_USER
         buffer += proxyUser
+      case None if !doAsEnabled =>
+        setSparkUserName(Utils.currentUser, buffer)
       case Some(name) =>
         setSparkUserName(name, buffer)
     }
@@ -175,10 +177,14 @@ class SparkProcessBuilder(
       try {
         val ugi = UserGroupInformation
           .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
-        if (ugi.getShortUserName != proxyUser) {
+        if (doAsEnabled && ugi.getShortUserName != proxyUser) {
           warn(s"The session proxy user: $proxyUser is not same with " +
             s"spark principal: ${ugi.getShortUserName}, so we can't support use keytab. " +
             s"Fallback to use proxy user.")
+          None
+        } else if (!doAsEnabled && ugi.getShortUserName != Utils.currentUser) {
+          warn(s"The server's user: ${Utils.currentUser} is not same with " +
+            s"spark principal: ${ugi.getShortUserName}, skip to use keytab.")
           None
         } else {
           Some(ugi.getShortUserName)

@@ -49,6 +49,7 @@ class KyuubiSessionImpl(
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf,
+    doAsEnabled: Boolean,
     parser: KyuubiParser)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
@@ -77,6 +78,7 @@ class KyuubiSessionImpl(
   lazy val engine: EngineRef = new EngineRef(
     sessionConf,
     user,
+    doAsEnabled,
     sessionManager.groupProvider,
     handle.identifier.toString,
     sessionManager.applicationManager,

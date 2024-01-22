@@ -53,7 +53,8 @@ class AdminRestApiSuite extends RestClientTestHelper {
     conf.set(KyuubiConf.AUTHENTICATION_METHOD, Seq("LDAP", "CUSTOM"))
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
     val user = ldapUser
-    val engine = new EngineRef(conf.clone, user, PluginLoader.loadGroupProvider(conf), id, null)
+    val engine =
+      new EngineRef(conf.clone, user, true, PluginLoader.loadGroupProvider(conf), id, null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",

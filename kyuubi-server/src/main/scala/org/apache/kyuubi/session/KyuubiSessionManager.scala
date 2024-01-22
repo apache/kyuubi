@@ -87,6 +87,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
+    val userConf = this.getConf.getUserDefaults(user)
     new KyuubiSessionImpl(
       protocol,
       user,
@@ -94,7 +95,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress,
       conf,
       this,
-      this.getConf.getUserDefaults(user),
+      userConf,
+      userConf.get(ENGINE_DO_AS_ENABLED),
       parser)
   }
 
