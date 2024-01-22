@@ -19,8 +19,9 @@
 ## Zookeeper Shell Client Entrance
 CLASS="org.apache.kyuubi.shaded.zookeeper.ZooKeeperMain"
 
-export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
-
+if [ -z "${KYUUBI_HOME}" ]; then
+  KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
+fi
 . "${KYUUBI_HOME}/bin/load-kyuubi-env.sh" -s
 
 if [[ -z ${JAVA_HOME} ]]; then

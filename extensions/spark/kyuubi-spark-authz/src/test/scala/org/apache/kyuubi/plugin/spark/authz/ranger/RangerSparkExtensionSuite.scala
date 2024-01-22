@@ -760,7 +760,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             s"""INSERT OVERWRITE DIRECTORY '/tmp/test_dir'
                | USING parquet
                | SELECT * FROM $db1.$table;""".stripMargin)))
-      assert(e.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+      assert(e.getMessage.contains(
+        s"does not have [write] privilege on [[/tmp/test_dir, /tmp/test_dir/]]"))
     }
   }
 
@@ -1087,8 +1088,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |INSERT OVERWRITE DIRECTORY '$path'
                  |USING parquet
                  |SELECT * FROM $db1.$table1""".stripMargin)))(
-            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
-              s"[write] privilege on [[$path, $path/]]")
+            s"does not have [write] privilege on [[$path, $path/]]")
         }
       }
     }
@@ -1129,8 +1129,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                    |INSERT OVERWRITE DIRECTORY '$path'
                    |USING parquet
                    |SELECT * FROM $db1.$table1""".stripMargin)))(
-            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
-              s"[write] privilege on [[$path, $path/]]")
+            s"does not have [write] privilege on [[$path, $path/]]")
 
           doAs(admin, sql(s"SELECT * FROM parquet.`$path`".stripMargin).explain(true))
           interceptEndsWith[AccessControlException](

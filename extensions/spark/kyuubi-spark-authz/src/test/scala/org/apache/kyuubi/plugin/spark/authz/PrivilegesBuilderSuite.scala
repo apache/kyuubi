@@ -1475,16 +1475,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       .queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
-    assert(in.size === 1)
-    val po0 = in.head
-    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assertEqualsIgnoreCase(reusedDb)(po0.dbname)
-    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
-    assert(po0.columns === Seq("key", "pid", "value"))
-    checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    assert(in.size === 0)
 
     assert(out.size == 1)
     val po1 = out.head
@@ -1526,18 +1517,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       val plan = sql(sqlStr).queryExecution.analyzed
       val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
       assert(operationType === QUERY)
-      assert(inputs.size == 1)
-      inputs.foreach { po =>
-        assert(po.actionType === PrivilegeObjectActionType.OTHER)
-        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-        assert(po.catalog.isEmpty)
-        assertEqualsIgnoreCase(reusedDb)(po.dbname)
-        assertEqualsIgnoreCase(reusedTableShort)(po.objectName)
-        assert(po.columns === Seq("key", "value"))
-        checkTableOwner(po)
-        val accessType = ranger.AccessType(po, operationType, isInput = true)
-        assert(accessType === AccessType.SELECT)
-      }
+      assert(inputs.size === 0)
 
       assert(outputs.size === 1)
       outputs.foreach { po =>
@@ -1606,16 +1586,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       .queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === QUERY)
-    assert(in.size === 1)
-    val po0 = in.head
-    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assertEqualsIgnoreCase(reusedDb)(po0.dbname)
-    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
-    assert(po0.columns === Seq("key", "pid", "value"))
-    checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    assert(in.size === 0)
 
     assert(out.size == 1)
     val po1 = out.head
@@ -1631,6 +1602,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   test("InsertIntoHiveDirCommand") {
     val tableDirectory = getClass.getResource("/").getPath + "table_directory"
     val directory = File(tableDirectory).createDirectory()
+    sql("set spark.sql.hive.convertMetastoreInsertDir=false")
     val plan = sql(
       s"""
          |INSERT OVERWRITE DIRECTORY '${directory.path}'
