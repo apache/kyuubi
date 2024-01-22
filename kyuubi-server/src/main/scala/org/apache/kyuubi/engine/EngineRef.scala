@@ -55,7 +55,7 @@ import org.apache.kyuubi.server.KyuubiServer
 private[kyuubi] class EngineRef(
     conf: KyuubiConf,
     user: String,
-    doAsEnabled: Boolean,
+    val doAsEnabled: Boolean,
     groupProvider: GroupProvider,
     engineRefId: String,
     engineManager: KyuubiApplicationManager,
@@ -97,6 +97,8 @@ private[kyuubi] class EngineRef(
     case GROUP => groupProvider.primaryGroup(user, conf.getAll.asJava)
     case _ => user
   }
+
+  private[kyuubi] val effectiveUser: String = if (doAsEnabled) appUser else Utils.currentUser
 
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {

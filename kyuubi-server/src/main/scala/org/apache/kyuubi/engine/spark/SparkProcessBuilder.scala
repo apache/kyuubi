@@ -161,7 +161,7 @@ class SparkProcessBuilder(
         setSparkUserName(proxyUser, buffer)
         buffer += PROXY_USER
         buffer += proxyUser
-      case None if !doAsEnabled =>
+      case None => // doAs disabled
         setSparkUserName(Utils.currentUser, buffer)
       case Some(name) =>
         setSparkUserName(name, buffer)

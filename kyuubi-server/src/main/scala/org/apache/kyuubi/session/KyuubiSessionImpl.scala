@@ -266,7 +266,7 @@ class KyuubiSessionImpl(
 
   private def renewEngineCredentials(): String = {
     try {
-      sessionManager.credentialsManager.renewCredentials(engine.appUser)
+      sessionManager.credentialsManager.renewCredentials(engine.effectiveUser)
     } catch {
       case e: Exception =>
         error(s"Failed to renew engine credentials for $handle", e)
