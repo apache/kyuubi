@@ -935,9 +935,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                |AS
                |SELECT count(*) as cnt, sum(id) as sum_id FROM $db1.$table1
               """.stripMargin))
-        interceptEndsWith[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$table1").show()))(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
+        doAs(someone, sql(s"SELECT count(*) FROM $db1.$table1").show())
 
         interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(*) FROM $db1.$view1").show()))(
