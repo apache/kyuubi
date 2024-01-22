@@ -66,7 +66,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       assert(po.columns === cols)
       checkTableOwner(po)
     } else {
-      cols.isEmpty
+      assert(cols.isEmpty)
     }
   }
 
