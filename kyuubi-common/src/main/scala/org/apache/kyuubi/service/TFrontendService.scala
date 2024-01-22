@@ -30,7 +30,7 @@ import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, PROXY_USER, SESSION_CLOSE_ON_DISCONNECT}
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
-import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
+import org.apache.kyuubi.service.authentication.{AuthUtils, KyuubiAuthenticationFactory}
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.shaded.thrift.protocol.TProtocol
@@ -128,11 +128,11 @@ abstract class TFrontendService(name: String)
       ipAddress: String,
       realUser: String): String = {
     val proxyUser = Option(sessionConf.get(PROXY_USER.key))
-      .getOrElse(sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER))
+      .getOrElse(sessionConf.get(AuthUtils.HS2_PROXY_USER))
     if (proxyUser == null) {
       realUser
     } else {
-      KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+      AuthUtils.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
       proxyUser
     }
   }

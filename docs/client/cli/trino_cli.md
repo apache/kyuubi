@@ -21,7 +21,7 @@ The Trino CLI provides a terminal-based, interactive shell for running queries. 
 
 ## Start Kyuubi Trino Server
 
-First we should configure the trino protocol and the service port in the `kyuubi.conf`
+First we should configure the trino protocol and the service port in the `kyuubi-defaults.conf`
 
 ```
 kyuubi.frontend.protocols TRINO

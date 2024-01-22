@@ -1388,6 +1388,13 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_TRINO_CONNECTION_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.connection.user")
+      .doc("The user used for connecting to trino cluster")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_TRINO_CONNECTION_PASSWORD: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.trino.connection.password")
       .doc("The password used for connecting to trino cluster")
