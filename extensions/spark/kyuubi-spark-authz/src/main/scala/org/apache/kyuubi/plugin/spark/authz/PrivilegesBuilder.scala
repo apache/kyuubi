@@ -238,7 +238,8 @@ object PrivilegesBuilder {
                   s"""
                      |Failed to analyze unresolved
                      |$p
-                     |due to ${e.getMessage}""".stripMargin, e)
+                     |due to ${e.getMessage}""".stripMargin,
+                  e)
             }
           }
         }
