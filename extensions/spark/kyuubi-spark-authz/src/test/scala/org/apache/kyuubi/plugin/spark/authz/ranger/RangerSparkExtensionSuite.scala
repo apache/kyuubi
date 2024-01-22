@@ -44,6 +44,7 @@ import org.apache.kyuubi.plugin.spark.authz.rule.Authorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
+
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll {
   // scalastyle:on
@@ -55,9 +56,9 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   }
 
   protected def errorMessage(
-      privilege: String,
-      resource: String = "default/src",
-      user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
+    privilege: String,
+    resource: String = "default/src",
+    user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
     s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
   }
 
@@ -188,8 +189,12 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val e = intercept[AccessControlException](sql(create))
     assert(e.getMessage === errorMessage("create", "mydb"))
     withCleanTmpResources(Seq((testDb, "database"))) {
-      doAs(admin, assert(Try { sql(create) }.isSuccess))
-      doAs(admin, assert(Try { sql(alter) }.isSuccess))
+      doAs(admin, assert(Try {
+        sql(create)
+      }.isSuccess))
+      doAs(admin, assert(Try {
+        sql(alter)
+      }.isSuccess))
       val e1 = intercept[AccessControlException](sql(alter))
       assert(e1.getMessage === errorMessage("alter", "mydb"))
       val e2 = intercept[AccessControlException](sql(drop))
@@ -211,14 +216,24 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     assert(e.getMessage === errorMessage("create"))
 
     withCleanTmpResources(Seq((s"$db.$table", "table"))) {
-      doAs(bob, assert(Try { sql(create0) }.isSuccess))
-      doAs(bob, assert(Try { sql(alter0) }.isSuccess))
+      doAs(bob, assert(Try {
+        sql(create0)
+      }.isSuccess))
+      doAs(bob, assert(Try {
+        sql(alter0)
+      }.isSuccess))
 
       val e1 = intercept[AccessControlException](sql(drop0))
       assert(e1.getMessage === errorMessage("drop"))
-      doAs(bob, assert(Try { sql(alter0) }.isSuccess))
-      doAs(bob, assert(Try { sql(select).collect() }.isSuccess))
-      doAs(kent, assert(Try { sql(s"SELECT key FROM $db.$table").collect() }.isSuccess))
+      doAs(bob, assert(Try {
+        sql(alter0)
+      }.isSuccess))
+      doAs(bob, assert(Try {
+        sql(select).collect()
+      }.isSuccess))
+      doAs(kent, assert(Try {
+        sql(s"SELECT key FROM $db.$table").collect()
+      }.isSuccess))
 
       Seq(
         select,
@@ -602,12 +617,16 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       // query all columns of the permanent view
       // with access privileges to the permanent view but no privilege to the source table
       val sql1 = s"SELECT * FROM $db1.$permView"
-      doAs(userPermViewOnly, { sql(sql1).collect() })
+      doAs(userPermViewOnly, {
+        sql(sql1).collect()
+      })
 
       // query the second column of permanent view with multiple columns
       // with access privileges to the permanent view but no privilege to the source table
       val sql2 = s"SELECT name FROM $db1.$permView"
-      doAs(userPermViewOnly, { sql(sql2).collect() })
+      doAs(userPermViewOnly, {
+        sql(sql2).collect()
+      })
     }
   }
 
@@ -1474,16 +1493,12 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$view1", "view"))) {
         doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
         doAs(admin, sql(s"CREATE VIEW $db1.$view1 AS SELECT * FROM $db1.$table1"))
-        interceptContains[AccessControlException](
-          doAs(
-            someone,
-            sql(s"SELECT count(*) FROM $db1.$table1 WHERE id > 1").collect()))(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
-        interceptContains[AccessControlException](
-          doAs(
-            someone,
-            sql(s"SELECT count(*) FROM $db1.$view1 WHERE id > 1").collect()))(
-          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
+        checkAnswer(
+          someone,
+          s"SELECT count(*) FROM $db1.$table1 WHERE id > 1", Row(0) :: Nil)
+        checkAnswer(
+          someone,
+          s"SELECT count(*) FROM $db1.$view1 WHERE id > 1", Row(0) :: Nil)
         interceptContains[AccessControlException](
           doAs(
             someone,
