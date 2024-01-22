@@ -234,13 +234,8 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
           someone,
           sql(s"CACHE TABLE $cacheTable1" +
             s" AS select * from $catalogV2.$namespace1.$table1")))
-      if (isSparkV32OrGreater) {
-        assert(e7.getMessage.contains(s"does not have [select] privilege" +
-          s" on [$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name]"))
-      } else {
-        assert(e7.getMessage.contains(s"does not have [select] privilege" +
-          s" on [$catalogV2.$namespace1/$table1]"))
-      }
+      assert(e7.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name]"))
     }
   }
 
