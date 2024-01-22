@@ -2093,7 +2093,7 @@ object KyuubiConf {
         "for engines which supports user impersonation, e.g. SPARK, depends on the " +
         s"`kyuubi.engine.share.level`, different users will be used to launch the engine. " +
         "Otherwise, Kyuubi Server's user will always be used to launch the engine.")
-      .version("1.8.1")
+      .version("1.9.0")
       .booleanConf
       .createWithDefault(true)
 
