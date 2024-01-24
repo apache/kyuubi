@@ -18,7 +18,7 @@
 
 # Gluten
 
-Gluten is a Spark plugin developed by Intel, designed to accelerate Apache Spark with native libraries. Currently, only CentOS 7/8 and Ubuntu 20.04/22.04, along with Spark 3.2/3.3/3.4, are supported. Users can employ the following methods to utilize the Gluten with Velox native libraries.
+[Gluten](https://oap-project.github.io/gluten/) is a Spark plugin developed by Intel, designed to accelerate Apache Spark with native libraries. Currently, only CentOS 7/8 and Ubuntu 20.04/22.04, along with Spark 3.2/3.3/3.4, are supported. Users can employ the following methods to utilize the Gluten with Velox native libraries.
 
 ## Building(with velox Backend)
 
@@ -40,11 +40,11 @@ You can use Gluten to accelerate Spark by following steps.
 
 ### Installing
 
-add gluten jar: `copy /path/to/gluten/package/target/gluten-velox-bundle-spark3.x_2.12-*.jar $SPARK_HOME/jars/` or specified to `spark.jars` configuration
+Add gluten jar: `copy /path/to/gluten/package/target/gluten-velox-bundle-spark3.x_2.12-*.jar $SPARK_HOME/jars/` or specified to `spark.jars` configuration
 
 ### Configure
 
-add config into `spark-defaults.conf`:
+Add the following minimal configuration into `spark-defaults.conf`:
 
 ```properties
 spark.plugins=io.glutenproject.GlutenPlugin
@@ -53,3 +53,4 @@ spark.memory.offHeap.enabled=true
 spark.shuffle.manager=org.apache.spark.shuffle.sort.ColumnarShuffleManager
 ```
 
+For more configuration can be found in the doc of [Configuration](https://oap-project.github.io/gluten/Configuration.html).
