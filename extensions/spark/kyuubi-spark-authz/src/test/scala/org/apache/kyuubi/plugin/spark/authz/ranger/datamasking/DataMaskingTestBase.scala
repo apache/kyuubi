@@ -302,7 +302,6 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     val s2 = s"SELECT * FROM default.src where key = 11"
     // scalastyle:off
     checkAnswer(
-
       bob,
       s1,
       Seq(Row(
@@ -335,9 +334,7 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
           df0.as("a").join(
             right = df0.as("b"),
             joinExprs = $"a.key" === $"b.key",
-            joinType = "left_outer").collect() === Seq(Row(1, 1))
-        )
-      }
-    )
+            joinType = "left_outer").collect() === Seq(Row(1, 1)))
+      })
   }
 }
