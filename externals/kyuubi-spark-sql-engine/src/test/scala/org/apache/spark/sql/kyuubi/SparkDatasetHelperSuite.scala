@@ -33,13 +33,13 @@ class SparkDatasetHelperSuite extends WithSparkSQLEngine {
         " SELECT * FROM VALUES(1),(2),(3),(4) AS t(id)")
 
       val topKStatement = s"SELECT * FROM(SELECT * FROM tv ORDER BY id LIMIT ${topKThreshold - 1})"
-      assert(SparkDatasetHelper.planLimit(
-        spark.sql(topKStatement).queryExecution.sparkPlan) === Option(topKThreshold - 1))
+      assert(SparkDatasetHelper.optimizedPlanLimit(
+        spark.sql(topKStatement).queryExecution) === Option(topKThreshold - 1))
 
       val collectLimitStatement =
         s"SELECT * FROM (SELECT * FROM tv ORDER BY id LIMIT $topKThreshold)"
-      assert(SparkDatasetHelper.planLimit(
-        spark.sql(collectLimitStatement).queryExecution.sparkPlan) === Option(topKThreshold))
+      assert(SparkDatasetHelper.optimizedPlanLimit(
+        spark.sql(collectLimitStatement).queryExecution) === Option(topKThreshold))
     }
   }
 }
