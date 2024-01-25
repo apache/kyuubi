@@ -277,7 +277,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       }
       serviceNode = null
     }
-    if (serviceDiscovery  != null) {
+    if (serviceDiscovery != null) {
       serviceDiscovery.stopGracefully(true)
       serviceDiscovery = null
     }
