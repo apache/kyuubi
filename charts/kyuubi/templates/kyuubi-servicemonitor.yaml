@@ -22,6 +22,9 @@ metadata:
   name: {{ .Release.Name }}
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
+    {{- if .Values.serviceMonitor.additionalLabels }}
+    {{- toYaml .Values.serviceMonitor.additionalLabels | nindent 4 }}
+    {{- end }}
 spec:
   selector:
     matchLabels:
