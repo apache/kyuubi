@@ -163,8 +163,8 @@ object SparkCatalogUtils extends Logging {
     val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
     catalog match {
       case builtin if builtin.name() == SESSION_CATALOG =>
-        val catalog = spark.sessionState.catalog
-        val databases = catalog.listDatabases(schemaPattern)
+        val sessionCatalog = spark.sessionState.catalog
+        val databases = sessionCatalog.listDatabases(schemaPattern)
 
         def isMatchedTableType(tableTypes: Set[String], tableType: String): Boolean = {
           val typ = if (tableType.equalsIgnoreCase(VIEW)) VIEW else TABLE
@@ -172,7 +172,8 @@ object SparkCatalogUtils extends Logging {
         }
 
         databases.flatMap { db =>
-          val identifiers = catalog.listTables(db, tablePattern, includeLocalTempViews = false)
+          val identifiers =
+            sessionCatalog.listTables(db, tablePattern, includeLocalTempViews = false)
           if (ignoreTableProperties) {
             identifiers.map {
               case TableIdentifier(
@@ -192,7 +193,7 @@ object SparkCatalogUtils extends Logging {
                   null)
             }
           } else {
-            catalog.getTablesByName(identifiers)
+            sessionCatalog.getTablesByName(identifiers)
               .filter(t => isMatchedTableType(tableTypes, t.tableType.name)).map { t =>
                 val typ = if (t.tableType.name == VIEW) VIEW else TABLE
                 Row(
