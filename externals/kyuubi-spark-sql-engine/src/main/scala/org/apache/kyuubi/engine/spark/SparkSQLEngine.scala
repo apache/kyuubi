@@ -125,10 +125,6 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
       if (!shutdown.get) {
         info(s"Spark engine is de-registering from engine discovery space.")
         frontendServices.flatMap(_.discoveryService).foreach(_.stop())
-        while (backendService.sessionManager.getOpenSessionCount > 0) {
-          Thread.sleep(1000 * 60)
-        }
-        info(s"Spark engine has no open session now, terminating.")
         stop()
       }
     }

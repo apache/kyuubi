@@ -22,8 +22,10 @@ import java.util.UUID
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_CHECK_INTERVAL, ENGINE_SHARE_LEVEL, ENGINE_SPARK_MAX_INITIAL_WAIT, ENGINE_SPARK_MAX_LIFETIME}
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel.ShareLevel
+import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.service.ServiceState
 
@@ -34,6 +36,12 @@ import org.apache.kyuubi.service.ServiceState
 trait ShareLevelSparkEngineTests
   extends WithDiscoverySparkSQLEngine with HiveJDBCTestHelper {
   def shareLevel: ShareLevel
+  override def withKyuubiConf: Map[String, String] = super.withKyuubiConf ++ Map(
+    ENGINE_SHARE_LEVEL.key -> shareLevel.toString,
+    ENGINE_SPARK_MAX_LIFETIME.key -> "PT5s",
+    ENGINE_SPARK_MAX_INITIAL_WAIT.key -> "0",
+    ENGINE_CHECK_INTERVAL.key -> "PT2s",
+    HighAvailabilityConf.HA_ENGINE_STOP_GRACEFUL_PERIOD.key -> "PT1S")
 
   override protected def jdbcUrl: String = getJdbcUrl
   override val namespace: String = {
@@ -72,6 +80,25 @@ trait ShareLevelSparkEngineTests
           case _ =>
             assert(engine.getServiceState == ServiceState.STOPPED)
             assert(discoveryClient.pathExists(namespace))
+        }
+      }
+    }
+  }
+
+  test("test spark engine max life-time with graceful period") {
+    withDiscoveryClient { discoveryClient =>
+      assert(engine.getServiceState == ServiceState.STARTED)
+      assert(discoveryClient.pathExists(namespace))
+      withJdbcStatement() { _ =>
+        eventually(Timeout(30.seconds)) {
+          shareLevel match {
+            case ShareLevel.CONNECTION =>
+              assert(engine.getServiceState == ServiceState.STOPPED)
+              assert(discoveryClient.pathNonExists(namespace))
+            case _ =>
+              assert(engine.getServiceState == ServiceState.STOPPED)
+              assert(discoveryClient.pathExists(namespace))
+          }
         }
       }
     }

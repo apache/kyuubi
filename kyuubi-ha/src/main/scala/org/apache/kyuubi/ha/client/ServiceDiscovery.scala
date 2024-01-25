@@ -17,8 +17,10 @@
 
 package org.apache.kyuubi.ha.client
 
-import java.util.concurrent.CountDownLatch
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
+
+import scala.concurrent.duration.Duration
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
@@ -68,14 +70,23 @@ abstract class ServiceDiscovery(
   // stop the server genteelly
   def stopGracefully(isLost: Boolean = false): Unit = {
     val startTime = System.currentTimeMillis()
-    while (fe.be.sessionManager.getOpenSessionCount > 0) {
-      if (gracefulShutdownPeriod.exists(System.currentTimeMillis() - startTime > _)) {
-        warn(s"Graceful shutdown period ${gracefulShutdownPeriod.get}ms is expired, " +
-          s"force to shutdown")
-      } else {
-        info(
-          s"${fe.be.sessionManager.getOpenSessionCount} connection(s) are active, delay shutdown")
-        Thread.sleep(1000 * 60)
+    while (fe.be.sessionManager.getOpenSessionCount > 0 &&
+      !gracefulShutdownPeriod.exists(System.currentTimeMillis() - startTime > _)) {
+      info(s"${fe.be.sessionManager.getOpenSessionCount} connection(s) are active, delay shutdown")
+      Thread.sleep(Duration(10, TimeUnit.SECONDS).toMillis)
+    }
+    if (fe.be.sessionManager.getOpenSessionCount > 0) {
+      warn(s"Graceful shutdown period ${gracefulShutdownPeriod.get}ms is expired, " +
+        s"force to shutdown the service discovery.")
+      fe.be.sessionManager.allSessions().foreach { session =>
+        warn(s"Closing session ${session.handle.identifier} forcibly after service graceful stop" +
+          s" period ${gracefulShutdownPeriod.get} ms.")
+        try {
+          fe.be.sessionManager.closeSession(session.handle)
+        } catch {
+          case e: Throwable =>
+            error(s"Error closing session ${session.handle.identifier}", e)
+        }
       }
     }
     isServerLost.set(isLost)
