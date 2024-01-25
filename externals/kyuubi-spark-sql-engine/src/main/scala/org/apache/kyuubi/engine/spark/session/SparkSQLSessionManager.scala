@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.session
 
+import java.nio.file.Paths
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 
 import org.apache.hadoop.fs.Path
@@ -211,17 +212,16 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   override protected def isServer: Boolean = false
 
   private[spark] def getEngineResultSavePath(): String = {
-    Seq(conf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR), engineId).mkString(Path.SEPARATOR)
+    Paths.get(conf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR), engineId).toString
   }
 
   private def getSessionResultSavePath(sessionHandle: SessionHandle): String = {
-    Seq(getEngineResultSavePath(), sessionHandle.identifier.toString).mkString(Path.SEPARATOR)
+    Paths.get(getEngineResultSavePath(), sessionHandle.identifier.toString).toString
   }
 
   private[spark] def getOperationResultSavePath(
       sessionHandle: SessionHandle,
       opHandle: OperationHandle): String = {
-    Seq(getSessionResultSavePath(sessionHandle), opHandle.identifier.toString).mkString(
-      Path.SEPARATOR)
+    Paths.get(getSessionResultSavePath(sessionHandle), opHandle.identifier.toString).toString
   }
 }
