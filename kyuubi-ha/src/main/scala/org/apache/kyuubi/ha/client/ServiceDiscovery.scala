@@ -80,7 +80,7 @@ abstract class ServiceDiscovery(
         s"force to shutdown the service discovery.")
       fe.be.sessionManager.allSessions().foreach { session =>
         warn(s"Closing session ${session.handle.identifier} forcibly after service graceful stop" +
-          s" period ${gracefulShutdownPeriod.get} ms.")
+          s" period ${gracefulShutdownPeriod.get}ms.")
         try {
           fe.be.sessionManager.closeSession(session.handle)
         } catch {
