@@ -33,7 +33,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.ApplicationManagerInfo
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, KillResponse}
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
@@ -45,7 +45,7 @@ import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionManager, SessionHa
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class AdminResource extends ApiRequestContext with Logging {
-
+  private var killMessage: KillResponse = (false, "UNKNOWN")
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
@@ -248,6 +248,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("proxyUser") kyuubiProxyUser: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
+      @QueryParam("forceKill") forceKill: Boolean,
       @QueryParam("refId") refId: String,
       @QueryParam("sparK8Context") sparK8Context: String,
       @QueryParam("sparK8Namespace") sparK8Namespace: String,
@@ -260,7 +261,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     }
     val engine = normalizeEngineInfo(userName, engineType, shareLevel, subdomain, "default")
     val engineSpace = calculateEngineSpace(engine)
-
+    var msg = s"Engine $engineSpace is deleted successfully."
     withDiscoveryClient(fe.getConf) { discoveryClient =>
       val engineNodes = discoveryClient.getChildren(engineSpace)
       engineNodes.foreach { node =>
@@ -275,21 +276,23 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
               s"${e.getMessage}")
         }
       }
-
-      if (Option(refId).isDefined) {
+      if (forceKill) {
 
         val applicationManagerInfo = ApplicationManagerInfo(
           Option(sparkMaster),
           Option(sparK8Context),
           Option(sparK8Namespace))
 
-        fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+        killMessage = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
           .applicationManager.killApplication(applicationManagerInfo, refId)
+        if (!killMessage._1) {
+          msg = s"Engine $engineSpace failed to get deleted forcibly," +
+            s"cause ${killMessage._2}"
+          error(msg)
+        }
       }
-
     }
-
-    Response.ok(s"Engine $engineSpace is deleted successfully.").build()
+    Response.ok(msg).build()
   }
 
   @ApiResponse(
