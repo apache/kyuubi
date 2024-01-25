@@ -329,7 +329,9 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     doAs(
       "bob", {
         val df0 = spark.table("default.src")
-          .select("key").sort($"key").limit(1)
+          .select("key")
+          .filter($"key" === 1)
+          .sort($"key")
         assert(
           df0.as("a").join(
             right = df0.as("b"),
