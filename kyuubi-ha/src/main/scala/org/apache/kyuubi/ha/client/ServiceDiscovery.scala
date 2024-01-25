@@ -37,6 +37,7 @@ abstract class ServiceDiscovery(
 
   protected val gracefulShutdownLatch = new CountDownLatch(1)
   protected val isServerLost = new AtomicBoolean(false)
+  protected def gracefulShutdownPeriod: Option[Long]
 
   /**
    * a pre-defined namespace used to publish the instance of the associate service
@@ -66,9 +67,16 @@ abstract class ServiceDiscovery(
 
   // stop the server genteelly
   def stopGracefully(isLost: Boolean = false): Unit = {
+    val startTime = System.currentTimeMillis()
     while (fe.be.sessionManager.getOpenSessionCount > 0) {
-      info(s"${fe.be.sessionManager.getOpenSessionCount} connection(s) are active, delay shutdown")
-      Thread.sleep(1000 * 60)
+      if (gracefulShutdownPeriod.exists(System.currentTimeMillis() - startTime > _)) {
+        warn(s"Graceful shutdown period ${gracefulShutdownPeriod.get}ms is expired, " +
+          s"force to shutdown")
+      } else {
+        info(
+          s"${fe.be.sessionManager.getOpenSessionCount} connection(s) are active, delay shutdown")
+        Thread.sleep(1000 * 60)
+      }
     }
     isServerLost.set(isLost)
     gracefulShutdownLatch.countDown()

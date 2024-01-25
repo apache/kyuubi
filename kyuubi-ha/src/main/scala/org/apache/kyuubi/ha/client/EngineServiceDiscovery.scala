@@ -20,6 +20,7 @@ package org.apache.kyuubi.ha.client
 import scala.util.control.NonFatal
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
+import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.service.FrontendService
 
 /**
@@ -29,6 +30,9 @@ import org.apache.kyuubi.service.FrontendService
  */
 class EngineServiceDiscovery(
     fe: FrontendService) extends ServiceDiscovery("EngineServiceDiscovery", fe) {
+
+  override protected def gracefulShutdownPeriod: Option[Long] =
+    conf.get(HighAvailabilityConf.HA_ENGINE_STOP_GRACEFUL_PERIOD)
 
   override def stop(): Unit = synchronized {
     if (!isServerLost.get()) {

@@ -180,6 +180,22 @@ object HighAvailabilityConf {
       .stringConf
       .createOptional
 
+  val HA_SERVER_STOP_GRACEFUL_PERIOD: OptionalConfigEntry[Long] =
+    buildConf("kyuubi.ha.server.stop.graceful.period")
+      .doc("The period of time(ms) for server discovery to stop gracefully.")
+      .version("1.9.0")
+      .timeConf
+      .checkValue(_ > 0, "Must be positive")
+      .createOptional
+
+  val HA_ENGINE_STOP_GRACEFUL_PERIOD: OptionalConfigEntry[Long] =
+    buildConf("kyuubi.ha.engine.stop.graceful.period")
+      .doc("The period of time(ms) for engine discovery to stop gracefully.")
+      .version("1.9.0")
+      .timeConf
+      .checkValue(_ > 0, "Must be positive")
+      .createOptional
+
   val HA_ZK_PUBLISH_CONFIGS: ConfigEntry[Boolean] =
     buildConf("kyuubi.ha.zookeeper.publish.configs")
       .doc("When set to true, publish Kerberos configs to Zookeeper. " +

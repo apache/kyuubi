@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.ha.client
 
+import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.service.FrontendService
 
 /**
@@ -27,6 +28,9 @@ import org.apache.kyuubi.service.FrontendService
  */
 class KyuubiServiceDiscovery(
     fe: FrontendService) extends ServiceDiscovery("KyuubiServiceDiscovery", fe) {
+
+  override protected def gracefulShutdownPeriod: Option[Long] =
+    conf.get(HighAvailabilityConf.HA_SERVER_STOP_GRACEFUL_PERIOD)
 
   override def stop(): Unit = synchronized {
     if (!isServerLost.get()) {
