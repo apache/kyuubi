@@ -173,21 +173,41 @@ object SparkCatalogUtils extends Logging {
 
         databases.flatMap { db =>
           val identifiers = catalog.listTables(db, tablePattern, includeLocalTempViews = false)
-          catalog.getTablesByName(identifiers)
-            .filter(t => isMatchedTableType(tableTypes, t.tableType.name)).map { t =>
-              val typ = if (t.tableType.name == VIEW) VIEW else TABLE
-              Row(
-                catalogName,
-                t.database,
-                t.identifier.table,
-                typ,
-                t.comment.getOrElse(""),
-                null,
-                null,
-                null,
-                null,
-                null)
+          if (ignoreTableProperties) {
+            identifiers.map {
+              case TableIdentifier(
+                    table: String,
+                    database: Option[String],
+                    catalog: Option[String]) =>
+                Row(
+                  catalog.getOrElse(catalogName),
+                  database.getOrElse("default"),
+                  table,
+                  TABLE, // ignore tableTypes criteria and simply treat all table type as TABLE
+                  "",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null)
             }
+          } else {
+            catalog.getTablesByName(identifiers)
+              .filter(t => isMatchedTableType(tableTypes, t.tableType.name)).map { t =>
+                val typ = if (t.tableType.name == VIEW) VIEW else TABLE
+                Row(
+                  catalogName,
+                  t.database,
+                  t.identifier.table,
+                  typ,
+                  t.comment.getOrElse(""),
+                  null,
+                  null,
+                  null,
+                  null,
+                  null)
+              }
+          }
         }
       case tc: TableCatalog =>
         val tp = tablePattern.r.pattern
